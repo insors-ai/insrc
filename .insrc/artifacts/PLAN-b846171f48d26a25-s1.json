@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790449823719-3sfdn9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T19:14:26.922Z",
+    "epicCreatedAt": "2026-09-26T19:14:26.923Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 243175,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b846171f48d26a25",
+    "epicSlug": "lld-approved-standalone-bugfix-issue-b846171f48d26a25",
+    "storyId": "s1",
+    "lldRunId": "wf-1790446816695-8c2jhh",
+    "lldEffectiveHash": "c90ce092998d69d1fde21c46d51b54f0370fc37d95220ca042825ff02973a522",
+    "approvedAt": "2026-09-27T04:34:35.817Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Extend vscode.d.ts stub with the WebviewPanelSerializer API",
+        "summary": "Add to src/vscode.d.ts: `interface WebviewPanelSerializer { deserializeWebviewPanel(panel: WebviewPanel, state: unknown): Thenable<void> | void }` and `window.registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable`; ensure the Webview interface's `html` is a settable field (already used by the createPanel adapter). Type-only, no runtime effect.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "src/vscode.d.ts declares registerWebviewPanelSerializer + WebviewPanelSerializer + a settable Webview.html; tsc --noEmit stays clean.",
+          "The additions match the real VS Code API shape (viewType, serializer, Disposable return)."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "tsc --noEmit clean with the new WebviewPanelSerializer + registerWebviewPanelSerializer stub types."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extract the shared webviewPanelChannel(panel) factory in extension.ts",
+        "summary": "Extract extension.ts's inline createWebviewPanel->ChatPanelChannel wrapper (:513-539) into one reusable `webviewPanelChannel(panel: WebviewPanel): ChatPanelChannel` function (setHtml->webview.html, postMessage->webview.postMessage(...).then, onMessage->onDidReceiveMessage, onDidDispose, reveal, dispose). The existing chat createPanel dep calls it. Pure refactor — no behaviour change.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The chat createPanel dep produces the SAME ChatPanelChannel behaviour via the extracted factory (fresh-open unchanged).",
+          "webviewPanelChannel is reusable by the serializer (takes any WebviewPanel, no createWebviewPanel call inside)."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "webviewPanelChannel(panel) maps a fake WebviewPanel to a ChatPanelChannel (setHtml->webview.html, postMessage->webview.postMessage, onMessage->onDidReceiveMessage, onDidDispose, reveal, dispose)."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add ChatPanelHost.adopt(channel) + refactor open() to one shared wiring internal",
+        "summary": "In chat-panel.ts add adopt(channel: ChatPanelChannel) to the ChatPanelHost interface + createChatPanelHost return; extract open()'s post-channel body (wire onDidDispose/onMessage, setHtml(renderShell()), post theme/session-restored/history-list, empty-providers error) into a shared internal that BOTH open() and adopt() call. adopt() supersedes an already-live channel (cancelActive + dispose prior). open()'s signature + observable behaviour byte-identical.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ChatPanelHost gains adopt(channel); open()/dispose() unchanged for existing callers.",
+          "adopt(channel) wires the channel + posts theme/session-restored/history-list (same as open()), and supersedes any already-live channel (single active channel).",
+          "open() and adopt() share ONE post-channel wiring internal (no duplicated wiring)."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat-panel.test.ts: host.adopt(fakeChannel) posts theme + session-restored + history-list on the ADOPTED channel and wires onMessage so a subsequent submit-turn flows."
+          },
+          {
+            "level": "unit",
+            "name": "chat-panel.test.ts: adopt() when a channel is already live supersedes it (prior channel disposed / cancelActive)."
+          },
+          {
+            "level": "unit",
+            "name": "chat-panel.test.ts: open() behaviour byte-identical (existing open()/submit/history tests stay green after the shared-internal refactor)."
+          },
+          {
+            "level": "unit",
+            "name": "chat-panel.test.ts: adopt() with providers empty posts the same 'no agentic CLI' error turn-event open() does."
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Register the WebviewPanelSerializer for 'insrc.chatPanel' in extension.ts",
+        "summary": "In the insrc.chat.enabled chat block, register window.registerWebviewPanelSerializer('insrc.chatPanel', { deserializeWebviewPanel(panel){ try { chatHost.adopt(webviewPanelChannel(panel)); } catch { panel.dispose(); } } }) and push the Disposable to context.subscriptions. Optionally add 'onWebviewPanel:insrc.chatPanel' to package.json activationEvents for robust restore.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A restored 'insrc.chatPanel' panel is wrapped via webviewPanelChannel and adopted by chatHost (history + wiring restored).",
+          "deserialize is registered only under insrc.chat.enabled; the Disposable is in context.subscriptions.",
+          "An adopt failure is caught and the panel disposed (no throw into VS Code)."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Serializer unit test: deserializeWebviewPanel(fakeWebviewPanel) builds a ChatPanelChannel via webviewPanelChannel() and calls chatHost.adopt() so the fake panel receives setHtml + the initial posts."
+          },
+          {
+            "level": "unit",
+            "name": "deserialize error path: when adopt throws, the error is swallowed and the fake panel disposed."
+          },
+          {
+            "level": "smoke",
+            "name": "packaging.test.ts / activation.test.ts still pass with the added serializer registration."
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests + verification (adopt, serializer, tsc, full sweep)",
+        "summary": "Add unit tests: chat-panel.test.ts adopt(fakeChannel) posts theme/session-restored/history-list + supersede + open()-unchanged + empty-providers error; a serializer unit test driving deserializeWebviewPanel with a fake WebviewPanel (asserts webviewPanelChannel wrap + adopt + error->dispose). Within the build, write the adopt tests right after t3 and the serializer test right after t4, then run `npx tsc --noEmit` and `npx tsx --test 'src/**/__tests__/*.test.ts'`; confirm no existing test regressed.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "New adopt + serializer unit tests pass; existing chat/extension tests stay green (additive).",
+          "tsc --noEmit clean; full plugin sweep green."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Full plugin sweep (npx tsx --test 'src/**/__tests__/*.test.ts') green + tsc --noEmit clean — no existing test regressed."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "chat-panel.test.ts: host.adopt(fakeChannel) posts theme + session-restored + history-list on the ADOPTED channel and wires onMessage so a subsequent submit-turn flows.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: adopt() when a channel is already live supersedes it (prior channel disposed / cancelActive).",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: open() behaviour byte-identical (existing open()/submit/history tests stay green after the shared-internal refactor).",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: adopt() with providers empty posts the same 'no agentic CLI' error turn-event open() does.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Serializer unit test: deserializeWebviewPanel(fakeWebviewPanel) builds a ChatPanelChannel via webviewPanelChannel() and calls chatHost.adopt() so the fake panel receives setHtml + the initial posts.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "webviewPanelChannel(panel) maps a fake WebviewPanel to a ChatPanelChannel (setHtml->webview.html, postMessage->webview.postMessage, onMessage->onDidReceiveMessage, onDidDispose, reveal, dispose).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "deserialize error path: when adopt throws, the error is swallowed and the fake panel disposed.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "tsc --noEmit clean with the new serializer stub types.",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Full plugin sweep (npx tsx --test 'src/**/__tests__/*.test.ts') green — no existing test regressed.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "packaging.test.ts / activation.test.ts still pass with the added serializer registration.",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1: ChatPanelHost.adopt + createChatPanelHost.open shared-wiring refactor (chat-panel.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1: webviewPanelChannel factory extracted from the inline createWebviewPanel->ChatPanelChannel adapter (extension.ts:513-539)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1: vscode.d.ts stub extension — WebviewPanelSerializer + window.registerWebviewPanelSerializer + settable Webview.html"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1: register the WebviewPanelSerializer for 'insrc.chatPanel' in the flag-gated chat block; deserialize wraps+adopts, try/catch->dispose"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy: adopt + serializer unit tests via fakeChannel/fake WebviewPanel + tsc + full plugin sweep (node:test)"
+    }
+  ]
+}

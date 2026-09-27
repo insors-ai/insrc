@@ -1,0 +1,535 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790436483527-1spdus",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T15:35:58.726Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 475174,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "epicHash": "f9563bf5bbb29c43",
+    "epicSlug": "vs-code-editor-dev-chat-ui",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1790428640052-v7rbx8",
+    "hldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contractDetails/renderRegistryWebviewSource",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "render-registry.ts exposes renderRegistryWebviewSource() whose factory provides register + renderRow + collapsible (the sc1 registry S003 registers into).",
+          "evidence": "grep confirms renderRegistryWebviewSource (src) + `function renderRow` + `function collapsible` in render-registry.ts — the sc1 registry/collapse seam S003 registers into exists as cited.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "migration/stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "S001 pre-registered the 'user' and 'assistant-text' renderers as plain line() rows (no role differentiation, no collapse) — the placeholder bodies S003 replaces.",
+          "evidence": "grep matches the exact placeholder bodies `register('user',function(vm){return line(vm.text)` and `register('assistant-text',function(vm){return line(vm.text)` (1 src hit each) — the plain-line renderers S003 replaces.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "invariants/k6d",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The 'tool-command' renderer renders inline via line() with the tool tone and does not use collapsible — S003 must leave it inline (k6 d).",
+          "evidence": "grep matches `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool')` (1 src hit) — tool-command renders inline via line(), no collapsible (k6 d).",
+          "action": "None — confirmed; S003 must leave it inline.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "contractDetails/RenderHost.collapsible",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sc1 collapse primitive + its 3-line clamp already exist (RENDER_REGISTRY_STYLE with -webkit-line-clamp:3 + the icon-only chevron), so S003 reuses rather than re-implements collapse.",
+          "evidence": "grep confirms `-webkit-line-clamp:3` (2 src) + `insrc-collapse__chevron` (7 src) + RENDER_REGISTRY_STYLE (7 src) — the sc1 collapse primitive + 3-line clamp exist; S003 reuses them (k5/k6 a/b single-sourced).",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "errorCases/renderer-throw",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderRow wraps each renderer in a try/catch that falls back to line(), so a throwing S003 widget cannot blank the transcript (per-row isolation).",
+          "evidence": "grep matches `try{return r.render` + `REG.fallback.render` (1 src each) — renderRow's per-row try/catch fallback exists, so a throwing S003 widget falls back to line() (per-row isolation).",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "interactionWithShared",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "toViewModel maps an assistant message to kind 'assistant-text' (no markdown/JSON classification), so S003's assistant renderer must content-type-detect at render time; S003 does not edit toViewModel.",
+          "evidence": "grep confirms `function toViewModel` (2 src) mapping assistant→'assistant-text'; 'assistant-markdown' appears only in the RowKind type (1 src), not as a toViewModel output — so S003's render-time content-type detection is the right approach and toViewModel is not edited.",
+          "action": "None — confirmed; toViewModel untouched.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "search.text/tool-result",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The TurnEvent union has no 'tool-result' producer (kinds: assistant-delta/tool-call/file-edit/status/done/error), so a 'tool-result' renderer is registered-but-dormant and k2 forbids adding a new event.",
+          "evidence": "stream-events.ts:30 read found; grep shows the TurnEvent kinds (assistant-delta/tool-call/file-edit/status/done/error, 40 src) and 'tool-result' only as the RowKind type (1 src) with NO event producer — so the tool-result renderer is correctly dormant and no new event is added (k2).",
+          "action": "None — confirmed dormant/reserved.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "testStrategy",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "render-registry.test.ts evals renderRegistryWebviewSource() against a fake document + fake line — the harness S003's renderer unit tests extend.",
+          "evidence": "render-registry.test.ts read found; grep confirms the eval'd-factory harness (makeRegistry/fakeDocument, 18 hits) — the pattern S003's renderer unit tests extend.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "boundary",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "sc1 is owned by S001 and consumed by S003 per the approved HLD, so S003 registering renderers (not editing toViewModel) is in-boundary.",
+          "evidence": "The bare-path HLD read returned found:false (no line anchor), but grep matched ownedByStory/sc1/consumedByStories and the LLD's embedded HLD slice records sc1 ownedByStory=s1 / consumedByStories includes s3 — the consumer trace holds (design.story ran on the approved HLD).",
+          "action": "None — ownership/consumer trace confirmed via the approved HLD slice.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-09-26T15:37:31.480Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T15:38:53.367Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Deliver the overhaul as ONE shared inline render layer plus an additively-widened event/protocol contract, both foundational in S001, with S002/S003/S004 building on them. S001 establishes (sc1) a message view-model derived at view time from the plain durable transcript + a render registry of inline widget renderers, and (sc2) the additively-widened TurnEvent + webview protocol (tool-call carries its command; the approval event/message + permission-mode are reserved shapes S004 fills). S002 restyles the shell chrome (fixed header, bottom-pinned input, icon-only Send/Stop, one animated progress widget) around the EXISTING DOM regions, preserving their stable element ids so it needs no cross-story contract. S003 adds the concrete renderers to sc1's registry (user/assistant differentiation, collapse-by-default 3-line preview for both roles + tool results/inline diffs via one shared chevron primitive, markdown + JSON widgets). S004 fills sc2's approval event + permission-decision message and adds a CLI permission-mode seam on the adapter spawn, plus an approval-card renderer and the auto-mode status indicator. The agreed mock (k5) and locked directions (k6) are implemented ONCE in the render layer. Everything inline under the nonce'd CSP (k1), the transcript stays plain + replayable (k4), the contract stays additive/non-breaking (k2), and permissions ride CLI flags with no REST (k3).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "MessageViewModel + inline RenderRegistry",
+          "purpose": "The single view-time rendering seam: a typed per-row view-model derived from the plain transcript + live events, and a registry mapping each row kind to an inline renderer (incl. the shared collapse/chevron primitive + role base). S003 adds markdown/JSON/collapse renderers and S004 adds the approval-card renderer to the SAME registry, so the mock (k5) + directions (k6) are implemented once and cannot drift.",
+          "interfaceSketch": "type ChatRole = 'user' | 'assistant';\ntype RowKind = 'user' | 'assistant-text' | 'assistant-markdown' | 'assistant-json' | 'tool-command' | 'tool-result' | 'inline-diff' | 'approval' | 'progress' | 'fallback';\ninterface RowViewModel { readonly kind: RowKind; readonly role?: ChatRole; readonly text: string; readonly cssClass?: string; readonly collapsible: boolean; readonly meta?: Readonly<Record<string, unknown>>; }\ninterface RowRenderer { render(vm: RowViewModel, host: RenderHost): HTMLElement; }\ninterface RenderHost { collapsible(el: HTMLElement, opts: { defaultCollapsed: boolean }): HTMLElement; readonly tokens: Readonly<Record<string, string>>; }\ninterface RenderRegistry { register(kind: RowKind, r: RowRenderer): void; renderRow(vm: RowViewModel): HTMLElement; }\ndeclare function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c1",
+            "c4"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Consumes sc1 and registers the concrete message/widget renderers: user-vs-assistant visual differentiation; collapse-by-default to a 3-line preview for long user AND assistant messages via sc1's shared icon-only chevron primitive; tool results and inline diffs collapsing to their caption header via the same primitive (the single-line tool-command renderer from S001 stays inline, never collapsed); and markdown + JSON render widgets. All renderers emit inline DOM (k1) and read only the plain view-model (k4). Adds no new event/protocol shape."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Owns the two foundations plus its own behaviours: the live user-prompt echo on submit (de-duplicated against the replayed row on session-restored, lc1), per-step assistant text via the view-model, surfacing the tool COMMAND (populating ToolCallEvent.command and a never-collapsed inline tool-command renderer), and the 32-char session-name ellipsis in the header. Introduces the view-model + registry and routes existing rows through it with flat line() kept as the fallback renderer, so no current row kind regresses."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [],
+          "internal": "Owns the shell chrome as pure layout over the EXISTING DOM regions: fixed header on top, bottom-pinned input with an icon-only Send/Stop button (▶ green / ■ red), and a single animated progress widget above the input (live-only, never written to the transcript). Preserves the stable element ids/regions (the transcript node, the status bar, the input) so the S001 render layer and the S004 approval card + auto-mode indicator slot into the same regions without S002 exposing a cross-story contract. Independent of S001 in the graph; both touch renderShell in separable ways (S001 the render script, S002 the shell CSS/controls) and both keep the element-id contract stable."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Consumes sc1 (registers the approval-card renderer) and sc2 (fills the approval-request event + permission-decision message + permission-mode). Owns the adapter permission seam: run claude with --permission-prompts host + a permission-prompt handler (codex: its approval routing) so a permission request surfaces as an approval-request event; relay the webview's approve/deny decision back to the CLI's permission channel; and a permission-mode seam on the spawn args (auto = --permission-mode/bypass; review = host-answered) driven by an auto/review selector shown in the status bar. All via CLI flags (k3), no REST."
+        }
+      ],
+      "rolloutPhase": "Phase C — rich rendering",
+      "nonFunctional": {
+        "performance": "Rendering is per-row and incremental (append on each event; re-render only the changed row on collapse/expand), so a long transcript costs O(visible rows); markdown/JSON widgets render synchronously from already-received content with no network.",
+        "security": "All webview assets inline under the nonce'd CSP with no external fetch (k1); rendering uses textContent/className, never innerHTML on untrusted text; permission decisions travel host↔adapter↔CLI over local flags/stdio only, no cloud REST (k3).",
+        "observability": "The durable transcript remains the human-readable record of the turn; approval decisions and mode changes are visible in-chat (card + status bar), not hidden.",
+        "durability": "The session transcript stays a plain, replayable record (roles + text + cssClass) — rich rendering, collapse state, and the progress widget are view-time only and never persisted (k4)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderRegistryWebviewSource",
+          "signature": "renderRegistryWebviewSource(): string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The existing sc1 factory source (render-registry.ts, S001). S003 REPLACES the bodies of the pre-registered 'user' and 'assistant-text' renderers (role-differentiated + collapse-when-long via host.collapsible) and ADDS 'assistant-markdown'/'assistant-json'/'tool-result'/'inline-diff' renderers into the same registry. The assistant renderer detects content-type (JSON.parse → JSON widget; markdown markers → markdown widget; else plain). All DOM via createElement/textContent/className, never innerHTML."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "renderRow's per-row try/catch (S001) still falls back to line() if any renderer throws — one bad row never blanks the transcript."
+            }
+          ],
+          "preconditions": [
+            "Runs webview-side, inline under the nonce'd CSP (k1); consumes sc1 (does not edit toViewModel)."
+          ],
+          "postconditions": [
+            "'user' and 'assistant-text' rows are role-differentiated and collapse to a 3-line preview when long; assistant markdown/JSON render as widgets; tool-command stays inline/never-collapsed (k6 d); the RowKind set, toViewModel and the durable transcript are unchanged (k2/k4)."
+          ]
+        },
+        {
+          "name": "RenderHost.collapsible",
+          "signature": "collapsible(el: HTMLElement, opts: { defaultCollapsed: boolean }): HTMLElement",
+          "parameters": [
+            {
+              "name": "el",
+              "type": "HTMLElement",
+              "purpose": "The content element to wrap (a message body, a tool-result body, or a diff body).",
+              "optional": false
+            },
+            {
+              "name": "opts.defaultCollapsed",
+              "type": "boolean",
+              "purpose": "S003 passes true for long messages + tool results + inline diffs (collapsed by default, k6 b/c).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HTMLElement",
+            "meaning": "The sc1 shared collapse container with the icon-only chevron (▸/▾) + 3-line clamp (S001). S003 CONSUMES it — it does not re-implement collapse; that keeps k6 a/b single-sourced."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Pure DOM construction (S001)."
+            }
+          ],
+          "preconditions": [
+            "Consumed from the sc1 RenderHost passed into each renderer; not re-implemented (k5)."
+          ],
+          "postconditions": [
+            "Collapsed content shows a 3-line preview; the chevron toggles collapsed<->expanded; the tool-command renderer never calls it (k6 d)."
+          ]
+        },
+        {
+          "name": "register",
+          "signature": "register(kind: RowKind, r: RowRenderer): void",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "RowKind",
+              "purpose": "One of the sc1 RowKinds S003 fills: 'user','assistant-text','inline-diff','tool-result' (and optionally 'assistant-markdown'/'assistant-json' aliased to the same widget builders).",
+              "optional": false
+            },
+            {
+              "name": "r",
+              "type": "RowRenderer",
+              "purpose": "The concrete inline renderer S003 supplies.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The sc1 registry mutator (S001). S003 CONSUMES it to install its renderers; it does not change register's shape."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Re-registering a kind replaces its renderer (S003 replaces S001's placeholder user/assistant-text bodies)."
+            }
+          ],
+          "preconditions": [
+            "Called at factory-construction time inside renderRegistryWebviewSource, before renderRow dispatches."
+          ],
+          "postconditions": [
+            "Each S003 RowKind resolves to its concrete renderer; unregistered kinds still fall back to line() (k2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "sc1 renderers in render-registry.ts (user / assistant-text bodies + markdown/JSON/tool-result/inline-diff)",
+        "change": "field-modify",
+        "details": "Replace S001's placeholder 'user'/'assistant-text' renderer bodies (plain line()) with role-differentiated rows that wrap long content in host.collapsible({defaultCollapsed:true}) (ac1/ac2); the assistant renderer detects content-type and renders a markdown widget or a structured JSON widget else plain text (ac3), all via createElement/textContent (k1). Add 'inline-diff' (collapsible-to-caption over the hunk body) and 'tool-result' (collapsible, dormant — no producer, k2) renderers. The 'tool-command' renderer is left inline/never-collapsed (k6 d). toViewModel is NOT edited (consumed).",
+        "schemaDiff": "register('user', role-tone + collapsible-when-long)\nregister('assistant-text', role-tone + collapsible-when-long + content-type widget)\nregister('inline-diff', collapsible-to-caption)\nregister('tool-result', collapsible-to-caption)  // dormant until a producer emits it",
+        "callSites": [
+          "vscode-plugin/src/chat/render-registry.ts"
+        ]
+      },
+      {
+        "entity": "S003 role + widget CSS in chat-panel.ts layoutStyle",
+        "change": "field-add",
+        "details": "Add inline CSS tokens for the user vs assistant role tones (ac1) and the markdown/JSON widget + tool-result/inline-diff caption styling, reusing the existing RENDER_REGISTRY_STYLE collapse classes (S001). Inline under the CSP, no remote origin (k1).",
+        "schemaDiff": "+ .insrc-msg--user / .insrc-msg--assistant tones\n+ .insrc-md-* (markdown widget) / .insrc-json-* (JSON widget) / tool-result caption classes",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "S003 consumes sc1: it registers concrete renderers into the existing RenderRegistry (via register), reuses RenderHost.collapsible for the icon-only chevron 3-line collapse, and reads only the plain RowViewModel. It does NOT edit toViewModel or the RowKind set (S001-owned); markdown/JSON classification is done at render time inside S003's assistant renderer, so no sc1 change and no HLD amendment. S004 later adds the 'approval' renderer to the same registry independently."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Assistant text is almost-JSON (starts with { or [ but does not parse) or malformed markdown.",
+          "detection": "The assistant renderer wraps content-type detection in try/catch: JSON.parse throws → not JSON; the markdown sniff is a marker test that either matches or not.",
+          "response": "Fall through to the next widget (JSON fail → try markdown → else plain text); never throw. The row always renders as at least plain text.",
+          "userImpact": "Ambiguous content shows as readable plain text instead of a broken widget.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A widget builder (markdown/JSON/collapse) throws while constructing DOM.",
+          "detection": "sc1 renderRow's existing per-row try/catch (S001) catches any renderer throw.",
+          "response": "Fall back to the flat line() renderer for that row — one bad row never blanks or breaks the transcript.",
+          "userImpact": "The affected row shows as plain text; the rest of the conversation renders normally.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pathologically large assistant message or deeply-nested JSON.",
+          "detection": "The renderer bounds its work: the JSON widget renders only to a sensible depth/size and the collapse primitive clamps the preview to 3 lines (only the expanded view is full).",
+          "response": "Render a bounded widget (truncate depth / rely on the collapsed 3-line preview); no unbounded DOM growth per row.",
+          "userImpact": "Huge content stays compact by default (collapsed) and legible when expanded.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A short (< 3 line) user or assistant message.",
+          "expected": "Rendered with its role tone but NOT wrapped in the collapse primitive (nothing to collapse) — no chevron shown (ac2 only collapses long messages)."
+        },
+        {
+          "input": "An assistant message that is exactly valid JSON.",
+          "expected": "Rendered as the structured JSON widget (ac3); the raw text is still the source (transcript unchanged, k4)."
+        },
+        {
+          "input": "An assistant message with markdown (headings/lists/code fences).",
+          "expected": "Rendered as the inline markdown widget (createElement, no innerHTML); collapsed to a 3-line preview if long."
+        },
+        {
+          "input": "A tool-COMMAND row (from S001) alongside the new renderers.",
+          "expected": "Stays inline, single-line, never wrapped in collapse (k6 d) — S003 does not touch it."
+        },
+        {
+          "input": "A row whose kind is 'tool-result' (no producer emits it today).",
+          "expected": "The registered tool-result renderer exists but is never invoked; no behavioural change (dormant, k2)."
+        },
+        {
+          "input": "A plain-text assistant message with no JSON/markdown markers.",
+          "expected": "Rendered as plain text with the assistant role tone (the content-type detection falls through to plain)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "S003 CONSUMES sc1 — it registers renderers + reuses host.collapsible + reads the plain RowViewModel; it does NOT edit toViewModel or the RowKind set (S001-owned), so no cross-story boundary breach and no new event/protocol shape (k2).",
+          "source": "c1"
+        },
+        {
+          "text": "The icon-only chevron + 3-line clamp come from the SINGLE sc1 collapse primitive (RENDER_REGISTRY_STYLE); S003 reuses it rather than re-implementing collapse, so k6 a/b stay single-sourced (k5).",
+          "source": "c1"
+        },
+        {
+          "text": "All widgets build DOM via createElement/textContent/className, never innerHTML on assistant text, inline under the nonce'd CSP with no remote origin (k1).",
+          "source": "c1"
+        },
+        {
+          "text": "Rich rendering (widgets + collapse state) is derived at view time; the durable transcript stays a plain role/text/cssClass record and no rendered HTML is persisted (k4/lc1), and the sc1 fallback line() keeps every currently-handled row kind rendering so the ~203 chat tests stay green (k2).",
+          "source": "c1"
+        },
+        {
+          "text": "The tool-COMMAND renderer (S001) stays inline and is never collapsed by S003 (k6 d).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the S003 renderers in isolation by eval'ing renderRegistryWebviewSource() against a fake document + fake line (the render-registry.test.ts pattern): role differentiation, collapse-when-long, markdown/JSON widgets, and the tool-command never-collapse invariant.",
+          "subjects": [
+            "the 'user' renderer emits a user-role-classed row and the 'assistant-text' renderer an assistant-role-classed row (distinct tones) — ac1",
+            "a long (>3-line) message is wrapped in host.collapsible (default-collapsed, icon-only chevron); a short message is NOT wrapped — ac2",
+            "the assistant renderer detects valid JSON → a structured JSON widget, and markdown → a markdown widget, and plain text → plain, all via createElement/textContent (no innerHTML) — ac3/k1",
+            "almost-JSON / a throwing widget falls through to plain text / the sc1 line() fallback (per-row isolation)",
+            "the 'tool-command' renderer is unchanged — inline, single line, never wrapped in collapse (k6 d)",
+            "the 'inline-diff' and 'tool-result' renderers wrap their body in host.collapsible collapsed-to-caption (k6 c)"
+          ],
+          "fixturesNeeded": [
+            "the render-registry.test.ts fake document (createElement records className/textContent/children/listeners) + fake line()",
+            "sample RowViewModels: short/long user + assistant, a JSON string, a markdown string, a plain string"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the shell still renders + the ~203 existing chat tests stay green after S003 registers its renderers (chat-panel.test.ts html/posted-message assertions; no DOM exec).",
+          "subjects": [
+            "the rendered shell still has exactly one nonce'd inline <script>, no innerHTML, no remote origin after the S003 renderers + CSS are embedded (k1)",
+            "the existing chat-panel/cli-adapter/markers/render-registry suites stay green — sc1 fallback + toViewModel unchanged (k2), transcript stays plain (k4/lc1)"
+          ],
+          "fixturesNeeded": [
+            "the existing FakeChannel + createChatPanelHost harness (genNonce fixed)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: the 'user' renderer emits a user-role-classed row and the 'assistant-text' renderer an assistant-role-classed row (distinct tones)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: a long (>3-line) message is wrapped in host.collapsible (default-collapsed, icon-only chevron); a short message is NOT wrapped"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: the assistant renderer detects valid JSON → a structured JSON widget, and markdown → a markdown widget, and plain text → plain, all via createElement/textContent (no innerHTML)"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` (the vscode-plugin/src/chat suites: render-registry.test.ts for the eval'd renderers + chat-panel.test.ts for the shell/CSP invariants)"
+    },
+    "migration": {
+      "stateBefore": "The sc1 registry (render-registry.ts, S001) pre-registers placeholder renderers: 'user' and 'assistant-text' both render a plain line() row with NO role differentiation and NO collapse, and 'tool-command' renders inline/never-collapsed. host.collapsible (icon-only chevron + 3-line clamp) + RENDER_REGISTRY_STYLE exist but only the collapse primitive is defined — nothing consumes it yet. toViewModel maps an assistant message to kind 'assistant-text' (no markdown/JSON classification). RowKind already reserves 'assistant-markdown'|'assistant-json'|'tool-result'|'inline-diff'. So user/assistant look identical, long messages are not collapsed, and markdown/JSON render as flat text.",
+      "stateAfter": "S003 has REPLACED the 'user'/'assistant-text' renderer bodies with role-differentiated rows that wrap long content (>3 lines) in host.collapsible (default-collapsed, icon-only chevron) (ac1/ac2), the assistant renderer detects content-type and renders a markdown widget / structured JSON widget / plain text (ac3), and 'inline-diff'/'tool-result' renderers wrap their body in collapsible-to-caption (k6 c; tool-result dormant). The tool-command renderer is unchanged (inline, k6 d). toViewModel, the RowKind set, the sc2 contract and the durable transcript are all untouched; the sc1 fallback line() still covers every unmapped kind, so the ~203 chat tests stay green.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the S003 role-tone + markdown/JSON-widget + caption CSS to chat-panel.ts layoutStyle, reusing the existing RENDER_REGISTRY_STYLE collapse classes — additive, purely visual.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Replace the 'user' and 'assistant-text' renderer bodies in renderRegistryWebviewSource with role-differentiated rows that wrap content in host.collapsible({defaultCollapsed:true}) only when it exceeds ~3 lines; short messages render un-wrapped.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add content-type detection to the assistant renderer: try JSON.parse → structured JSON widget; else markdown-marker sniff → markdown widget; else plain text — all via createElement/textContent, wrapped in try/catch that falls through to plain.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Register 'inline-diff' and 'tool-result' renderers that wrap their body in host.collapsible collapsed-to-caption (tool-result dormant until a producer emits it); leave the 'tool-command' renderer inline/never-collapsed.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "S003 only CONSUMES sc1 — it re-registers renderers into the existing registry and adds CSS; it edits no public API signature (renderRegistryWebviewSource/register/collapsible/renderRow/toViewModel keep their shapes) and adds no event/protocol shape (k2). Re-registering 'user'/'assistant-text' replaces S001's placeholder bodies with richer ones that still render the same text (now differentiated/collapsible); the sc1 fallback line() still covers every other kind, so no current row kind regresses. The durable transcript schema is unchanged and no rendered HTML is persisted (k4/lc1). The tool-command renderer (S001) and the sc2 contract are untouched. A rollback restores the S001 placeholder renderers with no data migration.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Render-time content-type detection in S003's own renderers; toViewModel untouched",
+        "oneLineSummary": "S003 registers role-differentiated user/assistant renderers that wrap long content in host.collapsible and, for assistant text, detect content-type at render time (JSON.parse-able → JSON widget; markdown markers → markdown widget; else plain) — sc1/toViewModel stay untouched.",
+        "approach": "S003 stays entirely a consumer of sc1: it REPLACES the bodies of the pre-registered 'user' and 'assistant-text' renderers and registers 'tool-result'/'inline-diff' renderers into the SAME registry. The user renderer emits a role-classed row (a --user tone) and the assistant renderer a distinct assistant tone (ac1). Both wrap their content in host.collapsible({defaultCollapsed:true}) ONLY when the text exceeds ~3 lines, giving the icon-only chevron 3-line preview (ac2) via the existing RENDER_REGISTRY_STYLE. For ac3 the assistant renderer inspects the plain view-model text: if it JSON.parse()s to an object/array it renders a structured JSON widget (inline key/value DOM via createElement + textContent); else if it carries markdown markers it renders a minimal inline markdown widget (headings/lists/code/emphasis via createElement, never innerHTML); else plain text. The tool-COMMAND renderer (S001) stays inline/never-collapsed (k6 d). tool-result/inline-diff renderers use host.collapsible collapsed-to-caption (k6 c) — inline-diff wraps the existing hunk rows; tool-result is dormant until a producer exists (no new event, k2). toViewModel/sc1 and the durable transcript are untouched (k4/lc1); all DOM is inline under the CSP (k1).",
+        "pros": [
+          "Stays strictly in S003's boundary: consumes sc1, registers renderers, edits NO S001-owned code (toViewModel/sc1 untouched) — no HLD amendment.",
+          "The full RowKind union is honoured without a producer change: assistant content-typing lives in the renderer, so no new event/protocol shape (k2).",
+          "Reuses the existing host.collapsible + RENDER_REGISTRY_STYLE so the chevron/3-line behaviour is single-sourced (k5/k6 a/b) and cannot drift.",
+          "All widgets build DOM via createElement/textContent/className — CSP-safe, no innerHTML on untrusted assistant text (k1)."
+        ],
+        "cons": [
+          "The assistant renderer carries content-type detection (a small JSON.parse + markdown-marker sniff), so it is fatter than a pure kind→widget dispatch.",
+          "Content-typing at render time means the RowKind stays 'assistant-text' for markdown/JSON rows (the assistant-markdown/assistant-json kinds remain reserved-but-unused) — a slight mismatch with the RowKind union's intent."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "toViewModel classifies assistant content into assistant-markdown/assistant-json kinds (sc1 amendment)",
+        "oneLineSummary": "Teach sc1's toViewModel to detect markdown/JSON and emit the reserved 'assistant-markdown'/'assistant-json' RowKinds; S003 registers one renderer per kind.",
+        "approach": "Same role-differentiation + collapse renderers as a1, but ac3 is driven by KIND: toViewModel (sc1, S001-owned) is taught to classify an assistant message and emit kind 'assistant-markdown' or 'assistant-json' (else 'assistant-text'); S003 registers a dedicated renderer per kind (each a pure kind→widget with no in-renderer sniffing). Because toViewModel is part of sc1 (owned by S001), this requires a small HLD amendment (storyBoundary.addConsumer or a note that S003 co-edits toViewModel's classification) or a back-flow to S001.",
+        "pros": [
+          "Cleaner kind→renderer dispatch: each renderer is a pure widget with no content sniffing; the assistant-markdown/assistant-json RowKinds are actually used as designed.",
+          "Classification is single-sourced in toViewModel (host + webview parity), so host-derived and webview-derived kinds agree."
+        ],
+        "cons": [
+          "Edits sc1's toViewModel — S001-owned code — so it steps on an adjacent boundary and needs an HLD amendment/back-flow (violates the stay-in-scope default).",
+          "Couples S003's delivery to an sc1 change + its parity test, widening the blast radius for no user-visible gain over a1.",
+          "toViewModel gains content-inspection responsibility (JSON.parse/markdown sniff) that the S001 contract framed as pure structural mapping."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Behaviourally equal to a1 and arguably cleaner dispatch, but PARTIAL on sc1: it edits S001-owned toViewModel and needs an HLD amendment — a boundary breach the stay-in-scope rule says to avoid when a1 achieves the same user outcome in-boundary."
+      },
+      {
+        "id": "a3",
+        "name": "One unified message renderer for user+assistant (role + content branch in a single fn)",
+        "oneLineSummary": "Register a single shared renderer for both 'user' and 'assistant-text' that branches internally on role (differentiation), length (collapse), and assistant content-type (markdown/JSON).",
+        "approach": "Instead of separate per-kind renderers, register ONE function for 'user' and 'assistant-text' that reads vm.role to pick the tone (ac1), wraps in host.collapsible when long (ac2), and — for assistant — detects markdown/JSON and renders the widget (ac3). tool-result/inline-diff still get their own renderers. sc1/toViewModel untouched, like a1.",
+        "pros": [
+          "Fewer registrations; the role/collapse/content logic lives in one place.",
+          "Stays in-boundary (no sc1 edit), like a1."
+        ],
+        "cons": [
+          "A single fat renderer conflates three concerns (role, collapse, content-type) — harder to unit-test each in isolation than a1's per-kind renderers.",
+          "Diverges from the registry's per-kind design (one renderer per RowKind), making S004's later additions and any future kind harder to reason about.",
+          "The user path carries dead assistant-only branches (content-type) — lower cohesion."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "In-boundary like a1 but a single fat renderer conflates three concerns, is harder to unit-test per-kind, and diverges from the per-kind registry design S004 extends — lower cohesion for no gain over a1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/chat/render-registry.ts (sc1 registry/collapsible/toViewModel) + chat-panel.ts (layoutStyle) + render-registry.test.ts (S003 s1 grounding)",
+      "quotedText": "sc1 (S001) exposes register/renderRow/collapsible (icon-only chevron + 3-line clamp) + toViewModel; S001 pre-registered placeholder user/assistant-text (plain line, no role/collapse) + tool-command (inline). S003 consumes sc1: re-registers role-differentiated + collapse-when-long renderers and adds markdown/JSON/inline-diff/tool-result widgets, without editing toViewModel/RowKind; the transcript stays plain and the fallback keeps every kind green."
+    }
+  ]
+}

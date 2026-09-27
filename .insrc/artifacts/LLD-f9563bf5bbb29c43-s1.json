@@ -1,0 +1,725 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790430623509-50mblv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T14:05:36.915Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 913282,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "epicHash": "f9563bf5bbb29c43",
+    "epicSlug": "vs-code-editor-dev-chat-ui",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790428640052-v7rbx8",
+    "hldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "contractDetails/line",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts defines a flat writer `line(s, cls?)` that sets textContent and only sets className when cls is passed (no innerHTML), around line 234.",
+          "evidence": "chat-panel.ts:234 reads verbatim `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;...}` — flat writer, textContent, className only when cls passed, no innerHTML. Exactly as cited.",
+          "action": "None — citation resolves verbatim.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "migration/stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "On submit the webview bootstrap posts a 'submit-turn' message (and clears the box) with no live user-row render, around chat-panel.ts:262.",
+          "evidence": "chat-panel.ts:262 posts {type:'submit-turn',text:box.value} and clears box.value on Cmd/Ctrl+Enter — no live user-row render, as cited.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "dataModel/user-row",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The host pushes a durable user row (role:'user') into the transcript, around chat-panel.ts:337, which is why the prompt currently appears only on session-restored replay.",
+          "evidence": "chat-panel.ts:337 reads `s.transcript.push({ role: 'user', text: prompt, at: now() });` — the host durably pushes the user row, confirming the current replay-only appearance.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "invariants/k4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "appendEvent persists marker/assistant rows to the transcript but does NOT persist status ticks, around chat-panel.ts:424.",
+          "evidence": "chat-panel.ts:424 reads `if (ev.kind === 'status') return;` — status ticks are skipped from persistence, confirming k4's non-persisted-status invariant.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "dataModel/sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "markers.ts maps a tool-call event to a label using the tool/mcp name only (e.g. `event.mcp ? server·name : event.tool`), around markers.ts:66.",
+          "evidence": "markers.ts:66 reads `label: event.mcp ? `${event.mcp.server} · ${event.mcp.name}` : event.tool,` — tool-call label is name-only, as cited; motivates surfacing the command.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "contractDetails/mapLine",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "cli-adapter.ts has a claude mapper (around :156) whose assistant tool_use block exposes `input` (around :166) and emits the tool-call (around :171) with tool (+mcp) only.",
+          "evidence": "cli-adapter.ts:166 `const input = (block['input'] ...) ?? {};` and :171 emits `{ kind:'tool-call', turnId, tool: toolName[, mcp] }` — claude mapper exposes input and emits name-only, exactly as cited; command is available to populate additively.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "contractDetails/mapLine",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "cli-adapter.ts has a codex mapper (around :200-227) whose command_execution/tool_call items carry `item.command` (around :222) and emit the tool-call (around :223) with tool only.",
+          "evidence": "cli-adapter.ts:222 shows `item['command']` is read (currently coalesced into `tool` as a fallback label) and :223 emits `{ kind:'tool-call', turnId, tool }`. item.command is present at the parse point, so populating a separate additive `command` field is sound; the LLD's characterization holds.",
+          "action": "None — confirmed; the command value is already in hand at :222.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "dataModel/ToolCallEvent",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "stream-events.ts declares the tool-call TurnEvent member (`kind: 'tool-call'`) around :33 — the shape S001 extends with an optional `command?: string`.",
+          "evidence": "stream-events.ts:33 reads `readonly kind: 'tool-call';` — the ToolCallEvent member S001 extends with optional command, as cited.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "dataModel/TURN_EVENT_KINDS",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "stream-events.ts declares TURN_EVENT_KINDS (around :50) and derives TurnEventKind = typeof TURN_EVENT_KINDS[number] (around :59) — the union S001 reserves 'approval-request' into additively.",
+          "evidence": "stream-events.ts:50 `export const TURN_EVENT_KINDS = [` and :59 `export type TurnEventKind = (typeof TURN_EVENT_KINDS)[number];` — the union derivation is exactly as cited; reserving 'approval-request' is a pure array-member addition.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl10",
+          "ref": "boundary/sc1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There is currently NO MessageViewModel / RowViewModel / RenderRegistry / toViewModel in vscode-plugin/src/chat — sc1 is net-new (so S001 does not collide with an existing render layer).",
+          "evidence": "Greps for RenderRegistry/RowViewModel/toViewModel return matches ONLY in docs/ (this epic's HLD.md + LLD.md), none in vscode-plugin/src/ — sc1 is genuinely net-new source, so S001 introduces it without colliding with an existing render layer.",
+          "action": "None — confirmed net-new.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl11",
+          "ref": "testStrategy",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The existing chat test suites S001 must keep green are chat-panel.test.ts, cli-adapter.test.ts, and markers.test.ts under vscode-plugin/src/chat/__tests__.",
+          "evidence": "markers.test.ts:23 reads `{ kind: 'tool-call', turnId: 't', tool: 'grep' },` — an existing tool-call test fixture, confirming markers.test.ts exercises the tool-call path S001 must keep green.",
+          "action": "None — confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl12",
+          "ref": "interactionWithShared",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S001 owns shared contracts sc1 and sc2 per the approved HLD (ownedByStory=s1), so implementing them here is in-scope and not a re-design of another story's contract.",
+          "evidence": "The bare-path read of HLD.md returned found:false (no line anchor), but the grep corroborates the trace: this epic's HLD.md:15/27/30/31 defines sc1 (MessageViewModel + inline RenderRegistry, RowViewModel, toViewModel) and the LLD's own embedded HLD context slice records ownedByStory=s1 for sc1/sc2. Ownership trace holds; the failed read is a probe-anchor artifact, not an LLD defect.",
+          "action": "None — ownership confirmed via grep + the approved HLD context slice.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12
+      },
+      "reviewedAt": "2026-09-26T14:08:45.234Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-26T14:16:46.855Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Deliver the overhaul as ONE shared inline render layer plus an additively-widened event/protocol contract, both foundational in S001, with S002/S003/S004 building on them. S001 establishes (sc1) a message view-model derived at view time from the plain durable transcript + a render registry of inline widget renderers, and (sc2) the additively-widened TurnEvent + webview protocol (tool-call carries its command; the approval event/message + permission-mode are reserved shapes S004 fills). S002 restyles the shell chrome (fixed header, bottom-pinned input, icon-only Send/Stop, one animated progress widget) around the EXISTING DOM regions, preserving their stable element ids so it needs no cross-story contract. S003 adds the concrete renderers to sc1's registry (user/assistant differentiation, collapse-by-default 3-line preview for both roles + tool results/inline diffs via one shared chevron primitive, markdown + JSON widgets). S004 fills sc2's approval event + permission-decision message and adds a CLI permission-mode seam on the adapter spawn, plus an approval-card renderer and the auto-mode status indicator. The agreed mock (k5) and locked directions (k6) are implemented ONCE in the render layer. Everything inline under the nonce'd CSP (k1), the transcript stays plain + replayable (k4), the contract stays additive/non-breaking (k2), and permissions ride CLI flags with no REST (k3).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "MessageViewModel + inline RenderRegistry",
+          "purpose": "The single view-time rendering seam: a typed per-row view-model derived from the plain transcript + live events, and a registry mapping each row kind to an inline renderer (incl. the shared collapse/chevron primitive + role base). S003 adds markdown/JSON/collapse renderers and S004 adds the approval-card renderer to the SAME registry, so the mock (k5) + directions (k6) are implemented once and cannot drift.",
+          "interfaceSketch": "type ChatRole = 'user' | 'assistant';\ntype RowKind = 'user' | 'assistant-text' | 'assistant-markdown' | 'assistant-json' | 'tool-command' | 'tool-result' | 'inline-diff' | 'approval' | 'progress' | 'fallback';\ninterface RowViewModel { readonly kind: RowKind; readonly role?: ChatRole; readonly text: string; readonly cssClass?: string; readonly collapsible: boolean; readonly meta?: Readonly<Record<string, unknown>>; }\ninterface RowRenderer { render(vm: RowViewModel, host: RenderHost): HTMLElement; }\ninterface RenderHost { collapsible(el: HTMLElement, opts: { defaultCollapsed: boolean }): HTMLElement; readonly tokens: Readonly<Record<string, string>>; }\ninterface RenderRegistry { register(kind: RowKind, r: RowRenderer): void; renderRow(vm: RowViewModel): HTMLElement; }\ndeclare function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c1",
+            "c4"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ChatEventProtocol (additively widened)",
+          "purpose": "The shared TurnEvent union + host<->webview protocol messages both the adapter (producer) and webview (consumer) import. S001 adds the tool command to the tool-call event; S004 fills the reserved approval-request event + permission-decision message + permission-mode. Additive only — every existing kind/message keeps working (k2).",
+          "interfaceSketch": "interface ToolCallEvent { readonly kind: 'tool-call'; readonly turnId: string; readonly tool: string; readonly mcp?: { server: string; name: string }; readonly command?: string; }\ninterface ApprovalRequestEvent { readonly kind: 'approval-request'; readonly turnId: string; readonly requestId: string; readonly title: string; readonly detail: string; readonly toolName?: string; }\ntype PermissionMode = 'review' | 'auto';\ninterface PermissionDecisionMsg { readonly type: 'permission-decision'; readonly requestId: string; readonly decision: 'approve' | 'deny'; readonly scope?: 'once' | 'session'; }\ninterface SetPermissionModeMsg { readonly type: 'set-permission-mode'; readonly mode: PermissionMode; }\n// TURN_EVENT_KINDS gains 'approval-request'; existing kinds unchanged.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c4",
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Owns the two foundations plus its own behaviours: the live user-prompt echo on submit (de-duplicated against the replayed row on session-restored, lc1), per-step assistant text via the view-model, surfacing the tool COMMAND (populating ToolCallEvent.command and a never-collapsed inline tool-command renderer), and the 32-char session-name ellipsis in the header. Introduces the view-model + registry and routes existing rows through it with flat line() kept as the fallback renderer, so no current row kind regresses."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [],
+          "internal": "Owns the shell chrome as pure layout over the EXISTING DOM regions: fixed header on top, bottom-pinned input with an icon-only Send/Stop button (▶ green / ■ red), and a single animated progress widget above the input (live-only, never written to the transcript). Preserves the stable element ids/regions (the transcript node, the status bar, the input) so the S001 render layer and the S004 approval card + auto-mode indicator slot into the same regions without S002 exposing a cross-story contract. Independent of S001 in the graph; both touch renderShell in separable ways (S001 the render script, S002 the shell CSS/controls) and both keep the element-id contract stable."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Consumes sc1 and registers the concrete message/widget renderers: user-vs-assistant visual differentiation; collapse-by-default to a 3-line preview for long user AND assistant messages via sc1's shared icon-only chevron primitive; tool results and inline diffs collapsing to their caption header via the same primitive (the single-line tool-command renderer from S001 stays inline, never collapsed); and markdown + JSON render widgets. All renderers emit inline DOM (k1) and read only the plain view-model (k4). Adds no new event/protocol shape."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Consumes sc1 (registers the approval-card renderer) and sc2 (fills the approval-request event + permission-decision message + permission-mode). Owns the adapter permission seam: run claude with --permission-prompts host + a permission-prompt handler (codex: its approval routing) so a permission request surfaces as an approval-request event; relay the webview's approve/deny decision back to the CLI's permission channel; and a permission-mode seam on the spawn args (auto = --permission-mode/bypass; review = host-answered) driven by an auto/review selector shown in the status bar. All via CLI flags (k3), no REST."
+        }
+      ],
+      "rolloutPhase": "Phase A — foundation (render layer + widened contract + fidelity)",
+      "nonFunctional": {
+        "performance": "Rendering is per-row and incremental (append on each event; re-render only the changed row on collapse/expand), so a long transcript costs O(visible rows); markdown/JSON widgets render synchronously from already-received content with no network.",
+        "security": "All webview assets inline under the nonce'd CSP with no external fetch (k1); rendering uses textContent/className, never innerHTML on untrusted text; permission decisions travel host↔adapter↔CLI over local flags/stdio only, no cloud REST (k3).",
+        "observability": "The durable transcript remains the human-readable record of the turn; approval decisions and mode changes are visible in-chat (card + status bar), not hidden.",
+        "durability": "The session transcript stays a plain, replayable record (roles + text + cssClass) — rich rendering, collapse state, and the progress widget are view-time only and never persisted (k4)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "toViewModel",
+          "signature": "function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel",
+          "parameters": [
+            {
+              "name": "entry",
+              "type": "TranscriptEntry | TurnEvent",
+              "purpose": "A plain durable transcript row OR a live turn-event to be rendered.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RowViewModel",
+            "meaning": "The view-time model {kind, role?, text, cssClass?, collapsible, meta?} the registry renders; derived, never persisted (k4)."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Total function — an unrecognised entry maps to kind:'fallback' (rendered by line())."
+            }
+          ],
+          "preconditions": [
+            "Runs webview-side under the nonce'd CSP (k1)."
+          ],
+          "postconditions": [
+            "kind is one of RowKind; a user or assistant row carries role; the mapping is pure (no DOM, no storage write)."
+          ]
+        },
+        {
+          "name": "RenderRegistry",
+          "signature": "interface RenderRegistry { register(kind: RowKind, r: RowRenderer): void; renderRow(vm: RowViewModel): HTMLElement }",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "RowKind",
+              "purpose": "The row kind a renderer is registered for.",
+              "optional": false
+            },
+            {
+              "name": "r",
+              "type": "RowRenderer",
+              "purpose": "The inline renderer producing an HTMLElement via textContent/className only.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HTMLElement",
+            "meaning": "renderRow returns the DOM node for a row; dispatches to the registered renderer or the 'fallback' renderer when a kind is unmapped."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "An unmapped kind falls back to the line() renderer (k2 — no current row kind regresses)."
+            }
+          ],
+          "preconditions": [
+            "S001 registers 'user', 'assistant-text', 'tool-command', and 'fallback'; S003/S004 register the remaining kinds later."
+          ],
+          "postconditions": [
+            "Every RowKind resolves to a renderer (registered or fallback); renders are inline (k1)."
+          ]
+        },
+        {
+          "name": "RenderHost.collapsible",
+          "signature": "collapsible(el: HTMLElement, opts: { defaultCollapsed: boolean }): HTMLElement",
+          "parameters": [
+            {
+              "name": "el",
+              "type": "HTMLElement",
+              "purpose": "The content element to wrap in the shared collapse container.",
+              "optional": false
+            },
+            {
+              "name": "opts.defaultCollapsed",
+              "type": "boolean",
+              "purpose": "Whether the content starts collapsed (S003 messages/results pass true).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HTMLElement",
+            "meaning": "A container with the icon-only chevron (▸/▾) toggle per k6(a); S001 provides the primitive, S003 uses it. The tool-command renderer does NOT use it (k6 d)."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Pure DOM construction; no failure path."
+            }
+          ],
+          "preconditions": [
+            "Inline under CSP; toggle via className, no innerHTML (k1)."
+          ],
+          "postconditions": [
+            "Collapsed content clamps to a 3-line preview; the chevron is icon-only (k6 a/b)."
+          ]
+        },
+        {
+          "name": "line",
+          "signature": "function line(s: string, cls?: string): void",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "string",
+              "purpose": "The text content (textContent) of the row.",
+              "optional": false
+            },
+            {
+              "name": "cls",
+              "type": "string",
+              "purpose": "Optional marker className.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The existing flat writer (chat-panel.ts:234), now registered as the 'fallback' RowRenderer so every currently-handled row kind renders unchanged."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Unchanged behaviour."
+            }
+          ],
+          "preconditions": [
+            "Reused verbatim; not deleted (k2)."
+          ],
+          "postconditions": [
+            "Appended row uses textContent + optional className only (k1)."
+          ]
+        },
+        {
+          "name": "mapLine",
+          "signature": "mapLine(line: string, turnId: string, state: TurnState): TurnEvent[]",
+          "parameters": [
+            {
+              "name": "line",
+              "type": "string",
+              "purpose": "A raw stream-json / codex-json line from the CLI subprocess.",
+              "optional": false
+            },
+            {
+              "name": "turnId",
+              "type": "string",
+              "purpose": "The active turn id.",
+              "optional": false
+            },
+            {
+              "name": "state",
+              "type": "TurnState",
+              "purpose": "Parser state (sessionId capture etc.).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TurnEvent[]",
+            "meaning": "The existing claude/codex mappers (cli-adapter.ts:156/:200), reshaped ONLY to set the additive ToolCallEvent.command from the already-parsed input.command (claude :166) / item.command (codex :222)."
+          },
+          "errors": [
+            {
+              "type": "SyntaxError",
+              "condition": "Unparseable line — unchanged: caller skips + logs."
+            }
+          ],
+          "preconditions": [
+            "command is a compact command string; secrets are not introduced (the command text is what the tool already ran)."
+          ],
+          "postconditions": [
+            "tool-call events carry command when the source provides one; when absent, command is omitted and rendering falls back to the tool name (k2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "RowViewModel + RowKind + RowRenderer + RenderRegistry + RenderHost (sc1)",
+        "change": "new",
+        "details": "New webview-side view types establishing sc1: the per-row view-model + the render registry + the RenderHost collapse/chevron primitive. Derived at view time from the plain transcript; never persisted (k4). line() is registered as the 'fallback' renderer.",
+        "schemaDiff": "+ type RowKind = 'user'|'assistant-text'|'assistant-markdown'|'assistant-json'|'tool-command'|'tool-result'|'inline-diff'|'approval'|'progress'|'fallback';\n+ interface RowViewModel { kind; role?; text; cssClass?; collapsible; meta? }\n+ interface RenderRegistry { register; renderRow }\n+ interface RenderHost { collapsible; tokens }",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:234",
+          "vscode-plugin/src/chat/markers.ts:66"
+        ]
+      },
+      {
+        "entity": "ToolCallEvent (sc2)",
+        "change": "field-add",
+        "details": "Add optional `command?: string` to the existing tool-call TurnEvent. Additive (k2): every existing tool-call producer/consumer/test keeps working; populated from the already-parsed command.",
+        "schemaDiff": "interface ToolCallEvent { kind:'tool-call'; turnId; tool; mcp?; command?: string }",
+        "callSites": [
+          "vscode-plugin/src/chat/stream-events.ts:33",
+          "vscode-plugin/src/chat/cli-adapter.ts:171",
+          "vscode-plugin/src/chat/cli-adapter.ts:223"
+        ]
+      },
+      {
+        "entity": "TURN_EVENT_KINDS / TurnEvent union (sc2)",
+        "change": "field-add",
+        "details": "RESERVE the 'approval-request' kind in the union + TURN_EVENT_KINDS as a type S004 fills. Adding a member is additive; S001 registers no approval handler (stay-in-scope). Existing kinds unchanged.",
+        "schemaDiff": "TURN_EVENT_KINDS = [ ...existing, 'approval-request' ]",
+        "callSites": [
+          "vscode-plugin/src/chat/stream-events.ts:50",
+          "vscode-plugin/src/chat/stream-events.ts:59"
+        ]
+      },
+      {
+        "entity": "user-row emit on submit (host)",
+        "change": "invariant-change",
+        "details": "The host, on 'submit-turn', emits the durable user row as a live turn-event in addition to persisting it — ONE append is both the durable row and the live echo, so a session-restored replay renders exactly one user row (lc1). The stored transcript shape is unchanged (still role:'user'+text); this changes WHEN the row is surfaced, not its schema (k4).",
+        "schemaDiff": "(no schema change) submit path: persist user row + post turn-event(userRow)",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:262",
+          "vscode-plugin/src/chat/chat-panel.ts:337"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns + realizes sc1: defines RowViewModel/RowKind/RowRenderer/RenderRegistry/RenderHost, wires renderRow into the webview transcript append path, registers the 'user'/'assistant-text'/'tool-command'/'fallback' renderers + the collapse/chevron primitive. S003/S004 later register their kinds into the same registry (consume)."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S001 owns + widens sc2: adds ToolCallEvent.command (populated in both mappers) and reserves the 'approval-request' kind, keeping every existing event kind/message byte-compatible (k2). S004 later fills the approval event + permission messages (consume)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The parsed tool input has no usable command string (e.g. a non-Bash tool, or input.command is absent/non-string).",
+          "detection": "The mapper guards `typeof input['command'] === 'string'` (claude) / `typeof item['command'] === 'string'` (codex) before setting ToolCallEvent.command.",
+          "response": "Omit command; emit the tool-call exactly as today (tool + optional mcp). The renderer shows the tool/mcp name.",
+          "userImpact": "No regression — command-less tools render as before; only command-bearing tools gain the extra line.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A registered row renderer throws while building its DOM node.",
+          "detection": "renderRow wraps each renderer call in try/catch (per-row isolation).",
+          "response": "Catch and render the row via the flat line() fallback (its text) so one bad renderer never blanks or breaks the whole transcript; log to the webview console.",
+          "userImpact": "The affected row shows as plain text instead of its rich widget; the rest of the conversation renders normally.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The user-row turn-event is emitted by the host but the webview receives the session-restored replay for the same row (live + restore in one session).",
+          "detection": "Rows carry a stable key; renderRow/append checks whether a row with that key already exists before appending.",
+          "response": "Render the row once — the live-emitted row and its replayed twin reconcile to a single node (lc1).",
+          "userImpact": "Exactly one user message; never a duplicate after reload.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The user submits the same prompt text twice in one session.",
+          "expected": "Two distinct user rows (each its own keyed message) — lc1 reconciles live-vs-replay of the SAME row, not two independent submits."
+        },
+        {
+          "input": "A tool-call whose command is very long (e.g. a multi-line here-doc).",
+          "expected": "The tool-command row stays INLINE and always-visible (k6 d, never collapsed); overflow scrolls within the row's own container, it is not clamped away."
+        },
+        {
+          "input": "An unmapped/new row kind reaches renderRow (e.g. the reserved 'approval-request' before S004 registers it).",
+          "expected": "The 'fallback' renderer (line()) renders it as plain text — no crash, no blank (k2)."
+        },
+        {
+          "input": "A session name of 32 characters or fewer.",
+          "expected": "Shown in full with no ellipsis; the clamp only applies beyond 32 chars (ac4)."
+        },
+        {
+          "input": "An assistant message arrives as multiple assistant-delta events across steps.",
+          "expected": "Each step's actual text renders as it arrives (ac2), via the view-model — not collapsed to a single status label."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "flat line() remains a working renderer (registered as 'fallback'); every currently-handled row kind renders unchanged so the ~151 chat tests stay green (k2).",
+          "source": "c1"
+        },
+        {
+          "text": "The durable session transcript stays a plain record (role/text/cssClass); the RowViewModel is derived at view time and never persisted, and status ticks remain non-persisted as today (k4, chat-panel.ts:424).",
+          "source": "c1"
+        },
+        {
+          "text": "Every existing TurnEvent kind + webview protocol message keeps its current shape; S001 only ADDS an optional ToolCallEvent.command and RESERVES the 'approval-request' kind (additive, k2).",
+          "source": "c4"
+        },
+        {
+          "text": "The tool COMMAND is the text the tool already ran (from the parsed input/item) — no new data source, no secret introduced; command-less tools omit it (cli-adapter.ts:166/:222).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the new sc1 view layer in isolation: toViewModel mapping, RenderRegistry dispatch + fallback, the collapse/chevron primitive, and the additive ToolCallEvent.command population in both mappers.",
+          "subjects": [
+            "toViewModel — user/assistant/tool-command/unknown entries map to the right RowKind + role",
+            "RenderRegistry.renderRow — dispatches to a registered renderer and falls back to line() for an unmapped kind (incl. the reserved 'approval-request')",
+            "RenderHost.collapsible — icon-only chevron primitive; default-collapsed clamps to 3 lines (S001 provides it; tool-command renderer never uses it)",
+            "cli-adapter claude mapper — a Bash tool_use sets ToolCallEvent.command from input.command; a command-less tool omits command",
+            "cli-adapter codex mapper — a command_execution item sets command from item.command; a command-less item omits it",
+            "session-title clamp helper — >32 chars truncates to 32 + ellipsis; <=32 unchanged"
+          ],
+          "fixturesNeeded": [
+            "a sample claude stream-json tool_use line (Bash + a non-command tool)",
+            "a sample codex-json command_execution item",
+            "sample TranscriptEntry rows (user, assistant, marker)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the webview transcript behaviour end-to-end over the existing chat-panel harness: live user echo, per-step assistant content, tool-command surfacing, and de-dup against session-restored replay.",
+          "subjects": [
+            "submit-turn emits a live user row that renders immediately (not only after reload)",
+            "the live user row + its session-restored replay reconcile to exactly one row (lc1)",
+            "an assistant multi-step turn renders each step's actual text, not a status label",
+            "a command-bearing tool-call renders the command line; a command-less one renders the tool name",
+            "the header renders a >32-char session name clamped with an ellipsis",
+            "the ~151 existing chat tests (chat-panel/cli-adapter/markers) stay green — line() fallback keeps every current row kind rendering unchanged"
+          ],
+          "fixturesNeeded": [
+            "the existing chat-panel.test.ts webview DOM harness",
+            "a scripted turn event sequence (user submit → assistant deltas → tool-call → done)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: submit-turn emits a live user row that renders immediately",
+            "integration: live user row + session-restored replay reconcile to exactly one row (lc1)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: assistant multi-step turn renders each step's actual text, not a status label",
+            "unit: toViewModel maps an assistant entry to an assistant-text row carrying its text"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: claude mapper sets ToolCallEvent.command from input.command; command-less tool omits it",
+            "unit: codex mapper sets command from item.command",
+            "integration: a command-bearing tool-call renders the command line; command-less renders the tool name"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: session-title clamp truncates >32 chars to 32 + ellipsis and leaves <=32 unchanged",
+            "integration: the header renders a >32-char session name clamped with an ellipsis"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` (the vscode-plugin/src/chat suites: chat-panel.test.ts, cli-adapter.test.ts, markers.test.ts)"
+    },
+    "migration": {
+      "stateBefore": "The webview renders every row through the flat `line(s,cls)` writer (chat-panel.ts:234) with no view-model layer; tool-calls show the tool/mcp name only (markers.ts:66); on submit the bootstrap posts submit-turn and clears the box but renders NO live user row, so the user's prompt appears only on the next session-restored replay of the durable transcript (chat-panel.ts:262/:337); ToolCallEvent carries no command (stream-events.ts:33); the session name is rendered untruncated in the chrome. ~151 chat tests are green against this behaviour.",
+      "stateAfter": "A webview-side sc1 view layer (RowViewModel + RenderRegistry + RenderHost) sits over the transcript; `line()` is registered as the 'fallback' renderer so every current row kind renders unchanged. Submitting a prompt emits a live user row that renders immediately and reconciles with the durable replay to exactly one row (lc1). Each assistant step's actual text renders as it arrives. ToolCallEvent carries an optional `command` populated additively in both mappers, and the tool-command row renders the real command inline. The header clamps a >32-char session name to 32 + ellipsis (view-only; stored title unchanged). The 'approval-request' kind is reserved for S004 but unhandled.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the sc1 view types (RowKind, RowViewModel, RowRenderer, RenderRegistry, RenderHost) and register `line()` as the 'fallback' renderer, wiring renderRow into the transcript append path — behaviour-neutral: unmapped kinds still render via line() exactly as today.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Register the 'user', 'assistant-text', and 'tool-command' renderers so each maps to its RowViewModel (still text-only, inline, CSP-safe).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the nullable optional field ToolCallEvent.command and populate it in the claude mapper (from input.command) and the codex mapper (from item.command); command-less tools omit it.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Reserve the 'approval-request' kind in TURN_EVENT_KINDS / TurnEvent union with no handler (S004 fills it); the fallback renderer covers it in the interim.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Change the submit path to emit the user row as a live turn-event in addition to persisting it, and add the key-based de-dup so the live row and its session-restored replay reconcile to one row (lc1).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add the view-only session-name clamp (>32 chars → 32 + ellipsis) in the header render; the stored title is left unchanged.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "ToolCallEvent.command is optional and additive — every existing tool-call producer, consumer, and test keeps working with command absent; the tool name still renders when command is omitted. Adding the 'approval-request' kind is additive (no existing kind changes shape). line() stays the fallback renderer so all currently-handled row kinds render byte-identically, keeping the ~151 chat tests green. The durable transcript schema is unchanged (still role/text/cssClass); the user-row change is a timing change (surface live + on replay as one row), not a schema change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Webview-side view-model + registry; user-echo as a host-posted 'user' row (single writer)",
+        "oneLineSummary": "The host is the single source of the user row — on submit it appends the durable user row AND posts it as a turn-event; the webview derives a RowViewModel per row via the registry, so the live echo and the replay are the same one row.",
+        "approach": "sc1's RowViewModel + RenderRegistry live in the webview (inline under the CSP, k1). On submit the host, on receiving 'submit-turn', appends the durable user row exactly as today (chat-panel.ts:337) AND immediately posts a turn-event carrying that same user row to the webview; the webview's toViewModel maps it to a kind:'user' RowViewModel and the registry renders it. Because the host writes the durable row and emits the live row from the SAME append, there is exactly one user row: on a later session-restored replay the row re-renders identically, so lc1 holds with no client-side de-dup guessing. ToolCallEvent.command is populated additively at cli-adapter.ts:171/:223 from the already-parsed input/item command; the registry's tool-command renderer shows it inline and never-collapsed. The 32-char title clamp is a pure view transform in the header renderer. line() is registered as the 'fallback' renderer so any unmapped kind still renders as today (k2).",
+        "pros": [
+          "lc1 is satisfied by CONSTRUCTION — one host append is both the durable row and the live echo, so replay can never double-render (no fragile text/id de-dup).",
+          "The host stays the single source of transcript truth, matching the existing appendEvent model (chat-panel.ts:424) and k4.",
+          "Registry + view-model are webview-side and inline (k1); flat line() fallback keeps every existing row kind green (k2).",
+          "ToolCallEvent.command + the tool-command renderer are additive and reuse the already-available parse input (cli-adapter.ts:166/:222)."
+        ],
+        "cons": [
+          "The host gains a small responsibility (emit the user row as an event, not only persist it), a change to the submit path.",
+          "The webview must key rows so a replayed row and its live-emitted twin are recognised as the same when both a live session and a restore happen — needs a stable per-row id."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Optimistic client-side echo + de-dup against replay",
+        "oneLineSummary": "The bootstrap renders the user row locally on submit; on session-restored it de-dupes the replayed user row against the optimistic one by matching text + position.",
+        "approach": "Leave the host submit path unchanged (it still persists the durable user row at :337). The webview, on submit, optimistically renders a kind:'user' row immediately, then on the next session-restored replay reconciles by dropping/merging a replayed user row that matches the optimistic one (by text + adjacency). sc1 registry is still webview-side. ToolCallEvent.command + title clamp identical to a1.",
+        "pros": [
+          "No change to the host submit path — the smallest host diff.",
+          "Live echo is instant with no round-trip."
+        ],
+        "cons": [
+          "lc1 becomes a CLIENT-SIDE heuristic (match by text/position), which is exactly the double-render foot-gun the constraint warns about — fragile when the same prompt is sent twice or the replay ordering differs.",
+          "Two code paths write 'the user row' (optimistic webview + durable host), so the source of truth is split, contradicting the existing single-append model.",
+          "Harder to unit-test deterministically than a1's single-writer flow."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Only partial on sc2/lc1: it leaves lc1 to a fragile client-side de-dup heuristic (match by text + position) — the exact double-render foot-gun the constraint warns about — and splits the user-row source of truth across the webview + host, contradicting the existing single-append model. a1 makes lc1 true by construction instead."
+      },
+      {
+        "id": "a3",
+        "name": "Host-side view-model (host emits render-ready RowViewModels)",
+        "oneLineSummary": "Move toViewModel to the host so it posts fully-formed RowViewModels; the webview registry only renders them.",
+        "approach": "The host builds the RowViewModel for every row (user, assistant, tool, etc.) and posts render-ready view-models to the webview; the webview registry maps kind→renderer with no derivation logic. sc1's toViewModel lives host-side; the webview is a thin renderer. User-echo is a host-emitted user RowViewModel (single writer, like a1).",
+        "pros": [
+          "Derivation is testable in the host (node) without a DOM.",
+          "Single-writer user echo like a1."
+        ],
+        "cons": [
+          "Splits sc1 across host + webview and duplicates the marker/label logic markers.ts already shares host+webview — more surface, higher regression risk on the 151 tests.",
+          "Sends richer objects over postMessage than the current plain turn-events, a larger protocol change (tension with k2's minimal-additive intent).",
+          "The webview still needs the collapse/chevron primitive + inline renderers, so it does not actually remove webview render logic — net more code than a1."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Partial on sc1/sc2: it splits sc1's derivation across host + webview (duplicating the marker/label logic markers.ts already shares) and sends richer objects over postMessage — a heavier protocol change in tension with k2 — while the webview still needs the collapse primitive + inline renderers, so it is net more code and higher regression surface than a1 for no gain."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:234,:262,:337,:424",
+      "quotedText": "line(s,cls) is the flat writer (textContent/className, no innerHTML); submit only posts submit-turn (:262); the host pushes the durable user row so it appears on session-restored replay (:337); appendEvent persists marker/assistant rows but not status ticks (:424)."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:166,:171,:222,:223",
+      "quotedText": "claude mapper exposes input (:166) and emits the tool-call name-only (:171); codex items carry item.command (:222) and emit tool-only (:223) — command is already available to populate ToolCallEvent.command additively."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/chat/stream-events.ts:33,:50,:59",
+      "quotedText": "The tool-call kind member (:33), TURN_EVENT_KINDS (:50) and TurnEventKind = typeof[number] (:59) — S001 adds optional command + reserves 'approval-request' additively; no existing kind changes shape."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:370, cli-adapter.test.ts, markers.test.ts:23",
+      "quotedText": "Existing chat suites (chat-panel 36 / cli-adapter 22 / markers 7) run via node:test (npx tsx --test) and must stay green; S001 extends them with the user-echo, command-parse, title-clamp, and view-model/fallback tests."
+    }
+  ]
+}

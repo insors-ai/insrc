@@ -1,0 +1,422 @@
+<title>insrc Chat Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    /* Approved single-dark terminal palette (epic vs-code-editor-dev-chat-ui) */
+    --bg:#0b0e14; --bg-inset:#0d1119; --panel:#11161f;
+    --fg:#c6cdd8; --fg-strong:#e8edf4; --muted:#6b7688; --dim:#4a5464;
+    --border:#222a36; --border-lit:#2f3a4a;
+    --accent:#4ade80;   /* green  - done / prompt */
+    --accent2:#38bdf8;  /* cyan   - tool */
+    --amber:#fbbf24;    /* amber  - edit / approval */
+    --magenta:#c084fc;  /* magenta- assistant marker */
+    --red:#f87171;      /* red    - error / deny */
+    --user:#8ab4ff;     /* user accent */
+    --sel:rgba(74,222,128,.22);
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --sans:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:var(--mono); font-size:14px; line-height:1.5;
+    padding-block:32px; padding-inline:16px;
+  }
+  .wrap{max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:22px}
+
+  header.page{display:flex; flex-direction:column; gap:6px}
+  header.page h1{
+    font-family:var(--sans); font-weight:600; font-size:22px; letter-spacing:-.01em;
+    color:var(--fg-strong); margin:0; text-wrap:balance;
+  }
+  header.page p{margin:0; color:var(--muted); font-family:var(--sans); font-size:14px; max-width:66ch}
+  .epictag{
+    font-size:11px; color:var(--dim); letter-spacing:.04em;
+    border:1px solid var(--border); border-radius:6px; padding:3px 8px; align-self:flex-start;
+  }
+
+  /* ---- the chat window ---- */
+  .box{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; display:flex; flex-direction:column;
+    height:660px; box-shadow:0 18px 50px -24px rgba(0,0,0,.7);
+  }
+  @media (max-width:560px){ .box{height:560px} }
+
+  /* fixed header (S2) */
+  .chrome{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px;
+    background:var(--bg-inset); border-bottom:1px solid var(--border);
+    padding:10px 14px;
+  }
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(74,222,128,.14)}
+  .chrome .title{color:var(--fg-strong); font-weight:600; letter-spacing:.02em}
+  .chrome .right{margin-left:auto; display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px}
+  .segsel{
+    background:var(--panel); color:var(--fg); border:1px solid var(--border-lit);
+    border-radius:6px; padding:3px 8px; font-family:var(--mono); font-size:12px;
+  }
+  .sesstitle{max-width:32ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--fg)}
+
+  /* scrollable transcript */
+  .term{
+    flex:1 1 auto; min-height:0; overflow-y:auto;
+    padding:16px 14px; display:flex; flex-direction:column; gap:14px;
+    background:
+      radial-gradient(1200px 300px at 50% -10%, rgba(56,189,248,.05), transparent 60%),
+      var(--panel);
+  }
+  .term::-webkit-scrollbar{width:10px}
+  .term::-webkit-scrollbar-thumb{background:var(--border-lit); border-radius:6px}
+
+  .msg{display:flex; flex-direction:column; gap:4px; max-width:100%}
+  .who{font-size:11px; letter-spacing:.06em; text-transform:uppercase; display:flex; align-items:center; gap:6px}
+  .who .glyph{font-size:12px}
+
+  /* user message (S3: differentiated) */
+  .msg.user{align-items:flex-end}
+  .msg.user .who{color:var(--user)}
+  .bubble.user{
+    background:rgba(138,180,255,.08); border:1px solid rgba(138,180,255,.30);
+    border-radius:10px 10px 2px 10px; padding:9px 12px; color:var(--fg-strong);
+    max-width:82%; white-space:pre-wrap;
+  }
+
+  /* assistant message */
+  .msg.assistant .who{color:var(--magenta)}
+  .bubble.assistant{
+    background:var(--bg-inset); border:1px solid var(--border);
+    border-left:2px solid var(--magenta); border-radius:2px 10px 10px 10px;
+    padding:10px 13px; max-width:88%;
+  }
+  /* rendered markdown (S3) uses the sans face to read as "rendered" */
+  .md{font-family:var(--sans); color:var(--fg); font-size:13.5px; line-height:1.6}
+  .md h4{font-family:var(--sans); margin:2px 0 6px; color:var(--fg-strong); font-size:14px}
+  .md p{margin:0 0 8px}
+  .md ul{margin:0 0 4px; padding-left:18px}
+  .md li{margin:2px 0}
+  .md code{font-family:var(--mono); font-size:12px; background:#0a0d14; border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--accent2)}
+  .md strong{color:var(--fg-strong)}
+
+  /* tool-call surfacing the real command (S1 ac3) */
+  .toolrow{
+    display:flex; gap:9px; align-items:flex-start;
+    border:1px solid var(--border); border-radius:8px; background:#0a0d14; padding:8px 11px;
+  }
+  .toolrow .tk{color:var(--accent2); font-weight:600; flex:0 0 auto}
+  .toolrow .cmd{color:var(--fg-strong); white-space:pre-wrap; word-break:break-word}
+  .toolrow .cmd .prompt{color:var(--accent)}
+  .toolrow .meta{margin-left:auto; color:var(--dim); font-size:11px; flex:0 0 auto}
+
+  /* JSON widget (S3 ac3) */
+  .jsonw{border:1px solid var(--border); border-radius:8px; background:#0a0d14; overflow:hidden}
+  .jsonw .cap{display:flex; align-items:center; gap:8px; padding:6px 11px; border-bottom:1px solid var(--border); color:var(--muted); font-size:11px; letter-spacing:.05em; text-transform:uppercase}
+  .jsonw pre{margin:0; padding:10px 13px; overflow-x:auto; font-size:12.5px; line-height:1.55}
+  .j-key{color:var(--accent2)} .j-str{color:var(--accent)} .j-num{color:var(--amber)} .j-punc{color:var(--dim)}
+
+  /* collapsible long message (S3 ac2) — SHARED across user + assistant roles */
+  details.collapse{border:1px solid var(--border); background:var(--bg-inset); overflow:hidden; max-width:88%}
+  details.collapse.asst{border-left:2px solid var(--magenta); border-radius:2px 10px 10px 10px}
+  details.collapse.user{max-width:82%; border:1px solid rgba(138,180,255,.30); border-left:2px solid var(--user);
+    border-radius:10px 10px 2px 10px; background:rgba(138,180,255,.08)}
+  .msg.user details.collapse{align-self:flex-end}
+  details.collapse>summary{list-style:none; cursor:pointer; padding:10px 38px 10px 13px; color:var(--fg); position:relative}
+  details.collapse>summary::-webkit-details-marker{display:none}
+  details.collapse .preview{display:block; color:var(--fg); line-height:1.55;
+    max-height:calc(1.55em * 3); overflow:hidden; -webkit-mask-image:linear-gradient(180deg,#000 60%,transparent); mask-image:linear-gradient(180deg,#000 60%,transparent)}
+  details.collapse.asst .preview, details.collapse.asst .full{font-family:var(--sans); font-size:13.5px}
+  details.collapse.user .preview, details.collapse.user .full{font-family:var(--mono); font-size:13px; color:var(--fg-strong)}
+  details.collapse[open] .preview{display:none}
+  details.collapse .full{padding:0 13px 12px; line-height:1.6; color:var(--fg)}
+  .expandpill{position:absolute; top:9px; right:10px; display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; font-size:11px; line-height:1; color:var(--accent2);
+    border:1px solid var(--border-lit); border-radius:6px; background:var(--panel)}
+  details.collapse.user .expandpill{color:var(--user)}
+  details.collapse[open] .expandpill .lbl-open{display:none}
+  details.collapse:not([open]) .expandpill .lbl-close{display:none}
+
+  /* tool-result widgets collapse to their caption header, same chevron icon (S3) */
+  details.collapse.tool{max-width:100%; border:1px solid var(--border); border-left:1px solid var(--border);
+    border-radius:8px; background:#0a0d14; overflow:hidden}
+  details.collapse.tool>summary{display:flex; align-items:center; gap:8px; padding:7px 36px 7px 11px;
+    color:var(--muted); font-size:11px; letter-spacing:.05em; text-transform:uppercase}
+  details.collapse.tool.edit>summary{color:var(--amber); text-transform:none; letter-spacing:0; font-size:12px}
+  details.collapse.tool .expandpill{top:6px}
+  details.collapse.tool pre{margin:0; padding:10px 13px; overflow-x:auto; font-size:12.5px; line-height:1.55; border-top:1px solid var(--border)}
+  details.collapse.tool.diff pre{padding:8px 0}
+
+  /* file edit diff (existing renderDiff, kept) */
+  .diff{border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#0a0d14}
+  .diff .cap{display:flex; align-items:center; gap:8px; padding:6px 11px; border-bottom:1px solid var(--border); color:var(--amber); font-size:12px}
+  .diff pre{margin:0; padding:8px 0; font-size:12.5px; line-height:1.5}
+  .diff .ln{display:block; padding:0 12px; white-space:pre-wrap}
+  .diff .add{background:rgba(74,222,128,.10); color:#b6f3cf}
+  .diff .del{background:rgba(248,113,113,.10); color:#f6b6b6}
+  .diff .ctx{color:var(--muted)}
+
+  /* approval request card (S4 ac1/ac2) */
+  .approval{
+    border:1px solid rgba(251,191,36,.45); border-radius:10px;
+    background:linear-gradient(180deg, rgba(251,191,36,.09), rgba(251,191,36,.03));
+    padding:11px 13px; display:flex; flex-direction:column; gap:9px;
+  }
+  .approval .head{display:flex; align-items:center; gap:8px; color:var(--amber); font-weight:600}
+  .approval .body{color:var(--fg); font-size:13px}
+  .approval .body code{font-family:var(--mono); background:#0a0d14; border:1px solid var(--border); border-radius:4px; padding:1px 5px; color:var(--amber)}
+  .approval .acts{display:flex; gap:8px; flex-wrap:wrap}
+  .btn{font-family:var(--mono); font-size:12px; border-radius:7px; padding:5px 12px; border:1px solid var(--border-lit); background:var(--panel); color:var(--fg); cursor:pointer}
+  .btn.approve{border-color:rgba(74,222,128,.5); color:#bff3d3; background:rgba(74,222,128,.12)}
+  .btn.deny{border-color:rgba(248,113,113,.5); color:#f6bcbc; background:rgba(248,113,113,.10)}
+  .btn.always{color:var(--muted)}
+
+  /* thinking widget (S2 ac3) - lives above the input, live-only */
+  .progress{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px;
+    padding:7px 14px; border-top:1px solid var(--border); background:var(--bg-inset);
+    color:var(--muted); font-size:12px;
+  }
+  .progress .spin{display:inline-flex; gap:4px}
+  .progress .spin i{width:6px; height:6px; border-radius:50%; background:var(--accent2); opacity:.35; animation:blink 1.1s infinite}
+  .progress .spin i:nth-child(2){animation-delay:.18s} .progress .spin i:nth-child(3){animation-delay:.36s}
+  @keyframes blink{0%,100%{opacity:.30; transform:translateY(0)} 40%{opacity:1; transform:translateY(-2px)}}
+  .progress .elapsed{margin-left:auto; color:var(--dim); font-variant-numeric:tabular-nums}
+  @media (prefers-reduced-motion:reduce){ .progress .spin i{animation:none; opacity:.7} }
+
+  /* bottom-pinned input (S2 ac1/ac2) */
+  .inputbar{
+    flex:0 0 auto; display:flex; align-items:flex-end; gap:9px;
+    padding:11px 12px; border-top:1px solid var(--border); background:var(--bg-inset);
+  }
+  .inputbar .caret{color:var(--accent); padding-bottom:8px}
+  .inputbar textarea{
+    flex:1 1 auto; resize:none; min-height:40px; max-height:120px;
+    background:var(--panel); color:var(--fg-strong); border:1px solid var(--border-lit);
+    border-radius:9px; padding:9px 11px; font-family:var(--mono); font-size:13px; line-height:1.5;
+  }
+  .inputbar textarea::placeholder{color:var(--dim)}
+  .sendbtn{
+    flex:0 0 auto; border:none; border-radius:9px; width:40px; height:40px; padding:0; cursor:pointer;
+    font-family:var(--mono); font-size:16px; line-height:1; color:#062b16; background:var(--accent);
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .sendbtn.stop{background:var(--red); color:#2b0606; font-size:13px}
+
+  /* status bar */
+  .statusbar{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:7px 13px; border-top:1px solid var(--border); background:var(--bg-inset);
+    color:var(--muted); font-size:11.5px;
+  }
+  .statusbar .seg{display:inline-flex; align-items:center; gap:5px}
+  .statusbar .automode{margin-left:auto; display:inline-flex; align-items:center; gap:6px; color:var(--amber);
+    border:1px solid rgba(251,191,36,.4); border-radius:999px; padding:2px 9px}
+
+  /* annotation legend */
+  .legend{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px}
+  .card{border:1px solid var(--border); border-radius:10px; background:var(--panel); padding:13px 14px; display:flex; flex-direction:column; gap:6px}
+  .card .tag{font-family:var(--sans); font-size:11px; font-weight:600; letter-spacing:.03em; color:var(--accent2)}
+  .card h3{font-family:var(--sans); margin:0; font-size:14px; color:var(--fg-strong)}
+  .card ul{margin:0; padding-left:16px; font-family:var(--sans); font-size:12.5px; color:var(--muted); line-height:1.55}
+  .card li{margin:2px 0}
+  .card li b{color:var(--fg)}
+  .foot{color:var(--dim); font-family:var(--sans); font-size:12px; text-align:center; padding-top:4px}
+  .note{font-family:var(--sans); font-size:12px; color:var(--dim)}
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <span class="epictag">EPIC f9563bf5 · vs-code-editor-dev-chat-ui · UX MOCK</span>
+    <h1>insrc dev-chat — redesigned</h1>
+    <p>Target UX for the four stories: conversation fidelity, fixed layout with send/stop and a live progress widget, rich rendering, and an in-chat approval surface. Shown in a realistic mid-turn state.</p>
+  </header>
+
+  <div class="box" role="figure" aria-label="Redesigned insrc chat window">
+
+    <!-- S2: fixed header · S1 ac4: 32-char session-name truncation -->
+    <div class="chrome">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="title">insrc</span>
+      <span class="right">
+        <span>session</span>
+        <span class="segsel sesstitle" title="Wire the bugfix completion-close to the build→issue linkage across the daemon">Wire the bugfix completion-clos…</span>
+        <span class="segsel">claude ▾</span>
+      </span>
+    </div>
+
+    <!-- scrollable transcript -->
+    <div class="term">
+
+      <!-- S1 ac1: the user's prompt is echoed live, visually distinct (S3 ac1) -->
+      <div class="msg user">
+        <div class="who">you <span class="glyph">❯</span></div>
+        <div class="bubble user">show me where the chat renders each transcript row, then add a live echo of my prompt</div>
+      </div>
+
+      <!-- S3 ac2: a LONG *user* message also collapses to a 3-line preview (collapse is uniform across roles) -->
+      <div class="msg user">
+        <div class="who">you <span class="glyph">❯</span></div>
+        <details class="collapse user">
+          <summary>
+            <span class="preview">also, while you're in there: the tool rows only show the tool name today — surface the actual command that ran, the way a terminal would. and the session title in the header overflows on long names, so clamp it to ~32 chars with an ellipsis. finally the whole panel scrolls as one block, which means the input drifts off-screen on a long conversation — pin the header and the input and let only the transcript scroll. here is the exact repro I hit earlier that made me notice all of this at once…</span>
+            <span class="expandpill" aria-label="expand or collapse"><span class="lbl-close">▸</span><span class="lbl-open">▾</span></span>
+          </summary>
+          <div class="full">
+            <p style="margin:0 0 8px">also, while you're in there: the tool rows only show the tool name today — surface the actual command that ran, the way a terminal would.</p>
+            <p style="margin:0 0 8px">and the session title in the header overflows on long names, so clamp it to ~32 chars with an ellipsis.</p>
+            <p style="margin:0">finally the whole panel scrolls as one block, which means the input drifts off-screen on a long conversation — pin the header and the input and let only the transcript scroll. here is the exact repro I hit earlier that made me notice all of this at once.</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- S1 ac2: assistant's actual text per step, rendered markdown (S3 ac3) -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph">◆</span> claude</div>
+        <div class="bubble assistant">
+          <div class="md">
+            <h4>Plan</h4>
+            <p>The webview appends rows through a single <code>line()</code> helper. I'll trace it, then echo your prompt on <code>submit</code> before the turn starts.</p>
+            <ul>
+              <li>locate <code>renderShell()</code> + the bootstrap message handler</li>
+              <li>add a <strong>user</strong> row on submit (no reload needed)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- S1 ac3: tool-call surfaces the REAL command, not just the tool name -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph">▸</span> tool</div>
+        <div class="toolrow">
+          <span class="tk">bash</span>
+          <span class="cmd"><span class="prompt">$</span> grep -n "function line(" vscode-plugin/src/chat/chat-panel.ts</span>
+          <span class="meta">exit 0 · 40ms</span>
+        </div>
+      </div>
+
+      <!-- S3 ac3: structured (JSON) output rendered by a widget -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph">▸</span> tool result</div>
+        <details class="collapse tool">
+          <summary>
+            json · grep match
+            <span class="expandpill" aria-label="expand or collapse"><span class="lbl-close">▸</span><span class="lbl-open">▾</span></span>
+          </summary>
+<pre><span class="j-punc">{</span>
+  <span class="j-key">"file"</span><span class="j-punc">:</span> <span class="j-str">"chat-panel.ts"</span><span class="j-punc">,</span>
+  <span class="j-key">"line"</span><span class="j-punc">:</span> <span class="j-num">234</span><span class="j-punc">,</span>
+  <span class="j-key">"symbol"</span><span class="j-punc">:</span> <span class="j-str">"line()"</span>
+<span class="j-punc">}</span></pre>
+        </details>
+      </div>
+
+      <!-- S3 ac2: a long assistant message collapsed to a 3-line preview with expand -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph">◆</span> claude</div>
+        <details class="collapse asst">
+          <summary>
+            <span class="preview">Found it. <code>line(s, cls)</code> creates a div, sets <code>textContent</code>, and appends it to the transcript node — so every row is flat text with no per-role styling. The user's prompt is never rendered on submit; the bootstrap only posts <code>submit-turn</code> and clears the box, and the durable transcript row is written host-side, which is why it only shows up after a reload. To fix conversation fidelity we render a user row immediately on submit and de-duplicate it against the replayed row on the next session-restored load so it is never shown twice…</span>
+            <span class="expandpill" aria-label="expand or collapse"><span class="lbl-close">▸</span><span class="lbl-open">▾</span></span>
+          </summary>
+          <div class="full">
+            <p style="margin:0 0 8px">Found it. <code style="font-family:var(--mono);background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2)">line(s, cls)</code> creates a div, sets <code style="font-family:var(--mono);background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2)">textContent</code>, and appends it — every row is flat text with no per-role styling.</p>
+            <p style="margin:0">The user's prompt is never rendered on submit; the bootstrap only posts <code style="font-family:var(--mono);background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2)">submit-turn</code> and clears the box, and the durable transcript row is written host-side — which is why it only appears after a reload. The fix renders a user row immediately on submit and de-duplicates it against the replayed row on the next load.</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- existing file-edit diff, kept -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph">✎</span> edit · chat-panel.ts</div>
+        <details class="collapse tool edit diff">
+          <summary>
+            <span class="glyph" aria-hidden="true">✎</span> vscode-plugin/src/chat/chat-panel.ts
+            <span class="expandpill" aria-label="expand or collapse"><span class="lbl-close">▸</span><span class="lbl-open">▾</span></span>
+          </summary>
+<pre><span class="ln ctx">  box.addEventListener('keydown', e =&gt; {</span><span class="ln del">-   vs.postMessage({ type:'submit-turn', text: box.value });</span><span class="ln add">+   const text = box.value;</span><span class="ln add">+   echoUser(text);            // live user row (S1)</span><span class="ln add">+   vs.postMessage({ type:'submit-turn', text });</span><span class="ln ctx">    box.value = '';</span></pre>
+        </details>
+      </div>
+
+      <!-- S4 ac1/ac2: tool-permission request surfaced in-chat with approve / deny -->
+      <div class="msg assistant">
+        <div class="who"><span class="glyph" style="color:var(--amber)">◆</span> permission needed</div>
+        <div class="approval">
+          <div class="head"><span aria-hidden="true">✎</span> Write file</div>
+          <div class="body">claude wants to write <code>vscode-plugin/src/chat/render.ts</code> (new file, 84 lines).</div>
+          <div class="acts">
+            <button class="btn approve" type="button">✓ Approve</button>
+            <button class="btn deny" type="button">✗ Deny</button>
+            <button class="btn always" type="button">Always allow writes this session</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- S2 ac3: single animated progress widget above the input (live-only, not persisted) -->
+    <div class="progress" aria-live="polite">
+      <span class="spin" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>working — running tool</span>
+      <span class="elapsed">0:07</span>
+    </div>
+
+    <!-- S2 ac1/ac2: bottom-pinned input with Send (Stop while running) -->
+    <div class="inputbar">
+      <span class="caret" aria-hidden="true">❯</span>
+      <textarea rows="2" placeholder="message claude…  (⌘↵ to send)" aria-label="Message"></textarea>
+      <button class="sendbtn stop" type="button" aria-label="Stop the running turn" title="A turn is running — click to cancel">■</button>
+    </div>
+
+    <!-- status bar: provider · edit mode · auto-mode indicator (S4 ac3) -->
+    <div class="statusbar">
+      <span class="seg segsel">claude ▾</span>
+      <span class="seg">edits <span class="segsel">review ▾</span></span>
+      <span class="automode" title="Auto mode relays --permission-mode to the CLI so it does not block">auto-approve: on</span>
+    </div>
+  </div>
+
+  <!-- what changed, mapped to the four stories -->
+  <section class="legend" aria-label="What changed">
+    <div class="card">
+      <span class="tag">S001 · Conversation fidelity</span>
+      <h3>Read a faithful turn</h3>
+      <ul>
+        <li><b>Your prompt echoes live</b> as its own message, not only after reload.</li>
+        <li><b>Assistant text per step</b> is shown, not just a step label.</li>
+        <li><b>Tool rows show the real command</b> (e.g. the full <code>grep …</code>).</li>
+        <li><b>Session name truncates</b> to 32 chars with an ellipsis.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag">S002 · Layout &amp; input</span>
+      <h3>Usable at any length</h3>
+      <ul>
+        <li><b>Header fixed</b> on top, <b>input pinned</b> at the bottom; only the transcript scrolls.</li>
+        <li><b>Send</b> button, and a <b>Stop</b> button while a turn runs.</li>
+        <li><b>One animated progress widget</b> above the input replaces repeated inline “thinking” rows.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag">S003 · Rich rendering</span>
+      <h3>Legible, compact</h3>
+      <ul>
+        <li><b>User vs assistant</b> visually differentiated (accent, alignment, border).</li>
+        <li><b>Collapsed by default</b> — long user <em>or</em> assistant messages clamp to a 3-line preview; <b>tool results &amp; inline diffs</b> collapse to their caption header. A single <b>chevron icon</b> (▸ / ▾) toggles every one.</li>
+        <li><b>Markdown &amp; JSON</b> render in type-appropriate widgets, not flat text.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="tag">S004 · Approvals &amp; auto-mode</span>
+      <h3>Never silently blocked</h3>
+      <ul>
+        <li><b>Permission requests surface in-chat</b> with Approve / Deny.</li>
+        <li>The decision is <b>relayed to the CLI session</b>.</li>
+        <li><b>Auto-mode</b> relays a permission-mode flag and shows in the status bar.</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="foot">Static design mock · single-dark terminal palette from the approved S001 mock · interactions are illustrative. The <b>■ Stop</b>/progress state shown is the mid-turn view; at rest the icon button shows <b>▶ Send</b> (green) and the progress widget is hidden.</p>
+</div>

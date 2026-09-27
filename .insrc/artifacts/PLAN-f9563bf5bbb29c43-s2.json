@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790435380694-ugzcat",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T15:12:25.409Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 164691,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "epicSlug": "vs-code-editor-dev-chat-ui",
+    "storyId": "s2",
+    "lldRunId": "wf-1790434284590-xnbm1f",
+    "lldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
+    "approvedAt": "2026-09-26T15:13:30.476Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the additive WebviewToHost 'cancel-turn' message to the protocol",
+        "summary": "In protocol.ts add the additive WebviewToHost variant `{ readonly type: 'cancel-turn' }` and add 'cancel-turn' to WEBVIEW_TO_HOST_TYPES so WebviewToHostType derives it. No existing message changes shape.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "WebviewToHost includes `{ type: 'cancel-turn' }` and WEBVIEW_TO_HOST_TYPES contains 'cancel-turn'; every existing WebviewToHost message compiles unchanged (k2)",
+          "no existing message shape changes (additive only)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "'cancel-turn' is an accepted WebviewToHost type (additive) and a no-op when no turn is active"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Route 'cancel-turn' to the existing cancelActive() in handleMessage",
+        "summary": "Add a 'cancel-turn' case to the host handleMessage dispatcher that calls the existing cancelActive() reap; leave all other cases and cancelActive() itself untouched.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a 'cancel-turn' WebviewToHost message invokes cancelActive() and cancels the in-flight turn (the provider's cancel fires)",
+          "'cancel-turn' with no active turn is an idempotent no-op (no throw)",
+          "all existing handleMessage cases are unchanged"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a 'cancel-turn' WebviewToHost message routes to cancelActive() and cancels the active turn (the scripted adapter's cancel fires)"
+          },
+          {
+            "level": "integration",
+            "name": "existing chat-panel/protocol suites stay green — status persistence skip (chat-panel.ts:424) unchanged (k2/lc1)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "renderShell: icon-only Send/Stop button + fixed-region layout refined to the mock (ac1/ac2)",
+        "summary": "In renderShell add an icon-only #insrc-send button in the input area toggling ▶ (green Send) / ■ (red Stop) driven by a webview-local `running` flag (set on submit, cleared on done/error); Send posts submit-turn, Stop posts cancel-turn. Retain the Cmd/Ctrl+Enter submit path (converges on submit-turn). Refine the header/input fixed-region CSS to the mock so #insrc-term stays the only scroll region. Inline under the CSP, className/textContent only; every existing element id preserved.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the html contains an icon-only #insrc-send button (▶/■, no text label) inside the input area",
+          "a Send click posts submit-turn; while running the button is Stop (■) and its click posts cancel-turn",
+          "the fixed-region layout holds: #insrc-term is the only overflow-y:auto region, header + input stay flex:0 (ac1)",
+          "all pre-existing element ids remain (#insrc-term/#insrc-input/#insrc-provider/#insrc-history/#insrc-editmode/#insrc-sesstitle); still one nonce'd inline <script>; no innerHTML; no remote origin (k1)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the html contains an icon-only Send/Stop button #insrc-send (▶/■) inside the input area"
+          },
+          {
+            "level": "unit",
+            "name": "the fixed-region layout holds: #insrc-term is the only overflow-y:auto region; header + input stay flex:0"
+          },
+          {
+            "level": "unit",
+            "name": "all pre-existing element ids are still present (#insrc-term/#insrc-input/#insrc-provider/#insrc-history/#insrc-editmode/#insrc-sesstitle)"
+          },
+          {
+            "level": "unit",
+            "name": "still exactly one nonce'd inline <script>; no innerHTML; no remote origin (k1)"
+          },
+          {
+            "level": "integration",
+            "name": "the host still no-ops an empty submit (button Send with blank input starts no turn)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "renderShell: single animated #insrc-progress widget + reroute status to it (ac3/lc1)",
+        "summary": "In renderShell add a single hidden #insrc-progress element above the input with its animation CSS (inline, CSP-safe). Reroute the live turn-event handler so a status event shows/updates #insrc-progress (phase label, gated on t3's running flag — reused, not re-derived) instead of appending a transcript row, and the shared done/error handler hides the widget + clears running + restores ▶ (authored once here, building on t3's toggle). Non-status live rendering (assistant-delta/tool-call/markers) is unchanged from S001; the host status-skip (chat-panel.ts appendEvent) is untouched.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the html contains a single #insrc-progress widget above the input, hidden at rest, with an animation",
+          "a status event drives the progress widget (gated on running) and does NOT append a transcript row; rapid phase changes update one widget in place (ac3)",
+          "a done/error event hides #insrc-progress, clears running, and restores the ▶ Send button",
+          "the host status-skip is unchanged — status never enters the durable transcript (lc1/k4)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the html contains a single #insrc-progress widget above the input, hidden at rest"
+          },
+          {
+            "level": "integration",
+            "name": "status persistence skip (chat-panel.ts:424) unchanged — status never enters the durable transcript (lc1)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the html contains an icon-only Send/Stop button #insrc-send (▶/■) inside the input area",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the html contains a single #insrc-progress widget above the input, hidden at rest",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the fixed-region layout holds: #insrc-term is the only overflow-y:auto region; header + input stay flex:0",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "all pre-existing element ids are still present (#insrc-term/#insrc-input/#insrc-provider/#insrc-history/#insrc-editmode/#insrc-sesstitle)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "still exactly one nonce'd inline <script>; no innerHTML; no remote origin (k1)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a 'cancel-turn' WebviewToHost message routes to cancelActive() and cancels the active turn (the scripted adapter's cancel fires)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "'cancel-turn' is an accepted WebviewToHost type (additive) and a no-op when no turn is active",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host still no-ops an empty submit (button Send with blank input starts no turn)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing chat-panel/protocol suites stay green — status persistence skip (chat-panel.ts:424) unchanged (k2/lc1)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: WebviewToHost 'cancel-turn' message (protocol) field-add + handleMessage 'cancel-turn' case -> cancelActive()",
+      "quotedText": "Add an additive WebviewToHost variant { type: 'cancel-turn' } + 'cancel-turn' in WEBVIEW_TO_HOST_TYPES; handleMessage routes it to the existing cancelActive() reap. Additive; every existing message keeps working (k2)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails/renderShell + dataModelChanges: shell controls #insrc-send (Send/Stop) + #insrc-progress (widget) new, fixed-region layout to the mock",
+      "quotedText": "renderShell adds an icon-only #insrc-send button (▶/■, running flag) + a single hidden #insrc-progress widget above the input; #insrc-term stays the only scroll region and every existing element id is preserved (k1)."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: live turn-event handler status routes to the progress widget (invariant-change)",
+      "quotedText": "Status events drive #insrc-progress (gated on running) instead of appending a transcript row; done/error hides it + clears running; the host status-skip (chat-panel.ts appendEvent) is unchanged so status never persists (lc1/k4)."
+    }
+  ]
+}

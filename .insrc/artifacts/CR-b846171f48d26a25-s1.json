@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790484250313-6al182",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-27T04:44:10.314Z",
+    "model": "client",
+    "elapsedMs": 7,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b846171f48d26a25",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b846171f48d26a25",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "vscode-plugin/assets/steering-block.md",
+        "vscode-plugin/package.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

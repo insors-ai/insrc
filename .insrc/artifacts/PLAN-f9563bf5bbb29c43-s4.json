@@ -1,0 +1,325 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790440612924-reur60",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-26T16:42:18.507Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 325542,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "epicSlug": "vs-code-editor-dev-chat-ui",
+    "storyId": "s4",
+    "lldRunId": "wf-1790438685699-mz5wyg",
+    "lldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
+    "approvedAt": "2026-09-26T16:42:41.338Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc2 types: ApprovalRequestEvent union member + PermissionMode + markerFor null case",
+        "summary": "In stream-events.ts add the ApprovalRequestEvent union member to TurnEvent (kind:'approval-request',turnId,requestId,title,detail,toolName?) — 'approval-request' is already in TURN_EVENT_KINDS. Declare the shared PermissionMode = 'review'|'auto' type with its canonical home in protocol.ts (the sc2 module both the adapter and webview already import), so t2/t4/t7 import one type. In markers.ts add the 'approval-request'->null case to BOTH markerFor (:43, keeping the never-check at :76 compiling) AND its single-sourced webview mirror markerWebviewSource (:84) — review finding cl2. Additive only (k2), live-only so no marker persisted (k4).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ApprovalRequestEvent is a valid TurnEvent member and tsc compiles with the markerFor exhaustiveness never-check intact.",
+          "markerFor(approval-request) and the markerWebviewSource mirror both return null; no transcript marker persisted (k4).",
+          "PermissionMode is declared once in protocol.ts and imported by the adapter/webview; TURN_EVENT_KINDS unchanged; existing stream-events + markers tests stay green."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stream-events.test.ts: ApprovalRequestEvent valid; TURN_EVENT_KINDS unchanged; markerFor null + never-check compiles."
+          },
+          {
+            "level": "unit",
+            "name": "markers.test.ts: markerFor(approval-request) and the markerWebviewSource mirror both return null."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "protocol: permission-decision + set-permission-mode WebviewToHost messages",
+        "summary": "In protocol.ts add PermissionDecisionMsg {type:'permission-decision',requestId,decision:'approve'|'deny',scope?:'once'|'session'} and SetPermissionModeMsg {type:'set-permission-mode',mode:PermissionMode} to the WebviewToHost union and append both to WEBVIEW_TO_HOST_TYPES. Reuse the PermissionMode type declared in protocol.ts by t1. Additive; existing message roundtrips unchanged (k2).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "permission-decision + set-permission-mode are members of WebviewToHost and present in WEBVIEW_TO_HOST_TYPES.",
+          "scope is an optional 'once'|'session' field (accepted-but-inert 'once' per q2); existing protocol tests stay green."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "protocol.test.ts: permission-decision + set-permission-mode in WEBVIEW_TO_HOST_TYPES; existing roundtrips unchanged."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "SpawnedProcess.write seam + fake spawner scripting/recording",
+        "summary": "In cli-adapter.ts add the additive optional write?(data:string):void to SpawnedProcess and wire the production SpawnFn to child.stdin.write. Extend the fake spawner (fixtures.ts) so tests can script permission-request stdout lines AND record write() calls. Optional method keeps existing spawner impls/tests compiling (k2, exactOptionalPropertyTypes-safe).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "SpawnedProcess.write is optional; existing spawner impls/tests that omit it still compile.",
+          "Production SpawnFn writes to child.stdin; the fake spawner records writes and can script permission lines.",
+          "No behavioural change when write() is never called."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: fake spawner records write() calls and scripts permission stdout lines; omitting write() still compiles/behaves as today."
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "TurnRequest.permissionMode + buildArgs review/auto flags",
+        "summary": "In cli-adapter.ts add the optional permissionMode (importing PermissionMode from protocol.ts) to TurnRequest and make each ProviderMapper.buildArgs read it: review->claude --permission-prompts host (codex on-request approval); auto->claude --permission-mode bypassPermissions / codex --dangerously-bypass-approvals-and-sandbox. Undefined => byte-identical argv to today. Provider difference stays inside each mapper.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "buildArgs with permissionMode undefined returns byte-identical argv to today (claude :141 / codex :204-207).",
+          "review mode adds the host-answered flag and never a bypass flag; auto mode adds the bypass flag and never a host-answered flag.",
+          "cli-adapter tests cover both providers x {undefined, review, auto}."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: buildArgs review vs auto flags + undefined==today, both providers."
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "mapLine permission-request branch + pending-request registry + StreamAdapter.decide",
+        "summary": "Add a permission-request branch to each ProviderMapper.mapLine via a per-provider normalizing adapter over field aliases (q1) that maps a native permission/approval line onto one internal ApprovalRequest{requestId,title,detail,toolName?} -> ApprovalRequestEvent; a parseable-but-idless line yields [] and an unparseable line throws (as today). Add the adapter-side pending-request registry (register on emit) and StreamAdapter.decide(turnId,requestId,decision): look up the live entry, format+write the provider control response via write(), resolve+clear; no-op on unknown/stale; auto-clean outstanding entries on cancel()/exit in the run() loop. Kept as one task (the registry is the shared state decide() reads and mapLine writes; splitting would leave a half-wired commit) — within the build, land the fixtures + normalizing-adapter parser first, then the registry+decide. Capture claude/codex permission-line fixtures for the adapter + live suite.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A scripted permission line maps to exactly one ApprovalRequestEvent with a provider-stable requestId; non-permission lines map exactly as before (k2).",
+          "decide() writes the correct provider control response for a live requestId and no-ops for unknown/stale/dead ids (at most one write per requestId).",
+          "Pending entries are auto-cleaned on cancel()/exit so no card is left dangling; scope is accepted-but-inert 'once'-only.",
+          "The provider difference lives only inside each mapper/normalizing adapter."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: mapLine maps scripted permission line (both providers, via normalizing adapter over field aliases) to one ApprovalRequestEvent; idless line -> []; unparseable -> throws."
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter.test.ts: decide records correct control write for a live requestId, no-ops stale/unknown, at most one write per id; pending cleaned on cancel/exit."
+          },
+          {
+            "level": "live",
+            "name": "live-cli.test.ts: INSRC_LIVE_TESTS-gated claude --permission-prompts host + written decision; auto bypass; codex exec --json equivalent (validates captured fixtures against installed CLIs)."
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "sc1 approval-card renderer (icon-only approve/deny)",
+        "summary": "In render-registry.ts register a renderer for the already-reserved RowKind 'approval' in the webview source: an inline approval card with icon-only approve/deny controls (k6-i) built via className/textContent only, nonce'd (k1). Do NOT modify sc1 RowKind or toViewModel (s1-owned). Unit-test by eval'ing the *WebviewSource factory against the fake document.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "reg.register('approval', ...) yields a card with icon-only approve/deny controls using className/textContent (no innerHTML).",
+          "sc1 RowKind and toViewModel are unchanged; existing render-registry tests stay green.",
+          "The card buttons expose click listeners the eval'd factory test can invoke."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "render-registry.test.ts: 'approval' renderer builds icon-only approve/deny via className/textContent (no innerHTML) with click listeners."
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "chat-panel: live approval routing + permission-decision post + #insrc-permmode status control",
+        "summary": "In chat-panel.ts add an approval-request branch to the live turn-event handler (:304) that renders the approval card and wires its buttons to postMessage({type:'permission-decision',requestId,decision}). Add a DISTINCT #insrc-permmode 'perms' auto/review control to the .statusbar (:354-357), separate from the existing #insrc-editmode select (review finding cl11), posting set-permission-mode + showing the active mode as a seg. Add handleMessage cases: permission-decision->adapter.decide; set-permission-mode->store per-session, apply to the NEXT turn's buildArgs (not the in-flight spawn).",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A live approval-request event routes to the approval renderer; a card click posts permission-decision{requestId,decision} dispatched to decide().",
+          "The status bar has a distinct #insrc-permmode auto/review control (not conflated with #insrc-editmode); changing it posts set-permission-mode and updates the mode seg.",
+          "set-permission-mode stores the per-session mode applied to the next turn's buildArgs; chat-panel tests assert on html + posted messages."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat-panel.test.ts: html has the #insrc-permmode status control; mode change posts set-permission-mode; card click posts permission-decision; live approval-request routed to approval renderer."
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verification: extend suites, tsc + full chat suite green",
+        "summary": "Ensure the five owning suites (stream-events, protocol, cli-adapter, render-registry, chat-panel) + markers cover the new seams, then run tsc and the full chat suite locally to confirm all ~211+ tests green and the contract stayed additive (k2). Validate/code-review gates are hollow here — verify locally.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "`npx tsx --test 'src/chat/**/__tests__/*.test.ts'` is fully green with the new coverage added.",
+          "tsc is clean (optional write?/permissionMode? exactOptionalPropertyTypes-safe).",
+          "No existing chat test regressed (additive contract, k2)."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Full chat suite green (npx tsx --test 'src/chat/**/__tests__/*.test.ts') + tsc clean; no existing test regressed (additive, k2)."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "stream-events.test.ts: ApprovalRequestEvent valid; TURN_EVENT_KINDS unchanged; markerFor null + never-check compiles.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "protocol.test.ts: permission-decision + set-permission-mode in WEBVIEW_TO_HOST_TYPES; existing roundtrips unchanged.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-adapter.test.ts: buildArgs review vs auto flags + undefined==today; mapLine maps scripted permission line to one ApprovalRequestEvent; decide records correct write / no-ops stale; pending cleaned on cancel/exit.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "render-registry.test.ts: 'approval' renderer builds icon-only approve/deny via className/textContent (no innerHTML) with click listeners.",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat-panel.test.ts: html has status-bar mode control; mode change posts set-permission-mode; card click posts permission-decision; live approval-request routed to approval renderer.",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "INSRC_LIVE_TESTS-gated claude -p --permission-prompts host + written decision; auto bypass; codex exec --json equivalent.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Full chat suite green; tsc clean (optional write?/permissionMode?).",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4: sc2 ApprovalRequestEvent + PermissionMode + PermissionDecisionMsg/SetPermissionModeMsg + buildArgs permission flags",
+      "quotedText": "Realizes sc2's HLD-sketched reserved members ... ApprovalRequestEvent union member, PermissionDecisionMsg + SetPermissionModeMsg + PermissionMode; buildArgs adds review/auto flags."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4: cli-adapter permission seam — SpawnedProcess.write + mapLine permission branch + pending-request registry + StreamAdapter.decide",
+      "quotedText": "SpawnedProcess needs an additive write() seam ... StreamAdapter.decide looks up the live pending entry, writes the provider control response, resolves+clears; auto-clean on cancel()/exit."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4: sc1 approval-card renderer registration + chat-panel live approval-request routing",
+      "quotedText": "Registers an 'approval'-kind renderer into the existing RenderRegistry ... event->row mapping in S004's own live handler."
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "Epic constraint k6-i / mocks.html — approve/deny card + auto/review status-bar mode",
+      "quotedText": "tool-permission requests surface in-chat as an approve/deny card and the chosen auto/review mode shows in the status bar."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy: five owning chat suites + tsc/full-suite verification (~211 tests)",
+      "quotedText": "node:test via `npx tsx --test 'src/chat/**/__tests__/*.test.ts'` ... verify tsc + full chat suite locally."
+    }
+  ]
+}

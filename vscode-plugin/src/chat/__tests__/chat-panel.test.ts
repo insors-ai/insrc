@@ -1297,3 +1297,74 @@ test('S004 t7: permission-decision with no active turn is a safe no-op (never th
   host.open();
   assert.doesNotThrow(() => fc.send(env('permission-decision', { requestId: 'x', decision: 'approve' })));
 });
+
+// ---- S001 (bugfix): ChatPanelHost.adopt — restore a webview panel in place ----
+
+/** A fakeChannel whose dispose() is observable (for supersede assertions). */
+function trackedChannel(): { fc: FakeChannel; disposed(): boolean } {
+  const fc = fakeChannel();
+  let disposed = false;
+  const ch = fc.channel;
+  const origDispose = ch.dispose;
+  ch.dispose = () => { disposed = true; origDispose(); };
+  return { fc, disposed: () => disposed };
+}
+
+test('S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)', () => {
+  const store = createInMemoryChatSessionStore();
+  store.create('claude'); // seed history
+  const host = createChatPanelHost({
+    createPanel: () => fakeChannel().channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  const adopted = fakeChannel();
+  host.adopt(adopted.channel);
+  const types = adopted.posted.map((m) => m.payload.type);
+  assert.ok(types.includes('theme'), 'posts theme to the adopted channel');
+  assert.ok(types.includes('session-restored'), 'posts session-restored');
+  assert.ok(types.includes('history-list'), 'posts history-list (dropdown populates)');
+  // The adopted channel is wired: a submit-turn routed through it reaches the host.
+  let ran = false;
+  const store2 = createInMemoryChatSessionStore();
+  const host2 = createChatPanelHost({
+    createPanel: () => fakeChannel().channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: () => { ran = true; } }) }, ['claude']),
+    store: store2,
+    cwd: () => '/repo',
+  });
+  const ad2 = fakeChannel();
+  host2.adopt(ad2.channel);
+  ad2.send(env('submit-turn', { text: 'hi' }));
+  assert.equal(ran, true, 'onMessage is wired on the adopted channel (submit-turn reached the host)');
+});
+
+test('S001 adopt() supersedes an already-live channel (prior disposed; single active channel)', () => {
+  const open1 = trackedChannel();
+  const host = createChatPanelHost({
+    createPanel: () => open1.fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: (() => { const s = createInMemoryChatSessionStore(); s.create('claude'); return s; })(),
+    cwd: () => '/repo',
+  });
+  host.open(); // live channel = open1
+  assert.equal(open1.disposed(), false);
+  const adopted = fakeChannel();
+  host.adopt(adopted.channel); // a restored panel supersedes open1
+  assert.equal(open1.disposed(), true, 'the prior channel was disposed on adopt');
+  assert.ok(adopted.posted.map((m) => m.payload.type).includes('history-list'), 'the adopted channel is now the live one');
+});
+
+test('S001 adopt() with no agentic CLI posts the same error a fresh open does', () => {
+  const host = createChatPanelHost({
+    createPanel: () => fakeChannel().channel,
+    providers: registry({}, []), // none installed
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  const adopted = fakeChannel();
+  host.adopt(adopted.channel);
+  const errs = adopted.posted.filter((m) => m.payload.type === 'turn-event').map((m) => m.payload['event'] as TurnEvent);
+  assert.ok(errs.some((e) => e.kind === 'error' && /no agentic CLI/.test((e as { message: string }).message)), 'adopt mirrors open()’s no-CLI error');
+});

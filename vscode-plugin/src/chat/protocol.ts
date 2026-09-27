@@ -90,7 +90,13 @@ export type WebviewToHost =
     }
   // S004 sc2 (additive): the status-bar auto/review toggle. The host stores it per-session
   // and applies it to the NEXT turn's buildArgs (never the in-flight spawn).
-  | { readonly type: 'set-permission-mode'; readonly mode: PermissionMode };
+  | { readonly type: 'set-permission-mode'; readonly mode: PermissionMode }
+  // S001 (bugfix) (additive): the webview→host readiness handshake. Posted once the webview's
+  // message listener is attached — on the INITIAL load AND on every VS-Code webview reload
+  // (show-after-hide / restore, since the panel has no retainContextWhenHidden). The host
+  // (re)sends theme + active session + history in response, so a reloaded webview is always
+  // populated instead of racing the not-yet-attached listener with a post-after-setHtml.
+  | { readonly type: 'ready' };
 
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
@@ -115,6 +121,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'cancel-turn',
   'permission-decision',
   'set-permission-mode',
+  'ready',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

@@ -2,7 +2,7 @@
   "name": "insrc-vscode",
   "displayName": "insrc",
   "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "publisher": "insors",
   "license": "MIT",
   "repository": {
@@ -123,7 +123,10 @@
           },
           "insrc.chat.diffView": {
             "type": "string",
-            "enum": ["chat", "editor"],
+            "enum": [
+              "chat",
+              "editor"
+            ],
             "enumDescriptions": [
               "Show edit diffs inside the terminal chat panel",
               "Show edit diffs in a native VS Code editor diff"

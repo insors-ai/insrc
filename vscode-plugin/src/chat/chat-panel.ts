@@ -155,6 +155,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
+  // S001 (bugfix): (re)send the full view state to the webview. Called on every 'ready' handshake
+  // (handleMessage) — the initial load AND every VS-Code webview reload (show-after-hide / restore,
+  // since the panel carries no retainContextWhenHidden). Posting this synchronously after setHtml
+  // instead would race the not-yet-attached listener and be lost, leaving an empty dropdown +
+  // transcript even though the store has the sessions (the root cause of the "history disappeared"
+  // regression). A no-agentic-CLI environment surfaces the same error a fresh open would.
+  const postInitialState = (): void => {
+    post({ type: 'theme', theme });
+    const available = deps.providers.available;
+    if (available.length === 0) {
+      post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
+      return;
+    }
+    // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty session
+    // to history; it enters the store only on the first turn (runTurn's save).
+    if (session === undefined) session = deps.store.draft(available[0]!);
+    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+    postHistory();
+  };
+
   // LLM chat titling: after the first turn, an INJECTED deriveTitle (extension.ts wires the
   // one-shot CLI call) produces a short name that swaps in over the truncated first-prompt
   // fallback. When no deriveTitle is provided (or it fails), the fallback stays. The one-shot
@@ -357,7 +377,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
       // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
       `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);hideProgress();}else{doSubmit();}});` +
-      `setRunning(false);`;
+      `setRunning(false);` +
+      // S001 (bugfix): the readiness handshake — now that the 'message' listener above is attached,
+      // tell the host we can receive. This runs on the INITIAL load AND on every VS-Code webview
+      // reload (show-after-hide / restore, since the panel has no retainContextWhenHidden), so the
+      // host re-sends theme + active session + history and the dropdown/transcript are always
+      // repopulated instead of being lost to a post-after-setHtml race.
+      `vs.postMessage({v:1,payload:{type:'ready'}});`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
@@ -550,6 +576,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
     const msg = env.payload as WebviewToHost;
     switch (msg.type) {
+      case 'ready':
+        // S001 (bugfix): the webview attached its listener and is ready to receive. (Re)send the
+        // full view state. Fires on the initial load AND every VS-Code webview reload (the panel
+        // has no retainContextWhenHidden), so a restored/re-shown chat is always repopulated
+        // instead of showing an empty dropdown + transcript.
+        postInitialState();
+        return;
       case 'submit-turn':
         void runTurn(msg.text);
         return;
@@ -638,9 +671,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   }
 
   // S001 (bugfix): the ONE post-channel wiring path shared by open() (fresh panel) and adopt()
-  // (a VS-Code-restored panel). Wires onDidDispose/onMessage, renders the shell, and posts the
-  // initial theme/session-restored/history-list, so a restored panel behaves identically to a
-  // fresh one (no drift). The caller owns supersede/reveal decisions before calling this.
+  // (a VS-Code-restored panel). Wires onDidDispose/onMessage, renders the shell, and seeds the
+  // session + initial state via postInitialState(). NOTE: in the REAL VS-Code webview these
+  // initial posts race the not-yet-attached message listener and are lost — the AUTHORITATIVE
+  // delivery is the webview's 'ready' handshake (handleMessage → postInitialState), which fires
+  // on the initial load AND on every webview reload (show-after-hide / restore, since the panel
+  // has no retainContextWhenHidden). Calling it here too keeps the session drafted synchronously
+  // (the open()-yields-a-turnable-session invariant) and single-sources the post sequence.
   const wireChannel = (ch: ChatPanelChannel): void => {
     disposed = false;
     channel = ch;
@@ -651,18 +688,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     });
     channel.onMessage(handleMessage);
     channel.setHtml(renderShell());
-
-    const available = deps.providers.available;
-    if (available.length === 0) {
-      post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
-      return;
-    }
-    // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty
-    // session to history; it enters the store only on the first turn (runTurn's save).
-    if (session === undefined) session = deps.store.draft(available[0]!);
-    post({ type: 'theme', theme });
-    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
-    postHistory(); // S005: populate the history dropdown as soon as the panel opens
+    postInitialState();
   };
 
   return {

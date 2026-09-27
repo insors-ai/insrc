@@ -1368,3 +1368,80 @@ test('S001 adopt() with no agentic CLI posts the same error a fresh open does', 
   const errs = adopted.posted.filter((m) => m.payload.type === 'turn-event').map((m) => m.payload['event'] as TurnEvent);
   assert.ok(errs.some((e) => e.kind === 'error' && /no agentic CLI/.test((e as { message: string }).message)), 'adopt mirrors open()’s no-CLI error');
 });
+
+// ---- S001 (bugfix): the 'ready' handshake reliably (re)delivers view state ----
+// Root cause of the "history disappeared" regression: the host posted theme/session-restored/
+// history-list synchronously after setHtml, before the webview's message listener existed, and
+// the panel has no retainContextWhenHidden so VS Code reloads the webview (empty) on every
+// show-after-hide without the host re-posting. The webview now posts 'ready' once its listener
+// is attached (initial load AND every reload); the host answers by (re)sending the full state.
+
+test('S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  const listenerAt = html.indexOf(`addEventListener('message'`);
+  const readyAt = html.indexOf(`payload:{type:'ready'}`);
+  assert.ok(listenerAt !== -1, 'the webview attaches a message listener');
+  assert.ok(readyAt !== -1, 'the webview emits a ready handshake');
+  assert.ok(readyAt > listenerAt, 'ready is posted only AFTER the listener is attached (no self-race)');
+  // Delivered in the ONE nonce-guarded script — no new script, CSP intact, no remote origin.
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one inline script');
+  assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
+});
+
+test('S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  store.create('claude'); // seed history so list() is non-empty
+  store.create('claude');
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  // Simulate the REAL webview: the initial post-after-setHtml was lost. Clear what the fake
+  // (synchronous) channel captured, then let the webview announce itself.
+  fc.posted.length = 0;
+  fc.send(env('ready'));
+  const types = fc.posted.map((m) => m.payload.type);
+  assert.ok(types.includes('theme'), 'ready re-posts theme');
+  assert.ok(types.includes('session-restored'), 'ready re-posts the active session');
+  const hl = fc.posted.filter((m) => m.payload.type === 'history-list').map((m) => m.payload['chats'] as unknown[]);
+  assert.ok(hl.length >= 1, 'ready re-posts history-list');
+  assert.equal(hl[hl.length - 1]!.length, 2, 'the re-posted history carries both seeded sessions (dropdown populates)');
+
+  // A SECOND ready models a webview reload (show-after-hide): state is delivered again.
+  fc.posted.length = 0;
+  fc.send(env('ready'));
+  assert.ok(fc.posted.some((m) => m.payload.type === 'history-list'), 'a webview reload re-delivers history');
+  assert.ok(fc.posted.some((m) => m.payload.type === 'session-restored'), 'a webview reload re-delivers the session');
+});
+
+test('S001 ready before any open-time delivery still populates history (models the dropped initial post)', () => {
+  // Wire a channel directly (adopt path = a VS-Code-restored panel) whose initial posts are
+  // assumed lost; only the ready handshake arrives. History must still reach the webview.
+  const store = createInMemoryChatSessionStore();
+  store.create('codex');
+  const host = createChatPanelHost({
+    createPanel: () => fakeChannel().channel,
+    providers: registry({ codex: scriptedAdapter([]) }, ['codex']),
+    store,
+    cwd: () => '/repo',
+  });
+  const restored = fakeChannel();
+  host.adopt(restored.channel);
+  restored.posted.length = 0; // drop everything the initial (racing) post produced
+  restored.send(env('ready'));
+  const hl = restored.posted.filter((m) => m.payload.type === 'history-list').map((m) => m.payload['chats'] as unknown[]);
+  assert.ok(hl.length >= 1 && hl[hl.length - 1]!.length === 1, 'the restored+ready webview receives the seeded history');
+});

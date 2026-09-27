@@ -9,16 +9,24 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { marked } from 'marked';
 import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE, toViewModel } from '../render-registry.js';
 import type { RowViewModel } from '../render-registry.js';
 import type { TranscriptEntry } from '../session-store.js';
 import type { TurnEvent } from '../stream-events.js';
+
+// S001 (bugfix): the webview render now delegates assistant markdown to the bundled `marked`
+// (global in the real webview). Provide it to the eval'd source so renderAssistantMd runs the
+// real library; the fake node stores the resulting HTML as its `innerHTML` string property, which
+// the tests assert on (guardMd's querySelectorAll no-ops on the fake node, wrapped in try/catch).
+(globalThis as unknown as { marked: unknown }).marked = marked;
 
 /** A tiny DOM stand-in: records className/textContent/children + click listeners. */
 interface FakeNode {
   tag: string;
   className: string;
   textContent: string;
+  innerHTML?: string; // S001: renderAssistantMd assigns marked's HTML here (asserted by the md tests)
   attrs: Record<string, string>;
   children: FakeNode[];
   listeners: Record<string, Array<() => void>>;
@@ -91,6 +99,13 @@ function msgText(row: FakeNode): string {
   const b = findByClass(row, 'insrc-bubble');
   return b ? (b.textContent || '') : (row.textContent || '');
 }
+// S001 (bugfix): assistant messages render via marked -> the .insrc-md div's innerHTML (HTML string).
+function mdHtml(row: FakeNode): string {
+  return findByClass(row, 'insrc-md')?.innerHTML ?? '';
+}
+function mdText(row: FakeNode): string {
+  return mdHtml(row).replace(/<[^>]+>/g, '').trim();
+}
 
 test('renderRow dispatches to a registered renderer for its kind', () => {
   const { reg } = makeRegistry();
@@ -160,13 +175,16 @@ test('collapsible: defaultCollapsed=false starts expanded with a ▾ chevron', (
   assert.equal(chevron.textContent, '▾');
 });
 
-test('renderRegistryWebviewSource() is CSP-safe: no import/remote/innerHTML/vscode', () => {
+test('renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked', () => {
   const src = renderRegistryWebviewSource();
   assert.doesNotMatch(src, /\bimport\b/, 'no import');
   assert.doesNotMatch(src, /https?:\/\//, 'no remote origin');
-  assert.doesNotMatch(src, /innerHTML/, 'no innerHTML');
   assert.doesNotMatch(src, /asWebviewUri/, 'no asWebviewUri');
   assert.doesNotMatch(src, /\bvscode\b/, 'no vscode reference');
+  // S001 (bugfix): innerHTML is used ONLY for the marked render, and every assignment is paired
+  // with guardMd sanitization in the same statement (marked escapes text; the CSP blocks scripts).
+  assert.equal((src.match(/\.innerHTML=/g) ?? []).length, 1, 'exactly one innerHTML assignment (the marked render)');
+  assert.match(src, /\.innerHTML=[^;]*marked\.parse[^;]*;guardMd\(/, 'the innerHTML render is marked + guardMd');
 });
 
 test('RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview', () => {
@@ -231,7 +249,7 @@ test('integration: an assistant multi-step turn renders each step\'s actual text
     { kind: 'assistant-delta', turnId: 't', text: 'second step' },
   ];
   for (const ev of steps) reg.renderRow(reg.toViewModel(ev));
-  assert.deepEqual(appended.map((n) => msgText(n)), ['first step', 'second step']);
+  assert.deepEqual(appended.map((n) => mdText(n)), ['first step', 'second step']);
 });
 
 test('integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)', () => {
@@ -326,45 +344,46 @@ test('S003 k6 d: the tool-command renderer stays inline, never wrapped in collap
 
 // ---- S003 t3: assistant content-type widgets ----
 
-test('S003 ac3: valid JSON renders a structured JSON widget (key/value spans, no innerHTML)', () => {
+test('S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)', () => {
   const { reg } = makeRegistry();
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: '{"a":1,"b":"x"}', collapsible: true })!;
-  const json = findByClass(row, 'insrc-json');
-  assert.ok(json, 'a JSON widget is rendered');
-  assert.ok(findByClass(json!, 'insrc-json-key'), 'has a key span');
-  assert.ok(findByClass(json!, 'insrc-json-val'), 'has a value span');
+  const html = mdHtml(row);
+  assert.match(html, /<pre>/, 'rendered as a code block');
+  assert.match(html, /language-json/, 'tagged as json');
+  const decoded = html.replace(/&quot;/g, '"'); // marked HTML-escapes code content
+  assert.ok(decoded.includes('"a"') && decoded.includes('"b"'), 'the JSON content is present (pretty-printed)');
 });
 
-test('S003 ac3: markdown renders a markdown widget (heading + list + inline code)', () => {
+test('S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML', () => {
   const { reg } = makeRegistry();
-  const md = '# Title\n- item one\n- item two\nsome `code` here';
+  const md = '# Title\n\n- item one\n- item two\n\nsome `code` here';
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
-  // md has 4 lines -> long -> wrapped in collapse; the md widget lives under the collapse body.
-  const widget = findByClass(row, 'insrc-md');
-  assert.ok(widget, 'a markdown widget is rendered');
-  assert.ok(findByTag(widget!, 'h1'), 'heading rendered');
-  assert.ok(findByTag(widget!, 'ul') && findByTag(widget!, 'li'), 'list rendered');
-  assert.ok(findByClass(widget!, 'insrc-md-code'), 'inline code rendered as a span');
+  const html = mdHtml(row); // marked HTML lives on the .insrc-md div's innerHTML
+  assert.match(html, /<h1[^>]*>Title<\/h1>/, 'heading rendered');
+  assert.match(html, /<ul>[\s\S]*<li>item one<\/li>/, 'list rendered');
+  assert.match(html, /<code>code<\/code>/, 'inline code rendered');
 });
 
-test('S003 ac3: plain text renders plain (no md/json widget)', () => {
+test('S001 (bugfix): plain prose renders as a paragraph (marked), text preserved', () => {
   const { reg } = makeRegistry();
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'just some prose without markers', collapsible: true })!;
-  assert.ok(!findByClass(row, 'insrc-md'), 'no markdown widget');
-  assert.ok(!findByClass(row, 'insrc-json'), 'no JSON widget');
-  assert.equal(msgText(row), 'just some prose without markers', 'plain text preserved');
+  assert.ok(findByClass(row, 'insrc-md'), 'wrapped in the marked container');
+  assert.ok(mdText(row).includes('just some prose without markers'), 'the prose text is preserved');
 });
 
-test('S003: almost-JSON falls through to plain text without throwing (per-row isolation)', () => {
+test('S001 (bugfix): malformed JSON does not throw — it renders as markdown text', () => {
   const { reg } = makeRegistry();
   let row: FakeNode | null = null;
   assert.doesNotThrow(() => { row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: '{not valid json', collapsible: true }); });
-  assert.ok(!findByClass(row!, 'insrc-json'), 'no JSON widget for malformed JSON');
-  assert.equal(msgText(row!), '{not valid json', 'falls through to plain text');
+  assert.ok(mdText(row!).includes('not valid json'), 'the raw text survives as markdown');
 });
 
-test('S003: no innerHTML anywhere in the render-registry source (k1)', () => {
-  assert.doesNotMatch(renderRegistryWebviewSource(), /innerHTML/, 'no innerHTML');
+test('S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)', () => {
+  const src = renderRegistryWebviewSource();
+  assert.match(src, /marked\.parse\(/, 'delegates to the marked library');
+  assert.match(src, /function guardMd\(/, 'defines the sanitizer');
+  // Every innerHTML assignment is immediately followed (in the same statement) by guardMd(...).
+  assert.match(src, /\.innerHTML=[^;]*;guardMd\(/, 'innerHTML is always paired with guardMd sanitization');
 });
 
 // ---- S003 t4: collapsible inline-diff + tool-result renderers (k6 c) ----
@@ -427,26 +446,22 @@ test('S004 t6: an approval card with no decision sink registered does not throw 
 
 // ---- S001 (bugfix): markdown tables + ordered lists + blockquotes (were raw pipes/text) ----
 
-test('S001 (bugfix): mdWidget renders a table (thead/tbody/th/td), ordered list, and blockquote', () => {
+test('S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes', () => {
   const { reg } = makeRegistry();
   const md = '# Title\n\n| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n\n1. first\n2. second\n\n> a quoted line\n\ntail paragraph';
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
-  const table = findByClass(row, 'insrc-md-table');
-  assert.ok(table, 'a table element is rendered (not raw pipes)');
-  assert.ok(findByTag(table!, 'thead') && findByTag(table!, 'tbody'), 'table has thead + tbody');
-  assert.ok(findByTag(table!, 'th'), 'header cells (th)');
-  const countTag = (n: FakeNode, tag: string): number =>
-    (n.tag === tag ? 1 : 0) + n.children.reduce((s, c) => s + countTag(c, tag), 0);
-  assert.equal(countTag(table!, 'th'), 2, 'two header cells');
-  assert.equal(countTag(table!, 'td'), 4, 'four body cells (2 rows x 2 cols)');
-  assert.ok(!allText(table!).includes('|'), 'no raw pipe characters leaked into the table');
-  assert.ok(findByTag(row, 'ol'), 'ordered list rendered as <ol>');
-  assert.ok(findByClass(row, 'insrc-md-quote'), 'blockquote rendered');
+  const html = mdHtml(row);
+  assert.match(html, /<table>[\s\S]*<thead>[\s\S]*<tbody>/, 'a real table (thead + tbody), not raw pipes');
+  assert.equal((html.match(/<th[\s>]/g) ?? []).length, 2, 'two header cells');
+  assert.equal((html.match(/<td[\s>]/g) ?? []).length, 4, 'four body cells (2 rows x 2 cols)');
+  assert.ok(!/\| A \| B \|/.test(html), 'the raw pipe row did not leak through');
+  assert.match(html, /<ol>[\s\S]*<li>first<\/li>/, 'ordered list rendered as <ol>');
+  assert.match(html, /<blockquote>/, 'blockquote rendered');
 });
 
-test('S001 (bugfix): a table-only response still triggers the markdown widget (looksMarkdown)', () => {
+test('S001 (bugfix): a table-only response still renders as a table (marked GFM)', () => {
   const { reg } = makeRegistry();
   const md = '| Col1 | Col2 |\n| --- | --- |\n| x | y |';
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
-  assert.ok(findByClass(row, 'insrc-md-table'), 'a bare table is detected + rendered');
+  assert.match(mdHtml(row), /<table>/, 'a bare table renders as <table>');
 });

@@ -319,7 +319,7 @@ test('rendered shell: one nonce\'d inline script + strict CSP + sc1 style + no r
   assert.match(csp![1]!, /script-src 'nonce-FIXEDNONCE'/, 'script-src limited to the nonce');
   assert.equal(script![1], 'FIXEDNONCE', 'the script nonce matches the CSP nonce');
   assert.ok(html.includes('<style>') && html.includes('.insrc-term-chat {'), 'embeds the sc1 <style> + surfaceClass(chat)');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
@@ -356,13 +356,13 @@ test('S004 rendered shell: non-delta turn-events route through the marker mapper
   assert.ok(/function line\(s,cls\)/.test(html), 'line() is widened to carry a marker class');
   assert.match(html, /className=cls/, 'the marker class is applied via className');
   assert.doesNotMatch(html, /'\['\+ev\.kind\+'\]'/, 'the bare [kind] fall-through is gone');
-  assert.doesNotMatch(html, /innerHTML/, 'renders via textContent, never innerHTML');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
   // The CSP shell invariants still hold after the S004 edit.
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   const csp = /Content-Security-Policy" content="([^"]*)"/.exec(html);
   assert.match(csp![1]!, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin introduced by the mapper');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
 });
 
 test('S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)', async () => {
@@ -436,9 +436,9 @@ test('S005 shell: provider-selector options == available + history-dropdown; one
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
-  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
 });
 
 test('S005 shell: empty providers.available -> disabled selector', () => {
@@ -726,8 +726,8 @@ test('S001 shell: session-restored replay routes through the sc1 registry (keyed
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
-  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
@@ -909,8 +909,8 @@ test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d 
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
-  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
@@ -1009,8 +1009,8 @@ test('S001 ac4: the header embeds the session-name clamp wiring (>32 chars -> el
   // CSP/one-script/textContent invariants intact.
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
-  assert.doesNotMatch(html, /innerHTML/, 'textContent only, never innerHTML');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
 });
 
 // ---- S002 t2: cancel-turn routes to the existing cancelActive() ----
@@ -1119,8 +1119,8 @@ test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no in
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
-  assert.doesNotMatch(html, /innerHTML/, 'no innerHTML');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
 });
 
 test('S002: an empty submit is a host no-op (no turn starts)', async () => {
@@ -1209,8 +1209,8 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
   assert.match(html, /\.insrc-caption\{/, 'tool-result/inline-diff caption styling');
   // CSP/one-script/textContent invariants intact.
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one inline script');
-  assert.doesNotMatch(html, /innerHTML/, 'no innerHTML');
-  assert.doesNotMatch(html, /https?:\/\//, 'no remote origin');
+  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
+  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
   for (const id of ['insrc-term', 'insrc-input', 'insrc-send', 'insrc-progress', 'insrc-sesstitle']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }

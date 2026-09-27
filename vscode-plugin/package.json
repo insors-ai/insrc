@@ -734,9 +734,13 @@
     "test": "tsx --test 'src/**/__tests__/*.test.ts'",
     "vscode:prepublish": "tsc -p tsconfig.json && npm run bundle",
     "package": "npx --yes @vscode/vsce@3.2.1 package",
-    "vscode:uninstall": "node ./out/uninstall.js"
+    "vscode:uninstall": "node ./out/uninstall.js",
+    "gen:webview-libs": "node gen-webview-libs.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "marked": "^4.3.0"
   }
 }

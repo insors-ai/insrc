@@ -207,69 +207,26 @@ export function renderRegistryWebviewSource(): string {
     `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
     `else{bubble.textContent=raw;}` +
     `wrap.appendChild(bubble);return wrap;}` +
-    // S003 t3: assistant content-type widgets (ac3). All via createElement/textContent, no innerHTML (k1).
-    // BT is the backtick char (built at runtime so the source carries no literal backtick).
+    // S001 (bugfix): assistant content is rendered by the bundled `marked` library (GFM: tables,
+    // ordered/nested lists, code, blockquotes — replacing the incomplete hand-rolled parser). BT is
+    // the backtick char (built at runtime so the source carries no literal backtick).
     `var BT=String.fromCharCode(96);` +
-    // inlineMd: render inline \`code\`, **strong**, *em* as spans/elements; plain segments as spans.
-    `function inlineMd(parent,text){` +
-    `var re=new RegExp('('+BT+'[^'+BT+']+'+BT+'|\\\\*\\\\*[^*]+\\\\*\\\\*|\\\\*[^*]+\\\\*)');` +
-    `var parts=(text||'').split(re);` +
-    `for(var i=0;i<parts.length;i++){var p=parts[i];if(!p)continue;var el;` +
-    `if(p.charAt(0)===BT){el=document.createElement('span');el.className='insrc-md-code';el.textContent=p.slice(1,-1);}` +
-    `else if(p.slice(0,2)==='**'){el=document.createElement('strong');el.textContent=p.slice(2,-2);}` +
-    `else if(p.charAt(0)==='*'){el=document.createElement('em');el.textContent=p.slice(1,-1);}` +
-    `else{el=document.createElement('span');el.textContent=p;}` +
-    `parent.appendChild(el);}}` +
-    // looksMarkdown: trigger on a heading / list item / ordered item / code fence / inline code /
-    // table separator (NOT bare emphasis, which false-positives on prose). Emphasis still renders
-    // inside the widget when present.
-    `function looksMarkdown(s){s=s||'';return /(^|\\n)#{1,6}\\s/.test(s)||/(^|\\n)\\s*[-*]\\s+/.test(s)||/(^|\\n)\\s*\\d+\\.\\s+/.test(s)||/(^|\\n)\\s*\\|[-:| ]+\\|/.test(s)||s.indexOf(BT+BT+BT)>=0||new RegExp(BT+'[^'+BT+']+'+BT).test(s);}` +
-    // splitCells: a pipe-delimited row -> trimmed cell strings (leading/trailing pipe stripped).
-    `function splitCells(r){return r.replace(/^\\s*\\|/,'').replace(/\\|\\s*$/,'').split('|').map(function(c){return c.trim();});}` +
-    // isTableSep: the `|---|:--:|` alignment row that MUST follow a table header (contains a dash).
-    `function isTableSep(r){return /^\\s*\\|?[\\s:|-]*-[\\s:|-]*\\|?\\s*$/.test(r||'')&&(r||'').indexOf('|')>=0;}` +
-    `function mdWidget(s){` +
-    `var root=document.createElement('div');root.className='insrc-md';var lines=(s||'').split('\\n');var i=0;var ul=null;var ol=null;` +
-    `while(i<lines.length){var ln=lines[i];` +
-    // fenced code block
-    `if(ln.indexOf(BT+BT+BT)===0){ul=null;ol=null;var pre=document.createElement('pre');var buf=[];i++;while(i<lines.length&&lines[i].indexOf(BT+BT+BT)!==0){buf.push(lines[i]);i++;}pre.textContent=buf.join('\\n');root.appendChild(pre);i++;continue;}` +
-    // table: a pipe row immediately followed by a `|---|` separator; rows continue while pipes+non-blank.
-    `if(ln.indexOf('|')>=0&&i+1<lines.length&&isTableSep(lines[i+1])){ul=null;ol=null;` +
-    `var table=document.createElement('table');table.className='insrc-md-table';` +
-    `var thead=document.createElement('thead');var htr=document.createElement('tr');` +
-    `splitCells(ln).forEach(function(c){var th=document.createElement('th');inlineMd(th,c);htr.appendChild(th);});` +
-    `thead.appendChild(htr);table.appendChild(thead);i+=2;` +
-    `var tbody=document.createElement('tbody');` +
-    `while(i<lines.length&&lines[i].indexOf('|')>=0&&lines[i].trim()!==''){var tr=document.createElement('tr');splitCells(lines[i]).forEach(function(c){var td=document.createElement('td');inlineMd(td,c);tr.appendChild(td);});tbody.appendChild(tr);i++;}` +
-    `table.appendChild(tbody);root.appendChild(table);continue;}` +
-    // heading
-    `var h=/^(#{1,6})\\s+(.*)$/.exec(ln);` +
-    `if(h){ul=null;ol=null;var lvl=h[1].length>3?3:h[1].length;var head=document.createElement('h'+lvl);inlineMd(head,h[2]);root.appendChild(head);i++;continue;}` +
-    // unordered list item
-    `var li=/^\\s*[-*]\\s+(.*)$/.exec(ln);` +
-    `if(li){ol=null;if(!ul){ul=document.createElement('ul');root.appendChild(ul);}var item=document.createElement('li');inlineMd(item,li[1]);ul.appendChild(item);i++;continue;}` +
-    // ordered list item (1. 2. 3.)
-    `var oli=/^\\s*\\d+\\.\\s+(.*)$/.exec(ln);` +
-    `if(oli){ul=null;if(!ol){ol=document.createElement('ol');root.appendChild(ol);}var oitem=document.createElement('li');inlineMd(oitem,oli[1]);ol.appendChild(oitem);i++;continue;}` +
-    // blockquote
-    `var bq=/^\\s*>\\s?(.*)$/.exec(ln);` +
-    `if(bq){ul=null;ol=null;var q=document.createElement('blockquote');q.className='insrc-md-quote';inlineMd(q,bq[1]);root.appendChild(q);i++;continue;}` +
-    // paragraph / blank line
-    `ul=null;ol=null;if(ln.trim()===''){i++;continue;}var para=document.createElement('div');para.className='insrc-md-p';inlineMd(para,ln);root.appendChild(para);i++;}` +
-    `return root;}` +
-    `function jsonWidget(obj){` +
-    `var root=document.createElement('div');root.className='insrc-json';` +
-    `if(obj&&typeof obj==='object'&&!Array.isArray(obj)){var keys=Object.keys(obj);` +
-    `for(var i=0;i<keys.length;i++){var k=keys[i];var row=document.createElement('div');` +
-    `var ks=document.createElement('span');ks.className='insrc-json-key';ks.textContent=k;` +
-    `var ps=document.createElement('span');ps.className='insrc-json-punct';ps.textContent=': ';` +
-    `var vs=document.createElement('span');vs.className='insrc-json-val';var v=obj[k];` +
-    `vs.textContent=(v!==null&&typeof v==='object')?JSON.stringify(v):String(v);` +
-    `row.appendChild(ks);row.appendChild(ps);row.appendChild(vs);root.appendChild(row);}}` +
-    `else{var pre=document.createElement('pre');pre.textContent=JSON.stringify(obj,null,2);root.appendChild(pre);}` +
-    `return root;}` +
-    // detectAssistant: try JSON -> jsonWidget; else markdown -> mdWidget; else null (plain). Never throws.
-    `function detectAssistant(raw){try{var t=(raw||'').trim();if(t&&(t.charAt(0)==='{'||t.charAt(0)==='[')){var parsed=JSON.parse(t);if(parsed&&typeof parsed==='object')return jsonWidget(parsed);}if(looksMarkdown(raw))return mdWidget(raw);}catch(e){}return null;}` +
+    // guardMd: marked escapes text, and the strict CSP (default-src 'none'; scripts nonce-only)
+    // neutralizes injected scripts/handlers/resource loads — but belt-and-suspenders, scrub every
+    // rendered node: drop non-http(s) link hrefs, open the rest safely, and strip image sources.
+    `function guardMd(el){try{` +
+    `var as=el.querySelectorAll('a');for(var i=0;i<as.length;i++){var hr=as[i].getAttribute('href')||'';if(/^https?:/i.test(hr)){as[i].setAttribute('rel','noopener noreferrer');as[i].setAttribute('target','_blank');}else{as[i].removeAttribute('href');}}` +
+    `var ig=el.querySelectorAll('img');for(var j=0;j<ig.length;j++){ig[j].removeAttribute('src');ig[j].removeAttribute('srcset');}` +
+    `}catch(e){}}` +
+    // renderAssistantMd: marked.parse(raw) -> HTML assigned via innerHTML (k1 relaxed to a library
+    // render, kept safe by marked's escaping + the CSP + guardMd). A top-level JSON value is
+    // pretty-printed into a ```json code block so it renders as highlighted-ish code, not flat text.
+    `function renderAssistantMd(raw){` +
+    `var src=raw||'';var t=src.trim();` +
+    `if(t&&(t.charAt(0)==='{'||t.charAt(0)==='[')){try{var p=JSON.parse(t);src=BT+BT+BT+'json\\n'+JSON.stringify(p,null,2)+'\\n'+BT+BT+BT;}catch(e){}}` +
+    `var div=document.createElement('div');div.className='insrc-md';` +
+    `try{div.innerHTML=(typeof marked!=='undefined'&&marked&&marked.parse)?marked.parse(src,{gfm:true,breaks:false,headerIds:false,mangle:false}):src;guardMd(div);}catch(e){div.textContent=src;}` +
+    `return div;}` +
     `function renderRow(vm){` +
     `var r=(vm&&REG[vm.kind])||REG.fallback;` +
     `try{return r.render(vm,host);}` +
@@ -294,7 +251,7 @@ export function renderRegistryWebviewSource(): string {
     // S003 t2: role-differentiated + collapse-when-long (ac1/ac2). t3 extends assistant-text with
     // content-type widgets by passing an inner node to msgRow.
     `register('user',function(vm,host){return msgRow(vm,host,'user');});` +
-    `register('assistant-text',function(vm,host){return msgRow(vm,host,'assistant',detectAssistant(vm&&vm.text));});` +
+    `register('assistant-text',function(vm,host){return msgRow(vm,host,'assistant',renderAssistantMd(vm&&vm.text));});` +
     // S001 (bugfix): tool-call surfaces the REAL command in the mock's bordered `.toolrow` under a
     // '\\u25b8 tool' role label, with a green `$` prompt (k5 ac3). Never collapsed (k6 d). textContent (k1).
     `function toolRow(vm){` +

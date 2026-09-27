@@ -31,13 +31,17 @@ export interface DocsArtifactSummary {
 
 /**
  * S004 sc2 (additive): the tool-permission mode for a chat session. `review`
- * surfaces each permission request as an in-chat approve/deny card (host answers
- * the CLI); `auto` relays a no-prompt/bypass flag so the agent never blocks. This
- * is the ONE canonical declaration both the adapter (cli-adapter.ts buildArgs) and
- * the webview status-bar control import, so the two never drift (k2/k3). Distinct
- * from the edit-mode ('set-edit-mode') which governs file edits, not tool perms.
+ * S001 (bugfix): the SINGLE chat mode (merged from the old edits+perms controls,
+ * Claude-Code style — the two separate auto/review dropdowns confused which one
+ * gated tool permissions):
+ *   - 'manual'    — ask approval for every tool (edits AND commands) via the card
+ *   - 'edit-auto' — file edits auto-apply; commands/other tools still ask
+ *   - 'auto'      — nothing asks; fully autonomous
+ * This is the ONE canonical declaration both the adapter (cli-adapter.ts buildArgs)
+ * and the webview status-bar control import, so the two never drift (k2/k3). The
+ * old separate edit-review gate ('set-edit-mode') is retired: the mode governs edits.
  */
-export type PermissionMode = 'review' | 'auto';
+export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 
 /** Host -> webview: render + stream events. */
 export type HostToWebview =

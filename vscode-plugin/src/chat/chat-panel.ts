@@ -115,11 +115,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let activeProvider: import('./cli-adapter.js').ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
   let generation = 0;
-  // S004: the tool-permission mode for this chat panel. Default 'review' so permission
-  // requests surface as in-chat cards (ac1 — never silently blocked); the status-bar
-  // control switches it. View-time only, never persisted to the session store (k4);
-  // applied to the NEXT turn's buildArgs, never the in-flight spawn.
-  let permissionMode: PermissionMode = 'review';
+  // S001 (bugfix): the SINGLE chat mode for this panel. Default 'manual' so tool use surfaces as
+  // in-chat approval cards (never silently blocked); the status-bar control switches it between
+  // manual / edit-auto / auto. View-time only, never persisted (k4); applied to the NEXT turn's
+  // buildArgs, never the in-flight spawn.
+  let permissionMode: PermissionMode = 'manual';
   // S001 (bugfix): pending review-mode permission requests, requestId -> the tool to pre-allow.
   // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
   // also ENDS the turn); on Approve the host re-runs the blocked action resuming the session with
@@ -362,19 +362,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function hideProgress(){if(prog)prog.hidden=true;if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
-      // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
-      // emode gates the accept/reject controls webview-side; the host is authoritative for revert.
-      `var emode='auto';` +
-      `const em=document.getElementById('insrc-editmode');` +
-      `em.addEventListener('change',function(){emode=em.value==='review'?'review':'auto';vs.postMessage({v:1,payload:{type:'set-edit-mode',mode:emode}});});` +
-      // S004 ac3: the DISTINCT tool-permission mode control (auto/review), separate from the
-      // edit-mode select above. Posts set-permission-mode; its wrapping seg gets a 'perm-auto'
-      // class so the status bar visibly indicates auto mode (k6 i). Default review.
-      `var pmode='review';` +
-      `const pm=document.getElementById('insrc-permmode');` +
-      `const pmseg=document.getElementById('insrc-permseg');` +
+      // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
+      // set-permission-mode; its wrapping seg flags 'perm-auto' (amber pill) when fully autonomous.
+      `var pmode='manual';` +
+      `const pm=document.getElementById('insrc-mode');` +
+      `const pmseg=document.getElementById('insrc-modeseg');` +
       `function updatePermSeg(){if(pmseg)pmseg.className='seg'+(pmode==='auto'?' perm-auto':'');}` +
-      `if(pm)pm.addEventListener('change',function(){pmode=pm.value==='auto'?'auto':'review';vs.postMessage({v:1,payload:{type:'set-permission-mode',mode:pmode}});updatePermSeg();});` +
+      `if(pm)pm.addEventListener('change',function(){pmode=(pm.value==='auto'||pm.value==='edit-auto')?pm.value:'manual';vs.postMessage({v:1,payload:{type:'set-permission-mode',mode:pmode}});updatePermSeg();});` +
       // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
       // buttons that post edit-decision for this path.
@@ -453,12 +447,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S002 ac2: filled Send/Stop button (glyph + class set by setRunning: ▶ green Send / ■ red Stop).
       `<button id="insrc-send" class="sendbtn" type="button" aria-label="send">▶</button>` +
       `</div>` +
-      // Status bar: provider · edit mode · tool-permission mode · state (mock .statusbar).
+      // Status bar: provider · the SINGLE chat mode · state (mock .statusbar). S001 (bugfix): the
+      // old separate edits+perms dropdowns are merged into ONE mode control (Manual/Edit
+      // Automatically/Auto), Claude-Code style.
       `<div class="statusbar">` +
       `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
-      `<span class="seg">edits <select id="insrc-editmode" class="segsel ${provCls}" aria-label="edit mode"><option value="auto">auto</option><option value="review">review</option></select></span>` +
-      // S004: the tool-permission mode control — distinct from the edit-mode select (review finding cl11).
-      `<span class="seg" id="insrc-permseg">perms <select id="insrc-permmode" class="segsel ${provCls}" aria-label="permission mode"><option value="review">review</option><option value="auto">auto</option></select></span>` +
+      `<span class="seg" id="insrc-modeseg">mode <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
       `<span class="seg ok">✓ idle</span>` +
       `</div>` +
       `</div>` +
@@ -543,7 +537,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
     // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
     // so the diff + revert are computed against the true pre-turn content (k8 observer).
-    if (governor !== undefined) await governor.beginTurn({ mode: s.editMode, cwd: deps.cwd() });
+    // S001 (bugfix): the merged chat mode now governs edits (via claude's permission flags), so the
+    // governor runs visualize-only — it renders diffs but no longer gates with accept/reject (the
+    // separate edit-review gate is retired, Claude-Code style).
+    if (governor !== undefined) await governor.beginTurn({ mode: 'auto', cwd: deps.cwd() });
 
     // Hold the iterator explicitly so cancelActive() can .return() it even while it
     // is parked awaiting its first event.
@@ -724,9 +721,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         return;
       }
       case 'set-permission-mode': {
-        // S004 ac3: store the chosen mode for the NEXT turn's buildArgs (not the in-flight
-        // spawn). View-time only — never written to the session store (k4).
-        if (msg.mode !== 'auto' && msg.mode !== 'review') return; // invalid -> drop
+        // S001 (bugfix): store the chosen chat mode for the NEXT turn's buildArgs (not the
+        // in-flight spawn). View-time only — never written to the session store (k4).
+        if (msg.mode !== 'manual' && msg.mode !== 'edit-auto' && msg.mode !== 'auto') return; // invalid -> drop
         permissionMode = msg.mode;
         return;
       }

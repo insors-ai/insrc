@@ -427,27 +427,32 @@ test('S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (
 
 // ---- S004 t4: permissionMode -> buildArgs review/auto flags -------------------
 
-test('S004 t4: claude buildArgs — undefined is byte-identical to today; review/auto add the right flag only', async () => {
+test('S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)', async () => {
+  const base = ['-p', 'hi', '--output-format=stream-json', '--verbose'];
   // undefined: no permission flag (k2 — byte-identical to today's argv).
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', 'hi', '--output-format=stream-json', '--verbose']);
+    assert.deepEqual(spawner.calls[0]!.args, base);
   }
-  // review: host answers prompts, never a bypass flag.
+  // manual: host answers EVERY prompt; never a bypass or acceptEdits flag.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
-    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
-    const args = spawner.calls[0]!.args;
-    assert.deepEqual(args, ['-p', 'hi', '--output-format=stream-json', '--verbose', '--permission-prompts', 'host']);
-    assert.ok(!args.includes('bypassPermissions'), 'review never bypasses');
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
+    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-prompts', 'host']);
   }
-  // auto: bypass, never a host-answered flag.
+  // edit-auto: auto-accept edits, host answers the rest.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'edit-auto' })));
+    assert.deepEqual(spawner.calls[0]!.args, [...base, '--permission-mode', 'acceptEdits', '--permission-prompts', 'host']);
+  }
+  // auto: bypass all checks, never a host-answered flag.
   {
     const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'auto' })));
     const args = spawner.calls[0]!.args;
-    assert.deepEqual(args, ['-p', 'hi', '--output-format=stream-json', '--verbose', '--permission-mode', 'bypassPermissions']);
+    assert.deepEqual(args, [...base, '--permission-mode', 'bypassPermissions']);
     assert.ok(!args.includes('--permission-prompts'), 'auto never asks the host');
   }
 });
@@ -462,7 +467,7 @@ test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds -
   // review: codex default on-request approval — no extra flag (same argv as undefined).
   {
     const { deps, spawner } = depsFor(CODEX_TEXT_TURN);
-    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'review' })));
+    await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' })));
     assert.deepEqual(spawner.calls[0]!.args, ['exec', '--json', 'hi']);
   }
   // auto: bypass flag, placed before the positional prompt.
@@ -477,7 +482,7 @@ test('S004 t4: codex buildArgs — undefined/review keep today argv; auto adds -
 
 test('S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)', async () => {
   const { deps } = depsFor({ lines: CLAUDE_PERMISSION_TURN });
-  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
   const apprs = events.filter((e) => e.kind === 'approval-request');
   assert.equal(apprs.length, 1, 'exactly one approval-request');
   const ev = apprs[0]!;
@@ -492,7 +497,7 @@ test('S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent
 
 test('S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent', async () => {
   const { deps } = depsFor({ lines: CODEX_PERMISSION_TURN });
-  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'review' })));
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex', permissionMode: 'manual' })));
   const apprs = events.filter((e) => e.kind === 'approval-request');
   assert.equal(apprs.length, 1);
   const ev = apprs[0]!;
@@ -513,7 +518,7 @@ test('S001 (bugfix): claude system/permission_denied surfaces as an approval car
     message: "Claude requested permissions to write to /repo/hello.txt, but you haven't granted it yet.",
   });
   const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
-  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
   const apprs = events.filter((e) => e.kind === 'approval-request');
   assert.equal(apprs.length, 1, 'the denial surfaces as exactly one approval card (was: nothing)');
   const ev = apprs[0]!;
@@ -528,7 +533,7 @@ test('S001 (bugfix): claude system/permission_denied surfaces as an approval car
 
 test('S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)', async () => {
   const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
-  await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review', allowedTools: ['Write'] })));
+  await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual', allowedTools: ['Write'] })));
   const args = spawner.calls[0]!.args;
   const i = args.indexOf('--allowedTools');
   assert.ok(i >= 0, 'the grant re-run passes --allowedTools');
@@ -537,7 +542,7 @@ test('S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant 
 
 test('S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])', async () => {
   const { deps } = depsFor({ lines: CLAUDE_PERMISSION_IDLESS });
-  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
   assert.equal(events.filter((e) => e.kind === 'approval-request').length, 0);
   assert.equal(events.at(-1)?.kind, 'done', 'turn still completes');
 });
@@ -553,7 +558,7 @@ test('S004 t5: an unparseable line is skipped+logged, never thrown (as today)', 
 async function openUntilApproval(providerId: ProviderId, script: FakeProcScript) {
   const { deps, spawner } = depsFor(script);
   const adapter = createProviderRegistry(deps).get(providerId);
-  const it = adapter.run(REQ({ provider: providerId, permissionMode: 'review' }))[Symbol.asyncIterator]();
+  const it = adapter.run(REQ({ provider: providerId, permissionMode: 'manual' }))[Symbol.asyncIterator]();
   let appr: Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
   for (;;) {
     const { value, done } = await it.next();

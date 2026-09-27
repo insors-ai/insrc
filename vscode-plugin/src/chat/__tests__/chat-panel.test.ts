@@ -765,7 +765,7 @@ function fakeGovernance(): FakeGov {
 const editPrompts = (fc: FakeChannel): Array<{ path: string; diff: unknown; review?: boolean }> =>
   fc.posted.filter((m) => m.payload.type === 'edit-prompt').map((m) => m.payload as { path: string; diff: unknown; review?: boolean });
 
-test('S006 integration: a REVIEW turn posts an sc3 edit-prompt; edit-decision reject reverts via the fs seam; accept keeps', async () => {
+test('S001 (bugfix): the edit-review gate is RETIRED — even a legacy set-edit-mode:review turn is visualize-only (no revert)', async () => {
   const fc = fakeChannel();
   const gov = fakeGovernance();
   gov.baseline.set('src/a.ts', 'old\n');
@@ -783,14 +783,16 @@ test('S006 integration: a REVIEW turn posts an sc3 edit-prompt; edit-decision re
     editGovernance: gov.deps,
   });
   host.open();
-  // put the (default) session into review mode first
+  // A legacy set-edit-mode:'review' message is now inert — the merged chat mode governs edits, so
+  // the governor runs visualize-only regardless (Claude-Code style: no separate accept/reject gate).
   fc.send(env('set-edit-mode', { mode: 'review' }));
   fc.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => editPrompts(fc).length >= 1);
-  assert.equal(editPrompts(fc)[0]!.path, 'src/a.ts', 'review turn posted an edit-prompt for the edited path');
+  assert.equal(editPrompts(fc)[0]!.path, 'src/a.ts', 'the diff is still shown (visualize)');
+  assert.notEqual(editPrompts(fc)[0]!.review, true, 'but there is no review gate (review flag never set)');
   fc.send(env('edit-decision', { path: 'src/a.ts', accept: false }));
-  await waitFor(() => gov.disk.get('src/a.ts') === 'old\n');
-  assert.equal(gov.disk.get('src/a.ts'), 'old\n', 'reject reverted to the pre-turn baseline');
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(gov.disk.get('src/a.ts'), 'NEW\n', 'reject does NOT revert — the gate is retired');
 });
 
 test('S006 integration: an AUTO turn renders visualize-only (no accept/reject revert on reject) + edit marker still renders', async () => {
@@ -898,11 +900,12 @@ test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d 
   });
   host.open();
   const html = fc.html();
-  assert.match(html, /<select id="insrc-editmode"/, 'the edit-mode toggle is contributed');
-  assert.match(html, /function renderDiff\(/, 'the chat-view diff renderer is embedded');
-  assert.match(html, /renderDiff\(m\.path,m\.diff,m\.review===true\)/, 'controls gate on the HOST review flag, not a webview-local toggle');
-  assert.match(html, /type:'edit-decision'/, 'accept/reject controls post edit-decision');
-  assert.match(html, /type:'set-edit-mode'/, 'the toggle posts set-edit-mode');
+  // S001 (bugfix): the edit-mode toggle is gone (merged into the single mode control); the diff
+  // renderer stays (visualize). The single mode select posts set-permission-mode.
+  assert.doesNotMatch(html, /id="insrc-editmode"/, 'the old edit-mode toggle is removed');
+  assert.match(html, /<select id="insrc-mode"/, 'the single merged mode control is contributed');
+  assert.match(html, /type:'set-permission-mode'/, 'the mode control posts set-permission-mode');
+  assert.match(html, /function renderDiff\(/, 'the chat-view diff renderer is still embedded (visualize)');
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
@@ -911,8 +914,8 @@ test('S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce\'d 
   assert.doesNotMatch(html, /asWebviewUri/, 'no asWebviewUri');
 });
 
-test('S006: the edit-prompt carries the HOST review flag (authoritative; not a webview-local toggle) — review vs auto', async () => {
-  // review session -> edit-prompt.review === true
+test('S001 (bugfix): the edit-prompt is always visualize-only (review flag never set) — the gate is retired', async () => {
+  // A legacy set-edit-mode:'review' no longer flips the gate: every edit-prompt is visualize-only.
   const fcR = fakeChannel();
   const govR = fakeGovernance();
   govR.baseline.set('a.ts', 'old\n');
@@ -926,12 +929,12 @@ test('S006: the edit-prompt carries the HOST review flag (authoritative; not a w
     editGovernance: govR.deps,
   });
   hostR.open();
-  fcR.send(env('set-edit-mode', { mode: 'review' }));
+  fcR.send(env('set-edit-mode', { mode: 'review' })); // inert now
   fcR.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => editPrompts(fcR).length >= 1);
-  assert.equal(editPrompts(fcR)[0]!.review, true, 'review session -> edit-prompt.review true');
+  assert.notEqual(editPrompts(fcR)[0]!.review, true, 'even a legacy review request -> no gate (visualize)');
 
-  // auto session -> edit-prompt.review falsy (webview shows no controls, regardless of its local toggle)
+  // default mode -> edit-prompt.review falsy (webview shows no controls)
   const fcA = fakeChannel();
   const govA = fakeGovernance();
   govA.baseline.set('a.ts', 'old\n');
@@ -1112,7 +1115,7 @@ test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no in
   });
   host.open();
   const html = fc.html();
-  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-editmode', 'insrc-sesstitle']) {
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-mode', 'insrc-sesstitle']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
@@ -1215,7 +1218,7 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
 
 // ---- S004 t7: approval routing + permission-decision + #insrc-permmode --------
 
-test('S004 t7: renderShell has a distinct #insrc-permmode control + wires the approval seams', () => {
+test('S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -1225,14 +1228,12 @@ test('S004 t7: renderShell has a distinct #insrc-permmode control + wires the ap
   });
   host.open();
   const html = fc.html();
-  // The permission-mode control is distinct from the edit-mode select (review finding cl11).
-  assert.match(html, /id="insrc-permmode"/, 'has the permission-mode control');
-  assert.match(html, /id="insrc-editmode"/, 'still has the separate edit-mode select');
-  assert.ok(html.indexOf('insrc-permmode') !== html.indexOf('insrc-editmode'), 'they are two distinct controls');
-  assert.match(html, /aria-label="permission mode"/);
-  // Its options are review + auto.
-  const permBlock = html.slice(html.indexOf('insrc-permmode'));
-  assert.match(permBlock.slice(0, 200), /<option value="review">review<\/option><option value="auto">auto<\/option>/);
+  // One merged control (Manual / Edit Automatically / Auto); the old two dropdowns are gone.
+  assert.match(html, /id="insrc-mode"/, 'has the single mode control');
+  assert.doesNotMatch(html, /id="insrc-permmode"/, 'the old separate perms dropdown is removed');
+  assert.doesNotMatch(html, /id="insrc-editmode"/, 'the old separate edits dropdown is removed');
+  const modeBlock = html.slice(html.indexOf('insrc-mode'));
+  assert.match(modeBlock.slice(0, 260), /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/);
   // The bootstrap wires the decision sink + posts set-permission-mode + handles the live card.
   assert.match(html, /onApprovalDecision/, 'wires the approval decision sink');
   assert.match(html, /type:'permission-decision'/, 'card posts permission-decision');
@@ -1240,7 +1241,7 @@ test('S004 t7: renderShell has a distinct #insrc-permmode control + wires the ap
   assert.match(html, /ev\.kind==='approval-request'/, 'the live handler routes approval-request');
 });
 
-test("S004 t7: a turn's buildArgs default to review; set-permission-mode switches the NEXT turn to auto", async () => {
+test("S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)", async () => {
   const fc = fakeChannel();
   const seen: TurnRequest[] = [];
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }], { onRun: (r) => seen.push(r) });
@@ -1251,18 +1252,20 @@ test("S004 t7: a turn's buildArgs default to review; set-permission-mode switche
     cwd: () => '/repo',
   });
   host.open();
-  // First turn: default review.
   fc.send(env('submit-turn', { text: 'one' }));
   await waitFor(() => seen.length >= 1);
-  assert.equal(seen[0]!.permissionMode, 'review', 'defaults to review (surface prompts, ac1)');
-  // Switch to auto; it applies to the NEXT turn.
-  fc.send(env('set-permission-mode', { mode: 'auto' }));
+  assert.equal(seen[0]!.permissionMode, 'manual', 'defaults to manual (surface prompts)');
+  fc.send(env('set-permission-mode', { mode: 'edit-auto' }));
   fc.send(env('submit-turn', { text: 'two' }));
   await waitFor(() => seen.length >= 2);
-  assert.equal(seen[1]!.permissionMode, 'auto', 'the next turn relays auto (ac3)');
+  assert.equal(seen[1]!.permissionMode, 'edit-auto', 'the next turn relays the chosen mode');
+  fc.send(env('set-permission-mode', { mode: 'auto' }));
+  fc.send(env('submit-turn', { text: 'three' }));
+  await waitFor(() => seen.length >= 3);
+  assert.equal(seen[2]!.permissionMode, 'auto', 'and again for auto');
 });
 
-test('S004 t7: an invalid set-permission-mode is dropped (mode unchanged)', async () => {
+test('S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)', async () => {
   const fc = fakeChannel();
   const seen: TurnRequest[] = [];
   const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) });
@@ -1276,7 +1279,7 @@ test('S004 t7: an invalid set-permission-mode is dropped (mode unchanged)', asyn
   fc.send(env('set-permission-mode', { mode: 'bogus' }));
   fc.send(env('submit-turn', { text: 'x' }));
   await waitFor(() => seen.length >= 1);
-  assert.equal(seen[0]!.permissionMode, 'review', 'invalid mode ignored, stays review');
+  assert.equal(seen[0]!.permissionMode, 'manual', 'invalid mode ignored, stays manual');
 });
 
 test('S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)', async () => {

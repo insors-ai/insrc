@@ -234,9 +234,13 @@ const claudeMapper: ProviderMapper = {
     // S004: permission-mode flags (k3, verified spike 7100435). Undefined => no flag,
     // byte-identical argv to today (k2). review => host answers prompts (approval cards);
     // auto => bypass so the agent never blocks. Never both.
-    if (req.permissionMode === 'review') args.push('--permission-prompts', 'host');
+    // S001 (bugfix): the single chat mode → claude permission flags. manual: host answers every
+    // prompt (edits + commands). edit-auto: auto-accept edits, host answers the rest. auto: bypass
+    // all checks. Undefined => no flag (k2, today's argv). Never a bypass in manual/edit-auto.
+    if (req.permissionMode === 'manual') args.push('--permission-prompts', 'host');
+    else if (req.permissionMode === 'edit-auto') args.push('--permission-mode', 'acceptEdits', '--permission-prompts', 'host');
     else if (req.permissionMode === 'auto') args.push('--permission-mode', 'bypassPermissions');
-    // S001 (bugfix): the review-mode grant re-run pre-allows the approved tool so the resumed
+    // S001 (bugfix): the manual/edit-auto grant re-run pre-allows the approved tool so the resumed
     // action proceeds instead of denying again. Space-separated names after --allowedTools.
     if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
     return args;

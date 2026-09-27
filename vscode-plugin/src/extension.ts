@@ -49,7 +49,7 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createChatPanelHost } from './chat/chat-panel.js';
+import { createChatPanelHost, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
@@ -465,6 +465,35 @@ export function activate(context: vscode.ExtensionContext): void {
     // from an insrc icon in the editor title bar (contributes.menus["editor/title"]) \u2014 NOT a left
     // Activity Bar container. createChatPanelHost is the S003 host, driven over an injected
     // editor-panel channel (the same wiring as before the sidebar experiment).
+    //
+    // S001 (bugfix): the ONE adapter that wraps any WebviewPanel (freshly created OR restored by
+    // VS Code's WebviewPanelSerializer) into a ChatPanelChannel, so a restored panel is wired
+    // identically to a fresh one. Sets the themed tab icon on either path.
+    const webviewPanelChannel = (panel: vscode.WebviewPanel): ChatPanelChannel => {
+      panel.iconPath = {
+        light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon.svg')),
+        dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
+      };
+      return {
+        setHtml: (html) => {
+          panel.webview.html = html;
+        },
+        postMessage: (message) => {
+          // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
+          panel.webview.postMessage(message).then(undefined, () => {
+            /* ignore */
+          });
+        },
+        onMessage: (listener) => {
+          panel.webview.onDidReceiveMessage((m) => listener(m));
+        },
+        onDidDispose: (listener) => {
+          panel.onDidDispose(listener);
+        },
+        reveal: () => panel.reveal(),
+        dispose: () => panel.dispose(),
+      };
+    };
     const chatHost = createChatPanelHost({
       editGovernance: {
         computeDiff: defaultComputeDiff,
@@ -510,34 +539,10 @@ export function activate(context: vscode.ExtensionContext): void {
           }
         },
       },
-      createPanel: ({ viewType, title }) => {
-        // Open BESIDE the active editor group (a split), not on top of the current editor,
-        // and stamp the tab with the real insrc mark (themed light/dark).
-        const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, { enableScripts: true });
-        panel.iconPath = {
-          light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon.svg')),
-          dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
-        };
-        return {
-          setHtml: (html) => {
-            panel.webview.html = html;
-          },
-          postMessage: (message) => {
-            // Fire-and-forget: a post to a disposed/hidden panel must never reject inward.
-            panel.webview.postMessage(message).then(undefined, () => {
-              /* ignore */
-            });
-          },
-          onMessage: (listener) => {
-            panel.webview.onDidReceiveMessage((m) => listener(m));
-          },
-          onDidDispose: (listener) => {
-            panel.onDidDispose(listener);
-          },
-          reveal: () => panel.reveal(),
-          dispose: () => panel.dispose(),
-        };
-      },
+      createPanel: ({ viewType, title }) =>
+        // Open BESIDE the active editor group (a split), not on top of the current editor;
+        // the shared factory wraps it + stamps the themed insrc mark.
+        webviewPanelChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, { enableScripts: true })),
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
@@ -553,6 +558,22 @@ export function activate(context: vscode.ExtensionContext): void {
     commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
       chatHost.open();
     });
+    // S001 (bugfix): restore an insrc chat tab across a window reload / extension update. Without
+    // this, VS Code re-opens the serialized tab but never hands it back, leaving a dead shell
+    // (empty history, no wiring). deserializeWebviewPanel wraps the restored panel with the SAME
+    // adapter as a fresh open and hands it to chatHost.adopt(), so history + wiring are restored
+    // in place. Any failure disposes the panel (never throw into VS Code's restore path).
+    context.subscriptions.push(
+      vscode.window.registerWebviewPanelSerializer('insrc.chatPanel', {
+        deserializeWebviewPanel: (panel) => {
+          try {
+            chatHost.adopt(webviewPanelChannel(panel));
+          } catch {
+            panel.dispose();
+          }
+        },
+      }),
+    );
 
     // S007: the docs-review pane — a thin, passthrough (k8) observer over the daemon's
     // existing review IPCs (workflow.pending/artifactContent/approve/resolveComment, built

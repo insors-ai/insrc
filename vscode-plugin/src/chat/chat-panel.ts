@@ -82,6 +82,14 @@ export interface ChatPanelHostDeps {
 
 export interface ChatPanelHost {
   open(): void;
+  /**
+   * S001 (bugfix): adopt an EXTERNALLY-supplied channel — a VS-Code-restored WebviewPanel
+   * wrapped as a ChatPanelChannel — and wire+drive it exactly as open() does for a
+   * freshly-created one (theme + session-restored + history-list), so a restored chat tab
+   * shows history and is interactive instead of being an inert shell. Supersedes any
+   * already-live channel so only one remains. Called by the WebviewPanelSerializer.
+   */
+  adopt(channel: ChatPanelChannel): void;
   dispose(): void;
 }
 
@@ -629,6 +637,34 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   }
 
+  // S001 (bugfix): the ONE post-channel wiring path shared by open() (fresh panel) and adopt()
+  // (a VS-Code-restored panel). Wires onDidDispose/onMessage, renders the shell, and posts the
+  // initial theme/session-restored/history-list, so a restored panel behaves identically to a
+  // fresh one (no drift). The caller owns supersede/reveal decisions before calling this.
+  const wireChannel = (ch: ChatPanelChannel): void => {
+    disposed = false;
+    channel = ch;
+    channel.onDidDispose(() => {
+      cancelActive();
+      disposed = true;
+      channel = undefined;
+    });
+    channel.onMessage(handleMessage);
+    channel.setHtml(renderShell());
+
+    const available = deps.providers.available;
+    if (available.length === 0) {
+      post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
+      return;
+    }
+    // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty
+    // session to history; it enters the store only on the first turn (runTurn's save).
+    if (session === undefined) session = deps.store.draft(available[0]!);
+    post({ type: 'theme', theme });
+    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+    postHistory(); // S005: populate the history dropdown as soon as the panel opens
+  };
+
   return {
     open(): void {
       disposed = false;
@@ -636,26 +672,21 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         channel.reveal();
         return;
       }
-      channel = deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc chat' });
-      channel.onDidDispose(() => {
+      wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc chat' }));
+    },
+    adopt(ch: ChatPanelChannel): void {
+      // A restored panel arrived. Supersede any live channel (kill its in-flight turn + dispose
+      // it) so exactly one channel remains, then wire the restored one in place.
+      if (channel !== undefined) {
         cancelActive();
-        disposed = true;
+        try {
+          channel.dispose();
+        } catch {
+          /* already disposed */
+        }
         channel = undefined;
-      });
-      channel.onMessage(handleMessage);
-      channel.setHtml(renderShell());
-
-      const available = deps.providers.available;
-      if (available.length === 0) {
-        post({ type: 'turn-event', event: { kind: 'error', turnId: 'none', message: 'no agentic CLI (claude/codex) installed' } });
-        return;
       }
-      // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty
-      // session to history; it enters the store only on the first turn (runTurn's save).
-      if (session === undefined) session = deps.store.draft(available[0]!);
-      post({ type: 'theme', theme });
-      post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
-      postHistory(); // S005: populate the history dropdown as soon as the panel opens
+      wireChannel(ch);
     },
     dispose(): void {
       cancelActive();

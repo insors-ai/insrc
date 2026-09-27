@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1790514713941-wspyur",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-27T14:20:43.560Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 4129566,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "46b20c2f0459e807",
+    "epicSlug": "make-workflow-s-generated-artifact-documents",
+    "approvedAt": "2026-09-27T14:22:52.145Z"
+  },
+  "body": {
+    "category": "requirements",
+    "intent": "Make the workflow's generated artifact documents (DEF/HLD/LLD/PLAN/BUILD/CR/ISSUE/SPEC/EXT/TRACKER/STUB) human-readable AND functionally complete FOR THEIR AUDIENCE. Today they are machine-optimized and dev-geared, capturing very little functional definition even though the functional intent is the reason the builds exist. Deliver as ONE Epic of four Stories A→B→C→D.\n\n(A) Shared human-readable document ENVELOPE (built first — B/C/D render inside it): YAML frontmatter incl. the document's AUDIENCE; a status/metadata header; TOC; chain navigation across the DEF↔HLD↔LLD↔PLAN↔BUILD↔CR chain plus a generated per-work-item-folder index/landing page; one unified badge vocabulary (lifecycle status + design-review/code-review gate verdicts block/warn/pass); a revision/amendment log; a distinct SHORT H1; citations as hybrid links (relative file:line href + entity id carried for re-resolution), grouped by kind. One shared module reaches ALL eleven renderers, incl. BUILD and CR which live outside src/workflow/artifacts/.\n\n(B) Per-type format TEMPLATES + explicit CONTENT GUIDANCE on the existing template-loader override cascade, AUDIENCE-SCOPED: DEF/Epic → business/product with a strong FUNCTIONAL DEFINITION (problem in business terms, functional requirements/capabilities, user-facing behavior, business acceptance, value/outcome; minimal implementation jargon); HLD → technical, opening with a plain-language functional summary a PM can read; LLD/PLAN/BUILD/CR → engineering. Each template carries per-section authoring guidance (what to write, for whom, at what altitude), functional-first. The FUNCTIONAL-DEFINITION SPINE is a structured `realizesFR` field: FRs are captured with stable IDs on the DEF (or the chain's root artifact) as the source of truth, numbered as a per-chain sequence and referenced canonically as `<epic id>:FRxxx` (mirroring the existing `<epicHash>:<storyId>` convention); every downstream artifact carries `realizesFR` references — document-level required, per-item optional where sub-templates already exist (story/task granularity) — surfaced to the LLM as INPUT at each downstream stage. FR-coverage is judged by the LLM at code-review reading those structured refs (not free-text scanning). Content de-duplication: downstream stages LINK + a SHORT ABSTRACT to upstream context instead of embedding it VERBATIM (today the HLD framework-summary is copied verbatim into every LLD's HLD-context).\n\n(C) UML-like design DIAGRAMS (ER/sequence/component), OPTIONAL and content-gated via a `diagrams` field: the synthesizing LLM self-assesses structural complexity during authoring and sets `diagrams` + drafts the mermaid in the same pass (pre-build for DEF/HLD/LLD/PLAN); graph-derived via docgen post-build for CR/BUILD. Diagrams are SEPARATE referenced companion files, surfaced to the LLM as INPUT downstream.\n\n(D) Deep UX-design INTEGRATION: an OPTIONAL structured `uxAcceptance` field (mock reference + visual/UX acceptance checklist) on the LLD, REQUIRED when a story is UX-flagged (an explicit field set during design.story authoring); the mock is a referenced HTML companion surfaced as INPUT; enforced at code-review/BUILD-completion via the codeReview.enforce gate (blocking for UX-flagged stories, rendered-evidence required). Design-adherence is unified into the existing code-review 'adherence' dimension via a MULTISELECT ENUM of the facets evaluated — UX, Diagram:Sequence, Diagram:ER, Diagram:Component, FR-coverage (extensible) — each applying only when relevant to the artifact, giving per-facet visibility without proliferating dimensions; the aggregate adherence verdict feeds block/warn/pass. Grounded in docs/artifact-document-template-review.md; motivated by docs/vscode-chat-ui-ux-retrospective.md. Supersedes SPEC-0d6aaffe by folding the audience-aware + functional-definition-spine dimension into Stories A and B rather than adding a new story.",
+    "scopeBoundary": "Applies FORWARD-ONLY: existing approved artifacts are not migrated or re-rendered. The CORE artifact document stays markdown-native; diagram and UX-mock artifacts are SEPARATE referenced companion files (mermaid / HTML) — there is no self-contained-HTML rendering layer for the core document (docgen's whole-doc HTML output stays a separate surface). A template/schema version is stamped ONCE on each chain's root artifact at authoring time (Epic DEF for epic chains; SPEC, ISSUE, or a standalone LLD/BUILD for non-epic chains) and inherited unchanged by every downstream stage — legacy-vs-new selection is never re-decided per artifact. IN-FLIGHT epics/chains already rooted under the old template are GRANDFATHERED end-to-end (no format mixing mid-chain); the FR-coverage adherence facet treats a legitimate zero-FR (legacy) chain as valid, not a gap. FR-coverage and design-adherence add NO new gate mechanism — they ride the existing codeReview.enforce dimension set at its current default severity (advisory unless a team enables it; a UX-flagged story's UX facet is blocking with required rendered evidence). FR IDs are per-chain scoped (no global registry). Diagrams are optional/content-gated, never forced per type; uxAcceptance attaches only to UX-flagged stories. This initiative is document readability + functional-definition traceability + design-adherence gating — not a change to what the workflow builds.",
+    "nonGoals": [
+      "Migrating or re-rendering the existing artifact corpus retroactively — applies forward-only to newly authored/updated artifacts only",
+      "Diagrams are optional and content-gated, not generated for every artifact of every type",
+      "uxAcceptance is required only for UX-flagged stories, not attached to every LLD",
+      "In-flight epics with a pre-existing DEF/HLD are not retrofitted onto the new audience/FR-spine template — their downstream artifacts stay on the legacy template rather than mixing formats mid-epic",
+      "FR-coverage gaps do not get a new dedicated gate — they ride the existing codeReview.enforce dimension set at its current default severity",
+      "Legacy-vs-new template selection for a chain is not re-decided per artifact — it is fixed once at the chain's root artifact (Epic DEF, or SPEC/ISSUE/standalone LLD/BUILD) via a stamped version and inherited by every downstream stage",
+      "FR-coverage judgement at code-review reads structured realizesFR references rather than free-text-scanning the whole document",
+      "The UML design-adherence check does not get a new dedicated code-review dimension — it folds into the existing 'adherence' dimension as a sub-judgement gated on diagrams existing",
+      "FR IDs are per-chain scoped, not globally unique across the repo — no shared registry needed",
+      "Retrofit via a lightweight amendment before the next stage runs",
+      "Hard cutover — new gates apply to all epics immediately",
+      "New dedicated gate, default ON and blocking (codeReview.frCoverage.enforce)",
+      "Always advisory (warn, never block), independent of any enforce config",
+      "Inherited from an Epic-level 'uxEpic' flag",
+      "Auto-inferred from touched paths (webview/, ui/, jetbrains-plugin UI dirs) at build time",
+      "Derived from presence of a mock reference already in the LLD",
+      "Explicit manual field set by the human author during design.epic/design.story authoring, same mechanism as the UX flag",
+      "Config-level default per document type (e.g. always attempted for HLD/LLD, never for DEF/PLAN/BUILD/CR unless overridden)",
+      "Reactive — diagrams are added only when a reviewer requests one via insrc_review_step feedback, never proactively",
+      "Structurally sniff the existing DEF/HLD for the new fields (audience header, FR IDs) — their absence means legacy",
+      "Cutover by date/commit — epics with a DEF approved before the ship date are legacy, everything after is new",
+      "Manual opt-in flag — an epic stays legacy until a human explicitly marks it for upgrade to the new template mid-epic",
+      "Structured schema field only — DEF carries functionalRequirements: [{id, text, ...}] as typed JSON; downstream artifacts carry a typed realizesFR: [\"FR1\",\"FR3\"] field; coverage-check is a mechanical diff over these fields",
+      "Convention only — FRs live as markdown headings (### FR1: ...) in the DEF body; downstream artifacts reference them only in prose (\"Realizes: FR1\"); coverage-check is pure LLM judgment reading rendered text",
+      "Standalone/small/trivial/brainstorm/bugfix chains always render under the NEW template — legacy compatibility only applies to already-approved multi-stage Epics.",
+      "Global cutover flag: any chain (epic or standalone) started before a single config cutover date/version stays legacy end-to-end; anything started after uses new templates — no per-chain stamping at all.",
+      "Document-level only",
+      "Per-task/per-design-element",
+      "New dedicated 5th code-review dimension ('design-adherence'), alongside the existing adherence/conventions/coverage/quality set, with its own block/warn/pass verdict",
+      "Defer the design-adherence check — ship diagrams as documentation-only companions in this epic, without an automated as-built comparison",
+      "Globally unique via a shared counter/registry across the whole repo",
+      "Globally unique via a content-derived hash (like existing SHA256 entity IDs), displayed alongside a human-friendly per-chain FR1/FR2 label"
+    ],
+    "decisions": [
+      {
+        "chosen": "Grandfather in-flight epics under the legacy template",
+        "ruledOut": [
+          "Retrofit via a lightweight amendment before the next stage runs",
+          "Hard cutover — new gates apply to all epics immediately"
+        ],
+        "reason": "The user already pinned 'forward-only, no migration of the existing corpus' for the document corpus itself; this decision is the same fork one level up — whether that forward-only philosophy also covers epics whose Define predates this Epic but whose HLD/LLD/build work is still ongoing. The answer directly shapes how permissive the Story-B coverage-check gate at code-review must be."
+      },
+      {
+        "chosen": "Reuse the existing codeReview.enforce gate as-is — FR-coverage becomes one more judgement inside the current block/warn/pass dimension set, same default (off/advisory)",
+        "ruledOut": [
+          "New dedicated gate, default ON and blocking (codeReview.frCoverage.enforce)",
+          "Always advisory (warn, never block), independent of any enforce config"
+        ],
+        "reason": "Story D's uxAcceptance already has an explicit enforcement answer (blocking, gated by codeReview.enforce, for UX-flagged stories only); the FR-coverage check in Story B has no enforcement answer yet, and it applies to every story, not just UX-flagged ones — so the blast radius of getting this wrong is larger."
+      },
+      {
+        "chosen": "Explicit manual field set during design.story authoring",
+        "ruledOut": [
+          "Inherited from an Epic-level 'uxEpic' flag",
+          "Auto-inferred from touched paths (webview/, ui/, jetbrains-plugin UI dirs) at build time",
+          "Derived from presence of a mock reference already in the LLD"
+        ],
+        "reason": "Story D requires the uxAcceptance field/gate to apply only to stories that are 'UX-flagged'. How does a story get that flag?"
+      },
+      {
+        "chosen": "The synthesizing LLM self-assesses during artifact authoring — it judges whether the design's structural complexity (e.g. multiple components/entities/sequenced calls) warrants a diagram, sets `diagrams: true`, and drafts the mermaid in the same pass",
+        "ruledOut": [
+          "Explicit manual field set by the human author during design.epic/design.story authoring, same mechanism as the UX flag",
+          "Config-level default per document type (e.g. always attempted for HLD/LLD, never for DEF/PLAN/BUILD/CR unless overridden)",
+          "Reactive — diagrams are added only when a reviewer requests one via insrc_review_step feedback, never proactively"
+        ],
+        "reason": "Story C makes diagrams 'optional, content-gated' via a `diagrams` field — but who sets that field, and when? (The UX flag in decision 3 is an explicit manual field set by the human author. Diagrams are described as content-gated, which suggests a different trigger.)"
+      },
+      {
+        "chosen": "Stamp a template/schema version on the Epic's DEF at authoring time; every downstream stage reads the Epic's stamped version and picks the matching renderer/template set",
+        "ruledOut": [
+          "Structurally sniff the existing DEF/HLD for the new fields (audience header, FR IDs) — their absence means legacy",
+          "Cutover by date/commit — epics with a DEF approved before the ship date are legacy, everything after is new",
+          "Manual opt-in flag — an epic stays legacy until a human explicitly marks it for upgrade to the new template mid-epic"
+        ],
+        "reason": "Decision 1 grandfathers in-flight epics onto the legacy template. How does the system determine, for a given epic/story, whether to render under the legacy template or the new audience/FR-spine template?"
+      },
+      {
+        "chosen": "Hybrid — structured field is the source of truth on DEF and on every downstream artifact (realizesFR references), but the actual coverage judgement at code-review stays LLM-driven, reading those structured refs rather than free-text-scanning the whole document",
+        "ruledOut": [
+          "Structured schema field only — DEF carries functionalRequirements: [{id, text, ...}] as typed JSON; downstream artifacts carry a typed realizesFR: [\"FR1\",\"FR3\"] field; coverage-check is a mechanical diff over these fields",
+          "Convention only — FRs live as markdown headings (### FR1: ...) in the DEF body; downstream artifacts reference them only in prose (\"Realizes: FR1\"); coverage-check is pure LLM judgment reading rendered text"
+        ],
+        "reason": "The FR-spine is described as stable IDs (FR1, FR2…) 'captured at DEF and threaded through stories → HLD → LLD → build → CR' and 'coverage-checkable at code-review.' What is FR1/FR2 physically, and how does a downstream artifact reference the FRs it realizes?"
+      },
+      {
+        "chosen": "Stamp the version on the first artifact created in the chain (SPEC, ISSUE, or standalone LLD/BUILD) — same mechanism as decision 5, generalized to any chain's root artifact; downstream stages in that chain read and inherit it.",
+        "ruledOut": [
+          "Standalone/small/trivial/brainstorm/bugfix chains always render under the NEW template — legacy compatibility only applies to already-approved multi-stage Epics.",
+          "Global cutover flag: any chain (epic or standalone) started before a single config cutover date/version stays legacy end-to-end; anything started after uses new templates — no per-chain stamping at all."
+        ],
+        "reason": "Decision 5 stamps the template/schema version on the Epic's DEF, and every downstream stage in that epic chain inherits it. But `small`/`trivial` triage magnitudes route to a STANDALONE design.story (LLD) or a standalone BUILD with no Epic DEF at all, and SPEC (brainstorm) / ISSUE (bugfix) chains can also start with no DEF. Where does the template-version determination live for these non-epic chains?"
+      },
+      {
+        "chosen": "Hybrid: document-level required, per-item optional where sub-templates already exist",
+        "ruledOut": [
+          "Document-level only",
+          "Per-task/per-design-element"
+        ],
+        "reason": "Decision 6 settled that `realizesFR` is a structured field, source-of-truth on the DEF and carried on every downstream artifact. But within a single downstream artifact (an LLD, a BUILD, a CR), is that field attached once for the whole document, or per individual task/design-element inside it? The spec's own language — 'each design element/task/build ties back to the FR it realizes' — and Story B's 'repeatable story/task sub-templates' both point at finer granularity, but decision 6 never pinned it down."
+      },
+      {
+        "chosen": "Fold into the existing 'adherence' dimension (which already judges design/LLD fidelity) as one more sub-judgement when diagrams exist",
+        "ruledOut": [
+          "New dedicated 5th code-review dimension ('design-adherence'), alongside the existing adherence/conventions/coverage/quality set, with its own block/warn/pass verdict",
+          "Defer the design-adherence check — ship diagrams as documentation-only companions in this epic, without an automated as-built comparison"
+        ],
+        "reason": "Story D adds a 'UML design-adherence code-review dimension comparing the design diagram to the as-built graph-derived diagram.' Given decision 2 folded FR-coverage into the existing code-review dimension set rather than adding a new gate mechanism, should the design-adherence diagram check follow the same pattern, or stand alone as a new dimension? RESOLUTION: folded in, and generalized — the 'adherence' dimension carries a multiselect enum of the facets evaluated (UX, Diagram:Sequence, Diagram:ER, Diagram:Component, FR-coverage; extensible), each applying only when relevant, giving per-facet visibility without adding a dimension."
+      },
+      {
+        "chosen": "Per-chain scoped — each chain's DEF/root artifact numbers its own FRs starting at FR1; `realizesFR` refs are implicitly scoped to their own chain (no cross-chain collision risk since coverage-checking never crosses chains)",
+        "ruledOut": [
+          "Globally unique via a shared counter/registry across the whole repo",
+          "Globally unique via a content-derived hash (like existing SHA256 entity IDs), displayed alongside a human-friendly per-chain FR1/FR2 label"
+        ],
+        "reason": "FR IDs (FR1, FR2…) are the structured source-of-truth for the functional spine (decision 6), captured on the DEF and referenced downstream via `realizesFR`. Are these IDs unique only within their own chain (each Epic/standalone chain restarts at FR1), or globally unique across the whole repo? RESOLUTION: per-chain sequence, but the canonical/qualified id is `<epic id>:FRxxx` (mirroring `<epicHash>:<storyId>`) so references are globally unambiguous without a registry."
+      }
+    ],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1",
+      "quotedText": "One Epic, four forward-only Stories A→B→C→D; audience-scoped templates with a strong functional definition + stable-ID FR-spine (realizesFR, <epic id>:FRxxx) surfaced as input and LLM-coverage-checked at code-review; optional content-gated diagrams; uxAcceptance enforced at code-review; adherence unified as a multiselect enum (UX/Diagram:*/FR-coverage); forward-only with per-chain-root template-version stamping and grandfathered in-flight chains."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/artifact-document-template-review.md",
+      "quotedText": "Source inspection of the eleven artifact renderers + the documents they produce: no template layer, no frontmatter, invisible lifecycle state, duplicated H1, no TOC/nav, no diagrams, three status vocabularies, machine-optimized dev-geared content capturing little functional definition; reuse seams (template-loader, path-scheme, chain, docgen) already exist."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/vscode-chat-ui-ux-retrospective.md",
+      "quotedText": "Root cause #2: the agreed mock was the source of truth but never an acceptance gate; verification saw only the contract, never the rendered outcome. Motivates surfacing design (mock + diagrams + FRs) as input AND checking adherence at code-review."
+    }
+  ]
+}

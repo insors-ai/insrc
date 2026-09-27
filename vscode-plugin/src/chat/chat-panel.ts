@@ -213,46 +213,58 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<style>` +
       `:root{color-scheme:dark;--font:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;` +
       `--bg:#0b0e14;--bg-alt:#10141c;--bg-inset:#0d1119;--panel:#11161f;--fg:#c6cdd8;--fg-strong:#e8edf4;--muted:#6b7688;--dim:#4a5464;` +
-      `--border:#222a36;--border-lit:#2f3a4a;--accent:#4ade80;--accent2:#38bdf8;--amber:#fbbf24;--magenta:#c084fc;--red:#f87171;--sel:rgba(74,222,128,.22);}` +
+      `--border:#222a36;--border-lit:#2f3a4a;--accent:#4ade80;--accent2:#38bdf8;--amber:#fbbf24;--magenta:#c084fc;--red:#f87171;--user:#8ab4ff;--sel:rgba(74,222,128,.22);` +
+      `--sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}` +
       `*{box-sizing:border-box;}html,body{height:100%;width:100%;}` +
       `body{margin:0;padding:0;display:flex;background:radial-gradient(1200px 600px at 80% -10%,rgba(56,189,248,.06),transparent 60%),radial-gradient(900px 500px at -5% 10%,rgba(74,222,128,.05),transparent 55%),var(--bg);color:var(--fg);font-family:var(--font);font-size:13.5px;line-height:1.5;-webkit-font-smoothing:antialiased;}` +
       `::selection{background:var(--sel);}a{color:var(--accent2);}` +
       // Full-bleed: the .box IS the whole panel (approved --panel surface), edge to edge — no floating
       // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).
       `.box{flex:1 1 auto;width:100%;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden;}` +
-      `.chrome{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
-      `.chrome .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.85;flex:0 0 auto;}` +
-      `.chrome .title{color:var(--fg);}.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:var(--dim);}` +
+      `.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
+      `.chrome .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.14);flex:0 0 auto;}` +
+      `.chrome .title{color:var(--fg-strong);font-weight:600;letter-spacing:.02em;}` +
+      `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}.chrome .seglabel{color:var(--muted);}` +
       // S001 t6: the active session name in the header, clamped to 32 chars + ellipsis (ac4).
-      `.chrome .sesstitle{color:var(--muted);}.chrome .sesstitle:not(:empty)::before{content:'/';margin:0 6px;color:var(--dim);}` +
-      `.pad{padding:14px 16px;flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}` +
-      `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;white-space:pre-wrap;word-break:break-word;color:var(--fg);}` +
+      `.chrome .sesstitle{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg);}` +
+      // The scrolling transcript band (mock .term): the only overflow region, its own padding +
+      // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
+      `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:radial-gradient(1200px 300px at 50% -10%,rgba(56,189,248,.05),transparent 60%),var(--panel);}` +
       `#insrc-term>div{white-space:pre-wrap;}` +
       `.insrc-term__marker--pending{color:var(--muted);}.insrc-term__marker--pending::before{color:var(--magenta)!important;margin-right:.55em;}` +
       `.insrc-term__marker--tool{color:var(--accent2);}.insrc-term__marker--tool::before{color:var(--accent2)!important;margin-right:.55em;}` +
       `.insrc-term__marker--edit{color:var(--fg);}.insrc-term__marker--edit::before{color:var(--amber)!important;margin-right:.55em;}` +
       `.insrc-term__marker--done{color:var(--muted);}.insrc-term__marker--done::before{color:var(--accent)!important;margin-right:.55em;}` +
       `.insrc-term__marker--error{color:var(--red);}.insrc-term__marker--error::before{color:var(--red)!important;margin-right:.55em;}` +
-      `.inputline{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);flex:0 0 auto;}` +
-      `.inputline .caret{color:var(--accent);font-weight:700;padding-top:6px;user-select:none;}` +
-      // S002 ac2: the icon-only Send/Stop button (▶ green Send at rest / ■ red Stop while running).
-      `#insrc-send{flex:0 0 auto;align-self:flex-end;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg-inset);border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:var(--font);font-size:13px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0;}` +
-      `#insrc-send:hover{border-color:var(--accent);}#insrc-send.stop{color:var(--red);}#insrc-send.stop:hover{border-color:var(--red);}` +
-      // S002 ac3: the SINGLE animated progress widget above the input (live-only, never persisted).
-      `#insrc-progress{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--accent2);font-size:12px;flex:0 0 auto;}` +
+      // Bottom-pinned input bar (mock .inputbar): a full-width band with a top border + inset ground.
+      `.inputbar{display:flex;gap:9px;align-items:flex-end;padding:11px 12px;border-top:1px solid var(--border);background:var(--bg-inset);flex:0 0 auto;}` +
+      `.inputbar .caret{color:var(--accent);padding-bottom:8px;user-select:none;}` +
+      // S002 ac2: the filled Send/Stop button (mock .sendbtn): green ▶ Send at rest, red ■ Stop while running.
+      `#insrc-send{flex:0 0 auto;align-self:flex-end;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);border:none;border-radius:9px;color:#062b16;font-family:var(--font);font-size:16px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0;}` +
+      `#insrc-send:hover{filter:brightness(1.08);}#insrc-send.stop{background:var(--red);color:#2b0606;font-size:13px;}` +
+      // S002 ac3: the SINGLE animated progress bar above the input (mock .progress; live-only, never
+      // persisted): 3 blinking dots + a label + a right-aligned tabular elapsed timer.
+      `#insrc-progress{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border);background:var(--bg-inset);color:var(--muted);font-size:12px;flex:0 0 auto;}` +
       `#insrc-progress[hidden]{display:none;}` +
-      `#insrc-progress .spin{width:9px;height:9px;border-radius:50%;background:var(--accent2);animation:insrc-pulse 1s ease-in-out infinite;flex:0 0 auto;}` +
-      `@keyframes insrc-pulse{0%,100%{opacity:.25;transform:scale(.7);}50%{opacity:1;transform:scale(1);}}` +
-      `#insrc-input{flex:1 1 auto;min-width:0;resize:vertical;min-height:2.4em;background:var(--bg-inset);color:var(--fg);caret-color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font);font-size:13.5px;line-height:1.5;outline:none;}` +
+      `#insrc-progress .spin{display:inline-flex;gap:4px;flex:0 0 auto;}` +
+      `#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--accent2);opacity:.35;animation:insrc-blink 1.1s infinite;}` +
+      `#insrc-progress .spin i:nth-child(2){animation-delay:.18s;}#insrc-progress .spin i:nth-child(3){animation-delay:.36s;}` +
+      `#insrc-progress .elapsed{margin-left:auto;color:var(--dim);font-variant-numeric:tabular-nums;}` +
+      `@keyframes insrc-blink{0%,100%{opacity:.30;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}` +
+      `@media (prefers-reduced-motion:reduce){#insrc-progress .spin i{animation:none;opacity:.7;}}` +
+      `#insrc-input{flex:1 1 auto;min-width:0;resize:none;min-height:40px;max-height:120px;background:var(--panel);color:var(--fg-strong);caret-color:var(--accent);border:1px solid var(--border-lit);border-radius:9px;padding:9px 11px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--dim);}#insrc-input:focus{border-color:var(--accent);}` +
-      `.statusbar{display:flex;gap:16px;align-items:center;padding:7px 16px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:12px;flex-wrap:wrap;flex:0 0 auto;}` +
+      `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
       `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}.statusbar .seg b{color:var(--fg);font-weight:500;}.statusbar .ok{color:var(--accent);margin-left:auto;}` +
-      // S004: visibly flag auto permission mode in the status bar (k6 i).
-      `.statusbar .perm-auto{color:var(--accent);}` +
+      // S004 (k6 i): auto permission mode reads as the mock's amber "auto-approve" pill in the status bar.
+      `.statusbar .perm-auto{color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
       `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
       `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--bg-alt);color:var(--fg);font-weight:400;}` +
+      // Keep the header session switcher compact so a long session name can't overflow the chrome
+      // (the clamped .sesstitle already shows the active name; this is the switch affordance).
+      `.chrome #insrc-history{max-width:16ch;}` +
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
       `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
       `.insrc-diff-add{background:rgba(74,222,128,.10);color:var(--fg-strong);padding:0 10px;}` +
@@ -263,16 +275,34 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-diff-actions button:hover{border-color:var(--accent);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
       RENDER_REGISTRY_STYLE +
-      // S003: role tones (user vs assistant, ac1) + the markdown/JSON widget + tool-result/inline-diff
-      // caption styling. Reuses the sc1 .insrc-collapse* classes; inline under the CSP, no remote origin (k1).
-      `.insrc-msg{white-space:pre-wrap;word-break:break-word;}` +
-      `.insrc-msg--user{color:var(--user,#8ab4ff);}.insrc-msg--assistant{color:var(--fg);}` +
-      `.insrc-md h1,.insrc-md h2,.insrc-md h3{color:var(--fg-strong);font-weight:600;margin:.3em 0;}` +
-      `.insrc-md code,.insrc-md .insrc-md-code{font-family:var(--font);background:var(--bg-inset);border-radius:4px;padding:0 4px;color:var(--accent);}` +
-      `.insrc-md pre{background:var(--bg-inset);border:1px solid var(--border);border-radius:6px;padding:8px 10px;overflow-x:auto;}` +
-      `.insrc-md ul{margin:.3em 0;padding-left:1.4em;}.insrc-md em{font-style:italic;color:var(--fg-strong);}` +
-      `.insrc-json{font-family:var(--font);}.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--fg);}.insrc-json .insrc-json-punct{color:var(--dim);}` +
-      `.insrc-caption{color:var(--muted);cursor:default;}` +
+      // S001 (bugfix) — full mock parity (k5, docs/epics/…/mocks.html): the .msg card system.
+      // A message is a column of a `.insrc-who` role label above a bordered `.insrc-bubble`
+      // (user = right-aligned blue card; assistant = magenta-left-border card). Reuses the sc1
+      // .insrc-collapse* primitive inside the bubble for long messages. Inline under the CSP (k1).
+      `.insrc-msg{display:flex;flex-direction:column;gap:4px;max-width:100%;white-space:normal;}` +
+      `.insrc-who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;white-space:normal;}` +
+      `.insrc-who .insrc-glyph{font-size:12px;}` +
+      `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
+      `.insrc-bubble--user{background:rgba(138,180,255,.08);border:1px solid rgba(138,180,255,.30);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:82%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-who--assistant{color:var(--magenta);}` +
+      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-left:2px solid var(--magenta);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:88%;white-space:pre-wrap;word-break:break-word;}` +
+      // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
+      `.insrc-who--tool{color:var(--accent2);}` +
+      `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;max-width:100%;}` +
+      `.insrc-toolrow__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;font-family:var(--font);}` +
+      `.insrc-toolrow__prompt{color:var(--accent);}` +
+      // rendered markdown reads as "rendered": the sans face, mock spacing, cyan inline code chips.
+      `.insrc-md{font-family:var(--sans);color:var(--fg);font-size:13.5px;line-height:1.6;}` +
+      `.insrc-md h1,.insrc-md h2,.insrc-md h3{font-family:var(--sans);color:var(--fg-strong);font-weight:600;margin:2px 0 6px;font-size:14px;}` +
+      `.insrc-md p,.insrc-md .insrc-md-p{margin:0 0 8px;}` +
+      `.insrc-md ul{margin:0 0 4px;padding-left:18px;}.insrc-md li{margin:2px 0;}` +
+      `.insrc-md code,.insrc-md .insrc-md-code{font-family:var(--font);font-size:12px;background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2);}` +
+      `.insrc-md strong{color:var(--fg-strong);}.insrc-md em{font-style:italic;color:var(--fg-strong);}` +
+      `.insrc-md pre{background:#0a0d14;border:1px solid var(--border);border-radius:6px;padding:8px 10px;overflow-x:auto;font-family:var(--font);}` +
+      // JSON widget: a bordered code surface with key/value/punct tones (mock .jsonw).
+      `.insrc-json{font-family:var(--font);border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;font-size:12.5px;line-height:1.55;}` +
+      `.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--accent);}.insrc-json .insrc-json-punct{color:var(--dim);}` +
+      `.insrc-caption{color:var(--muted);cursor:default;font-size:11px;letter-spacing:.05em;text-transform:uppercase;}` +
       `</style>`;
     const provCls = surfaceClass('provider-dropdown');
     const histCls = surfaceClass('history-dropdown');
@@ -317,8 +347,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // written to the transcript (the host status-skip stays as-is, k4).
       `const prog=document.getElementById('insrc-progress');` +
       `const progLabel=prog?prog.querySelector('.plabel'):null;` +
-      `function setProgress(text){if(prog){prog.hidden=false;if(progLabel)progLabel.textContent=text;}}` +
-      `function hideProgress(){if(prog)prog.hidden=true;}` +
+      `const progElapsed=document.getElementById('insrc-elapsed');` +
+      // S001 (bugfix): the mock's live elapsed timer (m:ss). Starts on the first setProgress of a turn,
+      // ticks each second, and is cleared when the widget hides (done/error/cancel).
+      `var progT0=0,progTimer=null;` +
+      `function fmtElapsed(ms){var s=Math.floor(ms/1000);var m=Math.floor(s/60);var ss=s%60;return m+':'+(ss<10?'0':'')+ss;}` +
+      `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Date.now()-progT0);}` +
+      `function setProgress(text){if(prog){prog.hidden=false;if(progLabel)progLabel.textContent=text;if(!progTimer){progT0=Date.now();tickElapsed();progTimer=setInterval(tickElapsed,1000);}}}` +
+      `function hideProgress(){if(prog)prog.hidden=true;if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S006: per-session edit-mode toggle (auto/review) + the chat-view inline diff renderer.
@@ -395,23 +431,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // classes belong on the inner surface divs, never the root body.
       `<body class="insrc-term">` +
       `<div class="box">` +
+      // Fixed header (mock .chrome): dot + insrc + the session label / active-name / history switcher.
       `<div class="chrome">` +
-      `<span class="dot"></span><span class="title">insrc</span><span class="sesstitle" id="insrc-sesstitle"></span>` +
-      `<span class="right">session <select id="insrc-history" class="segsel ${histCls}" aria-label="history"><option value="">new…</option></select></span>` +
+      `<span class="dot"></span><span class="title">insrc</span>` +
+      `<span class="right"><span class="seglabel">session</span><span class="sesstitle" id="insrc-sesstitle"></span><select id="insrc-history" class="segsel ${histCls}" aria-label="history"><option value="">new…</option></select></span>` +
       `</div>` +
-      `<div class="pad">` +
+      // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
+      // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
       `<div id="insrc-term" class="term"></div>` +
-      // S002 ac3: the single animated progress widget, above the input, hidden until a turn runs.
-      `<div id="insrc-progress" hidden><span class="spin"></span><span class="plabel"></span></div>` +
-      `<div class="inputline">` +
+      // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
+      // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.
+      `<div id="insrc-progress" class="progress" hidden><span class="spin"><i></i><i></i><i></i></span><span class="plabel"></span><span class="elapsed" id="insrc-elapsed"></span></div>` +
+      `<div class="inputbar">` +
       `<span class="caret">❯</span>` +
-      `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send)"></textarea>` +
-      // S002 ac2: icon-only Send/Stop button (glyph + class set by setRunning: ▶ Send / ■ Stop).
-      `<button id="insrc-send" class="sendbtn" type="button" aria-label="send">❯</button>` +
+      `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude…  (⌘↵ to send)"></textarea>` +
+      // S002 ac2: filled Send/Stop button (glyph + class set by setRunning: ▶ green Send / ■ red Stop).
+      `<button id="insrc-send" class="sendbtn" type="button" aria-label="send">▶</button>` +
       `</div>` +
-      `</div>` +
-      // Approved layout: provider / session / edits live as STATUS-BAR segments at the bottom
-      // (the selects are styled as the bold segment value, transparent + borderless).
+      // Status bar: provider · edit mode · tool-permission mode · state (mock .statusbar).
       `<div class="statusbar">` +
       `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
       `<span class="seg">edits <select id="insrc-editmode" class="segsel ${provCls}" aria-label="edit mode"><option value="auto">auto</option><option value="review">review</option></select></span>` +

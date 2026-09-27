@@ -1077,7 +1077,7 @@ test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll
   assert.match(html, /#insrc-term\{flex:1 1 auto;min-height:0;overflow-y:auto/, '#insrc-term is the flex-growing scroll region');
   assert.equal((html.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term is the ONLY overflow-y:auto region');
   assert.match(html, /\.chrome\{[^}]*flex:0 0 auto/, 'the header is fixed (flex:0)');
-  assert.match(html, /\.inputline\{[^}]*flex:0 0 auto/, 'the input line is fixed (flex:0)');
+  assert.match(html, /\.inputbar\{[^}]*flex:0 0 auto/, 'the input bar is fixed (flex:0)');
 });
 
 test('S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill', () => {
@@ -1150,11 +1150,11 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   host.open();
   const html = fc.html();
   assert.equal((html.match(/id="insrc-progress"/g) ?? []).length, 1, 'exactly one progress widget');
-  assert.match(html, /<div id="insrc-progress" hidden>/, 'hidden at rest');
-  // It sits above the input line.
-  assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputline"'), 'progress is above the input');
+  assert.match(html, /<div id="insrc-progress" class="progress" hidden>/, 'hidden at rest');
+  // It sits above the input bar.
+  assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputbar"'), 'progress is above the input');
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
-  assert.match(html, /@keyframes insrc-pulse/, 'the widget is animated');
+  assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
   assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
   assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)\)\{setRunning\(false\);hideProgress\(\);\}/, 'done/error hides the widget + restores Send');
 });
@@ -1198,8 +1198,9 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
   });
   host.open();
   const html = fc.html();
-  assert.match(html, /\.insrc-msg--user\{/, 'user role tone');
-  assert.match(html, /\.insrc-msg--assistant\{/, 'assistant role tone');
+  assert.match(html, /\.insrc-bubble--user\{/, 'user bubble tone');
+  assert.match(html, /\.insrc-bubble--assistant\{/, 'assistant bubble tone');
+  assert.match(html, /\.insrc-who\b/, 'role labels (you / claude)');
   assert.match(html, /\.insrc-md /, 'markdown widget styling');
   assert.match(html, /\.insrc-json /, 'JSON widget styling');
   assert.match(html, /\.insrc-caption\{/, 'tool-result/inline-diff caption styling');

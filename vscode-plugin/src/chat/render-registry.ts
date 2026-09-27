@@ -132,14 +132,14 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-collapse--collapsed .insrc-collapse__body{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}` +
   // S004: the in-chat permission-approval card (k6 i). Icon-only approve/deny buttons
   // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
-  `.insrc-approval{border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin:2px 0;display:flex;flex-direction:column;gap:4px;}` +
-  `.insrc-approval__title{font-weight:600;}` +
-  `.insrc-approval__detail{color:var(--muted);white-space:pre-wrap;word-break:break-word;}` +
-  `.insrc-approval__actions{display:flex;gap:8px;margin-top:2px;}` +
-  `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border);background:var(--bg-inset);border-radius:3px;padding:2px 8px;line-height:1.4;font-size:13px;}` +
-  `.insrc-approval__btn--approve{color:var(--accent);}` +
-  `.insrc-approval__btn--deny{color:var(--danger,#e06c75);}` +
-  `.insrc-approval__btn:hover{filter:brightness(1.2);}`;
+  `.insrc-approval{border:1px solid rgba(251,191,36,.45);border-radius:10px;background:linear-gradient(180deg,rgba(251,191,36,.09),rgba(251,191,36,.03));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
+  `.insrc-approval__title{font-weight:600;color:var(--amber);display:flex;align-items:center;gap:8px;}` +
+  `.insrc-approval__detail{color:var(--fg);font-size:13px;white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-approval__actions{display:flex;gap:8px;flex-wrap:wrap;}` +
+  `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border-lit);background:var(--panel);color:var(--fg);border-radius:7px;padding:4px 12px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
+  `.insrc-approval__btn--approve{border-color:rgba(74,222,128,.5);color:#bff3d3;background:rgba(74,222,128,.12);}` +
+  `.insrc-approval__btn--deny{border-color:rgba(248,113,113,.5);color:#f6bcbc;background:rgba(248,113,113,.10);}` +
+  `.insrc-approval__btn:hover{filter:brightness(1.15);}`;
 
 /**
  * The webview-embeddable factory source. Evaluating it yields
@@ -185,16 +185,28 @@ export function renderRegistryWebviewSource(): string {
     // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
     // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
     `function isLong(s){s=s||'';return s.split('\\n').length>3||s.length>240;}` +
-    `function msgRow(vm,host,roleCls,inner){` +
+    // S001 (bugfix): the mock's role label — 'you \\u276f' (user) / '\\u25c6 claude' (assistant),
+    // the glyph on the outer edge. Spans only (the fake DOM has no createTextNode); textContent (k1).
+    `function whoRow(role,glyph,label){` +
+    `var w=document.createElement('div');w.className='insrc-who insrc-who--'+role;` +
+    `var g=document.createElement('span');g.className='insrc-glyph';g.textContent=glyph;` +
+    `var l=document.createElement('span');l.className='insrc-wholabel';l.textContent=label;` +
+    `if(role==='user'){w.appendChild(l);w.appendChild(g);}else{w.appendChild(g);w.appendChild(l);}` +
+    `return w;}` +
+    // S001 (bugfix): a message row is the mock's `.msg` — a `.who` role label above a bordered
+    // `.bubble` (user right-aligned blue card / assistant magenta-left-border card, k5). Long text
+    // (or an inner widget) collapses to a 3-line preview via the sc1 chevron primitive (ac2). The
+    // outer wrap is line('') so it is appended to the transcript + returned for keyed reconcile.
+    `function msgRow(vm,host,role,inner){` +
     `var raw=vm&&vm.text!=null?vm.text:'';` +
-    `var d=line(raw);d.className='insrc-msg '+roleCls;` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--'+role;` +
+    `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you'):whoRow('assistant','\\u25c6','claude'));` +
+    `var bubble=document.createElement('div');bubble.className='insrc-bubble insrc-bubble--'+role;` +
     `var content=inner||null;var longMsg=isLong(raw);` +
-    `if(content||longMsg){` +
-    `if(!content){content=document.createElement('div');content.textContent=raw;}` +
-    `d.textContent='';` +
-    `d.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);` +
-    `}` +
-    `return d;}` +
+    `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +
+    `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
+    `else{bubble.textContent=raw;}` +
+    `wrap.appendChild(bubble);return wrap;}` +
     // S003 t3: assistant content-type widgets (ac3). All via createElement/textContent, no innerHTML (k1).
     // BT is the backtick char (built at runtime so the source carries no literal backtick).
     `var BT=String.fromCharCode(96);` +
@@ -257,10 +269,20 @@ export function renderRegistryWebviewSource(): string {
     // collapsed (k6 d).
     // S003 t2: role-differentiated + collapse-when-long (ac1/ac2). t3 extends assistant-text with
     // content-type widgets by passing an inner node to msgRow.
-    `register('user',function(vm,host){return msgRow(vm,host,'insrc-msg--user');});` +
-    `register('assistant-text',function(vm,host){return msgRow(vm,host,'insrc-msg--assistant',detectAssistant(vm&&vm.text));});` +
-    // tool-command stays inline via line() with the sc1 tool tone — never collapsed (k6 d).
-    `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool');});` +
+    `register('user',function(vm,host){return msgRow(vm,host,'user');});` +
+    `register('assistant-text',function(vm,host){return msgRow(vm,host,'assistant',detectAssistant(vm&&vm.text));});` +
+    // S001 (bugfix): tool-call surfaces the REAL command in the mock's bordered `.toolrow` under a
+    // '\\u25b8 tool' role label, with a green `$` prompt (k5 ac3). Never collapsed (k6 d). textContent (k1).
+    `function toolRow(vm){` +
+    `var raw=vm&&vm.text!=null?vm.text:'';` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--tool';` +
+    `wrap.appendChild(whoRow('tool','\\u25b8','tool'));` +
+    `var box=document.createElement('div');box.className='insrc-toolrow';` +
+    `var cmd=document.createElement('span');cmd.className='insrc-toolrow__cmd';` +
+    `var p=document.createElement('span');p.className='insrc-toolrow__prompt';p.textContent='$';cmd.appendChild(p);` +
+    `var txt=document.createElement('span');txt.textContent=' '+raw;cmd.appendChild(txt);` +
+    `box.appendChild(cmd);wrap.appendChild(box);return wrap;}` +
+    `register('tool-command',function(vm){return toolRow(vm);});` +
     // S003 t4: tool results + inline diffs collapse to their caption header via the SAME sc1
     // chevron primitive (k6 c). A caption line stays visible; the body is default-collapsed.
     `function captionRow(vm,host,caption){` +

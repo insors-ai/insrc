@@ -71,6 +71,27 @@ function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   return { reg: factory(document, line), appended };
 }
 
+// Recursive helpers over the fake node tree (the fake DOM's textContent does NOT aggregate children).
+function findByClass(node: FakeNode, cls: string): FakeNode | undefined {
+  if (node.className && node.className.split(/\s+/).includes(cls)) return node;
+  for (const c of node.children) { const hit = findByClass(c, cls); if (hit) return hit; }
+  return undefined;
+}
+function findByTag(node: FakeNode, tag: string): FakeNode | undefined {
+  if (node.tag === tag) return node;
+  for (const c of node.children) { const hit = findByTag(c, tag); if (hit) return hit; }
+  return undefined;
+}
+function allText(node: FakeNode): string {
+  return (node.textContent || '') + node.children.map(allText).join('');
+}
+// S001 (bugfix): a message row now nests its text in a bordered .insrc-bubble under a .insrc-who
+// role label; the plain text lives on the bubble (or a widget/collapse under it), not the row.
+function msgText(row: FakeNode): string {
+  const b = findByClass(row, 'insrc-bubble');
+  return b ? (b.textContent || '') : (row.textContent || '');
+}
+
 test('renderRow dispatches to a registered renderer for its kind', () => {
   const { reg } = makeRegistry();
   let seen: unknown;
@@ -210,16 +231,18 @@ test('integration: an assistant multi-step turn renders each step\'s actual text
     { kind: 'assistant-delta', turnId: 't', text: 'second step' },
   ];
   for (const ev of steps) reg.renderRow(reg.toViewModel(ev));
-  assert.deepEqual(appended.map((n) => n.textContent), ['first step', 'second step']);
+  assert.deepEqual(appended.map((n) => msgText(n)), ['first step', 'second step']);
 });
 
 test('integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)', () => {
   const { reg, appended } = makeRegistry();
   reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'grep -rn foo' } as TurnEvent));
   reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Read' } as TurnEvent));
-  assert.equal(appended[0]!.textContent, 'grep -rn foo', 'the command is shown inline');
-  assert.equal(appended[0]!.className, 'insrc-term__marker--tool', 'the tool-command row keeps the sc1 tool tone');
-  assert.equal(appended[1]!.textContent, 'Read', 'command-less falls back to the tool name');
+  // S001 (bugfix): a tool-call now renders the mock's bordered .toolrow under a '▸ tool' label.
+  assert.match(appended[0]!.className, /insrc-msg--tool/, 'the tool row carries the tool role tone');
+  assert.ok(findByClass(appended[0]!, 'insrc-toolrow'), 'the command sits in the bordered toolrow');
+  assert.ok(allText(appended[0]!).includes('grep -rn foo'), 'the command is shown inline');
+  assert.ok(allText(appended[1]!).includes('Read'), 'command-less falls back to the tool name');
 });
 
 test('the tool-command renderer never wraps its content in the collapse primitive (k6 d)', () => {
@@ -281,36 +304,27 @@ test('S003 ac2: a >3-line message is wrapped in the collapse primitive (default-
   const { reg } = makeRegistry();
   const longText = 'l1\nl2\nl3\nl4\nl5';
   const longRow = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: longText, collapsible: true });
-  const wrap = longRow!.children.find((c) => /insrc-collapse/.test(c.className));
+  // S001 (bugfix): the collapse now lives inside the .insrc-bubble, not as a direct child of the row.
+  const wrap = findByClass(longRow!, 'insrc-collapse');
   assert.ok(wrap, 'a long message is wrapped in the collapse primitive');
   assert.match(wrap!.className, /insrc-collapse--collapsed/, 'default-collapsed (3-line preview)');
   const chevron = wrap!.children.find((c) => c.className === 'insrc-collapse__chevron');
   assert.equal(chevron!.textContent, '▸', 'icon-only chevron, collapsed glyph');
   const shortRow = reg.renderRow({ kind: 'user', role: 'user', text: 'just one line', collapsible: true });
-  assert.ok(!shortRow!.children.some((c) => /insrc-collapse/.test(c.className)), 'a short message is NOT wrapped');
-  assert.equal(shortRow!.textContent, 'just one line', 'short message keeps its plain text');
+  assert.ok(!findByClass(shortRow!, 'insrc-collapse'), 'a short message is NOT wrapped');
+  assert.equal(msgText(shortRow!), 'just one line', 'short message keeps its plain text');
 });
 
 test('S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse', () => {
   const { reg, appended } = makeRegistry();
   const node = reg.renderRow({ kind: 'tool-command', text: 'grep -rn foo', collapsible: false });
-  assert.equal(node, appended[0], 'tool-command is the flat line() row');
-  assert.equal(node!.className, 'insrc-term__marker--tool', 'tool tone, no msg/collapse class');
-  assert.doesNotMatch(node!.className, /insrc-collapse|insrc-msg/, 'never collapsed, not a message row');
+  assert.equal(node, appended[0], 'tool-command is the row node');
+  assert.match(node!.className, /insrc-msg--tool/, 'the tool role tone');
+  assert.doesNotMatch(node!.className, /insrc-collapse/, 'never collapsed');
+  assert.ok(allText(node!).includes('grep -rn foo'), 'the command is shown inline in the toolrow');
 });
 
 // ---- S003 t3: assistant content-type widgets ----
-
-function findByClass(node: FakeNode, cls: string): FakeNode | undefined {
-  if (node.className && node.className.split(/\s+/).includes(cls)) return node;
-  for (const c of node.children) { const hit = findByClass(c, cls); if (hit) return hit; }
-  return undefined;
-}
-function findByTag(node: FakeNode, tag: string): FakeNode | undefined {
-  if (node.tag === tag) return node;
-  for (const c of node.children) { const hit = findByTag(c, tag); if (hit) return hit; }
-  return undefined;
-}
 
 test('S003 ac3: valid JSON renders a structured JSON widget (key/value spans, no innerHTML)', () => {
   const { reg } = makeRegistry();
@@ -338,7 +352,7 @@ test('S003 ac3: plain text renders plain (no md/json widget)', () => {
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'just some prose without markers', collapsible: true })!;
   assert.ok(!findByClass(row, 'insrc-md'), 'no markdown widget');
   assert.ok(!findByClass(row, 'insrc-json'), 'no JSON widget');
-  assert.equal(row.textContent, 'just some prose without markers', 'plain text preserved');
+  assert.equal(msgText(row), 'just some prose without markers', 'plain text preserved');
 });
 
 test('S003: almost-JSON falls through to plain text without throwing (per-row isolation)', () => {
@@ -346,7 +360,7 @@ test('S003: almost-JSON falls through to plain text without throwing (per-row is
   let row: FakeNode | null = null;
   assert.doesNotThrow(() => { row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: '{not valid json', collapsible: true }); });
   assert.ok(!findByClass(row!, 'insrc-json'), 'no JSON widget for malformed JSON');
-  assert.equal(row!.textContent, '{not valid json', 'falls through to plain text');
+  assert.equal(msgText(row!), '{not valid json', 'falls through to plain text');
 });
 
 test('S003: no innerHTML anywhere in the render-registry source (k1)', () => {

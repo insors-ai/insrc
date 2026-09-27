@@ -502,6 +502,39 @@ test('S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent', 
   }
 });
 
+test('S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)', async () => {
+  // Captured verbatim from the installed claude CLI: a review-mode tool that needs permission is
+  // NOT a control_request — it is a system/permission_denied line, then the turn ends.
+  const denied = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Write',
+    tool_use_id: 'toolu_01UHvbWBFrXzLr2gaSHJi8cy',
+    message: "Claude requested permissions to write to /repo/hello.txt, but you haven't granted it yet.",
+  });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));
+  const apprs = events.filter((e) => e.kind === 'approval-request');
+  assert.equal(apprs.length, 1, 'the denial surfaces as exactly one approval card (was: nothing)');
+  const ev = apprs[0]!;
+  if (ev.kind === 'approval-request') {
+    assert.equal(ev.requestId, 'toolu_01UHvbWBFrXzLr2gaSHJi8cy', 'requestId == tool_use_id');
+    assert.equal(ev.toolName, 'Write', 'the tool to pre-allow on approve rides the event');
+    assert.match(ev.title, /Write/, 'the card names the tool');
+    assert.match(ev.detail ?? '', /grant/i, 'the card carries claude’s message');
+  }
+  assert.equal(events.at(-1)?.kind, 'done', 'the turn still completes (claude ended it)');
+});
+
+test('S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)', async () => {
+  const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+  await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review', allowedTools: ['Write'] })));
+  const args = spawner.calls[0]!.args;
+  const i = args.indexOf('--allowedTools');
+  assert.ok(i >= 0, 'the grant re-run passes --allowedTools');
+  assert.equal(args[i + 1], 'Write', 'with exactly the approved tool');
+});
+
 test('S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])', async () => {
   const { deps } = depsFor({ lines: CLAUDE_PERMISSION_IDLESS });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'review' })));

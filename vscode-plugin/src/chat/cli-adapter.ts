@@ -50,6 +50,13 @@ export interface TurnRequest {
    * Undefined preserves today's argv exactly (k2) — the CLI's own default.
    */
   readonly permissionMode?: PermissionMode;
+  /**
+   * S001 (bugfix): tools to pre-allow for THIS turn (claude `--allowedTools`). Used by the
+   * review-mode grant flow: claude in review mode denies a permission-needing tool and ends the
+   * turn (it emits `system/permission_denied`, surfaced as an approval card); on Approve the host
+   * re-runs the blocked action resuming the session with the tool named here, so it proceeds.
+   */
+  readonly allowedTools?: readonly string[];
 }
 
 export interface StreamAdapter {
@@ -229,6 +236,9 @@ const claudeMapper: ProviderMapper = {
     // auto => bypass so the agent never blocks. Never both.
     if (req.permissionMode === 'review') args.push('--permission-prompts', 'host');
     else if (req.permissionMode === 'auto') args.push('--permission-mode', 'bypassPermissions');
+    // S001 (bugfix): the review-mode grant re-run pre-allows the approved tool so the resumed
+    // action proceeds instead of denying again. Space-separated names after --allowedTools.
+    if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
     return args;
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
@@ -240,6 +250,20 @@ const claudeMapper: ProviderMapper = {
       state.sessionId = obj['session_id'] as string;
     }
     if (type === 'system') {
+      // S001 (bugfix): claude's REAL review-mode permission signal — a tool that needs permission
+      // surfaces as system/permission_denied (verified against the installed CLI; its capabilities
+      // lack the in-turn can_use_tool control channel), then the turn ends. Surface it as the
+      // in-chat approval card (the request that was NOT showing up). requestId = tool_use_id;
+      // toolName rides the event so the host's grant re-run can pre-allow exactly that tool.
+      if (obj['subtype'] === 'permission_denied') {
+        const toolName = typeof obj['tool_name'] === 'string' ? (obj['tool_name'] as string) : 'tool';
+        const rid =
+          typeof obj['tool_use_id'] === 'string' && obj['tool_use_id'] !== ''
+            ? (obj['tool_use_id'] as string)
+            : `perm-${turnId}`;
+        const message = typeof obj['message'] === 'string' ? (obj['message'] as string) : `${toolName} needs your permission`;
+        return [{ kind: 'approval-request', turnId, requestId: rid, title: `Permission: ${toolName}`, detail: message, toolName }];
+      }
       return [{ kind: 'status', turnId, phase: 'thinking' }];
     }
     if (type === 'assistant') {

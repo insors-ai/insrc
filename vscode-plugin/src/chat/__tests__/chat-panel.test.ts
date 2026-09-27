@@ -1467,3 +1467,54 @@ test('S001 ready before any open-time delivery still populates history (models t
   const hl = restored.posted.filter((m) => m.payload.type === 'history-list').map((m) => m.payload['chats'] as unknown[]);
   assert.ok(hl.length >= 1 && hl[hl.length - 1]!.length === 1, 'the restored+ready webview receives the seeded history');
 });
+
+// ---- S001 (bugfix): review-mode permission GRANT flow (claude denies + ends; Approve re-runs) ----
+
+test('S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const runs: TurnRequest[] = [];
+  // Turn 1 surfaces claude's denial as an approval card, then ends (as the real CLI does).
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'needs to write hello.txt', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write hello.txt' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  // The user approves the card.
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'approve' }));
+  await waitFor(() => runs.length > before);
+  const grant = runs[runs.length - 1]!;
+  assert.deepEqual([...(grant.allowedTools ?? [])], ['Write'], 'the re-run pre-allows exactly the approved tool');
+  assert.equal(grant.resume?.nativeSessionId, 'sess-1', 'the re-run resumes the same claude session');
+});
+
+test('S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write hello.txt' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runs.length, before, 'deny never re-runs the blocked action');
+});

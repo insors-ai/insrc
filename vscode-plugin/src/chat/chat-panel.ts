@@ -120,6 +120,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // control switches it. View-time only, never persisted to the session store (k4);
   // applied to the NEXT turn's buildArgs, never the in-flight spawn.
   let permissionMode: PermissionMode = 'review';
+  // S001 (bugfix): pending review-mode permission requests, requestId -> the tool to pre-allow.
+  // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
+  // also ENDS the turn); on Approve the host re-runs the blocked action resuming the session with
+  // that tool allowed. Cleared on decision.
+  const pendingPerms = new Map<string, string>();
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -495,7 +500,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
-  async function runTurn(text: unknown): Promise<void> {
+  async function runTurn(text: unknown, allowedTools?: readonly string[]): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const prompt = text.trim();
     if (prompt === '' || session === undefined) return; // empty submit is a no-op
@@ -531,9 +536,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       return;
     }
 
+    const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
     const req = s.nativeSessionId !== undefined
-      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
-      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode };
+      ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
+      : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant };
 
     // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn),
     // so the diff + revert are computed against the true pre-turn content (k8 observer).
@@ -553,6 +559,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         activeTurnId = ev.turnId;
         post({ type: 'turn-event', event: ev });
         appendEvent(s, ev);
+        // S001 (bugfix): remember which tool an approval card is asking about, so Approve can
+        // re-run the blocked action with exactly that tool pre-allowed (review-mode grant flow).
+        if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
+          pendingPerms.set(ev.requestId, ev.toolName);
+        }
         // S006: an observed file-edit -> the governor computes + renders its own diff
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
         // the incremental turn loop never blocks on git/fs IO.
@@ -690,6 +701,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // provider, never the current session's — it may have switched). decide() no-ops on an
         // unknown/stale/dead requestId, so a late/duplicate click is safe.
         if (typeof msg.requestId !== 'string' || (msg.decision !== 'approve' && msg.decision !== 'deny')) return;
+        // S001 (bugfix): review-mode GRANT flow. claude denies + ENDS the turn on a permission
+        // request (no in-turn control channel), so the decision can't be relayed to a live turn —
+        // instead, on Approve we re-run the blocked action resuming the session with that tool
+        // pre-allowed; on Deny we drop it (the turn already ended as denied).
+        const grantTool = pendingPerms.get(msg.requestId);
+        if (grantTool !== undefined) {
+          pendingPerms.delete(msg.requestId);
+          if (msg.decision === 'approve') {
+            void runTurn(`Approved: please proceed with the ${grantTool} action you requested permission for.`, [grantTool]);
+          }
+          return;
+        }
+        // Otherwise a provider that DOES answer in-turn (control-protocol / codex): relay to the
+        // LIVE turn's captured adapter. decide() no-ops on an unknown/stale/dead requestId.
         if (activeProvider === undefined || activeTurnId === undefined) return;
         try {
           deps.providers.get(activeProvider).decide(activeTurnId, msg.requestId, msg.decision);

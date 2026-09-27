@@ -118,11 +118,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let activeProvider: import('./cli-adapter.js').ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
   let generation = 0;
-  // S001 (bugfix): the SINGLE chat mode for this panel. Default 'manual' so tool use surfaces as
-  // in-chat approval cards (never silently blocked); the status-bar control switches it between
-  // manual / edit-auto / auto. View-time only, never persisted (k4); applied to the NEXT turn's
-  // buildArgs, never the in-flight spawn.
+  // S001 (bugfix): the SINGLE chat mode (Manual / Edit Automatically / Auto). It is now a PERSISTED
+  // per-session preference: it tracks the ACTIVE session's stored mode (synced on open/switch/
+  // restore) and is applied to the NEXT turn's buildArgs. Default 'manual' so tool use surfaces as
+  // in-chat approval cards (never silently blocked).
   let permissionMode: PermissionMode = 'manual';
+  // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
+  const modeOf = (s: ChatSession | undefined): PermissionMode =>
+    s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
   // S001 (bugfix): pending review-mode permission requests, requestId -> the tool to pre-allow.
   // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
   // also ENDS the turn); on Approve the host re-runs the blocked action resuming the session with
@@ -179,7 +182,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // A DRAFT session (in-memory, not persisted): opening the chat does not save an empty session
     // to history; it enters the store only on the first turn (runTurn's save).
     if (session === undefined) session = deps.store.draft(available[0]!);
-    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+    permissionMode = modeOf(session); // S001 (bugfix): adopt the active session's persisted mode
+    post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
     postHistory();
   };
 
@@ -412,7 +416,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // keyed by transcript index, so it single-sources rendering with the live path and carries
       // each row's stored cssClass (marker rows -> fallback with the class), and resetKeys() clears
       // the reconciliation map for the fresh replay.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();}` +
+      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +
+      // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
+      `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';}});` +
       `const box=document.getElementById('insrc-input');` +
@@ -670,7 +676,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
         session = deps.store.draft(msg.provider);
-        post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript });
+        permissionMode = modeOf(session);
+        post({ type: 'session-restored', sessionId: session.id, transcript: session.transcript, mode: permissionMode });
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
         return;
       }
@@ -687,7 +694,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         cancelActive();
         ++generation;
         session = s;
-        post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript });
+        permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
+        post({ type: 'session-restored', sessionId: s.id, transcript: s.transcript, mode: permissionMode });
         postHistory(); // S005: keep the dropdown selection/order in sync
         return;
       }
@@ -735,10 +743,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         return;
       }
       case 'set-permission-mode': {
-        // S001 (bugfix): store the chosen chat mode for the NEXT turn's buildArgs (not the
-        // in-flight spawn). View-time only — never written to the session store (k4).
+        // S001 (bugfix): the chat mode is a PERSISTED per-session preference. Apply it to the NEXT
+        // turn's buildArgs and write it onto the active session so it survives reload + follows the
+        // session. Persist immediately for an already-saved session (a draft persists on its first
+        // turn, so its mode rides along without cluttering history with empty chats).
         if (msg.mode !== 'manual' && msg.mode !== 'edit-auto' && msg.mode !== 'auto') return; // invalid -> drop
         permissionMode = msg.mode;
+        if (session !== undefined) {
+          session.mode = msg.mode;
+          if (deps.store.get(session.id) !== undefined) deps.store.save(session);
+        }
         return;
       }
       default:

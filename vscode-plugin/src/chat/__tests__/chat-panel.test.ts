@@ -1521,3 +1521,57 @@ test('S001 (bugfix): denying a permission-denied request does NOT re-run (the tu
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(runs.length, before, 'deny never re-runs the blocked action');
 });
+
+// ---- S001 (bugfix): the chat mode is a PERSISTED per-session preference ----
+
+test('S001 (bugfix): set-permission-mode persists onto the active (saved) session', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' })); // first turn persists the session
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const id = store.list()[0]!.id;
+  assert.equal(store.get(id)!.mode ?? 'manual', 'manual', 'a fresh session defaults to manual');
+  fc.send(env('set-permission-mode', { mode: 'auto' }));
+  assert.equal(store.get(id)!.mode, 'auto', 'the chosen mode is written onto the saved session (survives reload)');
+});
+
+test('S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const a = store.create('claude'); a.mode = 'auto'; store.save(a);
+  const seen: TurnRequest[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open(); // a fresh draft (manual)
+  fc.send(env('open-chat', { chatId: a.id }));
+  const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').map((m) => m.payload);
+  assert.equal(restored[restored.length - 1]!['mode'], 'auto', 'session-restored carries the session’s persisted mode');
+  fc.send(env('submit-turn', { text: 'x' }));
+  await waitFor(() => seen.length >= 1);
+  assert.equal(seen[0]!.permissionMode, 'auto', 'the turn runs in the opened session’s mode, not the panel default');
+});
+
+test('S001 (bugfix): the webview sets the mode control from a restored session', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /if\(m\.mode&&pm\)\{pmode=m\.mode;pm\.value=m\.mode;updatePermSeg\(\);\}/, 'the webview syncs the mode dropdown on session-restored');
+});

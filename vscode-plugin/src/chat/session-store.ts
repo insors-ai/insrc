@@ -11,6 +11,7 @@
  * so the real vscode.Memento passes directly and tests inject an in-memory double.
  */
 import type { ProviderId } from './cli-adapter.js';
+import type { PermissionMode } from './protocol.js';
 
 export interface TranscriptEntry {
   readonly role: 'user' | 'assistant' | 'marker';
@@ -27,6 +28,12 @@ export interface ChatSession {
   readonly createdAt: string;
   title: string;
   editMode: 'auto' | 'review';
+  /**
+   * S001 (bugfix): the per-session chat mode (Manual / Edit Automatically / Auto), persisted so it
+   * survives reload + follows the session when switched. Optional for back-compat: a pre-mode
+   * session (or a corrupt value) defaults to 'manual' on read.
+   */
+  mode?: PermissionMode;
   transcript: TranscriptEntry[];
 }
 
@@ -154,6 +161,7 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
       createdAt: now(),
       title: 'new chat',
       editMode: 'auto',
+      mode: 'manual',
       transcript: [],
     });
 

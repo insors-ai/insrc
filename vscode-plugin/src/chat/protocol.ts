@@ -46,7 +46,7 @@ export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 /** Host -> webview: render + stream events. */
 export type HostToWebview =
   | { readonly type: 'turn-event'; readonly event: TurnEvent }
-  | { readonly type: 'session-restored'; readonly sessionId: string; readonly transcript: TranscriptEntry[] }
+  | { readonly type: 'session-restored'; readonly sessionId: string; readonly transcript: TranscriptEntry[]; readonly mode?: PermissionMode }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
   | { readonly type: 'edit-prompt'; readonly path: string; readonly diff: UnifiedDiff; readonly review?: boolean }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }

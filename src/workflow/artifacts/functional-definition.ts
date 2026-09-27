@@ -76,3 +76,35 @@ export function validateFunctionalDefinition(
 	}
 	return null;
 }
+
+/**
+ * Render the Functional Requirements section as markdown lines, generated from the
+ * record (k2 — prose is never hand-authored). ABSENT-SAFE: returns `[]` when the
+ * record is undefined or empty, so a caller that spreads the result appends nothing
+ * and its output is byte-identical to before. Doc-level requirements list first;
+ * per-item requirements are grouped under their referenced story/task id.
+ */
+export function renderFunctionalRequirementsSection(fd: FunctionalDefinition | undefined): string[] {
+	if (fd === undefined || fd.requirements.length === 0) return [];
+	const line = (r: FunctionalRequirement): string =>
+		`- **${r.id}** — ${r.statement}${r.rationale !== undefined && r.rationale.length > 0 ? ` _(${r.rationale})_` : ''}`;
+
+	const lines: string[] = ['## Functional requirements', ''];
+	for (const r of fd.requirements) {
+		if (r.scope === 'doc') lines.push(line(r));
+	}
+	const byItem = new Map<string, FunctionalRequirement[]>();
+	for (const r of fd.requirements) {
+		if (r.scope !== 'item') continue;
+		const key = r.itemRef !== undefined && r.itemRef.length > 0 ? r.itemRef : '(unassigned)';
+		const arr = byItem.get(key) ?? [];
+		arr.push(r);
+		byItem.set(key, arr);
+	}
+	for (const [item, rs] of byItem) {
+		lines.push('', `**${item}:**`, '');
+		for (const r of rs) lines.push(line(r));
+	}
+	lines.push('');
+	return lines;
+}

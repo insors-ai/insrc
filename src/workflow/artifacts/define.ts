@@ -22,6 +22,7 @@ import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
+import { renderFunctionalRequirementsSection } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // Body shape
@@ -112,6 +113,10 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 	lines.push('');
 	lines.push(body.problem);
 	lines.push('');
+
+	// sc1 (S001): the functional-definition section, generated from the record.
+	// Absent-safe — spreads nothing when there is no functionalDefinition.
+	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
 
 	if (body.nonGoals.length > 0) {
 		lines.push('## Non-goals');

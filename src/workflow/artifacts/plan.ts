@@ -31,6 +31,7 @@ import { safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
 import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
+import { renderFunctionalRequirementsSection } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // sc4 — TaskTestPlan
@@ -110,6 +111,9 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	lines.push(`**LLD run:** \`${meta.lldRunId}\``);
 	lines.push(`**LLD effective hash:** \`${meta.lldEffectiveHash.slice(0, 12)}...\``);
 	lines.push('');
+
+	// sc1 (S001): functional-definition section (absent-safe).
+	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
 
 	lines.push('## Tasks');
 	lines.push('');

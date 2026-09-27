@@ -20,6 +20,7 @@ import { safeCanonical, storyWorkflowId } from '../id.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
+import { renderFunctionalRequirementsSection } from './functional-definition.js';
 
 // ---------------------------------------------------------------------------
 // Body sub-shapes
@@ -123,6 +124,8 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 	lines.push('');
 	lines.push(body.frameworkSummary);
 	lines.push('');
+	// sc1 (S001): functional-definition section (absent-safe).
+	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
 	lines.push('## Architecture shape');
 	lines.push('');
 	lines.push(body.architectureShape);

@@ -424,3 +424,29 @@ test('S004 t6: an approval card with no decision sink registered does not throw 
   const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-2', title: 'y' } })!;
   assert.doesNotThrow(() => findByClass(card, 'insrc-approval__btn--approve')!.click());
 });
+
+// ---- S001 (bugfix): markdown tables + ordered lists + blockquotes (were raw pipes/text) ----
+
+test('S001 (bugfix): mdWidget renders a table (thead/tbody/th/td), ordered list, and blockquote', () => {
+  const { reg } = makeRegistry();
+  const md = '# Title\n\n| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n\n1. first\n2. second\n\n> a quoted line\n\ntail paragraph';
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
+  const table = findByClass(row, 'insrc-md-table');
+  assert.ok(table, 'a table element is rendered (not raw pipes)');
+  assert.ok(findByTag(table!, 'thead') && findByTag(table!, 'tbody'), 'table has thead + tbody');
+  assert.ok(findByTag(table!, 'th'), 'header cells (th)');
+  const countTag = (n: FakeNode, tag: string): number =>
+    (n.tag === tag ? 1 : 0) + n.children.reduce((s, c) => s + countTag(c, tag), 0);
+  assert.equal(countTag(table!, 'th'), 2, 'two header cells');
+  assert.equal(countTag(table!, 'td'), 4, 'four body cells (2 rows x 2 cols)');
+  assert.ok(!allText(table!).includes('|'), 'no raw pipe characters leaked into the table');
+  assert.ok(findByTag(row, 'ol'), 'ordered list rendered as <ol>');
+  assert.ok(findByClass(row, 'insrc-md-quote'), 'blockquote rendered');
+});
+
+test('S001 (bugfix): a table-only response still triggers the markdown widget (looksMarkdown)', () => {
+  const { reg } = makeRegistry();
+  const md = '| Col1 | Col2 |\n| --- | --- |\n| x | y |';
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
+  assert.ok(findByClass(row, 'insrc-md-table'), 'a bare table is detected + rendered');
+});

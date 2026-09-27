@@ -300,7 +300,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-md{font-family:var(--sans);color:var(--fg);font-size:13.5px;line-height:1.6;}` +
       `.insrc-md h1,.insrc-md h2,.insrc-md h3{font-family:var(--sans);color:var(--fg-strong);font-weight:600;margin:2px 0 6px;font-size:14px;}` +
       `.insrc-md p,.insrc-md .insrc-md-p{margin:0 0 8px;}` +
-      `.insrc-md ul{margin:0 0 4px;padding-left:18px;}.insrc-md li{margin:2px 0;}` +
+      `.insrc-md ul,.insrc-md ol{margin:0 0 8px;padding-left:20px;}.insrc-md li{margin:2px 0;}` +
+      // S001 (bugfix): markdown tables (were rendering as raw pipes). Scroll wide tables in-place.
+      `.insrc-md-table{border-collapse:collapse;margin:4px 0 8px;font-size:12.5px;display:block;overflow-x:auto;max-width:100%;}` +
+      `.insrc-md-table th,.insrc-md-table td{border:1px solid var(--border);padding:4px 9px;text-align:left;vertical-align:top;}` +
+      `.insrc-md-table th{background:var(--bg-inset);color:var(--fg-strong);font-weight:600;white-space:nowrap;}` +
+      `.insrc-md-quote{border-left:2px solid var(--border-lit);margin:4px 0 8px;padding:2px 0 2px 10px;color:var(--muted);}` +
       `.insrc-md code,.insrc-md .insrc-md-code{font-family:var(--font);font-size:12px;background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2);}` +
       `.insrc-md strong{color:var(--fg-strong);}.insrc-md em{font-style:italic;color:var(--fg-strong);}` +
       `.insrc-md pre{background:#0a0d14;border:1px solid var(--border);border-radius:6px;padding:8px 10px;overflow-x:auto;font-family:var(--font);}` +

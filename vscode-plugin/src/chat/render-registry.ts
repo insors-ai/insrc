@@ -220,18 +220,42 @@ export function renderRegistryWebviewSource(): string {
     `else if(p.charAt(0)==='*'){el=document.createElement('em');el.textContent=p.slice(1,-1);}` +
     `else{el=document.createElement('span');el.textContent=p;}` +
     `parent.appendChild(el);}}` +
-    // looksMarkdown: trigger on a heading / list item / code fence / inline code (NOT bare emphasis,
-    // which false-positives on prose). Emphasis is still rendered inside the widget when present.
-    `function looksMarkdown(s){s=s||'';return /(^|\\n)#{1,6}\\s/.test(s)||/(^|\\n)\\s*[-*]\\s+/.test(s)||s.indexOf(BT+BT+BT)>=0||new RegExp(BT+'[^'+BT+']+'+BT).test(s);}` +
+    // looksMarkdown: trigger on a heading / list item / ordered item / code fence / inline code /
+    // table separator (NOT bare emphasis, which false-positives on prose). Emphasis still renders
+    // inside the widget when present.
+    `function looksMarkdown(s){s=s||'';return /(^|\\n)#{1,6}\\s/.test(s)||/(^|\\n)\\s*[-*]\\s+/.test(s)||/(^|\\n)\\s*\\d+\\.\\s+/.test(s)||/(^|\\n)\\s*\\|[-:| ]+\\|/.test(s)||s.indexOf(BT+BT+BT)>=0||new RegExp(BT+'[^'+BT+']+'+BT).test(s);}` +
+    // splitCells: a pipe-delimited row -> trimmed cell strings (leading/trailing pipe stripped).
+    `function splitCells(r){return r.replace(/^\\s*\\|/,'').replace(/\\|\\s*$/,'').split('|').map(function(c){return c.trim();});}` +
+    // isTableSep: the `|---|:--:|` alignment row that MUST follow a table header (contains a dash).
+    `function isTableSep(r){return /^\\s*\\|?[\\s:|-]*-[\\s:|-]*\\|?\\s*$/.test(r||'')&&(r||'').indexOf('|')>=0;}` +
     `function mdWidget(s){` +
-    `var root=document.createElement('div');root.className='insrc-md';var lines=(s||'').split('\\n');var i=0;var ul=null;` +
+    `var root=document.createElement('div');root.className='insrc-md';var lines=(s||'').split('\\n');var i=0;var ul=null;var ol=null;` +
     `while(i<lines.length){var ln=lines[i];` +
-    `if(ln.indexOf(BT+BT+BT)===0){ul=null;var pre=document.createElement('pre');var buf=[];i++;while(i<lines.length&&lines[i].indexOf(BT+BT+BT)!==0){buf.push(lines[i]);i++;}pre.textContent=buf.join('\\n');root.appendChild(pre);i++;continue;}` +
+    // fenced code block
+    `if(ln.indexOf(BT+BT+BT)===0){ul=null;ol=null;var pre=document.createElement('pre');var buf=[];i++;while(i<lines.length&&lines[i].indexOf(BT+BT+BT)!==0){buf.push(lines[i]);i++;}pre.textContent=buf.join('\\n');root.appendChild(pre);i++;continue;}` +
+    // table: a pipe row immediately followed by a `|---|` separator; rows continue while pipes+non-blank.
+    `if(ln.indexOf('|')>=0&&i+1<lines.length&&isTableSep(lines[i+1])){ul=null;ol=null;` +
+    `var table=document.createElement('table');table.className='insrc-md-table';` +
+    `var thead=document.createElement('thead');var htr=document.createElement('tr');` +
+    `splitCells(ln).forEach(function(c){var th=document.createElement('th');inlineMd(th,c);htr.appendChild(th);});` +
+    `thead.appendChild(htr);table.appendChild(thead);i+=2;` +
+    `var tbody=document.createElement('tbody');` +
+    `while(i<lines.length&&lines[i].indexOf('|')>=0&&lines[i].trim()!==''){var tr=document.createElement('tr');splitCells(lines[i]).forEach(function(c){var td=document.createElement('td');inlineMd(td,c);tr.appendChild(td);});tbody.appendChild(tr);i++;}` +
+    `table.appendChild(tbody);root.appendChild(table);continue;}` +
+    // heading
     `var h=/^(#{1,6})\\s+(.*)$/.exec(ln);` +
-    `if(h){ul=null;var lvl=h[1].length>3?3:h[1].length;var head=document.createElement('h'+lvl);inlineMd(head,h[2]);root.appendChild(head);i++;continue;}` +
+    `if(h){ul=null;ol=null;var lvl=h[1].length>3?3:h[1].length;var head=document.createElement('h'+lvl);inlineMd(head,h[2]);root.appendChild(head);i++;continue;}` +
+    // unordered list item
     `var li=/^\\s*[-*]\\s+(.*)$/.exec(ln);` +
-    `if(li){if(!ul){ul=document.createElement('ul');root.appendChild(ul);}var item=document.createElement('li');inlineMd(item,li[1]);ul.appendChild(item);i++;continue;}` +
-    `ul=null;if(ln.trim()===''){i++;continue;}var para=document.createElement('div');para.className='insrc-md-p';inlineMd(para,ln);root.appendChild(para);i++;}` +
+    `if(li){ol=null;if(!ul){ul=document.createElement('ul');root.appendChild(ul);}var item=document.createElement('li');inlineMd(item,li[1]);ul.appendChild(item);i++;continue;}` +
+    // ordered list item (1. 2. 3.)
+    `var oli=/^\\s*\\d+\\.\\s+(.*)$/.exec(ln);` +
+    `if(oli){ul=null;if(!ol){ol=document.createElement('ol');root.appendChild(ol);}var oitem=document.createElement('li');inlineMd(oitem,oli[1]);ol.appendChild(oitem);i++;continue;}` +
+    // blockquote
+    `var bq=/^\\s*>\\s?(.*)$/.exec(ln);` +
+    `if(bq){ul=null;ol=null;var q=document.createElement('blockquote');q.className='insrc-md-quote';inlineMd(q,bq[1]);root.appendChild(q);i++;continue;}` +
+    // paragraph / blank line
+    `ul=null;ol=null;if(ln.trim()===''){i++;continue;}var para=document.createElement('div');para.className='insrc-md-p';inlineMd(para,ln);root.appendChild(para);i++;}` +
     `return root;}` +
     `function jsonWidget(obj){` +
     `var root=document.createElement('div');root.className='insrc-json';` +

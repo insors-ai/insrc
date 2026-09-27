@@ -260,3 +260,62 @@ export function epicOf(id: WorkflowId): WorkflowId {
 export function isEpicId(id: WorkflowId):  boolean { return id.level === 'epic'; }
 export function isStoryId(id: WorkflowId): boolean { return id.level === 'story'; }
 export function isTaskId(id: WorkflowId):  boolean { return id.level === 'task'; }
+
+// ---------------------------------------------------------------------------
+// Functional-requirement ids (sc1 — S001)
+//
+// FR ids mirror the story/task sequence scheme (lc1): the same fixed-width epic
+// segment + zero-padded ordinal, appended as a `:FR<nnn>` (or `-FR<nnn>` slug)
+// level. A doc-level FR hangs off the epic; a per-item FR hangs off a story.
+// These are PURE string helpers that reuse `hash8Of` / `utcDate` / `padOrdinal`
+// / `storyIdToOrdinal` above — they add no new WorkflowId union member.
+//
+//   doc-level : E<YYYYMMDD><hash8>:FR<nnn>
+//   per-item  : E<YYYYMMDD><hash8>:S<nnn>:FR<nnn>
+// ---------------------------------------------------------------------------
+
+/** The segments of a parsed FR id. `story` is present only for a per-item FR. */
+export interface FrIdParts {
+	readonly date:  string;
+	readonly hash8: string;
+	readonly story?: number | undefined;
+	readonly fr:    number;
+}
+
+const FR_CANONICAL_RE = /^E(\d{8})([0-9a-f]{8})(?::S(\d+))?:FR(\d+)$/;
+const FR_SLUG_RE      = /^E(\d{8})([0-9a-f]{8})(?:-S(\d+))?-FR(\d+)$/;
+
+/**
+ * Mint a stable FR id from the same structural inputs as a story/task id.
+ * Omit `storyId` for a doc-level FR; pass it for a per-item FR. Throws on a
+ * malformed epicHash / createdAt (via the shared guards) or a non-positive
+ * ordinal — an FR id is load-bearing identity, so it fails loudly rather than
+ * degrading (unlike `safeCanonical`).
+ */
+export function mintFrId(epicHash: string, createdAtISO: string, ordinal: number, storyId?: string): string {
+	if (!Number.isInteger(ordinal) || ordinal < 1) {
+		throw new Error(`mintFrId: ordinal must be an integer >= 1 (got ${String(ordinal)})`);
+	}
+	let s = `E${utcDate(createdAtISO)}${hash8Of(epicHash)}`;
+	if (storyId !== undefined) s += `:S${padOrdinal(storyIdToOrdinal(storyId))}`;
+	s += `:FR${padOrdinal(ordinal)}`;
+	return s;
+}
+
+/** Parse a (canonical or slug) FR id into its segments, or `null` when it is not one. */
+export function parseFrId(s: string): FrIdParts | null {
+	if (typeof s !== 'string') return null;
+	const m = FR_CANONICAL_RE.exec(s) ?? FR_SLUG_RE.exec(s);
+	if (m === null) return null;
+	const date = m[1]!;
+	const hash8 = m[2]!;
+	const storyStr = m[3];
+	const fr = Number(m[4]);
+	if (storyStr !== undefined) return { date, hash8, story: Number(storyStr), fr };
+	return { date, hash8, fr };
+}
+
+/** Cheap guard — a string is a (canonical or slug) FR id. */
+export function isFrId(s: string): boolean {
+	return parseFrId(s) !== null;
+}

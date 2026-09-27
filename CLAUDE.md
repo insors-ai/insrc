@@ -167,8 +167,8 @@ lookups carry the detail so this block can stay small:
 - **`insrc_guide`** — a workflow's full STEP-BY-STEP PROCEDURE. Call
   `insrc_guide({ workflow })` before running a workflow you don't have fresh in
   context, with one of: `define`, `design.epic`, `design.story`, `plan`,
-  `build`, `review`, `code-review`, `brainstorm`, `tracker`, `triage`. Omit
-  `workflow` to get the list of keys back.
+  `build`, `review`, `code-review`, `brainstorm`, `bugfix`, `tracker`, `triage`.
+  Omit `workflow` to get the list of keys back.
 
 **Schema-first rule:** call `insrc_schema` before emitting any insrc_* call whose
 shape (fields, or the `phase` you're in) you are not certain of. Don't hand-shape
@@ -187,6 +187,12 @@ a call from memory when the contract is one lookup away.
   `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
   build → code-review → complete. Every feature, big or small, is tracked. See
   `insrc_guide({ workflow: 'triage' })` for the routing table.
+- **Fix a bug / defect** → same front door: `insrc_triage` classifies it
+  `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
+  defect gets tracked exactly like a feature, never patched off-ledger. Small →
+  issue → build; sized → issue → design.story → plan → build. On the approval of
+  the tracked `issue`, the bugfix chain auto-advances to its next stage. See
+  `insrc_guide({ workflow: 'bugfix' })`.
 - **Produce a design artifact / decision / tracker push** (Epic, HLD, LLD,
   GitHub) → drive the workflow chain turn-by-turn with `insrc_workflow_step`.
   See the matching `insrc_guide` key.

@@ -1,0 +1,558 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790602404238-dpi15o",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T13:46:32.219Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 787935,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "epicHash": "a0f4c1cfe262a497",
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1790588218844-46z20d",
+    "hldEffectiveHash": "96dce0c1944d9039ee00cc922a10bffef174739b8627a6fb17646b4b96c3ed9e",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "sc1",
+          "ref": "dataModel",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "BuildRecord (the persisted BUILD body the change-log/feedback attach to) is declared in src/workflow/runners/build/standalone-record.ts with a body carrying focus?/producesLld?/tasks?/commit?, and mergeWithPrior spreads {...prior.body, ...rec.body}.",
+          "evidence": "Confirmed: export interface BuildRecord @ standalone-record.ts:43; mergeWithPrior @ :211 with `...prior.body` @ :226 (spread before rec.body). The BUILD body + upsert-preserve semantics are as cited.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc2",
+          "ref": "dataModel",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderPlanBuildRecordMd + persistBuildRecord are the plan-driven BUILD renderer + writer in standalone-record.ts (the section-assembly + persist seam s2 modifies).",
+          "evidence": "Confirmed: renderPlanBuildRecordMd @ standalone-record.ts:116 and persistBuildRecord @ :151 — the renderer + writer seam s2 modifies.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc3",
+          "ref": "contract",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "realChangedFiles derives the changed set from the git_diff builtin (returns file paths) in src/workflow/code-review/subject.ts — the lc1 changed-set grounding s2 reuses.",
+          "evidence": "Confirmed: realChangedFiles @ code-review/subject.ts:69 derives the changed set via gitDiffTool (diff.ts:54). The lc1 changed-set grounding s2 reuses exists as cited.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc4",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ChangeLogEntry/ChangeLog and FeedbackRecord are already declared in the provenance types module (from S001) for s2 to import.",
+          "evidence": "Confirmed: ChangeLogEntry @ provenance/types.ts:45, ChangeLog @ :51, FeedbackRecord @ :50 — all shipped by S001, ready for s2 to import.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc5",
+          "ref": "sc2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "appendFeedback (s1) is body-shape-agnostic (writes body.feedback on any artifact JSON), so s2 reuses it UNCHANGED for BUILD code feedback with no new writer.",
+          "evidence": "Confirmed: appendFeedback @ provenance/writer.ts:117 writes body.feedback (body-shape-agnostic per the S001 tests); s2 reuses it unchanged for BUILD code feedback — no parallel writer.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc6",
+          "ref": "sc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "feedbackBodyLines already exists in format/bindings.ts (s1) but changeLogBodyLines is NOT yet implemented — s2 adds the sc3-declared changeLogBodyLines sibling.",
+          "evidence": "Confirmed: feedbackBodyLines @ format/bindings.ts:56 exists; `export function changeLogBodyLines` has ZERO hits — exactly as the LLD states, so s2 adds the sc3-declared changeLogBodyLines sibling (consumer wiring, not a re-design).",
+          "action": "none — verified sound; the not-yet-built claim holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "sc7",
+          "ref": "validate",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The build validate phase (handleValidate, dispatched from mcp/build-step/handler.ts) is where the BuildRecord is persisted — the async seam where the change-log is populated before persistBuildRecord.",
+          "evidence": "Confirmed: handleValidate is dispatched from build-step/handler.ts:44 and persistBuildRecord is called at phases/validate.ts:96 — the validate phase is the async seam where s2 populates the change-log before persist.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-28T13:47:43.595Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-28T13:48:49.782Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "epicHash": "a0f4c1cfe262a497",
+      "storyId": "s2",
+      "rolloutPhase": "Phase B — BUILD change-log + code feedback",
+      "ownedContracts": [],
+      "consumedContracts": [
+        "sc1",
+        "sc2",
+        "sc3"
+      ],
+      "frameworkSummary": "s2 reuses s1's foundation to record the BUILD change-log from the build's actual git_diff changed set and BUILD code-anchored feedback — additive, absent-safe, byte-identical when absent. Consumes sc1 (ChangeLogEntry/ChangeLog/FeedbackRecord), sc2 (appendFeedback), sc3 (render bindings); owns no new contract."
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderPlanBuildRecordMd",
+          "signature": "function renderPlanBuildRecordMd(rec: BuildRecord): string",
+          "parameters": [
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The plan-driven BUILD record (its body may now carry changeLog?/feedback?).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The BUILD markdown; gains a `## Changes` section (from changeLogBodyLines) and a `## Feedback` section (from feedbackBodyLines) via the sc3 omit-slot bindings. Byte-identical to today when both are absent."
+          },
+          "errors": [],
+          "preconditions": [
+            "rec is the plan-driven (standalone:false) record; the Trivial renderStandaloneBuildRecordMd is unchanged"
+          ],
+          "postconditions": [
+            "Changes/Feedback sections are generated from body.changeLog/body.feedback; absent → sections omitted → byte-identical (ac3/ac4/k1/k5)"
+          ]
+        },
+        {
+          "name": "persistBuildRecord",
+          "signature": "function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repo whose BUILD ledger record is written.",
+              "optional": false
+            },
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The record whose body now optionally carries changeLog (populated at the validate phase).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "The written md + json paths. mergeWithPrior's `{...prior.body, ...rec.body}` merge preserves changeLog + any out-of-band appended feedback across a re-validate upsert."
+          },
+          "errors": [],
+          "preconditions": [
+            "Unchanged signature; s2 only enriches rec.body before the call"
+          ],
+          "postconditions": [
+            "changeLog and appended feedback survive re-validate (append-only, lc1/k5)"
+          ]
+        },
+        {
+          "name": "appendFeedback (sc2, consumed)",
+          "signature": "function appendFeedback(req: AppendFeedbackRequest): AppendFeedbackResult",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "AppendFeedbackRequest",
+              "purpose": "artifactPath = the BUILD json; entry.target = a source-file ProvenanceTarget (code feedback).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AppendFeedbackResult",
+            "meaning": "s2 REUSES s1's appendFeedback UNCHANGED to record BUILD code feedback — it is body-shape-agnostic (writes body.feedback on any artifact JSON, incl. the BUILD record). No new writer."
+          },
+          "errors": [
+            {
+              "type": "ArtifactFeedbackError (s1)",
+              "condition": "out-of-tree BUILD path / malformed json / blank author or comment — unchanged from s1"
+            }
+          ],
+          "preconditions": [
+            "The BUILD json path resolves under the artifact root"
+          ],
+          "postconditions": [
+            "A code-anchored feedback entry is appended to the BUILD body.feedback, attributed + append-only (ac2/k2/k3)"
+          ]
+        },
+        {
+          "name": "changeLogBodyLines / feedbackBodyLines (sc3, consumed)",
+          "signature": "function changeLogBodyLines(changeLog: ChangeLog | undefined): readonly string[]\nfunction feedbackBodyLines(feedback: FeedbackRecord | undefined): readonly string[]",
+          "parameters": [
+            {
+              "name": "changeLog / feedback",
+              "type": "ChangeLog | undefined  /  FeedbackRecord | undefined",
+              "purpose": "The BUILD body's structured records; [] when absent (omit-slot).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "The Changes/Feedback section lines. feedbackBodyLines already exists (s1); changeLogBodyLines is the sibling ChangeLogSectionBinding declared by sc3 — s1 left it unbuilt (no document consumer needs it), so s2 adds it in format/bindings.ts as the sc3-declared sibling (still sc3's shape, not a new contract)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Absent/empty → [] → section omitted (byte-identical, k5)"
+          ]
+        },
+        {
+          "name": "realChangedFiles / changedFiles (existing capability, reused)",
+          "signature": "function changedFiles(repoPath: string): Promise<readonly string[]>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repo whose working-tree changed set is derived via the git_diff builtin.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<readonly string[]>",
+            "meaning": "The real changed file set (unstaged ∪ staged), the lc1 grounding for the change-log. Reused from realChangedFiles (code-review/subject.ts:69), extracted into a small shared helper so the build does not depend on the code-review module."
+          },
+          "errors": [
+            {
+              "type": "NoBuildChangesError (existing)",
+              "condition": "git_diff fails / returns no data — the build handles it as 'no change-log' (empty changeLog), never a hard failure"
+            }
+          ],
+          "preconditions": [
+            "Called at the validate phase before persistBuildRecord"
+          ],
+          "postconditions": [
+            "Each returned path becomes one file-level ChangeLogEntry (segment omitted; line-ranges deferred)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildRecord.body",
+        "change": "field-add",
+        "details": "Add `readonly changeLog?: ChangeLog | undefined;` and `readonly feedback?: FeedbackRecord | undefined;` to BuildRecord.body (importing ChangeLog/FeedbackRecord from src/workflow/artifacts/provenance/types.js — consuming sc1). Both optional + absent-safe; mergeWithPrior already carries them through `{...prior.body, ...rec.body}`. No guard change (BuildRecord has no isXBody guard; readPriorRecord only checks meta.epicHash/storyId).",
+        "schemaDiff": "+ readonly changeLog?: ChangeLog | undefined;      // BUILD-only (k7)\n+ readonly feedback?:  FeedbackRecord | undefined;  // BUILD code feedback (k3)",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts:43",
+          "src/workflow/artifacts/provenance/types.ts:45"
+        ]
+      },
+      {
+        "entity": "renderPlanBuildRecordMd",
+        "change": "field-modify",
+        "details": "After the Tasks-validated section, append a `## Changes` block from changeLogBodyLines(rec.body.changeLog) and a `## Feedback` block from feedbackBodyLines(rec.body.feedback), each via the omit-slot pattern (push lines only when non-empty). Byte-identical when both absent (existing BUILD records unchanged).",
+        "schemaDiff": "lines.push(...changeLogBodyLines(rec.body.changeLog)); lines.push(...feedbackBodyLines(rec.body.feedback))  // omit-slot",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts:116",
+          "src/workflow/artifacts/format/bindings.ts"
+        ]
+      },
+      {
+        "entity": "collectBuildChangeLog (new s2-internal helper)",
+        "change": "new",
+        "details": "A new helper that maps the changed set to a ChangeLog: for each path in changedFiles(repoPath), build a ChangeLogEntry { target:{file: path, version: commit?}, author: <build actor>, timestamp: <build time>, summary?: undefined }. segment omitted (file-level). Lives in the build runner (near persistBuildRecord) or the provenance module; grounded in lc1.",
+        "schemaDiff": "collectBuildChangeLog(repoPath, ctx: { author: string; timestamp: string; version?: string }): Promise<ChangeLog>",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts:151",
+          "src/workflow/code-review/subject.ts:69"
+        ]
+      },
+      {
+        "entity": "build validate phase (handleValidate)",
+        "change": "field-modify",
+        "details": "At the validate phase, before constructing/persisting the BuildRecord, call collectBuildChangeLog (async) and set rec.body.changeLog. git_diff failure → empty change-log, never aborts the build. No signature change to handleValidate.",
+        "schemaDiff": "rec.body.changeLog = await collectBuildChangeLog(repoPath, ctx)  // before persistBuildRecord",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts",
+          "src/mcp/build-step/handler.ts:23"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "s2 imports ChangeLogEntry/ChangeLog/FeedbackRecord from s1's provenance/types (already declared) and attaches optional changeLog?/feedback? to BuildRecord.body — no vocabulary change, pure consumption."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "s2 reuses appendFeedback UNCHANGED for BUILD code feedback (body-shape-agnostic; writes body.feedback on the BUILD json) with a source-file ProvenanceTarget. No new writer/tool/IPC."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "s2 calls feedbackBodyLines + changeLogBodyLines (the sc3-declared bindings) from renderPlanBuildRecordMd via the omit-slot pattern; changeLogBodyLines (the BUILD-changes sibling s1 left unbuilt) is added in format/bindings.ts as the sc3-declared shape — consumer wiring, not a re-design of s1's feedbackBodyLines."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The git_diff builtin fails or returns no data at the validate phase (no repo, git error)",
+          "detection": "changedFiles(repoPath) rejects with NoBuildChangesError (the existing realChangedFiles path throws when git_diff.execute returns !success or no data).",
+          "response": "The build catches it and treats it as an EMPTY change-log (rec.body.changeLog left undefined/[]); the build never fails on change-log derivation — a missing change-log is absent-safe, not an error.",
+          "userImpact": "The BUILD record persists without a Changes section; the build itself succeeds.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A re-validate rewrites the BuildRecord and could drop a previously-recorded change-log or an out-of-band appended feedback entry",
+          "detection": "persistBuildRecord→mergeWithPrior reads the prior on-disk record; if the new rec.body omits changeLog/feedback the spread `{...prior.body, ...rec.body}` would normally let the new (absent) value win only if present.",
+          "response": "Rely on the existing mergeWithPrior semantics: `...prior.body` is spread FIRST so a prior changeLog/feedback survives when the new write omits it; a new write that recomputes changeLog replaces it (still the real changed set). Feedback appended out-of-band via appendFeedback is on prior.body and is preserved. Confirm with a re-validate test.",
+          "userImpact": "No loss of prior change-log or feedback across re-validate (append-only, lc1).",
+          "recoverable": true
+        },
+        {
+          "scenario": "Code feedback is recorded on a BUILD json that is out-of-tree or malformed",
+          "detection": "appendFeedback (s1, unchanged) resolves+guards the path and JSON.parses — an out-of-tree path / malformed json / blank author or comment throws ArtifactFeedbackError before any write.",
+          "response": "The typed error surfaces (or the IPC handler returns {error}); the BUILD json is untouched. s2 adds no new error path — it inherits s1's.",
+          "userImpact": "The feedback append is rejected with a clear message; the BUILD record is unchanged.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A build that changed NO files (empty changed set)",
+          "expected": "collectBuildChangeLog returns [] → rec.body.changeLog is [] or omitted → the Changes section is omitted (byte-identical) — no empty '## Changes' heading."
+        },
+        {
+          "input": "An existing BUILD record written before s2 (no changeLog/feedback field)",
+          "expected": "It reads + re-renders unchanged (optional fields absent → omit-slot → byte-identical); mergeWithPrior tolerates the missing fields (ac4/k5)."
+        },
+        {
+          "input": "A Trivial standalone build (standalone:true)",
+          "expected": "Routes through renderStandaloneBuildRecordMd which stays byte-identical — s2 does not add Changes/Feedback there (scoped to the plan-driven path; Trivial parity deferred)."
+        },
+        {
+          "input": "A changed file with a very long path or an unusual character",
+          "expected": "It becomes one ChangeLogEntry.target.file verbatim (the git_diff path); the renderer prints it as-is — no parsing/escaping beyond markdown."
+        },
+        {
+          "input": "The build commit sha is unknown at validate time",
+          "expected": "ChangeLogEntry.target.version is omitted (optional in sc1); the entry is still valid with file+author+timestamp."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The BUILD change-log MUST be grounded in the real git_diff changed set (unstaged ∪ staged), not a hand-authored or plan/task-derived summary — the same git_diff source the code-review subject already trusts (realChangedFiles @ code-review/subject.ts:69) (lc1).",
+          "source": "c2"
+        },
+        {
+          "text": "mergeWithPrior must keep spreading `...prior.body` before `...rec.body` so changeLog + out-of-band appended feedback survive a re-validate upsert (append-only, never un-recording).",
+          "source": "c2"
+        },
+        {
+          "text": "A BUILD record with no changeLog/feedback must render byte-identical to today (omit-slot), and the Trivial renderStandaloneBuildRecordMd stays byte-identical — existing records unchanged (k5).",
+          "source": "c2"
+        },
+        {
+          "text": "Code feedback on the BUILD artifact reuses s1's appendFeedback UNCHANGED (append-only, key-preserving, path-guarded); s2 introduces no parallel writer (k6/lc1).",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove collectBuildChangeLog maps the changed set to attributed ChangeLogEntries and the BUILD renderer emits Changes/Feedback via the sc3 omit-slot, byte-identical when absent.",
+          "subjects": [
+            "collectBuildChangeLog: each changed file → one ChangeLogEntry {target.file, author, timestamp, version?}, segment omitted; empty changed set → []",
+            "renderPlanBuildRecordMd: with changeLog → '## Changes' section; with feedback → '## Feedback' section; with neither → output byte-identical to the pre-change render",
+            "changeLogBodyLines: non-empty → section lines; undefined/empty → [] (omit-slot)"
+          ],
+          "fixturesNeeded": [
+            "an in-memory BuildRecord fixture with/without changeLog + feedback",
+            "a stub changedFiles returning a fixed path list"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the upsert preserves changeLog + appended feedback across a re-validate (append-only).",
+          "subjects": [
+            "persistBuildRecord/mergeWithPrior: a re-validate that omits changeLog keeps the prior changeLog; a prior out-of-band feedback entry survives; a new write's recomputed changeLog replaces the prior"
+          ],
+          "fixturesNeeded": [
+            "a temp-dir prior BUILD json with changeLog + feedback, then a second persist with a new body"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the end-to-end BUILD provenance: a build with real changes records the change-log, code feedback appends via sc2, both render, and a legacy record is unchanged.",
+          "subjects": [
+            "a plan-driven build over a repo with a known changed set → the BUILD json carries a changeLog with one attributed entry per changed file, and renderPlanBuildRecordMd shows the Changes section (ac1)",
+            "appendFeedback on the BUILD json with a source-file target → a code feedback entry lands on body.feedback and renders in the Feedback section (ac2)",
+            "a legacy BUILD record (no changeLog/feedback) reads + re-renders byte-identically (ac4)"
+          ],
+          "fixturesNeeded": [
+            "a temp git repo with a controlled working-tree diff (a couple of changed files)",
+            "a written BUILD json envelope for the append+render path"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: collectBuildChangeLog maps each changed file to an attributed ChangeLogEntry (file+author+timestamp+version?)",
+            "integration: a build with a known changed set → BUILD json changeLog has one entry per changed file, grounded in the real git_diff set (lc1)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: appendFeedback on the BUILD json with a source-file ProvenanceTarget → an append-only, attributed code-feedback entry on body.feedback",
+            "unit: renderPlanBuildRecordMd shows the Feedback section from body.feedback"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: renderPlanBuildRecordMd with changeLog and/or feedback present → Changes/Feedback sections generated from the structured body",
+            "unit: renderPlanBuildRecordMd with neither → byte-identical to the pre-change render"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: mergeWithPrior/persistBuildRecord preserve a legacy record's absence of changeLog/feedback (reads + re-renders unchanged)",
+            "integration: a pre-s2 BUILD json re-renders byte-identically (forward-only)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), *.test.ts — the repo convention (src/workflow/runners/build convention.detect: camelCase fns, *.test files; matches the S001 provenance suites)"
+    },
+    "migration": {
+      "stateBefore": "BuildRecord.body (src/workflow/runners/build/standalone-record.ts:43-66) carries focus?/producesLld?/tasks?/commit? and no change-log or feedback; renderPlanBuildRecordMd (:116) renders only the header + Tasks-validated section; persistBuildRecord/mergeWithPrior (:151/:211) upsert-merge the body. There is no build-time changed-set producer — the only git_diff-derived collector is realChangedFiles (code-review/subject.ts:69, files only, private to code-review). S001 already declared ChangeLogEntry/ChangeLog + FeedbackRecord in provenance/types.ts and shipped appendFeedback (body-shape-agnostic).",
+      "stateAfter": "BuildRecord.body carries optional changeLog?/feedback? (absent on every existing record). At the validate phase the plan-driven build derives the real git_diff changed set and records a file-level, attributed change-log; renderPlanBuildRecordMd shows Changes + Feedback sections via the shared sc3 bindings (byte-identical when absent). Code feedback rides s1's appendFeedback unchanged. Nothing is migrated; existing BUILD records stay valid and render identically. Trivial renderStandaloneBuildRecordMd is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add optional changeLog?/feedback? fields to BuildRecord.body (import ChangeLog/FeedbackRecord from the s1 provenance types) — purely additive; no reader/guard change (readPriorRecord only checks meta ids).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Extract the git_diff-derived changed-set derivation (realChangedFiles) into a small shared changedFiles(repoPath) helper (or export it) so the build can reuse it without depending on the code-review module.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the collectBuildChangeLog helper: map each changed file to an attributed ChangeLogEntry (file, author, timestamp, version?; segment omitted).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "In the validate phase, before persistBuildRecord, populate rec.body.changeLog from collectBuildChangeLog (git_diff failure → empty change-log, never aborts).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Wire the '## Changes' + '## Feedback' omit-slot sections into renderPlanBuildRecordMd via changeLogBodyLines/feedbackBodyLines (byte-identical when both absent); add changeLogBodyLines to format/bindings.ts if s1 did not.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward compatible: changeLog?/feedback? are optional + absent-safe, so every existing BUILD record (and the Trivial standalone renderer) reads + renders byte-identically; mergeWithPrior already tolerates and preserves the new fields across a re-validate (append-only). persistBuildRecord + renderPlanBuildRecordMd keep their signatures; changedFiles is a reuse of an existing capability (extract-only, no behaviour change to the code-review path). No existing public API signature changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "File-level change-log from the git_diff changed set (reuse the realChangedFiles capability)",
+        "oneLineSummary": "Add changeLog?/feedback? to BuildRecord.body; populate a one-entry-per-changed-file change-log at the validate phase from the existing git_diff-derived changed set (segment omitted, optional); feedback via sc2 unchanged; render both via sc3 in renderPlanBuildRecordMd.",
+        "approach": "Add changeLog?/feedback? to BuildRecord.body (import from s1 provenance types — sc1). Extract realChangedFiles into a shared changedFiles helper and reuse it at the validate phase. Map each changed file to a ChangeLogEntry {target:{file, version:commit?}, author, timestamp, summary?} — segment omitted (file-level; sc1 allows). persistBuildRecord/mergeWithPrior carry it through. Code feedback reuses sc2 appendFeedback unchanged; render via sc3 omit-slot bindings in renderPlanBuildRecordMd. Scope to the plan-driven path; Trivial renderer byte-identical.",
+        "pros": [
+          "Grounded in the REAL git_diff changed set (lc1), not a hand-authored summary.",
+          "Minimal new surface: reuses the s1 foundation + the existing git_diff derivation; s2 owns no new contract.",
+          "Absent-safe/forward-only (ac3/ac4/k5); mergeWithPrior preserves changeLog + appended feedback across re-validate (append-only, lc1).",
+          "Satisfies ac1/k7 attribution (file, version, author, timestamp) — segment optional in sc1."
+        ],
+        "cons": [
+          "No per-change line-ranges (segment omitted; deferred enhancement).",
+          "Extracting realChangedFiles into a shared helper touches the code-review subject module."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Line-range change-log by parsing git-diff hunks into segment{startLine,endLine}",
+        "oneLineSummary": "Same wiring as a1 but derive per-change LINE-RANGES from git diff hunks so each ChangeLogEntry carries target.segment, fully realising k7's {segment/lines}.",
+        "approach": "As a1, but add a diff-hunk parser over git diff that yields per-file {startLine,endLine} hunk ranges and emit one ChangeLogEntry per hunk with target.segment populated. Everything else matches a1.",
+        "pros": [
+          "Fully realises k7's {file, version, segment/lines, timestamp} — per-change line-ranges.",
+          "The rendered Changes section can show file:startLine-endLine."
+        ],
+        "cons": [
+          "New brittle parsing surface (git_diff exposes file-stat, not hunks).",
+          "One-entry-per-hunk needs a summarisation/merge policy.",
+          "Higher cost for a detail sc1 makes OPTIONAL."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Meets every constraint and is technically richer, but at L cost with a new brittle diff-hunk parser for a detail sc1 makes OPTIONAL. Better as a deferred enhancement on top of a1 than the first cut."
+      },
+      {
+        "id": "a3",
+        "name": "Change-log derived from the plan's validated tasks (body.tasks)",
+        "oneLineSummary": "Build the change-log from the BuildRecord's already-tracked validated tasks rather than the git changed set.",
+        "approach": "Reuse body.tasks[] and synthesize a ChangeLogEntry per task using the task id/title as the change description. No git_diff needed.",
+        "pros": [
+          "Zero new changed-set capability — tasks are already on BuildRecord.body.",
+          "Deterministic and already present at the validate phase."
+        ],
+        "cons": [
+          "VIOLATES lc1: tasks are the PLAN, not the actual changed set — exactly the hand-authored summary the invariant forbids.",
+          "Fails ac1's 'reflecting the actual changed set' and k7's {file, segment/lines}: a task has no file/line attribution.",
+          "Misleading provenance — a reviewer would read the plan back, not the build's real effect."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Rejected — violates ac1/lc1 (a task-derived log is exactly the hand-authored summary the invariant forbids) and misuses ChangeLogEntry (sc1 partial). Cheap but wrong provenance."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "S001 provenance vocabulary (sc1) — ChangeLogEntry/ChangeLog/FeedbackRecord in src/workflow/artifacts/provenance/types.ts; appendFeedback (sc2) + feedbackBodyLines (sc3) already shipped"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s2 s1-context — BuildRecord.body + renderPlanBuildRecordMd + persistBuildRecord/mergeWithPrior (standalone-record.ts:43/116/151/211); realChangedFiles git_diff changed set (code-review/subject.ts:69); the validate phase (mcp/build-step/handler.ts:23 → phases/validate.ts)",
+      "quotedText": "The BUILD body is BuildRecord.body; the change-log is grounded in the git_diff-derived changed set (file-level, segment optional); populated at the validate phase; mergeWithPrior preserves body across re-validate (append-only)."
+    }
+  ]
+}

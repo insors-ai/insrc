@@ -23,6 +23,8 @@ import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
 import { writeAtomic, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs } from '../../storage.js';
+import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
+import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 const log = getLogger('workflow:build-record');
 
@@ -62,6 +64,14 @@ export interface BuildRecord {
 		/** Plan-driven provenance — the tasks validated for the Story. */
 		readonly tasks?:       readonly BuildRecordTask[] | undefined;
 		readonly commit?:      string | undefined;
+		/** S002 (provenance/feedback): the file-level change-log of the build's
+		 *  changed set, collected at the validate phase. Absent → no `## Changes`
+		 *  section (omit-slot, byte-identity preserved for a no-change build). */
+		readonly changeLog?:   ChangeLog | undefined;
+		/** S002 (provenance/feedback): append-only, human-authored feedback on the
+		 *  build's changed code (populated out-of-band via `appendFeedback`, never by
+		 *  this writer). Absent → no `## Feedback` section (omit-slot). */
+		readonly feedback?:    FeedbackRecord | undefined;
 	};
 }
 
@@ -130,6 +140,17 @@ export function renderPlanBuildRecordMd(rec: BuildRecord): string {
 			const status = t.passed === true ? '✓' : t.passed === false ? '✗' : '·';
 			lines.push(`- ${status} \`${t.id}\``);
 		}
+	}
+	// S002: the file-level change-log and any out-of-band feedback — each an
+	// omit-slot section (heading pushed only when the binding yields content), so
+	// a build with neither renders byte-identically to the pre-S002 output.
+	const changeLines = changeLogBodyLines(rec.body.changeLog);
+	if (changeLines.length > 0) {
+		lines.push('', '## Changes', '', ...changeLines);
+	}
+	const feedbackLines = feedbackBodyLines(rec.body.feedback);
+	if (feedbackLines.length > 0) {
+		lines.push('', '## Feedback', '', ...feedbackLines);
 	}
 	lines.push('');
 	return lines.join('\n');

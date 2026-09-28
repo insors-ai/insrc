@@ -13,7 +13,7 @@ import type { Citation } from '../../types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { renderFunctionalRequirementsSection } from '../functional-definition.js';
 import type { CompanionArtifactRef } from '../companion/types.js';
-import type { FeedbackRecord } from '../provenance/types.js';
+import type { ChangeLog, FeedbackRecord } from '../provenance/types.js';
 
 /**
  * S001's FR section content WITHOUT its own '## Functional requirements' heading
@@ -59,6 +59,23 @@ export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[
 		const seg = f.target.segment !== undefined ? `:${f.target.segment.startLine}-${f.target.segment.endLine}` : '';
 		const kind = f.kind !== undefined ? ` \`${f.kind}\`` : '';
 		return `- **${f.author}** (${f.timestamp})${kind} — \`${f.target.file}${seg}\`: ${f.comment}`;
+	});
+}
+
+/**
+ * S002 (provenance/feedback): the Changes section body — each change-log entry
+ * rendered as one bullet showing the target file (+ optional `:startLine-endLine`
+ * when a segment is present), author, timestamp, and the optional summary. `[]`
+ * when the change-log is absent/empty (the renderer then omits the section —
+ * absent-safe/forward-only), so a build with no recorded changes renders
+ * byte-identically to before. Mirrors {@link feedbackBodyLines}.
+ */
+export function changeLogBodyLines(changeLog: ChangeLog | undefined): string[] {
+	if (changeLog === undefined || changeLog.length === 0) return [];
+	return changeLog.map(c => {
+		const seg = c.target.segment !== undefined ? `:${c.target.segment.startLine}-${c.target.segment.endLine}` : '';
+		const summary = c.summary !== undefined && c.summary.length > 0 ? ` — ${c.summary}` : '';
+		return `- \`${c.target.file}${seg}\` — **${c.author}** (${c.timestamp})${summary}`;
 	});
 }
 

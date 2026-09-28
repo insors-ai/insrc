@@ -20,6 +20,7 @@ import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { persistBuildRecord } from '../../../workflow/runners/build/standalone-record.js';
+import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import type { BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 
 const log = getLogger('mcp:build-step:validate');
@@ -93,9 +94,14 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 		if (epicHash.length > 0 && storyId.length > 0) {
 			try {
 				const now = new Date().toISOString();
+				// S002: collect the file-level change-log of the build's changed set as
+				// a SIDE EFFECT of the verdict. A git failure is swallowed inside
+				// collectBuildChangeLog (→ []), and an empty change-log is omitted from
+				// the body (omit-slot) so a no-change build stays byte-identical.
+				const changeLog = await collectBuildChangeLog(repoPath, { author: 'insrc-build', timestamp: now });
 				persistBuildRecord(repoPath, {
 					meta: { workflow: 'build', standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
-					body: { tasks: [{ id: taskId, passed }] },
+					body: { tasks: [{ id: taskId, passed }], ...(changeLog.length > 0 ? { changeLog } : {}) },
 				});
 			} catch (err) {
 				log.warn(

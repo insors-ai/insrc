@@ -34,22 +34,17 @@
  */
 
 import { requireApprovedLld, requireApprovedPlan, ArtifactMissingError, ArtifactNotApprovedError } from '../gates.js';
-import { gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
-import type { GitDiffData } from '../../daemon/tools/builtins/git/diff.js';
-import type { ToolDeps } from '../../daemon/tools/types.js';
+import { changedFiles as realChangedFiles, NoBuildChangesError } from '../runners/build/changed-files.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
 import type { CodeReviewSubjectResult } from './types.js';
 
-/** Raised by a git seam that cannot derive a changed-file set (e.g. not a git
- *  repository / git failed). Mapped by the resolver to `reason:'no-build-record'`. */
-export class NoBuildChangesError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = 'NoBuildChangesError';
-	}
-}
+// S002 t2: the git changed-file seam + its `NoBuildChangesError` moved to the
+// shared `runners/build/changed-files.ts` so the BUILD runner reuses it without
+// importing this module. Re-exported here so existing importers (and tests) that
+// pull `NoBuildChangesError` from `./subject.js` are unchanged.
+export { NoBuildChangesError };
 
 /** The injectable seams `resolveCodeReviewSubject` composes. Defaults wire the
  *  real gates + `git_diff` builtin; tests supply fakes. */
@@ -61,24 +56,6 @@ export interface SubjectDeps {
 	readonly changedFiles: (repoPath: string) => Promise<readonly string[]>;
 	/** Reads the persisted build record for identity; `null` when none. Read-only. */
 	readonly readBuildRecord?: (repoPath: string, epicHash: string, storyId: string) => StandaloneBuildRecord | null;
-}
-
-/** Derive the changed-file set from the working-tree diff (unstaged ∪ staged)
- *  via the `git_diff` builtin. Read-only; throws `NoBuildChangesError` on git
- *  failure. */
-async function realChangedFiles(repoPath: string): Promise<readonly string[]> {
-	const toolDeps: ToolDeps = { sessionId: 'code-review', repoPath, send: () => {}, requestId: 0 };
-	const paths = new Set<string>();
-	for (const staged of [false, true]) {
-		const res = await gitDiffTool.execute({ cwd: repoPath, staged }, toolDeps);
-		if (!res.success) {
-			throw new NoBuildChangesError(`git_diff failed for ${repoPath}: ${res.error ?? res.output}`);
-		}
-		const data = res.data as GitDiffData | undefined;
-		if (!data) throw new NoBuildChangesError(`git_diff returned no data for ${repoPath}`);
-		for (const f of data.files) paths.add(f.path);
-	}
-	return [...paths];
 }
 
 const DEFAULT_DEPS: SubjectDeps = {

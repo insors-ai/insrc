@@ -1,0 +1,692 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790521391567-sqdzvt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-27T15:17:29.086Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 857499,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "epicHash": "c5824e17eccf0c14",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790520092322-vpqvrh",
+    "hldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "mintFrId",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "id.ts provides the reuse primitives mintFrId depends on: padOrdinal, hash8Of/utcDate guards, storyWorkflowId, and the parseWorkflowId null-on-miss pattern.",
+          "evidence": "grep resolves padOrdinal (16), storyWorkflowId (50), parseWorkflowId (30) in id.ts — the reuse primitives mintFrId composes; confirmed by direct read of id.ts:110-113 this turn.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DefineBody is declared around src/workflow/artifacts/define.ts:68 and rendered by renderDefineMarkdown at define.ts:86 — the attach point for the optional functionalDefinition field and the additive FR section.",
+          "evidence": "grep 'interface DefineBody' (2) and 'function renderDefineMarkdown' (2) resolve in src/workflow/artifacts/define.ts; direct read confirmed DefineBody at :68 and renderDefineMarkdown at :86.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "ReviewDimension",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "ReviewDimension is a four-member union ('adherence'|'conventions'|'coverage'|'quality') declared at src/workflow/code-review/types.ts:34, and DimensionFinding already carries an optional expectationRef the functional-coverage dimension reuses.",
+          "evidence": "grep 'type ReviewDimension =' (4) and 'expectationRef?' (14) resolve; direct read of code-review/types.ts confirmed the four-member union at :34 and DimensionFinding.expectationRef? at :45.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "DIMENSION_JUDGES",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "runner.ts lists the four dimension judges in a table around line 110 and validates the expected dimension set via validateArtifact at runner.ts:266.",
+          "evidence": "grep 'judge: judgeCoverage' (1) confirms the DIMENSION_JUDGES table (runner.ts:110-113) and 'function validateArtifact' (1) confirms the validator at runner.ts:266.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "DIMENSIONS",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The MCP code-review handler fixes DIMENSIONS = ['adherence','conventions','coverage','quality'] at src/mcp/code-review-step/handler.ts:56, driving the emit-judgements schema enum and validation — the constant the conditional-set change derives.",
+          "evidence": "grep 'const DIMENSIONS' (1) resolves to src/mcp/code-review-step/handler.ts:56 — the fixed four-member constant the conditional-set change derives from.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "invariants",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The block/warn/pass verdict reducer the LLD must not fork exists: computeReviewVerdict (src/workflow/review/review.ts) and effectiveReviewVerdict (src/workflow/review/resolve.ts).",
+          "evidence": "grep resolves computeReviewVerdict (15) and effectiveReviewVerdict (20) — the block/warn/pass reducer the LLD explicitly does not fork exists.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "coverage.ts is the sibling-dimension pattern the functional-coverage file mirrors, exporting buildCoveragePrompt + judgeCoverage.",
+          "evidence": "grep resolves buildCoveragePrompt and judgeCoverage — the sibling-dimension export pattern the functional-coverage file mirrors.",
+          "action": "No change — verified against source.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7
+      },
+      "reviewedAt": "2026-09-27T15:18:41.176Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-27T15:34:18.099Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Adopt a1: the artifact JSON body is the single source of truth for the new content, the existing per-type renderers are enriched to generate human-readable, audience-aware markdown from that structured body, and the three new adherence checks (functional-coverage, diagram, UX) are added as code-review dimensions that ride the existing computeReviewVerdict / codeReview.enforce completion gate without forking the verdict reducer. Diagrams and UX mocks are content-gated companion artifacts referenced from — never inlined into — the core markdown, produced through the existing docgen generateDocument seam. The four forward-only Stories layer cleanly: S001 introduces the functional-definition record + its coverage dimension; S002 makes every document navigable, audience-aware, and de-duplicated; S003 adds content-gated diagram companions; S004 unifies the selectable adherence dimensions and the UX-acceptance check.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "FunctionalDefinition record (artifact body)",
+          "purpose": "The structured functional-requirement data carried in every artifact JSON body: discrete requirements with stable sequence-numbered ids, doc-level and per-item, from which the human-readable prose is generated. It is the source of truth the whole functional thread rides (k2).",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "functional-coverage review dimension",
+          "purpose": "A code-review dimension that judges whether each functional requirement was genuinely realized by the build and contributes its finding to the existing verdict fold, so inadequate coverage withholds completion via the existing gate (S001 ac3, k4).",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Private to S001: the exact FR-id sequence-numbering/assignment scheme and its stability guarantee, the internal shape and validation of the FunctionalDefinition body extension, how the functional-definition prose is generated from the record, and the provider prompt/schema by which the functional-coverage dimension judges genuine realization."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ]
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc3"
+          ]
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ]
+        }
+      ],
+      "rolloutPhase": "Phase A — functional-definition spine",
+      "nonFunctional": {
+        "performance": "Generation adds at most one extra provider call per document, and only when the content-gate assesses a diagram (or an audience rewrite) is warranted. All added LLM/generation calls are serial (never Promise.all over a provider).",
+        "security": "No new external surface and no direct cloud REST; generation goes through local CliProvider/Ollama and docgen (k5).",
+        "observability": "New adherence findings are recorded as DimensionFindings in the existing code-review record; attribution rides the existing meta stamping.",
+        "durability": "Forward-only (k6); FR ids stable once assigned; companion artifacts stored as sibling files."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "mintFrId",
+          "signature": "mintFrId(epicHash: string, createdAtISO: string, ordinal: number, storyId?: string): string",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The 16-hex epic hash; first 8 chars form the id prefix, exactly as storyWorkflowId consumes it.",
+              "optional": false
+            },
+            {
+              "name": "createdAtISO",
+              "type": "string",
+              "purpose": "The epic's createdAt ISO, giving the YYYYMMDD segment via the same utcDate path id.ts uses.",
+              "optional": false
+            },
+            {
+              "name": "ordinal",
+              "type": "number",
+              "purpose": "The 1-based FR ordinal, zero-padded to >=3 via the existing padOrdinal.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "When present, produces a per-item id E<date><hash8>:S<nnn>:FR<nnn>; when absent, a doc-level id E<date><hash8>:FR<nnn>.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The canonical FR id string (an FrId), stable once assigned (lc1)."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "epicHash is not >=8-char lowercase hex, or createdAtISO is an invalid date — same guards as hash8Of/utcDate in id.ts."
+            }
+          ],
+          "preconditions": [
+            "ordinal >= 1"
+          ],
+          "postconditions": [
+            "The returned id round-trips through parseFrId and is byte-stable for the same (epicHash, createdAt, ordinal, storyId)."
+          ]
+        },
+        {
+          "name": "parseFrId",
+          "signature": "parseFrId(s: string): { date: string; hash8: string; story?: number; fr: number } | null",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "string",
+              "purpose": "A candidate FR id string to parse (canonical or slug form).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ date: string; hash8: string; story?: number; fr: number } | null",
+            "meaning": "The parsed segments, or null when the string is not an FR id — mirroring id.ts parseWorkflowId's null-on-miss contract."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Returns non-null iff s matches the FR-id grammar (`E<8><8>[:S<nnn>]:FR<nnn>` or its dash slug)."
+          ]
+        },
+        {
+          "name": "renderDefineMarkdown",
+          "signature": "renderDefineMarkdown(artifact: DefineArtifact): string",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "DefineArtifact",
+              "purpose": "The define artifact whose body now MAY carry an optional functionalDefinition to render as a Functional Requirements section.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The markdown, UNCHANGED byte-for-byte when body.functionalDefinition is absent; when present, a Functional Requirements section (each FR id + statement) is emitted from the record (k2)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An artifact with no functionalDefinition renders identically to the pre-change output (absent-safe). The peer renderers renderHldMarkdown/renderLldMarkdown/renderPlanMarkdown gain the same additive section."
+          ]
+        },
+        {
+          "name": "judgeFunctionalCoverage",
+          "signature": "judgeFunctionalCoverage(input: { grounding: CodeReviewGrounding; expectations: readonly FunctionalCoverageExpectation[]; judgement: unknown }): DimensionResult",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "{ grounding: CodeReviewGrounding; expectations: readonly FunctionalCoverageExpectation[]; judgement: unknown }",
+              "purpose": "The changed-symbol grounding plus the FR expectations (one per FrId from the subject's functionalDefinition) and the controller's emitted judgement (validated at runtime, mirroring the existing judges) — same shape as judgeCoverage.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DimensionResult",
+            "meaning": "A DimensionResult with dimension:'functional-coverage' whose DimensionFindings each set expectationRef to the FR id judged unrealized/partial, folding through the existing verdict via the unchanged reducer."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "A returned finding names an expectationRef that is not one of the supplied FR ids (guarded like the existing dimension validators)."
+            }
+          ],
+          "preconditions": [
+            "Called only when the subject carries a non-empty functionalDefinition (the conditional-inclusion rule)."
+          ],
+          "postconditions": [
+            "Emits only DimensionFindings for dimension 'functional-coverage'; severity is the review Severity verbatim so it folds with the other dimensions."
+          ]
+        },
+        {
+          "name": "buildFunctionalCoveragePrompt",
+          "signature": "buildFunctionalCoveragePrompt(subject: CodeReviewSubject, grounding: CodeReviewGrounding): string",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "The per-Story review subject, whose approved artifacts supply the FR records to check.",
+              "optional": false
+            },
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "The daemon-served changed-symbol summaries the FR-realization judgement reasons over.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The narrow-LLM prompt asking whether each FR id is genuinely realized — the functional-coverage analogue of buildCoveragePrompt."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Produced only for the functional-coverage dimension; peripheral-role model per model-tiering."
+          ]
+        },
+        {
+          "name": "validateArtifact",
+          "signature": "validateArtifact(a: CodeReviewArtifact, expectedDims: readonly ReviewDimension[]): string | null",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "CodeReviewArtifact",
+              "purpose": "The assembled code-review record to validate.",
+              "optional": false
+            },
+            {
+              "name": "expectedDims",
+              "type": "readonly ReviewDimension[]",
+              "purpose": "The expected dimension set — now DERIVED conditionally: the base four plus 'functional-coverage' only when the subject carries a non-empty functionalDefinition.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | null",
+            "meaning": "An error string when an expected dimension is missing/extra, else null — unchanged contract; only the expectedDims derivation feeding it changes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "When no functionalDefinition is present, expectedDims is exactly the existing four and validation behaves identically to today."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FunctionalRequirement",
+        "change": "new",
+        "details": "sc1 type: { id: FrId; statement: string; rationale?: string; scope: 'doc'|'item'; itemRef?: string }. FrId is the mintFrId output; itemRef binds a per-item FR to a story/task id when scope==='item'. Declared in a new src/workflow/artifacts/functional-definition.ts (or types.ts) and imported by each body.",
+        "schemaDiff": "+ interface FunctionalRequirement { readonly id: FrId; readonly statement: string; readonly rationale?: string; readonly scope: 'doc'|'item'; readonly itemRef?: string }",
+        "callSites": [
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/id.ts"
+        ]
+      },
+      {
+        "entity": "FunctionalDefinition",
+        "change": "new",
+        "details": "sc1 type: { requirements: readonly FunctionalRequirement[] }. The structured source of truth from which the Functional Requirements prose is generated (k2).",
+        "schemaDiff": "+ interface FunctionalDefinition { readonly requirements: readonly FunctionalRequirement[] }",
+        "callSites": [
+          "src/workflow/artifacts/define.ts"
+        ]
+      },
+      {
+        "entity": "DefineBody",
+        "change": "field-add",
+        "details": "Add optional `functionalDefinition?: FunctionalDefinition | undefined` (exactOptionalPropertyTypes). Purely additive; existing artifacts with no such field are unaffected (k6). The same additive field is added to HldBody/LldBody/PlanBody peer bodies.",
+        "schemaDiff": "  interface DefineBody { …; readonly functionalDefinition?: FunctionalDefinition | undefined }",
+        "callSites": [
+          "src/workflow/artifacts/define.ts:68",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts",
+          "src/workflow/artifacts/plan.ts"
+        ]
+      },
+      {
+        "entity": "ReviewDimension",
+        "change": "field-modify",
+        "details": "Widen the union to include 'functional-coverage'. Additive union member; the block/warn/pass reducer is not forked. DimensionFinding.expectationRef (already present) carries the FR id for functional-coverage findings — no new field on DimensionFinding.",
+        "schemaDiff": "- type ReviewDimension = 'adherence'|'conventions'|'coverage'|'quality'\n+ type ReviewDimension = 'adherence'|'conventions'|'coverage'|'quality'|'functional-coverage'",
+        "callSites": [
+          "src/workflow/code-review/types.ts:34"
+        ]
+      },
+      {
+        "entity": "DIMENSION_JUDGES (runner.ts) + DIMENSIONS (handler.ts)",
+        "change": "invariant-change",
+        "details": "The dimension set changes from a FIXED four-member constant to a set that CONDITIONALLY includes 'functional-coverage' when the subject carries a non-empty functionalDefinition. runner.ts adds a { dimension:'functional-coverage', judge: judgeFunctionalCoverage } row consulted only under that condition; handler.ts derives its emit-schema enum + expected set the same way. Non-FR reviews keep exactly the four existing dimensions.",
+        "schemaDiff": "runner.ts:110-113 DIMENSION_JUDGES gains one conditional row; handler.ts:56 DIMENSIONS becomes a function of subject.functionalDefinition presence",
+        "callSites": [
+          "src/workflow/code-review/runner.ts:110",
+          "src/mcp/code-review-step/handler.ts:56",
+          "src/workflow/code-review/runner.ts:266"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S001 owns sc1: it declares FrId/FunctionalRequirement/FunctionalDefinition, adds the optional functionalDefinition field to every <Stage>Body, mints FR ids via mintFrId (reusing id.ts padOrdinal + the canonical prefix so ids mirror the story/task sequence scheme, lc1), and renders a Functional Requirements section from the record (k2). Consumers S002/S003/S004 read the record shape only; the id/validation/prose-generation internals stay private to S001."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "S001 owns sc2: it adds 'functional-coverage' to ReviewDimension, a sibling dimension file (buildFunctionalCoveragePrompt/judgeFunctionalCoverage) mirroring coverage.ts, and a conditional row in the dimension orchestration so the dimension runs only when FR records exist. Findings bind to FR ids via the existing DimensionFinding.expectationRef and fold through computeReviewVerdict/effectiveReviewVerdict UNCHANGED (k4). S004 later consumes this dimension as one selectable member of its adherence enum."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Two functional requirements in the same document are minted with the same ordinal, producing duplicate FR ids.",
+          "detection": "The FunctionalDefinition assembly/validation step builds a Set over requirements[].id and finds size < length (a collision) before the artifact is persisted.",
+          "response": "Reject the artifact synthesis with a specific 'duplicate FR id' error naming the collided id; nothing is written (mirrors how the existing synthesizer refuses a malformed body).",
+          "userImpact": "The document is not generated until the FR ordinals are unique; the reviewer never sees a document with ambiguous FR identity.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A functional-coverage finding names an expectationRef that is not one of the document's FR ids.",
+          "detection": "The dimension validation (the same validateFinding path that already checks findings per dimension in handler.ts) cross-checks each functional-coverage finding's expectationRef against the subject's FR id set.",
+          "response": "Return a validation error for that dimension result; the code-review record is not written (the ok:false arm), exactly as an unknown dimension is rejected today.",
+          "userImpact": "A malformed coverage judgement cannot silently pass; the review must be re-run with valid FR references.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An artifact carries a functionalDefinition but its meta.createdAt/epicHash is missing or malformed, so an FR id cannot be minted.",
+          "detection": "mintFrId's hash8Of/utcDate guards (reused from id.ts) throw on non-hex hash or invalid ISO date.",
+          "response": "Surface the error at generation time; do NOT emit a partial/unstable id. (Unlike safeCanonical's best-effort display fallback, an FR id is load-bearing identity, so it must fail loudly rather than degrade.)",
+          "userImpact": "Generation fails fast with a clear cause instead of assigning an unstable id that would break the downstream thread.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A per-item FR (scope==='item') names an itemRef that no story/task in the body defines.",
+          "detection": "The assembly validator checks each scope==='item' requirement's itemRef against the body's known story/task ids.",
+          "response": "Reject synthesis with a 'dangling FR itemRef' error identifying the FR id and the missing item.",
+          "userImpact": "Per-item FRs always resolve to a real item, so the reviewer's per-item functional view is never broken.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "functionalDefinition is present but requirements is the empty array [].",
+          "expected": "Treated identically to absent: no Functional Requirements section is rendered and functional-coverage is NOT added to the dimension set (absent-safe) — output byte-identical to today."
+        },
+        {
+          "input": "functionalDefinition present with only scope==='doc' requirements (no per-item FRs).",
+          "expected": "A document-level Functional Requirements section renders; no per-item FR anchoring is emitted. Valid."
+        },
+        {
+          "input": "The same document is regenerated with the same requirement ordinals.",
+          "expected": "mintFrId yields byte-identical FR ids (stable once assigned, lc1), so the downstream thread and any recorded expectations remain valid across regenerations (k6)."
+        },
+        {
+          "input": "An FR ordinal >= 1000.",
+          "expected": "padOrdinal keeps the full width (never truncates), matching id.ts's story/task behaviour exactly."
+        },
+        {
+          "input": "A code review runs on a Story whose subject artifacts carry no functionalDefinition.",
+          "expected": "expectedDims is exactly the existing four dimensions; functional-coverage is neither expected nor judged; completion behaves identically to today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "An artifact with no functionalDefinition renders byte-for-byte identically to the pre-change output for every artifact type — the enrichment of the per-type renderers (define.ts:86 and peers) is strictly additive.",
+          "source": "c5"
+        },
+        {
+          "text": "The block/warn/pass verdict reduction (computeReviewVerdict / effectiveReviewVerdict) is not forked or reinterpreted; a functional-coverage HIGH folds into the verdict exactly like any other dimension's HIGH.",
+          "source": "c5"
+        },
+        {
+          "text": "validateArtifact's missing/extra-dimension contract is unchanged; only the derivation of expectedDims (now conditional on functionalDefinition presence) changes, so a non-FR review's expected set stays the existing four.",
+          "source": "c5"
+        },
+        {
+          "text": "No Promise.all over an LLM provider: the functional-coverage judge runs inside the existing serial dimension loop, preserving the sequential-await convention.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the FR-id minter/parser and the additive renderer behaviour in isolation.",
+          "subjects": [
+            "mintFrId: doc-level (E<date><hash8>:FR<nnn>) and per-item (E<date><hash8>:S<nnn>:FR<nnn>) forms; padOrdinal >=3 and >=1000 width; hash8/utcDate guards throw on bad input",
+            "parseFrId round-trips every mintFrId output and returns null on non-FR strings",
+            "renderDefineMarkdown (and peer renderers) emit a Functional Requirements section from a body with functionalDefinition, and byte-identical output when it is absent/empty"
+          ],
+          "fixturesNeeded": [
+            "A DefineArtifact fixture with a functionalDefinition (mix of doc + item scope)",
+            "A golden pre-change render snapshot per artifact type for the absent-field byte-identity assertion"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the functional-coverage dimension and the conditional dimension-set derivation.",
+          "subjects": [
+            "judgeFunctionalCoverage returns a DimensionResult with dimension 'functional-coverage' and expectationRef set to real FR ids; rejects an unknown expectationRef",
+            "the expectedDims derivation includes 'functional-coverage' only when the subject carries a non-empty functionalDefinition, and is exactly the base four otherwise",
+            "validateArtifact passes/fails against the conditionally-derived expected set"
+          ],
+          "fixturesNeeded": [
+            "A CodeReviewSubject fixture with and without functionalDefinition",
+            "A CodeReviewGrounding fixture (changed-symbol summaries)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the dimension folds through the existing verdict + gate end-to-end without forking the reducer.",
+          "subjects": [
+            "The code-review-step handler runs functional-coverage when FR records exist and a functional-coverage HIGH folds to a block verdict via computeReviewVerdict",
+            "A subject with no functionalDefinition drives exactly the four existing dimensions and completes byte-identically (absent-safe)"
+          ],
+          "fixturesNeeded": [
+            "The existing mcp/code-review-step handler test harness (reviewSpy/runReview) extended with an FR-bearing subject"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove sc1/sc2 shapes hold for downstream consumers.",
+          "subjects": [
+            "FunctionalDefinition/FunctionalRequirement on every <Stage>Body type-check under exactOptionalPropertyTypes",
+            "DimensionFinding.expectationRef carries an FR id and folds into the existing DimensionResult/CodeReviewBody verdict counts unchanged"
+          ],
+          "fixturesNeeded": [
+            "Type-level fixtures for each <Stage>Body carrying functionalDefinition"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: renderDefineMarkdown emits a Functional Requirements section listing each FR id + statement from a body.functionalDefinition (discrete, individually-identified, reviewer-facing)",
+            "unit: mintFrId assigns discrete stable ids per requirement"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: mintFrId is byte-stable for the same (epicHash, createdAt, ordinal, storyId) so a downstream body carries identical FR ids",
+            "contract: a downstream <Stage>Body carrying the same functionalDefinition ids type-checks and renders the same identities (thread continuity)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: judgeFunctionalCoverage emits expectationRef-bound findings and the conditional expectedDims includes functional-coverage only when FRs exist",
+            "integration: a functional-coverage HIGH folds to a block verdict through the existing gate, while a no-FR subject completes with the four existing dimensions unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` (*.test.ts under __tests__/), matching the workflow module's existing suite (e.g. src/workflow/__tests__/lld-artifact.test.ts, plan-artifact.test.ts) and the mcp code-review-step handler tests."
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles: the per-stage bodies (DefineBody define.ts:68-76 and peers HldBody/LldBody/PlanBody) carry no functional-requirement data, and the renderers (renderDefineMarkdown define.ts:86 + peers) emit a fixed set of sections. src/workflow/id.ts mints only epic/story/task ids (no FR minter). The code-review dimension set is a FIXED four-member list — ReviewDimension = 'adherence'|'conventions'|'coverage'|'quality' (code-review/types.ts:34), DIMENSION_JUDGES (runner.ts:110-113), DIMENSIONS (handler.ts:56) — and validateArtifact (runner.ts:266) requires exactly that expected set. DimensionFinding.expectationRef already exists (used by adherence).",
+      "stateAfter": "Each <Stage>Body carries an optional functionalDefinition; the renderers emit an additive Functional Requirements section only when it is present (byte-identical output otherwise). id.ts gains mintFrId/parseFrId producing stable `<epicId>[:S<nnn>]:FR<nnn>` ids via the existing padOrdinal. ReviewDimension includes 'functional-coverage'; a new dimension file (buildFunctionalCoveragePrompt/judgeFunctionalCoverage) mirrors coverage.ts; the dimension set is derived conditionally so functional-coverage is expected/judged only when the subject carries a non-empty functionalDefinition, folding through the unchanged verdict reducer + gate.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Declare the sc1 types (FrId, FunctionalRequirement, FunctionalDefinition) in a new module and add mintFrId/parseFrId to id.ts, reusing padOrdinal/hash8Of/utcDate. Pure additive code; nothing consumes it yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the optional `functionalDefinition?: FunctionalDefinition | undefined` field to each <Stage>Body type. Additive optional field; existing artifacts and callers compile and behave unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Enrich each per-type renderer to emit a Functional Requirements section from body.functionalDefinition, guarded so an absent/empty record produces byte-identical output to today (verified by golden snapshots).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Widen the ReviewDimension union with 'functional-coverage' and add the dimension file (buildFunctionalCoveragePrompt/judgeFunctionalCoverage) mirroring coverage.ts. Union widening is additive; the judge is not yet wired into the loop.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Make the dimension set conditional: add the functional-coverage row to DIMENSION_JUDGES (runner.ts) and derive DIMENSIONS (handler.ts) + validateArtifact's expectedDims from whether the subject carries a non-empty functionalDefinition. A subject with no FRs yields exactly the existing four dimensions.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "All changes are additive and absent-safe. Existing artifacts on disk carry no functionalDefinition and render byte-for-byte identically (k6 forward-only). The renderer signatures (renderDefineMarkdown etc.) and validateArtifact's signature are unchanged — only their internal behaviour extends when new data is present. A code review of non-FR work expects and judges exactly the four existing dimensions, so completion behaviour for all existing work is unchanged. The verdict reducer (computeReviewVerdict/effectiveReviewVerdict) is untouched.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "First-class FR level in the WorkflowId union",
+        "oneLineSummary": "Extend id.ts's WorkflowId with an 'fr' level and a frWorkflowId minter/regex, and carry the full FunctionalDefinition record on every <Stage>Body.",
+        "approach": "sc1's FrId becomes a fourth level of the existing hierarchical id: WorkflowId.level gains 'fr', CANONICAL_RE/SLUG_RE learn an optional `:FR<nnn>` segment, and a frWorkflowId minter plus parentId/epicOf handling are added so an FR id round-trips through parseWorkflowId like a story/task id. Each <Stage>Body gains the full FunctionalDefinition; functional-coverage is a conditional dimension.",
+        "pros": [
+          "FR ids parse/round-trip/derive parents through the SAME id.ts machinery — one uniform id vocabulary.",
+          "A reader/tracker that renders canonical ids handles FR ids with no special-casing.",
+          "Strongest expression of lc1."
+        ],
+        "cons": [
+          "Widens the WorkflowId discriminated union, touching every exhaustive switch over `level` — the largest blast radius in a heavily-reused pure module.",
+          "Every level:'epic'|'story'|'task' consumer must be re-audited for the new arm.",
+          "More than S001 needs — FR ids have no child hierarchy."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Matches a2 on every acceptance/contract score but pays a disproportionate blast radius: widening the WorkflowId union forces re-auditing every `level` switch in a heavily-reused pure module, more than S001 needs since FR ids never navigate a child hierarchy."
+      },
+      {
+        "id": "a2",
+        "name": "Isolated FR-id minter + full record per body",
+        "oneLineSummary": "Add a small standalone mintFrId helper reusing padOrdinal (leaving the WorkflowId union untouched), carry the full FunctionalDefinition on each body, and make functional-coverage a conditional dimension.",
+        "approach": "Leave id.ts's WorkflowId struct/union as-is. Add a pure mintFrId(epicHash, createdAtISO, ordinal, storyId?) composing the epic/story canonical prefix + `:FR<nnn>` via padOrdinal, plus parseFrId/isFrId. FunctionalDefinition attaches optionally to each <Stage>Body; the generating stage authors records and downstream stages carry the same ids (ac2). functional-coverage is added to ReviewDimension and included only when the subject carries a non-empty functionalDefinition; findings bind via expectationRef and fold through the unchanged reducer.",
+        "pros": [
+          "Smallest, most localized change: id.ts gains an additive helper; the WorkflowId union + its switches are untouched.",
+          "Each body is self-contained — holds the full FR statements it renders prose from (k2), no cross-artifact resolution at render time.",
+          "The conditional dimension keeps non-FR work byte-identical and the reducer un-forked (k4).",
+          "FR-id format mirrors the task/story sequence scheme (lc1)."
+        ],
+        "cons": [
+          "FR-id parsing lives beside, not inside, parseWorkflowId — a second small grammar to keep consistent.",
+          "Full record per downstream body restates FR statements; de-dup is deferred to S002 (sc3)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Doc-authoritative record + downstream by-reference",
+        "oneLineSummary": "Author the full FunctionalDefinition only on the first (DEF) body; downstream bodies carry only functionalRefs (FrId[]) that resolve back to it.",
+        "approach": "The full record lives on the earliest body only; each downstream <Stage>Body carries a lightweight functionalRefs?: readonly FrId[] resolved back to the authoritative record for rendering. FR-id minter is the isolated helper as in a2. functional-coverage resolves refs and judges per FR id.",
+        "pros": [
+          "No restatement of FR statements downstream — nothing for S002 to de-duplicate.",
+          "Single authoritative record makes 'stable once assigned' trivially enforceable."
+        ],
+        "cons": [
+          "Rendering a downstream document's functional section REQUIRES resolving refs against the upstream artifact — a cross-artifact read a2 avoids.",
+          "Reaches toward S002's sc3 de-dup territory.",
+          "A mid-chain document cannot render its functional section standalone."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc1 (the record must live on every body) and only partially meets ac2 (a downstream document can't render its functional section standalone); it also risks overreaching into S002's sc3 de-dup boundary by authoring bespoke ref-resolution."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/SPEC-46b20c2f0459e807.json",
+      "quotedText": "FR source of truth is structured JSON with prose generated from it; FR ids use `<epicId>:FRxxx` sequence numbering; forward-only."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/config/config-catalog.ts:90",
+      "quotedText": "codeReview.enforce — the blocking completion gate the functional-coverage dimension rides via approveWorkflowTarget."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze + direct reads: id.ts, artifacts/define.ts, code-review/types.ts, runner.ts, handler.ts",
+      "quotedText": "id.ts canonical E<YYYYMMDD><hash8>[:S<nnn>][:T<nnn>] + padOrdinal (110-113); DefineBody define.ts:68 + renderDefineMarkdown define.ts:86; ReviewDimension four-member union code-review/types.ts:34 + DimensionFinding.expectationRef; DIMENSION_JUDGES runner.ts:110-113 + validateArtifact runner.ts:266; DIMENSIONS handler.ts:56; computeReviewVerdict/effectiveReviewVerdict reducer not forked."
+    }
+  ]
+}

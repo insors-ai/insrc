@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790540609491-q5vmgv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-27T20:23:29.491Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a71086405dc6eeb4",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "a71086405dc6eeb4",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/define-fr-assembly.test.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/runners/define/__tests__/fr-elicitation-schemas.test.ts",
+        "src/workflow/runners/define/index.ts",
+        "src/workflow/runners/define/schemas.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/orchestrator.ts:1142",
+            "message": "The new logic (assembleFunctionalDefinition) is thoroughly unit-tested (mint order, scope/itemRef, stability, absent-safe, dangling-itemRef validation) and both step schemas' FR elicitation is tested, but there is no end-to-end test that finalizeDefine actually injects the assembled functionalDefinition into the DEF body + renders the FR section (the finalBody spread at :1142 is exercised only transitively). The wiring is a trivial call+spread and the assembly + renderer are each covered independently, so this is an observation, not a gap that leaves logic unverified.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

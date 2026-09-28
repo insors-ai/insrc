@@ -1,0 +1,269 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790523267270-86f5rh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-27T15:37:51.548Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 204264,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "storyId": "s1",
+    "lldRunId": "wf-1790521391567-sqdzvt",
+    "lldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
+    "approvedAt": "2026-09-27T15:38:03.730Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc1 types + FR-id minter/parser in id.ts",
+        "summary": "Declare FrId/FunctionalRequirement/FunctionalDefinition in a new functional-definition types module, and add pure mintFrId(epicHash, createdAtISO, ordinal, storyId?) + parseFrId to id.ts that compose the existing padOrdinal/hash8Of/utcDate and the canonical prefix (doc-level E<date><hash8>:FR<nnn>, per-item E<date><hash8>:S<nnn>:FR<nnn>). No WorkflowId union change.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "mintFrId produces the doc-level and per-item canonical forms and is byte-stable for identical inputs",
+          "parseFrId round-trips every mintFrId output and returns null on non-FR strings",
+          "mintFrId throws via the id.ts hash8Of/utcDate guards on a non-hex epicHash or invalid ISO date",
+          "an ordinal >= 1000 keeps full width (padOrdinal not truncated)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "mintFrId emits doc-level and per-item canonical forms, is byte-stable, handles ordinal>=1000, and throws on bad hash/date"
+          },
+          {
+            "level": "unit",
+            "name": "parseFrId round-trips every mintFrId output and returns null on non-FR strings"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Optional functionalDefinition field on each <Stage>Body + assembly validation",
+        "summary": "Add `functionalDefinition?: FunctionalDefinition | undefined` to DefineBody and the peer HldBody/LldBody/PlanBody. Add the record-assembly validation: unique FR ids (Set-size check), scope==='item' itemRef resolves to a real story/task id, and fail-loud when an id cannot be minted.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "each <Stage>Body type-checks with and without functionalDefinition under exactOptionalPropertyTypes",
+          "duplicate FR ids are rejected with a 'duplicate FR id' error before persistence",
+          "a scope==='item' FR with a dangling itemRef is rejected",
+          "an empty requirements [] is accepted and treated as absent"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "FunctionalDefinition/FunctionalRequirement on every <Stage>Body type-check under exactOptionalPropertyTypes (with and without the field)"
+          },
+          {
+            "level": "unit",
+            "name": "assembly validation rejects duplicate FR ids and dangling per-item itemRefs, and accepts an empty requirements[] as absent"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Enrich the per-type renderers to emit the additive Functional Requirements section",
+        "summary": "Enrich renderDefineMarkdown and the peer renderers (hld/lld/plan) to emit a Functional Requirements section from body.functionalDefinition (each FR id + statement, per-item FRs grouped under their item), guarded so an absent/empty record produces byte-identical output to today. Prove byte-identity against a golden pre-change snapshot for EACH of define/hld/lld/plan before enriching.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a body with functionalDefinition renders a Functional Requirements section listing each FR id + statement",
+          "a body with no/empty functionalDefinition renders byte-identically to the pre-change golden snapshot, for EACH of define/hld/lld/plan",
+          "per-item FRs render under their referenced story/task"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderDefineMarkdown (and hld/lld/plan peers) emit a Functional Requirements section from functionalDefinition, and produce byte-identical output to the golden snapshot when it is absent/empty"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Widen ReviewDimension + add the functional-coverage dimension file",
+        "summary": "Add 'functional-coverage' to the ReviewDimension union and create dimensions/functional-coverage.ts exporting buildFunctionalCoveragePrompt + judgeFunctionalCoverage mirroring coverage.ts; findings bind to FR ids via the existing DimensionFinding.expectationRef and carry the review Severity verbatim. Not yet wired into the loop.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ReviewDimension includes 'functional-coverage' and the union still type-checks across existing consumers",
+          "judgeFunctionalCoverage returns a DimensionResult(dimension:'functional-coverage') with expectationRef set to supplied FR ids",
+          "a finding whose expectationRef is not a supplied FR id is rejected",
+          "the verdict reducer computeReviewVerdict/effectiveReviewVerdict is left untouched"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "judgeFunctionalCoverage returns a functional-coverage DimensionResult with expectationRef set to real FR ids and rejects an unknown expectationRef"
+          },
+          {
+            "level": "unit",
+            "name": "a DimensionFinding.expectationRef FR id folds into the existing DimensionResult/CodeReviewBody verdict counts unchanged (reducer untouched)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Make the dimension set conditional on functionalDefinition presence",
+        "summary": "Add the { dimension:'functional-coverage', judge: judgeFunctionalCoverage } row to runner.ts DIMENSION_JUDGES and derive handler.ts DIMENSIONS + validateArtifact's expectedDims from whether the review subject carries a non-empty functionalDefinition, so functional-coverage is expected/judged only then and non-FR reviews keep exactly the four existing dimensions.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a subject WITH a non-empty functionalDefinition drives five dimensions and a functional-coverage HIGH folds to a block verdict through the existing gate",
+          "a subject with NO functionalDefinition drives exactly the four existing dimensions and completes byte-identically",
+          "validateArtifact passes/fails against the conditionally-derived expected set",
+          "the emit-judgements schema enum reflects the conditional dimension set"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "expectedDims derivation includes 'functional-coverage' only when the subject carries a non-empty functionalDefinition (else exactly the base four), and validateArtifact passes/fails against it"
+          },
+          {
+            "level": "integration",
+            "name": "the code-review-step handler runs functional-coverage when FR records exist and a HIGH folds to a block verdict; a no-FR subject drives exactly the four existing dimensions and completes byte-identically"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "mintFrId: doc-level (E<date><hash8>:FR<nnn>) and per-item (E<date><hash8>:S<nnn>:FR<nnn>) forms; padOrdinal >=3 and >=1000 width; hash8/utcDate guards throw on bad input",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseFrId round-trips every mintFrId output and returns null on non-FR strings",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDefineMarkdown (and peer renderers) emit a Functional Requirements section from a body with functionalDefinition, and byte-identical output when it is absent/empty",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "judgeFunctionalCoverage returns a DimensionResult with dimension 'functional-coverage' and expectationRef set to real FR ids; rejects an unknown expectationRef",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the expectedDims derivation includes 'functional-coverage' only when the subject carries a non-empty functionalDefinition, and is exactly the base four otherwise",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateArtifact passes/fails against the conditionally-derived expected set",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The code-review-step handler runs functional-coverage when FR records exist and a functional-coverage HIGH folds to a block verdict via computeReviewVerdict",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "A subject with no functionalDefinition drives exactly the four existing dimensions and completes byte-identically (absent-safe)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "FunctionalDefinition/FunctionalRequirement on every <Stage>Body type-check under exactOptionalPropertyTypes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DimensionFinding.expectationRef carries an FR id and folds into the existing DimensionResult/CodeReviewBody verdict counts unchanged",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails — mintFrId/parseFrId + renderDefineMarkdown API signatures",
+      "quotedText": "mintFrId(epicHash, createdAtISO, ordinal, storyId?) + parseFrId reuse id.ts padOrdinal; renderDefineMarkdown emits the additive Functional Requirements section."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges — FunctionalRequirement/FunctionalDefinition + DefineBody field-add",
+      "quotedText": "New FunctionalRequirement{id,statement,rationale?,scope,itemRef?}/FunctionalDefinition; optional functionalDefinition field additive on every <Stage>Body."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 sc2 / dataModelChanges — ReviewDimension widening + functional-coverage dimension + orchestration",
+      "quotedText": "Add 'functional-coverage' to ReviewDimension; new dimension file mirroring coverage.ts; conditional row in runner.ts DIMENSION_JUDGES; reducer un-forked."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails — validateArtifact conditional expectedDims + handler DIMENSIONS",
+      "quotedText": "validateArtifact's expectedDims derived conditionally; handler.ts:56 DIMENSIONS becomes a function of subject.functionalDefinition presence."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths — FR-record assembly validation (duplicate id, dangling itemRef, mint-fail)",
+      "quotedText": "Set-size collision check for duplicate FR ids; itemRef membership check; fail-loud when an id cannot be minted."
+    }
+  ]
+}

@@ -1,0 +1,1035 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790576670511-dxpseq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T06:37:43.220Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 792675,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "epicHash": "c5824e17eccf0c14",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1790520092322-vpqvrh",
+    "hldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c-assembleShell",
+          "ref": "contract/assembleShell",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "assembleShell is an existing exported render seam at src/docgen/render/shell.ts, imported by docgen/index.ts around line 32 and separable from the graph extractors — S003 reuses it to render the ER companion from an IR.",
+          "evidence": "CONFIRMED: `export async function assembleShell(` at src/docgen/render/shell.ts:266, imported at docgen/index.ts:32, called at index.ts:118 — a real separable render seam. Minor nit: the LLD wrote the signature as sync `function assembleShell(ir): ShellOutcome`; it is actually async returning Promise<ShellOutcome>. renderErCompanion is async and awaits it, so the consumption is consistent; the standalone signature line should read async/Promise.",
+          "action": "Build note: type assembleShell as `async (ir) => Promise<ShellOutcome>` at its call site; the design is sound.",
+          "fixability": "assisted"
+        },
+        {
+          "claimId": "c-validateAgainstSchema",
+          "ref": "contract/validateErDefinition",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "validateAgainstSchema is the ajv-backed validator exported at src/agent/providers/structured-output.ts around line 80, reused to validate the erDefinition against a vendored JSON Schema.",
+          "evidence": "CONFIRMED exact: `export function validateAgainstSchema<T>(` at src/agent/providers/structured-output.ts:80; Ajv singleton at :55. The ajv seam reused to validate the erDefinition is real.",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-doctypes-noER",
+          "ref": "openQuestion/ER",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "docgen has no entity-relationship/ER extractor (its registered docTypes are type-structure, component-dependency, call-sequence, narrative), which is why ER is rendered from the authored erDefinition rather than generateDocument.",
+          "evidence": "CONFIRMED: the four DocTypeRegistration fns exist (callSequence/componentDependency/typeStructure/narrative); the entity-relationship/ER-extractor pattern has 0 src hits — no ER extractor, so authoring+rendering ER from the body element is the correct realization.",
+          "action": "None — the no-ER-extractor premise holds.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-linkml-external",
+          "ref": "data/ErDefinition",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "LinkML is a real external data-modeling standard whose metamodel (ClassDefinition/SlotDefinition + cardinality via required/multivalued/minimum_cardinality/maximum_cardinality) is expressible as a JSON Schema that a standard validator can check — the basis for validating the erDefinition without the Python toolchain.",
+          "evidence": "EXTERNAL (0 src hits, as expected — LinkML is not yet vendored): LinkML is a real, documented data-modeling standard whose metamodel (ClassDefinition/SlotDefinition, cardinality via required/multivalued/minimum_cardinality/maximum_cardinality) is expressible as JSON Schema for standard-validator checking (confirmed via the standard's own docs during design research). The build vendors that metamodel JSON Schema as a bundled asset; no runtime Python.",
+          "action": "Build note: vendor a pinned copy of the LinkML metamodel JSON Schema (record the LinkML version) under src/assets so the external contract is frozen + offline.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-judgeslot-default",
+          "ref": "contract/judgeDiagram",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Code-review dimensions are a flat list of JudgeSlot handler objects, DEFAULT_JUDGES, in src/workflow/code-review/runner.ts (~113-119).",
+          "evidence": "CONFIRMED: interface JudgeSlot @ runner.ts:63; DEFAULT_JUDGES @ runner.ts:113 (a runner test comment notes it 'carries all five slots').",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-effectiveJudges",
+          "ref": "contract/hasDiagramReferences",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "effectiveJudges(judges, subject) in runner.ts (~125) is the predicate filter for conditional dimension inclusion, the seam hasDiagramReferences plugs into.",
+          "evidence": "CONFIRMED: effectiveJudges @ runner.ts:125, exercised by functional-coverage-conditional.test.ts — the conditional-inclusion seam hasDiagramReferences plugs into.",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-validateArtifact",
+          "ref": "errorpaths/arity",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "validateArtifact in runner.ts (~281-306) enforces the ran dimension set matches the expected set.",
+          "evidence": "CONFIRMED: `function validateArtifact(a, expectedDims)` @ runner.ts:281 enforces the ran==expected dimension set.",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-reviewdimension-union",
+          "ref": "data/ReviewDimension",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ReviewDimension is a flat string union in src/workflow/code-review/types.ts (~36) currently ending at functional-coverage, which S003 extends with 'diagram'.",
+          "evidence": "CONFIRMED exact: types.ts:36 ends the union at 'functional-coverage' — S003's 'diagram' extension is a correctly-scoped one-member additive change.",
+          "action": "None — the invariant-change is sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-fc-pattern",
+          "ref": "contract/judgeDiagram",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The conditional-dimension pattern exists: dimensions/functional-coverage.ts exports hasFunctionalDefinition (~89) as the gate predicate, plus a functional-coverage-conditional test.",
+          "evidence": "CONFIRMED: hasFunctionalDefinition @ functional-coverage.ts:89 + functional-coverage-conditional.test.ts — the exact conditional-dimension pattern the diagram dimension mirrors.",
+          "action": "None — the mirrored pattern is real.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-resolveArtifactMdPath",
+          "ref": "contract/resolveCompanionPath",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveArtifactMdPath (src/workflow/path-scheme.ts:119) is the existing .md path builder whose directory the net-new resolveCompanionPath anchors a sibling to; no companion helper exists today.",
+          "evidence": "CONFIRMED: resolveArtifactMdPath @ path-scheme.ts:119; (?i)companion has 0 src hits — the sibling companion scheme is genuinely net-new.",
+          "action": "None — citation + net-new claim sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-verdict-gate",
+          "ref": "invariant/verdict",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "computeReviewVerdict (src/workflow/review/review.ts:110) and enforceCodeReviewGate (src/workflow/code-review/gate.ts:66) plus codeReview.enforce (config-catalog.ts:90) exist and are consumed unchanged.",
+          "evidence": "CONFIRMED: computeReviewVerdict @ review/review.ts:110, enforceCodeReviewGate @ code-review/gate.ts:66, codeReview.enforce present — the reducer + gate the diagram findings ride unchanged.",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-dup-registry",
+          "ref": "contract/registerDiagramHandler",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The docgen registry provides the fail-fast duplicate-registration pattern (DuplicateDocTypeError / InMemoryDocTypeRegistry) in src/docgen/registry.ts (~26-54) the diagram-handler registry mirrors.",
+          "evidence": "CONFIRMED: DuplicateDocTypeError @ registry.ts:26 + InMemoryDocTypeRegistry @ registry.ts:54 — the fail-fast registry pattern the diagram-handler registry mirrors.",
+          "action": "None — citation sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c-sc4-ownership",
+          "ref": "interaction/sc4",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The HLD assigns sc4 (Companion-artifact reference) ownedByStory s3 and consumedByStories s4, matching this LLD's implements/owns claim.",
+          "evidence": "CONFIRMED cross-artifact: 'Companion-artifact reference' resolves in the HLD (3 hits incl. the HLD sc4 heading); the LLD's owns=sc4 / implements + consumedByStories s4 trace matches the HLD boundary.",
+          "action": "None — ownership trace holds.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13
+      },
+      "reviewedAt": "2026-09-28T06:40:06.592Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-28T06:46:21.688Z",
+    "questionResolutions": {
+      "q0b479f8b": {
+        "question": "ER generation-source refinement vs the HLD: the HLD framework summary says diagrams are 'produced through the existing docgen generateDocument seam,' but ER is now produced by reusing docgen's assembleShell RENDER seam from the authored erDefinition (NOT the generateDocument graph-extractor path). assembleShell is itself a docgen seam, so this is a wording refinement, not a new external surface. No structural amendment type fits a framework-summary wording change. Confirm the refinement (recommended) or back-flow the HLD framework summary to say 'produced through the existing docgen seams — assembleShell render for authored diagrams, generateDocument for code-derived.'",
+        "status": "resolved",
+        "choice": "Confirm the refinement in the LLD (no HLD change)",
+        "rationale": "User accepted the ER generation-source shift as a wording note (2026-09-28): assembleShell is itself a docgen seam, so no new external surface and no structural amendment type applies; the LLD carries the precision. Do NOT back-flow the HLD.",
+        "resolvedAt": "2026-09-28T06:48:34.593Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Adopt a1: the artifact JSON body is the single source of truth for the new content, the existing per-type renderers are enriched to generate human-readable, audience-aware markdown from that structured body, and the three new adherence checks (functional-coverage, diagram, UX) are added as code-review dimensions that ride the existing computeReviewVerdict / codeReview.enforce completion gate without forking the verdict reducer. Diagrams and UX mocks are content-gated companion artifacts referenced from — never inlined into — the core markdown, produced through the existing docgen generateDocument seam. The four forward-only Stories layer cleanly: S001 introduces the functional-definition record + its coverage dimension; S002 makes every document navigable, audience-aware, and de-duplicated; S003 adds content-gated diagram companions; S004 unifies the selectable adherence dimensions and the UX-acceptance check.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Companion-artifact reference",
+          "purpose": "The single contract for referencing an out-of-body companion file from the core markdown, including its on-disk path scheme (k1).",
+          "interfaceSketch": "type CompanionKind = 'diagram-mermaid' | 'diagram-html' | 'ux-mock';\ninterface CompanionArtifactRef { readonly kind: CompanionKind; readonly relPath: string; readonly title: string; readonly ofSectionId?: string }",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "assumptions": [
+            "c8"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "FunctionalDefinition record (artifact body)",
+          "purpose": "The structured FR data carried in every artifact JSON body; source of truth for the functional thread (k2).",
+          "interfaceSketch": "interface FunctionalRequirement { id: FrId; statement: string; rationale?: string; scope:'doc'|'item'; itemRef?: string } interface FunctionalDefinition { requirements: readonly FunctionalRequirement[] }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Document-structure + shared-context reference model",
+          "purpose": "The per-type navigable document structure + audience tag + SharedContextRef de-dup (S002, k1).",
+          "interfaceSketch": "type Audience='business'|'product'|'technical'; interface DocumentSection{id:string;heading:string;audience?:Audience}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "Private to S003: the per-document assessment that decides whether a diagram materially aids understanding, the ER authoring/render internals, and the diagram-adherence dimension's validation of the erDefinition JSON element. S004 consumes only sc4, not the ER internals."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Private to S001: FR-id scheme, FunctionalDefinition internals, functional-coverage provider prompt/schema."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Private to S002: per-type section layouts/renderer formatting, audience-tailoring, SharedContextRef diffing."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Private to S004: the multiselect adherence enum (UX, Diagram:Sequence/ER/Component, FR-coverage), the uxAcceptance flag, and the UX review dimension."
+        }
+      ],
+      "rolloutPhase": "Phase C — content-gated design diagrams",
+      "nonFunctional": {
+        "performance": "At most one extra provider call per document (the content-gate), only when warranted; ER validation + render are deterministic/provider-free; all provider calls serial.",
+        "security": "No new external surface, no cloud REST, no Python: ER validation via ajv against a vendored metamodel asset, render via docgen's local assembleShell (k5).",
+        "observability": "Diagram findings are DimensionFindings in the existing code-review record; attribution rides the existing meta stamping.",
+        "durability": "Forward-only (k6): applies to newly generated artifacts, migrates nothing; the erDefinition is a durable body element, the companion a sibling render."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolveCompanionPath",
+          "signature": "function resolveCompanionPath(repoPath: string, identity: WorkItemIdentity, workItemKind: WorkItemKind, slug: string, companionFileName: string): string",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repo root.",
+              "optional": false
+            },
+            {
+              "name": "identity",
+              "type": "WorkItemIdentity",
+              "purpose": "Work-item identity the companion belongs to.",
+              "optional": false
+            },
+            {
+              "name": "workItemKind",
+              "type": "WorkItemKind",
+              "purpose": "'epic' | 'standalone'.",
+              "optional": false
+            },
+            {
+              "name": "slug",
+              "type": "string",
+              "purpose": "Work-item slug.",
+              "optional": false
+            },
+            {
+              "name": "companionFileName",
+              "type": "string",
+              "purpose": "Safe basename of the companion file.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Absolute path to the companion as a SIBLING of the artifact's .md (k1/ac2)."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Story-scoped artifact missing identity.story — reuses resolveArtifactMdPath's guard (path-scheme.ts:126-132)."
+            }
+          ],
+          "preconditions": [
+            "companionFileName is a validated basename."
+          ],
+          "postconditions": [
+            "Net-new helper realizing sc4's on-disk scheme; pure construction, no disk read."
+          ]
+        },
+        {
+          "name": "assessDiagramNeed",
+          "signature": "function assessDiagramNeed(doc: { readonly kind: ArtifactKind; readonly body: unknown; readonly functionalDefinition?: FunctionalDefinition }, provider: LLMProvider): Promise<DiagramNeedAssessment>",
+          "parameters": [
+            {
+              "name": "doc",
+              "type": "{ kind: ArtifactKind; body: unknown; functionalDefinition?: FunctionalDefinition }",
+              "purpose": "The document under generation + (sc1) FR record for grounding.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "Local provider — the only path (k5/ac4).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DiagramNeedAssessment",
+            "meaning": "{ warranted; diagrams:[{ type:'er', ofSectionId?, rationale }] } — the content-gate; empty when no visual warranted (ac1/k3). S003 emits only 'er'."
+          },
+          "errors": [
+            {
+              "type": "(fail-safe)",
+              "condition": "Provider/parse failure resolves to { warranted:false, diagrams:[] } (never throws; k3)."
+            }
+          ],
+          "preconditions": [
+            "Exactly one serial provider call."
+          ],
+          "postconditions": [
+            "An ER is authored + rendered downstream only for a returned need."
+          ]
+        },
+        {
+          "name": "erDefinitionToIr",
+          "signature": "function erDefinitionToIr(erDef: ErDefinition): DocumentIR",
+          "parameters": [
+            {
+              "name": "erDef",
+              "type": "ErDefinition",
+              "purpose": "The authored LinkML-shaped ER element (source of truth).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "A docgen DocumentIR: classes->entity nodes, class-ranged slots->relationship edges with crow's-foot cardinality from required/multivalued/min/max_cardinality. Pure deterministic transform (no graph, no provider)."
+          },
+          "errors": [
+            {
+              "type": "ErDefinitionError",
+              "condition": "A relationship slot whose range names a class absent from erDef.classes (referential integrity)."
+            }
+          ],
+          "preconditions": [
+            "erDef passed validateErDefinition."
+          ],
+          "postconditions": [
+            "Same erDef -> same IR; feeds assembleShell unchanged."
+          ]
+        },
+        {
+          "name": "renderErCompanion",
+          "signature": "function renderErCompanion(erDef: ErDefinition, title: string, destPath: string): Promise<CompanionArtifactRef>",
+          "parameters": [
+            {
+              "name": "erDef",
+              "type": "ErDefinition",
+              "purpose": "The authored ER element to visualize.",
+              "optional": false
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "purpose": "Companion title.",
+              "optional": false
+            },
+            {
+              "name": "destPath",
+              "type": "string",
+              "purpose": "Sibling path from resolveCompanionPath.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CompanionArtifactRef",
+            "meaning": "{ kind:'diagram-mermaid', relPath, title, ofSectionId? } — the sc4 reference the markdown links, never inlines (ac2/k1); a pure visualization of erDef."
+          },
+          "errors": [
+            {
+              "type": "DiagramGenerationError",
+              "condition": "Wraps a non-ok DocGenOutcome from assembleShell so the caller omits the diagram."
+            }
+          ],
+          "preconditions": [
+            "erDefinitionToIr succeeded; assembleShell is the ONLY render path — no cloud REST, no Python (ac4/k5)."
+          ],
+          "postconditions": [
+            "The shell HTML is written to destPath as a sibling; relPath is repo-relative."
+          ]
+        },
+        {
+          "name": "assembleShell",
+          "signature": "function assembleShell(ir: DocumentIR): ShellOutcome",
+          "parameters": [
+            {
+              "name": "ir",
+              "type": "DocumentIR",
+              "purpose": "The IR to render (from erDefinitionToIr, not a graph extractor).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ShellOutcome",
+            "meaning": "DocGenOutcome<RenderedDocumentShell> — self-contained HTML w/ inlined SVG (render/shell.ts). CONSUMED unchanged; the SEPARABLE render seam reused without generateDocument."
+          },
+          "errors": [
+            {
+              "type": "DocGenOutcome (non-ok)",
+              "condition": "fallback-unavailable — returned as data."
+            }
+          ],
+          "preconditions": [
+            "EXISTING symbol (src/docgen/render/shell.ts, imported docgen/index.ts:32); S003 does not modify it."
+          ],
+          "postconditions": [
+            "Bundled mermaid/svg assets inline the diagram; local-only (ac4/k5)."
+          ]
+        },
+        {
+          "name": "validateErDefinition",
+          "signature": "function validateErDefinition(erDef: unknown, fnDef?: FunctionalDefinition): readonly DimensionFinding[]",
+          "parameters": [
+            {
+              "name": "erDef",
+              "type": "unknown",
+              "purpose": "The erDefinition body element to validate (the JSON ELEMENT, not the rendered doc).",
+              "optional": false
+            },
+            {
+              "name": "fnDef",
+              "type": "FunctionalDefinition",
+              "purpose": "(sc1) FR record for the ER<->FR consistency check.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "readonly DimensionFinding[]",
+            "meaning": "Three layers: (1) LinkML-metamodel schema validity via validateAgainstSchema vs the vendored metamodel; (2) referential integrity (relationship slot ranges resolve to defined classes, identifiers present); (3) FR/data-model consistency. Empty when sound."
+          },
+          "errors": [],
+          "preconditions": [
+            "Runs against the structured JSON element — NEVER parses the rendered companion (stakeholder direction)."
+          ],
+          "postconditions": [
+            "A HIGH 'breach' finding folds through the un-forked verdict/enforce gate (ac3/k4)."
+          ]
+        },
+        {
+          "name": "judgeDiagram",
+          "signature": "const judgeDiagram: (subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider) => Promise<DimensionResult>",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Carries the approved body (erDefinition + companion refs).",
+              "optional": false
+            },
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Assembled grounding.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "Local provider (the ER handler is deterministic and does not use it).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DimensionResult",
+            "meaning": "{ dimension:'diagram', findings } — THIN DISPATCHER over diagramHandlerFor(type); the ER handler calls validateErDefinition. NO inline type switch. Mirrors judgeFunctionalCoverage."
+          },
+          "errors": [
+            {
+              "type": "(per-handler isolation)",
+              "condition": "A handler failing yields a LOW 'observation', never aborts the dimension."
+            }
+          ],
+          "preconditions": [
+            "Registered as a peer JudgeSlot in DEFAULT_JUDGES, included only when hasDiagramReferences(subject); handlers serial."
+          ],
+          "postconditions": [
+            "findings ride the SAME computeReviewVerdict/foldVerdict + enforceCodeReviewGate — no forked gate (ac3/k4)."
+          ]
+        },
+        {
+          "name": "registerDiagramHandler",
+          "signature": "function registerDiagramHandler(handler: DiagramAdherenceHandler): void; function diagramHandlerFor(type: string): DiagramAdherenceHandler | undefined",
+          "parameters": [
+            {
+              "name": "handler",
+              "type": "DiagramAdherenceHandler",
+              "purpose": "A self-contained per-type handler; S003 registers the 'er' handler only.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void | DiagramAdherenceHandler | undefined",
+            "meaning": "The per-type handler REGISTRY (Map<string,DiagramAdherenceHandler>) mirroring docgen's InMemoryDocTypeRegistry — the extensibility seam S004's UX handler (and deferred sequence/component) register into as peers."
+          },
+          "errors": [
+            {
+              "type": "DuplicateDiagramHandlerError",
+              "condition": "A second registration for the same type — fail-fast (mirrors DuplicateDocTypeError, registry.ts:26-33)."
+            }
+          ],
+          "preconditions": [
+            "S003 registers only 'er' at module load."
+          ],
+          "postconditions": [
+            "judgeDiagram dispatches through diagramHandlerFor — the per-type-handler constraint realized here."
+          ]
+        },
+        {
+          "name": "hasDiagramReferences",
+          "signature": "function hasDiagramReferences(subject: CodeReviewSubject): boolean",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "The code-review subject.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True when the approved body carries an erDefinition and/or >=1 diagram CompanionArtifactRef — the inclusion GATE, mirroring hasFunctionalDefinition."
+          },
+          "errors": [],
+          "preconditions": [
+            "Drives effectiveJudges (runner.ts:125) + expectedDimensions (handler.ts:64) in lockstep."
+          ],
+          "postconditions": [
+            "A document with no ER/diagram runs exactly the base dimensions."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ErDefinition (LinkML-shaped authored body element)",
+        "change": "new",
+        "details": "The stakeholder-directed source of truth: a LinkML SchemaDefinition SUBSET — classes (entities) whose slots are SlotDefinitions with LinkML cardinality (required/multivalued/minimum_cardinality/maximum_cardinality) and a range (scalar type = attribute, another class = relationship). New src/workflow/artifacts/companion/er.ts. Authored when the content-gate warrants an ER; validated against the vendored LinkML metamodel schema (ajv). The JSON element is validated and visualized — the companion is derived from it, never the reverse.",
+        "schemaDiff": "+ interface ErDefinition { readonly id?: string; readonly classes: Record<string, ErClass> }\n+ interface ErClass { readonly attributes?: Record<string, ErSlot> }\n+ interface ErSlot { readonly range?: string; readonly required?: boolean; readonly multivalued?: boolean; readonly minimum_cardinality?: number; readonly maximum_cardinality?: number; readonly identifier?: boolean }",
+        "callSites": [
+          "src/workflow/artifacts/companion/er.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts"
+        ]
+      },
+      {
+        "entity": "Vendored LinkML metamodel JSON Schema (bundled asset)",
+        "change": "new",
+        "details": "A static JSON Schema of the LinkML metamodel (ClassDefinition/SlotDefinition + cardinality) vendored under src/assets/ + shipped via copy-assets, used by validateAgainstSchema — no Python/LinkML toolchain at runtime (k5). Boot asset-check mirrors docgen's asset-validator.",
+        "schemaDiff": "+ src/assets/artifacts/schemas/linkml-metamodel.schema.json (bundled)",
+        "callSites": [
+          "src/workflow/artifacts/companion/er.ts"
+        ]
+      },
+      {
+        "entity": "CompanionArtifactRef + HldBody/LldBody companions + erDefinition fields",
+        "change": "field-add",
+        "details": "sc4 CompanionArtifactRef (new companion/types.ts). Additive absent-safe `companions?: readonly CompanionArtifactRef[]` AND `erDefinition?: ErDefinition` on HLD+LLD bodies (the types with S002 diagram extension slots). Absent -> the S002 extension section renders empty (forward-only, k6).",
+        "schemaDiff": "  interface HldBody/LldBody { ...; readonly erDefinition?: ErDefinition; readonly companions?: readonly CompanionArtifactRef[] | undefined }",
+        "callSites": [
+          "src/workflow/artifacts/companion/types.ts",
+          "src/workflow/artifacts/hld.ts",
+          "src/workflow/artifacts/lld.ts"
+        ]
+      },
+      {
+        "entity": "ReviewDimension",
+        "change": "invariant-change",
+        "details": "Extend the flat union (code-review/types.ts:36) with 'diagram' — ONE new dimension; the per-type split (ER now; UX/sequence/component peers) lives below in the handler registry.",
+        "schemaDiff": "+ '...|functional-coverage|diagram'",
+        "callSites": [
+          "src/workflow/code-review/types.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/mcp/code-review-step/handler.ts"
+        ]
+      },
+      {
+        "entity": "DiagramAdherenceHandler / diagram handler registry",
+        "change": "new",
+        "details": "interface DiagramAdherenceHandler { readonly type: string; appliesTo(ref|body): boolean; judge(subject, grounding, provider): Promise<readonly DimensionFinding[]> }. Map<string,handler> registry (register/for, fail-fast dup) mirroring docgen's InMemoryDocTypeRegistry (registry.ts:54). S003 ships ONLY the 'er' handler. Keyed by a type string so peers (UX=S004, sequence/component=deferred) register without S003 enumerating them.",
+        "schemaDiff": "+ interface DiagramAdherenceHandler { type; appliesTo; judge }\n+ registry: Map<string, DiagramAdherenceHandler>  // S003 registers 'er'",
+        "callSites": [
+          "src/workflow/code-review/dimensions/diagram/registry.ts",
+          "src/workflow/code-review/dimensions/diagram/handlers/er.ts",
+          "src/workflow/code-review/runner.ts"
+        ]
+      },
+      {
+        "entity": "DiagramNeedAssessment",
+        "change": "new",
+        "details": "Content-gate result { warranted; diagrams:[{type,ofSectionId?,rationale}] }; empty when no visual warranted (ac1/k3). S003 emits only type:'er'.",
+        "schemaDiff": "+ interface DiagramNeedAssessment { readonly warranted: boolean; readonly diagrams: readonly { type: string; ofSectionId?: string; rationale: string }[] }",
+        "callSites": [
+          "src/workflow/artifacts/companion/assess.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "S003 owns sc4: CompanionArtifactRef + resolveCompanionPath + the companions?/erDefinition? body fields + the general AUTHORED-companion mechanism (structured body element -> deterministic visualization -> validate the JSON element). S004 reuses the SAME mechanism for ux-mock as a peer."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consumes FunctionalDefinition (S001) read-only in validateErDefinition for the ER<->FR consistency check; never modifies FR ids/record."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consumes S002's DocumentStructure — the existing 'diagrams'(HLD)/'diagramsEr'(LLD) extension slots — to render the CompanionArtifactRef as a link; no format re-design."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The authored erDefinition is invalid against the LinkML metamodel.",
+          "detection": "validateErDefinition runs validateAgainstSchema(erDef) against the vendored metamodel; ajv returns errors.",
+          "response": "HIGH 'breach' finding on the 'diagram' dimension; folds to block, withholds completion under enforce (ac3/k4). Validation targets the JSON element, not the doc.",
+          "userImpact": "A malformed ER model is caught against the structured element with a precise message before it can mislead a reviewer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A relationship slot's range names a class not defined in erDefinition.classes.",
+          "detection": "validateErDefinition / erDefinitionToIr resolves each class-ranged slot against erDef.classes and finds it absent.",
+          "response": "HIGH 'breach' naming the slot+range; the ER render is not emitted for a broken model.",
+          "userImpact": "An ER referencing a non-existent entity is caught against the JSON, not rendered as a misleading diagram.",
+          "recoverable": true
+        },
+        {
+          "scenario": "erDefinition is schema-valid but inconsistent with the FR/data-model.",
+          "detection": "validateErDefinition cross-checks entities/relationships against the consumed FunctionalDefinition (sc1).",
+          "response": "A finding describing the ER<->FR mismatch; folds through the shared gate.",
+          "userImpact": "The designed data model and the FRs are kept in agreement.",
+          "recoverable": true
+        },
+        {
+          "scenario": "assembleShell returns a non-ok DocGenOutcome for a valid erDefinition.",
+          "detection": "renderErCompanion inspects the DocGenOutcome discriminant before writing.",
+          "response": "Omit the companion (no file, no ref) + surface DiagramGenerationError; the erDefinition stays validated in-body.",
+          "userImpact": "A render hiccup yields a doc whose ER model is still present + validated, just without the picture — no broken link.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The content-gate provider call fails / returns unparseable output.",
+          "detection": "assessDiagramNeed wraps its single provider call in withStructuredRetry; caught inside.",
+          "response": "Fail safe to { warranted:false, diagrams:[] } — no ER authored/rendered.",
+          "userImpact": "A transient hiccup yields a diagram-less document (k3), not a failed generation.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A body carries an erDefinition but its referenced companion file is missing at review time.",
+          "detection": "The ER handler sees hasDiagramReferences true and a CompanionArtifactRef whose relPath resolves to no sibling.",
+          "response": "HIGH 'breach' (referenced-but-absent companion) — satisfying ac3; folds through the enforce gate.",
+          "userImpact": "A doc claiming an ER it does not ship is caught (blocks under enforce).",
+          "recoverable": true
+        },
+        {
+          "scenario": "Duplicate handler registration for a diagram type, or ran-set != expected-set.",
+          "detection": "registerDiagramHandler finds the type already in the Map (fail-fast); validateArtifact (runner.ts:281-306) compares ran vs expected dimensions.",
+          "response": "Throw DuplicateDiagramHandlerError / fail validateArtifact — dev-time errors kept green by the conditional-dimension test.",
+          "userImpact": "None in production: wiring/gate drift caught in dev/CI.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The vendored LinkML metamodel schema asset is missing/corrupt at runtime.",
+          "detection": "A boot-time asset check (mirroring docgen's asset-validator.ts) verifies the bundled schema before the ER handler runs.",
+          "response": "Fail loudly at boot with a rebuild/copy-assets message; never silently skip validation.",
+          "userImpact": "A packaging fault is caught at startup, not by passing an unvalidated ER model.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A document the content-gate deems needs NO ER diagram.",
+          "expected": "No erDefinition authored, no companion, hasDiagramReferences false -> the 'diagram' dimension not run; base dimensions only (ac1/k3)."
+        },
+        {
+          "input": "An erDefinition with a single entity and zero relationships.",
+          "expected": "Valid: renders a single-entity ER (attributes only); the ER handler passes."
+        },
+        {
+          "input": "A body whose companions[] contains a 'ux-mock' entry (added later by S004).",
+          "expected": "The ER handler's appliesTo ignores non-ER companions; diagramHandlerFor('ux') is unregistered in S003 -> a LOW 'observation' until S004 registers its peer. S003 builds no UX logic."
+        },
+        {
+          "input": "An older artifact with neither erDefinition nor companions.",
+          "expected": "The S002 extension section renders empty, hasDiagramReferences false, base dimensions only — forward-only (k6)."
+        },
+        {
+          "input": "An erDefinition slot whose range is a scalar type vs another class.",
+          "expected": "erDefinitionToIr renders scalar-range slots as attributes and class-range slots as relationships with crow's-foot cardinality — deterministic."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The authored erDefinition JSON element is the SOURCE OF TRUTH: the ER companion is a deterministic visualization derived from it, and adherence/validation runs against the JSON element, never by parsing the rendered doc (stakeholder direction; consistent with k2).",
+          "source": "c2"
+        },
+        {
+          "text": "The code-review verdict reducer is never forked: diagram findings flow through the same computeReviewVerdict/foldVerdict + enforceCodeReviewGate as the base dimensions.",
+          "source": "c6"
+        },
+        {
+          "text": "The base dimensions run exactly as before for work with no ER/diagram: effectiveJudges only ADDS 'diagram' when hasDiagramReferences, ran-set==expected-set.",
+          "source": "c3"
+        },
+        {
+          "text": "The ER companion is rendered ONLY via docgen's assembleShell render seam (local bundled assets) — generateDocument/graph extraction is NOT used for ER, no Python, no cloud REST (k5).",
+          "source": "c1"
+        },
+        {
+          "text": "The core markdown never inlines companion content: the ER visualization lives only as a sibling file referenced by relPath; the erDefinition stays a structured body element (k1).",
+          "source": "c5"
+        },
+        {
+          "text": "Every added provider call (the content-gate) is serial under withStructuredRetry; the ER validation + render are deterministic and provider-free.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict (tsx), co-located under src/workflow/**/__tests__/ and src/workflow/code-review/__tests__/, matching functional-coverage-conditional.test.ts + the docgen/path-scheme suites; live provider tests gate behind INSRC_LIVE_TESTS.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove ER validation runs against the JSON element (LinkML-metamodel + referential integrity + FR-consistency), never the rendered doc.",
+          "subjects": [
+            "validateErDefinition: metamodel-valid -> no findings; shape/cardinality violation -> HIGH breach (ajv vs vendored metamodel)",
+            "validateErDefinition: dangling relationship range -> HIGH referential-integrity breach",
+            "validateErDefinition: ER<->FR mismatch -> finding when FunctionalDefinition supplied",
+            "validateErDefinition never reads a rendered file (assert no companion fs read)"
+          ],
+          "fixturesNeeded": [
+            "valid + invalid ErDefinition fixtures",
+            "the vendored linkml-metamodel.schema.json",
+            "FunctionalDefinition fixtures"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the deterministic visualization + content-gate + companion path without cloud access.",
+          "subjects": [
+            "erDefinitionToIr: classes->entities, scalar slots->attributes, class slots->relationships w/ crow's-foot cardinality; deterministic",
+            "renderErCompanion: builds IR + spied assembleShell + writes sibling; non-ok -> no file + DiagramGenerationError",
+            "resolveCompanionPath sibling-of-.md; throws for story-scoped missing story",
+            "assessDiagramNeed: empty/no-visual, type:'er' when warranted, fail-safe on provider error (one serial call)",
+            "ErDefinition/companions/erDefinition fields optional + absent-safe"
+          ],
+          "fixturesNeeded": [
+            "ErDefinition fixtures",
+            "spied/fake assembleShell (ok + non-ok)",
+            "stub LLMProvider (canned + throwing)",
+            "temp repo + WorkItemIdentity fixtures"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the per-type registry + thin dispatcher + conditional wiring (no mega-switch).",
+          "subjects": [
+            "registerDiagramHandler/diagramHandlerFor: S003 registers 'er'; duplicate throws DuplicateDiagramHandlerError",
+            "judgeDiagram dispatches the ER companion to the 'er' handler (spy) + aggregates; an unregistered type yields a LOW observation",
+            "effectiveJudges/expectedDimensions/buildJudgementsSchema include 'diagram' iff hasDiagramReferences; validateArtifact accepts ran==expected, rejects drift"
+          ],
+          "fixturesNeeded": [
+            "fresh registry with the 'er' handler",
+            "CodeReviewSubject fixtures with/without erDefinition"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the dimension rides the existing verdict + gate end-to-end (un-forked).",
+          "subjects": [
+            "runCodeReview over a valid-erDefinition subject folds a DimensionResult{diagram} into the verdict (pass)",
+            "an invalid/inconsistent erDefinition folds to block + enforceCodeReviewGate withholds under enforce=true, advisory-warn under false",
+            "a no-ER subject runs base dimensions; CR record byte-shape-compatible with pre-S003",
+            "boot asset-check fails loudly when the vendored metamodel schema is absent"
+          ],
+          "fixturesNeeded": [
+            "temp repo with an approved HLD/LLD body carrying/omitting an erDefinition",
+            "stub grounding assembler",
+            "codeReview.enforce true/false fixtures",
+            "a temp assets dir missing the metamodel schema"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: assessDiagramNeed empty for no-visual + type:'er' when warranted",
+            "unit: assessDiagramNeed fail-safe on provider error",
+            "integration: a no-ER subject omits the companion + the 'diagram' dimension"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: resolveCompanionPath sibling of the .md",
+            "unit: renderErCompanion returns a linked reference; erDefinition stays in-body, companion out-of-body (never inlined)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: validateErDefinition HIGH breach on invalid/dangling/ER<->FR-inconsistent JSON element",
+            "unit: ER handler flags a referenced-but-absent companion",
+            "integration: those findings fold to block + enforceCodeReviewGate withholds under enforce=true"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: renderErCompanion renders ONLY via assembleShell (local docgen seam) — no generateDocument, no Python, no cloud REST",
+            "unit: validateErDefinition validates via ajv against the vendored bundled metamodel (no external toolchain)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per-type renderers emit markdown from the body (S002); the S002 formats declare diagram extension slots (HLD 'diagrams', LLD 'diagramsEr') that nothing fills. Code-review runs the base four + conditional functional-coverage via DEFAULT_JUDGES/effectiveJudges (runner.ts:113-128), folding through computeReviewVerdict/foldVerdict + enforceCodeReviewGate. docgen exposes generateDocument (graph path) AND a SEPARABLE assembleShell render seam (render/shell.ts, imported docgen/index.ts:32); there is NO ER extractor. path-scheme has resolveArtifactMdPath but NO companion helper. HLD/LLD bodies carry no erDefinition/companions. validateAgainstSchema (structured-output.ts:80) is the ajv seam.",
+      "stateAfter": "The artifact body carries an authored erDefinition (LinkML-shaped) as the ER source of truth; a content-gate decides per document whether an ER is warranted; when so, erDefinitionToIr + assembleShell render it into a SIBLING companion referenced by a CompanionArtifactRef the S002 slot links. A new 'diagram' code-review dimension — a thin dispatcher over a per-type registry whose only S003 member is the 'er' handler — validates the erDefinition JSON element and rides the same verdict/enforce gate. Forward-only; code-derived diagrams deferred; UX a peer in S004.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add sc4 CompanionArtifactRef + ErDefinition types (LinkML subset) + additive absent-safe erDefinition?/companions? on HldBody/LldBody.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Vendor the LinkML metamodel JSON Schema asset + wire copy-assets + a boot asset-check.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the net-new resolveCompanionPath helper.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add erDefinitionToIr + renderErCompanion (assembleShell) + assessDiagramNeed; wire generation into the doc path, inert until the gate warrants.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add validateErDefinition + the DiagramAdherenceHandler registry with the 'er' handler (keyed by type string for later peers).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Extend ReviewDimension with 'diagram', add judgeDiagram + its JudgeSlot, gate via hasDiagramReferences in effectiveJudges AND MCP expectedDimensions/buildJudgementsSchema (lockstep).",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Add ER validation/transform/render/content-gate units, registry/dispatcher units, the conditional-dimension test, and the integration + boot-asset-check tests.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API signature changes: generateDocument, assembleShell, resolveArtifactMdPath, validateAgainstSchema, computeReviewVerdict, enforceCodeReviewGate consumed unchanged; every new symbol is additive. erDefinition?/companions? and the 'diagram' dimension are optional/conditional, so pre-S003 artifacts render identically and get exactly the base dimensions — no stored artifact migrated or invalidated (k6). The ER generation-source is a refinement of the HLD wording (assembleShell render seam vs the generateDocument graph path), raised as an open question, not a breaking change.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Authored LinkML erDefinition body element + deterministic Mermaid render via assembleShell + per-type registry",
+        "oneLineSummary": "The erDefinition is a LinkML-metamodel-shaped structured element in the artifact body (source of truth); a deterministic transform renders it to a Mermaid ER companion via docgen's assembleShell; the ER adherence handler (a peer in the per-type registry) validates the JSON element, never the rendered doc.",
+        "approach": "The chosen design (see contract details): erDefinition body element + validateErDefinition (ajv vs vendored LinkML metamodel + referential integrity + FR-consistency) + erDefinitionToIr + assembleShell render + the per-type diagram handler registry (ER handler now) riding the un-forked verdict/gate.",
+        "pros": [
+          "Realizes the stakeholder model precisely (structured JSON is source of truth, doc is visualization, validate the JSON element).",
+          "Adopts LinkML the standard while honoring k5 (ajv + our own render, no Python).",
+          "Per-type handler registry keeps the no-mega-switch constraint + leaves a clean peer slot for S004's UX.",
+          "Removes the docgen ER-extractor gap."
+        ],
+        "cons": [
+          "Vendored metamodel asset + a LinkML->IR transform to author + test.",
+          "Generation-source for ER refines the HLD's 'produced through docgen generateDocument' wording (openQuestion)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Full LinkML toolchain at runtime (Python generators)",
+        "oneLineSummary": "Shell out to LinkML's Python generators to validate + render.",
+        "approach": "Author the erDefinition as LinkML and invoke the official generators as a subprocess for the JSON Schema + Mermaid outputs.",
+        "pros": [
+          "Maximal LinkML fidelity; no hand-written transform."
+        ],
+        "cons": [
+          "Adds a Python/LinkML runtime dependency + subprocess — violates k5.",
+          "Heavy toolchain for one diagram type; version-fragile."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "s3 ac4='violates' — a Python/LinkML runtime dependency breaks k5 (local-first). Rank 3."
+      },
+      {
+        "id": "a3",
+        "name": "Bespoke minimal ER schema (not LinkML)",
+        "oneLineSummary": "A hand-rolled ER JSON instead of the LinkML metamodel.",
+        "approach": "A compact custom ER body element + its own JSON Schema, same render/validate/registry wiring as a1.",
+        "pros": [
+          "Smallest schema surface; nothing external to vendor.",
+          "Still validate-the-JSON + deterministic render."
+        ],
+        "cons": [
+          "Forgoes the explicit 'adopt LinkML proper' decision + its standard vocabulary."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Sound and passes every AC/contract, but forgoes the stakeholder's explicit LinkML choice. Rank 2."
+      },
+      {
+        "id": "a4",
+        "name": "Keep ER code-derived via docgen type-structure (superseded prior design)",
+        "oneLineSummary": "Generate the ER from the code graph via docgen type-structure and validate the rendered companion.",
+        "approach": "Map ER->type-structure, call generateDocument, validate the rendered companion.",
+        "pros": [
+          "Reuses generateDocument end-to-end; matches the HLD wording literally."
+        ],
+        "cons": [
+          "Contradicts the stakeholder direction (source of truth must be the JSON element; validate the element, not the doc).",
+          "Cannot represent a designed, not-yet-built data model.",
+          "type-structure is types+inheritance, not true ER cardinality."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "s3 ac3='violates' — validates the doc not the JSON element and cannot model a designed data model. Rank 4."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ER generation-source refinement vs the HLD: the HLD framework summary says diagrams are 'produced through the existing docgen generateDocument seam,' but ER is now produced by reusing docgen's assembleShell RENDER seam from the authored erDefinition (NOT the generateDocument graph-extractor path). assembleShell is itself a docgen seam, so this is a wording refinement, not a new external surface. No structural amendment type fits a framework-summary wording change. Confirm the refinement (recommended) or back-flow the HLD framework summary to say 'produced through the existing docgen seams — assembleShell render for authored diagrams, generateDocument for code-derived.'",
+      "Scope confirmation (recorded, not blocking): S003 implements the authored-structured-companion model for ER only + establishes the reusable mechanism; UX schema (Adaptive Cards vs JSON Forms) is decided + wired by S004 as a peer handler; code-derived sequence/component diagrams are deferred to a later story."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 docgen bundle — generateDocument (src/docgen/index.ts:95) + the SEPARABLE assembleShell render seam (src/docgen/render/shell.ts, imported index.ts:32) + RenderedDocumentShell (types.ts:119); registered docTypes have no ER extractor",
+      "quotedText": "assembleShell turns a DocumentIR into a self-contained HTML shell; reused for ER without any graph extractor."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 ajv bundle — validateAgainstSchema (src/agent/providers/structured-output.ts:80), Ajv draft 2020-12; used to validate the erDefinition vs a vendored LinkML metamodel schema (no Python)",
+      "quotedText": "validateAgainstSchema(schema, raw) is the ajv-backed validator reused to validate the erDefinition JSON element."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 dimension-registry bundle — JudgeSlot/DEFAULT_JUDGES (runner.ts:63,113-119) + effectiveJudges (runner.ts:125) + validateArtifact (runner.ts:281-306) + ReviewDimension (types.ts:36)",
+      "quotedText": "Dimensions are a flat LIST of handler objects; conditional inclusion is a predicate filter; ran-set==expected-set enforced."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 functional-coverage pattern bundle — dimensions/functional-coverage.ts (judge:141, schema:54, hasFunctionalDefinition:89) + functional-coverage-conditional.test.ts",
+      "quotedText": "The 4-point conditional-dimension wiring the diagram dimension mirrors, one serial provider call under withStructuredRetry."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 path-scheme bundle — resolveArtifactMdPath (path-scheme.ts:119), STORY_SCOPED (:68); NO companion/sibling helper exists",
+      "quotedText": "There is no existing helper for a sibling/companion file next to the .md — sc4's scheme is net-new."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 verdict/gate bundle — computeReviewVerdict (review/review.ts:110), foldVerdict (runner.ts:232), codeReview.enforce (config-catalog.ts:90), enforceCodeReviewGate (gate.ts:66)",
+      "quotedText": "The shared reducer + enforce gate the diagram findings ride without forking."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "HLD-c5824e17eccf0c14 sc4 Companion-artifact reference (ownedByStory s3, consumedByStories s4) + assumption c8",
+      "quotedText": "The single contract for referencing an out-of-body companion file, including its on-disk path scheme."
+    }
+  ]
+}

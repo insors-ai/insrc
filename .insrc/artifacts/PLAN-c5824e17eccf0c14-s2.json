@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790568962070-7moxw6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T04:20:36.691Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 274466,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "storyId": "s2",
+    "lldRunId": "wf-1790535602476-cum1lu",
+    "lldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
+    "approvedAt": "2026-09-28T04:20:57.579Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc3 types + optional body fields",
+        "summary": "Add the sc3 model in a new src/workflow/artifacts/format/ module: Audience, SharedContextRef, SectionSpec (incl. numbered flag + source union), ItemFormat, DocumentFormat. Add optional summary {prose, audience?} to Define/Hld/Lld/Plan bodies and contextRefs to LldBody. Additive types only; additionalProperties:false retained; no behavior change yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Audience/SharedContextRef/SectionSpec/ItemFormat/DocumentFormat exported from format/",
+          "optional summary on each body type + contextRefs on LldBody; existing bodies still type-check",
+          "tsc clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc3 types compile + optional summary/contextRefs are absent-safe on each body type"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Shared render engine + helpers",
+        "summary": "Author renderFromFormat (envelope + ordered sections + References), computeSectionNumbers (literal section/nested ordinals; envelope unnumbered), sectionSlug (number-prefixed, collision-disambiguated), renderSharedContextReference (reference line + degraded literal), deriveHldContextRef (engine-derived HLD ref from epicHash). Fail-fast on a required section with no binding.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "renderFromFormat emits envelope + ordered numbered sections; throws on missing required binding",
+          "computeSectionNumbers: 1..N body, N.M items, envelope absent",
+          "deriveHldContextRef returns {sourceArtifactId:'HLD-<epicHash>', sectionId:'2-framework-summary'}"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderFromFormat: envelope + ordered sections + References; throws on missing required binding"
+          },
+          {
+            "level": "unit",
+            "name": "computeSectionNumbers: body 1..N, per-item N.M, envelope unnumbered"
+          },
+          {
+            "level": "unit",
+            "name": "sectionSlug: determinism + numeric-suffix disambiguation + number-prefixed anchors"
+          },
+          {
+            "level": "unit",
+            "name": "renderSharedContextReference + deriveHldContextRef: reference-line shape, engine-derived HLD ref, degraded literal on malformed id"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Bundled per-type FORMAT templates + default DocumentFormats",
+        "summary": "Add src/assets/artifacts/templates/{define,hld,lld,plan}.md + the default DocumentFormat constant per kind (section order, content guidance, audience, per-item sub-templates, named S003/S004 extension points), resolved via the existing loadTemplate cascade; wire copy-assets.mjs.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "loadTemplate resolves each bundled kind; a per-repo override wins",
+          "the four DocumentFormat constants match the reviewed mocks (docs/epics/.../S002/mocks/)",
+          "missing/corrupt template throws a descriptive Error"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "per-type DocumentFormat constants: summary SectionSpec audience tag + numbered:false; section order matches the reviewed mocks"
+          },
+          {
+            "level": "integration",
+            "name": "loadTemplate: resolves each bundled kind, per-repo override wins, missing/corrupt template throws"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Reshape DEF + HLD renderers via the engine",
+        "summary": "Reshape renderDefineMarkdown + renderHldMarkdown to render via loadTemplate(kind) + renderFromFormat with per-section bindings (short H1, item-scoped Summary, TOC, numbering, References; DEF Summary audience business|product + bound sc1 FR section). Update the define/hld heading-literal test suites to the new format.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "DEF/HLD render the new numbered envelope; H1 no longer duplicates the first body paragraph (defect #4)",
+          "DEF Summary is audience-tagged + foregrounds sc1 FR outcomes; FR section binds renderFunctionalRequirementsSection unchanged",
+          "define/hld heading-literal suites updated + green"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderDefineMarkdown: new numbered format + short H1 (defect #4) + audience-tagged Summary binding foregrounding sc1 FRs"
+          },
+          {
+            "level": "unit",
+            "name": "renderHldMarkdown: new numbered format heading-literal suite"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Reshape LLD + PLAN renderers + HLD-context de-dup",
+        "summary": "Reshape renderLldMarkdown (HLD-context rendered as a deriveHldContextRef reference — the ac2 de-dup, defect #13) + renderPlanMarkdown via the engine. Update the lld/plan heading-literal suites.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "LLD HLD-context is a SharedContextRef reference line, not the copied framework-summary; explicit contextRefs take precedence over the engine-derived default",
+          "PLAN renders per-task sub-template + numbering",
+          "lld/plan heading-literal suites updated + green"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderLldMarkdown: HLD-context reference (defect #13) + Summary binding + explicit-contextRefs precedence"
+          },
+          {
+            "level": "unit",
+            "name": "renderPlanMarkdown: per-task sub-template + numbering heading-literal suite"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Summary/audience/contextRefs elicitation across phases",
+        "summary": "Extend the step prompts + step schemas (define epic.frame, design.epic framework.write, design.story contract.detail, plan tasks.finalize) to elicit summary(+audience); extend the four synthesizer body schemas in orchestrator.ts to admit summary/audience (+ contextRefs for LLD) keeping additionalProperties:false; add per-phase checklist items. Add runner + synthesize-path tests. Do NOT touch the S001 functionalDefinition elicitation (already shipped).",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "each extended step schema admits summary(+audience); each synthesizer body admits summary/contextRefs (a step-emitted summary flows through, not rejected)",
+          "checklist items added per phase",
+          "runner + synthesize-path tests green"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "step schemas (epic.frame/framework.write/contract.detail/tasks.finalize) admit summary(+audience)"
+          },
+          {
+            "level": "unit",
+            "name": "synthesizer bodies (define/design.epic/design.story/plan) admit summary/contextRefs; a step-emitted summary flows through; define FR fields untouched"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Boundary-regex update + end-to-end integration tests",
+        "summary": "Update the synthesizer.ts:151 BOUNDARY_RULES to admit the new constructs (References block, TOC, numbered headings, per-item checkboxes) while still rejecting genuine scope leakage; add integration tests proving a full synthesize of each type produces the new format + a populated Summary + the HLD-context reference and passes the updated validators; a no-optional-data artifact stays absent-safe.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "BOUNDARY_RULES admit the new constructs; real scope leakage still rejected",
+          "integration: full synthesize of DEF/HLD/LLD/PLAN passes end-to-end",
+          "absent-safe: an artifact with no summary/contextRefs/functionalDefinition renders fully"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "BOUNDARY_RULES admit new constructs + still reject real scope leakage over the new rendered output"
+          },
+          {
+            "level": "integration",
+            "name": "end-to-end synthesize of DEF/HLD/LLD/PLAN with elicited summary; absent-safe no-optional-data artifact renders fully"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderFromFormat (ordered sections, envelope, References, required-binding throw)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "computeSectionNumbers (1..N body, N.M items, envelope unnumbered)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "sectionSlug (determinism + numeric-suffix disambiguation + number-prefixed anchors)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderSharedContextReference + deriveHldContextRef (reference-line shape; engine-derived HLD ref; degraded literal on malformed id)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDefineMarkdown",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderHldMarkdown",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderLldMarkdown",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderPlanMarkdown",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDefineMarkdown Summary binding",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderLldMarkdown Summary binding",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the per-type DocumentFormat summary SectionSpec (audience tag + numbered:false)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "runners/design-epic framework.write schema",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "runners/design-story contract.detail schema",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "runners/plan tasks.finalize schema",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "runners/define epic.frame schema",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "defineSynthesizer/designEpicSynthesizer/designStorySynthesizer/planSynthesizer body schemas (orchestrator.ts)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "loadTemplate (bundled default + per-repo override tier)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "BOUNDARY_RULES over the new rendered output (synthesizer.ts:151)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the missing-template throw path",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "end-to-end synthesize of DEF/HLD/LLD/PLAN with elicited summary",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails — sc3 API surface (loadTemplate/renderFromFormat/computeSectionNumbers/sectionSlug/renderSharedContextReference/deriveHldContextRef) + surfaceLevel"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges — sc3 types, per-type FORMAT templates, body summary/audience + LldBody.contextRefs, renderer invariant-change, elicitation entries"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths — required-binding fail-fast, missing-template throw, malformed contextRef degraded literal, boundary-regex trip"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy — unit + integration levels; acceptance mapping ac1/ac2/ac3"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration — 7 rollbackable steps: types → engine → templates → renderers → elicitation → synth schemas → boundary regexes"
+    }
+  ]
+}

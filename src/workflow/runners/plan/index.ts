@@ -255,6 +255,10 @@ const testStrategyWrite = llmPauseRunner({
 				'- `level` is one of unit / integration / live / smoke — reuse the LLD testStrategy vocabulary; do NOT invent levels.',
 				'- Emit `testStrategyCoverage[]`: one row per LLD testStrategy item (a `testLevels[].subjects` entry), verbatim, mapping it to the Task ids whose tests cover it.',
 				'- Every LLD testStrategy subject must appear as exactly one `lldStrategyItem` with >=1 covering Task.',
+				'',
+				'SUMMARY (`summary`, optional but STRONGLY preferred): a plain-language, Story-scoped build abstract the PLAN leads with.',
+				'- 2-4 sentences on what building this Story entails — the shape of the work, in reader terms; not a task-by-task restatement.',
+				'- Set `summary.audience` to `product` (the delivered capability) or `technical` (the build shape), whichever fits.',
 			].join('\n'),
 			userTurn: [
 				's4 finalized Tasks:',
@@ -285,6 +289,7 @@ const checklistVerify = llmPauseRunner({
 			'You are the AUDITOR for the `plan` workflow.',
 			'',
 			'Checklist:',
+			'  sm1: Is a plain-language build `summary` present and Story-scoped?',
 			'  t1: Every Task id matches `t\\d+` and is unique within the Story.',
 			'  t2: Every Task is sized (S/M/L), ordered (1-based), and dependency-labelled.',
 			'  t3: The dependsOn graph is acyclic and `order` is a valid topological order.',

@@ -151,6 +151,19 @@ export const epicFrameSchema = {
 				additionalProperties: false,
 			},
 		},
+		// OPTIONAL Epic-scoped plain-language Summary (S002 sc3 elicitation). A
+		// business/product-audience abstract the DEF leads with — outcome-worded,
+		// no implementation detail. `defineSynthesizer` carries it verbatim into
+		// `body.summary`; absent-safe (empty Summary section) when omitted.
+		summary: {
+			type: 'object',
+			required: ['prose'],
+			additionalProperties: false,
+			properties: {
+				prose:    { type: 'string', minLength: 1 },
+				audience: { enum: ['business', 'product'] },
+			},
+		},
 		// OPTIONAL doc-level functional requirements (S001 back-fill). The model
 		// emits outcome-worded STATEMENTS only — no id, no scope. `defineSynthesizer`
 		// mints the stable FR ids (scope 'doc') via `mintFrId`. Absent-safe.

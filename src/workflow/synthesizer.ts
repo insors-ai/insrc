@@ -148,6 +148,17 @@ export interface BannedPattern {
 	readonly reason:  string;
 }
 
+//
+// S002 (sc3) format-engine assessment: the reshaped renderers introduce a
+// Contents/TOC (list of markdown links `- [text](#anchor)`), a numbered
+// References section, engine-computed numbered headings (`## N. …`), and
+// shared-context reference lines (`> See **HLD-…** § …`). None of these match
+// the banned patterns below — the code-fence rule targets ```` ``` ````
+// (the DEF renderer emits no fences), and the task-list rule targets EMPTY
+// checkbox brackets `- [ ]` / `- []` (`\[\s?\]`), never a TOC link whose
+// brackets carry text. Per-item checkboxes appear only in the PLAN renderer,
+// and `plan` has no boundary rules. So the new constructs are admitted without
+// loosening these patterns; the integration synthesize e2e suites confirm it.
 const BOUNDARY_RULES: Partial<Record<WorkflowName, readonly BannedPattern[]>> = {
 	stub: [],
 	define: [

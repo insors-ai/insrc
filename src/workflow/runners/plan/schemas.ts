@@ -111,6 +111,19 @@ export const testStrategyWriteSchema = {
 	required: ['tasks', 'testStrategyCoverage'],
 	additionalProperties: false,
 	properties: {
+		// OPTIONAL Story-scoped plain-language build Summary (S002 sc3 elicitation).
+		// Elicited HERE (not tasks.finalize) because `planSynthesizer` reads ONLY the
+		// s5 output — a product/technical-audience abstract of what building this Story
+		// entails. Carried verbatim into `body.summary`; absent-safe when omitted.
+		summary: {
+			type: 'object',
+			required: ['prose'],
+			additionalProperties: false,
+			properties: {
+				prose:    { type: 'string', minLength: 1 },
+				audience: { enum: ['product', 'technical'] },
+			},
+		},
 		tasks: { type: 'array', minItems: 1, items: taskWithTestsSchema },
 		testStrategyCoverage: {
 			type: 'array',

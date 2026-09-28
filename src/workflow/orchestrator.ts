@@ -923,6 +923,7 @@ function defineSynthesizer(
 		'- `citations[]` MUST be the UNION of s2.citations + s3.citations, de-duplicated by id. No new citation ids invented at this step.',
 		'- `openQuestions` is populated from s4 verdict: every `missed`/`ambiguous` result (except the sb1/sb2/sb3 hard-fail items — those fail the whole synthesize) becomes an open question phrased as "Item <itemId>: <notes|verdict>".',
 		'- `body.flavor` matches s1.flavor exactly.',
+		'- `body.summary` MUST be carried verbatim from s2.summary when s2 emitted one (a `{ prose, audience? }` object). Omit `body.summary` when s2 has none — do NOT invent it.',
 		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
 	].join('\n');
 	const userTurn = [
@@ -943,6 +944,15 @@ function defineSynthesizer(
 				type: 'object',
 				required: ['flavor', 'problem', 'nonGoals', 'assumptions', 'constraints', 'stories', 'openQuestions'],
 				properties: {
+					summary: {
+						type: 'object',
+						required: ['prose'],
+						additionalProperties: false,
+						properties: {
+							prose:    { type: 'string', minLength: 1 },
+							audience: { enum: ['business', 'product'] },
+						},
+					},
 					flavor:       { enum: ['enhancement', 'new-capability'] },
 					problem:      { type: 'string', minLength: 20 },
 					nonGoals:     { type: 'array' },
@@ -1396,6 +1406,7 @@ function designEpicSynthesizer(
 		'HARD RULES:',
 		'- `body.frameworkSummary`, `architectureShape`, `sharedContracts`, `storyBoundaries`, `nonFunctional` MUST be verbatim from s4.',
 		'- `body.rolloutOverview` MUST be verbatim from s5.',
+		'- `body.summary` MUST be carried verbatim from s4.summary when s4 emitted one (a `{ prose, audience? }` object). Omit it when s4 has none.',
 		'- `body.alternativesConsidered` MUST include EVERY alternative from s2, with each loser carrying a `reasonRejected` line pulled from s3.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects every `missed`/`ambiguous` verdict from s6 that is NOT a scope-boundary item (sbdry1..sbdry4 hard-fail those instead).',
@@ -1420,6 +1431,15 @@ function designEpicSynthesizer(
 				required: ['frameworkSummary', 'architectureShape', 'sharedContracts', 'storyBoundaries', 'nonFunctional', 'rolloutOverview', 'alternativesConsidered', 'chosenAlternative', 'openQuestions'],
 				additionalProperties: false,
 				properties: {
+					summary: {
+						type: 'object',
+						required: ['prose'],
+						additionalProperties: false,
+						properties: {
+							prose:    { type: 'string', minLength: 1 },
+							audience: { enum: ['product', 'technical'] },
+						},
+					},
 					frameworkSummary:  { type: 'string', minLength: 20 },
 					architectureShape: { type: 'string', minLength: 20 },
 					sharedContracts:   { type: 'array' },
@@ -1663,6 +1683,7 @@ function designStorySynthesizer(
 		'HARD RULES:',
 		'- `body.hldContextSlice` MUST be verbatim from the HLD context slice below.',
 		'- `body.contractDetails`, `body.dataModelChanges`, `body.interactionWithShared` MUST be verbatim from s4.',
+		'- `body.summary` MUST be carried verbatim from s4.summary when s4 emitted one; `body.contextRefs` MUST be carried verbatim from s4.contextRefs when s4 emitted them. Omit either when s4 has none — the renderer derives the HLD-context reference from the Epic hash by default (do NOT invent contextRefs).',
 		'- `body.errorPaths` MUST be verbatim from s5.',
 		'- `body.testStrategy` MUST be verbatim from s6.',
 		`- ${migrationOptional
@@ -1698,6 +1719,27 @@ function designStorySynthesizer(
 				required: ['hldContextSlice', 'contractDetails', 'dataModelChanges', 'interactionWithShared', 'errorPaths', 'testStrategy', 'alternativesConsidered', 'chosenAlternative', 'openQuestions'],
 				additionalProperties: false,
 				properties: {
+					summary: {
+						type: 'object',
+						required: ['prose'],
+						additionalProperties: false,
+						properties: {
+							prose:    { type: 'string', minLength: 1 },
+							audience: { enum: ['product', 'technical'] },
+						},
+					},
+					contextRefs: {
+						type: 'array',
+						items: {
+							type: 'object',
+							required: ['sourceArtifactId', 'sectionId'],
+							additionalProperties: false,
+							properties: {
+								sourceArtifactId: { type: 'string', minLength: 1 },
+								sectionId:        { type: 'string', minLength: 1 },
+							},
+						},
+					},
 					hldContextSlice:       { type: 'object' },
 					contractDetails:       { type: 'object' },
 					dataModelChanges:      { type: 'array' },
@@ -2113,6 +2155,7 @@ function planSynthesizer(
 		'HARD RULES:',
 		'- `body.tasks` MUST be the s5 tasks verbatim (each with its `tests[]` filled).',
 		'- `body.testStrategyCoverage` MUST be the s5 testStrategyCoverage verbatim.',
+		'- `body.summary` MUST be carried verbatim from s5.summary when s5 emitted one (a `{ prose, audience? }` object). Omit it when s5 has none.',
 		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
 	].join('\n');
 	const userTurn = [
@@ -2134,6 +2177,15 @@ function planSynthesizer(
 				required: ['tasks', 'testStrategyCoverage'],
 				additionalProperties: false,
 				properties: {
+					summary: {
+						type: 'object',
+						required: ['prose'],
+						additionalProperties: false,
+						properties: {
+							prose:    { type: 'string', minLength: 1 },
+							audience: { enum: ['product', 'technical'] },
+						},
+					},
 					tasks:                { type: 'array', minItems: 1 },
 					testStrategyCoverage: { type: 'array' },
 				},

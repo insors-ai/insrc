@@ -122,6 +122,19 @@ export const frameworkWriteSchema = {
 	required: ['frameworkSummary', 'architectureShape', 'sharedContracts', 'storyBoundaries', 'nonFunctional'],
 	additionalProperties: false,
 	properties: {
+		// OPTIONAL Epic-scoped plain-language Summary (S002 sc3 elicitation). A
+		// product/technical-audience abstract the HLD leads with — the chosen
+		// approach in reader terms, not competing options. `designEpicSynthesizer`
+		// carries it verbatim into `body.summary`; absent-safe when omitted.
+		summary: {
+			type: 'object',
+			required: ['prose'],
+			additionalProperties: false,
+			properties: {
+				prose:    { type: 'string', minLength: 1 },
+				audience: { enum: ['product', 'technical'] },
+			},
+		},
 		frameworkSummary:  { type: 'string', minLength: 20 },
 		architectureShape: { type: 'string', minLength: 20 },
 		sharedContracts: {

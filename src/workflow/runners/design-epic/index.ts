@@ -259,6 +259,10 @@ const frameworkWrite = llmPauseRunner({
 			'- No implementation. No task lists. No new goals not in the Epic.',
 			'',
 			'`storyBoundaries[].internal` is a paragraph describing what stays PRIVATE to that Story — not consumed by anyone else.',
+			'',
+			'SUMMARY (`summary`, optional but STRONGLY preferred): a plain-language, Epic-scoped abstract the HLD leads with.',
+			'- 2-4 sentences describing the CHOSEN framework approach in reader terms — not competing options, not implementation detail.',
+			'- Set `summary.audience` to `product` (what capability the architecture enables) or `technical` (the shape of the solution), whichever fits.',
 		].join('\n'),
 		userTurn: [
 			's1 HldContext:',
@@ -334,6 +338,7 @@ const checklistVerify = llmPauseRunner({
 			'',
 			'Checklist:',
 			'  f1: Does frameworkSummary describe the CHOSEN approach, not competing options?',
+			'  sm1: Is a plain-language `summary` present, Epic-scoped, describing the CHOSEN approach in reader terms (not options, not implementation detail)?',
 			'  f2: Does architectureShape cite an analyze bundle from s1 for every module it names?',
 			'  sc1: Does every sharedContract have a story that OWNS it?',
 			'  sc2: Every consumer story listed in `consumedByStories` matches Epic dependency graph OR the mismatch is an openQuestion.',

@@ -160,6 +160,36 @@ export const contractDetailSchema = {
 	required: ['surfaceLevel', 'api', 'dataModel', 'interactionWithShared'],
 	additionalProperties: false,
 	properties: {
+		// OPTIONAL Story-scoped plain-language Summary (S002 sc3 elicitation). A
+		// product/technical-audience abstract the LLD leads with — what THIS Story
+		// builds, in reader terms. `designStorySynthesizer` carries it verbatim into
+		// `body.summary`; absent-safe when omitted.
+		summary: {
+			type: 'object',
+			required: ['prose'],
+			additionalProperties: false,
+			properties: {
+				prose:    { type: 'string', minLength: 1 },
+				audience: { enum: ['product', 'technical'] },
+			},
+		},
+		// OPTIONAL explicit shared-context references (S002 sc3). When present, the
+		// renderer references these upstream artifact sections instead of the
+		// engine-derived HLD default (de-dup, ac2). When absent, the engine derives
+		// the HLD-context reference from the Epic hash. `sectionId` is a
+		// number-prefixed section slug on the referenced artifact.
+		contextRefs: {
+			type: 'array',
+			items: {
+				type: 'object',
+				required: ['sourceArtifactId', 'sectionId'],
+				additionalProperties: false,
+				properties: {
+					sourceArtifactId: { type: 'string', minLength: 1 },
+					sectionId:        { type: 'string', minLength: 1 },
+				},
+			},
+		},
 		surfaceLevel: { enum: ['internal', 'internal-shared', 'public'] },
 		hld: {
 			type: 'object',

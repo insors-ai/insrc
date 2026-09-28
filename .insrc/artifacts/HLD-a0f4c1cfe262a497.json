@@ -1,0 +1,321 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1790588218844-46z20d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T09:47:18.886Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 620035,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "hc1",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "New daemon tools are registered via registerTool in src/daemon/tools/registry.ts, the seam the append API's tool wrapper plugs into.",
+          "evidence": "Confirmed: src/daemon/tools/registry.ts:18 `export function registerTool(tool: Tool): void`. The append-API tool wrapper's registration seam exists as cited.",
+          "action": "None — registerTool seam exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc2",
+          "ref": "sc2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A feature module outside src/daemon/tools registers its own tool via a nullary register<Name>Tool() wrapper — precedent registerDocgenTool in src/docgen/tool.ts.",
+          "evidence": "Confirmed: registerDocgenTool @ src/docgen/tool.ts:83, mounted at src/daemon/tools/builtins/index.ts:58; the register<Name>Tool() wrapper convention is real (28 register*Tool functions across src/).",
+          "action": "None — the wrapper precedent holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc3",
+          "ref": "sc2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Artifact JSON has a production READ path (readArtifact) but NO production WRITE path — writeArtifact exists only as test helpers — so the append API must introduce the production key-preserving writer.",
+          "evidence": "Confirmed: readArtifact is real production code (src/workflow/resolve-comment.ts:254 returns ArtifactShape), and every writeArtifact hit is a test helper (5 in __tests__/, 0 production). The 'no production writer' gap the HLD builds sc2 around is real.",
+          "action": "None — the gap is correctly identified; sc2 rightly introduces the production writer.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc4",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/artifacts/format/bindings.ts exists and is the additive body-slot binding surface the render binding (sc3) extends.",
+          "evidence": "Confirmed: companionBodyLines is exported from src/workflow/artifacts/format/bindings.js (imported by the companion tests); the additive body-slot binding surface sc3 extends exists.",
+          "action": "None — bindings.ts surface exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc5",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The BUILD body is shaped in src/mcp/build-step/types.ts, where the optional feedback + changeLog fields attach.",
+          "evidence": "Confirmed by direct file check (DEF review): src/mcp/build-step/types.ts exists and is the BUILD-step shape module. The broad greps matched unrelated 'Build*' names, but the cited file is present as the attach point for the optional feedback + changeLog fields.",
+          "action": "None — the BUILD body module exists as cited.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc6",
+          "ref": "sc1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An additive absent-safe optional body-field precedent already exists (S002 summary, S003 erDefinition), so a new optional feedback field can be added the same admit-but-never-emit way.",
+          "evidence": "Confirmed: ER_DEFINITION_PROPERTY_SCHEMA @ src/workflow/artifacts/companion/er-schema.ts:19 is wired into the synthesizer body schema at orchestrator.ts:1458 — the S003 additive optional-body-field precedent is live, so the new feedback field can follow the same admit-but-never-emit pattern.",
+          "action": "None — additive-field precedent confirmed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc7",
+          "ref": "sc1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing attribution model ArtifactModelAttribution the new provenance vocabulary aligns with lives in src/workflow/types.ts with helpers in src/workflow/attribution.ts.",
+          "evidence": "Confirmed: interface ArtifactModelAttribution @ src/workflow/types.ts:295 + singleModelAttribution @ src/workflow/attribution.ts:50. The attribution model the new provenance vocabulary aligns with (k6) exists as cited.",
+          "action": "None — attribution model exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "hc8",
+          "ref": "s1/s2",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "s1 owns sc1/sc2/sc3 and s2 dependsOn s1, so every s2-consumed contract is downstream of its owner (internal consistency).",
+          "evidence": "Internally consistent: s1 owns sc1/sc2/sc3 and s2 dependsOn s1, so every s2-consumed contract is downstream of its owner — the ownership graph is sound and no Epic dependency was invented.",
+          "action": "None — ownership/ordering is self-consistent.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-28T09:48:59.161Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-28T09:49:20.034Z"
+  },
+  "body": {
+    "frameworkSummary": "Add attributed provenance to the workflow ledger by giving every artifact body an optional, absent-safe feedback record, plus a BUILD-only change-log, all as structured data in the artifact JSON (the source of truth) from which the rendered document is generated. A single shared provenance vocabulary defines the feedback entry, its attribution (aligned with both the existing ArtifactModelAttribution stamp and the ReviewComment anchor), and the change-log entry; a production read-append-rewrite append API (daemon tool + IPC) lets a user add a feedback entry to any artifact without losing what is already there; and an additive render binding surfaces the records exactly like the S001/S002/S003 additive body-field pattern, byte-identical when absent. Story s1 lays the whole foundation (vocabulary + append API + doc-body wiring + render binding); story s2 reuses it to record the BUILD change-log from the build's actual changed set and BUILD code-anchored feedback.",
+    "architectureShape": "New module src/workflow/artifacts/provenance/ holds the shared vocabulary (FeedbackEntry, FeedbackRecord, ChangeLogEntry, ProvenanceTarget, ProvenanceAuthorship) and the pure render-binding helpers used by format/bindings.ts. An optional `feedback?` field is added to DefineBody/HldBody/LldBody/PlanBody and the BUILD body (mcp/build-step/types.ts); an optional `changeLog?` is added to the BUILD body only. Every isXBody guard tolerates the new fields absent-safely and every synthesizer body schema in orchestrator.ts admits-but-never-emits them (they are populated post-hoc, not model-authored), preserving additionalProperties:false. The append API is a production artifact-JSON writer (the analyze pass found only readArtifact + test-helper writers) exposed via registerTool + a register<Name>Tool() wrapper and a dotted IPC method (artifact.feedback.append), pinned by a per-method contract test in the repo-stats mould; it reads the artifact JSON, appends one entry to the body feedback record, and rewrites preserving all existing keys. Renderers call the additive section helpers so a Feedback section (all types) and a Changes section (BUILD) are generated from the structured record. s2 adds only the BUILD-side wiring: the build-step populates changeLog from the changed set and records code-anchored feedback through the same shared record + append API.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Provenance record vocabulary (feedback + change-log + attribution)",
+        "purpose": "The one structured shape for an attributed feedback entry, a BUILD change-log entry, and their shared {file, version, segment/lines, author, timestamp} attribution — aligned with ArtifactModelAttribution and the ReviewComment anchor so there is a single provenance vocabulary (k1/k2/k6). Both Stories build their records from this.",
+        "interfaceSketch": "interface ProvenanceTarget { readonly file: string; readonly version?: string; readonly segment?: { readonly startLine: number; readonly endLine: number }; }\ninterface ProvenanceAuthorship { readonly author: string; readonly timestamp: string; }\ninterface FeedbackEntry extends ProvenanceAuthorship { readonly id: string; readonly target: ProvenanceTarget; readonly comment: string; readonly kind?: 'feedback' | 'suggestion' | 'comment'; }\ninterface ChangeLogEntry extends ProvenanceAuthorship { readonly target: ProvenanceTarget; readonly summary?: string; }\ntype FeedbackRecord = readonly FeedbackEntry[];\ntype ChangeLog = readonly ChangeLogEntry[];\n// additive optional body fields:\ninterface WithFeedback { readonly feedback?: FeedbackRecord; }   // DefineBody/HldBody/LldBody/PlanBody + BUILD body\ninterface WithChangeLog { readonly changeLog?: ChangeLog; }      // BUILD body only",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2"
+        ],
+        "assumptions": [
+          "c1",
+          "c3",
+          "c4"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Artifact feedback append API (production JSON writer + tool + IPC)",
+        "purpose": "The provided append operation (k4) plus the production read-append-rewrite artifact-JSON writer it needs (the gap the analyze pass found): append one FeedbackEntry to an artifact's body feedback record, append-only, preserving every existing key (lc1/k5). s2 reuses it to record BUILD code feedback.",
+        "interfaceSketch": "interface AppendFeedbackRequest { readonly artifactPath: string; readonly entry: Omit<FeedbackEntry, 'id' | 'timestamp'> & { readonly timestamp?: string }; }\ninterface AppendFeedbackResult { readonly artifactPath: string; readonly entryId: string; readonly total: number; }\n// production writer (new): (path: string, artifact: ArtifactShape) => void  // key-preserving rewrite\n// daemon tool wrapper: registerArtifactFeedbackTool(): void\n// IPC method name: 'artifact.feedback.append' => AppendFeedbackResult",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2"
+        ],
+        "assumptions": [
+          "c2",
+          "c3",
+          "c4"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Additive provenance render binding",
+        "purpose": "Generate the Feedback section (all types) and Changes section (BUILD) from the structured record via format/bindings.ts, byte-identical when the record is absent (k1/k5). s2's BUILD renderer reuses the same binding so its feedback + changes render consistently.",
+        "interfaceSketch": "// pure, structural render-binding declarations (no bodies)\ntype FeedbackSectionBinding = (feedback: FeedbackRecord | undefined) => readonly string[];\ntype ChangeLogSectionBinding = (changeLog: ChangeLog | undefined) => readonly string[];\ninterface ProvenanceBindings { readonly feedbackBodyLines: FeedbackSectionBinding; readonly changeLogBodyLines: ChangeLogSectionBinding; }",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2"
+        ],
+        "assumptions": [
+          "c1"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "s1 owns the entire foundation: the provenance vocabulary module (sc1), the append API with its new production key-preserving artifact-JSON writer + daemon tool + IPC method (sc2), and the additive render binding (sc3). Private to s1 and consumed by no one else: the specific wiring of the optional feedback field onto the four DOCUMENT bodies (DefineBody/HldBody/LldBody/PlanBody), each document type guard's absent-safe tolerance, the admit-but-never-emit changes to the four document synthesizer body schemas in orchestrator.ts, and the document renderers' calls into sc3. These document-side details are internal to s1; s2 only needs the three shared contracts, not s1's per-document plumbing."
+      },
+      {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "s2 adds only the BUILD-side wiring, all private to it: the optional changeLog + feedback fields on the BUILD body (mcp/build-step/types.ts) and its guard; populating the change-log from the build's actual changed set in the build-step/runners (k7, grounded in the real changed set per lc1); recording code-anchored feedback via the shared append API (sc2) with a source-file target; and the BUILD renderer's calls into the shared render binding (sc3) for its Changes + Feedback sections. s2 introduces no new shared contract — it is a thin, BUILD-specific reuse of s1's foundation, matching its dependsOn s1."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "The append API is a single read-append-rewrite of one artifact JSON file per call; render binding is O(entries) string assembly. No LLM calls, no indexing. Negligible cost.",
+      "security": "The writer is confined to artifact JSON files under the repo's .insrc/artifacts tree (and docs mirror); it must reject paths outside the artifact root and must never drop or overwrite unrelated keys (key-preserving rewrite).",
+      "observability": "Append operations log the artifact path + new entry id via getLogger; malformed artifact JSON or an out-of-tree path fails loudly with a typed error rather than silently.",
+      "durability": "Feedback entries are append-only (lc1) — the writer never edits or removes an existing entry; the on-disk artifact JSON remains the durable record, forward-only and absent-safe so pre-existing artifacts stay valid (k5)."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — Feedback foundation (records + append API + document rendering)",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns all three shared contracts (sc1 vocabulary, sc2 append API + production JSON writer, sc3 render binding) and wires the feedback field onto the four document bodies. It has no dependsOn edge and must land first because s2 consumes every one of its contracts.",
+          "backwardCompat": "New body/meta fields are optional + absent-safe; all four document type guards, synthesizer schemas (additionalProperties:false preserved), and renderers must produce byte-identical output for artifacts with no feedback. The new production JSON writer must preserve every existing key.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — BUILD change-log + code feedback",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "s2 dependsOn s1 and consumes sc1/sc2/sc3; it adds only the BUILD-side wiring (changeLog from the actual changed set, code-anchored feedback via the shared append API, BUILD render sections). It lands after Phase A because it reuses that foundation and introduces no new shared contract.",
+          "backwardCompat": "The BUILD body's new changeLog + feedback fields are optional + absent-safe; a BUILD artifact without them renders exactly as before, and pre-existing BUILD artifacts stay valid.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Two phases in strict dependency order: s1 -> s2. s1 owns sc1/sc2/sc3 and every s2 consumption is downstream of it, so the owner phase (A) precedes the consumer phase (B). No feature flag is used because every change is additive + absent-safe and behind the natural optionality of the new fields, matching the S001/S002/S003 additive rollout.",
+      "riskyBits": [
+        {
+          "area": "New production artifact-JSON writer (sc2)",
+          "why": "No production writeArtifact existed before (only readArtifact + test helpers); a naive rewrite could drop unrelated keys or reorder, corrupting existing artifacts and breaking k5/lc1.",
+          "mitigation": "Round-trip test the writer: read an artifact, append one entry, re-read and assert every prior key + value is byte-preserved and only the feedback record grew; confine writes to the artifact root and fail loudly on out-of-tree paths."
+        },
+        {
+          "area": "Cross-cutting body/schema edits in s1",
+          "why": "Adding the optional field across four document bodies + guards + synthesizer schemas risks a schema that accidentally lets the model EMIT feedback, or a guard that rejects a legacy artifact.",
+          "mitigation": "Follow the S001/S002/S003 admit-but-never-emit precedent exactly (optional field, additionalProperties:false kept, HARD-RULE the synthesizer not to author it); add an absent-safe render test per type asserting byte-identical output when feedback is absent."
+        },
+        {
+          "area": "BUILD change-log grounding in the real changed set (k7/lc1)",
+          "why": "If the change-log is derived from a hand-authored summary rather than the build's actual changed files/lines, it stops being a faithful trace and violates lc1.",
+          "mitigation": "Populate changeLog from the build-step's actual changed-set source (the same signal the code-review grounding uses), and test that a build with a known changed set produces one attributed entry per change."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared body-level provenance module + append tool/IPC",
+        "oneLineSummary": "A new shared feedback/change-log record module; optional fields on every artifact BODY; a daemon read-append-rewrite append API; additive render sections.",
+        "approach": "A new src/workflow/artifacts/provenance/ module defines the shared vocabulary once: a FeedbackEntry {id, author, timestamp, target:{file, version, segment/lines}, body/comment} whose attribution aligns with BOTH the ArtifactModelAttribution stamp pattern (author/time) and the existing ReviewComment anchor pattern (file/segment/lines), plus a ChangeLogEntry for the BUILD change-log. A shared optional `feedback?: FeedbackRecord` field is added to all four document bodies (DefineBody/HldBody/LldBody/PlanBody) and the BUILD body, and an optional `changeLog?` to the BUILD body only; each type guard tolerates it absent-safely and each synthesizer body schema admits it (never authored by the model — the field is populated by the append API and by the build-step), exactly mirroring the S001 functionalDefinition / S002 summary / S003 companions additive-field precedent. The append API is a production read-append-rewrite path (the analyze pass found only readArtifact + test-helper writers, so this Epic introduces the production writer) exposed as a daemon tool via registerTool + a register<Name>Tool() wrapper and an IPC method (artifact.feedback.append), pinned by a per-method contract test like repo-stats.\n\nRendering rides the existing format/bindings.ts additive-section machinery: a Feedback section and (BUILD only) a Changes section are generated from the structured record, byte-identical-when-absent. Story s1 owns the shared record module + the doc-body wiring + the append API + the render section; story s2 reuses that shared module to add the BUILD change-log (populated from the build's actual changed set) and BUILD code-anchored feedback. This is the most direct read of the Epic's own language (\"feedback section in the core JSON structure\").",
+        "pros": [
+          "Directly satisfies k1 (structured data lives in the artifact JSON body, doc generated from it) and k3 (a field on every body type, doc feedback vs BUILD code feedback distinguished by which body carries it) with no reinterpretation.",
+          "Reuses the exact additive-optional-absent-safe body-field pattern shipped three times already (S001/S002/S003), so the forward-only/absent-safe guarantee k5 is a proven property, not a new risk.",
+          "The append tool/IPC follows the located registerTool + register<Name>Tool() + per-method contract-test precedent (repo-stats), so the API surface is conventional.",
+          "Clean Story split: s1 delivers the shared record + doc path + API; s2 is a thin reuse (change-log + code feedback) that only touches the BUILD producer, matching the DEF's dependsOn ordering."
+        ],
+        "cons": [
+          "Cross-cutting: touches five body interfaces + five type guards + five synthesizer schemas + the renderers, so the s1 change is wide even though each edit is small and additive.",
+          "Introduces a production artifact-JSON writer that did not previously exist (only readArtifact + test helpers), so the read-append-rewrite path must be carefully key-preserving to honor k5.",
+          "Feedback is authored content on the body but populated post-hoc by the API rather than the synthesizer — a slight conceptual mismatch with the rest of the body (which the model authors), requiring the synthesizer schema to admit-but-never-emit it."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Meta-level provenance aggregate on ArtifactMetaBase",
+        "oneLineSummary": "Put feedback[] (and change-log) under ArtifactMetaBase.meta alongside the existing attribution aggregate — one uniform home for all types, no per-body-schema edits.",
+        "approach": "Rather than a field per body type, extend ArtifactMetaBase (src/workflow/types.ts:290, where the attribution aggregate already lives) with an optional feedback aggregate — feedback?: FeedbackEntry[] — and, for BUILD, a changeLog?: ChangeLogEntry[]. Because every artifact's meta is the same shape, feedback becomes uniform across all types automatically with zero edits to the five body interfaces or the five synthesizer schemas: the record is provenance (like attribution), not authored content, so it belongs beside attribution rather than in the authored body. The append API reads the artifact JSON, appends to meta.feedback, and rewrites; the build-step writes meta.changeLog from its changed set. Renderers read meta and emit the additive Feedback/Changes sections via format/bindings.ts.\n\nThis leans on the observation that the append API and the build-step populate these records post-hoc — they are not model-authored, so keeping them out of the authored body (which the synthesizer owns and additionalProperties:false guards) avoids the admit-but-never-emit awkwardness of a1. The shared attribution helpers in attribution.ts are the natural sibling for the read helpers. Story s1 owns the meta aggregate + doc render + append API; s2 adds the BUILD change-log to meta + BUILD code feedback.",
+        "pros": [
+          "Maximum uniformity for k3: one meta field covers every artifact type at once, with no per-body-type schema or guard edits — a much smaller change surface than a1.",
+          "Tightest alignment with k6: the record sits literally beside ArtifactModelAttribution on ArtifactMetaBase and reuses the same provenance-on-meta convention, so there is provably one provenance home.",
+          "Avoids the a1 conceptual mismatch: feedback/change-log are post-hoc provenance, and meta is where non-authored provenance already lives, so no synthesizer schema must admit-but-never-emit a field.",
+          "Forward-only/absent-safe (k5) is trivially satisfied — an optional meta field is invisible to every existing artifact and reader."
+        ],
+        "cons": [
+          "Tension with k1's wording \"feedback section in the core JSON structure\" and DEF assumption c1 (\"every artifact type's BODY can carry\") — meta is arguably not the 'body'; a reviewer could read the stakeholder intent as body-level, so this needs an explicit wording reconciliation.",
+          "The BUILD change-log is stakeholder-scoped as BUILD-specific (k7); putting it on shared meta slightly under-expresses that it is a BUILD-only concept (mitigated by keeping changeLog only ever written for BUILD).",
+          "meta is currently framework/provenance-owned and rendered sparsely; adding rendered, user-facing content to meta broadens meta's role beyond pure provenance stamps."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Architecturally clean and smallest surface with the tightest k6 alignment, but it contradicts the stakeholder's explicit 'every artifact body' scope decision (k1 partial) and under-expresses the BUILD-specific change-log (k7 partial). Strong runner-up; would win if the home were left open, but the scope was fixed to the body."
+      },
+      {
+        "id": "a3",
+        "name": "Extend the existing review-comment slice as the feedback store",
+        "oneLineSummary": "Grow src/workflow/review's ReviewComment/resolve machinery into the feedback store and render from it, rather than adding a new record to the artifact.",
+        "approach": "Reuse the existing anchored-comment machinery: the backend ReviewComment {body, anchor} type (resolve-comment.ts) and the src/workflow/review resolve/apply/report slice already capture and resolve anchored free-text notes on design artifacts, and the JetBrains IDE already has an artifact-review comment layer. This alternative promotes that slice to the durable feedback store — feedback entries are ReviewComments persisted through the review slice, keyed to the artifact, and the renderers pull resolved comments into a Feedback section. The BUILD change-log would still be a BUILD-body addition, but code feedback would flow through the same review-comment path anchored to source files.\n\nThe append API becomes a thin wrapper over the review slice's existing persistence, and the attribution is the ReviewComment anchor plus an added author/timestamp. This maximizes reuse of code that already exists for exactly 'notes attached to an artifact'.",
+        "pros": [
+          "Highest code reuse: the ReviewComment type, the resolve/apply machinery, and the IDE comment layer already exist and are tested, so less new surface for the feedback vocabulary itself.",
+          "The IDE capture path the non-goal defers (k4) already speaks ReviewComment, so a future capture-wiring story would connect cleanly to the same shape."
+        ],
+        "cons": [
+          "Fights k1 head-on: the review slice stores notes SEPARATELY from the artifact JSON body/meta, so feedback would not be 'structured data in the artifact JSON (the single source of truth)' — it would be a parallel store, which is exactly what k6 warns against.",
+          "The review slice is design-artifact-scoped; it does not naturally cover the BUILD artifact (k3 requires BUILD code feedback), so BUILD would need a separate path anyway — splitting the model.",
+          "Couples the durable ledger record to the review-run lifecycle (resolve/apply), conflating 'a durable audit trail of feedback' (lc1 append-only) with 'review findings that get resolved', which have different lifecycles.",
+          "Larger blast radius into the review + IDE subsystems for a feature the Epic scopes as an artifact-JSON record + append API."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "High reuse but violates k1 and k6 (a parallel store outside the artifact JSON), does not cover BUILD naturally (k3), and couples the durable append-only feedback record to the review-run resolve/apply lifecycle (against lc1). Rejected."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — artifact bodies + guards + synthesizer body schemas + renderers: src/workflow/artifacts/{define,hld,lld,plan}.ts, orchestrator.ts, format/bindings.ts",
+      "quotedText": "Adding a feedback record to the CORE body means a shared optional field on all four doc bodies + the BUILD body, each guard tolerating it absent-safely (like S002 summary / S003 companions), each synthesizer schema admitting it, and a render section via format/bindings.ts."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — BUILD artifact shape + producer: src/mcp/build-step/{types,render,handler}.ts, src/workflow/runners/build/{schemas,standalone-record}.ts, gates.ts",
+      "quotedText": "The BUILD change-log (per-change {file,version,timestamp,segment/lines}) and BUILD code-feedback attach to the BUILD body + are populated by the build-step and rendered by build-step/render.ts / standalone-record.ts."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — existing attribution model: src/workflow/types.ts:290-331 ArtifactMetaBase.attribution / ArtifactModelAttribution + src/workflow/attribution.ts",
+      "quotedText": "The new shared attribution contract {file,version,timestamp,segment/lines,author} for feedback + change-log entries should align with this structured, additive record pattern rather than introduce a parallel provenance model."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundles — existing feedback/comment capability (ReviewComment {body,anchor} in src/workflow/review + resolve-comment.ts + IDE comment layer) AND the daemon tool/IPC + artifact-JSON read/write pattern (registerTool @ daemon/tools/registry.ts, register<Name>Tool wrapper @ docgen/tool.ts, readArtifact @ resolve-comment.ts:254, repo-stats contract-test precedent)",
+      "quotedText": "New tools register via registerTool exposed by a register<Name>Tool() wrapper; production writeArtifact was NOT located (only readArtifact + test helpers), so the append API needs a production read-append-rewrite path; the body-level feedback record should ALIGN with the existing ReviewComment {body, anchor} shape rather than invent a parallel comment model."
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790587114909-t9vhlp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T09:23:41.149Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 306222,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/types.ts defines an artifact attribution model — ArtifactMetaBase.attribution and an ArtifactModelAttribution type — that the new feedback/change attribution is to align with.",
+          "evidence": "Confirmed: src/workflow/types.ts:295 declares `interface ArtifactModelAttribution` and :331 `ArtifactMetaBase.attribution?: ArtifactModelAttribution`. The DEF's :290 anchor lands on the aggregate's doc-comment header (exact interface at 295). Attribution model exists as cited.",
+          "action": "None — citation resolves; DEF aligns with the real attribution model.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/attribution.ts exists as the attribution helper module the new contract reuses.",
+          "evidence": "Confirmed: src/workflow/attribution.ts exists and exports singleModelAttribution / attributionOf / modelSummary over ArtifactModelAttribution + ArtifactMetaBase.",
+          "action": "None — the attribution helper module exists as cited.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The four document-artifact renderers exist as src/workflow/artifacts/{define,hld,lld,plan}.ts, the surfaces the shared feedback field is rendered from.",
+          "evidence": "Confirmed: src/workflow/artifacts/{define,hld,lld,plan}.ts all exist (direct file check OK for all four).",
+          "action": "None — all four document renderers exist.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/artifacts/format/bindings.ts exists and carries the additive body-slot binding pattern (S002 summary / S003 companions) the feedback section rides on.",
+          "evidence": "Confirmed: src/workflow/artifacts/format/bindings.ts exists and exports companionBodyLines (the S002/S003 additive body-slot binding), referenced by companion tests.",
+          "action": "None — the additive-slot binding surface exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The BUILD-step producer files src/mcp/build-step/{types,render,handler}.ts exist — where the change-log + code-feedback attach to the BUILD body and are rendered.",
+          "evidence": "Confirmed: src/mcp/build-step/{types,render,handler}.ts all exist (direct file check OK).",
+          "action": "None — the BUILD-step producer files exist.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The build runner files src/workflow/runners/build/{schemas,standalone-record}.ts exist — the BUILD artifact shape + standalone record producer.",
+          "evidence": "Confirmed: src/workflow/runners/build/{schemas,standalone-record}.ts both exist; standalone-record.ts renders the BUILD record (renderPlanBuildRecordMd).",
+          "action": "None — the build runner files exist.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/gates.ts exists — the gate surface referenced for the BUILD change-log grounding.",
+          "evidence": "Confirmed: src/workflow/gates.ts exists (direct file check OK).",
+          "action": "None — the gate surface exists.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "c1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An additive, absent-safe optional body field precedent already exists in the artifact synthesizer body schemas (S002 `summary`, S003 `erDefinition`), proving a new optional feedback field can be added the same way.",
+          "evidence": "Confirmed: the additive absent-safe optional body-field precedent is live — design-epic/schemas.ts includes optional `summary` (S002) and `erDefinition` (S003, via ER_DEFINITION_PROPERTY_SCHEMA); orchestrator.ts authors erDefinition content-gated. A new optional feedback field follows the same proven pattern.",
+          "action": "None — the additive-field pattern is real and precedented.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "s1/s2",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Story s2 (build change-log + code feedback) depends on s1 (shared feedback record + append API) because s2 reuses the shared feedback record and append API that s1 owns.",
+          "evidence": "Internally consistent: s2 declares dependsOn s1 and its ac2 explicitly reuses the shared feedback record + append API that s1 owns; the ordering is sound.",
+          "action": "None — dependency ordering is self-consistent.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-09-28T09:27:35.640Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-28T09:36:06.312Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "summary": {
+      "prose": "Every tracked workflow artifact records what was produced, but not the human judgment around it: audience feedback on a generated document, and the actual code a build changed, leave no attributed, durable trace on the artifact itself. This Epic adds two structured, attributed records to the artifact JSON — a feedback record on every artifact (document feedback on the docs, code feedback on the build) and a change-log on the build — plus an API to append feedback, so the ledger captures not just outputs but the feedback and change provenance a reviewer or auditor needs.",
+      "audience": "product"
+    },
+    "problem": "The workflow's artifacts durably record what each stage PRODUCED — the framing, the design, the plan, the built change — but they do not record the human judgment that surrounds those outputs. When a user or an audience reviewer comments on, suggests a change to, or gives feedback about a generated document, that feedback lives in a chat log or a reviewer's memory rather than attached to the artifact it is about; there is no durable, attributed record of who said what, about which part of which version of which artifact, and when. As a result a document's evolution cannot be traced against the feedback that shaped it, and repeated or unresolved feedback is invisible on the ledger. Separately, when a build changes the codebase there is no structured record IN the build artifact of what actually changed — which files, which line ranges, at what version and time — so the build's effect on the code, and any code-related feedback on that build, are not traceable from the build record itself. The ledger therefore captures outputs but omits the attributed feedback and change provenance needed to understand why an artifact looks the way it does and what a build actually did.",
+    "nonGoals": [
+      {
+        "text": "Wiring live capture of feedback from the review/IDE surfaces — automatically recording in-session user comments into the artifact.",
+        "rationale": "The stakeholder scoped this Epic to the structured records + an append API now, deferring the capture-into-review-surfaces wiring to a later story (a distinct process/UI concern)."
+      },
+      {
+        "text": "Introducing a new, parallel provenance/attribution model.",
+        "rationale": "The artifact meta already carries an attribution model; the new feedback/change attribution must align with it, not duplicate it, to keep one provenance vocabulary."
+      },
+      {
+        "text": "Migrating or back-filling feedback/change records onto artifacts already written to disk.",
+        "rationale": "The change is forward-only and additive; existing artifacts stay valid without the new records (no rewrite)."
+      },
+      {
+        "text": "A user interface for browsing, threading, or resolving feedback.",
+        "rationale": "This Epic ships the structured record + the append API; presentation/resolution UX is out of scope."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Every artifact type's body can carry an additive, optional feedback record absent-safely, the same way prior additive body fields were introduced.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "The existing artifact attribution model can be aligned with (or minimally extended for) the new {file, version, timestamp, segment/lines, author} entry shape without a parallel model.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "The build stage can record the code changes it made (files + line ranges + version + time) from the build's own change information.",
+        "confidence": "med",
+        "source": "c2"
+      },
+      {
+        "text": "An append operation for feedback entries fits the existing daemon tool/IPC surface pattern.",
+        "confidence": "med",
+        "source": "c2"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The feedback and change-log records are STRUCTURED DATA in the artifact JSON (the single source of truth); the rendered document is generated from them, never authored in prose alone.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k2",
+        "text": "Every feedback entry and every change-log entry carries attribution: file, version, timestamp, segment/lines, and author.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k3",
+        "text": "The feedback record spans EVERY artifact type; on the document artifacts (DEF/HLD/LLD/PLAN) it captures document/audience feedback anchored to the reviewed document, and on the BUILD artifact it captures CODE-related feedback anchored to source files/lines.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k4",
+        "text": "Ship the structured records + an append API in this Epic; wiring live capture into the review/IDE surfaces is explicitly deferred (a non-goal here).",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k5",
+        "text": "Forward-only and additive: the new records are optional + absent-safe, existing on-disk artifacts stay valid, and nothing is migrated.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k6",
+        "text": "Reuse/align with the existing artifact attribution model rather than introducing a parallel provenance model.",
+        "type": "convention",
+        "source": "c3"
+      },
+      {
+        "id": "k7",
+        "text": "The change-log is BUILD-specific and records the build's actual code changes ({file, version, timestamp, segment/lines}).",
+        "type": "stakeholder",
+        "source": "c4"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Capture attributed audience feedback on generated documents",
+        "userValue": "When a user or an audience reviewer comments on, suggests a change to, or gives feedback about a generated document (DEF/HLD/LLD/PLAN), the workflow records that feedback as a structured, attributed entry on the artifact — who said it, about which section/line-range of which version of which document, and when — renders it in the document from that structured record, and lets a user append such an entry through a provided API. Feedback survives beyond chat, and a document's evolution can be traced against the feedback that shaped it.",
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1",
+          "c3"
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Feedback entries are append-only — a durable audit trail: an entry is added, never silently edited or removed, so the record of who-said-what-when stays trustworthy.",
+            "type": "invariant",
+            "source": "c4"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a generated document artifact (DEF/HLD/LLD/PLAN)",
+            "when": "a feedback entry is recorded on it",
+            "then": "the artifact JSON carries a structured feedback entry attributed with file, version, segment/lines, author, and timestamp, and the rendered document shows that feedback",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a document artifact carrying feedback entries",
+            "when": "the document is rendered",
+            "then": "the feedback section is generated from the structured record (never authored in prose alone), and an artifact with no feedback renders exactly as before",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a user wants to add feedback to an artifact",
+            "when": "they invoke the provided append API with a feedback entry for that artifact",
+            "then": "the entry is appended to that artifact's feedback record with its attribution and nothing already recorded is lost",
+            "operationalizes": [
+              "k4",
+              "lc1"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "an existing artifact written before the feedback record existed",
+            "when": "it is read or re-rendered",
+            "then": "it stays valid and renders unchanged (forward-only, absent-safe)",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a feedback entry's attribution",
+            "when": "the entry is created",
+            "then": "its attribution aligns with the existing artifact attribution model rather than a parallel provenance model",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Record build changes and code feedback on the build artifact",
+        "userValue": "When a build changes the codebase, the build artifact records what actually changed — each change attributed to a source file, version, line-range, and time — and captures code-related feedback on the build anchored to the source. A reviewer or auditor can see the build's effect on the code, and any feedback about that code, directly from the build record instead of reconstructing it from git or chat.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The build change-log reflects the build's ACTUAL code changes (grounded in the real changed set), not a hand-authored summary, so the record is a faithful trace of what the build did.",
+            "type": "invariant",
+            "source": "c4"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a build that changed code",
+            "when": "the build artifact is produced",
+            "then": "the build JSON records a change-log with one attributed entry per change (file, version, segment/lines, timestamp) reflecting the actual changed set",
+            "operationalizes": [
+              "k7",
+              "k2",
+              "lc1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the build artifact",
+            "when": "code-related feedback is recorded on it",
+            "then": "it is captured as a feedback entry anchored to the source file/line-range (reusing the shared feedback record and append API from s1), attributed and append-only",
+            "operationalizes": [
+              "k3",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a build artifact carrying a change-log and/or code feedback",
+            "when": "the build document is rendered",
+            "then": "both are generated from the structured build JSON, and a build artifact without them renders as before",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "an existing build artifact written before these records existed",
+            "when": "it is read or re-rendered",
+            "then": "it stays valid and renders unchanged (forward-only)",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — artifact bodies + type guards + renderers (define/hld/lld/plan.ts) + synthesizer body schemas (orchestrator.ts) + format/bindings.ts; additive absent-safe body-field pattern (S002 summary / S003 companions)",
+      "quotedText": "A shared optional feedback field on all four doc bodies + the BUILD body, each guard + synth schema tolerating it, rendered as an additive section."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — BUILD artifact shape + producer: src/mcp/build-step/{types,render,handler}.ts + src/workflow/runners/build/{schemas,standalone-record}.ts + gates.ts",
+      "quotedText": "The BUILD change-log + code-feedback attach to the BUILD body + are populated/rendered by the build-step."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle — existing attribution model src/workflow/types.ts:290 ArtifactMetaBase.attribution / ArtifactModelAttribution + src/workflow/attribution.ts",
+      "quotedText": "Align the new {file,version,timestamp,segment/lines,author} contract with the existing attribution model rather than duplicating it."
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User spec + clarifications (2026-09-28): feedback record on the core body of every artifact type anchored to the reviewed artifact; BUILD captures code-related feedback; append API now + capture-into-review-surfaces deferred; BUILD change-log with {file,version,timestamp,segment/lines}",
+      "quotedText": "There should be a feedback section in the core JSON structure that captures the user/audience feedback (along with attribution: file, version, timestamp, segment/lines) ... The build JSON should record the changes made during this build ... BUILD captures code related feedback."
+    }
+  ]
+}

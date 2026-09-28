@@ -40,6 +40,7 @@ export const DEFINE_FORMAT: DocumentFormat = {
 		S({ id: 'stories',    heading: 'Stories', contentGuidance: 'Per-story sub-template: user value, Given/When/Then acceptance criteria, local constraints.' }),
 		S({ id: 'references', heading: 'References', required: true, contentGuidance: 'Citations as grouped links.' }),
 		S({ id: 'openQuestions', heading: 'Open questions' }),
+		S({ id: 'feedback',   heading: 'Feedback', contentGuidance: 'Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.' }),
 	],
 	itemFormat: { itemKind: 'story', sections: [
 		S({ id: 'userValue', heading: 'User value', numbered: false }),
@@ -64,6 +65,7 @@ export const HLD_FORMAT: DocumentFormat = {
 		S({ id: 'alternatives', heading: 'Alternatives considered' }),
 		S({ id: 'references',  heading: 'References', required: true }),
 		S({ id: 'openQuestions', heading: 'Open questions' }),
+		S({ id: 'feedback',    heading: 'Feedback', contentGuidance: 'Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.' }),
 	],
 };
 
@@ -85,6 +87,7 @@ export const LLD_FORMAT: DocumentFormat = {
 		S({ id: 'ux',          heading: 'UX', source: 'extension', contentGuidance: 'NAMED extension point — S004 UX section/mock reference.' }),
 		S({ id: 'references',  heading: 'References', required: true }),
 		S({ id: 'openQuestions', heading: 'Open questions' }),
+		S({ id: 'feedback',    heading: 'Feedback', contentGuidance: 'Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.' }),
 	],
 };
 
@@ -97,6 +100,7 @@ export const PLAN_FORMAT: DocumentFormat = {
 		S({ id: 'tasks',       heading: 'Tasks', required: true, contentGuidance: 'Per-task sub-template: size, depends-on, acceptance checks, tests.' }),
 		S({ id: 'coverage',    heading: 'Test-strategy coverage' }),
 		S({ id: 'references',  heading: 'References', required: true }),
+		S({ id: 'feedback',    heading: 'Feedback', contentGuidance: 'Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.' }),
 	],
 	itemFormat: { itemKind: 'task', sections: [
 		S({ id: 'size', heading: 'Size', numbered: false }),

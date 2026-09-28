@@ -42,7 +42,7 @@ test('defaultFormat(kind) returns the matching format', () => {
 test('DEF format: business-tagged Summary + FR section + Stories, in human-first order', () => {
 	assert.equal(DEFINE_FORMAT.summary.audience, 'business');
 	const ids = DEFINE_FORMAT.sections.map(s => s.id);
-	assert.deepEqual(ids, ['problem', 'fr', 'nonGoals', 'assumptions', 'constraints', 'stories', 'references', 'openQuestions']);
+	assert.deepEqual(ids, ['problem', 'fr', 'nonGoals', 'assumptions', 'constraints', 'stories', 'references', 'openQuestions', 'feedback']);
 	assert.equal(DEFINE_FORMAT.sections.find(s => s.id === 'fr')!.source, 'fr');
 });
 

@@ -26,8 +26,9 @@ import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
+import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, companionBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 import type { ErDefinition } from './companion/er.js';
@@ -160,6 +161,10 @@ export interface LldBody {
 	/** sc4 (S003): out-of-body companion references (rendered as links in the
 	 *  Diagrams (`diagramsEr`) extension slot, never inlined). Additive + absent-safe. */
 	readonly companions?: readonly CompanionArtifactRef[] | undefined;
+	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
+	 *  populated append-only by the feedback API — NEVER by the synthesizer.
+	 *  Additive + absent-safe: an absent field renders byte-identically to before. */
+	readonly feedback?: FeedbackRecord | undefined;
 }
 
 // LLD meta extends the base with HLD anchoring. Every LLD carries
@@ -443,6 +448,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		alternatives: () => body.alternativesConsidered.length > 0 ? { items: body.alternativesConsidered.map(altItem) } : { omit: true },
 		references:  () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
+		feedback:    () => { const l = feedbackBodyLines(body.feedback); return l.length > 0 ? { lines: l } : { omit: true }; },
 	};
 	const format = resolveDocumentFormat('lld', artifact.meta.repoPath);
 	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });

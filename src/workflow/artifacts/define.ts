@@ -24,8 +24,9 @@ import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,10 @@ export interface DefineBody {
 	/** sc3 (S002): the plain-language, item-scoped Summary/abstract the document
 	 *  leads with. Additive + absent-safe. */
 	readonly summary?: DocumentSummary | undefined;
+	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
+	 *  populated append-only by the feedback API — NEVER by the synthesizer.
+	 *  Additive + absent-safe: an absent field renders byte-identically to before. */
+	readonly feedback?: FeedbackRecord | undefined;
 }
 
 export type DefineArtifact = WorkflowArtifact<DefineBody>;
@@ -144,6 +149,7 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 		stories:       () => ({ items: body.stories.map(storyItem) }),
 		references:    () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
+		feedback:      () => { const l = feedbackBodyLines(body.feedback); return l.length > 0 ? { lines: l } : { omit: true }; },
 	};
 	const format = resolveDocumentFormat('define', artifact.meta.repoPath);
 	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });

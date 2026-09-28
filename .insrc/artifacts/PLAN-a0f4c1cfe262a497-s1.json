@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790592163477-q7oetz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T10:46:23.863Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 220284,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two",
+    "storyId": "s1",
+    "lldRunId": "wf-1790588966488-erdnfu",
+    "lldEffectiveHash": "96dce0c1944d9039ee00cc922a10bffef174739b8627a6fb17646b4b96c3ed9e",
+    "approvedAt": "2026-09-28T10:46:35.378Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Provenance vocabulary module (sc1 types)",
+        "summary": "Create src/workflow/artifacts/provenance/types.ts declaring ProvenanceTarget, ProvenanceAuthorship, FeedbackEntry, FeedbackRecord (and ChangeLogEntry/ChangeLog for s2 to consume later), verbatim from the sc1 sketch; attribution fields (author/timestamp) named to align with ArtifactModelAttribution without importing it. Purely additive, imported by nothing yet. Co-locate a small type-shape unit test.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "FeedbackEntry has id + author + timestamp + target{file,version?,segment?{startLine,endLine}} + comment + optional kind (k2)",
+          "types compile under strict/exactOptionalPropertyTypes; FeedbackRecord = readonly FeedbackEntry[]"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "provenance/types: a FeedbackEntry carries author+timestamp field-aligned with ArtifactModelAttribution (no review-type import) (ac5)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Append writer + production key-preserving artifact-JSON writer (sc2 core)",
+        "summary": "Create src/workflow/artifacts/provenance/writer.ts with appendFeedback(req): read the artifact JSON (JSON.parse, readArtifact-style), guard the path is under the repo artifact root, validate non-empty author+comment, mint id+timestamp, append to body.feedback, and writeArtifactJson (JSON.stringify(...,null,2)) key-preservingly; ArtifactFeedbackError for out-of-tree/missing/malformed/blank-field. No render or daemon wiring here. Co-locate the writer's unit tests (round-trip + rejections) with this task.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "appendFeedback appends exactly one entry, mints id + (missing) timestamp, returns {artifactPath,entryId,total} (ac3/lc1)",
+          "writeArtifactJson preserves every meta/citations/other-body key; only body.feedback grows (k5)",
+          "out-of-tree path, missing/malformed JSON, and blank author/comment each throw ArtifactFeedbackError before any write",
+          "co-located unit tests for the round-trip + all three rejection paths are added with this task"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "provenance/writer: appendFeedback mints id + timestamp, appends one entry, returns {entryId,total}; blank author/comment rejected; out-of-tree path rejected; malformed JSON rejected"
+          },
+          {
+            "level": "unit",
+            "name": "provenance/writer: writeArtifactJson round-trip preserves every meta/citations/body key and only grows body.feedback"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "feedbackBodyLines render binding (sc3)",
+        "summary": "Add feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] to src/workflow/artifacts/format/bindings.ts, mirroring companionBodyLines: return [] when undefined/empty (omit-slot), else render each entry's attribution (author, timestamp, target file+segment) + comment as markdown lines. Co-locate its unit test.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "feedbackBodyLines(undefined) === [] and feedbackBodyLines([]) === [] (ac2/ac4)",
+          "non-empty input renders attribution + comment lines from the record, never prose (k1)",
+          "co-located unit test covers the present + absent branches"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "format/bindings: feedbackBodyLines non-empty → section lines with attribution; undefined/empty → [] (omit-slot)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add optional feedback? to the four document bodies (guards untouched)",
+        "summary": "Append `readonly feedback?: FeedbackRecord | undefined;` near the tail of DefineBody/HldBody/LldBody/PlanBody (S002 summary? spelling). Leave every isXBody guard untouched so legacy bodies still validate. Co-locate the guard-tolerance unit test (body with + without feedback).",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "all four bodies carry the optional feedback? field",
+          "isDefineBody/isHldBody/isLldBody/isPlanBody validate a body WITH feedback AND a legacy body WITHOUT it (guards unchanged)",
+          "co-located guard-tolerance unit test added"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "artifacts/body-fields: isDefineBody/isHldBody/isLldBody/isPlanBody validate a body WITH feedback AND a legacy body WITHOUT it (guard untouched)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire the Feedback section into the four renderers + DocumentFormats",
+        "summary": "In each of renderDefine/Hld/Lld/PlanMarkdown, add a `feedback` key to the SectionBindings table handed to renderFromFormat using the omit-slot pattern (feedbackBodyLines(body.feedback) → {lines} else {omit:true}); add the `feedback` section to each DocumentFormat in format/formats.ts + template so the section has a place.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "each renderer emits a Feedback section when feedback is present (ac1/ac2)",
+          "each renderer output is byte-identical to pre-change when feedback is absent (ac2/ac4/k5)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderDefine/Hld/Lld/PlanMarkdown: with feedback → Feedback section present; without feedback → output byte-identical to the pre-change render"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Admit-but-never-emit feedback in the four document synthesizer body schemas",
+        "summary": "In orchestrator.ts, add the optional feedback field to the four document synthesizer body JSON schemas so a body carrying it validates, keeping additionalProperties:false; HARD-RULE the model not to author feedback (it is API/post-hoc-populated).",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "synthesizer body schemas accept a body with feedback without loosening additionalProperties:false",
+          "the model is instructed never to author feedback (admit-but-never-emit)"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "orchestrator synthesizer schemas: a document body carrying feedback validates; additionalProperties:false preserved"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Daemon tool + inline artifact.feedback.append IPC handler",
+        "summary": "Add registerArtifactFeedbackTool() (registerTool, registerDocgenTool idiom) in the provenance module, mount it in daemon/tools/builtins/index.ts; add an inline 'artifact.feedback.append' handler to the daemon/index.ts handler map delegating to appendFeedback and returning a typed {error} object (not a throw) on a bad/out-of-tree/malformed request.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "registerArtifactFeedbackTool is mounted among the builtins",
+          "'artifact.feedback.append' is registered in the index.ts handler map, delegates to appendFeedback, and returns {error} (not throw) on a bad request (ac3)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "artifact-feedback-handler-contract: source-scan proves 'artifact.feedback.append' registered in index.ts, delegates to appendFeedback, returns {error} not throw (repo-stats mould)"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Cross-cutting tests (renderer byte-identity + IPC contract + integration)",
+        "summary": "With per-task unit tests already co-located (t1-t4/t7), add the CROSS-CUTTING tests: renderer byte-identity present-vs-absent per doc type; a source-scan contract test for the IPC handler (repo-stats mould); and an integration append→read→render + legacy forward-only test. Confirm ac1-ac5 all map to a passing test and the full sweep is green (tsc clean).",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "ac1-ac5 each have ≥1 passing proving test (unit co-located + cross-cutting here)",
+          "renderer byte-identity present-vs-absent asserted per type; IPC contract test pins registration+delegation+append-only; integration append→read→render + legacy forward-only pass",
+          "the full sweep passes (tsc clean; no regression in existing renderer output)"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "append a feedback entry to a written DEF/HLD/LLD/PLAN JSON, re-read, assert the entry is present with full attribution and renders in the doc (ac1)"
+          },
+          {
+            "level": "integration",
+            "name": "a legacy artifact (no feedback field) reads + re-renders unchanged, then accepts a first append that initialises the record (ac4)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "feedbackBodyLines: non-empty feedback → section lines with attribution; undefined/empty → [] (omit-slot)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "appendFeedback: mints id + timestamp, appends one entry, returns {entryId,total}; blank author/comment rejected; out-of-tree path rejected; malformed JSON rejected",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writeArtifactJson: round-trip preserves every meta/citations/body key and only grows body.feedback",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "isDefineBody/isHldBody/isLldBody/isPlanBody: a body WITH feedback still validates AND a legacy body WITHOUT it still validates (guard untouched)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDefineMarkdown / renderHldMarkdown / renderLldMarkdown / renderPlanMarkdown: with feedback → Feedback section present; without feedback → output byte-identical to the pre-change render",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "artifact.feedback.append handler: registered in the daemon index.ts handler map; delegates to the provenance append fn; returns a typed {error} object (not a throw) on a bad/out-of-tree request",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerArtifactFeedbackTool: mounted among the builtins",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "append a feedback entry to a written DEF/HLD/LLD/PLAN JSON, re-read, and assert the entry is present with full attribution and renders in the doc",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a legacy artifact (no feedback field) reads + re-renders unchanged, then accepts a first append that initialises the record",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 — sc1 vocabulary (ProvenanceTarget/ProvenanceAuthorship/FeedbackEntry/FeedbackRecord in new provenance module)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 — sc2 append API (appendFeedback + production key-preserving writeArtifactJson + registerArtifactFeedbackTool + inline artifact.feedback.append IPC handler)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 — sc3 render binding (feedbackBodyLines omit-slot in format/bindings.ts wired into the four renderers + DocumentFormats)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 — dataModelChanges: optional feedback? on DefineBody/HldBody/LldBody/PlanBody (guards untouched) + synthesizer admit-but-never-emit in orchestrator.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 — testStrategy: unit (vocab/writer/binding/guards) + renderer byte-identity + IPC contract + integration append→read→render/legacy forward-only"
+    }
+  ]
+}

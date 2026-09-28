@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790594070240-ukuhme",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T11:14:30.240Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/assets/artifacts/formats/define.md",
+        "src/assets/artifacts/formats/hld.md",
+        "src/assets/artifacts/formats/lld.md",
+        "src/assets/artifacts/formats/plan.md",
+        "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts",
+        "src/daemon/index.ts",
+        "src/daemon/tools/builtins/index.ts",
+        "src/workflow/__tests__/feedback-provenance.test.ts",
+        "src/workflow/__tests__/feedback-synth-schema.test.ts",
+        "src/workflow/artifacts/define.ts",
+        "src/workflow/artifacts/format/__tests__/bindings.test.ts",
+        "src/workflow/artifacts/format/__tests__/formats.test.ts",
+        "src/workflow/artifacts/format/bindings.ts",
+        "src/workflow/artifacts/format/formats.ts",
+        "src/workflow/artifacts/hld.ts",
+        "src/workflow/artifacts/lld.ts",
+        "src/workflow/artifacts/plan.ts",
+        "src/workflow/artifacts/provenance/__tests__/body-fields.test.ts",
+        "src/workflow/artifacts/provenance/__tests__/types.test.ts",
+        "src/workflow/artifacts/provenance/__tests__/writer.test.ts",
+        "src/workflow/artifacts/provenance/schema.ts",
+        "src/workflow/artifacts/provenance/tool.ts",
+        "src/workflow/artifacts/provenance/types.ts",
+        "src/workflow/artifacts/provenance/writer.ts",
+        "src/workflow/orchestrator.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/provenance/writer.ts:117",
+            "message": "Grounding is diff-based and hollow (fresh files: every testsReaching edge is empty), so testsReaching cannot be used as coverage ground-truth here — reporting a HIGH per empty edge would be fabricated. Coverage was instead verified by RUNNING the suite: 583/583 pass across src/workflow/artifacts/** + src/workflow/__tests__ + the handler-contract test, and every plan-promised test is present (types, writer round-trip + 3 rejection paths, feedbackBodyLines present/absent, four isXBody guard-tolerance, renderer byte-identity per type, synth-schema additionalProperties:false, IPC handler source-scan, integration append→read→render + legacy forward-only). No real coverage gap.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/provenance/writer.ts:66",
+            "message": "assertUnderArtifactRoot guards by SEGMENT MATCH (any path containing consecutive `.insrc/artifacts` segments, or any `docs` segment) rather than anchoring to the actual repo root, so a resolved path OUTSIDE the repo that happens to contain a `docs` segment (e.g. /tmp/docs/x.json) would pass the guard. It satisfies the LLD's stated intent (confine writes to the artifact tree) for the shipped single-caller daemon scope, but is looser than the security NF's 'under the repo's .insrc/artifacts tree'. Consider anchoring the check to the repo root when a repoPath is available. Non-blocking.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

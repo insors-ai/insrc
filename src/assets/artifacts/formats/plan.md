@@ -21,6 +21,11 @@ Per-task sub-template: size, depends-on, acceptance checks, tests.
 <!-- insrc:section id=references source=body required numbered -->
 ## References
 
+<!-- insrc:section id=feedback source=body numbered -->
+## Feedback
+
+Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.
+
 <!-- insrc:itemFormat kind=task -->
 
 <!-- insrc:item-section id=size source=body -->

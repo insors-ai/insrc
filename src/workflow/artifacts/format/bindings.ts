@@ -13,6 +13,7 @@ import type { Citation } from '../../types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { renderFunctionalRequirementsSection } from '../functional-definition.js';
 import type { CompanionArtifactRef } from '../companion/types.js';
+import type { FeedbackRecord } from '../provenance/types.js';
 
 /**
  * S001's FR section content WITHOUT its own '## Functional requirements' heading
@@ -42,6 +43,22 @@ export function companionBodyLines(companions: readonly CompanionArtifactRef[] |
 	return diagrams.map(c => {
 		const suffix = c.ofSectionId !== undefined && c.ofSectionId.length > 0 ? ` (§ ${c.ofSectionId})` : '';
 		return `- [${c.title}](${c.relPath})${suffix}`;
+	});
+}
+
+/**
+ * S001 (provenance/feedback): the Feedback section body — each post-hoc, human-
+ * authored entry rendered as one bullet showing author, timestamp, target (file +
+ * optional `:startLine-endLine`), optional kind, and the comment. `[]` when there
+ * is no feedback (the renderer then omits the section — absent-safe/forward-only,
+ * k6), so an artifact with no feedback renders byte-identically to before.
+ */
+export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] {
+	if (feedback === undefined || feedback.length === 0) return [];
+	return feedback.map(f => {
+		const seg = f.target.segment !== undefined ? `:${f.target.segment.startLine}-${f.target.segment.endLine}` : '';
+		const kind = f.kind !== undefined ? ` \`${f.kind}\`` : '';
+		return `- **${f.author}** (${f.timestamp})${kind} — \`${f.target.file}${seg}\`: ${f.comment}`;
 	});
 }
 

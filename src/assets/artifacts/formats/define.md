@@ -39,6 +39,11 @@ Citations as grouped links.
 <!-- insrc:section id=openQuestions source=body numbered -->
 ## Open questions
 
+<!-- insrc:section id=feedback source=body numbered -->
+## Feedback
+
+Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.
+
 <!-- insrc:itemFormat kind=story -->
 
 <!-- insrc:item-section id=userValue source=body -->

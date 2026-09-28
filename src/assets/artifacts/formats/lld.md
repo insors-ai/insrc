@@ -51,3 +51,8 @@ NAMED extension point — S004 UX section/mock reference.
 
 <!-- insrc:section id=openQuestions source=body numbered -->
 ## Open questions
+
+<!-- insrc:section id=feedback source=body numbered -->
+## Feedback
+
+Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.

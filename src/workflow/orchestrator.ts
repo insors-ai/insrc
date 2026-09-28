@@ -118,6 +118,7 @@ import { validateErDefinition, type ErDefinition } from './artifacts/companion/e
 import { renderErCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
+import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -930,6 +931,7 @@ function defineSynthesizer(
 		'- `body.flavor` matches s1.flavor exactly.',
 		'- `body.summary` MUST be carried verbatim from s2.summary when s2 emitted one (a `{ prose, audience? }` object). Omit `body.summary` when s2 has none — do NOT invent it.',
 		'- Do NOT emit `functionalDefinition` (or any FR ids) in the body: the framework assembles the functional-definition record from the FR statements elicited in s2/s3 and mints its stable ids deterministically after this step.',
+		FEEDBACK_NEVER_AUTHOR_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}`,
@@ -965,6 +967,7 @@ function defineSynthesizer(
 					constraints:  { type: 'array' },
 					stories:      { type: 'array', minItems: 1 },
 					openQuestions: { type: 'array', items: { type: 'string' } },
+					feedback:     FEEDBACK_PROPERTY_SCHEMA,
 				},
 				additionalProperties: false,
 			},
@@ -1416,6 +1419,7 @@ function designEpicSynthesizer(
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects every `missed`/`ambiguous` verdict from s6 that is NOT a scope-boundary item (sbdry1..sbdry4 hard-fail those instead).',
 		ER_CONTENT_GATE_RULE,
+		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
 	].join('\n');
 	const userTurn = [
@@ -1457,6 +1461,7 @@ function designEpicSynthesizer(
 					openQuestions:     { type: 'array', items: { type: 'string' } },
 					erDefinition:      ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:        COMPANIONS_PROPERTY_SCHEMA,
+					feedback:          FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -1750,6 +1755,7 @@ function designStorySynthesizer(
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		ER_CONTENT_GATE_RULE,
+		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 	].join('\n');
 	const userTurn = [
@@ -1810,6 +1816,7 @@ function designStorySynthesizer(
 					openQuestions:         { type: 'array', items: { type: 'string' } },
 					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:            COMPANIONS_PROPERTY_SCHEMA,
+					feedback:              FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -2228,6 +2235,7 @@ function planSynthesizer(
 		'- `body.testStrategyCoverage` MUST be the s5 testStrategyCoverage verbatim.',
 		'- `body.summary` MUST be carried verbatim from s5.summary when s5 emitted one (a `{ prose, audience? }` object). Omit it when s5 has none.',
 		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
+		FEEDBACK_NEVER_AUTHOR_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
@@ -2259,6 +2267,7 @@ function planSynthesizer(
 					},
 					tasks:                { type: 'array', minItems: 1 },
 					testStrategyCoverage: { type: 'array' },
+					feedback:             FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {

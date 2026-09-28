@@ -33,8 +33,9 @@ import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
@@ -90,6 +91,10 @@ export interface PlanBody {
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
 	/** sc3 (S002): plain-language, Story-scoped Summary/abstract. Additive + absent-safe. */
 	readonly summary?: DocumentSummary | undefined;
+	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
+	 *  populated append-only by the feedback API — NEVER by the synthesizer.
+	 *  Additive + absent-safe: an absent field renders byte-identically to before. */
+	readonly feedback?: FeedbackRecord | undefined;
 }
 
 export interface PlanArtifact {
@@ -150,6 +155,7 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 		tasks:      () => ({ lines: taskTable(), items: ordered.map(taskItem) }),
 		coverage:   () => body.testStrategyCoverage.length > 0 ? { lines: coverageLines() } : { omit: true },
 		references: () => ({ lines: citationBodyLines(artifact.citations) }),
+		feedback:   () => { const l = feedbackBodyLines(body.feedback); return l.length > 0 ? { lines: l } : { omit: true }; },
 	};
 	const format = resolveDocumentFormat('plan', artifact.meta.repoPath);
 	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });

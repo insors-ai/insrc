@@ -46,3 +46,8 @@ NAMED extension point — S003 component diagram companion.
 
 <!-- insrc:section id=openQuestions source=body numbered -->
 ## Open questions
+
+<!-- insrc:section id=feedback source=body numbered -->
+## Feedback
+
+Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.

@@ -423,18 +423,21 @@ test('renderLldMarkdown emits all sections', () => {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	};
 	const md = renderLldMarkdown(artifact);
-	assert.ok(md.includes('# LLD: s1'));
-	assert.ok(md.includes('**Epic:** `tag-filtering`'));
-	assert.ok(md.includes('## HLD context'));
-	assert.ok(md.includes('## Contract details'));
-	assert.ok(md.includes('### `TagFilterAPI.list`'));
-	assert.ok(md.includes('## Data model changes'));
-	assert.ok(md.includes('## Interaction with shared contracts'));
-	assert.ok(md.includes('## Error paths'));
-	assert.ok(md.includes('## Test strategy'));
+	// sc3 (S002): short H1 + Summary (carries Epic/HLD meta) + Contents + numbered body.
+	assert.match(md, /^# LLD: s1/m);
+	assert.ok(md.includes('## Contents'));
+	assert.ok(md.includes('**Epic:** `tag-filtering`'));   // meta now in the Summary
+	assert.match(md, /## \d+\. HLD context/);
+	assert.match(md, /## \d+\. Contract details/);
+	assert.match(md, /### \d+\.\d+ `TagFilterAPI\.list`/);  // nested API item
+	assert.match(md, /## \d+\. Data model changes/);
+	assert.match(md, /## \d+\. Interaction with shared contracts/);
+	assert.match(md, /## \d+\. Error paths/);
+	assert.match(md, /## \d+\. Test strategy/);
 	assert.ok(md.includes('| Criterion | Proving tests |'));
-	assert.ok(md.includes('## Alternatives considered'));
+	assert.match(md, /## \d+\. Alternatives considered/);
 	assert.ok(md.includes('**CHOSEN**'));
+	assert.match(md, /## \d+\. References/);
 });
 
 test('renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries is non-empty', () => {
@@ -507,7 +510,7 @@ test('renderLldMarkdown includes Migration section for enhancement (when present
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	};
 	const md = renderLldMarkdown(artifact);
-	assert.ok(md.includes('## Migration'));
+	assert.match(md, /## \d+\. Migration/);
 	assert.ok(md.includes('1. add index'));
 	assert.ok(md.includes('2. backfill'));
 	assert.ok(md.includes('index-ready'));

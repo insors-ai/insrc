@@ -1552,7 +1552,8 @@ function finalizeDesignEpic(
 	const renderedBody = renderHldMarkdown(artifact);
 	const check = validateBodyAndCitations(artifact, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	const renderedMd = renderedBody + renderCitationBlock(citations);
+	// sc3 (S002): the renderer emits an in-body References section (no separate append).
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'design.epic', runId, size: renderedMd.length, citations: citations.length, contracts: body.sharedContracts.length },
@@ -1856,7 +1857,8 @@ function finalizeDesignStory(
 	const renderedBody = renderLldMarkdown(artifact);
 	const check = validateBodyAndCitations({ meta: artifact.meta, body: artifact.body as LldBody, citations: artifact.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	const renderedMd = renderedBody + renderCitationBlock(citations);
+	// sc3 (S002): the renderer emits an in-body References section (no separate append).
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	// Collect any amendment proposals from s4 / s5 outputs + persist
@@ -1999,7 +2001,8 @@ function finalizeStandaloneLld(
 		renderedBody,
 	);
 	if (!check.ok) return { ok: false, failure: check };
-	const renderedMd   = renderedBody + renderCitationBlock(citations);
+	// sc3 (S002): the renderer emits an in-body References section (no separate append).
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	log.info(
@@ -2218,7 +2221,8 @@ function finalizePlan(
 	const renderedBody = renderPlanMarkdown(artifact);
 	const check = validateBodyAndCitations({ meta: artifact.meta, body: artifact.body as PlanBody, citations: artifact.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	const renderedMd = renderedBody + renderCitationBlock(citations);
+	// sc3 (S002): the renderer emits an in-body References section (no separate append).
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'plan', runId, epicHash, storyId, tasks: body.tasks.length, citations: citations.length },

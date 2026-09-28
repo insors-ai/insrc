@@ -33,6 +33,9 @@ import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
+import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { PLAN_FORMAT } from './format/formats.js';
 
 // ---------------------------------------------------------------------------
 // sc4 — TaskTestPlan
@@ -103,59 +106,52 @@ export const PLAN_SCHEMA_VERSION = 1;
 
 export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	const { body, meta } = artifact;
-	const lines: string[] = [];
-	lines.push(artifactIdMarker(planArtifactId(meta.epicHash, meta.storyId)));
-	lines.push('');
-	const eh = meta.epicHash;
-	const planSid = eh ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
-	lines.push(`# Plan: ${planSid ?? meta.storyId}`);
-	lines.push('');
-	lines.push(`**Epic:** \`${meta.epicSlug}\``);
-	lines.push(`**LLD run:** \`${meta.lldRunId}\``);
-	lines.push(`**LLD effective hash:** \`${meta.lldEffectiveHash.slice(0, 12)}...\``);
-	lines.push('');
+	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
+	const marker = eh !== undefined ? artifactIdMarker(planArtifactId(meta.epicHash, meta.storyId)) : undefined;
+	const planSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	const h1 = `Plan: ${planSid ?? meta.storyId}`;
+	const ordered = [...body.tasks].sort((a, b) => a.order - b.order);
 
-	// sc1 (S001): functional-definition section (absent-safe).
-	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
+	const summaryLines = (): string[] => {
+		const out: string[] = [`**Epic:** \`${meta.epicSlug}\``];
+		if (typeof meta.lldRunId === 'string' && meta.lldRunId.length > 0) out.push(`**LLD run:** \`${meta.lldRunId}\``);
+		if (typeof meta.lldEffectiveHash === 'string' && meta.lldEffectiveHash.length > 0) out.push(`**LLD effective hash:** \`${meta.lldEffectiveHash.slice(0, 12)}...\``);
+		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);
+		return out;
+	};
 
-	lines.push('## Tasks');
-	lines.push('');
-	lines.push('| # | Task | Size | Depends on | Tests | Derived from |');
-	lines.push('| :--- | :--- | :--- | :--- | :--- | :--- |');
-	for (const t of [...body.tasks].sort((a, b) => a.order - b.order)) {
-		const deps  = t.dependsOn.length > 0 ? t.dependsOn.map(d => `\`${d}\``).join(', ') : '—';
-		const tests = t.tests.length > 0 ? t.tests.map(x => `${x.level}: ${escapePipes(x.name)}`).join('; ') : '—';
-		const cites = t.derivedFrom.map(c => `[[${c}]]`).join(' ');
-		lines.push(`| ${t.order} | **\`${t.id}\`** ${escapePipes(t.title)} | ${t.size} | ${deps} | ${escapePipes(tests)} | ${cites} |`);
-	}
-	lines.push('');
-
-	for (const t of [...body.tasks].sort((a, b) => a.order - b.order)) {
-		const tid = eh ? safeCanonical(() => taskWorkflowId(eh, meta.createdAt, meta.storyId, t.id)) : undefined;
-		lines.push(tid !== undefined ? `### ${tid} — ${t.title}` : `### \`${t.id}\` — ${t.title}`);
-		lines.push('');
-		lines.push(t.summary);
-		lines.push('');
-		if (t.acceptanceChecks.length > 0) {
-			lines.push('**Acceptance checks:**');
-			for (const ac of t.acceptanceChecks) lines.push(`- ${ac}`);
-			lines.push('');
+	const taskTable = (): string[] => {
+		const l = ['| # | Task | Size | Depends on | Tests | Derived from |', '| :--- | :--- | :--- | :--- | :--- | :--- |'];
+		for (const t of ordered) {
+			const deps  = t.dependsOn.length > 0 ? t.dependsOn.map(d => `\`${d}\``).join(', ') : '—';
+			const tests = t.tests.length > 0 ? t.tests.map(x => `${x.level}: ${escapePipes(x.name)}`).join('; ') : '—';
+			const cites = t.derivedFrom.map(c => `[[${c}]]`).join(' ');
+			l.push(`| ${t.order} | **\`${t.id}\`** ${escapePipes(t.title)} | ${t.size} | ${deps} | ${escapePipes(tests)} | ${cites} |`);
 		}
-	}
+		return l;
+	};
 
-	if (body.testStrategyCoverage.length > 0) {
-		lines.push('## Test-strategy coverage');
-		lines.push('');
-		lines.push('| LLD strategy item | Covered by |');
-		lines.push('| :--- | :--- |');
-		for (const c of body.testStrategyCoverage) {
-			const by = c.coveredByTaskIds.map(id => `\`${id}\``).join(', ');
-			lines.push(`| ${escapePipes(c.lldStrategyItem)} | ${by} |`);
-		}
-		lines.push('');
-	}
+	const taskItem = (t: PlanTask): SectionItem => {
+		const tid = eh !== undefined ? safeCanonical(() => taskWorkflowId(eh, meta.createdAt, meta.storyId, t.id)) : undefined;
+		const l: string[] = [t.summary, ''];
+		if (t.acceptanceChecks.length > 0) { l.push('**Acceptance checks:**'); for (const ac of t.acceptanceChecks) l.push(`- ${ac}`); }
+		return { title: tid !== undefined ? `${tid} — ${t.title}` : `\`${t.id}\` — ${t.title}`, lines: l };
+	};
 
-	return lines.join('\n');
+	const coverageLines = (): string[] => {
+		const l = ['| LLD strategy item | Covered by |', '| :--- | :--- |'];
+		for (const c of body.testStrategyCoverage) l.push(`| ${escapePipes(c.lldStrategyItem)} | ${c.coveredByTaskIds.map(id => `\`${id}\``).join(', ')} |`);
+		return l;
+	};
+
+	const bindings: SectionBindings = {
+		summary:    () => ({ lines: summaryLines() }),
+		fr:         () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
+		tasks:      () => ({ lines: taskTable(), items: ordered.map(taskItem) }),
+		coverage:   () => body.testStrategyCoverage.length > 0 ? { lines: coverageLines() } : { omit: true },
+		references: () => ({ lines: citationBodyLines(artifact.citations) }),
+	};
+	return renderFromFormat(PLAN_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 function escapePipes(s: string): string { return s.replace(/\|/g, '\\|'); }

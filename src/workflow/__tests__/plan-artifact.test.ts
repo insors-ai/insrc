@@ -194,7 +194,7 @@ test('renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task 
 	assert.ok(/# Plan: E\d{8}[0-9a-f]{8}:S001\b/.test(md), md.split('\n').find(l => l.startsWith('# Plan:')));
 	assert.ok(md.includes('| # | Task | Size | Depends on | Tests | Derived from |'));
 	assert.ok(md.includes('[[c1]]'), 'task derivedFrom not rendered as a citation ref');
-	assert.ok(md.includes('## Test-strategy coverage'));
+	assert.match(md, /## \d+\. Test-strategy coverage/);   // sc3 (S002): numbered section
 });
 
 test('renderPlanMarkdown output passes validateCitations (every citation grounded)', () => {

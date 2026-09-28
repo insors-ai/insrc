@@ -166,7 +166,14 @@ function emitSection(
 
 	if (spec.source === 'shared-ref') {
 		const ref = content.ref ?? ctx.defaultRef;
-		out.push(ref !== undefined ? renderSharedContextReference(ref) : NONE, '');
+		const extra = content.lines ?? [];
+		if (ref !== undefined) {
+			out.push(renderSharedContextReference(ref), '');
+		} else if (extra.length === 0) {
+			out.push(NONE, '');
+		}
+		for (const l of extra) out.push(l);
+		if (extra.length > 0) out.push('');
 		return;
 	}
 	const items = content.items ?? [];

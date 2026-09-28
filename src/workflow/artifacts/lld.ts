@@ -26,6 +26,9 @@ import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
+import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
+import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { LLD_FORMAT } from './format/formats.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 
 // ---------------------------------------------------------------------------
@@ -291,233 +294,147 @@ export function findAdjacentScopeViolations(
 
 export function renderLldMarkdown(artifact: LldArtifact): string {
 	const { body, meta } = artifact;
-	const lines: string[] = [];
-	if (typeof meta.epicHash === 'string' && meta.epicHash.length > 0) {
-		lines.push(artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)));
-		lines.push('');
-	}
-	const eh = meta.epicHash;
-	const lldSid = eh ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
-	lines.push(`# LLD: ${lldSid ?? meta.storyId}`);
-	lines.push('');
-	lines.push(`**Epic:** \`${meta.epicSlug}\``);
-	lines.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);
-	lines.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
-	// Provenance (S009/ac3): identify the approved spec this standalone LLD was seeded from.
-	const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
-	if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) {
-		lines.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
-	}
-	const storyRef = (meta as { tracker?: { storyRef?: string } }).tracker?.storyRef;
-	if (typeof storyRef === 'string' && storyRef.includes('#')) {
-		lines.push(trackerRefLine(storyRef));
-	}
-	lines.push('');
+	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
+	const marker = eh !== undefined ? artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)) : undefined;
+	const lldSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	const h1 = `LLD: ${lldSid ?? meta.storyId}`;
+	const isStandalone = (meta as { standalone?: boolean }).standalone === true;
 
-	// sc1 (S001): functional-definition section (absent-safe).
-	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
+	const summaryLines = (): string[] => {
+		const out: string[] = [`**Epic:** \`${meta.epicSlug}\``];
+		if (typeof meta.hldBaseRunId === 'string' && meta.hldBaseRunId.length > 0) out.push(`**HLD base run:** \`${meta.hldBaseRunId}\``);
+		if (typeof meta.hldEffectiveHash === 'string' && meta.hldEffectiveHash.length > 0) out.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
+		const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
+		if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) out.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
+		const storyRef = (meta as { tracker?: { storyRef?: string } }).tracker?.storyRef;
+		if (typeof storyRef === 'string' && storyRef.includes('#')) out.push(trackerRefLine(storyRef));
+		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);
+		return out;
+	};
 
-	lines.push('## HLD context');
-	lines.push('');
-	lines.push(`**Framework:** ${body.hldContextSlice.frameworkSummary}`);
-	lines.push(`**Rollout phase:** ${body.hldContextSlice.rolloutPhase}`);
-	if (body.hldContextSlice.ownedContracts.length > 0) {
-		lines.push(`**Owns:** ${body.hldContextSlice.ownedContracts.map(c => `\`${c.id}\` (${c.name})`).join(', ')}`);
-	}
-	if (body.hldContextSlice.consumedContracts.length > 0) {
-		lines.push(`**Consumes:** ${body.hldContextSlice.consumedContracts.map(c => `\`${c.id}\` (${c.name})`).join(', ')}`);
-	}
-	// Adjacent scope: the sibling boundaries owned by OTHER stories. Rendered
-	// only when non-empty so single-story / standalone LLDs stay byte-compatible.
-	const adjacent = body.hldContextSlice.adjacentBoundaries ?? [];
-	if (adjacent.length > 0) {
-		lines.push('');
-		lines.push('**Adjacent scope (owned by other stories — do NOT implement here):**');
-		for (const sb of adjacent) {
-			const owns = sb.owns.length > 0 ? ` — owns ${sb.owns.map(o => `\`${o}\``).join(', ')}` : '';
-			lines.push(`- \`${sb.storyId}\`: ${sb.internal}${owns}`);
+	// HLD context: the framework summary is DE-DUPED to a reference (ac2) when a
+	// real parent HLD exists (or the body carries explicit contextRefs); a
+	// standalone LLD renders it inline (there is no HLD to reference). The LLD's
+	// own boundary slice (rollout phase / owns / consumes / adjacent) always shows.
+	const hldContextContent = (): { ref?: SharedContextRef; lines: string[] } => {
+		const slice = body.hldContextSlice;
+		const boundary: string[] = [`**Rollout phase:** ${slice.rolloutPhase}`];
+		if (slice.ownedContracts.length > 0)    boundary.push(`**Owns:** ${slice.ownedContracts.map(c => `\`${c.id}\` (${c.name})`).join(', ')}`);
+		if (slice.consumedContracts.length > 0) boundary.push(`**Consumes:** ${slice.consumedContracts.map(c => `\`${c.id}\` (${c.name})`).join(', ')}`);
+		const adjacent = slice.adjacentBoundaries ?? [];
+		if (adjacent.length > 0) {
+			boundary.push('', '**Adjacent scope (owned by other stories — do NOT implement here):**');
+			for (const sb of adjacent) {
+				const owns = sb.owns.length > 0 ? ` — owns ${sb.owns.map(o => `\`${o}\``).join(', ')}` : '';
+				boundary.push(`- \`${sb.storyId}\`: ${sb.internal}${owns}`);
+			}
 		}
-	}
-	lines.push('');
+		const explicit = body.contextRefs !== undefined && body.contextRefs.length > 0 ? body.contextRefs[0] : undefined;
+		const ref = explicit ?? (eh !== undefined && !isStandalone ? deriveHldContextRef(eh) : undefined);
+		if (ref !== undefined) return { ref, lines: boundary };
+		// No HLD to reference (standalone) → render the framework summary inline.
+		return { lines: [`**Framework:** ${slice.frameworkSummary}`, ...boundary] };
+	};
 
-	lines.push('## Contract details');
-	lines.push('');
-	lines.push(`**Surface level:** ${body.contractDetails.surfaceLevel}`);
-	lines.push('');
-	for (const api of body.contractDetails.api) {
-		lines.push(`### \`${api.name}\``);
-		lines.push('');
-		lines.push('```typescript');
-		lines.push(api.signature);
-		lines.push('```');
-		lines.push('');
+	const apiItem = (api: LldBody['contractDetails']['api'][number]): SectionItem => {
+		const l: string[] = ['```typescript', api.signature, '```', ''];
 		if (api.parameters.length > 0) {
-			lines.push('**Parameters:**');
-			for (const p of api.parameters) {
-				const opt = p.optional ? ' _(optional)_' : '';
-				lines.push(`- \`${p.name}: ${p.type}\`${opt} — ${p.purpose}`);
+			l.push('**Parameters:**');
+			for (const p of api.parameters) l.push(`- \`${p.name}: ${p.type}\`${p.optional ? ' _(optional)_' : ''} — ${p.purpose}`);
+			l.push('');
+		}
+		l.push(`**Returns:** \`${api.returns.type}\` — ${api.returns.meaning}`);
+		if (api.errors.length > 0) { l.push('', '**Errors:**'); for (const e of api.errors) l.push(`- \`${e.type}\` when ${e.condition}`); }
+		if (api.preconditions.length > 0) { l.push('', '**Preconditions:**'); for (const pc of api.preconditions) l.push(`- ${pc}`); }
+		if (api.postconditions.length > 0) { l.push('', '**Postconditions:**'); for (const pc of api.postconditions) l.push(`- ${pc}`); }
+		return { title: `\`${api.name}\``, lines: l };
+	};
+
+	const dmItem = (d: LldBody['dataModelChanges'][number]): SectionItem => {
+		const l: string[] = [d.details, ''];
+		if (d.schemaDiff !== undefined) l.push('```', d.schemaDiff, '```', '');
+		if (d.callSites.length > 0) { l.push('**Call sites:**'); for (const cs of d.callSites) l.push(`- \`${cs}\``); }
+		return { title: `\`${d.entity}\` — ${d.change}`, lines: l };
+	};
+
+	const errorPathsLines = (): string[] => {
+		const l: string[] = [];
+		if (body.errorPaths.errorCases.length > 0) {
+			l.push('**Error cases**', '');
+			for (const e of body.errorPaths.errorCases) {
+				l.push(`- **${e.scenario}** (${e.recoverable ? 'recoverable' : 'terminal'})`, `  - Detection: ${e.detection}`, `  - Response: ${e.response}`, `  - User impact: ${e.userImpact}`);
 			}
-			lines.push('');
+			l.push('');
 		}
-		lines.push(`**Returns:** \`${api.returns.type}\` — ${api.returns.meaning}`);
-		lines.push('');
-		if (api.errors.length > 0) {
-			lines.push('**Errors:**');
-			for (const e of api.errors) lines.push(`- \`${e.type}\` when ${e.condition}`);
-			lines.push('');
+		if (body.errorPaths.edgeCases.length > 0) {
+			l.push('**Edge cases**', '', '| Input | Expected |', '| :--- | :--- |');
+			for (const ec of body.errorPaths.edgeCases) l.push(`| ${escapePipes(ec.input)} | ${escapePipes(ec.expected)} |`);
+			l.push('');
 		}
-		if (api.preconditions.length > 0) {
-			lines.push('**Preconditions:**');
-			for (const pc of api.preconditions) lines.push(`- ${pc}`);
-			lines.push('');
+		if (body.errorPaths.invariantsToPreserve.length > 0) {
+			l.push('**Invariants to preserve**', '');
+			for (const iv of body.errorPaths.invariantsToPreserve) l.push(`- ${iv.text} [[${iv.source}]]`);
 		}
-		if (api.postconditions.length > 0) {
-			lines.push('**Postconditions:**');
-			for (const pc of api.postconditions) lines.push(`- ${pc}`);
-			lines.push('');
-		}
-	}
+		while (l.length > 0 && l[l.length - 1] === '') l.pop();
+		return l;
+	};
 
-	if (body.dataModelChanges.length > 0) {
-		lines.push('## Data model changes');
-		lines.push('');
-		for (const d of body.dataModelChanges) {
-			lines.push(`### \`${d.entity}\` — ${d.change}`);
-			lines.push('');
-			lines.push(d.details);
-			lines.push('');
-			if (d.schemaDiff !== undefined) {
-				lines.push('```');
-				lines.push(d.schemaDiff);
-				lines.push('```');
-				lines.push('');
-			}
-			if (d.callSites.length > 0) {
-				lines.push('**Call sites:**');
-				for (const cs of d.callSites) lines.push(`- \`${cs}\``);
-				lines.push('');
-			}
+	const testStrategyLines = (): string[] => {
+		const l: string[] = [`**Test framework:** \`${body.testStrategy.testFramework}\``, '', '**Test levels**', ''];
+		for (const tl of body.testStrategy.testLevels) {
+			l.push(`- **${tl.level}** — ${tl.purpose}`);
+			if (tl.subjects.length > 0) l.push(`  - Subjects: ${tl.subjects.map(s => `\`${s}\``).join(', ')}`);
+			if (tl.fixturesNeeded !== undefined && tl.fixturesNeeded.length > 0) l.push(`  - Fixtures: ${tl.fixturesNeeded.map(f => `\`${f}\``).join(', ')}`);
 		}
-	}
+		if (body.testStrategy.acceptanceMapping.length > 0) {
+			l.push('', '**Acceptance mapping**', '', '| Criterion | Proving tests |', '| :--- | :--- |');
+			for (const am of body.testStrategy.acceptanceMapping) l.push(`| \`${am.criterionId}\` | ${am.provingTests.map(t => `\`${t}\``).join(', ')} |`);
+		}
+		return l;
+	};
 
-	if (body.interactionWithShared.length > 0) {
-		lines.push('## Interaction with shared contracts');
-		lines.push('');
-		lines.push('| Contract | Role | How |');
-		lines.push('| :--- | :--- | :--- |');
-		for (const i of body.interactionWithShared) {
-			lines.push(`| \`${i.contractId}\` | ${i.role} | ${escapePipes(i.howDetails)} |`);
-		}
-		lines.push('');
-	}
-
-	lines.push('## Error paths');
-	lines.push('');
-	if (body.errorPaths.errorCases.length > 0) {
-		lines.push('### Error cases');
-		lines.push('');
-		for (const e of body.errorPaths.errorCases) {
-			const rec = e.recoverable ? 'recoverable' : 'terminal';
-			lines.push(`- **${e.scenario}** (${rec})`);
-			lines.push(`  - Detection: ${e.detection}`);
-			lines.push(`  - Response: ${e.response}`);
-			lines.push(`  - User impact: ${e.userImpact}`);
-		}
-		lines.push('');
-	}
-	if (body.errorPaths.edgeCases.length > 0) {
-		lines.push('### Edge cases');
-		lines.push('');
-		lines.push('| Input | Expected |');
-		lines.push('| :--- | :--- |');
-		for (const ec of body.errorPaths.edgeCases) {
-			lines.push(`| ${escapePipes(ec.input)} | ${escapePipes(ec.expected)} |`);
-		}
-		lines.push('');
-	}
-	if (body.errorPaths.invariantsToPreserve.length > 0) {
-		lines.push('### Invariants to preserve');
-		lines.push('');
-		for (const iv of body.errorPaths.invariantsToPreserve) {
-			lines.push(`- ${iv.text} [[${iv.source}]]`);
-		}
-		lines.push('');
-	}
-
-	lines.push('## Test strategy');
-	lines.push('');
-	lines.push(`**Test framework:** \`${body.testStrategy.testFramework}\``);
-	lines.push('');
-	lines.push('### Test levels');
-	lines.push('');
-	for (const tl of body.testStrategy.testLevels) {
-		lines.push(`- **${tl.level}** — ${tl.purpose}`);
-		if (tl.subjects.length > 0) lines.push(`  - Subjects: ${tl.subjects.map(s => `\`${s}\``).join(', ')}`);
-		if (tl.fixturesNeeded !== undefined && tl.fixturesNeeded.length > 0) {
-			lines.push(`  - Fixtures: ${tl.fixturesNeeded.map(f => `\`${f}\``).join(', ')}`);
-		}
-	}
-	lines.push('');
-	if (body.testStrategy.acceptanceMapping.length > 0) {
-		lines.push('### Acceptance mapping');
-		lines.push('');
-		lines.push('| Criterion | Proving tests |');
-		lines.push('| :--- | :--- |');
-		for (const am of body.testStrategy.acceptanceMapping) {
-			lines.push(`| \`${am.criterionId}\` | ${am.provingTests.map(t => `\`${t}\``).join(', ')} |`);
-		}
-		lines.push('');
-	}
-
-	if (body.migration !== undefined) {
-		lines.push('## Migration');
-		lines.push('');
-		lines.push(`**State before:** ${body.migration.stateBefore}`);
-		lines.push('');
-		lines.push(`**State after:** ${body.migration.stateAfter}`);
-		lines.push('');
-		lines.push(`**Zero downtime:** ${body.migration.zeroDowntime ? 'yes' : 'no'} — **Data rewrite:** ${body.migration.dataRewriteRequired ? 'yes' : 'no'}`);
-		lines.push('');
-		lines.push('### Steps');
-		lines.push('');
-		for (const s of [...body.migration.migrationSteps].sort((a, b) => a.order - b.order)) {
+	const migrationLines = (): string[] => {
+		if (body.migration === undefined) return [];
+		const m = body.migration;
+		const l: string[] = [`**State before:** ${m.stateBefore}`, '', `**State after:** ${m.stateAfter}`, '',
+			`**Zero downtime:** ${m.zeroDowntime ? 'yes' : 'no'} — **Data rewrite:** ${m.dataRewriteRequired ? 'yes' : 'no'}`, '', '**Steps**', ''];
+		for (const s of [...m.migrationSteps].sort((a, b) => a.order - b.order)) {
 			const rb = s.rollbackable ? '↩ rollbackable' : '✕ non-rollbackable';
-			const flags = s.prerequisiteFlags === undefined || s.prerequisiteFlags.length === 0
-				? ''
-				: ` _(needs: ${s.prerequisiteFlags.map(f => `\`${f}\``).join(', ')})_`;
-			lines.push(`${s.order}. ${s.action} — ${rb}${flags}`);
+			const flags = s.prerequisiteFlags === undefined || s.prerequisiteFlags.length === 0 ? '' : ` _(needs: ${s.prerequisiteFlags.map(f => `\`${f}\``).join(', ')})_`;
+			l.push(`${s.order}. ${s.action} — ${rb}${flags}`);
 		}
-		lines.push('');
-		if (body.migration.backwardCompat.length > 0) {
-			lines.push(`**Backward compat:** ${body.migration.backwardCompat}`);
-			lines.push('');
-		}
-	}
+		if (m.backwardCompat.length > 0) l.push('', `**Backward compat:** ${m.backwardCompat}`);
+		return l;
+	};
 
-	lines.push('## Alternatives considered');
-	lines.push('');
-	for (const a of body.alternativesConsidered) {
+	const altItem = (a: LldBody['alternativesConsidered'][number]): SectionItem => {
 		const badge = a.id === body.chosenAlternative ? ' — **CHOSEN**' : '';
-		lines.push(`### ${a.id}: ${a.name}${badge}`);
-		lines.push('');
-		lines.push(a.oneLineSummary);
-		lines.push('');
-		lines.push(a.approach);
-		lines.push('');
-		if (a.reasonRejected !== undefined && a.reasonRejected.length > 0) {
-			lines.push(`**Rejected because:** ${a.reasonRejected}`);
-			lines.push('');
-		}
-	}
+		const l: string[] = [a.oneLineSummary, '', a.approach];
+		if (a.reasonRejected !== undefined && a.reasonRejected.length > 0) l.push('', `**Rejected because:** ${a.reasonRejected}`);
+		return { title: `${a.id}: ${a.name}${badge}`, lines: l };
+	};
 
-	if (body.openQuestions.length > 0) {
-		lines.push('## Open questions');
-		lines.push('');
-		for (const q of body.openQuestions) lines.push(`- ${q}`);
-		lines.push('');
-	}
+	const interactionLines = (): string[] => {
+		const l = ['| Contract | Role | How |', '| :--- | :--- | :--- |'];
+		for (const i of body.interactionWithShared) l.push(`| \`${i.contractId}\` | ${i.role} | ${escapePipes(i.howDetails)} |`);
+		return l;
+	};
 
-	return lines.join('\n');
+	const bindings: SectionBindings = {
+		summary:     () => ({ lines: summaryLines() }),
+		hldContext:  () => hldContextContent(),
+		fr:          () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
+		contract:    () => ({ lines: [`**Surface level:** ${body.contractDetails.surfaceLevel}`], items: body.contractDetails.api.map(apiItem) }),
+		dataModel:   () => body.dataModelChanges.length > 0 ? { items: body.dataModelChanges.map(dmItem) } : { omit: true },
+		interaction: () => body.interactionWithShared.length > 0 ? { lines: interactionLines() } : { omit: true },
+		errorPaths:  () => ({ lines: errorPathsLines() }),
+		testStrategy: () => ({ lines: testStrategyLines() }),
+		migration:   () => { const l = migrationLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
+		alternatives: () => body.alternativesConsidered.length > 0 ? { items: body.alternativesConsidered.map(altItem) } : { omit: true },
+		references:  () => ({ lines: citationBodyLines(artifact.citations) }),
+		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
+	};
+	return renderFromFormat(LLD_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 function escapePipes(s: string): string { return s.replace(/\|/g, '\\|'); }

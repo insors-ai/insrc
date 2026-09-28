@@ -54,6 +54,7 @@ export const HLD_FORMAT: DocumentFormat = {
 	sections: [
 		S({ id: 'problemContext', heading: 'Problem context', source: 'shared-ref', contentGuidance: 'Reference the DEF problem, not copied.' }),
 		S({ id: 'framework',   heading: 'Framework summary', required: true }),
+		S({ id: 'fr',          heading: 'Functional requirements', source: 'fr' }),
 		S({ id: 'architecture', heading: 'Architecture shape' }),
 		S({ id: 'diagrams',    heading: 'Diagrams', source: 'extension', contentGuidance: 'NAMED extension point — S003 component diagram companion.' }),
 		S({ id: 'contracts',   heading: 'Shared contracts' }),
@@ -92,6 +93,7 @@ export const PLAN_FORMAT: DocumentFormat = {
 	h1: 'Plan: <story id>',
 	summary: summaryProduct('Story'),
 	sections: [
+		S({ id: 'fr',          heading: 'Functional requirements', source: 'fr' }),
 		S({ id: 'tasks',       heading: 'Tasks', required: true, contentGuidance: 'Per-task sub-template: size, depends-on, acceptance checks, tests.' }),
 		S({ id: 'coverage',    heading: 'Test-strategy coverage' }),
 		S({ id: 'references',  heading: 'References', required: true }),

@@ -240,8 +240,8 @@ test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', asyn
 		assert.ok(outPath.endsWith('/HLD.md'), outPath);
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
-		assert.ok(md.includes('## Framework summary'));
-		assert.ok(md.includes('### sc1: TagFilterAPI'));
+		assert.match(md, /## \d+\. Framework summary/);       // sc3 (S002): numbered body sections
+		assert.match(md, /### \d+\.\d+ sc1: TagFilterAPI/);   // nested shared-contract item
 		assert.ok(md.includes('**CHOSEN**'));
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

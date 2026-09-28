@@ -77,21 +77,24 @@ test('renderHldMarkdown emits all sections', () => {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	};
 	const md = renderHldMarkdown(artifact);
-	assert.ok(md.includes('# HLD:'));
-	assert.ok(md.includes('## Framework summary'));
-	assert.ok(md.includes('## Architecture shape'));
-	assert.ok(md.includes('## Shared contracts'));
-	assert.ok(md.includes('### sc1:'));
-	assert.ok(md.includes('## Story boundaries'));
-	assert.ok(md.includes('### Story `s1`'));
-	assert.ok(md.includes('## Non-functional targets'));
-	assert.ok(md.includes('## Rollout'));
+	// sc3 (S002): short H1 + generated Contents + numbered body + nested items.
+	assert.match(md, /^# HLD: /m);
+	assert.ok(md.includes('## Contents'));
+	assert.match(md, /## \d+\. Framework summary/);
+	assert.match(md, /## \d+\. Architecture shape/);
+	assert.match(md, /## \d+\. Shared contracts/);
+	assert.match(md, /### \d+\.\d+ sc1:/);
+	assert.match(md, /## \d+\. Story boundaries/);
+	assert.match(md, /### \d+\.\d+ Story `s1`/);
+	assert.match(md, /## \d+\. Non-functional targets/);
+	assert.match(md, /## \d+\. Rollout/);
 	assert.ok(md.includes('Phase A'));
-	assert.ok(md.includes('## Alternatives considered'));
-	assert.ok(md.includes('### a1:'));
+	assert.match(md, /## \d+\. Alternatives considered/);
+	assert.match(md, /### \d+\.\d+ a1:/);
 	assert.ok(md.includes('**CHOSEN**'));
-	assert.ok(md.includes('### a2:'));
+	assert.match(md, /### \d+\.\d+ a2:/);
 	assert.ok(md.includes('**Rejected because:**'));
+	assert.match(md, /## \d+\. References/);
 });
 
 test('renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set', () => {

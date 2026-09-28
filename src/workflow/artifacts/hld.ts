@@ -22,6 +22,9 @@ import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
+import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { HLD_FORMAT } from './format/formats.js';
 
 // ---------------------------------------------------------------------------
 // Body sub-shapes
@@ -110,134 +113,95 @@ export const HLD_SCHEMA_VERSION = 1;
 // ---------------------------------------------------------------------------
 
 export function renderHldMarkdown(artifact: HldArtifact): string {
-	const { body } = artifact;
-	const lines: string[] = [];
-	if (typeof artifact.meta.epicHash === 'string' && artifact.meta.epicHash.length > 0) {
-		lines.push(artifactIdMarker(hldArtifactId(artifact.meta.epicHash)));
-		lines.push('');
-	}
-	lines.push(`# HLD: ${firstLine(body.frameworkSummary)}`);
-	lines.push('');
-	const epicRef = (artifact.meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
-	if (typeof epicRef === 'string' && epicRef.includes('#')) {
-		lines.push(trackerRefLine(epicRef));
-		lines.push('');
-	}
-	lines.push('## Framework summary');
-	lines.push('');
-	lines.push(body.frameworkSummary);
-	lines.push('');
-	// sc1 (S001): functional-definition section (absent-safe).
-	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
-	lines.push('## Architecture shape');
-	lines.push('');
-	lines.push(body.architectureShape);
-	lines.push('');
+	const { body, meta } = artifact;
+	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
+	const marker = eh !== undefined ? artifactIdMarker(hldArtifactId(eh)) : undefined;
+	const h1 = `HLD: ${hldShortName(artifact)}`;
 
-	lines.push('## Shared contracts');
-	lines.push('');
-	for (const sc of body.sharedContracts) {
-		lines.push(`### ${sc.id}: ${sc.name}`);
-		lines.push('');
-		lines.push(`**Owner Story:** \`${sc.ownedByStory}\``);
-		if (sc.consumedByStories.length > 0) {
-			lines.push(`**Consumed by:** ${sc.consumedByStories.map(s => `\`${s}\``).join(', ')}`);
+	const summaryLines = (): string[] => {
+		const out: string[] = [];
+		const epicRef = (meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
+		if (typeof epicRef === 'string' && epicRef.includes('#')) out.push(trackerRefLine(epicRef));
+		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) { if (out.length > 0) out.push(''); out.push(body.summary.prose); }
+		return out;
+	};
+
+	const scItem = (sc: SharedContract): SectionItem => {
+		const l: string[] = [`**Owner Story:** \`${sc.ownedByStory}\``];
+		if (sc.consumedByStories.length > 0) l.push(`**Consumed by:** ${sc.consumedByStories.map(s => `\`${s}\``).join(', ')}`);
+		l.push('', `**Purpose:** ${sc.purpose}`, '', '**Interface sketch (type-level):**', '', '```', sc.interfaceSketch, '```');
+		if (sc.assumptions.length > 0) l.push('', `**Assumptions cited:** ${sc.assumptions.map(a => `[[${a}]]`).join(' ')}`);
+		return { title: `${sc.id}: ${sc.name}`, lines: l };
+	};
+
+	const sbItem = (sb: StoryBoundary): SectionItem => {
+		const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, sb.storyId)) : undefined;
+		const l: string[] = [];
+		if (sb.owns.length > 0)    l.push(`**Owns:** ${sb.owns.map(x => `\`${x}\``).join(', ')}`);
+		if (sb.depends.length > 0) l.push(`**Depends on:** ${sb.depends.map(x => `\`${x}\``).join(', ')}`);
+		l.push('', sb.internal);
+		return { title: sid !== undefined ? `Story ${sid}` : `Story \`${sb.storyId}\``, lines: l };
+	};
+
+	const nfLines = (): string[] => {
+		const l: string[] = [];
+		if (body.nonFunctional.performance   !== undefined) l.push(`- **Performance:** ${body.nonFunctional.performance}`);
+		if (body.nonFunctional.security      !== undefined) l.push(`- **Security:** ${body.nonFunctional.security}`);
+		if (body.nonFunctional.observability !== undefined) l.push(`- **Observability:** ${body.nonFunctional.observability}`);
+		if (body.nonFunctional.durability    !== undefined) l.push(`- **Durability:** ${body.nonFunctional.durability}`);
+		return l;
+	};
+
+	const rolloutLines = (): string[] => {
+		const l: string[] = [];
+		for (const p of body.rolloutOverview.phases) {
+			l.push(`**${p.name}**`, '', `**Stories:** ${p.includesStories.map(s => `\`${s}\``).join(', ')}`);
+			if (p.featureFlag !== null) l.push(`**Flag:** \`${p.featureFlag}\``);
+			l.push('', p.rationale);
+			if (p.backwardCompat.length > 0) l.push('', `**Backward compat:** ${p.backwardCompat}`);
+			l.push('');
 		}
-		lines.push('');
-		lines.push(`**Purpose:** ${sc.purpose}`);
-		lines.push('');
-		lines.push('**Interface sketch (type-level):**');
-		lines.push('');
-		lines.push('```');
-		lines.push(sc.interfaceSketch);
-		lines.push('```');
-		lines.push('');
-		if (sc.assumptions.length > 0) {
-			lines.push(`**Assumptions cited:** ${sc.assumptions.map(a => `[[${a}]]`).join(' ')}`);
-			lines.push('');
+		if (body.rolloutOverview.orderingRationale.length > 0) l.push(`**Ordering rationale:** ${body.rolloutOverview.orderingRationale}`, '');
+		if (body.rolloutOverview.riskyBits.length > 0) {
+			l.push('**Risky bits**', '', '| Area | Why | Mitigation |', '| :--- | :--- | :--- |');
+			for (const rb of body.rolloutOverview.riskyBits) l.push(`| ${escapePipes(rb.area)} | ${escapePipes(rb.why)} | ${escapePipes(rb.mitigation)} |`);
 		}
-	}
+		while (l.length > 0 && l[l.length - 1] === '') l.pop();
+		return l;
+	};
 
-	lines.push('## Story boundaries');
-	lines.push('');
-	const eh = artifact.meta.epicHash;
-	for (const sb of body.storyBoundaries) {
-		const sid = eh ? safeCanonical(() => storyWorkflowId(eh, artifact.meta.createdAt, sb.storyId)) : undefined;
-		lines.push(sid !== undefined ? `### Story ${sid}` : `### Story \`${sb.storyId}\``);
-		lines.push('');
-		if (sb.owns.length > 0)    lines.push(`**Owns:** ${sb.owns.map(x => `\`${x}\``).join(', ')}`);
-		if (sb.depends.length > 0) lines.push(`**Depends on:** ${sb.depends.map(x => `\`${x}\``).join(', ')}`);
-		lines.push('');
-		lines.push(sb.internal);
-		lines.push('');
-	}
-
-	lines.push('## Non-functional targets');
-	lines.push('');
-	if (body.nonFunctional.performance   !== undefined) lines.push(`- **Performance:** ${body.nonFunctional.performance}`);
-	if (body.nonFunctional.security      !== undefined) lines.push(`- **Security:** ${body.nonFunctional.security}`);
-	if (body.nonFunctional.observability !== undefined) lines.push(`- **Observability:** ${body.nonFunctional.observability}`);
-	if (body.nonFunctional.durability    !== undefined) lines.push(`- **Durability:** ${body.nonFunctional.durability}`);
-	lines.push('');
-
-	lines.push('## Rollout');
-	lines.push('');
-	for (const p of body.rolloutOverview.phases) {
-		lines.push(`### ${p.name}`);
-		lines.push('');
-		lines.push(`**Stories:** ${p.includesStories.map(s => `\`${s}\``).join(', ')}`);
-		if (p.featureFlag !== null) lines.push(`**Flag:** \`${p.featureFlag}\``);
-		lines.push('');
-		lines.push(p.rationale);
-		if (p.backwardCompat.length > 0) {
-			lines.push('');
-			lines.push(`**Backward compat:** ${p.backwardCompat}`);
-		}
-		lines.push('');
-	}
-	if (body.rolloutOverview.orderingRationale.length > 0) {
-		lines.push('**Ordering rationale:** ' + body.rolloutOverview.orderingRationale);
-		lines.push('');
-	}
-	if (body.rolloutOverview.riskyBits.length > 0) {
-		lines.push('### Risky bits');
-		lines.push('');
-		lines.push('| Area | Why | Mitigation |');
-		lines.push('| :--- | :--- | :--- |');
-		for (const rb of body.rolloutOverview.riskyBits) {
-			lines.push(`| ${escapePipes(rb.area)} | ${escapePipes(rb.why)} | ${escapePipes(rb.mitigation)} |`);
-		}
-		lines.push('');
-	}
-
-	lines.push('## Alternatives considered');
-	lines.push('');
-	for (const a of body.alternativesConsidered) {
+	const altItem = (a: Alternative): SectionItem => {
 		const badge = a.id === body.chosenAlternative ? ' — **CHOSEN**' : '';
-		lines.push(`### ${a.id}: ${a.name}${badge}`);
-		lines.push('');
-		lines.push(a.oneLineSummary);
-		lines.push('');
-		lines.push(a.approach);
-		lines.push('');
-		if (a.pros.length > 0) { lines.push('**Pros:**'); for (const p of a.pros) lines.push(`- ${p}`); lines.push(''); }
-		if (a.cons.length > 0) { lines.push('**Cons:**'); for (const c of a.cons) lines.push(`- ${c}`); lines.push(''); }
-		lines.push(`**Cost estimate:** ${a.costEstimate}`);
-		lines.push('');
-		if (a.reasonRejected !== undefined && a.reasonRejected.length > 0) {
-			lines.push(`**Rejected because:** ${a.reasonRejected}`);
-			lines.push('');
-		}
-	}
+		const l: string[] = [a.oneLineSummary, '', a.approach, ''];
+		if (a.pros.length > 0) { l.push('**Pros:**'); for (const p of a.pros) l.push(`- ${p}`); l.push(''); }
+		if (a.cons.length > 0) { l.push('**Cons:**'); for (const c of a.cons) l.push(`- ${c}`); l.push(''); }
+		l.push(`**Cost estimate:** ${a.costEstimate}`);
+		if (a.reasonRejected !== undefined && a.reasonRejected.length > 0) l.push('', `**Rejected because:** ${a.reasonRejected}`);
+		return { title: `${a.id}: ${a.name}${badge}`, lines: l };
+	};
 
-	if (body.openQuestions.length > 0) {
-		lines.push('## Open questions');
-		lines.push('');
-		for (const q of body.openQuestions) lines.push(`- ${q}`);
-		lines.push('');
-	}
+	const bindings: SectionBindings = {
+		summary:        () => { const l = summaryLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
+		problemContext: () => eh !== undefined ? { ref: { sourceArtifactId: `DEF-${eh}`, sectionId: '1-problem' } } : { omit: true },
+		framework:      () => ({ lines: [body.frameworkSummary] }),
+		fr:             () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
+		architecture:   () => ({ lines: [body.architectureShape] }),
+		contracts:      () => body.sharedContracts.length > 0 ? { items: body.sharedContracts.map(scItem) } : { omit: true },
+		boundaries:     () => body.storyBoundaries.length > 0 ? { items: body.storyBoundaries.map(sbItem) } : { omit: true },
+		nonFunctional:  () => { const l = nfLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
+		rollout:        () => { const l = rolloutLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
+		alternatives:   () => body.alternativesConsidered.length > 0 ? { items: body.alternativesConsidered.map(altItem) } : { omit: true },
+		references:     () => ({ lines: citationBodyLines(artifact.citations) }),
+		openQuestions:  () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
+	};
+	return renderFromFormat(HLD_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+}
 
-	return lines.join('\n');
+/** A short, distinct H1 name for the HLD (prefers the Epic slug). */
+function hldShortName(artifact: HldArtifact): string {
+	const slug = (artifact.meta as { epicSlug?: string }).epicSlug;
+	if (typeof slug === 'string' && slug.length > 0) return slug;
+	return firstLine(artifact.body.frameworkSummary);
 }
 
 function firstLine(s: string): string {

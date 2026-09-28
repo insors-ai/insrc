@@ -58,12 +58,12 @@ function standaloneLldIntent(): WorkflowIntent {
 // Orchestrator: correctable boundary failure with structured findings
 // ---------------------------------------------------------------------------
 
-test('finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries structured findings', () => {
+test('finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries structured findings', async () => {
 	const stepOutputs = {
 		s8: { results: [{ itemId: 'sbdry4', verdict: 'missed', evidence: 'references src/foo/invented.ts which does not exist in the grounding' }] },
 	};
 	const artifact = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'file', ref: 'src/daemon/workflow-rpc.ts' }] };
-	const result = finalizeArtifact(standaloneLldIntent(), stepOutputs, 'wf-t', 0, artifact, 'client');
+	const result = await finalizeArtifact(standaloneLldIntent(), stepOutputs, 'wf-t', 0, artifact, 'client');
 
 	assert.equal(result.ok, false);
 	if (result.ok) return;
@@ -79,10 +79,10 @@ test('finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries struc
 	assert.match(f.findings![0]!.detail, /invented\.ts/, 'detail carries the auditor evidence, not just the id');
 });
 
-test('finalizeArtifact: a CLEAN s8 (all passed) yields no boundary failure', () => {
+test('finalizeArtifact: a CLEAN s8 (all passed) yields no boundary failure', async () => {
 	const stepOutputs = { s8: { results: [{ itemId: 'sbdry4', verdict: 'passed', evidence: 'all references resolve' }] } };
 	const artifact = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'file', ref: 'src/daemon/workflow-rpc.ts' }] };
-	const result = finalizeArtifact(standaloneLldIntent(), stepOutputs, 'wf-t', 0, artifact, 'client');
+	const result = await finalizeArtifact(standaloneLldIntent(), stepOutputs, 'wf-t', 0, artifact, 'client');
 	// It may still fail later checks, but NOT with a boundary failure.
 	if (!result.ok && !result.failure.ok) {
 		assert.notEqual(result.failure.kind, 'boundary', 'a passed audit must not trip the boundary hard-fail');

@@ -149,9 +149,9 @@ function defineIntent(params: Record<string, unknown>): WorkflowIntent {
 	return { workflow: 'define', focus: 'seed epic from spec', repoPath: '/tmp/repo', repoIndexedAt: null, params };
 }
 
-test('ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surfaces it when seeded', () => {
+test('ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surfaces it when seeded', async () => {
 	const emit = { body: defineBody(), citations: [{ id: 'c1', kind: 'step-output', ref: 's2' }] };
-	const result = finalizeArtifact(defineIntent({ specHash: SPEC_HASH }), {}, 'wf-def-seeded', 5, emit, 'client');
+	const result = await finalizeArtifact(defineIntent({ specHash: SPEC_HASH }), {}, 'wf-def-seeded', 5, emit, 'client');
 	assert.equal(result.ok, true);
 	if (!result.ok) return;
 	const artifact = result.finalized.artifact as DefineArtifact;
@@ -159,9 +159,9 @@ test('ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surf
 	assert.match(renderDefineMarkdown(artifact), new RegExp(`Seeded from:.*SPEC-${SPEC_HASH}`));
 });
 
-test('ac4: a plain-focus finalizeDefine leaves meta.seededFromSpec unset + no seeded-from header line', () => {
+test('ac4: a plain-focus finalizeDefine leaves meta.seededFromSpec unset + no seeded-from header line', async () => {
 	const emit = { body: defineBody(), citations: [{ id: 'c1', kind: 'step-output', ref: 's2' }] };
-	const result = finalizeArtifact(defineIntent({}), {}, 'wf-def-plain', 5, emit, 'client');
+	const result = await finalizeArtifact(defineIntent({}), {}, 'wf-def-plain', 5, emit, 'client');
 	assert.equal(result.ok, true);
 	if (!result.ok) return;
 	const artifact = result.finalized.artifact as DefineArtifact;
@@ -204,9 +204,9 @@ function standaloneLldIntent(params: Record<string, unknown>): WorkflowIntent {
 	};
 }
 
-test('ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + renders the Seeded-from line', () => {
+test('ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + renders the Seeded-from line', async () => {
 	const emit = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
-	const result = finalizeArtifact(standaloneLldIntent({ specHash: SPEC_HASH }), {}, 'wf-lld-seeded', 5, emit, 'client');
+	const result = await finalizeArtifact(standaloneLldIntent({ specHash: SPEC_HASH }), {}, 'wf-lld-seeded', 5, emit, 'client');
 	assert.equal(result.ok, true);
 	if (!result.ok) return;
 	const artifact = result.finalized.artifact as LldArtifact;
@@ -214,9 +214,9 @@ test('ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + 
 	assert.match(renderLldMarkdown(artifact), new RegExp(`Seeded from:.*SPEC-${SPEC_HASH}`));
 });
 
-test('ac4: a plain-focus standalone LLD leaves meta.seededFromSpec unset + no Seeded-from line', () => {
+test('ac4: a plain-focus standalone LLD leaves meta.seededFromSpec unset + no Seeded-from line', async () => {
 	const emit = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
-	const result = finalizeArtifact(standaloneLldIntent({}), {}, 'wf-lld-plain', 5, emit, 'client');
+	const result = await finalizeArtifact(standaloneLldIntent({}), {}, 'wf-lld-plain', 5, emit, 'client');
 	assert.equal(result.ok, true);
 	if (!result.ok) return;
 	const artifact = result.finalized.artifact as LldArtifact;

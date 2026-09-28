@@ -35,6 +35,7 @@ import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/co
 import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
 import { buildQualityPrompt } from '../../workflow/code-review/dimensions/quality.js';
 import { buildFunctionalCoveragePrompt, hasFunctionalDefinition } from '../../workflow/code-review/dimensions/functional-coverage.js';
+import { buildDiagramPrompt, hasDiagramReferences } from '../../workflow/code-review/dimensions/diagram/index.js';
 import type {
 	CodeReviewGrounding,
 	CodeReviewSubject,
@@ -62,7 +63,10 @@ const DIMENSIONS: readonly ReviewDimension[] = ['adherence', 'conventions', 'cov
 /** The dimensions the judgements turn must cover for THIS subject: the base four,
  *  plus functional-coverage when the subject declares functional requirements. */
 export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewDimension[] {
-	return hasFunctionalDefinition(subject) ? [...DIMENSIONS, 'functional-coverage'] : DIMENSIONS;
+	const dims: ReviewDimension[] = [...DIMENSIONS];
+	if (hasFunctionalDefinition(subject)) dims.push('functional-coverage');
+	if (hasDiagramReferences(subject))    dims.push('diagram');
+	return dims;
 }
 
 /** Injectable seams so the handler tests stub the daemon/graph/runner. The s9
@@ -381,6 +385,7 @@ function emitJudgementsResult(
 		buildCoveragePrompt(subject, grounding, undefined),
 		buildQualityPrompt(subject, grounding, undefined),
 		...(hasFunctionalDefinition(subject) ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
+		...(hasDiagramReferences(subject) ? [buildDiagramPrompt(subject, grounding, undefined)] : []),
 	];
 	return {
 		next:     'emit_judgements',

@@ -136,6 +136,49 @@ export function resolveArtifactMdPath(
 	return join(root, storySeg, `${kind}.md`);
 }
 
+/**
+ * Absolute path to a companion file (sc4 — S003) that sits as a SIBLING of a
+ * Story's artifact `.md`, in the same `S<nnn>/` subfolder — e.g. a rendered ER
+ * diagram companion next to the Story's `LLD.md`. Pure construction (no disk
+ * read); the caller stores a repo-RELATIVE `relPath` in the CompanionArtifactRef.
+ *
+ * Reuses `resolveArtifactMdPath`'s story-scoped guard: a companion is anchored to
+ * a Story artifact, so an epic-level identity (no `identity.story`) cannot locate
+ * it. `companionFileName` must be a bare basename — a value carrying a path
+ * separator (or a parent-dir segment) is rejected so a companion can never escape
+ * the Story folder.
+ *
+ * @throws when `identity.story` is undefined (cannot locate a Story folder).
+ * @throws when `companionFileName` contains a path separator or `..` segment.
+ */
+export function resolveCompanionPath(
+	repoPath:          string,
+	identity:          WorkItemIdentity,
+	workItemKind:      WorkItemKind,
+	slug:              string,
+	companionFileName: string,
+): string {
+	if (identity.story === undefined) {
+		throw new Error(
+			`resolveCompanionPath: a companion is Story-scoped and requires a story identity, ` +
+			`but identity.story is undefined (an epic-level identity cannot locate a companion)`,
+		);
+	}
+	if (
+		companionFileName.length === 0 ||
+		companionFileName.includes('/') ||
+		companionFileName.includes('\\') ||
+		companionFileName.split(/[\\/]/).some(seg => seg === '..' || seg === '.')
+	) {
+		throw new Error(
+			`resolveCompanionPath: companionFileName '${companionFileName}' must be a bare basename ` +
+			`(no path separators, no '.'/'..' segments)`,
+		);
+	}
+	const root = workItemRoot(repoPath, identity, workItemKind, slug);
+	return join(root, storyFolder(identity.story), companionFileName);
+}
+
 // ---------------------------------------------------------------------------
 // Enumerate the tree (replaces the flat readdir + filename-prefix scans)
 // ---------------------------------------------------------------------------

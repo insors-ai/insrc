@@ -1,0 +1,65 @@
+{
+  "$comment": "LinkML version: linkml-model 1.8.x. Vendored subset of the LinkML metamodel for the authored ErDefinition body element. Compiled by the shared ajv singleton (structured-output.ts, draft 2020-12 semantics; the $schema meta-schema declaration is intentionally omitted so the shared ajv instance compiles it with no external meta-schema fetch). Pinned so the ER JSON element is validated with ajv and NO Python/LinkML toolchain runs at daemon runtime (k5). Models ClassDefinition (classes) whose slots are SlotDefinitions with LinkML cardinality (required/multivalued/minimum_cardinality/maximum_cardinality), a range (scalar type = attribute, another class = relationship), and an identifier flag.",
+  "title": "ErDefinition (LinkML metamodel subset)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["classes"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Optional schema/definition identifier."
+    },
+    "classes": {
+      "type": "object",
+      "description": "The entities of the data model, keyed by class name. Each value is an ErClass.",
+      "additionalProperties": { "$ref": "#/$defs/ErClass" }
+    }
+  },
+  "$defs": {
+    "ErClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A LinkML ClassDefinition subset — an entity with named slots.",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "description": "The class's slots, keyed by slot name. Each value is an ErSlot.",
+          "additionalProperties": { "$ref": "#/$defs/ErSlot" }
+        }
+      }
+    },
+    "ErSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A LinkML SlotDefinition subset. A `range` naming a scalar type is an attribute; a `range` naming another class is a relationship. Cardinality follows LinkML (required/multivalued or the explicit minimum/maximum_cardinality).",
+      "properties": {
+        "range": {
+          "type": "string",
+          "description": "The slot's type: a scalar type name (attribute) or a class name defined in `classes` (relationship)."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "LinkML `required`: the slot must be present (minimum cardinality >= 1)."
+        },
+        "multivalued": {
+          "type": "boolean",
+          "description": "LinkML `multivalued`: the slot may hold many values (maximum cardinality > 1)."
+        },
+        "minimum_cardinality": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "LinkML explicit minimum cardinality."
+        },
+        "maximum_cardinality": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "LinkML explicit maximum cardinality."
+        },
+        "identifier": {
+          "type": "boolean",
+          "description": "LinkML `identifier`: this slot uniquely identifies an instance of the class."
+        }
+      }
+    }
+  }
+}

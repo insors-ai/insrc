@@ -190,8 +190,8 @@ test('prepareSynthesize: brainstorm is supported (no "not yet supported" throw) 
 	assert.equal(typeof prompt.schema, 'object');
 });
 
-test('finalizeArtifact[brainstorm]: converged output → exactly one SpecArtifact, approvedAt unset', () => {
-	const result = finalizeArtifact(brainstormIntent(), convergedS1(), 'wf-spec-run', 5, synthEmit(), 'client');
+test('finalizeArtifact[brainstorm]: converged output → exactly one SpecArtifact, approvedAt unset', async () => {
+	const result = await finalizeArtifact(brainstormIntent(), convergedS1(), 'wf-spec-run', 5, synthEmit(), 'client');
 	assert.equal(result.ok, true);
 	if (!result.ok) return;
 	assert.equal(result.finalized.workflow, 'brainstorm');
@@ -209,8 +209,8 @@ test('finalizeArtifact[brainstorm]: converged output → exactly one SpecArtifac
 	assert.match(result.finalized.renderedMd, /## Intent/);
 });
 
-test('finalizeArtifact[brainstorm]: rejects an under-structured body (empty scopeBoundary), writes nothing', () => {
-	const result = finalizeArtifact(
+test('finalizeArtifact[brainstorm]: rejects an under-structured body (empty scopeBoundary), writes nothing', async () => {
+	const result = await finalizeArtifact(
 		brainstormIntent(), convergedS1(), 'wf-spec-run', 5,
 		synthEmit({ scopeBoundary: '' }), 'client',
 	);
@@ -221,8 +221,8 @@ test('finalizeArtifact[brainstorm]: rejects an under-structured body (empty scop
 	assert.equal(result.failure.kind, 'schema');
 });
 
-test('finalizeArtifact[brainstorm]: rejects a ruled-out direction missing from nonGoals', () => {
-	const result = finalizeArtifact(
+test('finalizeArtifact[brainstorm]: rejects a ruled-out direction missing from nonGoals', async () => {
+	const result = await finalizeArtifact(
 		brainstormIntent(), convergedS1(), 'wf-spec-run', 5,
 		// The decision rules out a direction that is NOT in nonGoals → dropped from the record.
 		synthEmit({ nonGoals: ['multi-user shared sessions'] }),

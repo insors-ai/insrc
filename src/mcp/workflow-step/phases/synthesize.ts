@@ -43,7 +43,7 @@ export async function handleSynthesize(
 		);
 	}
 	const elapsedMs = Date.now() - state.startedAtMs;
-	const result = finalizeArtifact(
+	const result = await finalizeArtifact(
 		state.intent,
 		state.stepOutputs,
 		state.runId,

@@ -92,9 +92,10 @@ test('runCodeReview: a no-FR subject runs exactly the four base dimensions (abse
 	assert.equal(out.artifact.body.verdict, 'pass'); // functional-coverage HIGH never ran
 });
 
-test('DEFAULT_DEPS carries the functional-coverage slot last (conditional at run time)', () => {
-	assert.deepEqual(DEFAULT_DEPS.judges.map(j => j.dimension),
-		['adherence', 'conventions', 'coverage', 'quality', 'functional-coverage']);
+test('DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)', () => {
+	// functional-coverage precedes diagram (sc4 — S003), both conditional at run time.
+	const dims = DEFAULT_DEPS.judges.map(j => j.dimension);
+	assert.deepEqual(dims.slice(0, 5), ['adherence', 'conventions', 'coverage', 'quality', 'functional-coverage']);
 });
 
 // ---- handler expectedDimensions + schema ----

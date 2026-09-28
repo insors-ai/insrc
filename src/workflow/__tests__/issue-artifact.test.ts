@@ -196,8 +196,8 @@ test('prepareSynthesize[issue]: supported (no throw) and grounds on the step out
 	assert.equal(typeof prompt.schema, 'object');
 });
 
-test('finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset', () => {
-	const result = finalizeArtifact(issueIntent('sized'), convergedSteps(), 'wf-issue-run', 5, synthEmit(), 'client');
+test('finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset', async () => {
+	const result = await finalizeArtifact(issueIntent('sized'), convergedSteps(), 'wf-issue-run', 5, synthEmit(), 'client');
 	assert.equal(result.ok, true, result.ok ? '' : JSON.stringify(result.failure));
 	if (!result.ok) return;
 	assert.equal(result.finalized.workflow, 'issue');
@@ -211,9 +211,9 @@ test('finalizeArtifact[issue]: converged output → exactly one IssueArtifact, m
 	assert.doesNotMatch(result.finalized.renderedMd, /"magnitude"|sized\b/);
 });
 
-test('finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)', () => {
+test('finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)', async () => {
 	const bad = { body: { title: 'x', reproduction: 'y', rootCause: 'z' }, citations: [{ id: 'c1', kind: 'code', ref: 'r' }] };
-	const result = finalizeArtifact(issueIntent(), convergedSteps(), 'wf-issue-run', 5, bad, 'client');
+	const result = await finalizeArtifact(issueIntent(), convergedSteps(), 'wf-issue-run', 5, bad, 'client');
 	assert.equal(result.ok, false);
 	if (result.ok) return;
 	assert.equal(result.failure.ok, false);

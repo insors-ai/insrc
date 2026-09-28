@@ -50,6 +50,7 @@ import { judgeConventions } from './dimensions/conventions.js';
 import { judgeCoverage } from './dimensions/coverage.js';
 import { judgeQuality } from './dimensions/quality.js';
 import { judgeFunctionalCoverage, hasFunctionalDefinition } from './dimensions/functional-coverage.js';
+import { judgeDiagram, hasDiagramReferences } from './dimensions/diagram/index.js';
 
 const log = getLogger('code-review:runner');
 
@@ -116,6 +117,7 @@ const DEFAULT_JUDGES: readonly JudgeSlot[] = [
 	{ dimension: 'coverage',            judge: judgeCoverage },
 	{ dimension: 'quality',             judge: judgeQuality },
 	{ dimension: 'functional-coverage', judge: judgeFunctionalCoverage },
+	{ dimension: 'diagram',             judge: judgeDiagram },
 ];
 
 /** The judge slots that actually run for THIS subject: the base four always, plus
@@ -123,8 +125,13 @@ const DEFAULT_JUDGES: readonly JudgeSlot[] = [
  *  functionalDefinition. Applied to both the serial loop and the expected-dimension
  *  set fed to validateArtifact, so they can never disagree. */
 export function effectiveJudges(judges: readonly JudgeSlot[], subject: CodeReviewSubject): readonly JudgeSlot[] {
-	if (hasFunctionalDefinition(subject)) return judges;
-	return judges.filter(s => s.dimension !== 'functional-coverage');
+	const dropFc = !hasFunctionalDefinition(subject);
+	const dropDiagram = !hasDiagramReferences(subject);
+	if (!dropFc && !dropDiagram) return judges;
+	return judges.filter(s =>
+		(s.dimension !== 'functional-coverage' || !dropFc) &&
+		(s.dimension !== 'diagram' || !dropDiagram),
+	);
 }
 
 /** The real dependency wiring: the four shipped judges + S001's assembler

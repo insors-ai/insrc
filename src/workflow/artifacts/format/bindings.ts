@@ -12,6 +12,7 @@
 import type { Citation } from '../../types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { renderFunctionalRequirementsSection } from '../functional-definition.js';
+import type { CompanionArtifactRef } from '../companion/types.js';
 
 /**
  * S001's FR section content WITHOUT its own '## Functional requirements' heading
@@ -25,6 +26,23 @@ export function frBodyLines(fd: FunctionalDefinition | undefined): string[] {
 	const body = raw.slice(2);
 	while (body.length > 0 && body[body.length - 1] === '') body.pop();
 	return body;
+}
+
+/**
+ * sc4 (S003): the Diagrams extension-slot body — each companion rendered as a
+ * LINK line (never the companion's content, k1/ac2). `[]` when there are no
+ * companions (the renderer then omits the extension section — absent-safe/
+ * forward-only, k6). A diagram-* companion is rendered; non-diagram companions
+ * (e.g. S004 ux-mock) are left for their own slot.
+ */
+export function companionBodyLines(companions: readonly CompanionArtifactRef[] | undefined): string[] {
+	if (companions === undefined || companions.length === 0) return [];
+	const diagrams = companions.filter(c => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html');
+	if (diagrams.length === 0) return [];
+	return diagrams.map(c => {
+		const suffix = c.ofSectionId !== undefined && c.ofSectionId.length > 0 ? ` (§ ${c.ofSectionId})` : '';
+		return `- [${c.title}](${c.relPath})${suffix}`;
+	});
 }
 
 /** Citation list lines (no heading) for the numbered References section — mirrors

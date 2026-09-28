@@ -92,8 +92,8 @@ function finalizeWithS8(results: Array<{ itemId: string; verdict: string; eviden
 // Behavioural — sbdry5 hard-fail
 // ---------------------------------------------------------------------------
 
-test('design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail', () => {
-	const result = finalizeWithS8([{ itemId: 'sbdry5', verdict: 'missed', evidence: 'implements a sibling contract' }]);
+test('design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail', async () => {
+	const result = await finalizeWithS8([{ itemId: 'sbdry5', verdict: 'missed', evidence: 'implements a sibling contract' }]);
 	assert.equal(result.ok, false);
 	if (result.ok) return;
 	assert.equal(result.failure.ok, false);
@@ -103,9 +103,9 @@ test('design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fai
 	assert.match(result.failure.message, /sbdry5/);
 });
 
-test('design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)', () => {
+test('design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)', async () => {
 	for (const id of ['sbdry1', 'sbdry2', 'sbdry3', 'sbdry4']) {
-		const result = finalizeWithS8([{ itemId: id, verdict: 'missed', evidence: 'x' }]);
+		const result = await finalizeWithS8([{ itemId: id, verdict: 'missed', evidence: 'x' }]);
 		assert.equal(result.ok, false, `${id} should hard-fail`);
 		if (result.ok) continue;
 		if (result.failure.ok) continue;
@@ -114,18 +114,18 @@ test('design.story: sbdry1-4 still hard-fail (regression — set was extended, n
 	}
 });
 
-test('design.story: a PASSED sbdry5 does not trigger the boundary hard-fail', () => {
+test('design.story: a PASSED sbdry5 does not trigger the boundary hard-fail', async () => {
 	// sbdry5 present but passed → the s8 boundary gate must NOT fire. The verdict
 	// gates the hard-fail: only missed/ambiguous do. Asserted UNCONDITIONALLY —
 	// the result is either ok or a non-boundary failure (this standalone fixture
 	// currently surfaces a later schema failure, which is fine; what must never
 	// happen is a boundary hard-fail on a passed sbdry5).
-	const result = finalizeWithS8([{ itemId: 'sbdry5', verdict: 'passed', evidence: 'stays in scope' }]);
+	const result = await finalizeWithS8([{ itemId: 'sbdry5', verdict: 'passed', evidence: 'stays in scope' }]);
 	const isBoundaryFail = !result.ok && !result.failure.ok && result.failure.kind === 'boundary';
 	assert.equal(isBoundaryFail, false, 'a passed sbdry5 must not be a boundary hard-fail');
 	// Contrast control: the SAME harness with sbdry5 MISSED *is* a boundary fail,
 	// proving the difference is the verdict, not the fixture.
-	const missed = finalizeWithS8([{ itemId: 'sbdry5', verdict: 'missed', evidence: 'x' }]);
+	const missed = await finalizeWithS8([{ itemId: 'sbdry5', verdict: 'missed', evidence: 'x' }]);
 	assert.ok(!missed.ok && !missed.failure.ok && missed.failure.kind === 'boundary', 'missed sbdry5 IS a boundary fail (control)');
 });
 
@@ -223,12 +223,12 @@ function s2BodyImplementingS1Contract(): LldBody {
 	return { ...b, interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 'over-reach' }] };
 }
 
-test('epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail', () => {
+test('epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-adj-guard-'));
 	try {
 		seedTwoStoryEpic(repo);
 		const emit = { body: s2BodyImplementingS1Contract(), citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }] };
-		const result = finalizeArtifact(epicStoryIntent(repo, 's2'), {}, 'wf-adj-run', 5, emit, 'client');
+		const result = await finalizeArtifact(epicStoryIntent(repo, 's2'), {}, 'wf-adj-run', 5, emit, 'client');
 		assert.equal(result.ok, false);
 		if (result.ok) return;
 		assert.equal(result.failure.ok, false);
@@ -241,13 +241,13 @@ test('epic-parented design.story: implementing a sibling-owned contract is a det
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail', () => {
+test('epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-adj-guard-ok-'));
 	try {
 		seedTwoStoryEpic(repo);
 		const body = { ...minimalLldBody(), interactionWithShared: [{ contractId: 'sc1', role: 'consumes', howDetails: 'legit' }] };
 		const emit = { body, citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }] };
-		const result = finalizeArtifact(epicStoryIntent(repo, 's2'), {}, 'wf-adj-run', 5, emit, 'client');
+		const result = await finalizeArtifact(epicStoryIntent(repo, 's2'), {}, 'wf-adj-run', 5, emit, 'client');
 		// It may still fail later cross-artifact checks, but NEVER as an adjacent-scope boundary hard-fail.
 		if (!result.ok && !result.failure.ok) {
 			const isAdjacentBoundaryFail = result.failure.kind === 'boundary' && /adjacent-scope/.test(result.failure.message);

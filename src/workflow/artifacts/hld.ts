@@ -23,8 +23,10 @@ import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
+import type { ErDefinition } from './companion/er.js';
+import type { CompanionArtifactRef } from './companion/types.js';
 
 // ---------------------------------------------------------------------------
 // Body sub-shapes
@@ -102,6 +104,13 @@ export interface HldBody {
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
 	/** sc3 (S002): plain-language, Epic-scoped Summary/abstract. Additive + absent-safe. */
 	readonly summary?: DocumentSummary | undefined;
+	/** sc4 (S003): the authored ER data-model element (source of truth for an ER
+	 *  companion). Additive + absent-safe — absent bodies type-check + render
+	 *  unchanged (k6). */
+	readonly erDefinition?: ErDefinition | undefined;
+	/** sc4 (S003): out-of-body companion references (rendered as links in the
+	 *  Diagrams extension slot, never inlined). Additive + absent-safe. */
+	readonly companions?: readonly CompanionArtifactRef[] | undefined;
 }
 
 export type HldArtifact = WorkflowArtifact<HldBody>;
@@ -186,6 +195,7 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 		framework:      () => ({ lines: [body.frameworkSummary] }),
 		fr:             () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
 		architecture:   () => ({ lines: [body.architectureShape] }),
+		diagrams:       () => { const l = companionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
 		contracts:      () => body.sharedContracts.length > 0 ? { items: body.sharedContracts.map(scItem) } : { omit: true },
 		boundaries:     () => body.storyBoundaries.length > 0 ? { items: body.storyBoundaries.map(sbItem) } : { omit: true },
 		nonFunctional:  () => { const l = nfLines(); return l.length > 0 ? { lines: l } : { omit: true }; },

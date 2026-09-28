@@ -14,6 +14,7 @@ import {
 	listArtifactMdPaths,
 	listWorkItems,
 	resolveArtifactMdPath,
+	resolveCompanionPath,
 	type ArtifactKind,
 } from '../path-scheme.js';
 import {
@@ -170,4 +171,35 @@ test('lldMdRel: nested repo-relative md path matching the absolute helper', () =
 // A guard the whole scheme leans on: the json id helper never changed shape.
 test('defineArtifactId is unchanged (hash-flat json store stays untouched)', () => {
 	assert.equal(defineArtifactId(HASH), `DEF-${HASH}`);
+});
+
+// ---------------------------------------------------------------------------
+// resolveCompanionPath (sc4 — S003): sibling of the Story artifact .md
+// ---------------------------------------------------------------------------
+
+test('resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD.md (ac2)', () => {
+	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	const lld = resolveArtifactMdPath('/repo', identity, 'LLD', 'epic', SLUG);
+	const companion = resolveCompanionPath('/repo', identity, 'epic', SLUG, 'er-model.html');
+	assert.equal(companion, `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}/S001/er-model.html`);
+	// Same directory as the LLD's .md.
+	assert.equal(companion.slice(0, companion.lastIndexOf('/')), lld.slice(0, lld.lastIndexOf('/')));
+});
+
+test('resolveCompanionPath: standalone kind lands under docs/standalone', () => {
+	const identity = deriveWorkItemIdentity(HASH, CREATED, 's2');
+	const p = resolveCompanionPath('/repo', identity, 'standalone', SLUG, 'er-model.html');
+	assert.equal(p, `/repo/docs/standalone/${SLUG}-${EPIC_SEGMENT}/S002/er-model.html`);
+});
+
+test('resolveCompanionPath: throws for a story-scoped companion missing identity.story', () => {
+	const identity = deriveWorkItemIdentity(HASH, CREATED);   // epic-level, no story
+	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, 'er-model.html'), /story/i);
+});
+
+test('resolveCompanionPath: rejects a companionFileName containing a path separator', () => {
+	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, 'sub/er.html'), /basename/);
+	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, '..\\er.html'), /basename/);
+	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, '../er.html'), /basename/);
 });

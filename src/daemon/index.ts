@@ -335,6 +335,14 @@ async function main(): Promise<void> {
 	const { validateDocgenAssets } = await import('../docgen/asset-validator.js');
 	await validateDocgenAssets();
 
+	// 6d‴. Validate the vendored LinkML metamodel schema asset (sc4, S003) the ER
+	//      companion validator relies on. Mirrors the docgen validator: a
+	//      missing/corrupt schema asset is a fail-fast startup refusal
+	//      (LinkmlMetamodelAssetError re-raises to the top-level fatal handler)
+	//      rather than a silent skip of ER-model validation at review time.
+	const { validateLinkmlMetamodelAsset } = await import('../workflow/artifacts/companion/metamodel.js');
+	await validateLinkmlMetamodelAsset();
+
 	// 6d″. Validate the curated cloud model catalog (cli-claude/cli-codex model
 	//      list, Epic ba132c185fe45860, S001). Mirrors the docgen validator: a
 	//      missing/malformed catalog asset is a fail-fast startup refusal

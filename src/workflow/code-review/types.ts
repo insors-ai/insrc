@@ -33,7 +33,7 @@ import type { StandaloneBuildRecord } from '../runners/build/standalone-record.j
 /** The review dimensions the code-review stage judges. The base four are always
  *  present; `functional-coverage` (sc2 — S001) is a CONDITIONAL fifth, included
  *  only when the review subject carries a non-empty functionalDefinition. */
-export type ReviewDimension = 'adherence' | 'conventions' | 'coverage' | 'quality' | 'functional-coverage';
+export type ReviewDimension = 'adherence' | 'conventions' | 'coverage' | 'quality' | 'functional-coverage' | 'diagram';
 
 /** One finding a dimension raises. `severity` is the review `Severity` VERBATIM
  *  (reused, not redefined) so findings fold into one ReviewReport-shaped record. */

@@ -8,6 +8,8 @@
  * outer LLM. One schema per step (s1..s8).
  */
 
+import { ER_DEFINITION_PROPERTY_SCHEMA } from '../../artifacts/companion/er-schema.js';
+
 // ---------------------------------------------------------------------------
 // s1 — LldContext
 // ---------------------------------------------------------------------------
@@ -273,6 +275,10 @@ export const contractDetailSchema = {
 				additionalProperties: false,
 			},
 		},
+		// sc4 (S003): OPTIONAL authored ER data model (content-gated). The
+		// synthesizer carries it verbatim into body.erDefinition; finalize renders
+		// the companion. Absent-safe when omitted.
+		erDefinition: ER_DEFINITION_PROPERTY_SCHEMA,
 	},
 } as const;
 

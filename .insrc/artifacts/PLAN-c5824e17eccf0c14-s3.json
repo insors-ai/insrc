@@ -1,0 +1,470 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790578156294-gzr5b7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-28T06:56:10.952Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 414624,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "storyId": "s3",
+    "lldRunId": "wf-1790576670511-dxpseq",
+    "lldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
+    "approvedAt": "2026-09-28T06:56:29.927Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "sc4 companion types + ErDefinition (LinkML subset) types + absent-safe body fields",
+        "summary": "Add src/workflow/artifacts/companion/types.ts (CompanionArtifactRef, CompanionKind) and companion/er.ts type block (ErDefinition/ErClass/ErSlot). Add absent-safe optional erDefinition?/companions? to HldBody + LldBody. Additive types only, no behaviour yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "CompanionArtifactRef + ErDefinition/ErClass/ErSlot compile with the LLD field shapes",
+          "erDefinition?/companions? are optional + absent-safe on HldBody/LldBody (older bodies still type-check)",
+          "tsc clean; no renderer/behaviour change yet"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ErDefinition/companions/erDefinition body fields are optional + absent-safe (older bodies type-check + render unchanged)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Vendor the LinkML metamodel JSON Schema asset + boot asset-check",
+        "summary": "Add src/assets/artifacts/schemas/linkml-metamodel.schema.json (pinned LinkML metamodel subset for ClassDefinition/SlotDefinition + cardinality) and a boot-time asset validator mirroring docgen/asset-validator.ts that fails loudly if it is missing/unparseable. copy-assets already ships src/assets.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the vendored schema file is present + parseable + records the LinkML version",
+          "boot asset-check throws an actionable error when the schema is absent/corrupt",
+          "the schema validates a known-good ErDefinition and rejects a malformed one via ajv"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "boot asset-check fails loudly when the vendored metamodel schema is absent"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "resolveCompanionPath sibling-path helper",
+        "summary": "Add resolveCompanionPath to path-scheme.ts returning a sibling of resolveArtifactMdPath's directory, reusing the story-scoped guard (path-scheme.ts:126-132). Pure construction, no disk read.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "returns a path in the same directory resolveArtifactMdPath computes for the same identity",
+          "throws for a story-scoped kind missing identity.story",
+          "rejects a companionFileName containing path separators"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveCompanionPath sibling-of-.md; throws for story-scoped missing story"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "validateErDefinition (ajv metamodel + referential integrity + FR-consistency)",
+        "summary": "In companion/er.ts, add validateErDefinition(erDef, fnDef?) returning DimensionFinding[]: (1) validateAgainstSchema vs the vendored metamodel; (2) referential integrity (relationship slot ranges resolve to defined classes; identifiers present); (3) FR/data-model consistency using the consumed sc1 FunctionalDefinition. Operates on the JSON element only — never reads a rendered file.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "metamodel-invalid erDef -> HIGH breach; sound erDef -> no findings",
+          "dangling relationship range -> HIGH referential-integrity breach",
+          "ER<->FR mismatch -> finding when a FunctionalDefinition is supplied",
+          "no filesystem read of any companion occurs during validation"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "validateErDefinition: metamodel-valid -> no findings; shape/cardinality violation -> HIGH breach (ajv vs vendored metamodel)"
+          },
+          {
+            "level": "unit",
+            "name": "validateErDefinition: dangling relationship range -> HIGH referential-integrity breach"
+          },
+          {
+            "level": "unit",
+            "name": "validateErDefinition: ER<->FR mismatch -> finding when FunctionalDefinition supplied"
+          },
+          {
+            "level": "unit",
+            "name": "validateErDefinition never reads a rendered file (assert no companion fs read)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "erDefinitionToIr + renderErCompanion (deterministic assembleShell render)",
+        "summary": "In companion/er.ts + companion/render.ts, add erDefinitionToIr(erDef): DocumentIR (classes->entity nodes, scalar slots->attributes, class-ranged slots->relationship edges w/ crow's-foot cardinality) and renderErCompanion(erDef, title, destPath) that builds the IR + awaits docgen assembleShell + writes the sibling HTML + returns a CompanionArtifactRef. Deterministic; non-ok DocGenOutcome -> DiagramGenerationError + omit.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "erDefinitionToIr is deterministic (same erDef -> same IR) and maps scalar vs class-ranged slots correctly",
+          "renderErCompanion writes the sibling via assembleShell and returns a diagram-mermaid CompanionArtifactRef",
+          "a non-ok assembleShell outcome yields DiagramGenerationError + no file written",
+          "no generateDocument, no Python, no cloud REST is exercised"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "erDefinitionToIr: classes->entities, scalar slots->attributes, class slots->relationships w/ crow's-foot cardinality; deterministic"
+          },
+          {
+            "level": "unit",
+            "name": "renderErCompanion: builds IR + spied assembleShell + writes sibling; non-ok -> no file + DiagramGenerationError"
+          },
+          {
+            "level": "unit",
+            "name": "renderErCompanion renders ONLY via assembleShell (local docgen seam) — no generateDocument, no Python, no cloud REST"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "assessDiagramNeed content-gate",
+        "summary": "In companion/assess.ts, add assessDiagramNeed(doc, provider): one serial provider call returning DiagramNeedAssessment { warranted, diagrams:[{type:'er',ofSectionId?,rationale}] }; empty when no visual warranted; fail-safe to {warranted:false,diagrams:[]} on provider/parse error. S003 emits only type 'er'.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "returns empty for a doc needing no visual and a type:'er' need when warranted",
+          "fails safe to no-diagram on a provider/parse error (never throws)",
+          "exactly one serial provider call (no Promise.all over the provider)"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assessDiagramNeed: empty/no-visual, type:'er' when warranted, fail-safe on provider error (one serial call)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "DiagramAdherenceHandler registry + the 'er' handler",
+        "summary": "Add src/workflow/code-review/dimensions/diagram/registry.ts (Map<string,DiagramAdherenceHandler> + registerDiagramHandler/diagramHandlerFor, fail-fast DuplicateDiagramHandlerError mirroring docgen registry.ts) and handlers/er.ts (the 'er' handler wrapping validateErDefinition). Register only 'er' at module load.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "diagramHandlerFor('er') resolves the ER handler; a duplicate registration throws DuplicateDiagramHandlerError",
+          "the 'er' handler delegates to validateErDefinition (no inline type switch)",
+          "registry is keyed by a type string so a future peer (UX/sequence) can register without editing the ER handler"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registerDiagramHandler/diagramHandlerFor: S003 registers 'er'; duplicate throws DuplicateDiagramHandlerError"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "'diagram' ReviewDimension + judgeDiagram dispatcher + hasDiagramReferences gate wiring",
+        "summary": "Extend ReviewDimension (types.ts:36) with 'diagram'; add dimensions/diagram/index.ts (judgeDiagram thin dispatcher over diagramHandlerFor + hasDiagramReferences predicate); wire the JudgeSlot into DEFAULT_JUDGES + the effectiveJudges branch (runner.ts) and MCP expectedDimensions + buildJudgementsSchema (handler.ts:64) in lockstep. Rides computeReviewVerdict/enforce un-forked.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "judgeDiagram dispatches each companion to its per-type handler + aggregates; an unregistered type yields a LOW observation, never throws",
+          "effectiveJudges + expectedDimensions include 'diagram' iff hasDiagramReferences; validateArtifact accepts ran==expected and rejects drift",
+          "diagram findings fold through computeReviewVerdict/foldVerdict + enforceCodeReviewGate (no forked gate)"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "judgeDiagram dispatches the ER companion to the 'er' handler (spy) + aggregates; an unregistered type yields a LOW observation"
+          },
+          {
+            "level": "unit",
+            "name": "effectiveJudges/expectedDimensions/buildJudgementsSchema include 'diagram' iff hasDiagramReferences; validateArtifact accepts ran==expected, rejects drift"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Wire the content-gate + render into document generation + render the sc4 reference in S002 slots (strictly additive)",
+        "summary": "Wire assessDiagramNeed + renderErCompanion into the document-generation path so a warranted ER is authored + rendered + referenced; render the CompanionArtifactRef as a link in S002's existing 'diagrams'(HLD)/'diagramsEr'(LLD) extension slots. STRICTLY ADDITIVE: only FILL the already-declared extension slots — do NOT re-shape the S002 DocumentFormat/renderer internals (s2's owned boundary). Inert until the gate warrants an ER; forward-only + absent-safe; never inlined (k1/ac2).",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "a warranted ER is authored into the body, rendered to a sibling companion, and linked in the S002 extension slot",
+          "a not-warranted document produces no erDefinition/companion and renders unchanged",
+          "the core markdown links the companion, never inlines its content (k1/ac2)",
+          "no change to the S002 DocumentFormat/renderer internals — only the extension slots are filled"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderErCompanion returns a linked reference; erDefinition stays in-body, companion out-of-body (never inlined)"
+          },
+          {
+            "level": "integration",
+            "name": "a no-ER subject omits the companion + the 'diagram' dimension"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Tests: ER validation/transform/render/content-gate + registry/dispatcher + conditional-dimension + integration + boot-asset-check",
+        "summary": "Co-located node:test suites, ONE named test per subject, reusing the functional-coverage-conditional.test.ts structure for the dimension-wiring test; an integration test over runCodeReview + the enforce gate; explicit ac1-ac4 mapping.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "every S003 acceptance criterion (ac1-ac4) has >=1 proving test, mapped explicitly",
+          "the full sweep is green (except the pre-existing better-sqlite3 native-ABI red herring)",
+          "the conditional-dimension test mirrors functional-coverage-conditional.test.ts rather than re-inventing"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "runCodeReview over a valid-erDefinition subject folds a DimensionResult{diagram} into the verdict (pass)"
+          },
+          {
+            "level": "integration",
+            "name": "an invalid/inconsistent erDefinition folds to block + enforceCodeReviewGate withholds under enforce=true, advisory-warn under false"
+          },
+          {
+            "level": "integration",
+            "name": "a no-ER subject runs base dimensions; CR record byte-shape-compatible with pre-S003"
+          },
+          {
+            "level": "unit",
+            "name": "ER handler flags a referenced-but-absent companion (ac3)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "validateErDefinition: metamodel-valid -> no findings; shape/cardinality violation -> HIGH breach (ajv vs vendored metamodel)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateErDefinition: dangling relationship range -> HIGH referential-integrity breach",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateErDefinition: ER<->FR mismatch -> finding when FunctionalDefinition supplied",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateErDefinition never reads a rendered file (assert no companion fs read)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "erDefinitionToIr: classes->entities, scalar slots->attributes, class slots->relationships w/ crow's-foot cardinality; deterministic",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderErCompanion: builds IR + spied assembleShell + writes sibling; non-ok -> no file + DiagramGenerationError",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveCompanionPath sibling-of-.md; throws for story-scoped missing story",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "assessDiagramNeed: empty/no-visual, type:'er' when warranted, fail-safe on provider error (one serial call)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ErDefinition/companions/erDefinition fields optional + absent-safe",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerDiagramHandler/diagramHandlerFor: S003 registers 'er'; duplicate throws DuplicateDiagramHandlerError",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "judgeDiagram dispatches the ER companion to the 'er' handler (spy) + aggregates; an unregistered type yields a LOW observation",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "effectiveJudges/expectedDimensions/buildJudgementsSchema include 'diagram' iff hasDiagramReferences; validateArtifact accepts ran==expected, rejects drift",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "runCodeReview over a valid-erDefinition subject folds a DimensionResult{diagram} into the verdict (pass)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "an invalid/inconsistent erDefinition folds to block + enforceCodeReviewGate withholds under enforce=true, advisory-warn under false",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "a no-ER subject runs base dimensions; CR record byte-shape-compatible with pre-S003",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "boot asset-check fails loudly when the vendored metamodel schema is absent",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — sc4 CompanionArtifactRef + the authored-companion mechanism (structured body element -> deterministic visualization -> validate the JSON element)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — ErDefinition (LinkML subset) body element + absent-safe erDefinition?/companions? on HLD/LLD bodies"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — vendored LinkML metamodel JSON Schema bundled asset + boot asset-check"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — net-new resolveCompanionPath sibling-path helper on path-scheme.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — validateErDefinition (ajv vs metamodel + referential integrity + FR-consistency; validates the JSON element, not the doc)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — erDefinitionToIr + renderErCompanion via docgen assembleShell (deterministic render; no generateDocument/Python/cloud REST)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — assessDiagramNeed content-gate (one serial provider call; fail-safe; ac1/k3)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — 'diagram' ReviewDimension + judgeDiagram thin dispatcher + DiagramAdherenceHandler registry ('er' handler) + hasDiagramReferences gate wiring"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — test strategy (unit/integration levels + ac1-ac4 acceptance mapping)"
+    }
+  ]
+}

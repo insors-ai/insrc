@@ -112,7 +112,12 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { dirname, join as joinPath } from 'node:path';
+import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
+import { renderErCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
+import type { CompanionArtifactRef } from './artifacts/companion/types.js';
+import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -367,7 +372,7 @@ export type FinalizeResult =
 	| { readonly ok: true;  readonly finalized: FinalizedArtifact }
 	| { readonly ok: false; readonly failure:   ValidationResult };
 
-export function finalizeArtifact(
+export async function finalizeArtifact(
 	intent:       WorkflowIntent,
 	stepOutputs:  Readonly<Record<string, unknown>>,
 	runId:        string,
@@ -383,15 +388,15 @@ export function finalizeArtifact(
 	 *  runner's RoleRouter. When present it is written verbatim to `meta.attribution`;
 	 *  when absent, a single-element attribution is synthesized from `model`. */
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	try {
 		switch (intent.workflow) {
 			case 'stub':         return finalizeStub(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'brainstorm':   return finalizeBrainstorm(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'issue':        return finalizeIssue(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'define':       return finalizeDefine(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
-			case 'design.epic':  return finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
-			case 'design.story': return finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'design.epic':  return await finalizeDesignEpic(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+			case 'design.story': return await finalizeDesignStory(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'plan':         return finalizePlan(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			case 'tracker.push':
 			case 'tracker.sync':
@@ -1410,6 +1415,7 @@ function designEpicSynthesizer(
 		'- `body.alternativesConsidered` MUST include EVERY alternative from s2, with each loser carrying a `reasonRejected` line pulled from s3.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects every `missed`/`ambiguous` verdict from s6 that is NOT a scope-boundary item (sbdry1..sbdry4 hard-fail those instead).',
+		ER_CONTENT_GATE_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
 	].join('\n');
 	const userTurn = [
@@ -1449,6 +1455,8 @@ function designEpicSynthesizer(
 					alternativesConsidered: { type: 'array', minItems: 2 },
 					chosenAlternative: { type: 'string', pattern: '^a\\d+$' },
 					openQuestions:     { type: 'array', items: { type: 'string' } },
+					erDefinition:      ER_DEFINITION_PROPERTY_SCHEMA,
+					companions:        COMPANIONS_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -1472,7 +1480,49 @@ function designEpicSynthesizer(
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
 }
 
-function finalizeDesignEpic(
+/**
+ * sc4 (S003) — the AUTHOR-GATES companion render. The synthesizer LLM authors the
+ * `erDefinition` into the body only when an ER materially aids understanding (the
+ * content-gate); finalize renders the companion DETERMINISTICALLY — NO provider
+ * here. Given an authored erDefinition that carries no HIGH validation finding, it
+ * renders the sibling `er-model.html` via docgen's assembleShell and returns the
+ * CompanionArtifactRef the S002 Diagrams slot links. Never throws: a HIGH
+ * validation finding or a DiagramGenerationError leaves the erDefinition in-body
+ * without a picture (k1/k3). `destPath` is a sibling of the artifact `.md`.
+ */
+async function renderErCompanionForBody(
+	body:     { readonly erDefinition?: ErDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
+	destPath: string,
+	repoPath: string,
+): Promise<CompanionArtifactRef | undefined> {
+	const erDef = body.erDefinition;
+	if (erDef === undefined) return undefined;
+	// Deterministic validation of the JSON element; a broken model is NOT rendered
+	// (the ER code-review handler surfaces the breach against the in-body element).
+	const problems = validateErDefinition(erDef, body.functionalDefinition);
+	if (problems.some(f => f.severity === 'HIGH')) {
+		log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: erDefinition has HIGH findings; leaving it in-body without a companion');
+		return undefined;
+	}
+	try {
+		return await renderErCompanion(erDef, 'ER model', destPath, { repoPath });
+	} catch (err) {
+		if (err instanceof DiagramGenerationError) {
+			log.warn({ repoPath, status: err.status }, 'finalize: ER companion render failed; erDefinition stays in-body without a picture');
+			return undefined;
+		}
+		throw err;
+	}
+}
+
+/** Merge a rendered companion ref into the body's `companions` (additive; never
+ *  clobbers an existing entry). Returns the body unchanged when `ref` is absent. */
+function withCompanion<T extends { readonly companions?: readonly CompanionArtifactRef[] | undefined }>(body: T, ref: CompanionArtifactRef | undefined): T {
+	if (ref === undefined) return body;
+	return { ...body, companions: [...(body.companions ?? []), ref] };
+}
+
+async function finalizeDesignEpic(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
@@ -1480,7 +1530,7 @@ function finalizeDesignEpic(
 	llmResponse: Record<string, unknown>,
 	model:       string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
@@ -1550,23 +1600,30 @@ function finalizeDesignEpic(
 		return { ok: false, failure: schemaFailure(`chosenAlternative '${body.chosenAlternative}' not in alternativesConsidered`) };
 	}
 
+	const nowISO = new Date().toISOString();
+	const meta = {
+		workflow:      'design.epic' as const,
+		runId,
+		repoPath:      intent.repoPath,
+		createdAt:     nowISO,
+		// Work-item folder anchor (sc2): keyed on the Epic's define createdAt so
+		// the HLD lands in the same folder as its DEF.
+		epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? nowISO,
+		attribution:   attribution ?? singleModelAttribution(model),
+		elapsedMs,
+		repoIndexedAt: intent.repoIndexedAt,
+		schemaVersion: HLD_SCHEMA_VERSION,
+		epicHash,
+		epicSlug,
+	};
+	// sc4 (S003): render + attach the ER companion when the LLM authored an
+	// erDefinition (the author-gate). Deterministic + provider-free; a sibling of
+	// the HLD.md, matching where synthesize writes it.
+	const hldMd = hldArtifactPaths(intent.repoPath, epicHash, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath);
 	const artifact: HldArtifact = {
-		meta: {
-			workflow:      'design.epic',
-			runId,
-			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
-			// Work-item folder anchor (sc2): keyed on the Epic's define createdAt so
-			// the HLD lands in the same folder as its DEF.
-			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
-			attribution:   attribution ?? singleModelAttribution(model),
-			elapsedMs,
-			repoIndexedAt: intent.repoIndexedAt,
-			schemaVersion: HLD_SCHEMA_VERSION,
-			epicHash,
-			epicSlug,
-		},
-		body,
+		meta,
+		body: withCompanion(body, companionRef),
 		citations,
 	};
 	const renderedBody = renderHldMarkdown(artifact);
@@ -1692,6 +1749,7 @@ function designStorySynthesizer(
 		'- `body.alternativesConsidered` MUST include every alternative from s2 with losers carrying `reasonRejected` pulled from s3.',
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
+		ER_CONTENT_GATE_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 	].join('\n');
 	const userTurn = [
@@ -1750,6 +1808,8 @@ function designStorySynthesizer(
 					alternativesConsidered: { type: 'array', minItems: 2 },
 					chosenAlternative:     { type: 'string', pattern: '^a\\d+$' },
 					openQuestions:         { type: 'array', items: { type: 'string' } },
+					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
+					companions:            COMPANIONS_PROPERTY_SCHEMA,
 				},
 			},
 			citations: {
@@ -1773,7 +1833,7 @@ function designStorySynthesizer(
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
 }
 
-function finalizeDesignStory(
+async function finalizeDesignStory(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
@@ -1781,7 +1841,7 @@ function finalizeDesignStory(
 	llmResponse: Record<string, unknown>,
 	model:       string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
@@ -1815,7 +1875,7 @@ function finalizeDesignStory(
 	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
 	// and stamp the triage provenance instead. See `plans/feature-triage-router.md`.
 	if (intent.params['standalone'] === true) {
-		return finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
+		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
 	}
 
 	// Cross-artifact invariants — LLD must fit approved Epic + HLD.
@@ -1873,27 +1933,33 @@ function finalizeDesignStory(
 	const appliedAmendments = listApprovedAmendments(intent.repoPath, epicHash);
 	const effectiveHash = getEffectiveHash(intent.repoPath, epicHash, baseHld);
 
+	const nowISO = new Date().toISOString();
+	const meta = {
+		workflow:      'design.story' as const,
+		runId,
+		repoPath:      intent.repoPath,
+		createdAt:     nowISO,
+		attribution:   attribution ?? singleModelAttribution(model),
+		elapsedMs,
+		repoIndexedAt: intent.repoIndexedAt,
+		schemaVersion: LLD_SCHEMA_VERSION,
+		// Work-item folder anchor (sc2): an Epic Story's LLD is keyed on the
+		// Epic's define createdAt so it lands in the Story's folder.
+		epicCreatedAt:        readEpicCreatedAt(intent.repoPath, epicHash) ?? nowISO,
+		epicHash,
+		epicSlug,
+		storyId,
+		hldBaseRunId:         baseHld.meta.runId,
+		hldEffectiveHash:     effectiveHash,
+		hldAmendmentsApplied: appliedAmendments.map(a => a.id),
+	};
+	// sc4 (S003): render + attach the ER companion when the LLM authored an
+	// erDefinition (author-gate). Deterministic; a sibling of the LLD.md.
+	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	const artifact: LldArtifact = {
-		meta: {
-			workflow:      'design.story',
-			runId,
-			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
-			attribution:   attribution ?? singleModelAttribution(model),
-			elapsedMs,
-			repoIndexedAt: intent.repoIndexedAt,
-			schemaVersion: LLD_SCHEMA_VERSION,
-			// Work-item folder anchor (sc2): an Epic Story's LLD is keyed on the
-			// Epic's define createdAt so it lands in the Story's folder.
-			epicCreatedAt:        readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
-			epicHash,
-			epicSlug,
-			storyId,
-			hldBaseRunId:         baseHld.meta.runId,
-			hldEffectiveHash:     effectiveHash,
-			hldAmendmentsApplied: appliedAmendments.map(a => a.id),
-		},
-		body,
+		meta,
+		body: withCompanion(body, companionRef),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);
@@ -1974,7 +2040,7 @@ function finalizeDesignStory(
  *  `requireApprovedLld` gate skips staleness for a standalone LLD), and the
  *  triage provenance (`standalone` / `sizeClass` / `triageRationale`) is
  *  stamped. See `plans/feature-triage-router.md`. */
-function finalizeStandaloneLld(
+async function finalizeStandaloneLld(
 	intent:    WorkflowIntent,
 	runId:     string,
 	elapsedMs: number,
@@ -1982,7 +2048,7 @@ function finalizeStandaloneLld(
 	citations: readonly import('./types.js').Citation[],
 	model:     string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	const epicHash = requireEpicHash(intent);   // self-minted by augmentStandaloneParams
 	const storyId  = requireStoryId(intent);
 	const epicSlug = safeDeriveSlug(intent.focus);
@@ -2011,30 +2077,35 @@ function finalizeStandaloneLld(
 		? intent.params['specHash'] as string
 		: undefined;
 
+	const meta = {
+		workflow:      'design.story' as const,
+		runId,
+		repoPath:      intent.repoPath,
+		createdAt:     new Date().toISOString(),
+		attribution:   attribution ?? singleModelAttribution(model),
+		elapsedMs,
+		repoIndexedAt: intent.repoIndexedAt,
+		schemaVersion: LLD_SCHEMA_VERSION,
+		epicHash,
+		epicSlug,
+		storyId,
+		// Self-consistent sentinels — no parent HLD. Inert: the LLD gate
+		// skips staleness for a standalone LLD.
+		hldBaseRunId:         runId,
+		hldEffectiveHash:     computeHldEffectiveHash(runId, []),
+		hldAmendmentsApplied: [],
+		standalone:           true,
+		...(sizeClass !== undefined ? { sizeClass } : {}),
+		...(triageRationale !== undefined ? { triageRationale } : {}),
+		...(seededFromSpec !== undefined ? { seededFromSpec } : {}),
+	};
+	// sc4 (S003): render + attach the ER companion when the LLM authored an
+	// erDefinition (author-gate). Deterministic; a sibling of the standalone LLD.md.
+	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), workItemKindOf(meta), epicSlug).md;
+	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	const artifact: LldArtifact = {
-		meta: {
-			workflow:      'design.story',
-			runId,
-			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
-			attribution:   attribution ?? singleModelAttribution(model),
-			elapsedMs,
-			repoIndexedAt: intent.repoIndexedAt,
-			schemaVersion: LLD_SCHEMA_VERSION,
-			epicHash,
-			epicSlug,
-			storyId,
-			// Self-consistent sentinels — no parent HLD. Inert: the LLD gate
-			// skips staleness for a standalone LLD.
-			hldBaseRunId:         runId,
-			hldEffectiveHash:     computeHldEffectiveHash(runId, []),
-			hldAmendmentsApplied: [],
-			standalone:           true,
-			...(sizeClass !== undefined ? { sizeClass } : {}),
-			...(triageRationale !== undefined ? { triageRationale } : {}),
-			...(seededFromSpec !== undefined ? { seededFromSpec } : {}),
-		},
-		body,
+		meta,
+		body: withCompanion(body, companionRef),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);

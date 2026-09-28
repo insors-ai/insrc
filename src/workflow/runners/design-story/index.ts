@@ -28,6 +28,7 @@ import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
 import { extractHldContextSlice } from '../../artifacts/lld.js';
 import { ANTI_OVERREACH_RULE } from '../scope-prompts.js';
+import { ER_CONTENT_GATE_RULE } from '../../artifacts/companion/er-schema.js';
 import { isStandaloneParams, standaloneStoryContext, type StandaloneStoryContext } from './standalone.js';
 import { assertEpicHash } from '../../hash.js';
 import { scopeAnalyzeCachePath } from '../../storage.js';
@@ -292,6 +293,8 @@ const contractDetail = llmPauseRunner({
 				'SUMMARY (`summary`, optional but STRONGLY preferred): a plain-language, Story-scoped abstract the LLD leads with.',
 				'- 2-4 sentences on what THIS Story builds, in reader terms — not the full contract, not code.',
 				'- Set `summary.audience` to `product` (the capability) or `technical` (the design), whichever fits.',
+				'',
+				ER_CONTENT_GATE_RULE,
 				'',
 				'SHARED-CONTEXT REFERENCES (`contextRefs`, optional): only set this to override the engine-derived HLD reference.',
 				'- Leave `contextRefs` OUT to let the engine derive the HLD-context reference from the Epic — the default de-dup (ac2).',

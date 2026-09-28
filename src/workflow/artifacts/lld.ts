@@ -27,9 +27,11 @@ import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
+import type { ErDefinition } from './companion/er.js';
+import type { CompanionArtifactRef } from './companion/types.js';
 
 // ---------------------------------------------------------------------------
 // Sub-shapes
@@ -151,6 +153,13 @@ export interface LldBody {
 	/** sc3 (S002): references to upstream shared context (the HLD-context de-dup, ac2).
 	 *  Absent → the renderer uses deriveHldContextRef(epicHash). */
 	readonly contextRefs?: readonly SharedContextRef[] | undefined;
+	/** sc4 (S003): the authored ER data-model element (source of truth for an ER
+	 *  companion). Additive + absent-safe — absent bodies type-check + render
+	 *  unchanged (k6). */
+	readonly erDefinition?: ErDefinition | undefined;
+	/** sc4 (S003): out-of-body companion references (rendered as links in the
+	 *  Diagrams (`diagramsEr`) extension slot, never inlined). Additive + absent-safe. */
+	readonly companions?: readonly CompanionArtifactRef[] | undefined;
 }
 
 // LLD meta extends the base with HLD anchoring. Every LLD carries
@@ -426,6 +435,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		fr:          () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
 		contract:    () => ({ lines: [`**Surface level:** ${body.contractDetails.surfaceLevel}`], items: body.contractDetails.api.map(apiItem) }),
 		dataModel:   () => body.dataModelChanges.length > 0 ? { items: body.dataModelChanges.map(dmItem) } : { omit: true },
+		diagramsEr:  () => { const l = companionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
 		interaction: () => body.interactionWithShared.length > 0 ? { lines: interactionLines() } : { omit: true },
 		errorPaths:  () => ({ lines: errorPathsLines() }),
 		testStrategy: () => ({ lines: testStrategyLines() }),

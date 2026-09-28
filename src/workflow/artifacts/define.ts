@@ -24,6 +24,9 @@ import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
 import type { DocumentSummary } from './format/types.js';
+import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
+import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { DEFINE_FORMAT } from './format/formats.js';
 
 // ---------------------------------------------------------------------------
 // Body shape
@@ -93,113 +96,70 @@ export const DEFINE_SCHEMA_VERSION = 1;
 // ---------------------------------------------------------------------------
 
 export function renderDefineMarkdown(artifact: DefineArtifact): string {
-	const { body } = artifact;
-	const lines: string[] = [];
-	if (typeof artifact.meta.epicHash === 'string' && artifact.meta.epicHash.length > 0) {
-		lines.push(artifactIdMarker(defineArtifactId(artifact.meta.epicHash)));
-		lines.push('');
-	}
-	lines.push(`# Epic: ${firstSentence(body.problem)}`);
-	lines.push('');
-	lines.push(`**Flavor:** ${body.flavor}`);
-	// Provenance (S008/ac3): identify the approved spec this Epic was seeded from.
-	const seededFromSpec = (artifact.meta as { seededFromSpec?: string }).seededFromSpec;
-	if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) {
-		lines.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
-	}
-	const epicRef = (artifact.meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
-	if (typeof epicRef === 'string' && epicRef.includes('#')) {
-		lines.push(trackerRefLine(epicRef));
-	}
-	lines.push('');
+	const { body, meta } = artifact;
+	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
+	const marker = eh !== undefined ? artifactIdMarker(defineArtifactId(eh)) : undefined;
+	const h1 = `Epic: ${epicShortName(artifact)}`;
 
-	lines.push('## Problem');
-	lines.push('');
-	lines.push(body.problem);
-	lines.push('');
+	// The Summary envelope carries the Flavor + provenance meta lines (previously
+	// rendered right after the H1), then the plain-language abstract when present.
+	const summaryLines = (): string[] => {
+		const out: string[] = [`**Flavor:** ${body.flavor}`];
+		const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
+		if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) out.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
+		const epicRef = (meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
+		if (typeof epicRef === 'string' && epicRef.includes('#')) out.push(trackerRefLine(epicRef));
+		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);
+		return out;
+	};
 
-	// sc1 (S001): the functional-definition section, generated from the record.
-	// Absent-safe — spreads nothing when there is no functionalDefinition.
-	lines.push(...renderFunctionalRequirementsSection(body.functionalDefinition));
-
-	if (body.nonGoals.length > 0) {
-		lines.push('## Non-goals');
-		lines.push('');
-		for (const ng of body.nonGoals) {
-			lines.push(`- **${ng.text}** — ${ng.rationale}`);
-		}
-		lines.push('');
-	}
-
-	if (body.assumptions.length > 0) {
-		lines.push('## Assumptions');
-		lines.push('');
-		for (const a of body.assumptions) {
-			lines.push(`- \`${a.confidence}\` ${a.text} [[${a.source}]]`);
-		}
-		lines.push('');
-	}
-
-	if (body.constraints.length > 0) {
-		lines.push('## Constraints');
-		lines.push('');
-		lines.push('| ID | Type | Text | Source |');
-		lines.push('| :--- | :--- | :--- | :--- |');
-		for (const c of body.constraints) {
-			lines.push(`| \`${c.id}\` | ${c.type} | ${escapePipes(c.text)} | [[${c.source}]] |`);
-		}
-		lines.push('');
-	}
-
-	lines.push('## Stories');
-	lines.push('');
-	const eh = artifact.meta.epicHash;
-	for (const s of body.stories) {
-		const sid = eh ? safeCanonical(() => storyWorkflowId(eh, artifact.meta.createdAt, s.id)) : undefined;
-		lines.push(sid !== undefined ? `### ${sid} — ${s.title}` : `### ${s.id}: ${s.title}`);
-		lines.push('');
+	const storyItem = (s: DefineStory): SectionItem => {
+		const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, s.id)) : undefined;
+		const title = sid !== undefined ? `${sid} — ${s.title}` : `${s.id}: ${s.title}`;
+		const l: string[] = [];
 		const size = s.sizeEstimate === undefined ? '' : ` \`size: ${s.sizeEstimate}\``;
-		lines.push(`**User value:**${size}`);
-		lines.push('');
-		lines.push(s.userValue);
-		lines.push('');
-		if (s.dependsOn !== undefined && s.dependsOn.length > 0) {
-			lines.push(`**Depends on:** ${s.dependsOn.map(x => `\`${x}\``).join(', ')}`);
-			lines.push('');
-		}
-		if (s.existingCapabilityRefs !== undefined && s.existingCapabilityRefs.length > 0) {
-			lines.push(`**Extends:** ${s.existingCapabilityRefs.map(x => `[[${x}]]`).join(' ')}`);
-			lines.push('');
-		}
-		lines.push('**Acceptance criteria:**');
-		lines.push('');
+		l.push(`**User value:**${size}`, '', s.userValue, '');
+		if (s.dependsOn !== undefined && s.dependsOn.length > 0) l.push(`**Depends on:** ${s.dependsOn.map(x => `\`${x}\``).join(', ')}`, '');
+		if (s.existingCapabilityRefs !== undefined && s.existingCapabilityRefs.length > 0) l.push(`**Extends:** ${s.existingCapabilityRefs.map(x => `[[${x}]]`).join(' ')}`, '');
+		l.push('**Acceptance criteria:**', '');
 		for (const ac of s.acceptanceCriteria) {
-			const ops = ac.operationalizes.length === 0
-				? ''
-				: ` _(operationalizes ${ac.operationalizes.map(o => `\`${o}\``).join(', ')})_`;
-			lines.push(`- **${ac.id}:** Given ${ac.given}, when ${ac.when}, then ${ac.then}.${ops}`);
+			const ops = ac.operationalizes.length === 0 ? '' : ` _(operationalizes ${ac.operationalizes.map(o => `\`${o}\``).join(', ')})_`;
+			l.push(`- **${ac.id}:** Given ${ac.given}, when ${ac.when}, then ${ac.then}.${ops}`);
 		}
-		lines.push('');
 		if (s.localConstraints !== undefined && s.localConstraints.length > 0) {
-			lines.push('**Local constraints:**');
-			lines.push('');
-			for (const c of s.localConstraints) {
-				lines.push(`- \`${c.id}\` (${c.type}) ${c.text} [[${c.source}]]`);
-			}
-			lines.push('');
+			l.push('', '**Local constraints:**', '');
+			for (const c of s.localConstraints) l.push(`- \`${c.id}\` (${c.type}) ${c.text} [[${c.source}]]`);
 		}
-	}
+		while (l.length > 0 && l[l.length - 1] === '') l.pop();
+		return { title, lines: l };
+	};
 
-	if (body.openQuestions.length > 0) {
-		lines.push('## Open questions');
-		lines.push('');
-		for (const q of body.openQuestions) {
-			lines.push(`- ${q}`);
-		}
-		lines.push('');
-	}
+	const bindings: SectionBindings = {
+		summary:       () => ({ lines: summaryLines() }),
+		problem:       () => ({ lines: [body.problem] }),
+		fr:            () => { const f = frBodyLines(body.functionalDefinition); return f.length > 0 ? { lines: f } : { omit: true }; },
+		nonGoals:      () => body.nonGoals.length > 0 ? { lines: body.nonGoals.map(ng => `- **${ng.text}** — ${ng.rationale}`) } : { omit: true },
+		assumptions:   () => body.assumptions.length > 0 ? { lines: body.assumptions.map(a => `- \`${a.confidence}\` ${a.text} [[${a.source}]]`) } : { omit: true },
+		constraints:   () => body.constraints.length > 0 ? { lines: constraintTable(body.constraints) } : { omit: true },
+		stories:       () => ({ items: body.stories.map(storyItem) }),
+		references:    () => ({ lines: citationBodyLines(artifact.citations) }),
+		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
+	};
+	return renderFromFormat(DEFINE_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+}
 
-	return lines.join('\n');
+/** A short, distinct H1 name (fixes defect #4 — the 40-word H1). Prefers the Epic
+ *  slug; falls back to the problem's first sentence. */
+function epicShortName(artifact: DefineArtifact): string {
+	const slug = (artifact.meta as { epicSlug?: string }).epicSlug;
+	if (typeof slug === 'string' && slug.length > 0) return slug;
+	return firstSentence(artifact.body.problem);
+}
+
+function constraintTable(cs: readonly DefineConstraint[]): string[] {
+	const l = ['| ID | Type | Text | Source |', '| :--- | :--- | :--- | :--- |'];
+	for (const c of cs) l.push(`| \`${c.id}\` | ${c.type} | ${escapePipes(c.text)} | [[${c.source}]] |`);
+	return l;
 }
 
 function firstSentence(s: string): string {

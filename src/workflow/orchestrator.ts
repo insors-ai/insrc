@@ -1162,7 +1162,9 @@ function finalizeDefine(
 	const renderedBody = renderDefineMarkdown(artifact);
 	const check = validateBodyAndCitations(artifact, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
-	const renderedMd = renderedBody + renderCitationBlock(citations);
+	// sc3 (S002): the renderer now emits a numbered References section in-body
+	// (no separate renderCitationBlock append).
+	const renderedMd = renderedBody;
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	// Cache the s1 analyze bundles for the design phase to reuse.
 	persistScopeAnalyzeCache(epicHash, (stepOutputs['s1'] as ScopeAssessOutput | undefined)?.analyzeBundles);

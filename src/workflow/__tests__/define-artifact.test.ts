@@ -81,17 +81,21 @@ test('renderDefineMarkdown produces expected sections', () => {
 			{ id: 'c2', kind: 'convention', ref: 'sidebar convention' },
 		],
 	});
-	assert.ok(md.includes('# Epic:'));
-	assert.ok(md.includes('**Flavor:** enhancement'));
-	assert.ok(md.includes('## Problem'));
-	assert.ok(md.includes('## Non-goals'));
-	assert.ok(md.includes('## Assumptions'));
-	assert.ok(md.includes('## Constraints'));
-	assert.ok(md.includes('## Stories'));
-	assert.ok(md.includes('### s1:'));
-	assert.ok(md.includes('### s2:'));
-	assert.ok(md.includes('[[c1]]'));   // assumption source
-	assert.ok(md.includes('[[c2]]'));   // constraint source
+	// sc3 (S002): short H1 + unnumbered Summary/Contents envelope + numbered body.
+	assert.match(md, /^# Epic: /m);
+	assert.ok(md.includes('## Summary'));
+	assert.ok(md.includes('## Contents'));
+	assert.ok(md.includes('**Flavor:** enhancement'));   // Flavor now lives in the Summary
+	assert.match(md, /## \d+\. Problem/);
+	assert.match(md, /## \d+\. Non-goals/);
+	assert.match(md, /## \d+\. Assumptions/);
+	assert.match(md, /## \d+\. Constraints/);
+	assert.match(md, /## \d+\. Stories/);
+	assert.match(md, /### \d+\.\d+ s1:/);                 // nested per-story number
+	assert.match(md, /### \d+\.\d+ s2:/);
+	assert.match(md, /## \d+\. References/);              // References is now an in-body section
+	assert.ok(md.includes('[[c1]]'));   // assumption source + References
+	assert.ok(md.includes('[[c2]]'));   // constraint source + References
 	assert.ok(md.includes('**Depends on:**'));
 	assert.ok(md.includes('**Extends:**'));
 });

@@ -206,8 +206,8 @@ test('define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.
 		const md = readFileSync(outPath, 'utf8');
 		assert.ok(md.includes('# Epic:'));
 		assert.ok(md.includes('**Flavor:** enhancement'));
-		assert.ok(md.includes('## Stories'));
-		assert.ok(md.includes('## Citations'));
+		assert.match(md, /## \d+\. Stories/);           // sc3 (S002): numbered body sections
+		assert.match(md, /## \d+\. References/);         // References is now an in-body section
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

@@ -17,10 +17,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { mintFrId } from '../id.js';
-import {
-	renderFunctionalRequirementsSection,
-	type FunctionalDefinition,
-} from '../artifacts/functional-definition.js';
+import type { FunctionalDefinition } from '../artifacts/functional-definition.js';
 import { renderDefineMarkdown, type DefineArtifact, type DefineBody } from '../artifacts/define.js';
 import { renderHldMarkdown, type HldArtifact, type HldBody } from '../artifacts/hld.js';
 import { renderLldMarkdown, type LldArtifact, type LldBody } from '../artifacts/lld.js';
@@ -93,15 +90,14 @@ for (const [name, render] of RENDERERS) {
 		assert.equal(render({ requirements: [] }), baseline);
 	});
 
-	test(`${name}: a functionalDefinition renders the FR section, changing nothing else`, () => {
-		const baseline = render(undefined);
-		const withRec  = render(RECORD);
-		assert.ok(withRec.includes(HEADING), `${name} must render the FR heading when present`);
+	test(`${name}: a functionalDefinition renders the FR section when present`, () => {
+		const withRec = render(RECORD);
+		// The FR heading is 'Functional requirements' — plain (old renderers) or
+		// engine-numbered '## N. Functional requirements' (S002-reshaped renderers).
+		assert.match(withRec, /## (?:\d+\. )?Functional requirements/, `${name} must render the FR heading when present`);
 		assert.ok(withRec.includes(mintFrId(EPIC, ISO, 1)), `${name} must list the doc-level FR id`);
 		assert.ok(withRec.includes(mintFrId(EPIC, ISO, 2, 's1')), `${name} must list the per-item FR id`);
-		// removing exactly the rendered section restores the baseline (nothing else changed)
-		const section = renderFunctionalRequirementsSection(RECORD).join('\n');
-		assert.ok(withRec.includes(section));
-		assert.equal(withRec.replace(section + '\n', ''), baseline);
+		// The FR requirement lines are present verbatim (de-headed by the engine reshaping).
+		assert.ok(withRec.includes(RECORD.requirements[0]!.statement), `${name} lists the doc-level FR statement`);
 	});
 }

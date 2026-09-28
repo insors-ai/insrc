@@ -23,6 +23,7 @@ import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
+import type { DocumentSummary } from './format/types.js';
 
 // ---------------------------------------------------------------------------
 // Body shape
@@ -78,6 +79,9 @@ export interface DefineBody {
 	/** sc1 (S001): the functional-definition record this document states. Additive +
 	 *  absent-safe — a body without it renders byte-identically to before (k2/k6). */
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
+	/** sc3 (S002): the plain-language, item-scoped Summary/abstract the document
+	 *  leads with. Additive + absent-safe. */
+	readonly summary?: DocumentSummary | undefined;
 }
 
 export type DefineArtifact = WorkflowArtifact<DefineBody>;

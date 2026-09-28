@@ -25,6 +25,7 @@ import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
+import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 
 // ---------------------------------------------------------------------------
@@ -142,6 +143,11 @@ export interface LldBody {
 	readonly openQuestions:        readonly string[];
 	/** sc1 (S001): additive + absent-safe functional-definition record (k2/k6). */
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
+	/** sc3 (S002): plain-language, Story-scoped Summary/abstract. Additive + absent-safe. */
+	readonly summary?: DocumentSummary | undefined;
+	/** sc3 (S002): references to upstream shared context (the HLD-context de-dup, ac2).
+	 *  Absent → the renderer uses deriveHldContextRef(epicHash). */
+	readonly contextRefs?: readonly SharedContextRef[] | undefined;
 }
 
 // LLD meta extends the base with HLD anchoring. Every LLD carries

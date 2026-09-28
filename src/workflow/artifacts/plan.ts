@@ -32,6 +32,7 @@ import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
 import { renderFunctionalRequirementsSection } from './functional-definition.js';
+import type { DocumentSummary } from './format/types.js';
 
 // ---------------------------------------------------------------------------
 // sc4 — TaskTestPlan
@@ -84,6 +85,8 @@ export interface PlanBody {
 	readonly testStrategyCoverage: readonly TestStrategyCoverage[];
 	/** sc1 (S001): additive + absent-safe functional-definition record (k2/k6). */
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
+	/** sc3 (S002): plain-language, Story-scoped Summary/abstract. Additive + absent-safe. */
+	readonly summary?: DocumentSummary | undefined;
 }
 
 export interface PlanArtifact {

@@ -26,7 +26,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines } from './format/bindings.js';
-import { DEFINE_FORMAT } from './format/formats.js';
+import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
 // Body shape
@@ -145,7 +145,8 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 		references:    () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
 	};
-	return renderFromFormat(DEFINE_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+	const format = resolveDocumentFormat('define', artifact.meta.repoPath);
+	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 /** A short, distinct H1 name (fixes defect #4 — the 40-word H1). Prefers the Epic

@@ -28,7 +28,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines } from './format/bindings.js';
-import { LLD_FORMAT } from './format/formats.js';
+import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 
 // ---------------------------------------------------------------------------
@@ -434,7 +434,8 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		references:  () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions: () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
 	};
-	return renderFromFormat(LLD_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+	const format = resolveDocumentFormat('lld', artifact.meta.repoPath);
+	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 function escapePipes(s: string): string { return s.replace(/\|/g, '\\|'); }

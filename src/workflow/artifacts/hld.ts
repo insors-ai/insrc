@@ -24,7 +24,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines } from './format/bindings.js';
-import { HLD_FORMAT } from './format/formats.js';
+import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
 // Body sub-shapes
@@ -194,7 +194,8 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 		references:     () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions:  () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
 	};
-	return renderFromFormat(HLD_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+	const format = resolveDocumentFormat('hld', artifact.meta.repoPath);
+	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 /** A short, distinct H1 name for the HLD (prefers the Epic slug). */

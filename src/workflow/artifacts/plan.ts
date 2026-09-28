@@ -35,7 +35,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines } from './format/bindings.js';
-import { PLAN_FORMAT } from './format/formats.js';
+import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
 // sc4 — TaskTestPlan
@@ -151,7 +151,8 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 		coverage:   () => body.testStrategyCoverage.length > 0 ? { lines: coverageLines() } : { omit: true },
 		references: () => ({ lines: citationBodyLines(artifact.citations) }),
 	};
-	return renderFromFormat(PLAN_FORMAT, bindings, marker !== undefined ? { h1, marker } : { h1 });
+	const format = resolveDocumentFormat('plan', artifact.meta.repoPath);
+	return renderFromFormat(format, bindings, marker !== undefined ? { h1, marker } : { h1 });
 }
 
 function escapePipes(s: string): string { return s.replace(/\|/g, '\\|'); }

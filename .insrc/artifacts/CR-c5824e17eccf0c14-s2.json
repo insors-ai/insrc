@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1790572513661-qpg9ed",
+    "runId": "cr-1790573606622-963tig",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-09-28T05:15:13.661Z",
+    "createdAt": "2026-09-28T05:33:26.623Z",
     "model": "client",
-    "elapsedMs": 1,
+    "elapsedMs": 0,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c5824e17eccf0c14",
@@ -18,17 +18,20 @@
     "groundingMode": "degraded",
     "subject": {
       "changedFiles": [
-        "src/workflow/orchestrator.ts",
-        "src/workflow/runners/__tests__/summary-elicitation-schemas.test.ts",
-        "src/workflow/runners/define/index.ts",
-        "src/workflow/runners/define/schemas.ts",
-        "src/workflow/runners/design-epic/index.ts",
-        "src/workflow/runners/design-epic/schemas.ts",
-        "src/workflow/runners/design-story/index.ts",
-        "src/workflow/runners/design-story/schemas.ts",
-        "src/workflow/runners/plan/index.ts",
-        "src/workflow/runners/plan/schemas.ts",
-        "src/workflow/synthesizer.ts"
+        ".insrc/artifacts/CR-c5824e17eccf0c14-s2.json",
+        "docs/epics/make-workflow-framework-s-generated-artifact-E20260927c5824e17/S002/CR.md",
+        "src/assets/artifacts/formats/define.md",
+        "src/assets/artifacts/formats/hld.md",
+        "src/assets/artifacts/formats/lld.md",
+        "src/assets/artifacts/formats/plan.md",
+        "src/workflow/artifacts/define.ts",
+        "src/workflow/artifacts/format/__tests__/template-loader.test.ts",
+        "src/workflow/artifacts/format/__tests__/template.test.ts",
+        "src/workflow/artifacts/format/template-loader.ts",
+        "src/workflow/artifacts/format/template.ts",
+        "src/workflow/artifacts/hld.ts",
+        "src/workflow/artifacts/lld.ts",
+        "src/workflow/artifacts/plan.ts"
       ]
     },
     "dimensions": [
@@ -38,9 +41,17 @@
           {
             "dimension": "adherence",
             "severity": "LOW",
-            "location": "src/workflow/runners/plan/schemas.ts:115",
-            "message": "The LLD migration step 5 names `tasks.finalize` (s4) as the PLAN summary elicitation site, but the build elicits it at `test-strategy.write` (s5). This is a justified departure, not a defect: planSynthesizer's userTurn passes ONLY the s5 output to the LLM, so a summary on s4 would never reach the synthesizer. The change honors the LLD's data-flow intent (the summary must reach the synthesizer) while departing from its literal step name.",
-            "expectationRef": "LLD migration step 5 (summary at tasks.finalize)",
+            "location": "src/workflow/artifacts/format/template-loader.ts:92",
+            "message": "The LLD's contract names reuse of the docgen loadTemplate (daemon/artifacts/template-loader.ts:156) and an async renderer. The build instead adds a PARALLEL, SYNChronous loadDocumentFormat: the docgen loader is keyed on the docgen ArtifactKind enum, resolves .html, and runs an HTML lint — none of which fit the workflow markdown FORMATS; and a sync loader keeps all 15 render call sites sync (no async ripple, which the LLD's own error.path flagged). Same 3-tier cascade + mtime cache + degrade-to-bundled semantics; honors a2's intent (editable per-repo/user-overridable per-type template files). A justified LLD refinement, documented in the module header.",
+            "expectationRef": "LLD contract: loadTemplate reuse + async renderer",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/format/template-loader.ts:118",
+            "message": "The promised test names 'missing/corrupt template throws'. The build realizes this as: a corrupt/malformed OVERRIDE (repo/user tier) degrades to the next tier with a warn (mirroring the docgen loader's degrade-to-bundled — never a silent no-render), and only a TOTAL miss (no tier resolves) throws. This is a deliberate, safer semantics than throwing on any corrupt file; parseFormatTemplate itself throws on malformed input (tested), and the loader's total-miss throw exists. Behaviour differs from the literal promise but is the more robust realization.",
+            "expectationRef": "promised test: missing/corrupt template throws",
             "confidence": "observation"
           }
         ]
@@ -51,16 +62,7 @@
       },
       {
         "dimension": "coverage",
-        "findings": [
-          {
-            "dimension": "coverage",
-            "severity": "LOW",
-            "location": "src/workflow/runners/design-story/index.ts:505",
-            "message": "The per-phase checklist `sm*` items and the SUMMARY/SHARED-CONTEXT prompt-string additions across the four runners are declarative prompt text with no direct unit assertion. The load-bearing behaviour they support — step schemas admitting summary(+audience)/contextRefs and the synthesizer bodies admitting them while keeping additionalProperties:false — IS exercised by summary-elicitation-schemas.test.ts (27 cases, run green locally). Graph testsReaching is empty for all just-changed files (hollow on a fresh diff), so coverage was judged by running the suite, not the edges; no untested shipped behaviour identified.",
-            "expectationRef": "prompt/checklist additions (t6)",
-            "confidence": "observation"
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "quality",
@@ -68,9 +70,18 @@
           {
             "dimension": "quality",
             "severity": "LOW",
-            "location": "src/workflow/orchestrator.ts:949",
-            "message": "The `{ prose, audience? }` summary schema fragment is duplicated inline across the four step schemas and the four synthesizer body schemas (8 near-identical copies; orchestrator.ts:949/1436/1724/2182). A shared fragment would DRY it, but per-file self-contained `as const` schema literals are the established idiom in this codebase (see the existing citation/analyzeBundles blocks repeated the same way), so this is a taste/consistency observation, not a risk.",
-            "counterpartRef": "src/workflow/runners/define/schemas.ts summary block",
+            "location": "src/workflow/artifacts/format/template-loader.ts:98",
+            "message": "The 3-tier cascade + mtime-cache + tryRead structure duplicates the docgen HTML loader (loadTemplate). This is a deliberate parallel across two distinct domains (workflow doc FORMATS vs docgen HTML templates; different kind set, extension, and lint), not accidental copy-paste — a shared generic cascade helper would DRY it but would couple the two domains. Flagging the overlap so a future refactor can consider extracting a kind-agnostic cascade.",
+            "expectationRef": "duplication",
+            "counterpartRef": "src/daemon/artifacts/template-loader.ts loadTemplate",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/format/template.ts:126",
+            "message": "parseFormatTemplate is a hand-rolled line walker. Its guidance-capture loop reads every line until the next `<!-- insrc:… -->` directive, so a guidance PROSE line that itself began with an insrc directive comment would be mis-detected as a section boundary. Guidance is author prose (extremely unlikely to embed a directive), the round-trip test guards the generated files, and a malformed parse degrades to bundled — so this is a low-risk taste/robustness note, not a correctness breach.",
+            "expectationRef": "complexity",
             "confidence": "observation"
           }
         ]
@@ -80,7 +91,7 @@
     "counts": {
       "high": 0,
       "med": 0,
-      "low": 3
+      "low": 4
     }
   }
 }

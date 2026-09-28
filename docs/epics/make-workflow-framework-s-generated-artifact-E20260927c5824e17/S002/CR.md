@@ -2,29 +2,29 @@
 
 # Code review: c5824e17eccf0c14:s2
 
-⚠️ **WARN** — HIGH 0 · MED 0 · LOW 3 · model `client`
+⚠️ **WARN** — HIGH 0 · MED 0 · LOW 4 · model `client`
 
-**Changed files:** 11
+**Changed files:** 14
 
-## adherence — 1 finding(s)
+## adherence — 2 finding(s)
 
 | Severity | Location | Message |
 | --- | --- | --- |
-| LOW | src/workflow/runners/plan/schemas.ts:115 | The LLD migration step 5 names `tasks.finalize` (s4) as the PLAN summary elicitation site, but the build elicits it at `test-strategy.write` (s5). This is a justified departure, not a defect: planSynthesizer's userTurn passes ONLY the s5 output to the LLM, so a summary on s4 would never reach the synthesizer. The change honors the LLD's data-flow intent (the summary must reach the synthesizer) while departing from its literal step name. |
+| LOW | src/workflow/artifacts/format/template-loader.ts:92 | The LLD's contract names reuse of the docgen loadTemplate (daemon/artifacts/template-loader.ts:156) and an async renderer. The build instead adds a PARALLEL, SYNChronous loadDocumentFormat: the docgen loader is keyed on the docgen ArtifactKind enum, resolves .html, and runs an HTML lint — none of which fit the workflow markdown FORMATS; and a sync loader keeps all 15 render call sites sync (no async ripple, which the LLD's own error.path flagged). Same 3-tier cascade + mtime cache + degrade-to-bundled semantics; honors a2's intent (editable per-repo/user-overridable per-type template files). A justified LLD refinement, documented in the module header. |
+| LOW | src/workflow/artifacts/format/template-loader.ts:118 | The promised test names 'missing/corrupt template throws'. The build realizes this as: a corrupt/malformed OVERRIDE (repo/user tier) degrades to the next tier with a warn (mirroring the docgen loader's degrade-to-bundled — never a silent no-render), and only a TOTAL miss (no tier resolves) throws. This is a deliberate, safer semantics than throwing on any corrupt file; parseFormatTemplate itself throws on malformed input (tested), and the loader's total-miss throw exists. Behaviour differs from the literal promise but is the more robust realization. |
 
 ## conventions — 0 finding(s)
 
 _No findings._
 
-## coverage — 1 finding(s)
+## coverage — 0 finding(s)
+
+_No findings._
+
+## quality — 2 finding(s)
 
 | Severity | Location | Message |
 | --- | --- | --- |
-| LOW | src/workflow/runners/design-story/index.ts:505 | The per-phase checklist `sm*` items and the SUMMARY/SHARED-CONTEXT prompt-string additions across the four runners are declarative prompt text with no direct unit assertion. The load-bearing behaviour they support — step schemas admitting summary(+audience)/contextRefs and the synthesizer bodies admitting them while keeping additionalProperties:false — IS exercised by summary-elicitation-schemas.test.ts (27 cases, run green locally). Graph testsReaching is empty for all just-changed files (hollow on a fresh diff), so coverage was judged by running the suite, not the edges; no untested shipped behaviour identified. |
-
-## quality — 1 finding(s)
-
-| Severity | Location | Message |
-| --- | --- | --- |
-| LOW | src/workflow/orchestrator.ts:949 | The `{ prose, audience? }` summary schema fragment is duplicated inline across the four step schemas and the four synthesizer body schemas (8 near-identical copies; orchestrator.ts:949/1436/1724/2182). A shared fragment would DRY it, but per-file self-contained `as const` schema literals are the established idiom in this codebase (see the existing citation/analyzeBundles blocks repeated the same way), so this is a taste/consistency observation, not a risk. |
+| LOW | src/workflow/artifacts/format/template-loader.ts:98 | The 3-tier cascade + mtime-cache + tryRead structure duplicates the docgen HTML loader (loadTemplate). This is a deliberate parallel across two distinct domains (workflow doc FORMATS vs docgen HTML templates; different kind set, extension, and lint), not accidental copy-paste — a shared generic cascade helper would DRY it but would couple the two domains. Flagging the overlap so a future refactor can consider extracting a kind-agnostic cascade. |
+| LOW | src/workflow/artifacts/format/template.ts:126 | parseFormatTemplate is a hand-rolled line walker. Its guidance-capture loop reads every line until the next `<!-- insrc:… -->` directive, so a guidance PROSE line that itself began with an insrc directive comment would be mis-detected as a section boundary. Guidance is author prose (extremely unlikely to embed a directive), the round-trip test guards the generated files, and a malformed parse degrades to bundled — so this is a low-risk taste/robustness note, not a correctness breach. |
 

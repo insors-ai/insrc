@@ -371,6 +371,53 @@ Declare a DocumentFormat spec per type as documentation/contract, and have each 
 - **[[c6]]** `step-output` `s2 alternatives + s3 judgment: winnerId a2 (editable per-type template files on the template-loader cascade)` — "a2 delivers concrete, editable per-type templates + the elicitation that populates them"
 - **[[c7]]** `code` `prompt-alignment finding: runners/{define,design-epic,design-story,plan}/index.ts step prompts + orchestrator.ts synthesizer body schemas (defineSynthesizer body at :937, stub summary at :315) — additionalProperties:false gates omit summary/audience/contextRefs/functionalDefinition` — "no step prompt elicits a summary/audience/contextRefs and no DEF/HLD/LLD/PLAN synthesizer body schema admits them"
 
+## Amendments
+
+### Build-time refinements — a2 realization (post-approval, 2026-09-28)
+
+The build implemented the approved alternative **a2** (editable per-type FORMAT
+template files on a 3-tier loader cascade). Four realization choices refine the
+LLD's letter while honouring its intent (no contract-shape change; sc3's model,
+the editable per-repo/user-overridable template files, and the elicitation are
+all as designed). Recorded here as the artifact of record.
+
+1. **Parallel workflow-scoped loader instead of literal `loadTemplate` reuse.**
+   The contract entry `loadTemplate` cited reuse of `daemon/artifacts/template-loader.ts:156`.
+   That loader is keyed on the **docgen** `ArtifactKind` enum, resolves `.html`,
+   and runs an HTML lint — none of which fit the workflow markdown FORMATS. The
+   build adds a **parallel** `loadDocumentFormat` in `src/workflow/artifacts/format/template-loader.ts`
+   that reuses the same 3-tier cascade + mtime-cache + degrade-to-bundled
+   *pattern* for the workflow doc formats (`.md`, workflow kinds, no HTML lint).
+   The `loadTemplate` citation stands as the pattern source, not a literal call.
+
+2. **Synchronous loader + in-renderer resolve instead of async renderers.** The
+   data-model note "renderLldMarkdown is sync today; template loading is async —
+   error.paths pins preload vs async renderer" flagged this tension. The build
+   resolves it with a **sync** `loadDocumentFormat` (readFileSync + mtime cache)
+   and has each renderer resolve its format via `resolveDocumentFormat(kind,
+   artifact.meta.repoPath)` at its final `renderFromFormat`. The renderers stay
+   sync — no async ripple through the 15 render call sites — and a per-repo/user
+   override is honoured on **every** render path (generation, relink, tail).
+
+3. **Template-file encoding (left open by the LLD).** A format file is editable
+   markdown where each section is an `<!-- insrc:section id=… source=… audience=…
+   required numbered -->` directive + heading + guidance prose. `formatToTemplate`
+   / `parseFormatTemplate` round-trip; the in-code `defaultFormat(kind)` constants
+   remain the oracle (the bundled files are generated from them and a round-trip
+   test asserts equality, so an edit to `formats.ts` flags the file for regen).
+
+4. **Missing/corrupt semantics.** The promised test named "missing/corrupt
+   template throws". The build realizes this more robustly: a corrupt/malformed
+   **override** (repo/user tier) degrades to the next tier with a warn (mirroring
+   the docgen loader — never a silent no-render); only a **total miss** throws;
+   `parseFormatTemplate` itself throws on malformed input. `resolveDocumentFormat`
+   wraps the loader with the in-code default as a defensive final fallback so a
+   packaging fault can never blank a document.
+
+Verification: full sweep 3738 pass (sole failure the pre-existing better-sqlite3
+native-ABI red herring); post-build code review **warn 0H/0M** on both the
+t6+t7 and the a2 changed sets (all LOW observations). See `CR.md`.
+
 <!-- insrc:review -->
 
 ## Review

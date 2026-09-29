@@ -43,6 +43,7 @@ export type RowKind =
   | 'tool-result'
   | 'inline-diff'
   | 'approval'
+  | 'permission-outcome'
   | 'progress'
   | 'fallback';
 
@@ -108,6 +109,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
     if (entry.role === 'tool-result') {
       return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
     }
+    // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model
+    // (tool name + decided badge). Single-sourced with the live-event branch below (dual-input parity).
+    if (entry.role === 'permission-outcome') {
+      return { kind: 'permission-outcome', text: entry.toolName, collapsible: false, meta: { toolName: entry.toolName, decision: entry.decision } };
+    }
     // 'marker' (S008): keep the sc1 marker class so a restored marker row renders identically.
     return entry.cssClass !== undefined
       ? { kind: 'fallback', text: entry.text, cssClass: entry.cssClass, collapsible: false }
@@ -124,6 +130,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   // replayed transcript twin (dual-input parity, a test pins the two).
   if (entry.kind === 'tool-result') {
     return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
+  }
+  // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model
+  // as its replayed transcript twin (dual-input parity, a test pins the two).
+  if (entry.kind === 'permission-outcome') {
+    return { kind: 'permission-outcome', text: entry.toolName, collapsible: false, meta: { toolName: entry.toolName, decision: entry.decision } };
   }
   return { kind: 'fallback', text: '', collapsible: false };
 }
@@ -156,7 +167,16 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-approval__btn{cursor:pointer;border:1px solid var(--border-lit);background:var(--panel);color:var(--fg);border-radius:7px;padding:4px 12px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
   `.insrc-approval__btn--approve{border-color:rgba(74,222,128,.5);color:#bff3d3;background:rgba(74,222,128,.12);}` +
   `.insrc-approval__btn--deny{border-color:rgba(248,113,113,.5);color:#f6bcbc;background:rgba(248,113,113,.10);}` +
-  `.insrc-approval__btn:hover{filter:brightness(1.15);}`;
+  `.insrc-approval__btn:hover{filter:brightness(1.15);}` +
+  // S003 (dev-chat ux polish) ac1: the resolved approval-card states — recolour the (now button-less)
+  // card to read as a settled decision, reusing the approve(green)/deny(red) tints.
+  `.insrc-approval--approved{border-color:rgba(74,222,128,.5);background:linear-gradient(180deg,rgba(74,222,128,.09),rgba(74,222,128,.03));}` +
+  `.insrc-approval--rejected{border-color:rgba(248,113,113,.5);background:linear-gradient(180deg,rgba(248,113,113,.09),rgba(248,113,113,.03));}` +
+  // S003 (dev-chat ux polish) t1: the persisted resolved-outcome chip — a tool name + a decided badge
+  // (green approved / red rejected via the approval btn tints). Non-actionable (no buttons).
+  `.insrc-permoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:5px 11px;max-width:100%;}` +
+  `.insrc-permoutcome__tool{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-permoutcome__badge{border:1px solid var(--border-lit);border-radius:7px;padding:2px 9px;font-size:12px;line-height:1.4;}`;
 
 /**
  * The webview-embeddable factory source. Evaluating it yields
@@ -257,11 +277,15 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
     `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
+    // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model.
+    `if(entry.role==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
     `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return {kind:'tool-command',text:label,collapsible:false};}` +
     // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model (parity).
     `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
+    // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model (parity).
+    `if(entry.kind==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     `return {kind:'fallback',text:'',collapsible:false};}` +
     // 'fallback' is the existing flat writer: byte-identical to the pre-sc1 render (k2).
     `register('fallback',function(vm){return line(vm&&vm.text!=null?vm.text:'',vm&&vm.cssClass);});` +
@@ -324,10 +348,27 @@ export function renderRegistryWebviewSource(): string {
     `approve.setAttribute('aria-label','approve');approve.setAttribute('title','Approve');approve.textContent='\\u2713';` +
     `var deny=document.createElement('button');deny.className='insrc-approval__btn insrc-approval__btn--deny';` +
     `deny.setAttribute('aria-label','deny');deny.setAttribute('title','Deny');deny.textContent='\\u2717';` +
-    `approve.addEventListener('click',function(){if(DEC)DEC(rid,'approve');});` +
-    `deny.addEventListener('click',function(){if(DEC)DEC(rid,'deny');});` +
+    // S003 (dev-chat ux polish) ac1: once decided, stamp the card with a resolved class (green
+    // approved / red rejected) and REMOVE the actions element so the buttons disappear and the
+    // card reads as a settled outcome (the pending card is live-only, never persisted).
+    `function resolve(dec){try{card.className='insrc-approval insrc-approval--'+(dec==='approve'?'approved':'rejected');if(actions)card.removeChild(actions);}catch(e){}}` +
+    `approve.addEventListener('click',function(){resolve('approve');if(DEC)DEC(rid,'approve');});` +
+    `deny.addEventListener('click',function(){resolve('deny');if(DEC)DEC(rid,'deny');});` +
     `actions.appendChild(approve);actions.appendChild(deny);card.appendChild(actions);` +
     `return card;});` +
+    // S003 (dev-chat ux polish) t1: the resolved permission-outcome chip — a persisted, non-actionable
+    // row (tool name + a decided badge, green approved / red rejected via the approval btn tints). Built
+    // via line() so it self-appends (like tool-result), so the live turn-event + replay paths agree.
+    `register('permission-outcome',function(vm){` +
+    `var meta=(vm&&vm.meta)||{};` +
+    `var tool=meta.toolName!=null?String(meta.toolName):'';` +
+    `var approved=meta.decision==='approved';` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--permoutcome';` +
+    `var chip=document.createElement('div');chip.className='insrc-permoutcome insrc-permoutcome--'+(approved?'approved':'rejected');` +
+    `var name=document.createElement('span');name.className='insrc-permoutcome__tool';name.textContent=tool;chip.appendChild(name);` +
+    `var badge=document.createElement('span');badge.className='insrc-permoutcome__badge insrc-approval__btn--'+(approved?'approve':'deny');` +
+    `badge.textContent=approved?'\\u2713 approved':'\\u2717 rejected';chip.appendChild(badge);` +
+    `wrap.appendChild(chip);return wrap;});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
     // SAME key (a live echo and its session-restored twin) reconciles to the one existing node
     // instead of double-rendering. resetKeys() is called when the transcript is cleared on

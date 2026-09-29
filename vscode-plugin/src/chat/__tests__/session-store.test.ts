@@ -221,6 +221,38 @@ test('S001 (ux polish): a tool-result row does not disturb a mixed transcript re
   assert.equal(t[1]!.role === 'tool-result' ? t[1]!.output : undefined, 'ok');
 });
 
+// ---- S003 (dev-chat ux polish): permission-outcome transcript row round-trip (ac4) ----
+
+test('S003 (ux polish): a permission-outcome row (toolName + decision) round-trips through the memento store intact', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'permission-outcome', toolName: 'Bash', decision: 'approved', at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'permission-outcome');
+  assert.equal(row && 'toolName' in row ? row.toolName : undefined, 'Bash');
+  assert.equal(row && 'decision' in row ? row.decision : undefined, 'approved');
+});
+
+test('S003 (ux polish): a rejected permission-outcome round-trips through the in-memory store', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'permission-outcome', toolName: 'Write', decision: 'rejected', at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'permission-outcome');
+  assert.equal(row && 'decision' in row ? row.decision : undefined, 'rejected');
+});
+
+test('S003 (ux polish): a permission-outcome row does not disturb a mixed transcript replay (order intact)', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'user', text: 'write it', at: 't1' });
+  store.append(s.id, { role: 'permission-outcome', toolName: 'Write', decision: 'approved', at: 't2' });
+  store.append(s.id, { role: 'assistant', text: 'done', at: 't3' });
+  const t = store.get(s.id)!.transcript;
+  assert.deepEqual(t.map((r) => r.role), ['user', 'permission-outcome', 'assistant']);
+});
+
 // ---- S006: per-session editMode (sc4) round-trip ----
 
 test('S006: editMode defaults to auto on create and a review update round-trips through save()/get()', () => {

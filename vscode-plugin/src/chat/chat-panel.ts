@@ -171,6 +171,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
 
+  // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
+  // dual persist+render path (appendEvent): emit it LIVE as a turn-event the webview renders via the
+  // registry (a resolved chip), AND persist it STRUCTURALLY as a role:'permission-outcome' transcript
+  // row (+ save) so a restored session shows the decided chip instead of the live-only approval card.
+  const recordPermissionOutcome = (toolName: string, approved: boolean, requestId: string): void => {
+    const decision: 'approved' | 'rejected' = approved ? 'approved' : 'rejected';
+    post({ type: 'turn-event', event: { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision } });
+    if (session !== undefined) {
+      session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
+      deps.store.save(session);
+    }
+  };
+
   // S001 (bugfix): (re)send the full view state to the webview. Called on every 'ready' handshake
   // (handleMessage) — the initial load AND every VS-Code webview reload (show-after-hide / restore,
   // since the panel carries no retainContextWhenHidden). Posting this synchronously after setHtml
@@ -406,7 +419,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
@@ -524,7 +537,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
-  async function runTurn(text: unknown, allowedTools?: readonly string[]): Promise<void> {
+  async function runTurn(text: unknown, allowedTools?: readonly string[], opts?: { readonly suppressEcho?: boolean }): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const prompt = text.trim();
     if (prompt === '' || session === undefined) return; // empty submit is a no-op
@@ -540,7 +553,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // later session-restored replay). ONE append is both the durable row and the live echo —
     // its key is the row's transcript index, so the live row and its replay reconcile to a
     // single rendered row webview-side (the stored transcript shape is unchanged, k4).
-    post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` });
+    // S003 (dev-chat ux polish) ac2: a SYNTHESIZED grant re-run (from an Approve) passes
+    // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
+    // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
+    if (opts?.suppressEcho !== true) {
+      post({ type: 'user-row', text: prompt, key: `r${s.transcript.length - 1}` });
+    }
     // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
     // rows are distinguishable; a whitespace-only prompt is already rejected above, so
     // the clip is non-empty. Later turns keep the established title.
@@ -754,6 +772,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const pending = pendingPerms.get(msg.requestId);
         if (pending !== undefined) {
           pendingPerms.delete(msg.requestId);
+          // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
+          // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
+          recordPermissionOutcome(pending.toolName, msg.decision === 'approve', msg.requestId);
           if (msg.decision === 'approve') {
             if (pending.blockKind === 'dir-block') {
               // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory,
@@ -776,10 +797,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             } else if (typeof pending.command === 'string' && pending.command !== '') {
               // A tool-permission gate WITH a concrete command: re-run naming the EXACT command so the
               // resumed model has an unambiguous action (not a vague "please proceed" nudge).
-              void runTurn(`Approved — run exactly this now: ${pending.command}`, [pending.toolName]);
+              // S003 (ux polish) ac2: suppressEcho so the synthetic grant prompt is not echoed as a
+              // user bubble — only the resolved permission-outcome chip marks the approval.
+              void runTurn(`Approved — run exactly this now: ${pending.command}`, [pending.toolName], { suppressEcho: true });
             } else {
               // A tool-permission gate with no captured command: fall back to today's tool-name phrasing.
-              void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName]);
+              void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName], { suppressEcho: true });
             }
           }
           return;

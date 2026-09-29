@@ -29,8 +29,10 @@ interface FakeNode {
   innerHTML?: string; // S001: renderAssistantMd assigns marked's HTML here (asserted by the md tests)
   attrs: Record<string, string>;
   children: FakeNode[];
+  parentNode?: FakeNode; // S003: set on appendChild so removeChild can detach (the approval resolve path)
   listeners: Record<string, Array<() => void>>;
   appendChild(c: FakeNode): void;
+  removeChild(c: FakeNode): void; // S003: the resolved approval card removes its .insrc-approval__actions
   setAttribute(k: string, v: string): void;
   addEventListener(ev: string, fn: () => void): void;
   click(): void;
@@ -43,7 +45,8 @@ function makeNode(tag: string): FakeNode {
     attrs: {},
     children: [],
     listeners: {},
-    appendChild(c) { this.children.push(c); },
+    appendChild(c) { c.parentNode = this; this.children.push(c); },
+    removeChild(c) { const i = this.children.indexOf(c); if (i >= 0) this.children.splice(i, 1); c.parentNode = undefined; },
     setAttribute(k, v) { this.attrs[k] = v; },
     addEventListener(ev, fn) { (this.listeners[ev] ??= []).push(fn); },
     click() { (this.listeners['click'] ?? []).forEach((f) => f()); },
@@ -241,6 +244,11 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { kind: 'tool-result', turnId: 't', output: 'no cmd' },
     { role: 'tool-result', command: 'ls', output: 'a\nb', at: 't' },
     { role: 'tool-result', output: 'orphan', at: 't' },
+    // S003 (ux polish): permission-outcome — live event (approved/rejected) and its replayed twin.
+    { kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' },
+    { kind: 'permission-outcome', turnId: 't', toolName: 'Write', decision: 'rejected' },
+    { role: 'permission-outcome', toolName: 'Bash', decision: 'approved', at: 't' },
+    { role: 'permission-outcome', toolName: 'Write', decision: 'rejected', at: 't' },
   ];
   for (const s of samples) {
     assert.deepEqual(reg.toViewModel(s), toViewModel(s), `webview/host toViewModel drift on ${JSON.stringify(s)}`);
@@ -489,10 +497,68 @@ test('S004 t6: card buttons invoke the registered decision sink with (requestId,
   const { reg } = makeRegistry();
   const decisions: Array<[string, string]> = [];
   reg.onApprovalDecision((requestId, decision) => decisions.push([requestId, decision]));
-  const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-9', title: 'x' } })!;
-  findByClass(card, 'insrc-approval__btn--approve')!.click();
-  findByClass(card, 'insrc-approval__btn--deny')!.click();
+  // S003 (ux polish) ac1: a decided card resolves + drops its buttons, so approve and deny are
+  // exercised on SEPARATE cards (a real card is single-use).
+  const approveCard = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-9', title: 'x' } })!;
+  findByClass(approveCard, 'insrc-approval__btn--approve')!.click();
+  const denyCard = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-9', title: 'x' } })!;
+  findByClass(denyCard, 'insrc-approval__btn--deny')!.click();
   assert.deepEqual(decisions, [['perm-9', 'approve'], ['perm-9', 'deny']]);
+});
+
+// ---- S003 (dev-chat ux polish) ac1: the approval card resolves + drops its buttons on decision ----
+
+test('S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element', () => {
+  const { reg } = makeRegistry();
+  const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-a', title: 'Run', detail: 'x' } })!;
+  assert.ok(findByClass(card, 'insrc-approval__actions'), 'buttons present before the decision');
+  findByClass(card, 'insrc-approval__btn--approve')!.click();
+  assert.match(card.className, /insrc-approval--approved/, 'card stamped with the approved resolved class');
+  assert.doesNotMatch(card.className, /insrc-approval--rejected/);
+  assert.ok(!findByClass(card, 'insrc-approval__actions'), 'the actions element (buttons) is removed once decided');
+});
+
+test('S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element', () => {
+  const { reg } = makeRegistry();
+  const card = reg.renderRow({ kind: 'approval', text: '', collapsible: false, meta: { requestId: 'perm-r', title: 'Run', detail: 'x' } })!;
+  findByClass(card, 'insrc-approval__btn--deny')!.click();
+  assert.match(card.className, /insrc-approval--rejected/, 'card stamped with the rejected resolved class');
+  assert.ok(!findByClass(card, 'insrc-approval__actions'), 'the actions element is removed on deny too');
+});
+
+// ---- S003 (dev-chat ux polish) t1: the resolved permission-outcome chip ----
+
+test('S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)', () => {
+  const live: TurnEvent = { kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' };
+  const replayed: TranscriptEntry = { role: 'permission-outcome', toolName: 'Bash', decision: 'approved', at: 't' };
+  const expected = { kind: 'permission-outcome', text: 'Bash', collapsible: false, meta: { toolName: 'Bash', decision: 'approved' } };
+  assert.deepEqual(toViewModel(live), expected, 'live event -> resolved-chip vm');
+  assert.deepEqual(toViewModel(replayed), expected, 'replayed entry -> the identical vm');
+  const reject: TranscriptEntry = { role: 'permission-outcome', toolName: 'Write', decision: 'rejected', at: 't' };
+  assert.deepEqual(toViewModel(reject).meta, { toolName: 'Write', decision: 'rejected' });
+});
+
+test('S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' } as TurnEvent);
+  const row = reg.renderRow(vm)!;
+  assert.equal(row, appended[0], 'the chip self-appends via line() (like tool-result)');
+  const chip = findByClass(row, 'insrc-permoutcome');
+  assert.ok(chip, 'the chip is rendered');
+  assert.ok(allText(row).includes('Bash'), 'the tool name is shown');
+  const badge = findByClass(row, 'insrc-permoutcome__badge')!;
+  assert.match(badge.className, /insrc-approval__btn--approve/, 'approved badge reuses the green approve tint');
+  assert.ok(badge.textContent.includes('approved'), 'the badge reads approved');
+  // Non-actionable: no buttons, no click listeners anywhere on the chip.
+  assert.ok(!findByTag(row, 'button'), 'the chip has no buttons (non-actionable)');
+});
+
+test('S003 t1: a rejected permission-outcome reuses the red deny tint', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow(reg.toViewModel({ role: 'permission-outcome', toolName: 'Write', decision: 'rejected', at: 't' } as TranscriptEntry))!;
+  const badge = findByClass(row, 'insrc-permoutcome__badge')!;
+  assert.match(badge.className, /insrc-approval__btn--deny/, 'rejected badge reuses the red deny tint');
+  assert.ok(badge.textContent.includes('rejected'), 'the badge reads rejected');
 });
 
 test('S004 t6: an approval card with no decision sink registered does not throw on click', () => {

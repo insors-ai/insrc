@@ -80,6 +80,11 @@ export function markerFor(event: TurnEvent): MarkerLine | null {
       // Approval requests render as a live in-chat card, not a durable transcript
       // marker — they are view-time only and never persisted (k4).
       return null;
+    case 'permission-outcome':
+      // S003 (dev-chat ux polish): a resolved approve/deny outcome persists STRUCTURALLY
+      // (a role:'permission-outcome' transcript row rendered as a decided chip), never as a
+      // flat lifecycle marker — so markerFor maps it to null (k2), like tool-result.
+      return null;
     default: {
       // A future sc2 kind added before this mapper catches up: skip it (no marker), never throw.
       const _never: never = event;

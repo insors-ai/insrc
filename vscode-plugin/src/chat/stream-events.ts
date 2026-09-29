@@ -90,6 +90,20 @@ export type TurnEvent =
        * for command-less requests — the event is then byte-identical to today (k2).
        */
       readonly command?: string;
+    }
+  | {
+      /**
+       * S003 (dev-chat ux polish) sc2 (additive): the RESOLVED outcome of a permission
+       * approval-request (the user clicked approve/deny on the live card). HOST-emitted
+       * from the permission-decision handler (not adapter-streamed), so the transcript can
+       * replace the live-only card with a decided, non-actionable chip. Persisted
+       * STRUCTURALLY as a `role:'permission-outcome'` transcript row (like tool-result),
+       * so markerFor maps it to null — it never renders as a flat lifecycle marker (k2).
+       */
+      readonly kind: 'permission-outcome';
+      readonly turnId: string;
+      readonly toolName: string;
+      readonly decision: 'approved' | 'rejected';
     };
 
 /**
@@ -110,6 +124,7 @@ export const TURN_EVENT_KINDS = [
   'error',
   'tool-result',
   'approval-request',
+  'permission-outcome',
 ] as const;
 
 export type TurnEventKind = (typeof TURN_EVENT_KINDS)[number];

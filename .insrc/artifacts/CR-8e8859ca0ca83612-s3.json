@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790689508407-9qyaln",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T13:45:08.407Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s3"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/markers.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/markers.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/session-store.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/stream-events.ts:1",
+            "message": "The live outcome is delivered as a NEW 'permission-outcome' TurnEvent (stream-events.ts + TURN_EVENT_KINDS), which the LLD's dataModelChanges listed only implicitly (it named TranscriptEntry + markerFor callSites, not stream-events). This is faithful to the HLD P1 pattern and mirrors S001's tool-result exactly (live emit via the existing post({type:'turn-event'}) plumbing, no protocol.ts change), so it's within the additive contract — recording it as an adherence observation, not a breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:1",
+            "message": "resolve(dec) wraps card.removeChild(actions) in try/catch that silently swallows any error. This is a reasonable defensive guard for the eval'd webview DOM (a detached/again-clicked card), but the empty catch means a genuine unexpected failure to remove the buttons would be invisible. Acceptable for a webview render path; noted as an observation.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

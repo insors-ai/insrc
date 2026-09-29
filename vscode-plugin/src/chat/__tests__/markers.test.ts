@@ -29,6 +29,8 @@ const SAMPLES: TurnEvent[] = [
   { kind: 'approval-request', turnId: 't', requestId: 'req-1', title: 'Run a command', detail: 'ls -la' },
   { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok' },
   { kind: 'tool-result', turnId: 't', output: '' },
+  { kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' },
+  { kind: 'permission-outcome', turnId: 't', toolName: 'Write', decision: 'rejected' },
 ];
 
 const ALL_CLASSES = new Set(Object.values(MARKER_CLASS));
@@ -98,6 +100,15 @@ test('S004: markerFor(approval-request) -> null (live-only card, never a durable
 
 test('S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)', () => {
   const ev: TurnEvent = { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok' };
+  assert.equal(markerFor(ev), null);
+  // The webview mirror agrees (its fall-through maps the unmapped kind to null too).
+  // eslint-disable-next-line no-eval
+  const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
+  assert.equal(webviewMarkerFor(ev), null);
+});
+
+test('S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)', () => {
+  const ev: TurnEvent = { kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' };
   assert.equal(markerFor(ev), null);
   // The webview mirror agrees (its fall-through maps the unmapped kind to null too).
   // eslint-disable-next-line no-eval

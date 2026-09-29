@@ -20,6 +20,9 @@ import type { PermissionMode } from './protocol.js';
  * - `tool-result` — S001 (dev-chat ux polish): a structured tool-output row carrying the tool
  *   `output` and an optional correlated `command` (NO `text`). Plain-serialisable, so it round-trips
  *   through the Memento with no per-row migration (isSession does no per-row check).
+ * - `permission-outcome` — S003 (dev-chat ux polish): the RESOLVED decision of a permission card
+ *   (approve/deny), carrying the `toolName` + `decision`, so a restored session shows a decided,
+ *   non-actionable chip in place of the live-only approval card. Plain-serialisable (same as above).
  *
  * Every variant carries `at`. Existing user/assistant/marker rows keep their exact shape (k1).
  */
@@ -37,6 +40,14 @@ export type TranscriptEntry =
       readonly command?: string;
       /** The tool's output text (may be empty). */
       readonly output: string;
+      readonly at: string;
+    }
+  | {
+      readonly role: 'permission-outcome';
+      /** The tool the approval card gated (e.g. 'Bash', 'Write'). */
+      readonly toolName: string;
+      /** The user's decision on the card. */
+      readonly decision: 'approved' | 'rejected';
       readonly at: string;
     };
 

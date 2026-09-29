@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790688240219-ly9ca1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T13:27:24.786Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 204541,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "storyId": "s3",
+    "lldRunId": "wf-1790687538424-20kgi6",
+    "lldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
+    "approvedAt": "2026-09-29T13:28:32.539Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building S003 threads one additive P1 'permission-outcome' row through the dev-chat render pipeline (RowKind + view + TranscriptEntry + toViewModel + renderer + markerFor, including the eval'd webview parity copy), makes the live approval card settle into a green/red resolved state that drops its buttons on decision, and gives runTurn an optional suppress-echo flag the two synthesized grant re-runs pass so the confusing fake 'Approved…' user line disappears while the resume turn + grant stay byte-identical. The permission-decision handler records the decided outcome (approve or deny) so it survives reload. Pure vscode-plugin/src/chat/ work verified through the eval'd *WebviewSource + session-store round-trip tests.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "P1 persisted permission-outcome row scaffold (RowKind + view + TranscriptEntry + toViewModel + renderer + markerFor)",
+        "summary": "Add the additive P1 seams for the resolved-outcome row: extend RowKind with 'permission-outcome' + the PermissionOutcomeRowView payload (render-registry.ts); add the plain-serialisable { kind:'permission-outcome'; toolName; decision } TranscriptEntry variant (session-store.ts); add the toViewModel branch mapping BOTH the replayed entry and the host-emitted live outcome to the view AND register the 'permission-outcome' renderer chip (green approved / red rejected, reusing the __btn--approve/--deny tints) in BOTH the module copy and the eval'd renderRegistryWebviewSource (keep the parity test green); add the markers.ts markerFor case for the persisted outcome, leaving the pending approval-request unmapped (-> null, never-default preserved).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "RowKind gains 'permission-outcome' and a PermissionOutcomeRowView { kind; toolName; decision:'approved'|'rejected' } exists; existing kinds unchanged.",
+          "TranscriptEntry gains the plain-serialisable permission-outcome variant; both stores accept it with no migration.",
+          "toViewModel maps a {kind:'permission-outcome'} TranscriptEntry AND a host-emitted live outcome to the same PermissionOutcomeRowView, in both the module and the eval'd webview source (parity test green).",
+          "register('permission-outcome') draws a resolved non-actionable chip via textContent/className only.",
+          "markers.ts markerFor returns the persisted permission-outcome mapping and STILL returns null for the pending approval-request (exhaustive-switch never-default intact)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "register('permission-outcome') draws a resolved chip (green approved / red rejected + tool name) reusing the __btn--approve/--deny tints; textContent/className only"
+          },
+          {
+            "level": "unit",
+            "name": "toViewModel maps BOTH a {kind:'permission-outcome'} TranscriptEntry (replay) and the host-emitted live outcome to the same PermissionOutcomeRowView"
+          },
+          {
+            "level": "unit",
+            "name": "markerFor returns the persisted permission-outcome mapping and STILL returns null for the pending approval-request (never-default preserved)"
+          },
+          {
+            "level": "unit",
+            "name": "the renderRegistryWebviewSource parity test admits a permission-outcome sample and stays green"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Approval card settles into a resolved state on decision (ac1)",
+        "summary": "Extend the register('approval') click path (render-registry.ts:315-330): on the approve/deny click, set a resolved (approved/rejected) class on the .insrc-approval card and remove its .insrc-approval__actions before/as it calls DEC(rid,decision). The pending card stays live-only (un-keyed, never persisted). Add the resolved-state CSS reusing the existing approve/deny tints.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Clicking approve or deny sets a resolved (approved/rejected) class on the card and removes the .insrc-approval__actions buttons.",
+          "The DEC(rid,decision) post still fires (decision relay unchanged).",
+          "The pending card is still appended un-keyed (never persisted)."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the approval renderer's decision path: on approve/deny click the card gains a resolved (approved/rejected) class and its .insrc-approval__actions buttons are removed (ac1)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "runTurn gains an optional suppressEcho flag gating the user-row echo (ac2/k1)",
+        "summary": "Add the optional third parameter opts?: { readonly suppressEcho?: boolean } to runTurn (chat-panel.ts:527) and gate the user-row echo post (chat-panel.ts:543) on it (default off = today's behaviour). The resume turn + tool grant are otherwise unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "runTurn's signature gains an optional opts.suppressEcho; existing call-sites compile unchanged (backward-compatible).",
+          "When suppressEcho is true the user-row echo post at :543 is skipped; when absent/false it posts exactly as today.",
+          "The resume turn + [toolName] grant behaviour is unchanged regardless of suppressEcho."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a NORMAL user turn still posts its user-row echo (suppressEcho off by default)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "permission-decision handler records the outcome + suppresses the grant echo (ac2/ac3/ac4/k4)",
+        "summary": "In the permission-decision handler (chat-panel.ts:745-796), on approve AND deny of a pending tool-gate push the { kind:'permission-outcome', toolName, decision } TranscriptEntry (persist it and emit it live via the same toViewModel/renderer t1 adds — no bespoke render), and pass { suppressEcho: true } to the two grant re-runs at :779/:782. Leave the dir-block informational branch (:764-775), the codex decide() relay (:787-794), pendingPerms, and the approval-request/permission-decision messages UNCHANGED.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "On approve (command or tool-name fallback) the host records permission-outcome(approved) and both grant re-runs pass { suppressEcho: true } (no user-row echo) while still running the resume turn with [toolName].",
+          "On deny the host records permission-outcome(rejected); no resume turn, no echo.",
+          "An unknown/stale requestId records no outcome and falls through to the codex decide() relay unchanged; the dir-block branch still posts its informational message and records approved without a grant.",
+          "The grant/resume path, pendingPerms correlation, and permission-decision message are byte-identical to today (k4)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "approve WITH command: host pushes permission-outcome(approved) AND the grant re-run posts NO user-row echo (suppressEcho) while still issuing the resume turn with [toolName]"
+          },
+          {
+            "level": "unit",
+            "name": "tool-name fallback grant (no command): records approved + suppresses echo + still resumes"
+          },
+          {
+            "level": "unit",
+            "name": "deny: records permission-outcome(rejected), no resume turn, no echo"
+          },
+          {
+            "level": "unit",
+            "name": "unknown/stale requestId records no outcome and falls through to the codex decide() relay unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "dir-block approve still posts its informational message unchanged and records an approved outcome without a grant"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests: resolved card, persisted-outcome round-trip + replay, echo suppression + grant preserved",
+        "summary": "Add/extend the eval'd *WebviewSource + fakeChannel/scriptedAdapter chat-panel tests, the session-store round-trip tests, and the markers/render-registry unit tests per the LLD test strategy — covering the resolved-card DOM change, the chip render, the dual-input toViewModel + markerFor mapping, the both-stores round-trip + reload replay (pending card does not reappear), and the host record-outcome + suppress-echo-while-preserving-grant behaviours (approve/deny/dir-block/unknown-requestId, and a normal user turn still echoing).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Unit tests cover ac1 (resolved card + chip), ac2 (echo suppressed for grants, preserved for normal turns), ac3 (grant/resume + dir-block/codex relay unchanged), ac4 (round-trip both stores + reload replay + markerFor->null pending).",
+          "The renderRegistryWebviewSource parity test is extended with a permission-outcome sample and stays green.",
+          "tsc clean and the full vscode-plugin suite passes (live tests skip under no INSRC_LIVE_TESTS)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "A {kind:'permission-outcome',toolName,decision} TranscriptEntry round-trips createInMemoryChatSessionStore AND createMementoChatSessionStore intact"
+          },
+          {
+            "level": "unit",
+            "name": "A session-restored replay containing a permission-outcome renders a non-actionable resolved chip; the pending card does NOT reappear"
+          },
+          {
+            "level": "unit",
+            "name": "An older transcript with no permission-outcome entries replays unchanged"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "The approval renderer's decision path: on approve/deny click the card gains a resolved (approved/rejected) class and its .insrc-approval__actions buttons are removed (ac1).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "register('permission-outcome') draws a resolved chip (green approved / red rejected + tool name) reusing the __btn--approve/--deny tints; textContent/className only.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "toViewModel maps BOTH a {kind:'permission-outcome'} TranscriptEntry (replay) and the host-emitted live outcome to the same PermissionOutcomeRowView.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor returns the persisted permission-outcome mapping and STILL returns null for the pending approval-request (never-default preserved).",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "A {kind:'permission-outcome',toolName,decision} TranscriptEntry round-trips createInMemoryChatSessionStore AND createMementoChatSessionStore intact.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "A session-restored replay containing a permission-outcome renders a non-actionable resolved chip; the pending card does NOT reappear.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "An older transcript with no permission-outcome entries replays unchanged.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "approve WITH command: host pushes permission-outcome(approved) AND the grant re-run posts NO user-row echo (suppressEcho) while still issuing the resume turn with [toolName].",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "tool-name fallback grant (no command): records approved + suppresses echo + still resumes.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "deny: records permission-outcome(rejected), no resume turn, no echo.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a NORMAL user turn still posts its user-row echo (suppressEcho off by default).",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "unknown/stale requestId records no outcome and falls through to the codex decide() relay unchanged.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "dir-block approve still posts its informational message unchanged and records an approved outcome without a grant.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ],
+    "chosenAlternative": "a1"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle — the S003 change surface in vscode-plugin/src/chat/: RowKind/RowViewModel/toViewModel/renderer (render-registry.ts), markerFor (markers.ts:43-85), TranscriptEntry union (session-store.ts:26), approval renderer (render-registry.ts:315-330) + live append (chat-panel.ts:412), runTurn (:527) + user-row echo (:543), the two grant re-runs (:779/:782), the permission-decision handler (:745-796) with pendingPerms (:138), dir-block (:764-775) + codex decide() relay (:787-794)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 — sc2 interfaceSketch (the P2->P1 instantiation over the existing approval-request) + the interactionWithShared entry: additive RowKind 'permission-outcome' + PermissionOutcomeRowView + plain-serialisable TranscriptEntry variant + toViewModel branch + markerFor case; approval-request stays markerFor->null; grant/resume path consumed UNCHANGED (k4)."
+    }
+  ]
+}

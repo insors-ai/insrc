@@ -1316,6 +1316,8 @@ test('S001 (bugfix): renderShell has the SINGLE merged mode control + wires the 
   assert.match(html, /type:'permission-decision'/, 'card posts permission-decision');
   assert.match(html, /type:'set-permission-mode'/, 'the control posts set-permission-mode');
   assert.match(html, /ev\.kind==='approval-request'/, 'the live handler routes approval-request');
+  // S003 (ux polish): the live handler routes a permission-outcome turn-event through the registry.
+  assert.match(html, /ev\.kind==='permission-outcome'/, 'the live handler routes permission-outcome to the registry');
 });
 
 test("S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)", async () => {
@@ -1678,7 +1680,7 @@ test('S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts a
   assert.ok(info.some((e) => e.kind === 'done'), 'the informational message ends with a done event');
 });
 
-test('S001 (bugfix): Deny drops both a tool-gate and a dir-block — nothing posted, no re-run', async () => {
+test('S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip', async () => {
   // tool-gate deny
   const fcT = fakeChannel();
   const runsT: TurnRequest[] = [];
@@ -1697,10 +1699,16 @@ test('S001 (bugfix): Deny drops both a tool-gate and a dir-block — nothing pos
   await waitFor(() => turnEvents(fcT).some((e) => e.kind === 'done'));
   const beforeT = runsT.length;
   const postsT = fcT.posted.length;
+  const echoesT = fcT.posted.filter((m) => m.payload.type === 'user-row').length;
   fcT.send(env('permission-decision', { requestId: 'req-t', decision: 'deny' }));
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(runsT.length, beforeT, 'tool-gate deny never re-runs');
-  assert.equal(fcT.posted.length, postsT, 'tool-gate deny posts nothing');
+  // S003 (ux polish): deny now records a rejected permission-outcome — exactly ONE new post, no echo.
+  assert.equal(fcT.posted.length, postsT + 1, 'tool-gate deny posts exactly the rejected outcome');
+  assert.equal(fcT.posted.filter((m) => m.payload.type === 'user-row').length, echoesT, 'deny posts no user-row echo');
+  const outT = turnEvents(fcT).filter((e) => e.kind === 'permission-outcome');
+  assert.equal(outT.length, 1, 'one permission-outcome event');
+  assert.deepEqual({ tool: (outT[0] as { toolName: string }).toolName, dec: (outT[0] as { decision: string }).decision }, { tool: 'Bash', dec: 'rejected' });
 
   // dir-block deny
   const fcD = fakeChannel();
@@ -1723,7 +1731,10 @@ test('S001 (bugfix): Deny drops both a tool-gate and a dir-block — nothing pos
   fcD.send(env('permission-decision', { requestId: 'req-d', decision: 'deny' }));
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(runsD.length, beforeD, 'dir-block deny never re-runs');
-  assert.equal(fcD.posted.length, postsD, 'dir-block deny posts nothing');
+  assert.equal(fcD.posted.length, postsD + 1, 'dir-block deny posts exactly the rejected outcome');
+  const outD = turnEvents(fcD).filter((e) => e.kind === 'permission-outcome');
+  assert.equal(outD.length, 1, 'one permission-outcome event for the dir-block deny');
+  assert.equal((outD[0] as { decision: string }).decision, 'rejected');
 });
 
 test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)', async () => {
@@ -1748,7 +1759,138 @@ test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) 
   fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
   await waitFor(() => decided.length >= 1);
   assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'fell through to the live adapter.decide relay (unchanged)');
+  // S003 (ux polish): a stale/no-pending decision records NO outcome (nothing to resolve).
+  assert.ok(!turnEvents(fc).some((e) => e.kind === 'permission-outcome'), 'no outcome recorded for a fall-through decision');
   fc.fireDispose(); // reap the hanging turn so the test process can exit
+});
+
+// ---- S003 (dev-chat ux polish) ac2/ac3/ac4: permission-outcome record + suppressed grant echo ----
+
+test('S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-bash', title: 'Permission: Bash', detail: 'needs perm', toolName: 'Bash', command: 'npm run build' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'build it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const echoesBefore = fc.posted.filter((m) => m.payload.type === 'user-row').length;
+  assert.equal(echoesBefore, 1, 'the ORIGINAL user turn posted exactly one user-row echo');
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-bash', decision: 'approve' }));
+  await waitFor(() => runs.length > before);
+  // The resume turn ran with the tool pre-allowed …
+  assert.deepEqual([...(runs[runs.length - 1]!.allowedTools ?? [])], ['Bash'], 'the grant re-run pre-allows the approved tool');
+  // … but the synthetic grant prompt was NOT echoed as a user bubble.
+  assert.equal(fc.posted.filter((m) => m.payload.type === 'user-row').length, echoesBefore, 'the grant re-run posts NO additional user-row echo');
+  // The approved outcome chip was emitted live.
+  const out = turnEvents(fc).filter((e) => e.kind === 'permission-outcome');
+  assert.equal(out.length, 1, 'exactly one approved outcome chip');
+  assert.deepEqual({ tool: (out[0] as { toolName: string }).toolName, dec: (out[0] as { decision: string }).decision }, { tool: 'Bash', dec: 'approved' });
+});
+
+test('S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)', async () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hello there' }));
+  await waitFor(() => fc.posted.some((m) => m.payload.type === 'user-row'));
+  const echoes = fc.posted.filter((m) => m.payload.type === 'user-row');
+  assert.equal(echoes.length, 1, 'a normal submit still echoes the user row');
+  assert.equal(echoes[0]!.payload['text'], 'hello there');
+});
+
+test('S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'needs to write', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const echoesBefore = fc.posted.filter((m) => m.payload.type === 'user-row').length;
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'approve' }));
+  await waitFor(() => runs.length > before);
+  assert.match(runs[runs.length - 1]!.prompt, /please proceed with the Write action/, 'fell back to the tool-name grant phrasing');
+  assert.equal(fc.posted.filter((m) => m.payload.type === 'user-row').length, echoesBefore, 'the fallback grant posts no user-row echo');
+  assert.equal(turnEvents(fc).filter((e) => e.kind === 'permission-outcome').length, 1, 'the approved outcome is recorded');
+});
+
+test('S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-dir', title: 'Permission: Bash', detail: 'Bash may only run in the allowed working directories for this session.', toolName: 'Bash', command: 'ls /etc' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'ls etc' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-dir', decision: 'approve' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'permission-outcome'));
+  assert.equal(runs.length, before, 'the dir-block Approve still never re-runs the adapter');
+  const out = turnEvents(fc).filter((e) => e.kind === 'permission-outcome');
+  assert.equal((out[0] as { decision: string }).decision, 'approved', 'the dir-block approve is recorded as approved');
+  // The informational assistant message is still posted (unchanged branch).
+  assert.ok(turnEvents(fc).some((e) => e.kind === 'assistant-delta' && /allowed working directories/i.test((e as { text: string }).text)), 'the dir-block info message is unchanged');
+});
+
+test('S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'needs to write', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'approve' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'permission-outcome'));
+  // The stored transcript has a permission-outcome row (renders the resolved chip on replay) and
+  // never an approval-request row (the pending card is live-only, so it cannot re-appear on restore).
+  const listed = store.list();
+  assert.equal(listed.length, 1, 'the session persisted');
+  const transcript = store.get(listed[0]!.id)!.transcript;
+  const outcome = transcript.find((r) => r.role === 'permission-outcome');
+  assert.ok(outcome, 'the resolved permission-outcome row is persisted');
+  assert.equal(outcome && 'decision' in outcome ? outcome.decision : undefined, 'approved');
+  assert.ok(!transcript.some((r) => (r as { role: string }).role === 'approval-request'), 'no approval-request row is ever persisted (no card on replay)');
 });
 
 // ---- S001 (bugfix): the chat mode is a PERSISTED per-session preference ----

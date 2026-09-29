@@ -269,6 +269,8 @@ Add the event + card + message + host relay that continues the run, but skip the
   - **resolved**: Fenced typed-JSON block (```insrc:select) — Matches the LLD's assumption + the user's approval; reuses the existing fenced-block scanner and fails safe (renders as a labelled code block in any client that doesn't know the tag). _(2026-09-29T14:15:30.180Z)_
 - `q549434d5` — Model steering: the model must be PROMPTED to emit the marker for the widget to fire in production (a steering/prompt concern outside the dev-chat module, k5). Without it the full round-trip is present + testable but rarely triggered. This steering is a follow-up, not part of this story's webview-module code.
   - **resolved**: Defer to a tracked follow-up story — Keeps S004's boundary honest (webview module only, k5); the round-trip ships fully testable via fixtures, and the steering surface (session preamble vs repo steering block) is decided on its own merits as a separate tracked item. _(2026-09-29T14:16:36.227Z)_
+- `qc28ef49b` — Duplicate/ës option ids in a marker: the renderer keys chips by array index so duplicates render, but the marker author should keep ids unique — a marker-authoring guideline tied to the syntax openQuestion.
+  - **resolved**: Guideline only — index-keyed rendering stays as-is — Index keying already renders + selects duplicates correctly, so no chip is lost and no marker is rejected; uniqueness belongs in the authoring guideline, keeping s4 scoped (Options 2-4 trade a real behaviour change for an author-only malformed-marker concern). _(2026-09-29T14:17:07.523Z)_
 
 ## Citations
 

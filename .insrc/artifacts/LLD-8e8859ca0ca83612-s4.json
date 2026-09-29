@@ -143,6 +143,13 @@
         "choice": "Defer to a tracked follow-up story",
         "rationale": "Keeps S004's boundary honest (webview module only, k5); the round-trip ships fully testable via fixtures, and the steering surface (session preamble vs repo steering block) is decided on its own merits as a separate tracked item.",
         "resolvedAt": "2026-09-29T14:16:36.227Z"
+      },
+      "qc28ef49b": {
+        "question": "Duplicate/ës option ids in a marker: the renderer keys chips by array index so duplicates render, but the marker author should keep ids unique — a marker-authoring guideline tied to the syntax openQuestion.",
+        "status": "resolved",
+        "choice": "Guideline only — index-keyed rendering stays as-is",
+        "rationale": "Index keying already renders + selects duplicates correctly, so no chip is lost and no marker is rejected; uniqueness belongs in the authoring guideline, keeping s4 scoped (Options 2-4 trade a real behaviour change for an author-only malformed-marker concern).",
+        "resolvedAt": "2026-09-29T14:17:07.523Z"
       }
     }
   },

@@ -67,6 +67,13 @@ export type TurnEvent =
       readonly title: string;
       readonly detail: string;
       readonly toolName?: string;
+      /**
+       * S001 (bugfix): the actual command the blocked action was about to run, when the
+       * provider exposes it (claude `command` / `input.command`). Carried so an Approve
+       * grant re-run can name the EXACT command to run instead of a vague nudge. Absent
+       * for command-less requests — the event is then byte-identical to today (k2).
+       */
+      readonly command?: string;
     };
 
 /**

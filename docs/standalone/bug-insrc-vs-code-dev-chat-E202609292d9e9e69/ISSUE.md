@@ -1,0 +1,23 @@
+<!-- insrc:artifact ISSUE-2d9e9e694a94116b -->
+
+# Dev-chat Approve silently no-ops (claude): grant re-run sends a vague nudge, and working-dir denials aren't handled
+
+## Reproduction
+
+In the insrc VS Code dev-chat (insrc.chat.enabled), with the claude provider in manual permission mode, ask something that runs a command the CLI blocks — e.g. a Bash `ls` targeting a directory OUTSIDE the session's allowed working directory. OBSERVED: an in-chat 'Permission: Bash' card appears with Approve/Deny; clicking Approve produces a reply like "I don't have a pending Bash request — this is the first turn of our conversation, so there's nothing I've asked permission for yet," and the blocked action never runs — the approval silently no-ops. EXPECTED: Approve causes the blocked action to actually proceed (the command runs), or, when it genuinely cannot be granted, the user is told why rather than getting a confused no-op.
+
+## Root cause
+
+TWO grounded causes. (A) The claude provider has no in-turn permission channel: the installed `claude -p` CLI surfaces a blocked tool as a `system/permission_denied` line and then ENDS the turn (cli-adapter.ts claudeMapper.mapLine ~:258-266 maps it to an approval-request event carrying only toolName + a human 'message' detail — NOT the command). Because the turn already ended as denied, the host can't relay a decision to a live request, so the permission-decision handler falls back to a 'grant re-run' (chat-panel.ts ~:727-733): on Approve it calls runTurn(`Approved: please proceed with the ${grantTool} action you requested permission for.`, [grantTool]) — a vague natural-language nudge with the tool pre-allowed via --allowedTools. On resume the model has NO pending tool_use to continue (the prior turn recorded a denial and completed), so it reasonably answers that nothing is pending and the approval no-ops. (B) The specific block in the report is a WORKING-DIRECTORY/sandbox-allowlist violation ('may only list files in the allowed working directories'), which is categorically different from a tool-permission gate: pre-allowing the tool via --allowedTools (buildArgs ~:243) cannot authorize a path outside the session's allowed dirs, so even a correct retry would be re-denied — the card offers a grant it cannot honor.
+
+## Fix intent
+
+Make Approve actually resolve the blocked action for the claude grant-re-run path, two parts. (1) Re-run the EXACT blocked command instead of a vague 'please proceed' nudge: surface the command the tool was about to run onto the approval record so Approve re-issues something concrete the model can execute, rather than relying on the model to reconstruct it. (2) Distinguish a working-directory/sandbox-allowlist denial from an ordinary tool-permission gate and handle it correctly — either widen the session's allowed directories when the user approves such a block, or do not present a grantable Approve for a block that a per-tool grant cannot satisfy (tell the user what it needs instead). Backward-compatible: the codex/in-turn-control path and the tool-gate grant path for already-working cases must be unaffected. Intent only — the exact event-shape, argv, and detection contract are designed in the LLD. Out of scope: adopting claude's in-turn control_response permission channel (a separate follow-on gated on the installed CLI exposing it).
+
+## Citations
+
+- **[[c1]]** `code` `vscode-plugin/src/chat/chat-panel.ts:731 — the Approve grant re-run: runTurn(`Approved: please proceed with the ${grantTool} action you requested permission for.`, [grantTool]) inside the permission-decision handler (:718-742)`
+- **[[c2]]** `code` `vscode-plugin/src/chat/cli-adapter.ts:258-266 claudeMapper.mapLine — `system/permission_denied` → an approval-request event { title:`Permission: ${toolName}`, detail:message, toolName } (no command); comment: claude 'denies + ENDS the turn ... lacks the in-turn can_use_tool control channel'`
+- **[[c3]]** `code` `vscode-plugin/src/chat/cli-adapter.ts:243 buildArgs — the grant re-run adds `--allowedTools <tool>` to pre-allow the approved tool; there is no --add-dir / working-directory widening path`
+- **[[c4]]** `code` `vscode-plugin/src/chat/chat-panel.ts:517 runTurn(text, allowedTools?) + :581 pendingPerms.set(requestId, toolName) — the grant path stores only toolName, so the exact command is not available to re-issue`
+- **[[c5]]** `code` `vscode-plugin/src/chat/cli-adapter.ts:315-345 formatDecision + the decide()/control_response relay (used by the codex branch at chat-panel.ts:739) — the correct in-turn answer path that claude does not currently exercise (the deferred FIX #2)`

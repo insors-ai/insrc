@@ -74,3 +74,30 @@ test('S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved k
   };
   assert.equal(withTool.kind === 'approval-request' ? withTool.toolName : undefined, 'Edit');
 });
+
+test('S001 (bugfix): ApprovalRequestEvent admits an optional command field; other kinds unaffected', () => {
+  // WITH the new command field.
+  const withCmd: TurnEvent = {
+    kind: 'approval-request',
+    turnId: 't',
+    requestId: 'req-3',
+    title: 'Permission: Bash',
+    detail: 'needs your permission',
+    toolName: 'Bash',
+    command: 'rm -rf build',
+  };
+  assert.equal(withCmd.kind === 'approval-request' ? withCmd.command : undefined, 'rm -rf build');
+  // WITHOUT it — the pre-fix shape still typechecks and carries no command (k2, byte-identical).
+  const noCmd: TurnEvent = {
+    kind: 'approval-request',
+    turnId: 't',
+    requestId: 'req-4',
+    title: 'Permission: Write',
+    detail: 'needs your permission',
+    toolName: 'Write',
+  };
+  assert.equal(noCmd.kind === 'approval-request' ? noCmd.command : 'x', undefined);
+  // Another kind is entirely unaffected by the widening.
+  const other: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'grep' };
+  assert.equal(other.kind, 'tool-call');
+});

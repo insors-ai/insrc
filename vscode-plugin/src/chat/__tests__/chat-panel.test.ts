@@ -1522,6 +1522,158 @@ test('S001 (bugfix): denying a permission-denied request does NOT re-run (the tu
   assert.equal(runs.length, before, 'deny never re-runs the blocked action');
 });
 
+// ---- S001 (bugfix): concrete tool-gate re-run + dir-block informational branch ----
+
+test('S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-bash', title: 'Permission: Bash', detail: 'Bash needs your permission', toolName: 'Bash', command: 'npm run build' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'build it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-bash', decision: 'approve' }));
+  await waitFor(() => runs.length > before);
+  const grant = runs[runs.length - 1]!;
+  assert.match(grant.prompt, /run exactly this now: npm run build/, 'the re-run names the exact command');
+  assert.doesNotMatch(grant.prompt, /please proceed with the/, 'not the vague tool-name nudge');
+  assert.deepEqual([...(grant.allowedTools ?? [])], ['Bash'], 'the tool is pre-allowed on the re-run');
+  assert.equal(grant.resume?.nativeSessionId, 'sess-1', 'the re-run resumes the same session');
+});
+
+test('S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'needs to write hello.txt', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write hello.txt' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'approve' }));
+  await waitFor(() => runs.length > before);
+  const grant = runs[runs.length - 1]!;
+  assert.match(grant.prompt, /please proceed with the Write action/, 'falls back to the tool-name phrasing');
+  assert.doesNotMatch(grant.prompt, /run exactly this now/, 'no concrete-command phrasing when there is no command');
+  assert.deepEqual([...(grant.allowedTools ?? [])], ['Write'], 'the tool is still pre-allowed');
+});
+
+test('S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched', async () => {
+  const fc = fakeChannel();
+  const runs: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-dir', title: 'Permission: Bash', detail: 'Bash may only run in the allowed working directories for this session.', toolName: 'Bash', command: 'ls /etc' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { onRun: (r) => runs.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'ls etc' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  const before = runs.length;
+  fc.send(env('permission-decision', { requestId: 'req-dir', decision: 'approve' }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runs.length, before, 'a dir-block Approve never re-runs the adapter (no grant)');
+  // An informational message was posted via post() (a fresh info-<requestId> turnId).
+  const info = turnEvents(fc).filter((e) => (e as { turnId: string }).turnId === 'info-req-dir');
+  assert.ok(info.some((e) => e.kind === 'assistant-delta' && /allowed working directories/i.test((e as { text: string }).text)), 'an informational assistant message explains the dir-block');
+  assert.ok(info.some((e) => e.kind === 'done'), 'the informational message ends with a done event');
+});
+
+test('S001 (bugfix): Deny drops both a tool-gate and a dir-block — nothing posted, no re-run', async () => {
+  // tool-gate deny
+  const fcT = fakeChannel();
+  const runsT: TurnRequest[] = [];
+  const evsT: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-t', title: 'Permission: Bash', detail: 'needs perm', toolName: 'Bash', command: 'npm run build' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const hostT = createChatPanelHost({
+    createPanel: () => fcT.channel,
+    providers: registry({ claude: scriptedAdapter(evsT, { onRun: (r) => runsT.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  hostT.open();
+  fcT.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fcT).some((e) => e.kind === 'done'));
+  const beforeT = runsT.length;
+  const postsT = fcT.posted.length;
+  fcT.send(env('permission-decision', { requestId: 'req-t', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runsT.length, beforeT, 'tool-gate deny never re-runs');
+  assert.equal(fcT.posted.length, postsT, 'tool-gate deny posts nothing');
+
+  // dir-block deny
+  const fcD = fakeChannel();
+  const runsD: TurnRequest[] = [];
+  const evsD: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-d', title: 'Permission: Bash', detail: 'Bash may only run in the allowed working directories for this session.', toolName: 'Bash' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ];
+  const hostD = createChatPanelHost({
+    createPanel: () => fcD.channel,
+    providers: registry({ claude: scriptedAdapter(evsD, { onRun: (r) => runsD.push(r) }) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  hostD.open();
+  fcD.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fcD).some((e) => e.kind === 'done'));
+  const beforeD = runsD.length;
+  const postsD = fcD.posted.length;
+  fcD.send(env('permission-decision', { requestId: 'req-d', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(runsD.length, beforeD, 'dir-block deny never re-runs');
+  assert.equal(fcD.posted.length, postsD, 'dir-block deny posts nothing');
+});
+
+test('S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)', async () => {
+  const fc = fakeChannel();
+  const decided: Array<[string, string, string]> = [];
+  // An approval-request WITHOUT a toolName is never added to pendingPerms, so a decision for it
+  // falls through to the live turn's adapter.decide() — the codex / in-turn control-protocol path.
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't9', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't9', requestId: 'perm-9', title: 'Run', detail: 'echo hi' },
+  ];
+  const adapter = scriptedAdapter(evs, { hang: true, onDecide: (t, r, d) => decided.push([t, r, d]) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'do it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+  await waitFor(() => decided.length >= 1);
+  assert.deepEqual(decided[0], ['t9', 'perm-9', 'approve'], 'fell through to the live adapter.decide relay (unchanged)');
+  fc.fireDispose(); // reap the hanging turn so the test process can exit
+});
+
 // ---- S001 (bugfix): the chat mode is a PERSISTED per-session preference ----
 
 test('S001 (bugfix): set-permission-mode persists onto the active (saved) session', async () => {

@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createProviderRegistry } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -538,6 +538,157 @@ test('S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant 
   const i = args.indexOf('--allowedTools');
   assert.ok(i >= 0, 'the grant re-run passes --allowedTools');
   assert.equal(args[i + 1], 'Write', 'with exactly the approved tool');
+});
+
+// ---- S001 (bugfix): permission_denied harvests the blocked command --------------
+
+const apprOf = (events: TurnEvent[]): Extract<TurnEvent, { kind: 'approval-request' }> | undefined =>
+  events.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
+
+test('S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)', async () => {
+  const denied = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Bash',
+    tool_use_id: 'toolu_cmd_top',
+    message: 'Bash needs your permission',
+    command: 'npm run build',
+  });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.ok(ev, 'an approval-request was emitted');
+  assert.equal(ev!.command, 'npm run build', 'the top-level command is harvested');
+  // The other fields are exactly as today.
+  assert.equal(ev!.requestId, 'toolu_cmd_top');
+  assert.equal(ev!.toolName, 'Bash');
+  assert.equal(ev!.title, 'Permission: Bash');
+  assert.equal(ev!.detail, 'Bash needs your permission');
+});
+
+test('S001 (bugfix): permission_denied with a nested input.command sets event.command', async () => {
+  const denied = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Bash',
+    tool_use_id: 'toolu_cmd_nested',
+    message: 'Bash needs your permission',
+    input: { command: 'git status', extra: 1 },
+  });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.ok(ev, 'an approval-request was emitted');
+  assert.equal(ev!.command, 'git status', 'the nested input.command is harvested');
+  assert.equal(ev!.toolName, 'Bash');
+});
+
+test('S001 (bugfix): a top-level command takes precedence over input.command', async () => {
+  const denied = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Bash',
+    tool_use_id: 'toolu_cmd_both',
+    message: 'needs perm',
+    command: 'TOP',
+    input: { command: 'NESTED' },
+  });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(ev!.command, 'TOP', 'top-level command wins');
+});
+
+test('S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)', async () => {
+  const denied = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Write',
+    tool_use_id: 'toolu_nocmd',
+    message: 'Write needs your permission',
+  });
+  const { deps } = depsFor({ lines: [denied, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev = apprOf(await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.ok(ev, 'an approval-request was emitted');
+  assert.equal(ev!.command, undefined, 'no command field when the line carries none');
+  // The event has exactly the pre-fix key set (no stray command key).
+  assert.deepEqual(Object.keys(ev!).sort(), ['detail', 'kind', 'requestId', 'title', 'toolName', 'turnId']);
+});
+
+test('S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)', async () => {
+  const deniedTop = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Bash',
+    tool_use_id: 'toolu_empty_top',
+    message: 'needs perm',
+    command: '',
+  });
+  const { deps: d1 } = depsFor({ lines: [deniedTop, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev1 = apprOf(await collect(createProviderRegistry(d1).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(ev1!.command, undefined, 'an empty top-level command is absent');
+
+  const deniedNested = JSON.stringify({
+    type: 'system',
+    subtype: 'permission_denied',
+    tool_name: 'Bash',
+    tool_use_id: 'toolu_empty_nested',
+    message: 'needs perm',
+    input: { command: '' },
+  });
+  const { deps: d2 } = depsFor({ lines: [deniedNested, JSON.stringify({ type: 'result', is_error: false })] });
+  const ev2 = apprOf(await collect(createProviderRegistry(d2).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' }))));
+  assert.equal(ev2!.command, undefined, 'an empty nested command is absent');
+});
+
+// ---- S001 (bugfix): classifyPermissionDenial ------------------------------------
+
+test('S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block', () => {
+  assert.equal(
+    classifyPermissionDenial('Bash may only run in the allowed working directories for this session.'),
+    'dir-block',
+  );
+  assert.equal(
+    classifyPermissionDenial('This path is outside the allowed working directories.'),
+    'dir-block',
+  );
+  // Case-insensitive.
+  assert.equal(classifyPermissionDenial('ALLOWED WORKING DIRECTORIES exceeded'), 'dir-block');
+});
+
+test('S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)', () => {
+  assert.equal(classifyPermissionDenial('Bash needs your permission to run this command'), 'tool-gate');
+  assert.equal(classifyPermissionDenial('Claude requested permissions to write to /repo/x.ts'), 'tool-gate');
+  assert.equal(classifyPermissionDenial('some unknown message'), 'tool-gate');
+  assert.equal(classifyPermissionDenial(''), 'tool-gate', 'empty -> tool-gate');
+});
+
+test('S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block', () => {
+  const toolGateMessages = [
+    "Claude requested permissions to write to /repo/hello.txt, but you haven't granted it yet.",
+    'Bash needs your permission to run: rm -rf build',
+    'Permission required to use the Edit tool.',
+    'The command touches files in your working directory tree.', // "working directory" but NOT "allowed working directories"
+    'This tool needs approval before it can proceed.',
+    'Write to the directory was requested.',
+  ];
+  for (const m of toolGateMessages) {
+    assert.equal(classifyPermissionDenial(m), 'tool-gate', `must not mis-classify: ${m}`);
+  }
+});
+
+test('S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir (no sandbox widening on a click)', async () => {
+  // With allowedTools passed (the grant re-run): --allowedTools present, --add-dir absent.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual', allowedTools: ['Bash'] })));
+    const args = spawner.calls[0]!.args;
+    assert.ok(args.includes('--allowedTools'), 'the grant re-run passes --allowedTools');
+    assert.ok(!args.includes('--add-dir'), 'buildArgs never adds --add-dir');
+  }
+  // Without allowedTools: still no --add-dir.
+  {
+    const { deps, spawner } = depsFor(CLAUDE_TEXT_TURN);
+    await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', permissionMode: 'manual' })));
+    assert.ok(!spawner.calls[0]!.args.includes('--add-dir'), 'no --add-dir without a grant either');
+  }
 });
 
 test('S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])', async () => {

@@ -201,6 +201,20 @@ function normalizeApprovalEvent(turnId: string, raw: Record<string, unknown>): T
   };
 }
 
+/**
+ * S001 (bugfix): classify a permission-denial message into what the host can actually do about it.
+ * A tool-permission gate ('tool-gate') can be granted by pre-allowing the tool on a resume re-run
+ * (--allowedTools); a working-directory / sandbox-allowlist block ('dir-block') CANNOT — no tool
+ * grant adds a directory to the session's allowed working dirs, so Approve must not pretend to.
+ *
+ * CONSERVATIVE: only the sandbox working-directory phrasing (matched case-insensitively on
+ * "allowed working directories") is a dir-block; everything else — including unknown/empty — is a
+ * tool-gate (the safe default). A real tool-gate is never mis-classified as dir-block.
+ */
+export function classifyPermissionDenial(detail: string): 'tool-gate' | 'dir-block' {
+  return /allowed working directories/i.test(detail) ? 'dir-block' : 'tool-gate';
+}
+
 /** Build a UnifiedDiff (single hunk) from a claude Edit/Write tool_use input. Best-effort, hunk-shaped. */
 function diffFromClaudeEdit(path: string, input: Record<string, unknown>): UnifiedDiff {
   const before = typeof input['old_string'] === 'string' ? (input['old_string'] as string) : '';
@@ -266,7 +280,27 @@ const claudeMapper: ProviderMapper = {
             ? (obj['tool_use_id'] as string)
             : `perm-${turnId}`;
         const message = typeof obj['message'] === 'string' ? (obj['message'] as string) : `${toolName} needs your permission`;
-        return [{ kind: 'approval-request', turnId, requestId: rid, title: `Permission: ${toolName}`, detail: message, toolName }];
+        // S001 (bugfix): harvest the blocked command when the line carries one (top-level `command`
+        // or a nested `input.command`), so the Approve grant re-run can name the EXACT command
+        // instead of a vague nudge. Empty string counts as absent; when there is no command the
+        // emitted event is byte-identical to today (k2).
+        const cmd =
+          typeof obj['command'] === 'string'
+            ? (obj['command'] as string)
+            : isRecord(obj['input']) && typeof obj['input']['command'] === 'string'
+              ? (obj['input']['command'] as string)
+              : undefined;
+        return [
+          {
+            kind: 'approval-request',
+            turnId,
+            requestId: rid,
+            title: `Permission: ${toolName}`,
+            detail: message,
+            toolName,
+            ...(cmd !== undefined && cmd !== '' ? { command: cmd } : {}),
+          },
+        ];
       }
       return [{ kind: 'status', turnId, phase: 'thinking' }];
     }

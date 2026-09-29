@@ -19,6 +19,9 @@ import { clampSessionTitleWebviewSource } from './session-title.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
+// S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
+// a working-directory / sandbox-allowlist block (the two must not share an Approve path).
+import { classifyPermissionDenial } from './cli-adapter.js';
 import type { ChatSessionStore, ChatSession } from './session-store.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import {
@@ -126,11 +129,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Normalize a session's stored mode (optional/back-compat/corrupt -> 'manual').
   const modeOf = (s: ChatSession | undefined): PermissionMode =>
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
-  // S001 (bugfix): pending review-mode permission requests, requestId -> the tool to pre-allow.
+  // S001 (bugfix): pending review-mode permission requests, requestId -> the request's grant facts.
   // Populated when a turn surfaces an approval-request (claude's `system/permission_denied`, which
-  // also ENDS the turn); on Approve the host re-runs the blocked action resuming the session with
-  // that tool allowed. Cleared on decision.
-  const pendingPerms = new Map<string, string>();
+  // also ENDS the turn). `toolName` is the tool to pre-allow; `command` (when present) is the exact
+  // command to name in the grant re-run; `blockKind` tells a tool-permission gate (Approve re-runs
+  // with the tool pre-allowed) apart from a working-dir / sandbox-allowlist block (Approve cannot
+  // grant a directory — it posts an informational message instead). Cleared on decision.
+  const pendingPerms = new Map<string, { toolName: string; command?: string; blockKind: 'tool-gate' | 'dir-block' }>();
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -576,10 +581,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         activeTurnId = ev.turnId;
         post({ type: 'turn-event', event: ev });
         appendEvent(s, ev);
-        // S001 (bugfix): remember which tool an approval card is asking about, so Approve can
-        // re-run the blocked action with exactly that tool pre-allowed (review-mode grant flow).
+        // S001 (bugfix): remember what an approval card is asking about, so Approve can re-run the
+        // blocked action concretely (the exact command / tool pre-allowed) — and so a working-dir
+        // block is branched away from the tool-grant path (classifyPermissionDenial).
         if (ev.kind === 'approval-request' && typeof ev.toolName === 'string' && ev.toolName !== '') {
-          pendingPerms.set(ev.requestId, ev.toolName);
+          pendingPerms.set(ev.requestId, {
+            toolName: ev.toolName,
+            ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
+            blockKind: classifyPermissionDenial(ev.detail),
+          });
         }
         // S006: an observed file-edit -> the governor computes + renders its own diff
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
@@ -724,11 +734,36 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // request (no in-turn control channel), so the decision can't be relayed to a live turn —
         // instead, on Approve we re-run the blocked action resuming the session with that tool
         // pre-allowed; on Deny we drop it (the turn already ended as denied).
-        const grantTool = pendingPerms.get(msg.requestId);
-        if (grantTool !== undefined) {
+        const pending = pendingPerms.get(msg.requestId);
+        if (pending !== undefined) {
           pendingPerms.delete(msg.requestId);
           if (msg.decision === 'approve') {
-            void runTurn(`Approved: please proceed with the ${grantTool} action you requested permission for.`, [grantTool]);
+            if (pending.blockKind === 'dir-block') {
+              // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory,
+              // so DON'T re-run (that produced the confused no-op). Post a self-contained
+              // informational message explaining what actually needs to change — no adapter/argv/
+              // allowlist touched (buildArgs still adds only --allowedTools, never --add-dir).
+              const tid = `info-${msg.requestId}`;
+              post({
+                type: 'turn-event',
+                event: {
+                  kind: 'assistant-delta',
+                  turnId: tid,
+                  text:
+                    `This action was blocked because its path is outside this session's allowed working directories. ` +
+                    `Approving cannot grant it — the directory must be added to the session's allowed working directories first ` +
+                    `(this is a sandbox/workspace setting, not a tool permission).`,
+                },
+              });
+              post({ type: 'turn-event', event: { kind: 'done', turnId: tid, ok: true } });
+            } else if (typeof pending.command === 'string' && pending.command !== '') {
+              // A tool-permission gate WITH a concrete command: re-run naming the EXACT command so the
+              // resumed model has an unambiguous action (not a vague "please proceed" nudge).
+              void runTurn(`Approved — run exactly this now: ${pending.command}`, [pending.toolName]);
+            } else {
+              // A tool-permission gate with no captured command: fall back to today's tool-name phrasing.
+              void runTurn(`Approved: please proceed with the ${pending.toolName} action you requested permission for.`, [pending.toolName]);
+            }
           }
           return;
         }

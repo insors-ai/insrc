@@ -116,10 +116,14 @@ import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPat
 import { dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
-import { renderErCompanion, renderUxCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
+import { validateSequenceDefinition, type SequenceDefinition } from './artifacts/companion/sequence.js';
+import { validateComponentDependencyDefinition, type ComponentDependencyDefinition } from './artifacts/companion/component.js';
+import { renderErCompanion, renderUxCompanion, renderSequenceCompanion, renderComponentCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
 import { UX_DEFINITION_PROPERTY_SCHEMA, UX_CONTENT_GATE_RULE } from './artifacts/companion/ux-schema.js';
+import { SEQUENCE_DEFINITION_PROPERTY_SCHEMA, SEQUENCE_CONTENT_GATE_RULE } from './artifacts/companion/sequence-schema.js';
+import { COMPONENT_DEFINITION_PROPERTY_SCHEMA, COMPONENT_CONTENT_GATE_RULE } from './artifacts/companion/component-schema.js';
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
 import { linkDocsToIssues } from './tracker/link.js';
@@ -1423,6 +1427,8 @@ function designEpicSynthesizer(
 		'- `body.openQuestions` collects every `missed`/`ambiguous` verdict from s6 that is NOT a scope-boundary item (sbdry1..sbdry4 hard-fail those instead).',
 		ER_CONTENT_GATE_RULE,
 		UX_CONTENT_GATE_RULE,
+		SEQUENCE_CONTENT_GATE_RULE,
+		COMPONENT_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
 	].join('\n');
@@ -1466,6 +1472,8 @@ function designEpicSynthesizer(
 					erDefinition:      ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:        COMPANIONS_PROPERTY_SCHEMA,
 					uxDefinition:      UX_DEFINITION_PROPERTY_SCHEMA,
+					sequenceDefinition:            SEQUENCE_DEFINITION_PROPERTY_SCHEMA,
+					componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA,
 					adherence:         ADHERENCE_PROPERTY_SCHEMA,
 					feedback:          FEEDBACK_PROPERTY_SCHEMA,
 				},
@@ -1562,11 +1570,77 @@ async function renderUxCompanionForBody(
 	}
 }
 
+/**
+ * sc3 (S003, artifact-companion-wiring) — the AUTHOR-GATED sequence + component
+ * diagram companion render, the finalize peer of renderErCompanionForBody /
+ * renderUxCompanionForBody. The synthesizer LLM authors a `sequenceDefinition`
+ * and/or a `componentDependencyDefinition` into the body only when a behaviour /
+ * structure diagram materially aids understanding (the content-gate); finalize
+ * renders each DETERMINISTICALLY — NO provider here. For each authored definition
+ * that carries no HIGH validation finding it renders the sibling HTML via docgen's
+ * assembleShell and returns its `kind:'diagram-mermaid'` CompanionArtifactRef.
+ * Content-gated + non-throwing: an absent slot yields no companion, and a HIGH
+ * validation finding or a DiagramGenerationError leaves that definition in-body
+ * without a picture (k1) — a valid second definition still renders. Returns the
+ * refs for whichever slots the body carries ([] when neither is present).
+ */
+async function renderDiagramCompanionsForBody(
+	body:     { readonly sequenceDefinition?: SequenceDefinition | undefined; readonly componentDependencyDefinition?: ComponentDependencyDefinition | undefined },
+	destDir:  string,
+	repoPath: string,
+): Promise<readonly CompanionArtifactRef[]> {
+	const refs: CompanionArtifactRef[] = [];
+
+	const seqDef = body.sequenceDefinition;
+	if (seqDef !== undefined) {
+		const problems = validateSequenceDefinition(seqDef);
+		if (problems.some(f => f.severity === 'HIGH')) {
+			log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: sequenceDefinition has HIGH findings; leaving it in-body without a companion');
+		} else {
+			try {
+				refs.push(await renderSequenceCompanion(seqDef, 'Sequence diagram', joinPath(destDir, 'sequence-diagram.html'), { repoPath }));
+			} catch (err) {
+				if (err instanceof DiagramGenerationError) {
+					log.warn({ repoPath, status: err.status }, 'finalize: sequence companion render failed; sequenceDefinition stays in-body without a picture');
+				} else {
+					throw err;
+				}
+			}
+		}
+	}
+
+	const compDef = body.componentDependencyDefinition;
+	if (compDef !== undefined) {
+		const problems = validateComponentDependencyDefinition(compDef);
+		if (problems.some(f => f.severity === 'HIGH')) {
+			log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: componentDependencyDefinition has HIGH findings; leaving it in-body without a companion');
+		} else {
+			try {
+				refs.push(await renderComponentCompanion(compDef, 'Component dependencies', joinPath(destDir, 'component-dependency.html'), { repoPath }));
+			} catch (err) {
+				if (err instanceof DiagramGenerationError) {
+					log.warn({ repoPath, status: err.status }, 'finalize: component companion render failed; componentDependencyDefinition stays in-body without a picture');
+				} else {
+					throw err;
+				}
+			}
+		}
+	}
+
+	return refs;
+}
+
 /** Merge a rendered companion ref into the body's `companions` (additive; never
  *  clobbers an existing entry). Returns the body unchanged when `ref` is absent. */
 function withCompanion<T extends { readonly companions?: readonly CompanionArtifactRef[] | undefined }>(body: T, ref: CompanionArtifactRef | undefined): T {
 	if (ref === undefined) return body;
 	return { ...body, companions: [...(body.companions ?? []), ref] };
+}
+
+/** Merge several rendered companion refs into the body's `companions` (additive;
+ *  folds each via withCompanion). Returns the body unchanged for an empty list. */
+function withCompanions<T extends { readonly companions?: readonly CompanionArtifactRef[] | undefined }>(body: T, refs: readonly CompanionArtifactRef[]): T {
+	return refs.reduce((b, ref) => withCompanion(b, ref), body);
 }
 
 async function finalizeDesignEpic(
@@ -1671,9 +1745,12 @@ async function finalizeDesignEpic(
 	// sc4 (S004): a document can carry BOTH an ER diagram and a UX mock — render the
 	// UX companion alongside the ER one and attach both refs.
 	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(hldMd), 'ux-mock.html'), intent.repoPath);
+	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
+	// component-dependency companions when the LLM authored either (content-gated).
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(hldMd), intent.repoPath);
 	const artifact: HldArtifact = {
 		meta,
-		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
+		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
 	const renderedBody = renderHldMarkdown(artifact);
@@ -1801,6 +1878,8 @@ function designStorySynthesizer(
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		ER_CONTENT_GATE_RULE,
 		UX_CONTENT_GATE_RULE,
+		SEQUENCE_CONTENT_GATE_RULE,
+		COMPONENT_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 	].join('\n');
@@ -1863,6 +1942,8 @@ function designStorySynthesizer(
 					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:            COMPANIONS_PROPERTY_SCHEMA,
 					uxDefinition:          UX_DEFINITION_PROPERTY_SCHEMA,
+					sequenceDefinition:            SEQUENCE_DEFINITION_PROPERTY_SCHEMA,
+					componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA,
 					adherence:             ADHERENCE_PROPERTY_SCHEMA,
 					feedback:              FEEDBACK_PROPERTY_SCHEMA,
 				},
@@ -2014,9 +2095,12 @@ async function finalizeDesignStory(
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
 	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);
+	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
+	// component-dependency companions when the LLM authored either (content-gated).
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath);
 	const artifact: LldArtifact = {
 		meta,
-		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
+		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);
@@ -2162,9 +2246,12 @@ async function finalizeStandaloneLld(
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
 	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);
+	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
+	// component-dependency companions when the LLM authored either (content-gated).
+	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath);
 	const artifact: LldArtifact = {
 		meta,
-		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
+		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);

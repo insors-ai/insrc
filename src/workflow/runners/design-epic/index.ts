@@ -38,6 +38,8 @@ import {
 } from './schemas.js';
 import { ER_CONTENT_GATE_RULE } from '../../artifacts/companion/er-schema.js';
 import { UX_CONTENT_GATE_RULE } from '../../artifacts/companion/ux-schema.js';
+import { SEQUENCE_CONTENT_GATE_RULE } from '../../artifacts/companion/sequence-schema.js';
+import { COMPONENT_CONTENT_GATE_RULE } from '../../artifacts/companion/component-schema.js';
 
 // ---------------------------------------------------------------------------
 // Shared: a simple llm-pause runner
@@ -268,6 +270,8 @@ const frameworkWrite = llmPauseRunner({
 			'',
 			ER_CONTENT_GATE_RULE,
 			UX_CONTENT_GATE_RULE,
+			SEQUENCE_CONTENT_GATE_RULE,
+			COMPONENT_CONTENT_GATE_RULE,
 		].join('\n'),
 		userTurn: [
 			's1 HldContext:',

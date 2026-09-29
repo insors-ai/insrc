@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790705822097-yetrh5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T18:22:04.982Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 302803,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "epicSlug": "complete-generated-artifact-companion-wiring-across",
+    "storyId": "s3",
+    "lldRunId": "wf-1790703806654-5jbgnb",
+    "lldEffectiveHash": "35f2a2c76e97400c9aa521427a38dfe21bdef17dd1556ae696936902971fd34c",
+    "approvedAt": "2026-09-29T18:23:50.468Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building S003 means copying the established ER/UX companion pattern twice: two net-new definition families (sequence, component-dependency), each a schema+gate module plus a definition+toIr module, and two renderers appended to render.ts whose bodies are identical to renderErCompanion. The two optional body slots are admitted into the HLD+LLD synth schemas and their content-gate rules injected at the four synth-prompt sites, then a renderDiagramCompanionsForBody finalize peer renders + links a companion for whichever slot a document authors. Finally the code-review 'diagram' dimension gains two additive peer handlers (Option B) so an authored sequence/component definition is judged for adherence. Nothing in the existing er/ux families or the docgen render engine changes.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Sequence companion family: schema + definition + toIr",
+        "summary": "Add src/workflow/artifacts/companion/sequence-schema.ts (SEQUENCE_DEFINITION_PROPERTY_SCHEMA — optional participants[]+messages[]+truncations?; SEQUENCE_CONTENT_GATE_RULE HARD-RULE string) and sequence.ts (SequenceDefinition interface, validateSequenceDefinition returning DimensionFinding[] via a light structural check, sequenceDefinitionToIr(def)->DocumentIR with docType 'call-sequence', nodes kind 'call-frame' + edges, ':repeat' suffix for recursion + 'truncation' nodes, dangling-endpoint throws DiagramGenerationError). Mirror er-schema.ts/er.ts; consume DocumentIR unchanged.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "sequenceDefinitionToIr returns a DocumentIR with docType 'call-sequence', one 'call-frame' node per participant, one edge per message, byte-identical for a byte-identical def",
+          "a message endpoint not in participants[] throws DiagramGenerationError before any render",
+          "SEQUENCE_DEFINITION_PROPERTY_SCHEMA is a valid optional JSON-schema fragment (never lists itself as required); SEQUENCE_CONTENT_GATE_RULE is a non-empty string",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sequence.test.ts — sequenceDefinitionToIr: participants→'call-frame' nodes, messages→edges, recursion→':repeat', truncation→'truncation' node, docType 'call-sequence', deterministic"
+          },
+          {
+            "level": "unit",
+            "name": "sequence.test.ts — sequenceDefinitionToIr dangling message endpoint throws DiagramGenerationError; validateSequenceDefinition structural findings"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Component-dependency companion family: schema + definition + toIr",
+        "summary": "Add component-schema.ts (COMPONENT_DEFINITION_PROPERTY_SCHEMA — optional components[]+dependencies[]; COMPONENT_CONTENT_GATE_RULE) and component.ts (ComponentDependencyDefinition interface, validateComponentDependencyDefinition, componentDependencyDefinitionToIr(def)->DocumentIR with docType 'component-dependency', one node per component + one 'A-->B' edge per dependency, dangling-edge throws DiagramGenerationError). Mirror t1; consume DocumentIR unchanged.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "componentDependencyDefinitionToIr returns a DocumentIR with docType 'component-dependency', one node per component, one edge per dependency, deterministic",
+          "a dependency referencing an undeclared component id throws DiagramGenerationError before render",
+          "COMPONENT_DEFINITION_PROPERTY_SCHEMA is optional-never-required; COMPONENT_CONTENT_GATE_RULE is a non-empty string",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "component.test.ts — componentDependencyDefinitionToIr: components→nodes, dependencies→edges, docType 'component-dependency', deterministic"
+          },
+          {
+            "level": "unit",
+            "name": "component.test.ts — componentDependencyDefinitionToIr dangling dependency edge throws DiagramGenerationError; validateComponentDependencyDefinition structural findings"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Two renderers in render.ts",
+        "summary": "Append renderSequenceCompanion + renderComponentCompanion to companion/render.ts with bodies IDENTICAL to renderErCompanion (xDefinitionToIr -> assembleShell -> non-ok throws DiagramGenerationError -> mkdir + writeFile -> return CompanionArtifactRef{kind:'diagram-mermaid', relPath, title, ofSectionId?}). No new CompanionKind member (reuse 'diagram-mermaid' at types.ts:24). renderErCompanion/renderUxCompanion untouched.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "renderSequenceCompanion / renderComponentCompanion on a valid def write exactly one sibling offline HTML at destPath and return a ref of kind 'diagram-mermaid' with a repo-relative relPath",
+          "a non-ok assembleShell DocGenOutcome throws DiagramGenerationError and leaves no partial file",
+          "types.ts CompanionKind union is unchanged (no member added)",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diagram-render.test.ts — renderSequenceCompanion / renderComponentCompanion ok→one sibling HTML + ref kind 'diagram-mermaid', repo-relative relPath, ofSectionId flows through"
+          },
+          {
+            "level": "unit",
+            "name": "diagram-render.test.ts — non-ok assembleShell DocGenOutcome throws DiagramGenerationError and writes no file"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Admit the two optional body slots (types + synth schemas)",
+        "summary": "Add optional sequenceDefinition? / componentDependencyDefinition? fields to the HLD + LLD body TYPES (artifacts/hld.ts, artifacts/lld.ts) next to erDefinition/uxDefinition, and admit sequenceDefinition: SEQUENCE_DEFINITION_PROPERTY_SCHEMA + componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA into the two synth body schemas (orchestrator.ts:1467 HLD, :1863 LLD) under the existing additionalProperties:false — additive, never required.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "prepareSynthesize(design.epic) and prepareSynthesize(design.story standalone) both expose sequenceDefinition + componentDependencyDefinition as body properties, neither in required, body still additionalProperties:false and compiles under ajv",
+          "the HLD + LLD body types type-check with the two new optional fields",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diagram-synth-schema.test.ts — prepareSynthesize(design.epic + design.story standalone) admits both diagram slots, neither required, additionalProperties:false, compiles under ajv (admit-but-never-force)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Inject the two content-gate rules at the four synth-prompt sites",
+        "summary": "Inject SEQUENCE_CONTENT_GATE_RULE + COMPONENT_CONTENT_GATE_RULE as bare array elements adjacent to the ER/UX gates at the four sites: orchestrator.ts:1425 (HLD synth), :1803 (LLD synth), runners/design-story/index.ts:298 (contract.detail), runners/design-epic/index.ts:270 (framework.write). Import from the two -schema.ts modules. Mirrors S1's UX-gate wiring convention (k4).",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "both gate rules are imported and injected once at every one of the four synth-prompt sites, co-located with the ER/UX gates (a source-fact invariant)",
+          "the gate injection is a bare array element in each HARD-RULES join list, matching the ER/UX pattern",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diagram-synth-schema.test.ts — source-scan: SEQUENCE_/COMPONENT_CONTENT_GATE_RULE imported + injected once at each of the four synth-prompt sites (orchestrator HLD/LLD, design-story, design-epic), co-located with ER/UX (k4 guard mirroring ux-synth-schema.test.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "renderDiagramCompanionsForBody finalize peer + wire the three finalize sites",
+        "summary": "Add renderDiagramCompanionsForBody(body, destDir, repoPath) mirroring renderErCompanionForBody (orchestrator.ts:1504): content-gated (absent slot -> no companion), validates each authored def via validateSequenceDefinition/validateComponentDependencyDefinition (HIGH finding -> leave in-body, no render), calls the matching renderer, catches DiagramGenerationError -> skip; returns the refs for whichever slots are present. Invoke it at the three finalize points (HLD ~:1670, LLD :2014, LLD :2162) next to the ER/UX ForBody calls and append its refs to body.companions. renderErCompanionForBody untouched.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a finalized body carrying a sequenceDefinition and/or componentDependencyDefinition writes the corresponding sibling HTML companion(s) and appends one ref per authored def to body.companions",
+          "a body carrying neither diagram slot yields no companion and no file (document byte-identical to today)",
+          "a dangling-ref / non-ok / validation-HIGH definition is swallowed (finalize never throws) and any valid second definition still renders",
+          "renderErCompanionForBody / renderUxCompanionForBody bodies are unchanged",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "diagram-companion-finalize.test.ts — renderDiagramCompanionsForBody: sequence-only→one HTML+ref, component-only→one HTML+ref, both→two, neither→[] + no file (byte-identical)"
+          },
+          {
+            "level": "integration",
+            "name": "diagram-companion-finalize.test.ts — swallow: a dangling-ref / non-ok / validation-HIGH definition is skipped, finalize does not throw, a valid second definition still renders"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Code-review 'diagram' dimension: additive sequence/component peer handlers (Option B)",
+        "summary": "Add net-new src/workflow/code-review/dimensions/diagram/handlers/sequence.ts + component.ts that self-register via registerDiagramHandler (registry.ts:46, the reserved peer slot). Extend hasDiagramReferences (dimensions/diagram/index.ts:55) to also return true on body.sequenceDefinition / componentDependencyDefinition, and add two body-keyed dispatch branches at index.ts:97 mirroring the erDefinition branch. Reads the body.sequenceDefinition / componentDependencyDefinition fields added in t4. handlers/er.ts + isErCompanion UNTOUCHED (purely additive — the resolved open-question Option B).",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a code-review subject whose body carries a sequenceDefinition (resp. componentDependencyDefinition) engages the 'diagram' dimension and routes to the new sequence (resp. component) handler",
+          "hasDiagramReferences returns true for a body carrying only a sequence/component definition",
+          "handlers/er.ts and its isErCompanion are unchanged (no edit to the sc4-owned ref routing)",
+          "tsc --noEmit clean"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diagram-handlers.test.ts — a body carrying only a sequenceDefinition (resp. componentDependencyDefinition) makes hasDiagramReferences true and dispatches to the new sequence (resp. component) handler; handlers/er.ts unchanged"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "sequenceDefinitionToIr: participants → nodes kind 'call-frame', messages → edges, recursion → ':repeat' suffix, truncation → 'truncation' node; docType 'call-sequence'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "componentDependencyDefinitionToIr: components → nodes, dependencies → edges; docType 'component-dependency'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "determinism: byte-identical DocumentIR for a byte-identical def",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "dangling-ref: DiagramGenerationError",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "validateSequenceDefinition / validateComponentDependencyDefinition structural findings",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderSequenceCompanion ok → HTML + ref kind 'diagram-mermaid'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderComponentCompanion ok → HTML + ref",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "non-ok assembleShell → DiagramGenerationError + no file",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "opts.repoPath → repo-relative relPath; ofSectionId flows into the ref",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareSynthesize(design.epic) + prepareSynthesize(design.story standalone): body admits sequenceDefinition + componentDependencyDefinition, neither required, additionalProperties false, compiles under ajv",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-scan of orchestrator.ts + runners/*/index.ts: both gate rules imported + injected once per admitting prompt, co-located with ER/UX",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderDiagramCompanionsForBody: sequence-only → one HTML + ref; component-only → one HTML + ref; both → two; neither → [], no file, byte-identical",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "swallow: a dangling-ref or validation-HIGH definition is skipped, finalize does not throw, a valid second definition still renders",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails — sequenceDefinitionToIr / componentDependencyDefinitionToIr + the render spine (s1 bundle 'render-pipeline-exists': shell.ts:170 documentIRToMermaid docType dispatch, :142-160 toSequenceDiagram, :123-134 toFlowchart)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails — renderSequenceCompanion / renderComponentCompanion + renderDiagramCompanionsForBody mirroring renderErCompanion / renderErCompanionForBody (s1 bundle 'er-ux-contract-to-mirror': render.ts, orchestrator.ts:1504-1527, types.ts:24 CompanionKind)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges + migration — the two optional body slots admitted at orchestrator.ts:1467/:1863 and the two content-gate rules injected at the four synth-prompt sites (s1 bundle 'synth-body-admission-and-gate-sites')"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 open question (resolved Option B) — the additive code-review 'diagram' dimension peer handlers via registerDiagramHandler + body-keyed dispatch (s1 bundle 'test-and-review-patterns': code-review/dimensions/diagram/index.ts, registry.ts)"
+    }
+  ]
+}

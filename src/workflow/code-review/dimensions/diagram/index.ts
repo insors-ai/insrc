@@ -27,9 +27,15 @@ import { getLogger } from '../../../../shared/logger.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult } from '../../types.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { ErDefinition } from '../../../artifacts/companion/er.js';
+import type { SequenceDefinition } from '../../../artifacts/companion/sequence.js';
+import type { ComponentDependencyDefinition } from '../../../artifacts/companion/component.js';
 import { diagramHandlerFor, listDiagramHandlers, type DiagramAdherenceHandler } from './registry.js';
-// Importing the ER handler module registers it into the registry at load (S003).
+// Importing a handler module registers it into the registry at load.
 import { ER_HANDLER_TYPE } from './handlers/er.js';
+// sc3 (S003, artifact-companion-wiring): the sequence + component peer handlers
+// self-register on import (additive; handlers/er.ts is untouched).
+import { SEQUENCE_HANDLER_TYPE } from './handlers/sequence.js';
+import { COMPONENT_HANDLER_TYPE } from './handlers/component.js';
 
 const log = getLogger('code-review:dimensions:diagram');
 const DIMENSION = 'diagram' as const;
@@ -37,11 +43,15 @@ const DIMENSION = 'diagram' as const;
 /** The diagram-carrying view of the approved body. */
 function bodyOf(subject: CodeReviewSubject): {
 	readonly erDefinition?: ErDefinition;
+	readonly sequenceDefinition?: SequenceDefinition;
+	readonly componentDependencyDefinition?: ComponentDependencyDefinition;
 	readonly companions?: readonly CompanionArtifactRef[];
 } {
 	const body = (subject.approvedLld as { body?: unknown } | null)?.body;
 	return (typeof body === 'object' && body !== null ? body : {}) as {
 		readonly erDefinition?: ErDefinition;
+		readonly sequenceDefinition?: SequenceDefinition;
+		readonly componentDependencyDefinition?: ComponentDependencyDefinition;
 		readonly companions?: readonly CompanionArtifactRef[];
 	};
 }
@@ -53,6 +63,10 @@ function bodyOf(subject: CodeReviewSubject): {
 export function hasDiagramReferences(subject: CodeReviewSubject): boolean {
 	const body = bodyOf(subject);
 	if (body.erDefinition !== undefined) return true;
+	// sc3 (S003, artifact-companion-wiring): an authored sequence / component
+	// definition engages the dimension even without a companion ref (body-keyed).
+	if (body.sequenceDefinition !== undefined) return true;
+	if (body.componentDependencyDefinition !== undefined) return true;
 	return (body.companions ?? []).some(c => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html');
 }
 
@@ -97,6 +111,18 @@ export async function judgeDiagram(
 	if (body.erDefinition !== undefined) {
 		const er = diagramHandlerFor(ER_HANDLER_TYPE);
 		if (er !== undefined) handlersToRun.add(er);
+	}
+
+	// sc3 (S003, artifact-companion-wiring): a body carrying a sequence /
+	// component-dependency definition is validated by its peer handler (body-keyed
+	// dispatch, mirroring the erDefinition branch). Additive — no ref routing change.
+	if (body.sequenceDefinition !== undefined) {
+		const seq = diagramHandlerFor(SEQUENCE_HANDLER_TYPE);
+		if (seq !== undefined) handlersToRun.add(seq);
+	}
+	if (body.componentDependencyDefinition !== undefined) {
+		const comp = diagramHandlerFor(COMPONENT_HANDLER_TYPE);
+		if (comp !== undefined) handlersToRun.add(comp);
 	}
 
 	// Serial dispatch; a handler that throws yields a LOW observation (isolation).

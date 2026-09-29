@@ -25,6 +25,10 @@ import type { ErDefinition } from './er.js';
 import { erDefinitionToIr } from './er.js';
 import type { UxDefinition } from './ux.js';
 import { uxDefinitionToIr } from './ux.js';
+import type { SequenceDefinition } from './sequence.js';
+import { sequenceDefinitionToIr } from './sequence.js';
+import type { ComponentDependencyDefinition } from './component.js';
+import { componentDependencyDefinitionToIr } from './component.js';
 import type { CompanionArtifactRef } from './types.js';
 
 const log = getLogger('artifacts:companion:render');
@@ -124,6 +128,91 @@ export async function renderUxCompanion(
 	log.info({ destPath, relPath }, 'UX mock companion rendered');
 	return {
 		kind:    'ux-mock',
+		relPath,
+		title,
+		...(opts.ofSectionId !== undefined ? { ofSectionId: opts.ofSectionId } : {}),
+	};
+}
+
+/** Options for renderSequenceCompanion / renderComponentCompanion (mirrors
+ *  RenderErCompanionOpts). */
+export interface RenderDiagramCompanionOpts {
+	/** Registered repo root — when supplied, `relPath` is computed relative to it. */
+	readonly repoPath?:    string | undefined;
+	/** The document section id this companion visualizes (bound onto the ref). */
+	readonly ofSectionId?: string | undefined;
+}
+
+/**
+ * sc3 (S003) — render the SEQUENCE-diagram companion for `seqDef` to `destPath` (a
+ * sibling of the artifact `.md`). Mirrors renderErCompanion: builds the IR
+ * (sequenceDefinitionToIr → docType 'call-sequence'), awaits the SAME docgen
+ * assembleShell render seam, and on `status:'ok'` writes the self-contained offline
+ * HTML + returns the `kind:'diagram-mermaid'` CompanionArtifactRef the core markdown
+ * LINKS (never inlines — k1).
+ *
+ * @throws DiagramGenerationError on a non-ok DocGenOutcome (nothing is written; the
+ *   sequenceDefinition stays validated in-body without a picture).
+ */
+export async function renderSequenceCompanion(
+	seqDef:   SequenceDefinition,
+	title:    string,
+	destPath: string,
+	opts:     RenderDiagramCompanionOpts = {},
+): Promise<CompanionArtifactRef> {
+	const ir = sequenceDefinitionToIr(seqDef);
+	const outcome = await assembleShell(ir);
+	if (outcome.status !== 'ok') {
+		const reason = 'reason' in outcome ? outcome.reason
+			: 'symbol' in outcome ? `not found: ${outcome.symbol}`
+			: 'depthUsed' in outcome ? `truncated at depth ${outcome.depthUsed}`
+			: 'unknown';
+		throw new DiagramGenerationError(outcome.status, reason);
+	}
+	mkdirSync(dirname(destPath), { recursive: true });
+	writeFileSync(destPath, outcome.value.html, 'utf8');
+	const relPath = toRepoRelative(destPath, opts.repoPath);
+	log.info({ destPath, relPath }, 'sequence companion rendered');
+	return {
+		kind:    'diagram-mermaid',
+		relPath,
+		title,
+		...(opts.ofSectionId !== undefined ? { ofSectionId: opts.ofSectionId } : {}),
+	};
+}
+
+/**
+ * sc3 (S003) — render the COMPONENT-DEPENDENCY companion for `compDef` to
+ * `destPath` (a sibling of the artifact `.md`). Mirrors renderErCompanion: builds
+ * the IR (componentDependencyDefinitionToIr → docType 'component-dependency'),
+ * awaits the SAME docgen assembleShell render seam, and on `status:'ok'` writes the
+ * self-contained offline HTML + returns the `kind:'diagram-mermaid'`
+ * CompanionArtifactRef the core markdown LINKS (never inlines — k1).
+ *
+ * @throws DiagramGenerationError on a non-ok DocGenOutcome (nothing is written; the
+ *   componentDependencyDefinition stays validated in-body without a picture).
+ */
+export async function renderComponentCompanion(
+	compDef:  ComponentDependencyDefinition,
+	title:    string,
+	destPath: string,
+	opts:     RenderDiagramCompanionOpts = {},
+): Promise<CompanionArtifactRef> {
+	const ir = componentDependencyDefinitionToIr(compDef);
+	const outcome = await assembleShell(ir);
+	if (outcome.status !== 'ok') {
+		const reason = 'reason' in outcome ? outcome.reason
+			: 'symbol' in outcome ? `not found: ${outcome.symbol}`
+			: 'depthUsed' in outcome ? `truncated at depth ${outcome.depthUsed}`
+			: 'unknown';
+		throw new DiagramGenerationError(outcome.status, reason);
+	}
+	mkdirSync(dirname(destPath), { recursive: true });
+	writeFileSync(destPath, outcome.value.html, 'utf8');
+	const relPath = toRepoRelative(destPath, opts.repoPath);
+	log.info({ destPath, relPath }, 'component-dependency companion rendered');
+	return {
+		kind:    'diagram-mermaid',
 		relPath,
 		title,
 		...(opts.ofSectionId !== undefined ? { ofSectionId: opts.ofSectionId } : {}),

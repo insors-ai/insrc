@@ -33,6 +33,8 @@ import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 import type { ErDefinition } from './companion/er.js';
 import type { UxDefinition } from './companion/ux.js';
+import type { SequenceDefinition } from './companion/sequence.js';
+import type { ComponentDependencyDefinition } from './companion/component.js';
 import type { AdherenceSelection } from './companion/adherence.js';
 import type { CompanionArtifactRef } from './companion/types.js';
 
@@ -167,6 +169,13 @@ export interface LldBody {
 	 *  source of truth for a ux-mock companion, rendered as a link in the `ux`
 	 *  extension slot, never inlined). Additive + absent-safe (k6). */
 	readonly uxDefinition?: UxDefinition | undefined;
+	/** sc3 (S003, artifact-companion-wiring): the authored sequence-diagram element
+	 *  (source of truth for a sequence companion). Additive + absent-safe (k6). */
+	readonly sequenceDefinition?: SequenceDefinition | undefined;
+	/** sc3 (S003, artifact-companion-wiring): the authored component-dependency
+	 *  element (source of truth for a component-dependency companion). Additive +
+	 *  absent-safe (k6). */
+	readonly componentDependencyDefinition?: ComponentDependencyDefinition | undefined;
 	/** sc4 (S004): the explicit, recorded selectable adherence set. Additive +
 	 *  absent-safe — the completion check unions it with the content-derived gates. */
 	readonly adherence?: AdherenceSelection | undefined;

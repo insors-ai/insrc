@@ -136,6 +136,13 @@
         "choice": "Fenced typed-JSON block (```insrc:select)",
         "rationale": "Matches the LLD's assumption + the user's approval; reuses the existing fenced-block scanner and fails safe (renders as a labelled code block in any client that doesn't know the tag).",
         "resolvedAt": "2026-09-29T14:15:30.180Z"
+      },
+      "q549434d5": {
+        "question": "Model steering: the model must be PROMPTED to emit the marker for the widget to fire in production (a steering/prompt concern outside the dev-chat module, k5). Without it the full round-trip is present + testable but rarely triggered. This steering is a follow-up, not part of this story's webview-module code.",
+        "status": "resolved",
+        "choice": "Defer to a tracked follow-up story",
+        "rationale": "Keeps S004's boundary honest (webview module only, k5); the round-trip ships fully testable via fixtures, and the steering surface (session preamble vs repo steering block) is decided on its own merits as a separate tracked item.",
+        "resolvedAt": "2026-09-29T14:16:36.227Z"
       }
     }
   },

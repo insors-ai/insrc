@@ -267,6 +267,8 @@ Add the event + card + message + host relay that continues the run, but skip the
 
 - `q6b92849a` — Marker syntax: the exact typed-marker format the model writes to trigger a selection-request (e.g. a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` JSON block) is a product+protocol decision — the LLD assumes a fenced typed-JSON block but the concrete grammar should be confirmed before build.
   - **resolved**: Fenced typed-JSON block (```insrc:select) — Matches the LLD's assumption + the user's approval; reuses the existing fenced-block scanner and fails safe (renders as a labelled code block in any client that doesn't know the tag). _(2026-09-29T14:15:30.180Z)_
+- `q549434d5` — Model steering: the model must be PROMPTED to emit the marker for the widget to fire in production (a steering/prompt concern outside the dev-chat module, k5). Without it the full round-trip is present + testable but rarely triggered. This steering is a follow-up, not part of this story's webview-module code.
+  - **resolved**: Defer to a tracked follow-up story — Keeps S004's boundary honest (webview module only, k5); the round-trip ships fully testable via fixtures, and the steering surface (session preamble vs repo steering block) is decided on its own merits as a separate tracked item. _(2026-09-29T14:16:36.227Z)_
 
 ## Citations
 

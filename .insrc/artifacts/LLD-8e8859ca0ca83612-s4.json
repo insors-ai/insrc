@@ -1,0 +1,585 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790689691287-45a8sv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T13:55:40.481Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 449155,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "epicHash": "8e8859ca0ca83612",
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1790676258005-32feqt",
+    "hldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "c-turnevent-kinds",
+          "ref": "2.1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "stream-events.ts declares the TurnEvent union + a TURN_EVENT_KINDS list where the additive 'selection-request' member is added.",
+          "evidence": "stream-events.ts:30 export type TurnEvent + :118 TURN_EVENT_KINDS both found; approval-request confirms the additive member pattern.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-protocol-webview-types",
+          "ref": "2.4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "protocol.ts declares the WebviewToHost union + WEBVIEW_TO_HOST_TYPES list, with an existing permission-decision member (~:89-94) as the template for the additive selection-decision message.",
+          "evidence": "protocol.ts:89-90 = the permission-decision WebviewToHost member; WEBVIEW_TO_HOST_TYPES @ :117. The selection-decision member + list entry follow this exact template.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-render-rowkind-toviewmodel",
+          "ref": "2.3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "render-registry.ts declares RowKind + toViewModel (dual-input) + register(...) + onApprovalDecision, and the approval card renderer around :315-330.",
+          "evidence": "render-registry.ts:37 RowKind, :102 toViewModel, register('approval') @ :339, onApprovalDecision present. NOTE: the approval card is now at :339 (LLD cited :315-330) — line-drift from S003's commit; the symbol resolves.",
+          "action": "Confirmed; citation line-drift is cosmetic (build re-anchors).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-markerfor",
+          "ref": "3.2",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "markers.ts markerFor is an exhaustive switch (never-default) over TurnEvent kinds around :43-85; the new selection-request/selection-outcome cases map to null and the never-default is preserved.",
+          "evidence": "markers.ts:43 markerFor(event: TurnEvent): MarkerLine | null; :58 const _never: never — the exhaustive never-default is intact.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-transcript-union",
+          "ref": "3.1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "session-store.ts TranscriptEntry is a role-discriminated union already carrying plain-serialisable S001 tool-result + S003 permission-outcome variants that round-trip createInMemoryChatSessionStore + createMementoChatSessionStore; S004 adds a role:'selection-outcome' variant in the same shape.",
+          "evidence": "session-store.ts:29 export type TranscriptEntry; role:'tool-result' + role:'permission-outcome' variants present (chat-panel push sites); createMementoChatSessionStore @ :136. The role-discriminant selection-outcome variant is consistent (LLD cited :26, actual :29 — minor drift).",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-chatpanel-relay-anchors",
+          "ref": "2.5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "chat-panel.ts registers the decision sink at ~:361, appends the live interactive card on ev.kind at ~:412, holds pendingPerms (~:138), and has the permission-decision handler (~:745) that the selection-decision handler mirrors.",
+          "evidence": "chat-panel.ts:138 pendingPerms, :374 onApprovalDecision sink, :425 approval-request live append, :763 permission-decision handler — all resolve. Line numbers drifted ~+18 from the LLD's pre-S003 citations (S003 commit); symbols correct.",
+          "action": "Confirmed; line-drift cosmetic (build uses current lines).",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-approval-request-origin",
+          "ref": "2.2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The approval-request event's ORIGIN is claudeMapper.mapLine parsing system/permission_denied (cli-adapter.ts ~:216/316) — the pattern the selection-request marker-parse mirrors.",
+          "evidence": "cli-adapter.ts:316 = kind:'approval-request' (from permission_denied); mapLine @ :162 — the origin pattern the marker-parse mirrors.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-no-native-selection",
+          "ref": "openQuestions",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "There is NO provider-native selection signal today: cli-adapter.ts mapLine emits no selection-* event and neither claude nor codex --json carries a selection kind, so the selection-request has no origin except an added marker parse (the load-bearing gap justifying the openQuestion).",
+          "evidence": "greps for selection-request/selection-decision/selection-outcome return ZERO source matches — confirms there is no selection surface today, so the origin gap (openQuestion) is real and load-bearing.",
+          "action": "Confirmed — validates the openQuestion.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "c-fallback-renderer",
+          "ref": "2.3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "render-registry.ts routes any RowKind with no registered renderer to a 'fallback' renderer, so an unmatched selection kind degrades to plain text rather than throwing.",
+          "evidence": "render-registry.ts has a 'fallback' renderer (19 matches) so an unmatched RowKind degrades to plain text; the defensive path holds.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-09-29T13:57:35.254Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T14:13:52.048Z",
+    "questionResolutions": {
+      "q6b92849a": {
+        "question": "Marker syntax: the exact typed-marker format the model writes to trigger a selection-request (e.g. a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` JSON block) is a product+protocol decision — the LLD assumes a fenced typed-JSON block but the concrete grammar should be confirmed before build.",
+        "status": "resolved",
+        "choice": "Fenced typed-JSON block (```insrc:select)",
+        "rationale": "Matches the LLD's assumption + the user's approval; reuses the existing fenced-block scanner and fails safe (renders as a labelled code block in any client that doesn't know the tag).",
+        "resolvedAt": "2026-09-29T14:15:30.180Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "S004 adds a selection-options widget to the dev-chat: when the agent needs the user to pick among choices it presents them as selectable controls (single- or multi-select) with a confirm, the webview relays the chosen option(s) back over a new additive selection-decision message, the host continues the run with a synthesized user turn conveying the choice, and a persisted selection-outcome row records what was chosen so it survives reload. The live prompt is emitted as a new selection-request TurnEvent (parsed by the CLI adapter from a typed marker the model writes) and stays live-only (never persisted); everything is additive over the one dev-chat render pipeline behind insrc.chat.enabled, mirroring the proven approval round-trip. Two openQuestions: the exact marker syntax + steering the model to emit it.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "P1 (additive row kind): RowKind + RowViewModel + toViewModel(dual-input) + markerFor + plain-serialisable TranscriptEntry round-tripped by both stores. P2 (live-only interactive prompt -> persisted outcome): pending request markerFor->null (never persisted); webview relays the decision; host records a PERSISTED outcome via P1 without altering the underlying action. S004 applies BOTH P1 and P2 for a NEW selection surface (owns sc3).",
+      "ownedContracts": [
+        "sc3"
+      ],
+      "consumedContracts": [
+        "sc3"
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "The selection-widget render (single/multi controls), the host relay that turns a selection-decision into the run's continuation, and the resolved-selection persistence."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "internal": "tool-output row — out of scope."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "internal": "input row + width — out of scope."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc2"
+          ],
+          "internal": "approval resolved card + permission-outcome — out of scope (separate path)."
+        }
+      ],
+      "rolloutPhase": "Phase C — Selection widget"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "SelectionRequestEvent (stream-events.ts) — additive TurnEvent member",
+          "signature": "interface SelectionRequestEvent { readonly kind: 'selection-request'; readonly turnId: string; readonly requestId: string; readonly prompt: string; readonly options: readonly { readonly id: string; readonly label: string }[]; readonly multi?: boolean }  // + 'selection-request' in TURN_EVENT_KINDS",
+          "parameters": [],
+          "returns": {
+            "type": "TurnEvent",
+            "meaning": "The live-only prompt carrying the options; rides the existing {type:'turn-event',event} plumbing. Existing kinds unchanged (k1). markerFor->null (live-only, k2)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A selection prompt can be delivered + rendered without persisting."
+          ]
+        },
+        {
+          "name": "claudeMapper/codexMapper.mapLine (cli-adapter.ts) — selection-request origin (marker parse)",
+          "signature": "mapLine(line: string, turnId: string, state: TurnState): TurnEvent[]  // + a branch detecting a typed selection marker in assistant text",
+          "parameters": [],
+          "returns": {
+            "type": "TurnEvent[]",
+            "meaning": "On a typed selection marker (a fenced JSON block, e.g. ```insrc:select {prompt, options:[{id,label}], multi?} ```) mapLine emits a selection-request AND strips the raw marker from the visible assistant-delta. A partial/streamed marker is buffered in TurnState; a turn with no marker behaves exactly as today (lc1)."
+          },
+          "errors": [
+            {
+              "type": "malformed-marker",
+              "condition": "The fenced block is not valid JSON or lacks prompt/options — left as ordinary assistant text (no event), never throwing."
+            }
+          ],
+          "preconditions": [
+            "The exact marker syntax + steering the model to emit it are OPEN QUESTIONS."
+          ],
+          "postconditions": [
+            "ac1 origin: a real model turn can present options; a non-marker turn is unaffected."
+          ]
+        },
+        {
+          "name": "RowKind + SelectionOutcomeRowView + toViewModel + register('selection-request'|'selection-outcome') (render-registry.ts) — additive",
+          "signature": "type RowKind = /* existing */ | 'selection-request' | 'selection-outcome';  toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel  // + branches; register(...) for the live selection card + the resolved chip",
+          "parameters": [],
+          "returns": {
+            "type": "void / RowViewModel",
+            "meaning": "A live selection-request renders a card (single=radio chips / multi=checkbox chips + confirm). A selection-outcome renders a resolved non-actionable chip listing the chosen label(s). toViewModel maps the replayed entry AND the live outcome to one view (dual-input), mirroring S001/S003, in BOTH the module + the eval'd renderRegistryWebviewSource (parity test extended). textContent/className only (k1/k3)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "ac1: options render as selectable single/multi controls; ac3: the resolved chip replays on reload."
+          ]
+        },
+        {
+          "name": "onSelectionDecision sink + SelectionDecision message (render-registry.ts + protocol.ts) — additive relay",
+          "signature": "// render-registry: onSelectionDecision(cb: (requestId: string, selected: readonly string[]) => void): void\n// protocol.ts: | { readonly type: 'selection-decision'; readonly requestId: string; readonly selected: readonly string[] }  // + 'selection-decision' in WEBVIEW_TO_HOST_TYPES",
+          "parameters": [],
+          "returns": {
+            "type": "void / WebviewToHost",
+            "meaning": "The card's confirm calls the decision sink (registered like onApprovalDecision at chat-panel.ts:361); the webview posts the additive {type:'selection-decision',requestId,selected[]}. Existing messages + WEBVIEW_TO_HOST_TYPES otherwise unchanged (lc1/k1)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The confirmed choice is conveyed to the host over one additive message."
+          ]
+        },
+        {
+          "name": "selection-decision host handler + pendingSelections + run continuation (chat-panel.ts) — additive onMessage case",
+          "signature": "case 'selection-decision': { /* pendingSelections.get(requestId); record selection-outcome; runTurn(<choice>) */ }  // + const pendingSelections = new Map<string, { options }>()",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Mirrors the permission-decision handler (chat-panel.ts:745): a pendingSelections Map keyed by requestId; on a decision the host records a persisted selection-outcome (live-emit via the same toViewModel/renderer, like S003's recordPermissionOutcome) AND continues the run via a synthesized user turn conveying the chosen label(s)/id(s). Unknown/stale requestId is a safe no-op. Existing cases unchanged."
+          },
+          "errors": [
+            {
+              "type": "unknown-requestId",
+              "condition": "A selection-decision with no pending entry (stale/duplicate) records no outcome and continues no run — a safe no-op, mirroring the permission-decision stale path."
+            }
+          ],
+          "preconditions": [
+            "A selection-request was surfaced for this requestId."
+          ],
+          "postconditions": [
+            "ac2: the run continues based on the selection; ac3/k2: the outcome persists, the live prompt does not."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TranscriptEntry (session-store.ts)",
+        "change": "field-add",
+        "details": "Add a plain-serialisable variant { role: 'selection-outcome'; chosen: readonly string[]; at } (matching the role-discriminant convention S001 tool-result / S003 permission-outcome use). Round-trips both stores. The pending selection-request is NOT persisted (markerFor->null); only the resolved outcome enters the durable transcript.",
+        "schemaDiff": "TranscriptEntry = /* existing */ | { role: 'selection-outcome'; chosen: readonly string[]; at: number }",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/markers.ts",
+          "vscode-plugin/src/chat/render-registry.ts"
+        ]
+      },
+      {
+        "entity": "markerFor (markers.ts:43-85)",
+        "change": "field-add",
+        "details": "Add cases: selection-request -> null (live-only, k2); selection-outcome -> null too (persisted structurally via the transcript push, like tool-result/permission-outcome). Preserve the exhaustive-switch never-default.",
+        "schemaDiff": "markerFor(event): MarkerLine | null  // + case 'selection-request': null; case 'selection-outcome': null (structured persist)",
+        "callSites": [
+          "vscode-plugin/src/chat/markers.ts",
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "S004 owns sc3 and instantiates BOTH patterns per its interfaceSketch: (P2 live prompt) the additive selection-request TurnEvent + its live selection card, markerFor->null; (P2 relay) the additive {type:'selection-decision',requestId,selected[]} message + the pendingSelections host handler that continues the run via a synthesized user turn; (P1 outcome) the additive selection-outcome RowKind + SelectionOutcomeRowView + dual-input toViewModel + plain-serialisable TranscriptEntry + resolved-chip renderer. The CLI-adapter marker parse supplies the origin. Existing events/messages/persistence are UNCHANGED (k1); the approval/permission path is untouched (k4)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A selection-decision arrives for a requestId with no pending selection (stale/duplicate/already-resolved).",
+          "detection": "The selection-decision handler looks up pendingSelections.get(requestId) and finds undefined (mirrors pendingPerms.get at chat-panel.ts:754).",
+          "response": "Records no outcome, continues no run — a safe no-op; the entry is deleted on the first decision so a duplicate finds nothing.",
+          "userImpact": "A late/duplicate confirm does nothing; no double run, no spurious outcome row.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The model emits a malformed selection marker (bad JSON or missing prompt/options).",
+          "detection": "The mapLine parse branch attempts JSON.parse of the fenced block inside try/catch and validates prompt + a non-empty options array.",
+          "response": "No selection-request is emitted; the block is left as ordinary assistant text (an assistant-delta), never throwing.",
+          "userImpact": "The user sees the raw text instead of a widget for that malformed prompt; the run is otherwise unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A selection marker is split across multiple streamed assistant-delta chunks.",
+          "detection": "mapLine holds an in-progress marker buffer in the per-turn TurnState; an unclosed fence leaves the buffer pending rather than emitting.",
+          "response": "The event emits only once the closing fence arrives and the block parses; a half-marker never emits and never leaks a partial raw fence.",
+          "userImpact": "The widget appears once the full marker has streamed; no flicker.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A persisted transcript is loaded from an older (pre-S004) session with no selection-outcome entries.",
+          "detection": "Store validation accepts the union without the new variant (additive/optional); replay encounters none.",
+          "response": "toViewModel + the selection renderers are never invoked for the new kinds; the transcript replays exactly as before (no migration).",
+          "userImpact": "Older chats load unchanged.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A single-select prompt (multi absent/false).",
+          "expected": "Radio-style chips where choosing one deselects the others; confirm posts selected:[oneId]."
+        },
+        {
+          "input": "A multi-select prompt with zero options chosen at confirm.",
+          "expected": "Confirm is disabled/no-op until >=1 option is selected, so selected[] is never empty on a posted decision (mirrors doSubmit's non-empty guard)."
+        },
+        {
+          "input": "A multi-select prompt with several options chosen.",
+          "expected": "confirm posts selected:[id1,id2,...]; the persisted chip lists all chosen labels; the continuation conveys all chosen labels."
+        },
+        {
+          "input": "The selection card is confirmed, then the session is reloaded.",
+          "expected": "The pending card (live-only, markerFor->null) does not reappear; the persisted selection-outcome replays as a non-actionable resolved chip (ac3)."
+        },
+        {
+          "input": "A turn with NO selection marker.",
+          "expected": "Unchanged: mapLine emits the usual events; no selection-request, no new message (lc1)."
+        },
+        {
+          "input": "A duplicate option id in the marker's options array.",
+          "expected": "The renderer keys chips by array index so duplicate ids render distinctly; the continuation conveys labels so ambiguity is user-visible — noted as a marker-authoring concern for the openQuestion."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The selection round-trip is ADDITIVE: selection-request (+ TURN_EVENT_KINDS) and selection-decision (+ WEBVIEW_TO_HOST_TYPES) are new members; every existing event, message, and behaviour is unchanged, and a turn without a marker behaves as before (lc1/k1).",
+          "source": "c3"
+        },
+        {
+          "text": "The pending selection-request stays LIVE-ONLY: markerFor->null, appended un-keyed (mirroring approval-request at chat-panel.ts:412), never in the durable transcript; only the resolved selection-outcome is persisted (k2/ac3).",
+          "source": "c1"
+        },
+        {
+          "text": "The selection surface is SEPARATE from the approval/permission-decision + resume-grant flow: S004 touches neither pendingPerms nor runTurn's grant path (k4); it reuses the same plumbing shapes (turn-event router, decision-sink registration at chat-panel.ts:361, a pending-Map keyed by requestId) additively.",
+          "source": "c2"
+        },
+        {
+          "text": "The persisted selection-outcome TranscriptEntry is plain-serialisable (role:'selection-outcome', chosen:string[]) and round-trips both stores, mirroring S001 tool-result / S003 permission-outcome.",
+          "source": "c1"
+        },
+        {
+          "text": "Both the module toViewModel/renderer and the eval'd renderRegistryWebviewSource inline copy gain the selection branches, kept byte-parity by the existing parity test (k3).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test) — colocated vscode-plugin/src/chat/__tests__/: chat-panel.test.ts (eval'd *WebviewSource + fakeChannel/scriptedAdapter) for the widget render + host relay, cli-adapter.test.ts for the marker-parse, session-store.test.ts for the round-trip, protocol.test.ts for the exhaustive WEBVIEW_TO_HOST_TYPES, and markers/render-registry unit tests; live provider turns gated behind INSRC_LIVE_TESTS.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the selection card renders single/multi controls and relays the confirmed choice (ac1/ac2).",
+          "subjects": [
+            "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style.",
+            "The card's confirm calls the decision sink and the webview posts exactly one {type:'selection-decision',requestId,selected:[...ids]}.",
+            "A multi-select confirm with zero chosen is a no-op until >=1 option is selected.",
+            "textContent/className only; no innerHTML/remote; card appended un-keyed (live-only)."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the host relay records the outcome and continues the run (ac2/ac3).",
+          "subjects": [
+            "On a selection-decision for a pending requestId the host records a persisted selection-outcome AND continues the run via a synthesized user turn conveying the choice.",
+            "An unknown/stale requestId records no outcome and continues no run; a duplicate decision is a no-op.",
+            "The approval path (pendingPerms, grant runTurn) is untouched (k4)."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove persistence + replay (P1) and the live-only invariant (ac3/k2).",
+          "subjects": [
+            "A {role:'selection-outcome',chosen,at} TranscriptEntry round-trips both stores intact.",
+            "toViewModel maps BOTH the replayed entry and the live outcome to the same SelectionOutcomeRowView (dual-input); the resolved chip lists the chosen label(s), non-actionable.",
+            "markerFor returns null for selection-request so a replay does NOT re-surface the pending card; never-default preserved.",
+            "The renderRegistryWebviewSource parity test gains selection-request + selection-outcome samples and stays green."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the marker-parse origin + additive protocol (ac1 origin / lc1 / k1).",
+          "subjects": [
+            "mapLine given a scripted line with a valid selection marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker.",
+            "A malformed marker emits NO selection-request and leaves the text as an assistant-delta (no throw).",
+            "A marker split across two streamed lines emits only when the closing fence arrives; a half-marker never emits.",
+            "A line with NO marker emits the usual events unchanged (lc1).",
+            "protocol: 'selection-decision' is in WEBVIEW_TO_HOST_TYPES (exhaustiveness test passes); existing types unchanged."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "A live selection-request renders a card with one selectable control per option (radio single / checkbox multi)",
+            "mapLine parses a valid marker into a selection-request (origin) and strips the raw marker"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "The card's confirm posts exactly one {type:'selection-decision',requestId,selected}",
+            "On a selection-decision the host records the outcome AND continues the run via a synthesized user turn conveying the choice",
+            "A multi-select confirm with zero chosen posts nothing (guard)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "A {role:'selection-outcome',chosen,at} TranscriptEntry round-trips both stores and replays as a non-actionable resolved chip listing the chosen option(s)",
+            "markerFor returns null for selection-request so the pending card does not re-surface on reload"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Today the dev-chat has NO selection surface. TurnEvent has no selection kind; protocol.ts has no selection message; render-registry has no selection RowKind/renderer; there is no pendingSelections handler. The only interactive round-trip is approval: claude system/permission_denied -> mapLine (cli-adapter.ts:216/316) -> approval-request -> register('approval') card (render-registry.ts:315-330) appended un-keyed (chat-panel.ts:412, markerFor->null) -> {type:'permission-decision'} (chat-panel.ts:361) -> case 'permission-decision' (:745-796) with pendingPerms(:138). A model cannot present selectable options; the user replies free-form.",
+      "stateAfter": "A new selection surface exists, additive and mirroring approval end-to-end: mapLine parses a typed selection marker into a selection-request (buffering partials, stripping the marker); a selection card renders single/multi controls + confirm; confirm posts {type:'selection-decision',requestId,selected[]}; a case 'selection-decision' host handler keyed by pendingSelections records a persisted selection-outcome and continues the run via a synthesized user turn; the selection-outcome is a plain-serialisable role:'selection-outcome' entry replayed as a resolved chip, while the pending selection-request stays markerFor->null. Existing shapes UNCHANGED; the approval path untouched. OpenQuestions: the marker syntax + model-steering.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the selection-request member to TurnEvent + 'selection-request' to TURN_EVENT_KINDS (stream-events.ts).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the selection-decision member to WebviewToHost + 'selection-decision' to WEBVIEW_TO_HOST_TYPES (protocol.ts).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the 'selection-request' + 'selection-outcome' RowKind members + the SelectionOutcomeRowView payload (render-registry.ts).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the plain-serialisable { role:'selection-outcome'; chosen; at } variant to the TranscriptEntry union (session-store.ts).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the toViewModel branches + register the selection-request card renderer (single=radio / multi=checkbox + confirm calling onSelectionDecision) and the selection-outcome chip renderer, in BOTH the module and the eval'd renderRegistryWebviewSource; add the onSelectionDecision sink; extend the parity test.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Add markers.ts markerFor cases: selection-request -> null; selection-outcome -> null (structured persistence). Preserve the never-default.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Add the mapLine marker-parse branch (claude + codex): detect the typed marker, buffer partials in TurnState, emit the selection-request, strip the raw marker; malformed markers fall through as assistant-delta.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Add the pendingSelections Map + populate it when a selection-request is surfaced + the case 'selection-decision' host handler (record outcome live-emit+persist + continue the run via a synthesized user turn); register onSelectionDecision alongside onApprovalDecision (chat-panel.ts:361). Leave the permission path untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Add/extend the tests: cli-adapter marker-parse (valid/malformed/split/no-marker), *WebviewSource widget+relay, session-store round-trip, protocol exhaustiveness, markers, render-registry parity samples.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible: the selection-request event, selection-decision message, selection-* RowKinds, and the selection-outcome TranscriptEntry are all NEW additive members; every existing event, message, RowKind, renderer, and persisted entry keeps its shape and behaviour, and consumers that ignore the new members are unaffected (k1/lc1). Older transcripts replay unchanged (no data rewrite). The mapLine change only ADDS a branch that fires on a marker the model does not emit today, so a non-marker turn behaves exactly as before. The approval/permission-decision + resume-grant path is a separate surface, untouched (k4). All behind insrc.chat.enabled (k5).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Full selection round-trip incl. adapter marker-parse origin; choice continues the run as a synthesized user turn",
+        "oneLineSummary": "Build the whole additive P1+P2 selection contract AND its origin: the cli-adapter parses a typed assistant-text marker into a selection-request; the widget relays the choice via a new selection-decision message; the host records a persisted selection-outcome and continues the run with a synthesized user turn.",
+        "approach": "Instantiate sc3 end-to-end: selection-request TurnEvent + live selection card (single=radio/multi=checkbox + confirm), the marker-parse origin in mapLine (buffer partials, strip the marker), the additive selection-decision message + onSelectionDecision sink, a pendingSelections host handler that continues the run via a synthesized user turn, and the persisted selection-outcome P1 row. All additive; existing events/messages unchanged; approval path untouched (k4). Verified via the eval'd *WebviewSource + a scripted-adapter line.",
+        "pros": [
+          "Delivers the FULL end-to-end capability: a real model turn presents options (ac1), the choice steers the run (ac2), the resolved chip persists across reload while the live prompt does not (ac3).",
+          "Mirrors the proven approval round-trip + the S001/S003 P1 row pattern verbatim.",
+          "Every piece is additive + unit-testable (marker parse via a scripted adapter line; widget+relay+persistence via *WebviewSource + round-trip)."
+        ],
+        "cons": [
+          "The adapter gains a text-parse branch that must be robust to streamed/partial markers — needs buffering + a guard so a half-marker never emits.",
+          "The marker SYNTAX is a new convention the model must be steered to emit (a prompt concern outside the module, k5) — an openQuestion. Largest surface."
+        ],
+        "costEstimate": "L",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Ship the render + protocol + relay + persistence seam; leave the adapter-parse ORIGIN as an openQuestion",
+        "oneLineSummary": "Everything in a1 except the cli-adapter marker parse: the round-trip is shipped + verified via a SYNTHESIZED selection-request; the emission trigger (marker format) is an openQuestion / follow-up.",
+        "approach": "Same additive contract as a1 (event, card, message, host relay, persisted row), but the event is driven only from a synthesized selection-request until a follow-up wires the adapter trigger. The marker syntax + parse are recorded as an openQuestion.",
+        "pros": [
+          "Ships the whole owned contract now, fully testable via *WebviewSource, without committing to a marker syntax.",
+          "Lower-risk + smaller: no streamed-marker parsing.",
+          "Honest boundary: the marker format is surfaced as an openQuestion rather than invented."
+        ],
+        "cons": [
+          "ac1/ac2 are provable only via a SYNTHESIZED selection-request, not an end-to-end model turn, until the follow-up — a complete seam, not a triggered-in-production capability.",
+          "Splits the capability across two increments."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "ac1/ac2 only PARTIAL (synthesized-only) — it defers the user-visible trigger; a1 meets all ACs end-to-end and is the accuracy-first choice."
+      },
+      {
+        "id": "a3",
+        "name": "Selection widget + relay WITHOUT a persisted outcome row (P2 only, no P1)",
+        "oneLineSummary": "Render the card + relay the choice + continue the run, but do NOT persist a selection-outcome.",
+        "approach": "Add the event + card + message + host relay that continues the run, but skip the P1 persisted selection-outcome (no RowKind/TranscriptEntry/markerFor for the outcome). Chosen state lives only in the live DOM.",
+        "pros": [
+          "Smallest surface — no session-store/RowKind/markerFor additions.",
+          "Delivers ac1/ac2 during the live session."
+        ],
+        "cons": [
+          "FAILS ac3: on reload the chosen option(s) are lost — no durable record.",
+          "VIOLATES sc3, which requires a PERSISTED resolved-selection row (P1); only half the contract."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc3 + fails ac3 by dropping the persisted outcome the owned contract requires."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Marker syntax: the exact typed-marker format the model writes to trigger a selection-request (e.g. a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` JSON block) is a product+protocol decision — the LLD assumes a fenced typed-JSON block but the concrete grammar should be confirmed before build.",
+      "Model steering: the model must be PROMPTED to emit the marker for the widget to fire in production (a steering/prompt concern outside the dev-chat module, k5). Without it the full round-trip is present + testable but rarely triggered. This steering is a follow-up, not part of this story's webview-module code.",
+      "Duplicate/ës option ids in a marker: the renderer keys chips by array index so duplicates render, but the marker author should keep ids unique — a marker-authoring guideline tied to the syntax openQuestion."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 code-map + interactive-roundtrip + protocol-additive bundles — render-registry.ts (RowKind/RowViewModel/toViewModel/register/onApprovalDecision, approval card :315-330), stream-events.ts (TurnEvent + TURN_EVENT_KINDS), protocol.ts (WebviewToHost + WEBVIEW_TO_HOST_TYPES + permission-decision :89-94), markers.ts (markerFor :43-85), session-store.ts (TranscriptEntry + both stores), chat-panel.ts (:361 sink registration, :412 live append, :745-796 permission-decision handler, :138 pendingPerms)."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "HLD sc3 interfaceSketch — the P1+P2 selection round-trip shapes (SelectionRequestEvent / SelectionDecision message / selection-outcome RowKind + TranscriptEntry) + the invariant that the selection surface is additive and separate from the approval/grant path (k4)."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "Story lc1 — the selection round-trip must be additive to the event stream + the webview<->host protocol; existing message flows unchanged and a turn without a choice prompt behaves as before."
+    }
+  ]
+}

@@ -20,7 +20,7 @@ import { getLogger } from '../../../shared/logger.js';
 import { startRun } from '../../../workflow/executor.js';
 import { resolveDraftDeps } from '../../../workflow/draft-deps.js';
 import { prepareSynthesize } from '../../../workflow/orchestrator.js';
-import { assertStage, decodeState, encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
+import { assertStage, decodeState, reencodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type {
 	WorkflowStepEmitStep,
 	WorkflowStepEmitSynthesize,
@@ -79,7 +79,7 @@ export async function handlePlan(
 			prompt:   pause.prompt,
 			userTurn: pause.userTurn,
 			schema:   pause.schema,
-			state:    encodeState(next),
+			state:    reencodeState(input.state, next),
 		};
 	}
 	// complete — all deterministic. Prepare the synthesizer.
@@ -102,7 +102,7 @@ export async function handlePlan(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    encodeState(next),
+		state:    reencodeState(input.state, next),
 	};
 }
 

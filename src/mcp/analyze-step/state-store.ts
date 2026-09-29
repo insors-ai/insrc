@@ -124,6 +124,24 @@ export function releaseState(token: string): void {
 	store.delete(token);
 }
 
+/**
+ * Mint the next-turn token for `payload` AND release the superseded
+ * `previousToken` in one call — the release-superseded-on-save primitive that
+ * keeps an active run to ~1 live entry regardless of turn count (so a long
+ * turn-by-turn run never crowds itself out of the LRU cap). Mint-BEFORE-release:
+ * the new token is saved first, so a failure never leaves the run with zero live
+ * tokens; the previous entry is dropped only when `previousToken` is defined AND
+ * distinct from the freshly-minted token. `previousToken === undefined` behaves
+ * exactly like saveState (mirrors the workflow-step store primitive).
+ */
+export function replaceState(previousToken: string | undefined, payload: StepStatePayload): string {
+	const token = saveState(payload);
+	if (previousToken !== undefined && previousToken !== token) {
+		releaseState(previousToken);
+	}
+	return token;
+}
+
 /** For unit tests: wipe every entry. */
 export function _clearStateStoreForTests(): void {
 	store.clear();

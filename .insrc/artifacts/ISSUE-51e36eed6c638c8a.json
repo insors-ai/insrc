@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1790709360851-de9w4q",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T19:17:07.884Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 67019,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "51e36eed6c638c8a",
+    "epicSlug": "bug-insrc-mcp-loses-opaque-server",
+    "standalone": true,
+    "magnitude": "sized",
+    "approvedAt": "2026-09-29T19:17:53.399Z",
+    "parentRef": {
+      "slug": "bug-insrc-mcp-loses-opaque-server"
+    }
+  },
+  "body": {
+    "title": "Workflow `state` token dropped on long turn-by-turn runs, forcing a stage restart",
+    "reproduction": "Drive a long insrc workflow stage turn-by-turn through `insrc_workflow_step` (observed twice on a design.epic/HLD run, which has many `step` turns and heavy controller reasoning between calls). Mid-stage, a subsequent phase call fails with StateTokenNotFound (\"workflow state token '<...>' not found: server restarted, TTL expired, or the run was already completed. Restart with phase='start'.\") even though the MCP server never restarted and the run was not completed. Observed: the opaque `state` token stops resolving and the whole stage must restart from phase='start', losing the in-progress (partially synthesized) artifact. Expected: a long turn-by-turn run survives realistic inter-turn gaps and normal per-run turn counts without the active token being evicted.",
+    "rootCause": "The `state` token is backed by a process-local in-memory Map in the MCP server (NOT the daemon and NOT the ~/.insrc/daemon.sock IPC — so the 'IPC run timeout' candidate is ruled out). The store has two eviction paths: a hard `MAX_ENTRIES = 100` LRU cap and a 1-hour TTL keyed on each entry's `touchedAt`, both applied by `sweep()` which runs at the top of every `saveState`. Two compounding factors cause the active run's token to be evicted on a long run: (1) every intermediate turn (`plan`, each `step`) calls `saveState`, which MINTS A NEW token, but `releaseState` is only called at the TERMINAL `synthesize` phase — so each turn LEAKS its now-superseded token, and a long multi-step stage (plus chained stages within one session) inflates the store toward the 100-entry cap, at which point `sweep()`'s LRU eviction deletes the least-recently-touched entries; (2) the 1-hour TTL is refreshed only when a token is loaded, so a long inter-turn gap (heavy controller reasoning between two phase calls) can let the active token cross the TTL and be swept. Either path makes `loadState` return undefined → StateTokenNotFound → forced stage restart. The same LRU+TTL pattern is duplicated across four near-identical stores (workflow-step, analyze-step, review-step, code-review-step), whose own docstring notes the TTLs/caps 'may drift', so any lifecycle fix must be applied deliberately and reconcile with the existing retry-safety property where code-review-step already releases a token on consume (so a resend fails, preventing a double-write).",
+    "fixIntent": "Make a long turn-by-turn workflow run survive realistic inter-turn gaps and normal per-run turn counts without the ACTIVE token being evicted — by hardening the state-store lifecycle so intermediate turns no longer leak superseded tokens into the LRU/TTL pressure, and so the active run is not dropped mid-stage. The exact strategy (e.g. release the superseded token when the next state for the same run is saved; and/or re-key a run to a single slot; and/or soften the caps/TTL; and/or refresh-on-save) is a design decision to be made in the LLD, reconciled across the four parallel stores and against the existing release-on-consume retry-safety property — not decided here. No behavioural change to a healthy short run; the token contract (opaque, single controller holds the latest) is unchanged."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/state-store.ts:27",
+      "quotedText": "const MAX_ENTRIES = 100; const TTL_MS = 60 * 60 * 1_000; — the in-process Map store's LRU cap + 1h TTL."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/state-store.ts:91",
+      "quotedText": "sweep(): deletes entries whose touchedAt > TTL_MS, then LRU-evicts the least-recently-touched down below MAX_ENTRIES; called at the top of saveState."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/state-store.ts:52",
+      "quotedText": "loadState throws StateTokenNotFound when store.get(token) is undefined — the forced-restart path."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/phases/synthesize.ts:91",
+      "quotedText": "releaseState is called only at the terminal synthesize phase — intermediate turns mint via saveState (state.ts:88) but never release, leaking superseded tokens."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/mcp/code-review-step/handler.ts:493",
+      "quotedText": "releaseState(token) on consume: 'a resend of this token fails loadState (no double-write)' — the retry-safety property any release-on-read fix must preserve."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/analyze-step/state-store.ts:56",
+      "quotedText": "The same MAX_ENTRIES=100 + 1h TTL LRU pattern is duplicated across the analyze / review / code-review step stores (docstring: TTLs/caps 'may drift')."
+    }
+  ]
+}

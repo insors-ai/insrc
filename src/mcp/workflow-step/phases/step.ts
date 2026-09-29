@@ -18,7 +18,7 @@ import { getLogger } from '../../../shared/logger.js';
 import { resumeRun } from '../../../workflow/executor.js';
 import { resolveDraftDeps } from '../../../workflow/draft-deps.js';
 import { prepareSynthesize } from '../../../workflow/orchestrator.js';
-import { assertStage, decodeState, encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
+import { assertStage, decodeState, reencodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type {
 	WorkflowStepEmitStep,
 	WorkflowStepEmitSynthesize,
@@ -81,7 +81,7 @@ export async function handleStep(
 			prompt:   pause.prompt,
 			userTurn: pause.userTurn,
 			schema:   pause.schema,
-			state:    encodeState(next),
+			state:    reencodeState(input.state, next),
 		};
 	}
 	// complete
@@ -104,7 +104,7 @@ export async function handleStep(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    encodeState(next),
+		state:    reencodeState(input.state, next),
 	};
 }
 

@@ -16,6 +16,7 @@ import {
 	assertStage,
 	decodeState,
 	encodeState,
+	reencodeState,
 	StepStateDecodeError,
 	STATE_VERSION,
 	type StepStatePayload,
@@ -23,7 +24,10 @@ import {
 import {
 	_clearStateStoreForTests,
 	_stateStoreSize,
+	loadState,
 	releaseState,
+	replaceState,
+	saveState,
 } from '../analyze-step/state-store.js';
 
 const INTENT: ClassifiedIntent = {
@@ -149,4 +153,45 @@ test('token round-trips a state with an executed plan attached', () => {
 	const token = encodeState(p);
 	const back = decodeState(token);
 	assert.deepEqual(back, p);
+});
+
+// ---------------------------------------------------------------------------
+// E20260929c71f7106:S001 — replaceState / reencodeState in the analyze-step peer
+// store (the other leaking store). Same release-superseded-on-save invariant.
+// ---------------------------------------------------------------------------
+
+test('analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted', () => {
+	_clearStateStoreForTests();
+	let token = saveState(samplePayload());
+	for (let i = 0; i < 150; i++) {
+		const next = replaceState(token, samplePayload());
+		assert.notEqual(next, token);
+		assert.throws(() => loadState(token));          // superseded token released (single-use)
+		assert.equal(loadState(next).runId, 'run-1');   // fresh token resolves
+		assert.equal(_stateStoreSize(), 1);             // bounded — no per-turn leak
+		token = next;
+	}
+});
+
+test('analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)', () => {
+	_clearStateStoreForTests();
+	const token = replaceState(undefined, samplePayload());
+	assert.equal(_stateStoreSize(), 1);
+	assert.equal(loadState(token).runId, 'run-1');
+});
+
+test('analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)', () => {
+	_clearStateStoreForTests();
+	const prev = encodeState(samplePayload());
+	const next = reencodeState(prev, samplePayload());
+	assert.notEqual(next, prev);
+	assert.throws(() => loadState(prev));               // prev released
+	assert.equal(loadState(next).runId, 'run-1');
+	try {
+		reencodeState(next, samplePayload({ version: 999 as unknown as typeof STATE_VERSION }));
+		assert.fail('expected a wrong-version throw');
+	} catch (e) {
+		assert.ok(e instanceof StepStateDecodeError);
+		assert.equal((e as StepStateDecodeError).code, 'wrong-version');
+	}
 });

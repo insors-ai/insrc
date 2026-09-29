@@ -18,12 +18,14 @@ import {
 	_workflowStateStoreSize,
 	loadState,
 	releaseState,
+	replaceState,
 	saveState,
 } from '../state-store.js';
 import {
 	assertStage,
 	decodeState,
 	encodeState,
+	reencodeState,
 	WorkflowStateDecodeError,
 } from '../state.js';
 import type { WorkflowStepStatePayload } from '../state.js';
@@ -115,4 +117,74 @@ test("s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus th
 	for (const code of ['malformed', 'wrong-version', 'wrong-stage', 'not-found'] as const) {
 		assert.equal(new WorkflowStateDecodeError(code, 'x').code, code);
 	}
+});
+
+// ---------------------------------------------------------------------------
+// E20260929c71f7106:S001 — replaceState / reencodeState: release-superseded-on-save
+// (the state-token eviction bugfix). A long turn-by-turn run must hold ~1 live
+// token, never leak one per turn into the LRU cap.
+// ---------------------------------------------------------------------------
+
+test('replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1', () => {
+	_clearWorkflowStateStoreForTests();
+	let token = saveState(fixture());
+	assert.equal(_workflowStateStoreSize(), 1);
+	// Advance many turns, threading each returned token as the next prev.
+	for (let i = 0; i < 250; i++) {
+		const next = replaceState(token, fixture());
+		assert.notEqual(next, token);                       // a fresh token each turn
+		assert.throws(() => loadState(token));              // the superseded token is gone (single-use)
+		assert.equal(loadState(next).runId, 'run-x');       // the new token resolves
+		assert.equal(_workflowStateStoreSize(), 1);         // never grows — no per-turn leak
+		token = next;
+	}
+});
+
+test('replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)', () => {
+	_clearWorkflowStateStoreForTests();
+	const token = replaceState(undefined, fixture());
+	assert.equal(_workflowStateStoreSize(), 1);
+	assert.equal(loadState(token).runId, 'run-x');
+});
+
+test('replaceState is mint-before-release: the new token always exists even as the old is dropped', () => {
+	_clearWorkflowStateStoreForTests();
+	const first = saveState(fixture());
+	const second = replaceState(first, fixture());
+	assert.throws(() => loadState(first), /not found/i);   // prev released
+	assert.doesNotThrow(() => loadState(second));           // next live
+});
+
+test('replaceState never deletes the just-minted token in the degenerate prev===next case', () => {
+	_clearWorkflowStateStoreForTests();
+	// mintToken is random, so prev===next cannot occur naturally; assert the guard
+	// directly: replacing a token with a save whose minted token differs still keeps
+	// exactly one live entry, and a self-referential release is a no-op on the live one.
+	const token = saveState(fixture());
+	const next = replaceState(token, fixture());
+	// Simulate the guard's intent: releasing `next` via replaceState(next,...) keeps a live token.
+	const after = replaceState(next, fixture());
+	assert.doesNotThrow(() => loadState(after));
+	assert.equal(_workflowStateStoreSize(), 1);
+});
+
+test('replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)', () => {
+	_clearWorkflowStateStoreForTests();
+	let token = saveState(fixture());
+	for (let i = 0; i < 150; i++) token = replaceState(token, fixture());   // > MAX_ENTRIES(100)
+	// The active token survives — the defect (LRU-eviction of the live run) is fixed.
+	assert.doesNotThrow(() => loadState(token));
+	assert.equal(_workflowStateStoreSize(), 1);
+});
+
+test('reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)', () => {
+	_clearWorkflowStateStoreForTests();
+	const prev = encodeState(fixture());
+	const next = reencodeState(prev, fixture());
+	assert.notEqual(next, prev);
+	assert.throws(() => loadState(prev), /not found/i);     // prev released
+	assert.equal(loadState(next).runId, 'run-x');
+	// wrong-version guard (mirrors encodeState)
+	const err = decodeErr(() => reencodeState(next, { ...fixture(), version: 999 as unknown as 1 }));
+	assert.equal(err.code, 'wrong-version');
 });

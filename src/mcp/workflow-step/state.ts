@@ -17,7 +17,7 @@ import type {
 	WorkflowIntent,
 } from '../../workflow/types.js';
 
-import { loadState, saveState, StateTokenNotFound } from './state-store.js';
+import { loadState, replaceState, saveState, StateTokenNotFound } from './state-store.js';
 
 export const STATE_VERSION = 1 as const;
 
@@ -86,6 +86,24 @@ export function encodeState(payload: WorkflowStepStatePayload): string {
 		);
 	}
 	return saveState(payload);
+}
+
+/**
+ * Codec wrapper for an INTERMEDIATE turn: version-check `payload` (same guard as
+ * encodeState) then mint the next token while releasing the superseded
+ * `previousToken` (the token this turn just decoded). Parallel to encodeState;
+ * the intermediate phase handlers (plan, step) call this instead of encodeState so
+ * an N-turn run holds ~1 live token rather than leaking one per turn. start (first
+ * mint) keeps calling encodeState; synthesize keeps its terminal releaseState.
+ */
+export function reencodeState(previousToken: string, payload: WorkflowStepStatePayload): string {
+	if (payload.version !== STATE_VERSION) {
+		throw new WorkflowStateDecodeError(
+			'wrong-version',
+			`reencodeState: payload version ${String(payload.version)} != expected ${STATE_VERSION}`,
+		);
+	}
+	return replaceState(previousToken, payload);
 }
 
 export function decodeState(token: string): WorkflowStepStatePayload {

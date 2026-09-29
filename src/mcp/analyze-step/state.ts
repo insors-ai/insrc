@@ -37,7 +37,7 @@ import type {
 } from '../../analyze/explore/index.js';
 import type { SynthesizerPromptKey } from '../../analyze/context/synthesizer.js';
 
-import { loadState, saveState, StateTokenNotFound } from './state-store.js';
+import { loadState, replaceState, saveState, StateTokenNotFound } from './state-store.js';
 
 // ---------------------------------------------------------------------------
 // Payload shape
@@ -125,6 +125,24 @@ export function encodeState(payload: StepStatePayload): string {
 		);
 	}
 	return saveState(payload);
+}
+
+/**
+ * Codec wrapper for an INTERMEDIATE turn: version-check `payload` (same guard as
+ * encodeState) then mint the next token while releasing the superseded
+ * `previousToken` (the token this turn just decoded). The intermediate phase
+ * handlers (plan, narrow) call this instead of encodeState so an N-turn run holds
+ * ~1 live token rather than leaking one per turn; start (first mint) keeps calling
+ * encodeState and bundle keeps its terminal releaseState.
+ */
+export function reencodeState(previousToken: string, payload: StepStatePayload): string {
+	if (payload.version !== STATE_VERSION) {
+		throw new StepStateDecodeError(
+			'wrong-version',
+			`reencodeState: payload version ${String(payload.version)} != expected ${STATE_VERSION}`,
+		);
+	}
+	return replaceState(previousToken, payload);
 }
 
 /**

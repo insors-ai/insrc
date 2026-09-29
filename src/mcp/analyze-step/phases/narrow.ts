@@ -32,7 +32,7 @@ import { prepareSynthesize } from '../../../analyze/context/synthesizer.js';
 import {
 	assertStage,
 	decodeState,
-	encodeState,
+	reencodeState,
 	StepStateDecodeError,
 	STATE_VERSION,
 	type StepStatePayload,
@@ -210,7 +210,7 @@ export async function handleNarrow(
 			prompt:          step.systemPrompt,
 			userTurn:        step.userTurn,
 			schema:          step.schema as unknown as Record<string, unknown>,
-			state:           encodeState(pauseState),
+			state:           reencodeState(input.state, pauseState),
 			explorationId:   step.explorationId,
 			explorationType: step.explorationType,
 		};
@@ -254,7 +254,7 @@ export async function handleNarrow(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema as Record<string, unknown>,
-		state:    encodeState(nextState),
+		state:    reencodeState(input.state, nextState),
 	};
 }
 

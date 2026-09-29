@@ -1,0 +1,497 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790695754294-6wbjiq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T15:34:34.423Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 320068,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "epicSlug": "complete-generated-artifact-companion-wiring-across",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "UX_CONTENT_GATE_RULE is defined in src/workflow/artifacts/companion/ux-schema.ts (around line 39).",
+          "evidence": "READ confirmed src/workflow/artifacts/companion/ux-schema.ts:39 = `export const UX_CONTENT_GATE_RULE =`. Citation resolves verbatim.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "UX_CONTENT_GATE_RULE has ZERO non-test source usages: it is exported/defined but never imported or injected into any synthesize prompt builder.",
+          "evidence": "grep UX_CONTENT_GATE_RULE = 7 matches: the sole src/ hit is the DEFINITION site ux-schema.ts:39; the other six are docs (this DEF + the S004 LLD/PLAN of the prior epic). No import or injection of UX_CONTENT_GATE_RULE anywhere in non-test source. The zero-source-usage (dead-gate) premise holds.",
+          "action": "Confirmed — dead-code premise is accurate; this is the S1 wiring target.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "ER_CONTENT_GATE_RULE (the ER twin of UX_CONTENT_GATE_RULE) IS injected into the synthesize prompt builders in orchestrator.ts, design-story/index.ts, and design-epic/index.ts.",
+          "evidence": "grep ER_CONTENT_GATE_RULE confirms injection at orchestrator.ts:1424 + :1801, design-epic/index.ts:268, design-story/index.ts:297 (plus the er-schema.ts:71 definition + three imports). The ER twin IS wired exactly as cited.",
+          "action": "Confirmed — the ER-parallel wiring sites named in c1 are accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The 'ux' code-review dimension lives at src/workflow/code-review/dimensions/ux/index.ts and keys on the body carrying a uxDefinition.",
+          "evidence": "src/workflow/code-review/dimensions/ux/index.ts exists; judgeUx defined at :94, wired into runner.ts:124; READ at :72 = \"includes 'ux', OR the body carries a uxDefinition, OR a ux-mock companion is...\" — the dimension keys on body uxDefinition (or adherence/ux-mock) exactly as cited.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "UX_DEFINITION_PROPERTY_SCHEMA is referenced in orchestrator.ts to admit a uxDefinition slot in the HLD and LLD synthesize body schemas.",
+          "evidence": "grep UX_DEFINITION_PROPERTY_SCHEMA confirms the slot is admitted in the synth body schemas at orchestrator.ts:1467 (HLD) + :1863 (LLD), imported at :122; defined at ux-schema.ts:24. The schema-admits-but-nothing-prompts framing is exactly right.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "persistBuildRecord is defined in src/workflow/runners/build/standalone-record.ts and collectBuildChangeLog in src/workflow/runners/build/changed-files.ts.",
+          "evidence": "grep confirms persistBuildRecord defined at src/workflow/runners/build/standalone-record.ts:172 and collectBuildChangeLog at src/workflow/runners/build/changed-files.ts:67. Both citations resolve.",
+          "action": "Confirmed — no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "persistBuildRecord is invoked only from the build-step validate phase (src/mcp/build-step/phases/validate.ts); no other production call site invokes it.",
+          "evidence": "grep `persistBuildRecord\\(` = the only production invocation is src/mcp/build-step/phases/validate.ts:102 (standalone-record.ts:195 is the module's own internal delegate; all other hits are tests/docs). collectBuildChangeLog is likewise only called from validate.ts:101. The 'only invoked from validate' premise holds — controller-side builds that skip validate write no record.",
+          "action": "Confirmed — the missing completion-path invocation is the S2 target.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "c3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The companion directory src/workflow/artifacts/companion/ contains er and ux companion renderers but no sequence or component-dependency companion renderer.",
+          "evidence": "grep `sequenceDefinition|componentDefinition|componentDependencyDefinition` = 0 matches across the tree. No sequence or component-dependency companion definition exists; companion/ carries only er + ux. The net-new S3 gap is confirmed.",
+          "action": "Confirmed — no such companion exists; S3 is genuinely net-new.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-29T15:36:18.591Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T15:36:48.127Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "The workflow framework already builds machinery to enrich its design and build artifacts — UX mock-ups and data-model diagrams on design docs, a per-build change-log and feedback record on the build ledger, and companion diagrams reviewers can check against. But three parts of that machinery are incompletely wired, so in practice those enrichments never actually appear: design docs get no UX mock even when one is warranted, controller-side builds record no change-log or feedback, and there is no way to attach sequence or component diagrams to a design doc at all. This epic closes those gaps so the artifacts carry the visual and provenance content the framework was built to produce.",
+      "audience": "product"
+    },
+    "flavor": "enhancement",
+    "problem": "The framework was built to produce richer design and build artifacts — design documents that can carry a UX mock-up or a data-model diagram, a build ledger record that logs the exact set of changed files and any reviewer feedback, and companion diagrams that make a design checkable at a glance. In practice three of these never materialise. Design documents for user-facing work never gain a UX mock even when the layout would clearly aid understanding. Builds performed by the controller (rather than the dedicated validate step) leave no build record at all — no change-log, no feedback — so the ledger that was meant to capture what each build touched is silently empty. And design documents cannot carry a sequence or component diagram at all: those diagrams are only obtainable as a separate, manual document-generation step, never embedded where a reviewer reads the design. The net effect is that the artifacts consistently under-deliver the visual and provenance content the framework promises, and the gap is invisible because nothing errors — the content is simply absent.",
+    "nonGoals": [
+      {
+        "text": "Do NOT change how the standalone document-generation surface (call-sequence / component-dependency / type-structure) works on its own.",
+        "rationale": "That surface is fine as a manual tool; the epic is about EMBEDDING diagram/mock/provenance content into the tracked design/build artifacts, not reworking the standalone generator."
+      },
+      {
+        "text": "Do NOT force a diagram, UX mock, or definition onto every artifact.",
+        "rationale": "The established convention is content-gated authoring — a companion is produced ONLY when it materially aids the specific document; blanket generation would bloat artifacts and erode signal."
+      },
+      {
+        "text": "Do NOT alter the underlying model behaviour that emits the marker/definition content, or introduce any cloud/REST path.",
+        "rationale": "Prompt-steering of the model is a separate concern outside these artifacts, and the project forbids direct cloud REST from the process; the epic wires existing in-process machinery only."
+      },
+      {
+        "text": "Do NOT rework the existing er/ux companion behaviour or the shipped code-review dimensions.",
+        "rationale": "Those already work; the epic consumes their established pattern for the new wiring, and only extends it — reworking them would be scope creep and risk regressions."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The synthesize schemas already admit the UX definition slot and the content-gate rule constant already exists, so closing the UX gap is wiring an existing rule into the prompt, not new design.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "The build-record writer and change-log collector already exist and work; the gap is that they are only invoked from the dedicated validate step, so a completion-path invocation is the missing wiring.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The companion system's er/ux pattern (a definition, a content-gate, a renderer, an optional review dimension) is a repeatable template that a sequence and a component diagram companion can follow.",
+        "confidence": "med",
+        "source": "c3"
+      },
+      {
+        "text": "The two prior epics that built this machinery (companion subsystem + provenance/feedback) are complete and shipped, so this is a fresh tracked epic that consumes their outputs rather than reopening them.",
+        "confidence": "high",
+        "source": "c4"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Every change is additive and backward-compatible: existing artifacts that carry no UX mock / no diagram / no build record keep their exact current shape and replay unchanged; consumers ignoring the new content are unaffected.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k2",
+        "text": "Authoring of any companion/definition stays CONTENT-GATED: a UX mock, sequence, or component diagram is produced ONLY when it materially aids the specific document, mirroring the established er/ux gate; never forced.",
+        "type": "convention",
+        "source": "c3"
+      },
+      {
+        "id": "k3",
+        "text": "Build-record persistence on the completion path must be idempotent and must not double-write or conflict when the dedicated validate step also runs — exactly one BUILD record per story build.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k4",
+        "text": "A source-scan guard test must pin each wiring so a gate rule / injection can never silently drift out of a prompt again (the convention established for the feedback synth wiring).",
+        "type": "convention",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "No direct cloud/REST path and no change to model-side steering; the epic wires existing in-process framework machinery only.",
+        "type": "contract",
+        "source": "c4"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Author a UX mock on design docs when it materially aids understanding",
+        "userValue": "As a reviewer of a design document for a user-facing feature, I get a UX mock companion and a UX review dimension when the design's layout matters, so the visual intent is captured and checkable instead of silently omitted.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a design document (HLD or LLD, including a standalone LLD) is being authored for a user-facing experience whose layout would materially aid understanding",
+            "when": "the author composes the document",
+            "then": "the author is prompted by the same kind of content-gate guidance the data-model companion already uses, so a UX mock is produced when warranted",
+            "operationalizes": [
+              "k2",
+              "lc1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a design document that does NOT design a user-facing experience",
+            "when": "the author composes it",
+            "then": "no UX mock is produced and the document is byte-identical to today's output",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a design document that carries an authored UX mock",
+            "when": "its companion is finalized and the code review runs",
+            "then": "a UX mock companion is rendered and the UX review dimension engages against it",
+            "operationalizes": [
+              "lc1"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the set of design-document synthesize prompts that admit a UX mock",
+            "when": "the guard runs",
+            "then": "each such prompt is confirmed to carry the UX content-gate guidance, so it can never silently disappear again",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Closing the gap is wiring an EXISTING content-gate rule into the synthesize prompts wherever the UX-mock slot is already admitted; no schema change and no new companion type — the UX-mock slot, renderer, and review dimension already exist.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "S",
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A user-facing design document is prompted to author a UX mock under a content-gate, producing a UX companion and engaging the UX review dimension.",
+            "rationale": "Makes the already-shipped UX-mock + review machinery reachable."
+          },
+          {
+            "statement": "A design document with no user-facing experience produces no UX mock and is unchanged.",
+            "rationale": "Content-gated, backward-compatible."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Record a build-ledger entry (change-log + feedback) for every completed build",
+        "userValue": "As someone auditing what a build changed, I can rely on a build-ledger record with the changed-file set and any reviewer feedback for every completed story build, regardless of which build path was used — not only builds that went through the dedicated validate step.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a story build has produced changes and is being completed",
+            "when": "the build is completed/approved",
+            "then": "a build-ledger record is written capturing the changed-file set and any reviewer feedback, even when the build did not run through the dedicated validate step",
+            "operationalizes": [
+              "lc2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a build that DID run through the dedicated validate step (which already writes a record)",
+            "when": "it is also completed on the completion path",
+            "then": "exactly one build-ledger record exists for that story build — no duplicate and no conflicting record",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a completed build whose changed set cannot be derived",
+            "when": "the record is written",
+            "then": "the record is still created with an empty change-log rather than failing the completion",
+            "operationalizes": [
+              "lc2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc2",
+            "text": "The build-record writer and the change-log collector already exist and are proven on the validate path; this Story invokes them at the completion/approve path, reusing them unchanged rather than reimplementing provenance.",
+            "type": "invariant",
+            "source": "c2"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Every completed story build records a build-ledger entry with its changed-file set and any reviewer feedback, independent of the build path taken.",
+            "rationale": "Reliable build provenance."
+          },
+          {
+            "statement": "Build-record persistence is idempotent — exactly one record per story build even when both the validate step and the completion path run.",
+            "rationale": "No duplicate/conflicting ledger rows."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Attach sequence and component-dependency diagrams to design docs",
+        "userValue": "As a reviewer of a design document, I can see a sequence diagram (behaviour) and a component-dependency diagram (structure) embedded in the document when they aid understanding, instead of having to run a separate manual generator, so the design is checkable at a glance.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a design document (HLD or LLD) whose behaviour or component structure would materially aid understanding",
+            "when": "the author composes the document",
+            "then": "the author can author a sequence diagram and/or a component-dependency diagram companion under the same content-gate discipline as the existing data-model and UX companions",
+            "operationalizes": [
+              "k2",
+              "lc3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a design document that authors a sequence or component diagram definition",
+            "when": "its companion is finalized",
+            "then": "a rendered sequence / component-dependency diagram companion is produced and linked from the document",
+            "operationalizes": [
+              "lc3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a design document that authors NO diagram definition",
+            "when": "it is composed and finalized",
+            "then": "no diagram companion is produced and the document is unchanged from today",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the new diagram companion types",
+            "when": "they are added",
+            "then": "they follow the established companion pattern (a definition, a content-gate, a renderer, and the diagram/review wiring) without reworking the existing data-model or UX companions",
+            "operationalizes": [
+              "lc3"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc3",
+            "text": "The new sequence + component diagram companions EXTEND the established companion pattern (definition + content-gate + renderer + review/diagram wiring) that the data-model and UX companions already use; they consume the existing graph-derived diagram sources rather than inventing a new diagram engine.",
+            "type": "contract",
+            "source": "c3"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A design document can author a sequence diagram companion under a content-gate, rendered and linked from the document.",
+            "rationale": "Behaviour diagrams embedded where the design is read."
+          },
+          {
+            "statement": "A design document can author a component-dependency diagram companion under a content-gate, rendered and linked from the document.",
+            "rationale": "Structure diagrams embedded where the design is read."
+          },
+          {
+            "statement": "A design document that authors no diagram is unchanged.",
+            "rationale": "Content-gated, backward-compatible."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20260929e2c6705f:FR001",
+          "statement": "For a design document that designs a user-facing experience whose layout would materially aid understanding, the system prompts the author to produce a UX mock, so a UX companion is rendered and the UX review dimension engages.",
+          "scope": "doc",
+          "rationale": "Closes the dead UX gate so the shipped UX-mock + review machinery is actually reachable."
+        },
+        {
+          "id": "E20260929e2c6705f:FR002",
+          "statement": "Every completed story build records a build-ledger entry capturing the changed-file set and any reviewer feedback, regardless of whether the build ran through the dedicated validate step or the controller path.",
+          "scope": "doc",
+          "rationale": "Makes build provenance reliable rather than dependent on which build path was used."
+        },
+        {
+          "id": "E20260929e2c6705f:FR003",
+          "statement": "A design document can carry a sequence diagram and a component-dependency diagram as companions, produced under the same content-gated authoring as the existing data-model and UX companions.",
+          "scope": "doc",
+          "rationale": "Extends the design artifacts to the two diagram kinds reviewers most need for behaviour + structure, embedded where the design is read."
+        },
+        {
+          "id": "E20260929e2c6705f:FR004",
+          "statement": "The wiring for each authored companion/definition is protected by an automated guard so a gate or injection cannot silently disappear from a prompt.",
+          "scope": "doc",
+          "rationale": "Prevents recurrence of the exact dead-gate class of defect this epic fixes."
+        },
+        {
+          "id": "E20260929e2c6705f:S001:FR001",
+          "statement": "A user-facing design document is prompted to author a UX mock under a content-gate, producing a UX companion and engaging the UX review dimension.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Makes the already-shipped UX-mock + review machinery reachable."
+        },
+        {
+          "id": "E20260929e2c6705f:S001:FR002",
+          "statement": "A design document with no user-facing experience produces no UX mock and is unchanged.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Content-gated, backward-compatible."
+        },
+        {
+          "id": "E20260929e2c6705f:S002:FR001",
+          "statement": "Every completed story build records a build-ledger entry with its changed-file set and any reviewer feedback, independent of the build path taken.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "Reliable build provenance."
+        },
+        {
+          "id": "E20260929e2c6705f:S002:FR002",
+          "statement": "Build-record persistence is idempotent — exactly one record per story build even when both the validate step and the completion path run.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "No duplicate/conflicting ledger rows."
+        },
+        {
+          "id": "E20260929e2c6705f:S003:FR001",
+          "statement": "A design document can author a sequence diagram companion under a content-gate, rendered and linked from the document.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Behaviour diagrams embedded where the design is read."
+        },
+        {
+          "id": "E20260929e2c6705f:S003:FR002",
+          "statement": "A design document can author a component-dependency diagram companion under a content-gate, rendered and linked from the document.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Structure diagrams embedded where the design is read."
+        },
+        {
+          "id": "E20260929e2c6705f:S003:FR003",
+          "statement": "A design document that authors no diagram is unchanged.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Content-gated, backward-compatible."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "(A) UX content-gate dead-code bundle — UX_DEFINITION_PROPERTY_SCHEMA wired at orchestrator.ts:1467 (HLD) / :1863 (LLD); UX_CONTENT_GATE_RULE (ux-schema.ts:39) has zero source usages while ER_CONTENT_GATE_RULE is injected at orchestrator.ts:1424/:1801 + design-story/index.ts:297 + design-epic/index.ts:268; the 'ux' review dimension (code-review/dimensions/ux/index.ts) keys on body.uxDefinition."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "(B) BUILD-record provenance bundle — persistBuildRecord (runners/build/standalone-record.ts) + collectBuildChangeLog (runners/build/changed-files.ts, from git_diff) + FeedbackRecord (artifacts/provenance/types.ts) invoked only from mcp/build-step/phases/validate.ts:99-103; controller-side builds skip validate so no BUILD record is written."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "(C) diagram-companion gap bundle — companion/ has only er.ts + ux.ts (+ render.ts/assess.ts/metamodel.ts); no sequence/component companion; call-sequence + component-dependency exist only as separate insrc_docgen docTypes, never authored as HLD/LLD companions."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "The shipped artifact-docs-readability epic (companion subsystem: er/ux content-gates + code-review dimensions, bbbbf7a) and the provenance/feedback epic (BUILD change-log + attributed feedback, fcca379) — both COMPLETE; this epic consumes and completes their wiring."
+    }
+  ]
+}

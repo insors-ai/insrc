@@ -119,7 +119,7 @@ import { validateUxDefinition, type UxDefinition } from './artifacts/companion/u
 import { renderErCompanion, renderUxCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
-import { UX_DEFINITION_PROPERTY_SCHEMA } from './artifacts/companion/ux-schema.js';
+import { UX_DEFINITION_PROPERTY_SCHEMA, UX_CONTENT_GATE_RULE } from './artifacts/companion/ux-schema.js';
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
 import { linkDocsToIssues } from './tracker/link.js';
@@ -1422,6 +1422,7 @@ function designEpicSynthesizer(
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects every `missed`/`ambiguous` verdict from s6 that is NOT a scope-boundary item (sbdry1..sbdry4 hard-fail those instead).',
 		ER_CONTENT_GATE_RULE,
+		UX_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
 	].join('\n');
@@ -1799,6 +1800,7 @@ function designStorySynthesizer(
 		'- `body.chosenAlternative` MUST equal s3.winnerId.',
 		'- `body.openQuestions` collects `missed`/`ambiguous` verdicts from s8 (except sbdry1-5 which hard-fail).',
 		ER_CONTENT_GATE_RULE,
+		UX_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
 	].join('\n');

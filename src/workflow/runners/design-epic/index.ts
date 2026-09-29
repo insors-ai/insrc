@@ -37,6 +37,7 @@ import {
 	rolloutOverviewSchema,
 } from './schemas.js';
 import { ER_CONTENT_GATE_RULE } from '../../artifacts/companion/er-schema.js';
+import { UX_CONTENT_GATE_RULE } from '../../artifacts/companion/ux-schema.js';
 
 // ---------------------------------------------------------------------------
 // Shared: a simple llm-pause runner
@@ -266,6 +267,7 @@ const frameworkWrite = llmPauseRunner({
 			'- Set `summary.audience` to `product` (what capability the architecture enables) or `technical` (the shape of the solution), whichever fits.',
 			'',
 			ER_CONTENT_GATE_RULE,
+			UX_CONTENT_GATE_RULE,
 		].join('\n'),
 		userTurn: [
 			's1 HldContext:',

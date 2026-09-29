@@ -1,0 +1,438 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790697308834-6e7xwa",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T16:01:23.166Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 374266,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "epicHash": "e2c6705fd105d4ac",
+    "epicSlug": "complete-generated-artifact-companion-wiring-across",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790696212238-iuz6vo",
+    "hldEffectiveHash": "35f2a2c76e97400c9aa521427a38dfe21bdef17dd1556ae696936902971fd34c",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "l1",
+          "ref": "2.2/2.3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ER_CONTENT_GATE_RULE is spliced as a bare array element in the two orchestrator.ts synthesizer prompts (designEpicSynthesizer ~:1424 HLD, designStorySynthesizer ~:1801 LLD), the sites S1 adds UX_CONTENT_GATE_RULE adjacent to.",
+          "evidence": "READ confirms orchestrator.ts:1424 = `\\t\\tER_CONTENT_GATE_RULE,` and grep confirms :1801 too (defined er-schema.ts:71, imported :121). The two synthesizer injection sites S1 targets are accurate.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "l2",
+          "ref": "2.4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ER_CONTENT_GATE_RULE is spliced in the two runner step prompts: design-story/index.ts:297 (contract.detail s4) and design-epic/index.ts:268 (framework.write s4).",
+          "evidence": "READ confirms design-story/index.ts:297 and design-epic/index.ts:268 both = `ER_CONTENT_GATE_RULE,` (imported at :31 / :39). The two runner s4-step injection sites are accurate.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "l3",
+          "ref": "2.1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "UX_CONTENT_GATE_RULE is exported from src/workflow/artifacts/companion/ux-schema.ts and currently has no injection usage (dead gate S1 wires).",
+          "evidence": "READ confirms ux-schema.ts:39 = `export const UX_CONTENT_GATE_RULE =`; the only src/ occurrence is this definition, confirming the dead-gate premise.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "l4",
+          "ref": "migration",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "UX_DEFINITION_PROPERTY_SCHEMA is admitted into the synth body as `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` at the two synthesizer sites (orchestrator.ts:1467 HLD, :1863 LLD), so the slot the gate governs already exists.",
+          "evidence": "grep `uxDefinition:\\s*UX_DEFINITION_PROPERTY_SCHEMA` returns exactly the two admission sites orchestrator.ts:1467 (HLD) + :1863 (LLD). The slot the gate governs already exists.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "l5",
+          "ref": "5/test-strategy",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The guard test S1 mirrors exists at src/workflow/__tests__/feedback-synth-schema.test.ts (source-scan pattern via readFileSync of orchestrator.ts).",
+          "evidence": "READ confirms feedback-synth-schema.test.ts:58 = the source-scan test 'all four synthesizer schemas wire feedback + carry the NEVER-author rule (source-scan)' — the exact guard pattern S1 mirrors.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "l6",
+          "ref": "3/ac3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The pre-shipped downstream S1 consumes unchanged exists: renderUxCompanion (render.ts) and the 'ux' review dimension judge judgeUx (code-review/dimensions/ux/index.ts, wired in runner.ts).",
+          "evidence": "grep confirms renderUxCompanion at render.ts:106 (already imported into orchestrator.ts:119) and judgeUx at code-review/dimensions/ux/index.ts:94 (wired into runner.ts:124). The pre-shipped downstream S1 consumes unchanged exists as cited.",
+          "action": "Confirmed — no change.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6
+      },
+      "reviewedAt": "2026-09-29T16:02:16.144Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T16:18:54.007Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "S1 wires the already-shipped-but-dead UX content-gate into the design-document authoring prompts. It adds the existing UX_CONTENT_GATE_RULE string as a HARD-RULE line at the same four prompt sites that already carry its ER twin, plus a source-scan guard test so the wiring can never silently drop out again. No schema, renderer, or review-dimension changes — those all shipped; a non-UX document stays byte-identical.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework: MIRROR THE ESTABLISHED SEAMS (a1). Every gap is a missing instance of a pattern the codebase already runs, closed at that pattern's own seam rather than behind a new registry or abstraction. S1 injects the already-defined UX content-gate rule into the three synthesize-prompt builders that already inject its ER twin, guarded by a source-scan test. S2 invokes the existing build-record writer + change-log collector at a NEW call site on the completion/approve path, relying on the writer's existing read-merge-write upsert for idempotency. S3 adds two new companion families (sequence, component-dependency) as parallel copies of the er/ux three-part contract (schema+gate / definition+toIr / renderer) plus a finalize call mirroring the ER one, consuming the graph-derived diagram source the existing docgen docTypes already produce. Every touch is additive, content-gated, and in-process; the existing er/ux companions and the validate-path record are untouched.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "UX content-gate injection into the synthesize prompts",
+          "purpose": "Wire the already-defined-but-never-injected UX_CONTENT_GATE_RULE into every design-document synthesize-prompt builder that admits the uxDefinition slot, so the synthesizer is told WHEN to author a UX mock (parallel to the ER gate), guarded so it cannot silently drift out again.",
+          "interfaceSketch": "// existing constant, already exported (src/workflow/artifacts/companion/ux-schema.ts)\nexport const UX_CONTENT_GATE_RULE: string;\n\n// injected at the SAME builder sites that already carry ER_CONTENT_GATE_RULE:\n//   src/workflow/orchestrator.ts (HLD synth ~:1424, LLD synth ~:1801)\n//   src/workflow/runners/design-story/index.ts (~:297)\n//   src/workflow/runners/design-epic/index.ts (~:268)\n// No signature change to the builders; the rule string joins the HARD-RULES block.\n\n// guard (type-level intent):\ninterface GateInjectionGuard {\n  readonly promptBuildersAdmittingUxSlot: readonly string[]; // every builder that admits uxDefinition\n  readonly eachCarriesRule: 'UX_CONTENT_GATE_RULE';           // asserted by a source-scan test\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "UX content-gate injection into the synthesize prompts",
+          "purpose": "Wire the already-defined-but-never-injected UX_CONTENT_GATE_RULE into every design-document synthesize-prompt builder that admits the uxDefinition slot, so the synthesizer is told WHEN to author a UX mock (parallel to the ER gate), guarded so it cannot silently drift out again.",
+          "interfaceSketch": "// existing constant, already exported (src/workflow/artifacts/companion/ux-schema.ts)\nexport const UX_CONTENT_GATE_RULE: string;\n\n// injected at the SAME builder sites that already carry ER_CONTENT_GATE_RULE:\n//   src/workflow/orchestrator.ts (HLD synth ~:1424, LLD synth ~:1801)\n//   src/workflow/runners/design-story/index.ts (~:297)\n//   src/workflow/runners/design-epic/index.ts (~:268)\n// No signature change to the builders; the rule string joins the HARD-RULES block.\n\n// guard (type-level intent):\ninterface GateInjectionGuard {\n  readonly promptBuildersAdmittingUxSlot: readonly string[]; // every builder that admits uxDefinition\n  readonly eachCarriesRule: 'UX_CONTENT_GATE_RULE';           // asserted by a source-scan test\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "S1 keeps private the exact join point and ordering of UX_CONTENT_GATE_RULE within each HARD-RULES block and the specific assertion mechanism of the source-scan guard test. It touches only the three synth-prompt builders and adds one test; it introduces no new companion type, schema, renderer, or review dimension (all already shipped) and does not alter the ER injection it mirrors."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "S2 keeps private the precise completion/approve call site (build-approve handler vs. a completion hook), how it resolves the epicHash/storyId + repoPath at that point, and how it threads the author/timestamp context into collectBuildChangeLog. It reuses persistBuildRecord and collectBuildChangeLog unchanged and does not modify the validate-phase invocation."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "S3 keeps private the internal shape of each new definition type (participant/message and node/edge structures), the DocumentIR mapping in each toIr, how each renderer assembles its offline HTML via the shared render spine, and which graph-derived docgen query feeds each diagram. It re-instances the sc1 injection convention for its two gates independently (no code dependency on S1) and adds its own finalize call without touching renderErCompanionForBody or the er/ux families."
+        }
+      ],
+      "rolloutPhase": "Phase A — UX gate + build provenance (pure wiring)",
+      "nonFunctional": {
+        "performance": "Companion rendering and build-record writes happen at finalize/completion, off the interactive path; no added latency to synthesize. Diagram companions reuse the existing offline docgen render, so no new network or engine cost (k5).",
+        "security": "No new external surface: all work is in-process framework machinery over the local graph + filesystem. No cloud/REST path, no model-side steering change (k5).",
+        "observability": "Each authored companion produces a CompanionArtifactRef linked from the document; each completed build produces a BUILD-<hash>-<story>.json/.md ledger entry with change-log + feedback, making build provenance auditable regardless of build path.",
+        "durability": "Build-record persistence is idempotent via the existing read-merge-write upsert — exactly one record per story build even when validate and completion both run (k3); a companion or record write is additive and never mutates existing artifacts (k1)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "UX_CONTENT_GATE_RULE",
+          "signature": "export const UX_CONTENT_GATE_RULE: string  // src/workflow/artifacts/companion/ux-schema.ts",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The existing, already-exported HARD-RULE string telling the synthesizer WHEN to author a uxDefinition (content-gated). S1 consumes it unchanged — no edit to ux-schema.ts."
+          },
+          "errors": [],
+          "preconditions": [
+            "UX_CONTENT_GATE_RULE is already exported from ux-schema.ts (shipped by the artifact-docs-readability epic); S1 does not define or modify it."
+          ],
+          "postconditions": [
+            "The constant is imported into orchestrator.ts (extend the existing ux-schema.js import at :122) and into the two runner index.ts files (new sibling import next to the er-schema.js import)."
+          ]
+        },
+        {
+          "name": "designEpicSynthesizer",
+          "signature": "function designEpicSynthesizer(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>): SynthesizerPrompt  // orchestrator.ts:1408",
+          "parameters": [],
+          "returns": {
+            "type": "SynthesizerPrompt",
+            "meaning": "The HLD synthesize prompt. S1 adds `UX_CONTENT_GATE_RULE,` as a bare array element in the systemPrompt `[...].join('\\n')` block adjacent to `ER_CONTENT_GATE_RULE,` at :1424. No signature change; the emitted body schema already admits `uxDefinition` at :1467."
+          },
+          "errors": [],
+          "preconditions": [
+            "ER_CONTENT_GATE_RULE is already spliced at orchestrator.ts:1424; the HLD body schema admits uxDefinition at :1467."
+          ],
+          "postconditions": [
+            "The HLD synthesize systemPrompt carries the UX content-gate; a warranted HLD authors a uxDefinition, an unwarranted one does not (content-gated)."
+          ]
+        },
+        {
+          "name": "designStorySynthesizer",
+          "signature": "function designStorySynthesizer(...): SynthesizerPrompt  // orchestrator.ts (LLD synth, injection at :1801)",
+          "parameters": [],
+          "returns": {
+            "type": "SynthesizerPrompt",
+            "meaning": "The LLD synthesize prompt. S1 adds `UX_CONTENT_GATE_RULE,` adjacent to `ER_CONTENT_GATE_RULE,` at :1801. No signature change; the emitted body schema already admits `uxDefinition` at :1863."
+          },
+          "errors": [],
+          "preconditions": [
+            "ER_CONTENT_GATE_RULE is already spliced at orchestrator.ts:1801; the LLD body schema admits uxDefinition at :1863."
+          ],
+          "postconditions": [
+            "The LLD synthesize systemPrompt carries the UX content-gate."
+          ]
+        },
+        {
+          "name": "ER_CONTENT_GATE_RULE",
+          "signature": "// injection sites in the two runner step prompts: design-story/index.ts:297 (contract.detail s4), design-epic/index.ts:268 (framework.write s4)",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The ER twin whose four injection sites S1 mirrors. At the two runner s4-step prompts, S1 adds `UX_CONTENT_GATE_RULE,` adjacent to the existing `ER_CONTENT_GATE_RULE,` element (importing UX_CONTENT_GATE_RULE from '../../artifacts/companion/ux-schema.js'), so the author is cued about the UX mock at the framework/contract step as well as at synthesize."
+          },
+          "errors": [],
+          "preconditions": [
+            "ER_CONTENT_GATE_RULE is spliced at design-story/index.ts:297 and design-epic/index.ts:268 as a bare array element."
+          ],
+          "postconditions": [
+            "Both runner s4-step prompts carry the UX gate adjacent to the ER gate; the four-site parity matches the sc1 contract."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S1 OWNS and implements sc1 (UX content-gate injection). It injects the existing UX_CONTENT_GATE_RULE at the four ER injection sites (orchestrator.ts:1424 HLD-synth + :1801 LLD-synth, design-story/index.ts:297, design-epic/index.ts:268) and adds a count-based source-scan guard test mirroring feedback-synth-schema.test.ts — asserting UX_CONTENT_GATE_RULE is imported + present at every site where UX_DEFINITION_PROPERTY_SCHEMA admits the uxDefinition slot, keyed to the ER twin's presence. It consumes the pre-shipped uxDefinition slot (ux-schema.ts), renderUxCompanion (render.ts), and the 'ux' review dimension (code-review/dimensions/ux) as-is, changing none of them."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A future edit adds or moves a synth-prompt that admits the uxDefinition slot but forgets to inject UX_CONTENT_GATE_RULE (the exact class of drift this epic was created to fix).",
+          "detection": "The source-scan guard test readFileSync's orchestrator.ts (+ the two runner index.ts) and counts UX_CONTENT_GATE_RULE occurrences vs the ER twin / uxDefinition-slot admissions; a mismatch fails the assertion at test time.",
+          "response": "The guard test fails in CI/local sweep, blocking the change until the gate is re-injected — the drift never reaches a shipped prompt.",
+          "userImpact": "None at runtime; the failure is caught in the test suite before merge.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The UX_CONTENT_GATE_RULE import path is wrong (e.g. missing the .js extension required by NodeNext) in one of the runner files.",
+          "detection": "tsc (strict, NodeNext) fails to resolve the module at compile time; the build errors before any test runs.",
+          "response": "Fix the import specifier to the correct relative '../../artifacts/companion/ux-schema.js' path; tsc passes.",
+          "userImpact": "None at runtime; caught at build.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A design document that designs NO user-facing experience (e.g. this very wiring LLD, or a pure data/infra story).",
+          "expected": "The content-gated rule instructs the synthesizer to author a uxDefinition ONLY when a UX layout materially aids the document, so no uxDefinition is authored and the emitted body is byte-identical to today's output (ac2)."
+        },
+        {
+          "input": "A design document that already carries an authored uxDefinition being re-synthesized.",
+          "expected": "Unchanged by S1 — the body schema already admits uxDefinition (admit-but-never-force), so a re-synthesize validates; the gate only affects WHEN authoring is prompted, not schema acceptance."
+        },
+        {
+          "input": "A standalone LLD (no HLD upstream) for a user-facing story.",
+          "expected": "The LLD synthesizer prompt (orchestrator.ts:1801) carries the UX gate the same as the epic-attached LLD path, so a warranted UX mock is prompted (ac1 covers 'including a standalone LLD')."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The uxDefinition slot, renderUxCompanion renderer, and the 'ux' code-review dimension are pre-shipped and MUST remain untouched — S1 only makes the prompt carry the author-gate; it defines/edits no schema, renderer, or dimension.",
+          "source": "c1"
+        },
+        {
+          "text": "Content-gated authoring is preserved: a companion/definition is produced ONLY when it materially aids the specific document; the injected rule is a content-gate, never a forced-emit, so non-UX documents stay byte-identical.",
+          "source": "c1"
+        },
+        {
+          "text": "The ER injection S1 mirrors must be left intact at all four sites — UX_CONTENT_GATE_RULE is added ADJACENT to ER_CONTENT_GATE_RULE, not replacing it, preserving the existing ER content-gate wiring.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Source-scan guard: assert UX_CONTENT_GATE_RULE is imported + injected at every prompt that admits the uxDefinition slot, keyed to the ER twin's presence — mirroring feedback-synth-schema.test.ts so the gate can never silently drift out (k4/ac4).",
+          "subjects": [
+            "readFileSync orchestrator.ts → assert UX_CONTENT_GATE_RULE occurrence count matches ER_CONTENT_GATE_RULE at the two synthesizer prompts (:1424 HLD, :1801 LLD) plus the import at :122",
+            "readFileSync design-story/index.ts → assert UX_CONTENT_GATE_RULE is imported (ux-schema.js) + present adjacent to ER_CONTENT_GATE_RULE at the s4 contract.detail prompt",
+            "readFileSync design-epic/index.ts → assert UX_CONTENT_GATE_RULE is imported + present adjacent to ER_CONTENT_GATE_RULE at the s4 framework.write prompt",
+            "co-location assertion: every occurrence of `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` in orchestrator.ts (:1467, :1863) has a UX_CONTENT_GATE_RULE in the same synthesizer builder"
+          ],
+          "fixturesNeeded": [
+            "the real source files read via readFileSync + fileURLToPath/dirname (no mocks) — exactly as feedback-synth-schema.test.ts does"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove admit-but-never-force: the HLD + LLD synthesize body schemas still admit uxDefinition and a body WITHOUT uxDefinition validates unchanged (ac2 backward-compat) — compiled via ajv like feedback-synth-schema.test.ts.",
+          "subjects": [
+            "prepareSynthesize(intent, {}) for workflow='design.epic' → body schema admits uxDefinition, additionalProperties:false preserved, a body with no uxDefinition validates",
+            "prepareSynthesize for workflow='design.story' → same, LLD body",
+            "a body carrying a valid uxDefinition still validates (re-synthesize of a doc with an authored mock is not rejected)"
+          ],
+          "fixturesNeeded": [
+            "a WorkflowIntent literal per workflow",
+            "a minimal valid body literal with and without a uxDefinition"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the downstream renderer + review dimension light up once a uxDefinition is present (ac3) — consuming the pre-shipped machinery unchanged; reuses the existing ux companion finalize/dimension tests as the proof surface.",
+          "subjects": [
+            "finalize path: a synthesized body carrying a valid uxDefinition renders a ux-mock CompanionArtifactRef (existing renderUxCompanion / ux companion finalize behaviour, unchanged by S1)",
+            "code-review: a subject whose body carries a uxDefinition engages the 'ux' dimension (existing judgeUx / computeExpectedDimensions, unchanged by S1)"
+          ],
+          "fixturesNeeded": [
+            "a temp artifact dir with a doc body carrying a uxDefinition (reuse the existing ux-integration fixture)",
+            "a CodeReviewSubject fixture carrying a uxDefinition"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit source-scan: the two synthesizer prompts (orchestrator.ts:1424/:1801) AND the two runner s4-step prompts carry UX_CONTENT_GATE_RULE, so a user-facing doc is prompted to author a UX mock at both authoring moments",
+            "unit: co-location assertion ties the gate to every uxDefinition-slot admission"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit (ajv): a body with NO uxDefinition validates against both synthesize body schemas with additionalProperties:false preserved — byte-identical, content-gated, no forced emit",
+            "edge: a non-UX document authors no uxDefinition"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a body carrying a valid uxDefinition renders a ux-mock companion (renderUxCompanion, pre-shipped)",
+            "integration: a subject carrying a uxDefinition engages the 'ux' review dimension (judgeUx, pre-shipped)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit source-scan guard: assert UX_CONTENT_GATE_RULE occurrence count across orchestrator.ts + the two runner index.ts matches the ER twin / uxDefinition-slot admissions — fails if any gated prompt drops the rule"
+          ]
+        }
+      ],
+      "testFramework": "node:test + node:assert/strict (+ ajv for schema compilation), *.test.ts run via `npx tsx --test`, mirroring src/workflow/__tests__/feedback-synth-schema.test.ts"
+    },
+    "migration": {
+      "stateBefore": "UX_CONTENT_GATE_RULE (ux-schema.ts:39) is defined and exported but has ZERO source usages — it is never imported or injected into any synth-prompt builder, while its twin ER_CONTENT_GATE_RULE is spliced at four sites (orchestrator.ts:1424 HLD-synth + :1801 LLD-synth, design-story/index.ts:297, design-epic/index.ts:268). The synth body schemas already admit the uxDefinition slot (orchestrator.ts:1467/:1863) and the renderer + 'ux' review dimension are shipped, but because the author-gate never reaches any prompt, no uxDefinition is ever authored, so the whole UX companion + review chain is dark (cited: s1 injection-sites + already-shipped-slot bundles).",
+      "stateAfter": "UX_CONTENT_GATE_RULE is imported into orchestrator.ts (extend the existing ux-schema.js import) + the two runner index.ts files, and spliced as a bare array element adjacent to ER_CONTENT_GATE_RULE at all four sites. A source-scan guard test pins the injection to every uxDefinition-slot-admitting prompt. The synthesizer is now told WHEN to author a uxDefinition; a warranted design doc authors one (lighting up the pre-shipped renderer + 'ux' dimension), a non-UX doc authors none and stays byte-identical.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the UX_CONTENT_GATE_RULE import: extend the existing ux-schema.js import in orchestrator.ts, and add a sibling ux-schema.js import next to the er-schema.js import in design-story/index.ts and design-epic/index.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Splice `UX_CONTENT_GATE_RULE,` as a bare array element immediately adjacent to `ER_CONTENT_GATE_RULE,` in each of the four synth-prompt HARD-RULES blocks (orchestrator.ts:1424 + :1801, design-story/index.ts:297, design-epic/index.ts:268).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the source-scan guard test (mirroring feedback-synth-schema.test.ts) asserting UX_CONTENT_GATE_RULE is imported + present at every prompt that admits the uxDefinition slot, plus an ajv check that a body without uxDefinition still validates (admit-but-never-force).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible. No public API signature changes — the builders keep their exact signatures; only a rule string is appended to internal prompt arrays. The synth body schemas are unchanged (uxDefinition was already admitted). A design document that does not warrant a UX mock authors none and its emitted body is byte-identical to today's output; existing artifacts with no uxDefinition replay unchanged. The change only affects WHEN the synthesizer is prompted to author, never schema acceptance.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Mirror ER exactly — inject UX_CONTENT_GATE_RULE at all four ER sites + a count-based source-scan guard",
+        "oneLineSummary": "Add `UX_CONTENT_GATE_RULE,` adjacent to `ER_CONTENT_GATE_RULE,` at each of the four existing sites and extend the source-scan guard to count it.",
+        "approach": "For each of the four sites where ER_CONTENT_GATE_RULE is already spliced as a bare array element into a `[...].join('\\n')` system prompt — orchestrator.ts:1424 (designEpicSynthesizer / HLD synth), orchestrator.ts:1801 (designStorySynthesizer / LLD synth), design-story/index.ts:297 (contract.detail s4), design-epic/index.ts:268 (framework.write s4) — add `UX_CONTENT_GATE_RULE,` on the adjacent line, and add the import to each file that does not already have it. The guard test mirrors feedback-synth-schema.test.ts: source-scan the files and assert UX_CONTENT_GATE_RULE appears once per injection site plus its import, keyed so the count tracks the ER twin's presence.",
+        "pros": [
+          "Exact parity with the shipped ER wiring — the UX gate reaches the same four prompts ER does, so an author gets the UX cue at both the s4 framework/contract step and the final synthesize, maximising the chance a warranted uxDefinition is actually authored (ac1).",
+          "The count-based source-scan guard is a direct copy of the proven feedback-synth-schema pattern, satisfying k4/ac4 with a known-good test idiom.",
+          "Zero behaviour change when no UX layout is present — the gate is a content-gated HARD RULE, so a non-UX doc authors no uxDefinition and stays byte-identical (ac2/k1)."
+        ],
+        "cons": [
+          "Injects at two site KINDS (the s4 step prompts AND the synthesizer prompts) when only the synthesizer body schema actually admits the uxDefinition slot — the s4-step injections are belt-and-suspenders, arguably redundant.",
+          "Touches three files instead of one, a slightly wider diff than the strict-minimum synthesizer-only change."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Inject only at the two synthesizer prompts that admit the uxDefinition slot",
+        "oneLineSummary": "Add the gate only at orchestrator.ts:1424/:1801 (the HLD+LLD synthesizers whose body schema admits uxDefinition), leaving the s4 step prompts untouched.",
+        "approach": "Restrict the injection to the two designEpicSynthesizer/designStorySynthesizer prompts in orchestrator.ts, because those are the only prompts whose emitted body schema actually admits `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` (at :1467 / :1863). The two runner s4-step prompts are left as-is. The guard test source-scans orchestrator.ts only.",
+        "pros": [
+          "Smallest diff — one file (orchestrator.ts), two injection lines + one extended import; the gate sits precisely where the uxDefinition body slot lives.",
+          "Cleaner semantics: the content-gate is present exactly at the prompts that admit the slot it governs, with no arguably-redundant s4-step injections."
+        ],
+        "cons": [
+          "Diverges from the HLD sc1 contract, which explicitly names all four ER sites for faithful parity — choosing this would be a (small) deviation to flag, not a free choice.",
+          "Loses the earlier s4-step UX cue that ER gets: an author composing the framework/contract step is not reminded of the UX mock until the final synthesize, which MAY reduce how often a warranted uxDefinition is authored (weaker ac1 surface than a1).",
+          "The guard test then differs in shape from the four-site ER/feedback precedent, a minor convention drift."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "PARTIAL-scores ac1 (loses the earlier s4 UX cue ER gets) and sc1 (diverges from the contract's explicit four-site mandate) — a deviation from the owned contract that a1 avoids at negligible extra cost (S vs XS)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 injection-sites + guard-test-pattern + already-shipped-slot bundles: ER_CONTENT_GATE_RULE spliced as a bare array element at orchestrator.ts:1424 (designEpicSynthesizer) + :1801 (designStorySynthesizer) + design-story/index.ts:297 + design-epic/index.ts:268; UX_CONTENT_GATE_RULE (ux-schema.ts:39) has zero source usages; UX_DEFINITION_PROPERTY_SCHEMA admitted at orchestrator.ts:1467/:1863; renderUxCompanion (render.ts:106) + judgeUx (code-review/dimensions/ux/index.ts, runner.ts:124) pre-shipped; the source-scan guard mirrors src/workflow/__tests__/feedback-synth-schema.test.ts."
+    }
+  ]
+}

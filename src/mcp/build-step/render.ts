@@ -50,8 +50,8 @@ export type TaskResolution =
 
 /** Resolve a target identifier to a TASK-level ref. Returns a typed error
  *  when the target is unknown or resolves to a non-task node. */
-export function resolveTaskRef(repoPath: string, target: string): TaskResolution {
-	const ref = resolveWorkflowRef(repoPath, target);
+export function resolveTaskRef(repoPath: string, target: string, epicHash?: string): TaskResolution {
+	const ref = resolveWorkflowRef(repoPath, target, { epicHash });
 	if (ref === null) {
 		return {
 			ok: false,

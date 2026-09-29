@@ -53,7 +53,7 @@ export async function handleImplement(
 		return handleStandaloneImplement(repoPath, input.standalone);
 	}
 
-	const resolved = resolveTaskRef(repoPath, input.target);
+	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 	const ref = resolved.ref;
 

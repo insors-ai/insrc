@@ -12,13 +12,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { parseGithubRemoteUrl, commitAndPushArtifacts, _setTrackerExecForTests } from '../github.js';
 import { parseIssueRef, buildRef, issueUrl, trackerRefLine } from '../refs.js';
 import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } from '../conventions.js';
+import { resolveWorkflowRef } from '../resolve.js';
+import { ARTIFACTS_DIR } from '../../storage.js';
 import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
 
 const SLUG = 'demo-feature';
@@ -197,4 +199,132 @@ test('updateEpicTaskList splices the link + is idempotent', () => {
 	assert.match(linked, /- \[ \] #7 — s1: Add filter field \(S\)/);
 	assert.match(linked, /- \[ \] s2: Persist/);
 	assert.equal(updateEpicTaskList(linked, 's1', 'acme/demo#7', 'Add filter field'), linked);   // idempotent
+});
+
+// ---------------------------------------------------------------------------
+// resolveWorkflowRef — optional epic scope for a structural label (BUGFIX)
+//
+// A structural label (`s1/t1`) resolved ONLY in a single-epic artifacts dir.
+// An optional `opts.epicHash` scope now lets it resolve in a MULTI-epic dir;
+// every unscoped / non-label / single-epic path stays byte-identical.
+// ---------------------------------------------------------------------------
+
+// Two epics sharing a 4-char prefix (`aaaa`) so a short prefix is ambiguous,
+// but each 8-char prefix is unique.
+const EPIC_A_HASH = 'aaaa1111bbbb2222';
+const EPIC_B_HASH = 'aaaa9999cccc8888';
+const EPIC_A_CREATED = '2026-07-17T07:42:28.275Z';
+const EPIC_B_CREATED = '2026-08-20T09:00:00.000Z';
+
+function seedEpic(dir: string, hash: string, slug: string, createdAt: string, taskRef: string): void {
+	writeFileSync(join(dir, `DEF-${hash}.json`), JSON.stringify({
+		meta: { workflow: 'define', epicHash: hash, epicSlug: slug, createdAt, approvedAt: createdAt },
+		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
+		citations: [],
+	}));
+	writeFileSync(join(dir, `LLD-${hash}-s1.json`), JSON.stringify({
+		meta: {
+			workflow: 'design.story', schemaVersion: 1, epicHash: hash, epicSlug: slug,
+			storyId: 's1', createdAt, approvedAt: createdAt, tracker: { storyRef: `acme/demo#${taskRef}0` },
+		},
+		body: { openQuestions: [] }, citations: [],
+	}));
+	writeFileSync(join(dir, `PLAN-${hash}-s1.json`), JSON.stringify({
+		meta: {
+			workflow: 'plan', schemaVersion: 1, epicHash: hash, epicSlug: slug, storyId: 's1', createdAt,
+			tracker: { taskRefs: { t1: `acme/demo#${taskRef}` } },
+		},
+		body: { tasks: [{ id: 't1', title: 'T', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: [], derivedFrom: [], tests: [] }] },
+		citations: [],
+	}));
+}
+
+/** A tmp repo whose `.insrc/artifacts/` holds two epics, both with s1/t1. */
+function mkMultiEpicRepo(): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-multi-'));
+	const dir = join(repo, ARTIFACTS_DIR);
+	mkdirSync(dir, { recursive: true });
+	seedEpic(dir, EPIC_A_HASH, 'epic-alpha', EPIC_A_CREATED, '101');
+	seedEpic(dir, EPIC_B_HASH, 'epic-beta',  EPIC_B_CREATED, '202');
+	return repo;
+}
+
+/** A tmp repo whose `.insrc/artifacts/` holds exactly one epic. */
+function mkSingleEpicRepo(): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-single-'));
+	const dir = join(repo, ARTIFACTS_DIR);
+	mkdirSync(dir, { recursive: true });
+	seedEpic(dir, EPIC_A_HASH, 'epic-alpha', EPIC_A_CREATED, '101');
+	return repo;
+}
+
+test('resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)', () => {
+	const repo = mkMultiEpicRepo();
+	try {
+		const full = resolveWorkflowRef(repo, 's1/t1', { epicHash: EPIC_A_HASH });
+		assert.ok(full !== null, 'full-hash scope resolves');
+		assert.equal(full!.level, 'task');
+		assert.equal(full!.epicHash, EPIC_A_HASH);
+		assert.equal(full!.storyId, 's1');
+		assert.equal(full!.taskId, 't1');
+		assert.equal(full!.issueRef, 'acme/demo#101');
+
+		// An 8-char prefix that uniquely names epic A resolves identically.
+		const prefixed = resolveWorkflowRef(repo, 's1/t1', { epicHash: 'aaaa1111' });
+		assert.deepEqual(prefixed, full);
+
+		// Scoping to epic B resolves to B's task instead.
+		const b = resolveWorkflowRef(repo, 's1/t1', { epicHash: EPIC_B_HASH });
+		assert.equal(b!.epicHash, EPIC_B_HASH);
+		assert.equal(b!.issueRef, 'acme/demo#202');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped', () => {
+	const multi = mkMultiEpicRepo();
+	try {
+		assert.equal(resolveWorkflowRef(multi, 's1/t1'), null);   // unchanged multi-epic refusal
+	} finally { rmSync(multi, { recursive: true, force: true }); }
+
+	const single = mkSingleEpicRepo();
+	try {
+		const r = resolveWorkflowRef(single, 's1/t1');   // unchanged single-epic resolve
+		assert.ok(r !== null);
+		assert.equal(r!.level, 'task');
+		assert.equal(r!.epicHash, EPIC_A_HASH);
+		assert.equal(r!.taskId, 't1');
+	} finally { rmSync(single, { recursive: true, force: true }); }
+});
+
+test('resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null', () => {
+	const repo = mkMultiEpicRepo();
+	try {
+		assert.equal(resolveWorkflowRef(repo, 's1/t1', { epicHash: 'ffffffff' }), null);   // zero matches
+		assert.equal(resolveWorkflowRef(repo, 's1/t1', { epicHash: 'aaaa' }), null);        // >1 matches (ambiguous)
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('resolveWorkflowRef: issue# and hierarchical-id forms resolve identically with or without opts.epicHash', () => {
+	const repo = mkMultiEpicRepo();
+	try {
+		// issue# — scope is ignored off the label path; both resolve epic A's task.
+		const issue     = resolveWorkflowRef(repo, '#101');
+		const issueOpt  = resolveWorkflowRef(repo, '#101', { epicHash: EPIC_B_HASH });
+		assert.ok(issue !== null);
+		assert.equal(issue!.epicHash, EPIC_A_HASH);
+		assert.deepEqual(issueOpt, issue);
+
+		// owner/repo#N form, likewise unaffected.
+		const ownerRepo = resolveWorkflowRef(repo, 'acme/demo#202', { epicHash: EPIC_A_HASH });
+		assert.ok(ownerRepo !== null);
+		assert.equal(ownerRepo!.epicHash, EPIC_B_HASH);
+
+		// hierarchical id — take epic A's canonical id, resolve it with/without the opt.
+		const scoped = resolveWorkflowRef(repo, 's1/t1', { epicHash: EPIC_A_HASH });
+		assert.ok(scoped !== null);
+		const viaHier    = resolveWorkflowRef(repo, scoped!.workflowId);
+		const viaHierOpt = resolveWorkflowRef(repo, scoped!.workflowId, { epicHash: EPIC_B_HASH });
+		assert.deepEqual(viaHier, scoped);
+		assert.deepEqual(viaHierOpt, scoped);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -79,7 +79,7 @@ export interface LocateThresholds {
  *  the pure-fs deterministic resolver; `promptForRef` surfaces the user prompt. */
 export interface LocateParentDeps {
 	readonly repoPath:        string;
-	readonly resolveRef:      (repoPath: string, identifier: string) => ResolvedRef | null;
+	readonly resolveRef:      (repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }) => ResolvedRef | null;
 	readonly inferCandidates: (req: InferParentsRequest) => Promise<InferredCandidates>;
 	readonly promptForRef:    () => Promise<string | null>;
 	readonly thresholds:      LocateThresholds;

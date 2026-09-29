@@ -1,0 +1,536 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790664980219-t9lfhg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T07:02:47.690Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 387436,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99bc81bbe965eec3",
+    "epicSlug": "lld-bugfix-scope-structural-label-build",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790664980219-t9lfhg",
+    "hldEffectiveHash": "a7c7f317f01b03c50c10075f87b0835585d48af2d769aa473c648e9ad5ec5b53",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveByLabel (src/workflow/tracker/resolve.ts ~:266) refuses a structural label whenever the artifacts dir is not single-epic: `if (hashes.length !== 1) return null;` then buildRef(dir, hashes[0], storyId, taskId).",
+          "evidence": "Confirmed: resolve.ts:266 = `function resolveByLabel(dir: string, storyId: string, taskId?: string): ResolvedRef | null {` and grep confirms the `hashes.length !== 1` refusal body — the exact multi-epic gate the fix scopes.",
+          "action": "No change needed — the root-cause anchor resolves verbatim.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveWorkflowRef (resolve.ts ~:292) is the single resolver taking (repoPath, identifier); a structural label (LABEL_RE) dispatches to resolveByLabel near :311.",
+          "evidence": "Confirmed: resolve.ts:292 = `export function resolveWorkflowRef(repoPath: string, identifier: string): ResolvedRef | null {` — the 2-arg signature the LLD widens with an optional 3rd param; resolveByLabel dispatch present.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildRef (resolve.ts ~:137) already performs the epic-scoped lookup (reads DEF/LLD/PLAN by epicHash) and is the sole ResolvedRef assembler the scoped-label path can reuse.",
+          "evidence": "Confirmed: resolve.ts:137 = `function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null {` — the epic-scoped assembler the scoped-label path reuses.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveByHier (resolve.ts ~:249) resolves an epic in a multi-epic dir by prefix-matching hash8 against listEpicHashes + createdAt — the model the scoped resolveByLabel mirrors.",
+          "evidence": "Confirmed: resolve.ts:249 = `function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {` + the hash8 startsWith prefix-match — the model the scoped resolveByLabel mirrors.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveTaskRef (src/mcp/build-step/render.ts ~:53) calls resolveWorkflowRef(repoPath, target) and maps a null ref to the 'could not resolve target' message.",
+          "evidence": "Confirmed: render.ts:54 = `const ref = resolveWorkflowRef(repoPath, target);` + the 'could not resolve target' message — the build-step chokepoint threaded by the fix.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Both build phases surface a failed resolveTaskRef as err('unresolved-target', ...): implement.ts ~:57 and validate.ts ~:65.",
+          "evidence": "Confirmed: implement.ts:57 = `if (!resolved.ok) return err('unresolved-target', resolved.message);` (validate.ts:65 mirrors) — the surfaced failure.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The epic-tracked build inputs BuildStepInputImplement (~types.ts:45) and BuildStepInputValidate (~:55) carry only `target` (+ standalone? on implement); they have NO epic-scope field today — the field the fix adds.",
+          "evidence": "Confirmed: types.ts:45 = `export interface BuildStepInputImplement {` — the epic-tracked input carrying only target today; the additive epicHash lands here + on BuildStepInputValidate.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "bugfix/mount.ts (~:116) passes `resolveRef: resolveWorkflowRef` as a dependency callback — a 2-arg consumer whose callback type must still accept the widened (optional 3rd arg) signature.",
+          "evidence": "Confirmed: bugfix/mount.ts:116 = `resolveRef: resolveWorkflowRef,` — the callback-dep consumer whose type must admit the optional 3rd arg (drives the backward-compat requirement).",
+          "action": "No change needed — the LLD correctly flags this as the callback type to widen.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "workflowIdForIssue (~resolve.ts:322) and issueForWorkflowId (~:328) call resolveWorkflowRef with two args — backward-compat consumers unaffected by an optional 3rd param.",
+          "evidence": "Confirmed: resolve.ts:322 = `export function workflowIdForIssue(repoPath: string, issueNumber: number | string): string | null {` (issueForWorkflowId adjacent) — a 2-arg consumer unaffected by an optional param.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The build-step tests drive handleBuildStep with target 's1/t1' against a SINGLE-epic tmp artifacts dir (build-step.test.ts), and the resolver suite lives at tracker/__tests__/tracker.test.ts — the suites the regression extends.",
+          "evidence": "Confirmed: build-step.test.ts:98 = `handleBuildStep({ phase: 'implement', target: 's1/t1', repo })` against a single-epic tmp dir — exactly why the multi-epic bug never surfaced in CI; the regression extends this suite + tracker.test.ts.",
+          "action": "No change needed.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-09-29T07:04:26.724Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T07:09:56.084Z"
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "LLD for the bugfix: scope structural-label build targets to the caller's epic. Thread an optional epic scope (epicHash) from the build-step input through resolveTaskRef → resolveWorkflowRef so resolveByLabel resolves a sN/tN label against the provided epic instead of requiring a single-epic .insrc/artifacts dir. Backward-compatible: issue#/hierId/single-epic-label forms unchanged. Upstream is ISSUE-99bc81bbe965eec3."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "resolveWorkflowRef",
+          "signature": "function resolveWorkflowRef(repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo whose .insrc/artifacts/ holds the DEF/LLD/PLAN JSON (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "identifier",
+              "type": "string",
+              "purpose": "Any identifier form: issue# / hierarchical id / structural label (unchanged).",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ epicHash?: string }",
+              "purpose": "NEW additive optional scope. When a structural label is parsed and opts.epicHash is set, the label resolves against that epic instead of requiring a single-epic dir. Absent → today's behaviour verbatim.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "The unified ref (unchanged shape, resolve.ts:50-68), or null when unlocatable. The only behavioural delta: a structural label in a multi-epic dir now resolves when opts.epicHash names a present epic."
+          },
+          "errors": [],
+          "preconditions": [
+            "opts.epicHash, when provided, is a full or prefix DEF hash of an epic present in the dir; a non-matching/ambiguous scope resolves to null (no throw)."
+          ],
+          "postconditions": [
+            "Absent opts (or a non-label identifier) → byte-identical to the current resolver for all four existing 2-arg consumers.",
+            "A structural label + a matching opts.epicHash → resolves via the existing buildRef(dir, epicHash, storyId, taskId)."
+          ]
+        },
+        {
+          "name": "resolveByLabel",
+          "signature": "function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string | undefined",
+              "purpose": "NEW optional scope. When set, disambiguate to that epic (prefix-match against listEpicHashes, mirroring resolveByHier's hash8 match) and call buildRef with it; when unset, keep the current `hashes.length !== 1 → null` single-epic rule.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "The resolved label ref, or null when the epic can't be uniquely determined (no scope + multi-epic dir, OR a scope that matches zero / >1 epics)."
+          },
+          "errors": [],
+          "preconditions": [
+            "When epicHash is provided it is matched against listEpicHashes(dir); exactly one match → resolve, else null."
+          ],
+          "postconditions": [
+            "epicHash undefined → identical to the current single-epic behaviour (resolve.ts:266-270).",
+            "epicHash matching one present epic → resolves the label in a multi-epic dir."
+          ]
+        },
+        {
+          "name": "resolveTaskRef",
+          "signature": "function resolveTaskRef(repoPath: string, target: string, epicHash?: string): TaskResolution",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string | undefined",
+              "purpose": "NEW optional scope threaded straight into resolveWorkflowRef(repoPath, target, { epicHash }). Absent → unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TaskResolution",
+            "meaning": "{ ok:true, ref } on a task-level resolve, else { ok:false, message } (unchanged shape). With epicHash set, a structural label in a multi-epic dir now reaches ok:true instead of the 'could not resolve target' message."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called by the two build phases with the epic-tracked build's known epicHash."
+          ],
+          "postconditions": [
+            "The 2-arg call site behaviour is unchanged; the 3-arg call scopes the label."
+          ]
+        },
+        {
+          "name": "handleImplement / handleValidate",
+          "signature": "// unchanged signatures; internal wiring only\nhandleImplement(input: BuildStepInputImplement): Promise<...>\nhandleValidate(input: BuildStepInputValidate): Promise<...>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "BuildStepInputImplement | BuildStepInputValidate",
+              "purpose": "Now carries an optional epicHash on the epic-tracked path; each phase passes it: resolveTaskRef(repoPath, input.target, input.epicHash).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<BuildStep*>",
+            "meaning": "Unchanged; the only change is the extra scoped arg into resolveTaskRef so a structural target resolves in a multi-epic repo."
+          },
+          "errors": [
+            {
+              "type": "err('unresolved-target', ...)",
+              "condition": "still returned when resolveTaskRef fails — but no longer fires for a well-formed sN/tN label once input.epicHash is supplied (implement.ts:57, validate.ts:65)."
+            }
+          ],
+          "preconditions": [
+            "The MCP caller supplies input.epicHash for an epic-tracked build (the approve/build flow already knows it)."
+          ],
+          "postconditions": [
+            "A build invoked with { target:'s4/t1', epicHash } resolves and proceeds; a build without epicHash in a single-epic repo is unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildStepInputImplement + BuildStepInputValidate (src/mcp/build-step/types.ts)",
+        "change": "field-add",
+        "details": "Add an optional `epicHash?: string | undefined` to the epic-tracked build inputs (the standalone path already has its own epicHash on BuildStandaloneContext). Purely additive; a build that omits it behaves exactly as today (single-epic dirs, issue#, hierId all still work). The MCP tool input schema gains the same optional field so callers can pass it.",
+        "schemaDiff": "+ readonly epicHash?: string | undefined;  // on BuildStepInputImplement (:45) and BuildStepInputValidate (:55)",
+        "callSites": [
+          "src/mcp/build-step/types.ts:45",
+          "src/mcp/build-step/phases/implement.ts:56",
+          "src/mcp/build-step/phases/validate.ts:64"
+        ]
+      },
+      {
+        "entity": "resolveByLabel epic-scoping (src/workflow/tracker/resolve.ts)",
+        "change": "invariant-change",
+        "details": "Today's invariant: a structural label resolves ONLY in a single-epic dir (hashes.length !== 1 → null). New invariant: a structural label ALSO resolves when a caller-provided epicHash uniquely matches a present epic; the unscoped path keeps the single-epic invariant verbatim. This preserves the existing behaviour it might otherwise break (unscoped callers), which is why it is modelled as an additive scope rather than replacing the rule.",
+        "schemaDiff": "resolveByLabel(dir, storyId, taskId?, epicHash?) — epicHash scopes via prefix-match + buildRef; else unchanged.",
+        "callSites": [
+          "src/workflow/tracker/resolve.ts:266",
+          "src/workflow/tracker/resolve.ts:311",
+          "src/workflow/tracker/resolve.ts:292"
+        ]
+      },
+      {
+        "entity": "resolveWorkflowRef opts + bugfix/mount.ts resolveRef callback type",
+        "change": "field-add",
+        "details": "resolveWorkflowRef gains the optional opts param. The bugfix/mount.ts `resolveRef: resolveWorkflowRef` dependency callback type must admit (but need not pass) the optional 3rd arg — an additive widening, so the existing 2-arg call stays valid. workflowIdForIssue/issueForWorkflowId keep calling 2-arg unchanged.",
+        "schemaDiff": "type ResolveRefFn = (repoPath: string, identifier: string, opts?: { epicHash?: string }) => ResolvedRef | null;",
+        "callSites": [
+          "src/workflow/tracker/resolve.ts:292",
+          "src/workflow/bugfix/mount.ts:116",
+          "src/mcp/build-step/render.ts:54"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The caller passes an epicHash scope that matches NO epic present in .insrc/artifacts/ (e.g. a stale/typo'd hash).",
+          "detection": "resolveByLabel prefix-matches the provided epicHash against listEpicHashes(dir) and finds zero matches.",
+          "response": "Return null (no throw); resolveTaskRef maps null to { ok:false, message } and the build phase returns err('unresolved-target', ...) — the existing failure path, now for a genuinely unlocatable scope.",
+          "userImpact": "The build refuses with the same clear 'could not resolve target' guidance; the operator fixes the epicHash and retries.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The provided epicHash is a prefix that ambiguously matches MORE THAN ONE present epic.",
+          "detection": "resolveByLabel's prefix-match against listEpicHashes(dir) yields >1 candidate hash.",
+          "response": "Return null (refuse to guess) rather than pick one — mirroring resolveByLabel's existing 'ambiguous → null' stance; the caller must pass a longer/full hash.",
+          "userImpact": "The build refuses instead of resolving the wrong epic's task; the operator disambiguates with a fuller hash.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The epicHash matches an epic, but that epic's PLAN has no such task (the label names a story/task the epic doesn't contain).",
+          "detection": "buildRef locates the epic + mints ids but the PLAN read finds no task with taskId (task=undefined); resolveTaskRef's guard (render.ts:63) sees ref.level !== 'task' / taskId===undefined.",
+          "response": "resolveTaskRef returns { ok:false, message: \"...resolved to a <level>, not a task...\" } (the existing non-task message), so the build refuses cleanly.",
+          "userImpact": "The operator learns the label doesn't name a task in that epic (wrong story/task ordinal), and corrects it.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "epicHash omitted, single-epic .insrc/artifacts/ dir, target 's1/t1'.",
+          "expected": "Resolves exactly as today via the unchanged single-epic branch (hashes.length === 1 → buildRef)."
+        },
+        {
+          "input": "epicHash omitted, multi-epic dir, target 's1/t1'.",
+          "expected": "Returns null (unchanged current behaviour) → build still surfaces 'unresolved-target'; the fix requires the caller to supply the scope, it does not change the unscoped verdict."
+        },
+        {
+          "input": "epicHash supplied as an 8-char prefix vs the full 16-hex hash, both naming the one epic.",
+          "expected": "Both resolve identically — the prefix-match (startsWith, like resolveByHier's hash8 match) accepts either."
+        },
+        {
+          "input": "A non-label identifier (issue# like '#42' or a hierarchical id) passed WITH an epicHash opt.",
+          "expected": "epicHash is ignored — only the resolveByLabel branch consults it; the issue#/hierId paths resolve exactly as today."
+        },
+        {
+          "input": "target 's1' (story-level, no task) with a matching epicHash on the build path.",
+          "expected": "resolveByLabel resolves the story ref, but resolveTaskRef's non-task guard still refuses it for build (build operates on a task) — unchanged level enforcement."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "resolveWorkflowRef called with two args (no opts) is byte-identical to today for every existing consumer — render.ts's resolveTaskRef, bugfix/mount.ts's resolveRef callback, and the workflowIdForIssue/issueForWorkflowId helpers — so the epic-scope parameter is purely additive.",
+          "source": "c3"
+        },
+        {
+          "text": "The issue# (resolveByIssue) and hierarchical-id (resolveByHier) resolution paths are untouched; only the structural-label branch (resolveByLabel) gains the optional scope, and its unscoped single-epic rule (hashes.length !== 1 → null) is preserved verbatim.",
+          "source": "c1"
+        },
+        {
+          "text": "buildRef remains the SOLE epic-scoped ref assembler; the scoped label path reuses buildRef(dir, epicHash, storyId, taskId) rather than introducing a parallel lookup, so ResolvedRef shape + minting stay consistent.",
+          "source": "c1"
+        },
+        {
+          "text": "The existing single-epic label tests (build-step.test.ts target 's1/t1') and the resolver suite (tracker.test.ts) must stay green — the change adds cases, it does not alter the outcomes those tests pin.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test), the repo-wide convention — colocated __tests__/*.test.ts, extending the existing tracker.test.ts + build-step.test.ts suites.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the resolver-level scoping: a structural label resolves against a caller-provided epicHash in a multi-epic dir, and every unscoped/other-form path is byte-identical to today.",
+          "subjects": [
+            "resolveByLabel/resolveWorkflowRef: in a MULTI-epic dir, resolveWorkflowRef(repo, 's1/t1', { epicHash: <present hash> }) resolves to that epic's task (via buildRef); the full 16-hex hash and an 8-char prefix both resolve.",
+            "resolveWorkflowRef: in a multi-epic dir, an UNSCOPED 's1/t1' still returns null (unchanged); a single-epic dir still resolves unscoped (unchanged).",
+            "resolveWorkflowRef: an epicHash matching ZERO epics → null; a prefix matching >1 epics → null (refuse-to-guess).",
+            "resolveWorkflowRef: issue# (#N / owner/repo#N) and hierarchical-id forms resolve identically whether or not opts.epicHash is passed (scope ignored off the label path).",
+            "backward-compat: the existing 2-arg resolveWorkflowRef calls (workflowIdForIssue/issueForWorkflowId, bugfix/mount.ts resolveRef callback type) still typecheck + behave unchanged."
+          ],
+          "fixturesNeeded": [
+            "a tmp .insrc/artifacts/ dir seeded with TWO epics' DEF+LLD+PLAN (both containing s1/t1) — the multi-epic case the bug needs",
+            "a single-epic tmp dir (the existing fixture) for the unchanged-path assertions",
+            "a PLAN whose tasks include t1 so buildRef returns a task-level ref"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the build-step seam threads the scope end-to-end: an epic-tracked build resolves a structural target when input.epicHash is supplied, and refuses cleanly on a bad scope.",
+          "subjects": [
+            "handleImplement + handleValidate: { phase, target:'s1/t1', epicHash, repo } against a multi-epic dir resolves + proceeds (no 'unresolved-target'); the taskId/storyId surface correctly.",
+            "handleImplement/handleValidate: { target:'s1/t1' } WITHOUT epicHash in a multi-epic dir still returns err('unresolved-target', ...) (the fix is opt-in via scope).",
+            "resolveTaskRef: 3-arg call threads epicHash into resolveWorkflowRef; 2-arg call unchanged.",
+            "the standalone path (BuildStandaloneContext) is untouched — standalone-implement.test.ts stays green."
+          ],
+          "fixturesNeeded": [
+            "the multi-epic tmp repo + a fake ValidateProvider (_setBuildValidateProviderForTests) returning a canned verdict",
+            "an approved PLAN under the scoped epic so admitBuild admits"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "resolveByLabel/resolveWorkflowRef: in a MULTI-epic dir, resolveWorkflowRef(repo, 's1/t1', { epicHash }) resolves to that epic's task (via buildRef); full hash + 8-char prefix both resolve.",
+            "handleImplement + handleValidate: { phase, target:'s1/t1', epicHash, repo } against a multi-epic dir resolves + proceeds (no 'unresolved-target')."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "resolveWorkflowRef: unscoped 's1/t1' still null in multi-epic; single-epic still resolves unscoped (unchanged).",
+            "resolveWorkflowRef: issue#/hierId forms resolve identically with/without opts.epicHash.",
+            "backward-compat: existing 2-arg resolveWorkflowRef consumers (workflowIdForIssue/issueForWorkflowId, bugfix/mount.ts resolveRef) typecheck + behave unchanged; tracker.test.ts stays green."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "resolveWorkflowRef: epicHash matching zero epics → null; prefix matching >1 → null (refuse-to-guess).",
+            "handleImplement/handleValidate: 's1/t1' without epicHash in a multi-epic dir still returns err('unresolved-target'); standalone path untouched (standalone-implement.test.ts green)."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "resolveWorkflowRef(repoPath, identifier) (tracker/resolve.ts:292) is the single 2-arg resolver; a structural label dispatches to resolveByLabel (:311), which refuses whenever the artifacts dir is not single-epic (`if (hashes.length !== 1) return null;` :266-270). The build step funnels through resolveTaskRef(repoPath, target) (render.ts:53-54) with only the bare target string, so an epic-tracked sN/tN build in a multi-epic repo returns err('unresolved-target', ...) (implement.ts:57, validate.ts:65). The epic-tracked build inputs (BuildStepInputImplement/Validate, types.ts:45/:55) carry no epic-scope field; only the standalone path has its own epicHash. resolveWorkflowRef's other consumers are 2-arg: render.ts's resolveTaskRef, bugfix/mount.ts's resolveRef callback (:116), and workflowIdForIssue/issueForWorkflowId (:322/:328).",
+      "stateAfter": "resolveWorkflowRef takes an additive optional 3rd arg `opts?: { epicHash? }`; when a structural label is parsed and opts.epicHash matches exactly one present epic (prefix-match like resolveByHier), resolveByLabel resolves it via the existing buildRef instead of requiring a single-epic dir. resolveTaskRef gains an optional epicHash threaded into that opts; the epic-tracked build inputs gain an optional epicHash the two phases pass. Every 2-arg / non-label / single-epic path is byte-identical to before. Net: an epic-tracked build invoked with { target:'s4/t1', epicHash } resolves and proceeds in a multi-epic repo.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional `opts?: { epicHash? }` parameter to resolveWorkflowRef and the optional `epicHash?` parameter to resolveByLabel; when set, prefix-match it against listEpicHashes and resolve via buildRef, else keep the current single-epic rule. Pure add — no existing call changes behaviour.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Widen the resolveRef callback type in bugfix/mount.ts to admit the optional 3rd arg (it need not pass it). Type-only, additive.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Thread an optional epicHash through resolveTaskRef (render.ts) into resolveWorkflowRef's opts.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the optional epicHash field to the epic-tracked build-step input types + the MCP tool input schema, and have handleImplement/handleValidate pass input.epicHash into resolveTaskRef.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the regression tests: resolver-level multi-epic scoped-resolve + unchanged-unscoped cases (tracker.test.ts) and a build-step scoped-resolve case (build-step.test.ts); confirm the existing single-epic label tests + standalone tests stay green.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible. resolveWorkflowRef / resolveTaskRef / resolveByLabel all gain OPTIONAL trailing parameters that default to undefined = today's exact behaviour, so every existing 2-arg consumer (render.ts resolveTaskRef, bugfix/mount.ts resolveRef callback, workflowIdForIssue/issueForWorkflowId) compiles and behaves unchanged. The build-step input change is an added optional field — a build that omits epicHash is unaffected (single-epic dirs, issue#, hierId, and hierarchical ids all resolve exactly as before). No public-API removal or rename; the unscoped single-epic label invariant is preserved verbatim.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Additive optional epic-scope param on resolveWorkflowRef + optional epicHash on the build-step input",
+        "oneLineSummary": "Widen resolveWorkflowRef with an optional { epicHash } scope that resolveByLabel consults (falling back to today's single-epic rule when absent), and add an optional epicHash to the epic-tracked build-step input, threaded resolveTaskRef → resolveWorkflowRef.",
+        "approach": "resolveWorkflowRef(repoPath, identifier, opts?: { epicHash?: string }): when a structural label is parsed and opts.epicHash is provided, resolveByLabel resolves against that epic (validating it is a real DEF hash present in the dir, disambiguating by prefix like resolveByHier's hash8 match) and calls the existing buildRef(dir, epicHash, storyId, taskId); when opts.epicHash is absent it keeps the exact current behaviour (single-epic dir → resolve, else null). resolveTaskRef(repoPath, target, epicHash?) threads the scope; BuildStepInputImplement/Validate gain an optional epicHash?; the two phases pass input.epicHash. The issue#/hierId/single-epic-label forms are untouched. buildRef already does the epic-scoped read, so no new resolution machinery.",
+        "pros": [
+          "Directly realizes the ISSUE fixIntent: the caller's known epic scopes the label; sN/tN resolves in a multi-epic dir.",
+          "Additive + backward-compatible: the optional 3rd param defaults to undefined = today's behaviour, so render.ts, bugfix/mount.ts's resolveRef callback, and the workflowIdForIssue/issueForWorkflowId helpers all keep working unchanged.",
+          "Reuses buildRef's existing epic-scoped lookup + resolveByHier's prefix-match idiom — minimal new logic.",
+          "One obvious call path; the epic scope lives on the same input the build step already threads."
+        ],
+        "cons": [
+          "Touches the shared resolveWorkflowRef signature (mitigated by keeping the new param optional).",
+          "Adds a field to two build-step input types + the resolveRef callback type in bugfix/mount.ts must admit the optional param."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Caller composes a hierarchical id (no resolver change)",
+        "oneLineSummary": "Leave resolveWorkflowRef untouched; when the build step has an epicHash + a bare sN/tN label, it composes the canonical E<date><hash>:S..:T.. id and passes THAT as the target so resolveByHier handles it.",
+        "approach": "resolveTaskRef (or the phases) detect a structural label + an available epicHash, read the epic's DEF createdAt, mint the canonical/slug hierarchical id via id.ts (taskWorkflowId/toCanonical), and call resolveWorkflowRef with the hierarchical id — which routes to resolveByHier and works in a multi-epic dir. resolveWorkflowRef + resolveByLabel stay exactly as today.",
+        "pros": [
+          "Zero change to the shared resolver and all its consumers — smallest blast radius on tracker/resolve.ts.",
+          "Uses the already-working resolveByHier path (the current manual workaround, promoted into code)."
+        ],
+        "cons": [
+          "Pushes id-composition + DEF createdAt lookup into the build step — duplicating a slice of resolveByHier/buildRef in the wrong module (the resolver should own ref resolution, not its callers).",
+          "The build step must read artifacts (DEF createdAt) to mint the id, coupling it to on-disk artifact shape it otherwise doesn't touch.",
+          "Leaves resolveByLabel still broken for every OTHER caller that has an epic in hand — fixes only the build step, not the resolver."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Smallest blast radius but scores 'violates' on ownership and only 'partial' on the fix (build-step-local), leaving the resolver defect in place for other callers. Loses to a1's resolver-level fix."
+      },
+      {
+        "id": "a3",
+        "name": "Infer the epic from label presence (heuristic, no param)",
+        "oneLineSummary": "Make resolveByLabel, in a multi-epic dir, scan the epics and resolve the label against the one epic whose PLAN/LLD actually contains that story/task — no new parameter.",
+        "approach": "resolveByLabel drops the `hashes.length !== 1` refusal and instead locates the epic(s) whose artifacts contain the given storyId (and taskId); if exactly one matches, resolve it via buildRef; if zero or more than one match, return null. No signature change anywhere.",
+        "pros": [
+          "No change to resolveWorkflowRef's signature or any caller/input type.",
+          "Transparently 'just works' for a bare label when only one epic happens to own it."
+        ],
+        "cons": [
+          "Fundamentally ambiguous: nearly every epic has an s1 (and often s1/t1), so the multi-match → null case is the COMMON case — the bug would persist for the labels that actually collide.",
+          "Ignores the caller's authoritative epic scope, substituting a fragile content heuristic for known truth.",
+          "More scanning I/O per resolve; still can't disambiguate the realistic collisions the ISSUE is about."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fails the core case: realistic sN/tN collisions across epics resolve to null, so the bug persists exactly where it bites. Ignores the caller's known epic. Clearly last."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 root-cause-map: resolveByLabel (:266-270) multi-epic refusal + resolveWorkflowRef (:292) dispatch + buildRef (:137) epic-scoped lookup + resolveByHier (:249) prefix-match model (src/workflow/tracker/resolve.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 seam-map: resolveTaskRef (render.ts:53-61) + implement.ts:56-57 + validate.ts:64-65 + BuildStepInput* (types.ts:45/:55) — the build-step target seam"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 caller-inventory: resolveWorkflowRef consumers — render.ts:54, bugfix/mount.ts:116 (resolveRef callback dep), workflowIdForIssue/issueForWorkflowId (resolve.ts:322/:328); all 2-arg (backward-compat surface)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 test-map: tracker/__tests__/tracker.test.ts (resolver suite) + mcp/build-step/__tests__/build-step.test.ts (single-epic 's1/t1' fixture) + standalone-implement.test.ts"
+    }
+  ]
+}

@@ -61,7 +61,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[validate]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}
-	const resolved = resolveTaskRef(repoPath, input.target);
+	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
 	// Establish the sc6 routing seam so the edit-session provider resolves through

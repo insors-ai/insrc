@@ -262,9 +262,19 @@ function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {
 	return buildRef(dir, epicHash, storyId, taskId);
 }
 
-/** label `s1/t3` / `s1` → node. Requires a single-epic artifacts dir. */
-function resolveByLabel(dir: string, storyId: string, taskId?: string): ResolvedRef | null {
+/** label `s1/t3` / `s1` → node. Requires a single-epic artifacts dir, OR a
+ *  caller-provided `epicHash` scope that uniquely names a present epic. */
+function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null {
 	const hashes = listEpicHashes(dir);
+	if (epicHash !== undefined) {
+		// Scoped: prefix-match the provided hash against the present epics
+		// (mirroring resolveByHier's `hash8` startsWith match). Exactly one
+		// match resolves via buildRef; zero or >1 matches → null (refuse to
+		// guess — the caller must pass a longer/full hash).
+		const matches = hashes.filter(h => h.startsWith(epicHash));
+		if (matches.length !== 1) return null;
+		return buildRef(dir, matches[0]!, storyId, taskId);
+	}
 	if (hashes.length !== 1) return null;   // ambiguous — needs an issue# or hierId
 	return buildRef(dir, hashes[0]!, storyId, taskId);
 }
@@ -289,7 +299,7 @@ function refNumber(ref: string): string {
 /** Resolve ANY identifier form → a unified `ResolvedRef`, or null when it
  *  can't be located (unknown form, missing artifact, or an ambiguous
  *  label in a multi-epic dir). */
-export function resolveWorkflowRef(repoPath: string, identifier: string): ResolvedRef | null {
+export function resolveWorkflowRef(repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }): ResolvedRef | null {
 	if (typeof identifier !== 'string' || identifier.length === 0) return null;
 	const id = identifier.trim();
 	const dir = artifactsDir(repoPath);
@@ -309,7 +319,7 @@ export function resolveWorkflowRef(repoPath: string, identifier: string): Resolv
 
 	// 4) Structural label — s1/t3 or s1.
 	const label = LABEL_RE.exec(id);
-	if (label !== null) return resolveByLabel(dir, label[1]!, label[2] ?? undefined);
+	if (label !== null) return resolveByLabel(dir, label[1]!, label[2] ?? undefined, opts?.epicHash);
 
 	return null;
 }

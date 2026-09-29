@@ -27,6 +27,12 @@ import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
 
+// A SECOND epic (distinct hash) for the multi-epic scoped-resolve regression:
+// with two epics present, an unscoped `s1/t1` is ambiguous → the resolver
+// refuses it, and only an `epicHash` scope resolves it.
+const HASH2 = 'b7c8d9e0f1a2b3c4';
+const CREATED_AT2 = '2026-08-21T00:00:00.000Z';
+
 function artifactsDir(repo: string): string {
 	const d = join(repo, ARTIFACTS_DIR);
 	mkdirSync(d, { recursive: true });
@@ -74,6 +80,44 @@ function seedPlan(repo: string, approved: boolean): string {
 	}, null, 2));
 	if (approved) approveArtifactByJsonPath(json);
 	return json;
+}
+
+/** Seed a SECOND epic (DEF+LLD+approved PLAN) also carrying s1/t1, so the
+ *  artifacts dir is multi-epic. */
+function seedSecondEpic(repo: string): void {
+	const dir = artifactsDir(repo);
+	writeFileSync(join(dir, `DEF-${HASH2}.json`), JSON.stringify({
+		meta: { workflow: 'define', epicHash: HASH2, epicSlug: 'other-epic', createdAt: CREATED_AT2, approvedAt: CREATED_AT2 },
+		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
+		citations: [],
+	}, null, 2));
+	writeFileSync(join(dir, `${lldArtifactId(HASH2, 's1')}.json`), JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'lld-run-2', schemaVersion: 1,
+			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2,
+			hldBaseRunId: 'hld-run-2', hldEffectiveHash: 'basis-hash-222', hldAmendmentsApplied: [],
+			approvedAt: CREATED_AT2, tracker: { storyRef: 'acme/widgets#20' },
+		},
+		body: { openQuestions: [] }, citations: [],
+	}, null, 2));
+	const planJson = join(dir, `${planArtifactId(HASH2, 's1')}.json`);
+	writeFileSync(planJson, JSON.stringify({
+		meta: {
+			workflow: 'plan', runId: 'plan-run-2', schemaVersion: 1,
+			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2,
+			lldRunId: 'lld-run-2', lldEffectiveHash: 'basis-hash-222',
+			tracker: { taskRefs: { t1: 'acme/widgets#52' } },
+		},
+		body: {
+			tasks: [{
+				id: 't1', title: 'Other task', summary: 'A task in the second epic.',
+				size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['Other check'],
+				derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: other' }],
+			}],
+		},
+		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
+	}, null, 2));
+	approveArtifactByJsonPath(planJson);
 }
 
 function mkRepo(): string {
@@ -275,4 +319,50 @@ test('validate: a BUILD-record persist failure is swallowed — the verdict is s
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// multi-epic dir — a structural target resolves ONLY with an epicHash scope
+// (the bugfix: `unresolved-target` when >1 epic DEF present, unless scoped)
+// ---------------------------------------------------------------------------
+
+test('implement: multi-epic dir + { target:\'s1/t1\', epicHash } resolves + proceeds', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo); seedPlan(repo, true);   // epic A (HASH)
+		seedSecondEpic(repo);                                 // epic B (HASH2)
+		const out = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', epicHash: HASH, repo }));
+		assert.equal(out['next'], 'implement');
+		assert.equal(out['taskId'], 't1');
+		assert.equal(out['issueRef'], 'acme/widgets#42');   // epic A's task ref, not B's #52
+		assert.match(out['prompt'] as string, /Filter narrows results by tag/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('validate: multi-epic dir + { target:\'s1/t1\', epicHash } resolves + returns a verdict', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo); seedPlan(repo, true);
+		seedSecondEpic(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 't1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', epicHash: HASH, repo }));
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(unresolved-target)', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo); seedPlan(repo, true);
+		seedSecondEpic(repo);
+		const out = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'error');
+		assert.equal((out['error'] as { code: string }).code, 'unresolved-target');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

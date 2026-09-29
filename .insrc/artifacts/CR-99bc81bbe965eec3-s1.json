@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790666982837-zmlmgq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T07:29:42.837Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99bc81bbe965eec3",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "99bc81bbe965eec3",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/phases/implement.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/build-step/render.ts",
+        "src/mcp/build-step/types.ts",
+        "src/mcp/server.ts",
+        "src/workflow/locate/types.ts",
+        "src/workflow/tracker/__tests__/tracker.test.ts",
+        "src/workflow/tracker/resolve.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/locate/types.ts:82",
+            "message": "Implements the approved LLD/PLAN faithfully: resolveWorkflowRef gains an optional opts.epicHash (resolve.ts:302) threaded to resolveByLabel (resolve.ts:266), which prefix-matches via listEpicHashes + buildRef (exactly-one → resolve, zero/>1 → null) and keeps the unscoped single-epic rule verbatim; resolveTaskRef threads epicHash (render.ts:53); both build phases pass input.epicHash; types.ts + server.ts expose the optional field end-to-end. One in-scope deviation from the LLD's literal anchor: the callback-type widening landed on LocateParentDeps.resolveRef (locate/types.ts:82) — the ACTUAL declared type that bugfix/mount.ts:116 wires resolveWorkflowRef into via locateParent — which is more correct than the LLD's guessed bugfix/mount.ts site. No adherence breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/resolve.ts:266",
+            "message": "Conventions upheld: additive optional trailing params (backward-compatible), the scoped branch mirrors resolveByHier's `h.startsWith(hash8)` idiom, `matches[0]!` is guarded by the `length !== 1` check (noUncheckedIndexedAccess-safe), no console/Promise.all, docstrings updated. The `opts?: { readonly epicHash? }` object shape (vs a bare positional arg) matches the LLD's intent to leave room for future scope fields. No convention breach.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/tracker.test.ts:1",
+            "message": "Coverage judged by RUNNING the suites (diff grounding is file-level/hollow, not authoritative). Independently verified: tsc --noEmit exit 0; full sweep 4024 tests / 3895 pass / 1 fail / 125 skip where the sole failure is the pre-existing ERR_DLOPEN_FAILED sqlite native-ABI red herring (NODE_MODULE_VERSION 127 vs 147), unrelated to the touched code; the resolver + build-step target suites re-ran 47/47 green. New tests cover every LLD subject: multi-epic scoped resolve (full hash + 8-char prefix), unscoped-null-in-multi/single-epic-resolves, zero-match + ambiguous-prefix → null, issue#/hierId unaffected by the opt, build-step scoped implement+validate resolve (asserting the correct epic's issueRef, not the sibling's), and without-epicHash still-'unresolved-target'. The pre-existing single-epic 's1/t1' tests + standalone-implement.test.ts stay green. No coverage gap.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/render.ts:54",
+            "message": "Sound, minimal fix. One trivial observation: resolveTaskRef always constructs `{ epicHash }` even when epicHash is undefined, yielding opts={epicHash:undefined}; resolveWorkflowRef guards with `opts?.epicHash` so this is byte-identical to the unscoped path — harmless, no change needed. The refuse-to-guess stance on an ambiguous prefix (return null rather than pick one) is the correct safety choice and is tested. The fix resolves the exact defect it was scoped to and reuses buildRef rather than forking a parallel lookup.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

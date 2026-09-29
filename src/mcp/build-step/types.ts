@@ -48,6 +48,10 @@ export interface BuildStepInputImplement {
 	 *  Ignored for a standalone build (spec comes from `standalone`). */
 	readonly target: string;
 	readonly repo?:  string;
+	/** Optional epic scope. When `target` is a structural label (`s1/t3`) and the
+	 *  repo's `.insrc/artifacts/` holds more than one epic, this scopes the label
+	 *  to a specific epic (prefix-match). Absent → today's single-epic behaviour. */
+	readonly epicHash?: string | undefined;
 	/** Present for a triage-routed no-plan build. */
 	readonly standalone?: BuildStandaloneContext | undefined;
 }
@@ -56,6 +60,9 @@ export interface BuildStepInputValidate {
 	readonly phase:  'validate';
 	readonly target: string;
 	readonly repo?:  string;
+	/** Optional epic scope for a structural `target` in a multi-epic dir — see
+	 *  `BuildStepInputImplement.epicHash`. Absent → today's behaviour. */
+	readonly epicHash?: string | undefined;
 }
 
 export type BuildStepInput =

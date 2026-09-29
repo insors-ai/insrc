@@ -568,6 +568,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				repo: z.string()
 					.describe('Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
+				epicHash: z.string()
+					.describe('Optional epic scope for a structural `target` (`s1/t3`) when the repo holds more than one epic — a full or prefix DEF hash naming the epic. Ignored for issue# / hierarchical ids and single-epic dirs.')
+					.optional(),
 				standalone: z.object({
 					standalone:      z.literal(true),
 					epicHash:        z.string().optional().describe('Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).'),

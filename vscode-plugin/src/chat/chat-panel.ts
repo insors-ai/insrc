@@ -255,10 +255,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-term__marker--error{color:var(--red);}.insrc-term__marker--error::before{color:var(--red)!important;margin-right:.55em;}` +
       // Bottom-pinned input bar (mock .inputbar): a full-width band with a top border + inset ground.
       `.inputbar{display:flex;gap:9px;align-items:flex-end;padding:11px 12px;border-top:1px solid var(--border);background:var(--bg-inset);flex:0 0 auto;}` +
-      `.inputbar .caret{color:var(--accent);padding-bottom:8px;user-select:none;}` +
-      // S002 ac2: the filled Send/Stop button (mock .sendbtn): green ▶ Send at rest, red ■ Stop while running.
-      `#insrc-send{flex:0 0 auto;align-self:flex-end;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);border:none;border-radius:9px;color:#062b16;font-family:var(--font);font-size:16px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0;}` +
-      `#insrc-send:hover{filter:brightness(1.08);}#insrc-send.stop{background:var(--red);color:#2b0606;font-size:13px;}` +
+      // S002 (ux-polish): the leading '>' prompt IS the clickable send/stop control — ❯ (terminal-green
+      // shell prompt) at rest, ■ (red) while a turn runs. The separate trailing send button is retired,
+      // so there is exactly one send/stop affordance. A comfortably clickable target, bottom-aligned to
+      // the textarea; the glyph/class are toggled by setRunning.
+      `#insrc-prompt{flex:0 0 auto;align-self:flex-end;display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:40px;color:var(--accent);font-family:var(--font);font-size:16px;line-height:1;cursor:pointer;outline:none;user-select:none;padding:0 4px;}` +
+      `#insrc-prompt:hover{filter:brightness(1.15);}#insrc-prompt:focus-visible{color:var(--fg-strong);}#insrc-prompt.stop{color:var(--red);font-size:13px;}` +
       // S002 ac3: the SINGLE animated progress bar above the input (mock .progress; live-only, never
       // persisted): 3 blinking dots + a label + a right-aligned tabular elapsed timer.
       `#insrc-progress{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border);background:var(--bg-inset);color:var(--muted);font-size:12px;flex:0 0 auto;}` +
@@ -302,7 +304,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
       `.insrc-bubble--user{background:rgba(138,180,255,.08);border:1px solid rgba(138,180,255,.30);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:82%;white-space:pre-wrap;word-break:break-word;}` +
       `.insrc-who--assistant{color:var(--magenta);}` +
-      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-left:2px solid var(--magenta);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:88%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-left:2px solid var(--magenta);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:90%;white-space:pre-wrap;word-break:break-word;}` +
       // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
       `.insrc-who--tool{color:var(--accent2);}` +
       `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;max-width:100%;}` +
@@ -365,11 +367,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // with session-title.ts. VIEW-only: the stored title (history option label) is untouched (k4).
       `const st=document.getElementById('insrc-sesstitle');` +
       `const clampTitle=(${clampSessionTitleWebviewSource()});` +
-      // S002 ac2: webview-local turn running-state drives the icon-only Send/Stop button.
-      // ▶ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
+      // S002 (ux-polish): webview-local turn running-state drives the leading '>' prompt send/stop control.
+      // ❯ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
       `var running=false;` +
-      `const sendBtn=document.getElementById('insrc-send');` +
-      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u25b6';sendBtn.className='sendbtn'+(r?' stop':'');sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
+      `const sendBtn=document.getElementById('insrc-prompt');` +
+      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
       // #insrc-progress label (gated on running by the caller); hideProgress hides it. It is never
       // written to the transcript (the host status-skip stays as-is, k4).
@@ -427,8 +429,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
       `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';}});` +
       `const box=document.getElementById('insrc-input');` +
-      // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the Send button); it posts
-      // submit-turn + marks running. The Send/Stop button posts cancel-turn while running.
+      // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
+      // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
       // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
       // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
       `function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');}` +
@@ -436,6 +438,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
       // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
       `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);hideProgress();}else{doSubmit();}});` +
+      // S002 (ux-polish): the '>' prompt is a role=button span — Enter/Space activate it like a click.
+      `if(sendBtn)sendBtn.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();sendBtn.click();}});` +
       `setRunning(false);` +
       // S001 (bugfix): the readiness handshake — now that the 'message' listener above is attached,
       // tell the host we can receive. This runs on the INITIAL load AND on every VS-Code webview
@@ -467,10 +471,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.
       `<div id="insrc-progress" class="progress" hidden><span class="spin"><i></i><i></i><i></i></span><span class="plabel"></span><span class="elapsed" id="insrc-elapsed"></span></div>` +
       `<div class="inputbar">` +
-      `<span class="caret">❯</span>` +
+      // S002 (ux-polish): the leading '>' prompt IS the send/stop control (glyph + class set by
+      // setRunning: ❯ green Send / ■ red Stop). role=button + tabindex make the span a keyboard-
+      // reachable control; the separate trailing send button is retired (one send affordance).
+      `<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude…  (⌘↵ to send)"></textarea>` +
-      // S002 ac2: filled Send/Stop button (glyph + class set by setRunning: ▶ green Send / ■ red Stop).
-      `<button id="insrc-send" class="sendbtn" type="button" aria-label="send">▶</button>` +
       `</div>` +
       // Status bar: provider · the SINGLE chat mode · state (mock .statusbar). S001 (bugfix): the
       // old separate edits+perms dropdowns are merged into ONE mode control (Manual/Edit

@@ -1097,9 +1097,9 @@ test('S002: a cancel-turn with no active turn is an idempotent no-op (no throw)'
   assert.doesNotThrow(() => fc.send(env('cancel-turn')));
 });
 
-// ---- S002 t3: Send/Stop button + fixed-region layout ----
+// ---- S002 (ux-polish) t1/t2/t3: the leading '>' prompt IS the send/stop control ----
 
-test('S002 ac2: renderShell embeds an icon-only Send/Stop button (#insrc-send) wired to submit-turn / cancel-turn', () => {
+test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the send/stop control; the trailing #insrc-send button is retired', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -1110,12 +1110,37 @@ test('S002 ac2: renderShell embeds an icon-only Send/Stop button (#insrc-send) w
   });
   host.open();
   const html = fc.html();
-  assert.match(html, /<button id="insrc-send"/, 'the input area has a Send/Stop button');
-  // icon-only: the glyph is set by setRunning (▶/■), no text label baked in beyond the initial caret.
-  assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the button glyph/class');
-  assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u25b6'/, 'Stop=■ (u25a0) while running, Send=▶ (u25b6) at rest');
-  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);hideProgress\(\);\}else\{doSubmit\(\);\}/, 'the button posts cancel-turn while running AND resets the UI locally (no stuck spinner), else submits');
-  assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty then posts submit-turn + marks running');
+  // t1: a leading '>' prompt control renders BEFORE the textarea.
+  assert.match(html, /<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯<\/span>\s*<textarea id="insrc-input"/, 'a leading ">" prompt control renders immediately before #insrc-input');
+  // t3: the separate trailing send button is gone (one send affordance).
+  assert.doesNotMatch(html, /id="insrc-send"/, 'the trailing #insrc-send button is retired');
+  assert.doesNotMatch(html, /#insrc-send\{/, 'the #insrc-send CSS rule is removed (no dead rule)');
+  // t2: the running-state glyph/class toggle now targets the '>' prompt; ❯ (u276f) send at rest, ■ (u25a0) stop while running.
+  assert.match(html, /const sendBtn=document\.getElementById\('insrc-prompt'\);/, 'the send/stop control is the leading #insrc-prompt');
+  assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the prompt glyph/class');
+  assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
+  // t2: click reuses the EXISTING doSubmit / cancel-turn body verbatim (byte-identical send intent).
+  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);hideProgress\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
+  assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty then posts submit-turn + marks running (unchanged)');
+  // t2: role=button span is keyboard-activatable (Enter/Space -> click).
+  assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
+});
+
+test('S002 (ux-polish) t4: the assistant bubble spans ~90% (bumped from 88%); user bubble (82%) + wrapper (100%) unchanged', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+    genNonce: () => 'FIXEDNONCE',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /\.insrc-bubble--assistant\{[^}]*max-width:90%/, 'assistant bubble max-width is 90%');
+  assert.doesNotMatch(html, /\.insrc-bubble--assistant\{[^}]*max-width:88%/, 'the old 88% assistant cap is gone');
+  assert.match(html, /\.insrc-bubble--user\{[^}]*max-width:82%/, 'user bubble stays 82%');
+  assert.match(html, /\.insrc-msg\{[^}]*max-width:100%/, 'the .insrc-msg wrapper stays 100%');
 });
 
 test('S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0', () => {
@@ -1263,7 +1288,7 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one inline script');
   assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
   assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
-  for (const id of ['insrc-term', 'insrc-input', 'insrc-send', 'insrc-progress', 'insrc-sesstitle']) {
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-prompt', 'insrc-progress', 'insrc-sesstitle']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
 });

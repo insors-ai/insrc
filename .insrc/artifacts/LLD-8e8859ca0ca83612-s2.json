@@ -1,0 +1,433 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790682912046-cmle6g",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T12:00:03.987Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 291875,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "epicHash": "8e8859ca0ca83612",
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1790676258005-32feqt",
+    "hldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "2.1/migration",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The chat-panel.ts webview HTML has a #insrc-input textarea and a SEPARATE trailing #insrc-send send button — the input row S002 reshapes into a leading-'>' terminal prompt.",
+          "evidence": "Confirmed: chat-panel.ts:471 `<textarea id=\"insrc-input\" ...>`, :473 `<button id=\"insrc-send\" class=\"sendbtn\">▶</button>`, :260 `#insrc-send{...}` — the textarea + trailing send button S002 reshapes into a leading '>' prompt.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "2.2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "doSubmit() in chat-panel.ts is the shared send path that posts a submit-turn message with the box text; the leading '>' click reuses it unchanged.",
+          "evidence": "Confirmed: chat-panel.ts:434 `function doSubmit(){if(!box.value.trim())return;vs.postMessage({...type:'submit-turn'...})}` — the shared send path (with the non-empty guard) the '>' click reuses unchanged.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "2.3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "setRunning(r) in chat-panel.ts drives the send/stop control state (the running-state indicator S002 relocates onto the '>' control).",
+          "evidence": "Confirmed: chat-panel.ts:372 `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'■':'▶';...}}` — drives the send/stop control state. (The 'cancel-turn' grep returned 0 due to the hyphenated-pattern escaping; the cancel-turn post exists in the send-button click handler at ~:438, verified directly this session — not a real gap.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "2.4/ac3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The assistant message bubble .insrc-bubble--assistant currently has max-width:88% — the value S002 bumps to ~90%.",
+          "evidence": "Confirmed: chat-panel.ts:305 `.insrc-bubble--assistant{...max-width:88%...}` — the assistant bubble width S002 bumps to ~90% (CSS only).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 4
+      },
+      "reviewedAt": "2026-09-29T12:00:56.622Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T12:02:07.942Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "S002 makes the dev-chat input read as a terminal prompt: a leading '>' indicator becomes the clickable send control (and the stop control while a turn runs), the textarea sits flush after it, and the separate trailing send button is retired — so there is one prompt-style send affordance. The click reuses the existing doSubmit()/submit-turn path unchanged, and Cmd/Ctrl+Enter still sends. It also widens the assistant message bubble from 88% to ~90% of the panel. Pure webview render/CSS/wiring in chat-panel.ts; no event, protocol, or persistence change.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): extend the existing single render pipeline through two HLD-level patterns applied additively, never reshaping a shipped contract. Pattern P1 (additive row kind): a new row kind is added by extending the RowKind discriminator, adding its RowViewModel payload, adding a toViewModel branch that maps BOTH the live TurnEvent and the replayed TranscriptEntry to the same row, adding a markerFor branch, and round-tripping a plain-serialisable TranscriptEntry field through both store constructions. Pattern P2 (live-only interactive prompt → persisted outcome): an interactive request is a LIVE-ONLY surface (markerFor->null while pending, never persisted), the webview relays the user's decision back over an additive protocol message, and on resolution the host records a PERSISTED outcome marker (via P1) showing the decided state — without altering the underlying action the decision triggers. S001 applies P1 for a tool-output row. S003 applies P2 to the EXISTING approval-request event (adding a persisted resolved-outcome marker and suppressing the visible synthesized echo) while leaving the shipped resume-grant untouched. S004 applies BOTH P1 and P2 for a new selection surface. S002 is pure render (input + width), owning no contract.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [],
+        "internal": "The input-row markup/CSS so it reads as a terminal prompt with a leading prompt indicator that acts as the send control (reusing the existing submit-turn intent unchanged), and the assistant-row width (~90%). Pure render; owns no cross-cutting contract and changes no event/protocol/persistence shape."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The webview render + CSS for a tool-output row (command, a visual separator, output collapsed to a ~3-line preview with expand/collapse), the rule that assistant/non-tool rows are never collapsed, and the adapter emission that produces the tool-output event from the provider stream. Private to S001 apart from the sc1 shape it establishes."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The approval-card render change (resolved approved/rejected state, action buttons removed once decided), suppressing the visible synthesized 'Approved: please proceed…' user-row echo, and recording the persisted permission-outcome marker on decision. The underlying resume-grant path and the existing permission-decision relay are consumed UNCHANGED (k4)."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "The selection-widget render (single/multi selectable controls), the host relay that turns a selection-decision message into the run's continuation (mirroring the existing decision-relay shape), and the resolved-selection persistence. Private to S004 apart from the sc3 shape."
+        }
+      ],
+      "rolloutPhase": "Phase A — Row-kind pattern + render polish",
+      "nonFunctional": {
+        "performance": "Rendering stays incremental per turn; collapse/expand is a DOM/CSS state toggle on the tool-output row, not a re-layout of the transcript. New events are small additive payloads; the Memento persistence path only gains plain-serialisable fields.",
+        "security": "No new sandbox/permission surface and no change to which tools may run; k4 preserved — the permission outcome display and the selection relay convey decisions exactly as the shipped path does, only the visible transcript representation changes. All behind insrc.chat.enabled (k5).",
+        "durability": "Persisted kinds (tool-output, permission-outcome, selection-outcome) round-trip through both createInMemoryChatSessionStore and createMementoChatSessionStore and must be plain-serialisable; pending interactive prompts (approval-request, selection-request) stay live-only (markerFor->null) and never enter the durable transcript (k2).",
+        "observability": "N/A — webview-only UX; behaviour verified through the eval'd *WebviewSource test pattern (k3)."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "chat-panel webview input row (renderRegistryWebviewSource / panel HTML)",
+          "signature": "// eval'd webview HTML (chat-panel.ts): the input row markup gains a leading '>' prompt control before #insrc-input; the trailing #insrc-send button is removed",
+          "parameters": [
+            {
+              "name": "leadingPrompt",
+              "type": "HTMLElement (a '>' control, e.g. id 'insrc-prompt')",
+              "purpose": "The terminal-prompt indicator rendered before the textarea; it is the send control (ac1/ac2). Styled terminal-green as a shell prompt; a comfortably clickable target.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string (webview source)",
+            "meaning": "The panel HTML now shows a single terminal-prompt input line ('>' + textarea). No other row/markup changes; className/textContent-safe, CSP-safe (k1)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The webview is the existing dev-chat panel HTML behind insrc.chat.enabled."
+          ],
+          "postconditions": [
+            "ac1: the input reads as a terminal prompt with a leading indicator; the redundant trailing send button is gone."
+          ]
+        },
+        {
+          "name": "doSubmit (chat-panel.ts:434) — REUSED unchanged",
+          "signature": "function doSubmit(): void  // consumed as-is: guards non-empty, posts {type:'submit-turn', text}, clears the box, setRunning(true)",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "The leading '>' click handler calls doSubmit() (send) exactly as the old button did, so the sent message and the submit-turn payload are byte-identical (ac2/lc1). While running, the '>' click posts cancel-turn (the existing stop behaviour)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Non-empty input (doSubmit's existing guard)."
+          ],
+          "postconditions": [
+            "ac2: activating the leading indicator sends identically to the existing send action; the Cmd/Ctrl+Enter keydown path is unchanged."
+          ]
+        },
+        {
+          "name": "setRunning (chat-panel.ts:372) — running/stop glyph relocated",
+          "signature": "function setRunning(r: boolean): void  // the send/stop indicator ('>' at rest / stop while running) moves from #insrc-send onto the leading '>' control",
+          "parameters": [
+            {
+              "name": "r",
+              "type": "boolean",
+              "purpose": "Running state; the leading control shows the send prompt at rest and the stop affordance while a turn is in flight (inheriting the current ▶↔■ send/stop semantics, now on the '>' control).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The one send/stop control is the leading '>' rather than the trailing button; the running-state semantics are unchanged, only the element they target moves."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exactly one send/stop control exists (no state drift between two controls)."
+          ]
+        },
+        {
+          "name": ".insrc-bubble--assistant (chat-panel.ts:305) — width bump",
+          "signature": "/* CSS */ .insrc-bubble--assistant { max-width: ~90%; /* was 88% */ }",
+          "parameters": [],
+          "returns": {
+            "type": "string (CSS in the panel style)",
+            "meaning": "The assistant message bubble spans ~90% of the panel width (ac3). CSS-only; no structural/render-model change. User bubble + .insrc-msg wrapper unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "ac3: assistant text uses the large majority (~90%) of the panel width."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "submit-turn intent + transcript (chat-panel.ts)",
+        "change": "invariant-change",
+        "details": "No data-model change: S002 is presentation-only. The submit-turn WebviewToHost message, its {text} payload, the transcript entries, and every event/persistence shape are UNCHANGED (lc1/k1). Only the input-row markup/CSS, the send-control element, and the assistant bubble width change.",
+        "schemaDiff": "(no type/message change) '>' click -> doSubmit() -> post {type:'submit-turn', text} (identical to today)",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The user clicks the leading '>' send control with an empty (or whitespace-only) input.",
+          "detection": "doSubmit()'s existing non-empty guard (box.value.trim()) sees an empty value.",
+          "response": "No submit-turn is posted — identical to today's empty-input behaviour (the guard is reused unchanged).",
+          "userImpact": "Nothing sends; no error surfaced. Same as clicking the old button on an empty box.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The user activates the leading control while a turn is already running (intending to stop).",
+          "detection": "The click handler checks the current running flag (the same flag setRunning maintains).",
+          "response": "It posts cancel-turn (the existing stop path), exactly as the old trailing button did while running.",
+          "userImpact": "The in-flight turn is cancelled; the control returns to the send prompt — unchanged stop behaviour.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Cmd/Ctrl+Enter pressed in the textarea (the keyboard send path).",
+          "expected": "Unchanged: the existing keydown handler still calls doSubmit() and sends; the '>' control is an ADDITIONAL affordance, not a replacement for the keyboard path (ac2)."
+        },
+        {
+          "input": "A very long or multi-line input in the textarea.",
+          "expected": "The textarea keeps its existing min/max-height + resize behaviour (#insrc-input CSS unchanged); the leading '>' sits at the prompt position and still sends the full value."
+        },
+        {
+          "input": "An assistant response narrower than ~90% (a short reply).",
+          "expected": "The bubble is content-sized up to the ~90% max-width cap; short replies are unaffected — only the cap widened from 88% to ~90%."
+        },
+        {
+          "input": "A user message row (right-aligned bubble).",
+          "expected": "Unchanged: only .insrc-bubble--assistant width changes; .insrc-bubble--user (82%, right-aligned) and .insrc-msg wrapper are untouched."
+        },
+        {
+          "input": "A tool-result row (S001) rendered near the input.",
+          "expected": "Unaffected — S002 does not touch the S001 tool-output render; only the input row + assistant bubble width change (adjacent-boundary respected)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The send intent is unchanged: activating the leading '>' calls the EXISTING doSubmit() which posts the same {type:'submit-turn', text} message; the payload, the host handler, the transcript, and the Cmd/Ctrl+Enter path are byte-identical (lc1/k1).",
+          "source": "c1"
+        },
+        {
+          "text": "Exactly one send/stop control exists after the change: the send/stop running-state indicator moves from the trailing #insrc-send button onto the leading '>' control, so there is no second control and no state drift.",
+          "source": "c1"
+        },
+        {
+          "text": "The change is confined to the eval'd webview source (HTML + CSS + click wiring) in chat-panel.ts and verified via the eval'd *WebviewSource test pattern; no TurnEvent/protocol/persistence shape changes and no adjacent-story (S001/S003/S004) scope is touched (k1/k3).",
+          "source": "c1"
+        },
+        {
+          "text": "Only .insrc-bubble--assistant's max-width changes (88% -> ~90%); the user bubble and the .insrc-msg wrapper widths are unchanged (ac3, presentation-only).",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test), the repo-wide convention — colocated vscode-plugin/src/chat/__tests__/chat-panel.test.ts; the eval'd *WebviewSource pattern (the panel HTML/source is eval'd and its DOM + a fakeChannel's posted messages asserted); live provider turns gated behind INSRC_LIVE_TESTS.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the input reads as a terminal prompt whose leading indicator sends, reusing the existing submit path.",
+          "subjects": [
+            "The eval'd panel HTML renders a leading '>' prompt control before #insrc-input and no longer renders the separate trailing #insrc-send button (ac1).",
+            "Clicking the leading '>' control with non-empty input posts exactly one {type:'submit-turn', text:<box value>} on the fake channel — identical payload to the pre-change send button (ac2/lc1).",
+            "Clicking '>' with an empty/whitespace input posts nothing (doSubmit guard reused).",
+            "Cmd/Ctrl+Enter in the textarea still sends (the keydown path is unchanged).",
+            "While a turn is running, activating the leading control posts cancel-turn (the stop path), and setRunning toggles the ONE control's send/stop state (no second control)."
+          ],
+          "fixturesNeeded": [
+            "the existing fakeChannel/scriptedAdapter chat-panel test harness (eval'd *WebviewSource)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the assistant bubble width is ~90% and other rows are unchanged.",
+          "subjects": [
+            ".insrc-bubble--assistant max-width is ~90% in the panel style string (bumped from 88%).",
+            ".insrc-bubble--user (82%) and .insrc-msg wrapper (100%) widths are unchanged (only the assistant cap moved)."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "The eval'd panel HTML renders a leading '>' prompt control before #insrc-input and no trailing #insrc-send button"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Clicking the leading '>' posts exactly one {type:'submit-turn', text} identical to the old send button",
+            "Cmd/Ctrl+Enter still sends via the unchanged keydown path",
+            "Empty-input click posts nothing (reused doSubmit guard)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            ".insrc-bubble--assistant max-width is ~90% in the panel style; user bubble + wrapper widths unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The dev-chat input row (chat-panel.ts eval'd webview source) is a bare textarea #insrc-input (:471) with a SEPARATE TRAILING 40x40 green send button #insrc-send ▶ (:473, CSS :260-261) aligned flex-end. Send converges on doSubmit() (:434, posts {type:'submit-turn', text}, clears the box, setRunning(true)), invoked from Cmd/Ctrl+Enter (keydown :435) and the button click (:438, cancel-turn while running); setRunning (:372) swaps the button glyph ▶↔■. Assistant text renders as .insrc-bubble--assistant (:305) at max-width:88%. The input does not read as a terminal prompt and the '>'/prompt indicator is absent (the trailing ▶ is the only send affordance).",
+      "stateAfter": "The input row reads as a single terminal-prompt line: a leading '>' prompt control sits before the textarea and IS the send control — clicking it calls the EXISTING doSubmit() (send) / cancel-turn (while running), with the running/stop state indicator relocated from #insrc-send onto the '>' control; the separate trailing button is removed. The Cmd/Ctrl+Enter path and the submit-turn message/payload are unchanged. Assistant .insrc-bubble--assistant max-width is bumped 88% -> ~90%. All confined to the eval'd webview source (HTML + CSS + click wiring) in chat-panel.ts.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add a leading '>' prompt control element to the input-row HTML before #insrc-input, and add its terminal-prompt CSS (green, comfortably clickable); keep #insrc-input's id/placeholder/CSS unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Wire the '>' control's click to the EXISTING doSubmit() (send when idle) / cancel-turn (while running), and relocate the setRunning send/stop state indicator from #insrc-send onto the '>' control; leave doSubmit and the submit-turn message untouched.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Remove the trailing #insrc-send button element (and its now-unused CSS) so there is exactly one send/stop control; the Cmd/Ctrl+Enter keydown path is unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Bump the .insrc-bubble--assistant max-width from 88% to ~90% in the panel style string (CSS only); user bubble + .insrc-msg wrapper unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update the existing 'Send/Stop button' *WebviewSource tests to target the relocated '>' control, and add tests for the leading-prompt presence, the click->submit-turn identity, the empty-input no-op, Cmd↵ still sends, and the ~90% assistant width.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Fully backward-compatible at the contract level: the submit-turn WebviewToHost message and its {text} payload, the host handlers, the transcript, and the Cmd/Ctrl+Enter path are byte-identical (lc1/k1). The only user-visible change is presentation — the send control moves from a trailing button to a leading '>' prompt, and the assistant bubble is ~2% wider. The removed #insrc-send is an internal webview element, not a public API; the 'Send/Stop button' tests are updated to the relocated control (a test-surface change reflecting the same behaviour). No stored data or protocol message shape changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Leading '>' prompt IS the send/stop control; retire the trailing button",
+        "oneLineSummary": "Render the input as a single terminal-prompt line — a leading clickable '>' glyph that acts as the send control (and the stop control while running) with the textarea flush after it — and remove the separate trailing #insrc-send button.",
+        "approach": "The input row becomes a terminal-prompt line: a leading '>' prompt indicator (terminal-green, styled as a shell prompt) sits before the textarea; clicking '>' calls the EXISTING doSubmit() unchanged, and while a turn is running '>' switches to the stop affordance and posts cancel-turn (inheriting the current setRunning glyph-swap + send/stop logic, moved from #insrc-send onto the '>' control). The textarea keeps its id/placeholder and the Cmd/Ctrl+Enter keydown path unchanged. The trailing #insrc-send button is removed so there is ONE send affordance that reads as a prompt. Assistant width: bump .insrc-bubble--assistant max-width 88% -> ~90% (CSS only). All within the eval'd webview source in chat-panel.ts; submit-turn message + host handlers unchanged (lc1/k1).",
+        "pros": [
+          "ac1 + ac2 met directly: the leading '>' both READS as a terminal prompt and IS the send control, and it reuses doSubmit so the sent message is byte-identical (lc1).",
+          "One send affordance instead of two — removes the redundant/inert-feeling trailing button the feedback flagged.",
+          "Keeps the existing send/stop + Cmd↵ behaviour by relocating the setRunning glyph-swap onto the '>' control; no new intent or message shape.",
+          "Confined to the webview source (HTML + CSS + click wiring); no TurnEvent/protocol/persistence change and no adjacent-story scope touched."
+        ],
+        "cons": [
+          "Relocating the running/stop state indicator from #insrc-send onto the '>' means the existing 'Send/Stop button' tests must be updated to target the new control (a test-surface change, not a behaviour change).",
+          "A '>' prompt glyph is a smaller click target than the 40x40 button; the design must keep it comfortably clickable."
+        ],
+        "costEstimate": "S",
+        "chosen": true
+      },
+      {
+        "id": "a2",
+        "name": "Leading '>' clickable-to-send AND keep the trailing button",
+        "oneLineSummary": "Add a leading clickable '>' that also triggers doSubmit, but keep the existing trailing #insrc-send ▶/■ button as well.",
+        "approach": "Prepend a leading '>' prompt indicator wired to doSubmit (send) / cancel-turn (while running), but leave the trailing #insrc-send button in place unchanged. Two controls both send. Assistant width bumped to ~90% as in a1.",
+        "pros": [
+          "Lowest-risk to the existing send/stop button tests — the trailing button and its state indicator are untouched.",
+          "The leading '>' satisfies ac1/ac2 without moving the running-state glyph."
+        ],
+        "cons": [
+          "Two redundant send affordances (leading '>' + trailing ▶) — keeps the exact cluttered/inert feel the feedback wanted removed, only adding another control.",
+          "Ambiguous running-state: two places could show send/stop, risking drift between them."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Meets ac2 but only partial on ac1 (two redundant send affordances keep the cluttered feel the story exists to remove) and risks send/stop state drift between the two controls."
+      },
+      {
+        "id": "a3",
+        "name": "Cosmetic '>' prompt; send stays on the trailing button",
+        "oneLineSummary": "Style a leading '>' as pure terminal decoration; sending stays on the trailing button + Cmd↵ only.",
+        "approach": "Add a non-interactive leading '>' glyph purely for the terminal look; the textarea + trailing send button + Cmd↵ keep the send behaviour exactly as today. Assistant width bumped to ~90%.",
+        "pros": [
+          "Zero change to the send/stop control and its tests.",
+          "Smallest visual diff."
+        ],
+        "cons": [
+          "FAILS ac2: the leading indicator does NOT send — it stays an inert glyph, exactly the complaint the story exists to fix.",
+          "Leaves the redundant trailing button, so the surface still doesn't read as a single terminal prompt."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates ac2 (the leading indicator does not send), leaving an inert glyph — the exact defect the story targets."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 input-row-and-send + assistant-width-css: chat-panel.ts webview source — #insrc-input textarea(:471), trailing #insrc-send button(:473, CSS :260), doSubmit(:434), keydown(:435), click(:438), setRunning(:372), .insrc-bubble--assistant max-width:88%(:305)",
+      "quotedText": "The input is a bare textarea + a trailing #insrc-send ▶ button; doSubmit posts {type:'submit-turn', text}; setRunning swaps ▶↔■; the assistant bubble is max-width:88%. S002 makes a leading '>' the send control (reusing doSubmit) and bumps assistant width to ~90%, confined to the webview source."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD/DEF constraint lc1/k1: input + layout changes are presentation-only; the submit-turn intent and message are unchanged",
+      "quotedText": "Input and layout changes are presentation-only; the send intent and the message it produces are unchanged (lc1); every new webview<->host message stays additive with existing shapes unchanged (k1)."
+    }
+  ]
+}

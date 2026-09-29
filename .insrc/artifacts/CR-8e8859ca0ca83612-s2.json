@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790684322915-2ao07j",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T12:18:42.915Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:432",
+            "message": "The submit-path comment still reads 'S002 ac2:' — a label from the PRIOR vs-code-chat-ui-overhaul epic's S002 (Send-Stop), not this ux-polish Story. Cosmetic only; the code is correct. Consider normalizing the residual 'S002 ac2/ac3' labels to 'S002 (ux-polish)' for the retired-button region to avoid cross-epic label drift.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:474",
+            "message": "The textarea placeholder '(⌘↵ to send)' still advertises only the keyboard send path; now that the leading '>' is also a click/Enter/Space send control the hint is slightly incomplete. Intentionally left unchanged per t1's acceptance ('#insrc-input's placeholder unchanged'), so not a defect — recording as a discoverability observation for a future copy tweak.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

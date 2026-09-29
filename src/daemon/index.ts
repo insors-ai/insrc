@@ -343,6 +343,14 @@ async function main(): Promise<void> {
 	const { validateLinkmlMetamodelAsset } = await import('../workflow/artifacts/companion/metamodel.js');
 	await validateLinkmlMetamodelAsset();
 
+	// 6d‴′. Validate the vendored Adaptive Cards schema asset (sc4, S004) the UX
+	//       companion validator relies on. Mirrors the LinkML metamodel validator:
+	//       a missing/corrupt schema asset is a fail-fast startup refusal
+	//       (AdaptiveCardsAssetError re-raises to the top-level fatal handler)
+	//       rather than a silent skip of UX-model validation at review time.
+	const { validateAdaptiveCardsAsset } = await import('../workflow/artifacts/companion/adaptive-cards.js');
+	await validateAdaptiveCardsAsset();
+
 	// 6d″. Validate the curated cloud model catalog (cli-claude/cli-codex model
 	//      list, Epic ba132c185fe45860, S001). Mirrors the docgen validator: a
 	//      missing/malformed catalog asset is a fail-fast startup refusal

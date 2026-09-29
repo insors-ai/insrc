@@ -47,6 +47,24 @@ export function companionBodyLines(companions: readonly CompanionArtifactRef[] |
 }
 
 /**
+ * sc4 (S004): the UX extension-slot body — each `ux-mock` companion rendered as a
+ * LINK line (never the companion's content, k1/ac1). `[]` when there are no ux-mock
+ * companions (the renderer then omits the UX extension section — absent-safe/
+ * forward-only, k6, so a body without a UX design renders byte-identically). Mirrors
+ * {@link companionBodyLines} but for the `ux-mock` kind so a document's ER diagram
+ * and UX mock render in their own slots.
+ */
+export function uxCompanionBodyLines(companions: readonly CompanionArtifactRef[] | undefined): string[] {
+	if (companions === undefined || companions.length === 0) return [];
+	const mocks = companions.filter(c => c.kind === 'ux-mock');
+	if (mocks.length === 0) return [];
+	return mocks.map(c => {
+		const suffix = c.ofSectionId !== undefined && c.ofSectionId.length > 0 ? ` (§ ${c.ofSectionId})` : '';
+		return `- [${c.title}](${c.relPath})${suffix}`;
+	});
+}
+
+/**
  * S001 (provenance/feedback): the Feedback section body — each post-hoc, human-
  * authored entry rendered as one bullet showing author, timestamp, target (file +
  * optional `:startLine-endLine`), optional kind, and the comment. `[]` when there

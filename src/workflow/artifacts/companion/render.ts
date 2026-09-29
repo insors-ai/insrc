@@ -23,6 +23,8 @@ import { assembleShell } from '../../../docgen/render/shell.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { ErDefinition } from './er.js';
 import { erDefinitionToIr } from './er.js';
+import type { UxDefinition } from './ux.js';
+import { uxDefinitionToIr } from './ux.js';
 import type { CompanionArtifactRef } from './types.js';
 
 const log = getLogger('artifacts:companion:render');
@@ -77,6 +79,51 @@ export async function renderErCompanion(
 	log.info({ destPath, relPath }, 'ER companion rendered');
 	return {
 		kind:    'diagram-mermaid',
+		relPath,
+		title,
+		...(opts.ofSectionId !== undefined ? { ofSectionId: opts.ofSectionId } : {}),
+	};
+}
+
+/** Options for renderUxCompanion (mirrors RenderErCompanionOpts). */
+export interface RenderUxCompanionOpts {
+	/** Registered repo root — when supplied, `relPath` is computed relative to it. */
+	readonly repoPath?:    string | undefined;
+	/** The document section id this companion visualizes (bound onto the ref). */
+	readonly ofSectionId?: string | undefined;
+}
+
+/**
+ * sc4 (S004) — render the UX mock companion for `uxDef` to `destPath` (a sibling of
+ * the artifact `.md`). Mirrors renderErCompanion: builds the IR (uxDefinitionToIr),
+ * awaits the SAME docgen assembleShell render seam, and on `status:'ok'` writes the
+ * self-contained offline HTML + returns the `kind:'ux-mock'` CompanionArtifactRef
+ * the core markdown LINKS (never inlines — ac1/k1).
+ *
+ * @throws DiagramGenerationError on a non-ok DocGenOutcome (nothing is written; the
+ *   uxDefinition stays validated in-body without a picture, mirroring S003).
+ */
+export async function renderUxCompanion(
+	uxDef:    UxDefinition,
+	title:    string,
+	destPath: string,
+	opts:     RenderUxCompanionOpts = {},
+): Promise<CompanionArtifactRef> {
+	const ir = uxDefinitionToIr(uxDef);
+	const outcome = await assembleShell(ir);
+	if (outcome.status !== 'ok') {
+		const reason = 'reason' in outcome ? outcome.reason
+			: 'symbol' in outcome ? `not found: ${outcome.symbol}`
+			: 'depthUsed' in outcome ? `truncated at depth ${outcome.depthUsed}`
+			: 'unknown';
+		throw new DiagramGenerationError(outcome.status, reason);
+	}
+	mkdirSync(dirname(destPath), { recursive: true });
+	writeFileSync(destPath, outcome.value.html, 'utf8');
+	const relPath = toRepoRelative(destPath, opts.repoPath);
+	log.info({ destPath, relPath }, 'UX mock companion rendered');
+	return {
+		kind:    'ux-mock',
 		relPath,
 		title,
 		...(opts.ofSectionId !== undefined ? { ofSectionId: opts.ofSectionId } : {}),

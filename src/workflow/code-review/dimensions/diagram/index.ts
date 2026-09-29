@@ -47,11 +47,13 @@ function bodyOf(subject: CodeReviewSubject): {
 }
 
 /** True when the approved body carries an erDefinition and/or >= 1 diagram-*
- *  companion — the inclusion gate mirroring hasFunctionalDefinition. */
+ *  companion — the inclusion gate mirroring hasFunctionalDefinition. Counts ONLY
+ *  diagram-* kinds; a `ux-mock` companion is EXCLUDED (S004) so a UX-only document
+ *  triggers the first-class 'ux' dimension (via hasUxAcceptance), not 'diagram'. */
 export function hasDiagramReferences(subject: CodeReviewSubject): boolean {
 	const body = bodyOf(subject);
 	if (body.erDefinition !== undefined) return true;
-	return (body.companions ?? []).some(c => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html' || c.kind === 'ux-mock');
+	return (body.companions ?? []).some(c => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html');
 }
 
 /** A display type for a companion no registered handler owns (for the observation). */

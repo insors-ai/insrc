@@ -49,8 +49,10 @@ import { judgeAdherence } from './dimensions/adherence.js';
 import { judgeConventions } from './dimensions/conventions.js';
 import { judgeCoverage } from './dimensions/coverage.js';
 import { judgeQuality } from './dimensions/quality.js';
-import { judgeFunctionalCoverage, hasFunctionalDefinition } from './dimensions/functional-coverage.js';
-import { judgeDiagram, hasDiagramReferences } from './dimensions/diagram/index.js';
+import { judgeFunctionalCoverage } from './dimensions/functional-coverage.js';
+import { judgeDiagram } from './dimensions/diagram/index.js';
+import { judgeUx } from './dimensions/ux/index.js';
+import { computeExpectedDimensions } from './expected-dimensions.js';
 
 const log = getLogger('code-review:runner');
 
@@ -107,10 +109,11 @@ export interface CodeReviewProgress {
 	readonly detail?:    string | undefined;
 }
 
-/** The shipped judges, in fixed evaluation order. `functional-coverage` (sc2 —
- *  S001) is listed LAST but is CONDITIONAL: `effectiveJudges` drops it for a
- *  subject with no functionalDefinition, so non-FR work keeps exactly the base
- *  four (absent-safe). */
+/** The shipped judges, in fixed evaluation order. The trailing conditionals —
+ *  `functional-coverage` (sc2 — S001), `diagram` (sc4 — S003), `ux` (sc4 — S004) —
+ *  are dropped by `effectiveJudges` for a subject that does not require them (via
+ *  computeExpectedDimensions), so non-FR / non-diagram / non-UX work keeps exactly
+ *  the base four (absent-safe). */
 const DEFAULT_JUDGES: readonly JudgeSlot[] = [
 	{ dimension: 'adherence',           judge: judgeAdherence },
 	{ dimension: 'conventions',         judge: judgeConventions },
@@ -118,20 +121,18 @@ const DEFAULT_JUDGES: readonly JudgeSlot[] = [
 	{ dimension: 'quality',             judge: judgeQuality },
 	{ dimension: 'functional-coverage', judge: judgeFunctionalCoverage },
 	{ dimension: 'diagram',             judge: judgeDiagram },
+	{ dimension: 'ux',                  judge: judgeUx },
 ];
 
 /** The judge slots that actually run for THIS subject: the base four always, plus
- *  `functional-coverage` only when the subject carries a non-empty
- *  functionalDefinition. Applied to both the serial loop and the expected-dimension
- *  set fed to validateArtifact, so they can never disagree. */
+ *  each conditional dimension (functional-coverage / diagram / ux) exactly when it
+ *  is in the computed expected-dimension set (content-derived gate OR recorded
+ *  adherence selection). Derives from the SAME computeExpectedDimensions as the MCP
+ *  handler's expectedDimensions, so the serial loop, validateArtifact, and the
+ *  handler's buildJudgementsSchema can never disagree (lock-step). */
 export function effectiveJudges(judges: readonly JudgeSlot[], subject: CodeReviewSubject): readonly JudgeSlot[] {
-	const dropFc = !hasFunctionalDefinition(subject);
-	const dropDiagram = !hasDiagramReferences(subject);
-	if (!dropFc && !dropDiagram) return judges;
-	return judges.filter(s =>
-		(s.dimension !== 'functional-coverage' || !dropFc) &&
-		(s.dimension !== 'diagram' || !dropDiagram),
-	);
+	const want = new Set<ReviewDimension>(computeExpectedDimensions(subject));
+	return judges.filter(s => want.has(s.dimension));
 }
 
 /** The real dependency wiring: the four shipped judges + S001's assembler

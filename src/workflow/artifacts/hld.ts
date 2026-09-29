@@ -27,6 +27,8 @@ import { renderFromFormat, type SectionBindings, type SectionItem } from './form
 import { citationBodyLines, frBodyLines, companionBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { ErDefinition } from './companion/er.js';
+import type { UxDefinition } from './companion/ux.js';
+import type { AdherenceSelection } from './companion/adherence.js';
 import type { CompanionArtifactRef } from './companion/types.js';
 
 // ---------------------------------------------------------------------------
@@ -112,6 +114,12 @@ export interface HldBody {
 	/** sc4 (S003): out-of-body companion references (rendered as links in the
 	 *  Diagrams extension slot, never inlined). Additive + absent-safe. */
 	readonly companions?: readonly CompanionArtifactRef[] | undefined;
+	/** sc4 (S004): the authored UX design element (an Adaptive Cards card subset —
+	 *  source of truth for a ux-mock companion). Additive + absent-safe (k6). */
+	readonly uxDefinition?: UxDefinition | undefined;
+	/** sc4 (S004): the explicit, recorded selectable adherence set. Additive +
+	 *  absent-safe — the completion check unions it with the content-derived gates. */
+	readonly adherence?: AdherenceSelection | undefined;
 	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
 	 *  populated append-only by the feedback API — NEVER by the synthesizer.
 	 *  Additive + absent-safe: an absent field renders byte-identically to before. */

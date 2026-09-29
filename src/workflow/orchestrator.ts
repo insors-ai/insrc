@@ -115,9 +115,12 @@ import {
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
 import { dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
-import { renderErCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
+import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
+import { renderErCompanion, renderUxCompanion, DiagramGenerationError } from './artifacts/companion/render.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 import { ER_DEFINITION_PROPERTY_SCHEMA, COMPANIONS_PROPERTY_SCHEMA, ER_CONTENT_GATE_RULE } from './artifacts/companion/er-schema.js';
+import { UX_DEFINITION_PROPERTY_SCHEMA } from './artifacts/companion/ux-schema.js';
+import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
@@ -1461,6 +1464,8 @@ function designEpicSynthesizer(
 					openQuestions:     { type: 'array', items: { type: 'string' } },
 					erDefinition:      ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:        COMPANIONS_PROPERTY_SCHEMA,
+					uxDefinition:      UX_DEFINITION_PROPERTY_SCHEMA,
+					adherence:         ADHERENCE_PROPERTY_SCHEMA,
 					feedback:          FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
@@ -1514,6 +1519,42 @@ async function renderErCompanionForBody(
 	} catch (err) {
 		if (err instanceof DiagramGenerationError) {
 			log.warn({ repoPath, status: err.status }, 'finalize: ER companion render failed; erDefinition stays in-body without a picture');
+			return undefined;
+		}
+		throw err;
+	}
+}
+
+/**
+ * sc4 (S004) — the AUTHOR-GATED UX-mock companion render, the finalize peer of
+ * renderErCompanionForBody. The synthesizer LLM authors the `uxDefinition` into the
+ * body only when a user-facing experience materially aids understanding (the
+ * content-gate); finalize renders the mock DETERMINISTICALLY — NO provider here.
+ * Given an authored uxDefinition that carries no HIGH validation finding, it renders
+ * the sibling `ux-mock.html` via docgen's assembleShell and returns the
+ * kind:'ux-mock' CompanionArtifactRef the S002 UX slot links (never inlined —
+ * ac1/k1). Never throws on a companion fault: a HIGH validation finding or a
+ * DiagramGenerationError leaves the uxDefinition in-body without a picture (k1/k3).
+ */
+async function renderUxCompanionForBody(
+	body:     { readonly uxDefinition?: UxDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
+	destPath: string,
+	repoPath: string,
+): Promise<CompanionArtifactRef | undefined> {
+	const uxDef = body.uxDefinition;
+	if (uxDef === undefined) return undefined;
+	// Deterministic validation of the JSON element; a broken model is NOT rendered
+	// (the UX code-review judge surfaces the breach against the in-body element).
+	const problems = validateUxDefinition(uxDef, body.functionalDefinition);
+	if (problems.some(f => f.severity === 'HIGH')) {
+		log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: uxDefinition has HIGH findings; leaving it in-body without a companion');
+		return undefined;
+	}
+	try {
+		return await renderUxCompanion(uxDef, 'UX mock', destPath, { repoPath });
+	} catch (err) {
+		if (err instanceof DiagramGenerationError) {
+			log.warn({ repoPath, status: err.status }, 'finalize: UX mock render failed; uxDefinition stays in-body without a picture');
 			return undefined;
 		}
 		throw err;
@@ -1626,9 +1667,12 @@ async function finalizeDesignEpic(
 	// the HLD.md, matching where synthesize writes it.
 	const hldMd = hldArtifactPaths(intent.repoPath, epicHash, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath);
+	// sc4 (S004): a document can carry BOTH an ER diagram and a UX mock — render the
+	// UX companion alongside the ER one and attach both refs.
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(hldMd), 'ux-mock.html'), intent.repoPath);
 	const artifact: HldArtifact = {
 		meta,
-		body: withCompanion(body, companionRef),
+		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
 		citations,
 	};
 	const renderedBody = renderHldMarkdown(artifact);
@@ -1816,6 +1860,8 @@ function designStorySynthesizer(
 					openQuestions:         { type: 'array', items: { type: 'string' } },
 					erDefinition:          ER_DEFINITION_PROPERTY_SCHEMA,
 					companions:            COMPANIONS_PROPERTY_SCHEMA,
+					uxDefinition:          UX_DEFINITION_PROPERTY_SCHEMA,
+					adherence:             ADHERENCE_PROPERTY_SCHEMA,
 					feedback:              FEEDBACK_PROPERTY_SCHEMA,
 				},
 			},
@@ -1964,9 +2010,11 @@ async function finalizeDesignStory(
 	// erDefinition (author-gate). Deterministic; a sibling of the LLD.md.
 	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
+	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);
 	const artifact: LldArtifact = {
 		meta,
-		body: withCompanion(body, companionRef),
+		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);
@@ -2110,9 +2158,11 @@ async function finalizeStandaloneLld(
 	// erDefinition (author-gate). Deterministic; a sibling of the standalone LLD.md.
 	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), workItemKindOf(meta), epicSlug).md;
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
+	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
+	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);
 	const artifact: LldArtifact = {
 		meta,
-		body: withCompanion(body, companionRef),
+		body: withCompanion(withCompanion(body, companionRef), uxCompanionRef),
 		citations,
 	};
 	const renderedBody = renderLldMarkdown(artifact);

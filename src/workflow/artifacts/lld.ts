@@ -28,10 +28,12 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, companionBodyLines, feedbackBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 import type { ErDefinition } from './companion/er.js';
+import type { UxDefinition } from './companion/ux.js';
+import type { AdherenceSelection } from './companion/adherence.js';
 import type { CompanionArtifactRef } from './companion/types.js';
 
 // ---------------------------------------------------------------------------
@@ -161,6 +163,13 @@ export interface LldBody {
 	/** sc4 (S003): out-of-body companion references (rendered as links in the
 	 *  Diagrams (`diagramsEr`) extension slot, never inlined). Additive + absent-safe. */
 	readonly companions?: readonly CompanionArtifactRef[] | undefined;
+	/** sc4 (S004): the authored UX design element (an Adaptive Cards card subset —
+	 *  source of truth for a ux-mock companion, rendered as a link in the `ux`
+	 *  extension slot, never inlined). Additive + absent-safe (k6). */
+	readonly uxDefinition?: UxDefinition | undefined;
+	/** sc4 (S004): the explicit, recorded selectable adherence set. Additive +
+	 *  absent-safe — the completion check unions it with the content-derived gates. */
+	readonly adherence?: AdherenceSelection | undefined;
 	/** S001 (provenance/feedback): post-hoc, human-authored feedback entries,
 	 *  populated append-only by the feedback API — NEVER by the synthesizer.
 	 *  Additive + absent-safe: an absent field renders byte-identically to before. */
@@ -441,6 +450,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		contract:    () => ({ lines: [`**Surface level:** ${body.contractDetails.surfaceLevel}`], items: body.contractDetails.api.map(apiItem) }),
 		dataModel:   () => body.dataModelChanges.length > 0 ? { items: body.dataModelChanges.map(dmItem) } : { omit: true },
 		diagramsEr:  () => { const l = companionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
+		ux:          () => { const l = uxCompanionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
 		interaction: () => body.interactionWithShared.length > 0 ? { lines: interactionLines() } : { omit: true },
 		errorPaths:  () => ({ lines: errorPathsLines() }),
 		testStrategy: () => ({ lines: testStrategyLines() }),

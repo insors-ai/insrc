@@ -34,8 +34,10 @@ import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adhe
 import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
 import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
 import { buildQualityPrompt } from '../../workflow/code-review/dimensions/quality.js';
-import { buildFunctionalCoveragePrompt, hasFunctionalDefinition } from '../../workflow/code-review/dimensions/functional-coverage.js';
-import { buildDiagramPrompt, hasDiagramReferences } from '../../workflow/code-review/dimensions/diagram/index.js';
+import { buildFunctionalCoveragePrompt } from '../../workflow/code-review/dimensions/functional-coverage.js';
+import { buildDiagramPrompt } from '../../workflow/code-review/dimensions/diagram/index.js';
+import { buildUxPrompt } from '../../workflow/code-review/dimensions/ux/index.js';
+import { computeExpectedDimensions } from '../../workflow/code-review/expected-dimensions.js';
 import type {
 	CodeReviewGrounding,
 	CodeReviewSubject,
@@ -53,20 +55,13 @@ import type {
 
 const log = getLogger('mcp:code-review-step:handler');
 
-/** The base four dimensions in fixed evaluation order — the same set the S006
- *  runner's DEFAULT_JUDGES uses. `functional-coverage` (sc2 — S001) is a
- *  CONDITIONAL fifth appended by `expectedDimensions` only when the subject
- *  carries a non-empty functionalDefinition, so non-FR reviews cover exactly the
- *  base four (absent-safe). */
-const DIMENSIONS: readonly ReviewDimension[] = ['adherence', 'conventions', 'coverage', 'quality'];
-
 /** The dimensions the judgements turn must cover for THIS subject: the base four,
- *  plus functional-coverage when the subject declares functional requirements. */
+ *  plus each conditional dimension (functional-coverage / diagram / ux) gated by its
+ *  content predicate AND the body's recorded adherence selection unioned in (ac3).
+ *  Delegates to the SINGLE computeExpectedDimensions the runner's effectiveJudges
+ *  also uses, so the handler + runner lock-step lists can never drift. */
 export function expectedDimensions(subject: CodeReviewSubject): readonly ReviewDimension[] {
-	const dims: ReviewDimension[] = [...DIMENSIONS];
-	if (hasFunctionalDefinition(subject)) dims.push('functional-coverage');
-	if (hasDiagramReferences(subject))    dims.push('diagram');
-	return dims;
+	return computeExpectedDimensions(subject);
 }
 
 /** Injectable seams so the handler tests stub the daemon/graph/runner. The s9
@@ -379,13 +374,17 @@ function emitJudgementsResult(
 	token:     string,
 ): CodeReviewStepOutput {
 	const dims = expectedDimensions(subject);
+	// Prompts are keyed off the COMPUTED dims (not the content predicates) so a
+	// declared-but-uncontented dimension (via the recorded adherence selection) still
+	// gets its charge, and the prompts stay aligned with the judgements schema.
 	const prompts = [
 		buildAdherencePrompt(subject, grounding, undefined),
 		buildConventionsPrompt(subject, grounding, undefined),
 		buildCoveragePrompt(subject, grounding, undefined),
 		buildQualityPrompt(subject, grounding, undefined),
-		...(hasFunctionalDefinition(subject) ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
-		...(hasDiagramReferences(subject) ? [buildDiagramPrompt(subject, grounding, undefined)] : []),
+		...(dims.includes('functional-coverage') ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
+		...(dims.includes('diagram') ? [buildDiagramPrompt(subject, grounding, undefined)] : []),
+		...(dims.includes('ux') ? [buildUxPrompt(subject, grounding, undefined)] : []),
 	];
 	return {
 		next:     'emit_judgements',

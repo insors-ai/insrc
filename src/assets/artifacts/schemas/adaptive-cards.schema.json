@@ -1,0 +1,159 @@
+{
+  "$comment": "Adaptive Cards 1.x — vendored SUBSET for the authored UxDefinition body element (S004). Compiled by the shared ajv singleton (structured-output.ts; the $schema meta-schema declaration is intentionally omitted so the shared ajv instance compiles it with no external meta-schema fetch, exactly like linkml-metamodel.schema.json). Pinned so the UX JSON element is validated with ajv and NO Adaptive Cards SDK/toolchain runs at daemon runtime (k5). Models a small, sensible subset of the card element vocabulary: TextBlock, Container, ColumnSet/Column, Image, Input.Text, Input.ChoiceSet, ActionSet/Action.Submit/Action.OpenUrl.",
+  "title": "UxDefinition (Adaptive Cards subset)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "body"],
+  "properties": {
+    "type": {
+      "const": "AdaptiveCard",
+      "description": "The card discriminator — always 'AdaptiveCard'."
+    },
+    "version": {
+      "type": "string",
+      "description": "Optional Adaptive Cards schema version (e.g. '1.5')."
+    },
+    "body": {
+      "type": "array",
+      "description": "The ordered card elements.",
+      "items": { "$ref": "#/$defs/Element" }
+    }
+  },
+  "$defs": {
+    "Element": {
+      "description": "One card element — exactly one of the supported element types.",
+      "oneOf": [
+        { "$ref": "#/$defs/TextBlock" },
+        { "$ref": "#/$defs/Container" },
+        { "$ref": "#/$defs/ColumnSet" },
+        { "$ref": "#/$defs/Column" },
+        { "$ref": "#/$defs/Image" },
+        { "$ref": "#/$defs/InputText" },
+        { "$ref": "#/$defs/InputChoiceSet" },
+        { "$ref": "#/$defs/ActionSet" }
+      ]
+    },
+    "TextBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": { "const": "TextBlock" },
+        "text": { "type": "string" },
+        "weight": { "type": "string", "enum": ["lighter", "default", "bolder"] },
+        "size": { "type": "string", "enum": ["small", "default", "medium", "large", "extraLarge"] },
+        "color": { "type": "string", "enum": ["default", "dark", "light", "accent", "good", "warning", "attention"] },
+        "wrap": { "type": "boolean" },
+        "isSubtle": { "type": "boolean" }
+      }
+    },
+    "Container": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "Container" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/Element" } }
+      }
+    },
+    "ColumnSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "columns"],
+      "properties": {
+        "type": { "const": "ColumnSet" },
+        "columns": { "type": "array", "items": { "$ref": "#/$defs/Column" } }
+      }
+    },
+    "Column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "items"],
+      "properties": {
+        "type": { "const": "Column" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/Element" } },
+        "width": { "type": ["string", "integer"] }
+      }
+    },
+    "Image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": { "const": "Image" },
+        "url": { "type": "string" },
+        "altText": { "type": "string" },
+        "size": { "type": "string", "enum": ["auto", "stretch", "small", "medium", "large"] }
+      }
+    },
+    "InputText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "const": "Input.Text" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "placeholder": { "type": "string" },
+        "isMultiline": { "type": "boolean" }
+      }
+    },
+    "InputChoiceSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "choices"],
+      "properties": {
+        "type": { "const": "Input.ChoiceSet" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "isMultiSelect": { "type": "boolean" },
+        "choices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Choice" }
+        }
+      }
+    },
+    "Choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "value"],
+      "properties": {
+        "title": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "ActionSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "actions"],
+      "properties": {
+        "type": { "const": "ActionSet" },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/Action" } }
+      }
+    },
+    "Action": {
+      "description": "A card action — Submit or OpenUrl.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "title"],
+          "properties": {
+            "type": { "const": "Action.Submit" },
+            "title": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "title", "url"],
+          "properties": {
+            "type": { "const": "Action.OpenUrl" },
+            "title": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}

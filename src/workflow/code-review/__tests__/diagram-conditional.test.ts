@@ -84,9 +84,12 @@ test('effectiveJudges keeps diagram only for a subject with an erDefinition/diag
 		['adherence', 'conventions', 'coverage', 'quality']);
 });
 
-test('DEFAULT_DEPS carries the diagram slot last (conditional at run time)', () => {
-	assert.ok(DEFAULT_DEPS.judges.map(j => j.dimension).includes('diagram'));
-	assert.equal(DEFAULT_DEPS.judges[DEFAULT_DEPS.judges.length - 1]!.dimension, 'diagram');
+test('DEFAULT_DEPS carries the diagram slot (conditional at run time)', () => {
+	// S004 appended the 'ux' slot after 'diagram', so 'diagram' is no longer the very
+	// last slot — but it is still a carried conditional, ordered before 'ux'.
+	const dims = DEFAULT_DEPS.judges.map(j => j.dimension);
+	assert.ok(dims.includes('diagram'));
+	assert.ok(dims.indexOf('diagram') < dims.indexOf('ux'));
 });
 
 // ── runCodeReview integration ────────────────────────────────────────────────────

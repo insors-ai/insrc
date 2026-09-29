@@ -34,11 +34,11 @@ import { approveWorkflowTarget } from '../../../gates.js';
 
 const HASH = 'abc123def4567890';
 
-function withRepo(fn: (repo: string) => void): void {
+async function withRepo(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-build-record-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	mkdirSync(join(repo, 'docs', 'builds'), { recursive: true });
-	try { fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
 const readJson = (p: string): { meta: Record<string, unknown>; body: Record<string, unknown> } =>
@@ -53,8 +53,8 @@ const planRec = (tasks: { id: string; passed?: boolean }[], at: string): BuildRe
 // fresh write
 // ---------------------------------------------------------------------------
 
-test('persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists', () => {
-	withRepo((repo) => {
+test('persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists', async () => {
+	await withRepo(async (repo) => {
 		const { json, md } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		assert.equal(json, artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
 		const rec = readJson(json);
@@ -71,8 +71,8 @@ test('persistBuildRecord writes a fresh standalone:false record at buildArtifact
 // upsert-merge: union tasks, preserve createdAt, refresh updatedAt
 // ---------------------------------------------------------------------------
 
-test('a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)', () => {
-	withRepo((repo) => {
+test('a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)', async () => {
+	await withRepo(async (repo) => {
 		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't2', passed: false }], '2026-02-02T00:00:00.000Z'));
 		const rec = readJson(json);
@@ -82,8 +82,8 @@ test('a second validate UNIONS tasks by id, preserves createdAt, refreshes updat
 	});
 });
 
-test('re-validating the same task refreshes its passed without duplicating the row', () => {
-	withRepo((repo) => {
+test('re-validating the same task refreshes its passed without duplicating the row', async () => {
+	await withRepo(async (repo) => {
 		persistBuildRecord(repo, planRec([{ id: 't1', passed: false }], '2026-01-01T00:00:00.000Z'));
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-02T00:00:00.000Z'));
 		assert.deepEqual(readJson(json).body['tasks'], [{ id: 't1', passed: true }], 'single row, passed refreshed');
@@ -94,8 +94,8 @@ test('re-validating the same task refreshes its passed without duplicating the r
 // preserve approval/rejection stamps across an upsert
 // ---------------------------------------------------------------------------
 
-test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)', () => {
-	withRepo((repo) => {
+test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)', async () => {
+	await withRepo(async (repo) => {
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		// Simulate the approval gate stamping the record.
 		const stamped = readJson(json);
@@ -114,8 +114,8 @@ test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upse
 // fail-open on a malformed prior record
 // ---------------------------------------------------------------------------
 
-test('a malformed prior record is treated as absent (fail-open fresh write), not a throw', () => {
-	withRepo((repo) => {
+test('a malformed prior record is treated as absent (fail-open fresh write), not a throw', async () => {
+	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		writeFileSync(json, '{ not valid json');
 		assert.doesNotThrow(() => persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z')));
@@ -129,8 +129,8 @@ test('a malformed prior record is treated as absent (fail-open fresh write), not
 // Trivial/standalone regression — byte-identical output via the thin wrapper
 // ---------------------------------------------------------------------------
 
-test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)', () => {
-	withRepo((repo) => {
+test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)', async () => {
+	await withRepo(async (repo) => {
 		const rec: StandaloneBuildRecord = {
 			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
@@ -148,19 +148,19 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 // consumability — the persisted plan-driven record satisfies the completion gate
 // ---------------------------------------------------------------------------
 
-test('approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)', () => {
-	withRepo((repo) => {
+test('approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)', async () => {
+	await withRepo(async (repo) => {
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		// enforce off → the code-review gate is advisory; completion proceeds + stamps approvedAt.
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path), [json], 'the BUILD record is approved');
 		assert.equal(out.skipped.length, 0);
 		assert.equal(typeof readJson(json).meta['approvedAt'], 'string', 'meta.approvedAt stamped');
 	});
 });
 
-test('S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)', () => {
-	withRepo(repo => {
+test('S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)', async () => {
+	await withRepo(async repo => {
 		// First build — no upstream LLD (Trivial), so the folder E<date> anchor is
 		// the record's OWN createdAt.
 		const first: StandaloneBuildRecord = {

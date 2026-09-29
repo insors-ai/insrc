@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790702459470-yn9oeh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T17:20:59.470Z",
+    "model": "client",
+    "elapsedMs": 7,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s2"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/index.ts",
+        "src/workflow/__tests__/approve-build-completion.test.ts",
+        "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "src/workflow/__tests__/approve-workflow-target.test.ts",
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "vscode-plugin/package.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

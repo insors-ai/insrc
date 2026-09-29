@@ -21,11 +21,11 @@ import { approveWorkflowTarget, NoPendingArtifactsError, ArtifactMissingError } 
 
 const HASH = 'abc123def4567890';
 
-function withRepo(fn: (repo: string, artifactsDir: string) => void): void {
+async function withRepo(fn: (repo: string, artifactsDir: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-approve-'));
 	const artifactsDir = join(repo, '.insrc', 'artifacts');
 	mkdirSync(artifactsDir, { recursive: true });
-	try { fn(repo, artifactsDir); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo, artifactsDir); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
 /** A pending artifact JSON (no approvedAt). `blocked` gives it an unresolved HIGH finding. */
@@ -44,10 +44,10 @@ const isApproved = (jsonPath: string): boolean =>
 // single artifact
 // ---------------------------------------------------------------------------
 
-test('single: a review-clean artifact is approved (approvedAt stamped)', () => {
-	withRepo((repo, dir) => {
+test('single: a review-clean artifact is approved (approvedAt stamped)', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `HLD-${HASH}.json`, 'design.epic');
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p });
 		assert.equal(out.approved.length, 1);
 		assert.equal(out.skipped.length, 0);
 		assert.equal(out.approved[0]!.path, p);
@@ -55,10 +55,10 @@ test('single: a review-clean artifact is approved (approvedAt stamped)', () => {
 	});
 });
 
-test('single: a review-blocked artifact lands in skipped[] (not approved[]), no override', () => {
-	withRepo((repo, dir) => {
+test('single: a review-blocked artifact lands in skipped[] (not approved[]), no override', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story', /* blocked */ true);
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.equal(out.skipped[0]!.path, p);
@@ -66,20 +66,20 @@ test('single: a review-blocked artifact lands in skipped[] (not approved[]), no 
 	});
 });
 
-test('single: overrideReview approves past the block', () => {
-	withRepo((repo, dir) => {
+test('single: overrideReview approves past the block', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story', true);
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'verified sound' });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'verified sound' });
 		assert.equal(out.approved.length, 1);
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p));
 	});
 });
 
-test('single: a missing artifact throws ArtifactMissingError (not skipped)', () => {
-	withRepo((repo, dir) => {
-		assert.throws(
-			() => approveWorkflowTarget({ repoPath: repo, artifactPath: join(dir, `HLD-${HASH}.json`) }),
+test('single: a missing artifact throws ArtifactMissingError (not skipped)', async () => {
+	await withRepo(async (repo, dir) => {
+		await assert.rejects(
+			async () => approveWorkflowTarget({ repoPath: repo, artifactPath: join(dir, `HLD-${HASH}.json`) }),
 			ArtifactMissingError,
 		);
 	});
@@ -89,12 +89,12 @@ test('single: a missing artifact throws ArtifactMissingError (not skipped)', () 
 // batch by epicHash
 // ---------------------------------------------------------------------------
 
-test('batch: a mixed epic splits into approved[] + skipped[] — nothing dropped', () => {
-	withRepo((repo, dir) => {
+test('batch: a mixed epic splits into approved[] + skipped[] — nothing dropped', async () => {
+	await withRepo(async (repo, dir) => {
 		const clean1 = writeArtifact(dir, `DEF-${HASH}.json`, 'define');
 		const clean2 = writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story');
 		const blocked = writeArtifact(dir, `LLD-${HASH}-s2.json`, 'design.story', true);
-		const out = approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
+		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
 		const approvedPaths = out.approved.map(a => a.path).sort();
 		assert.deepEqual(approvedPaths, [clean1, clean2].sort(), 'both clean artifacts approved');
 		assert.equal(out.skipped.length, 1);
@@ -103,36 +103,36 @@ test('batch: a mixed epic splits into approved[] + skipped[] — nothing dropped
 	});
 });
 
-test('batch: only NOT-yet-approved artifacts are swept (already-approved excluded)', () => {
-	withRepo((repo, dir) => {
+test('batch: only NOT-yet-approved artifacts are swept (already-approved excluded)', async () => {
+	await withRepo(async (repo, dir) => {
 		writeArtifact(dir, `DEF-${HASH}.json`, 'define');   // pending
 		const already = writeArtifact(dir, `HLD-${HASH}.json`, 'design.epic');
 		// pre-approve HLD
 		const j = JSON.parse(readFileSync(already, 'utf8')) as { meta: Record<string, unknown> };
 		j.meta['approvedAt'] = new Date(0).toISOString();
 		writeFileSync(already, JSON.stringify(j));
-		const out = approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
+		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
 		assert.equal(out.approved.length, 1, 'only the pending DEF is swept');
 		assert.ok(out.approved[0]!.path.endsWith(`DEF-${HASH}.json`));
 	});
 });
 
-test('batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError', () => {
-	withRepo((repo, dir) => {
+test('batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError', async () => {
+	await withRepo(async (repo, dir) => {
 		// all artifacts already approved
 		const p = writeArtifact(dir, `DEF-${HASH}.json`, 'define');
 		const j = JSON.parse(readFileSync(p, 'utf8')) as { meta: Record<string, unknown> };
 		j.meta['approvedAt'] = new Date(0).toISOString();
 		writeFileSync(p, JSON.stringify(j));
-		assert.throws(() => approveWorkflowTarget({ repoPath: repo, epicHash: HASH }), NoPendingArtifactsError);
+		await assert.rejects(async () => approveWorkflowTarget({ repoPath: repo, epicHash: HASH }), NoPendingArtifactsError);
 	});
 });
 
-test('batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)', () => {
-	withRepo((repo, dir) => {
+test('batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)', async () => {
+	await withRepo(async (repo, dir) => {
 		writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story', true);
 		writeArtifact(dir, `LLD-${HASH}-s2.json`, 'design.story', true);
-		const out = approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
+		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 2, 'both blocked artifacts reported, non-lossy');
 	});

@@ -255,11 +255,11 @@ test('advanceBugfixAfterIssue: bugfixCategory flag off -> skipped', async () => 
 // --- integration: completion reuses approveWorkflowTarget (ac3) -------------
 
 const HASH = 'abc123def4567890';
-function withRepo(fn: (repo: string, dir: string) => void): void {
+async function withRepo(fn: (repo: string, dir: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'bugfix-complete-'));
 	const dir = join(repo, '.insrc', 'artifacts');
 	mkdirSync(dir, { recursive: true });
-	try { fn(repo, dir); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo, dir); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 function writeBuild(dir: string, storyId: string): string {
 	const p = join(dir, `BUILD-${HASH}-${storyId}.json`);
@@ -273,29 +273,29 @@ function writeCR(repo: string, storyId: string, verdict: 'pass' | 'block'): void
 const isApproved = (p: string): boolean =>
 	(JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
 
-test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)', () => {
-	withRepo((repo, dir) => {
+test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4bf');
 		writeCR(repo, 's4bf', 'pass');
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p), 'a bugfix build completes when its CR passes under enforce');
 	});
 });
 
-test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved', () => {
-	withRepo((repo, dir) => {
+test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4bf');
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.ok(out.skipped.length >= 1, 'no CR under enforce withholds completion');
 		assert.ok(!isApproved(p));
 	});
 });
 
-test('ac3: a bugfix BUILD + enforce OFF + absent CR -> completes byte-identical (no new path)', () => {
-	withRepo((repo, dir) => {
+test('ac3: a bugfix BUILD + enforce OFF + absent CR -> completes byte-identical (no new path)', async () => {
+	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4bf');
-		const out = approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p));
 	});

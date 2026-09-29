@@ -649,14 +649,15 @@ async function main(): Promise<void> {
 				return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
 			}
 			const { approveWorkflowTarget } = await import('../workflow/gates.js');
-			const result = approveWorkflowTarget({
+			const result = await approveWorkflowTarget({
 				repoPath,
 				...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
 				...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
 				...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
 			});
-			// Post-approval bugfix seam (a2 mount): approveWorkflowTarget stays sync;
-			// the async advance/close run here, one level up, over the artifacts it
+			// Post-approval bugfix seam (a2 mount): approveWorkflowTarget is awaited
+			// (its completion hook writes the BUILD ledger); the async advance/close
+			// run here, one level up, over the artifacts it
 			// actually completed. DB-bound parent inference is bound to this daemon's
 			// graph handle (the same wiring the `locate.inferParents` IPC uses) and
 			// injected — the workflow layer stays DB-free. A seam throw is captured as

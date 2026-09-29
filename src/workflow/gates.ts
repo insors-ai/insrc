@@ -55,6 +55,7 @@ import {
 	workItemKindOf,
 	writeAtomic,
 } from './storage.js';
+import { ensureBuildRecordOnCompletion } from './runners/build/completion-record.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -633,10 +634,10 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
  *  NOT run the tracker (gh-push/commit) leg — that stays in the cli-services
  *  `approve()` used by the TUI. Throws ArtifactMissingError (single not found)
  *  or NoPendingArtifactsError (empty epic sweep). */
-export function approveWorkflowTarget(
+export async function approveWorkflowTarget(
 	req: WorkflowApproveRequest,
 	opts?: { readonly enforce?: boolean },
-): WorkflowApproveResult {
+): Promise<WorkflowApproveResult> {
 	const approveOpts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
 	const approved:   { path: string; result: ApprovalResult }[] = [];
 	const skipped:    { path: string; reason: string }[] = [];
@@ -691,12 +692,25 @@ export function approveWorkflowTarget(
 
 	if (req.artifactPath !== undefined) {
 		const jsonPath = jsonPathForMd(req.artifactPath);
+		// Completion hook: a controller-side build skips the validate phase, so its
+		// BUILD ledger record may not exist yet. CREATE-or-MERGE it from the changed
+		// set BEFORE the existsSync/approve so the artifact is present to stamp.
+		if (basename(jsonPath).startsWith('BUILD-')) {
+			const ref = buildRefFor(jsonPath);
+			if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
+		}
 		if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 		approveOne(jsonPath);
 	} else if (req.epicHash !== undefined) {
 		const pending = pendingArtifactJsonPaths(req.repoPath, req.epicHash);
 		if (pending.length === 0) throw new NoPendingArtifactsError(`No pending artifacts under epic ${req.epicHash} to approve`);
-		for (const p of pending) approveOne(p);
+		for (const p of pending) {
+			if (basename(p).startsWith('BUILD-')) {
+				const ref = buildRefFor(p);
+				if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
+			}
+			approveOne(p);
+		}
 	} else {
 		throw new Error('approveWorkflowTarget: exactly one of artifactPath | epicHash is required');
 	}
@@ -714,6 +728,34 @@ function readArtifactMeta(jsonPath: string): { epicHash?: string; storyId?: stri
 	} catch {
 		return undefined;
 	}
+}
+
+/** Inverse of `buildArtifactId`: parse `{ epicHash, storyId }` out of a
+ *  `BUILD-<epicHash>-<storyId>[.json|.md]` path basename. The FIRST `-`-segment is
+ *  the epicHash and the REST (joined by `-`) is the storyId, so a hyphen-bearing
+ *  storyId (`s2-x`) round-trips. Returns undefined for a non-BUILD basename or an
+ *  empty component. Exported for the completion-record round-trip test. */
+export function parseBuildArtifactRef(jsonOrMdPath: string): { epicHash: string; storyId: string } | undefined {
+	const b = basename(jsonOrMdPath).replace(/\.(json|md)$/, '');
+	if (!b.startsWith('BUILD-')) return undefined;
+	const rest = b.slice('BUILD-'.length);
+	const dash = rest.indexOf('-');
+	if (dash < 0) return undefined;
+	const epicHash = rest.slice(0, dash);
+	const storyId = rest.slice(dash + 1);
+	if (epicHash.length === 0 || storyId.length === 0) return undefined;
+	return { epicHash, storyId };
+}
+
+/** Resolve the `{ epicHash, storyId }` for a BUILD artifact — prefer the on-disk
+ *  meta (when the json exists with both fields), else parse it from the filename.
+ *  Returns undefined when neither yields a complete ref. */
+function buildRefFor(jsonPath: string): { epicHash: string; storyId: string } | undefined {
+	const meta = readArtifactMeta(jsonPath);
+	if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) {
+		return { epicHash: meta.epicHash, storyId: meta.storyId };
+	}
+	return parseBuildArtifactRef(jsonPath);
 }
 
 /** Project a {@link CodeReviewGateResult} into the presented

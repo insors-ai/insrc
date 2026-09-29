@@ -95,6 +95,11 @@ export type WebviewToHost =
   // S004 sc2 (additive): the status-bar auto/review toggle. The host stores it per-session
   // and applies it to the NEXT turn's buildArgs (never the in-flight spawn).
   | { readonly type: 'set-permission-mode'; readonly mode: PermissionMode }
+  // S004 (dev-chat ux polish) (additive): the confirm click on an in-chat selection widget.
+  // `requestId` correlates back to the SelectionRequestEvent; `selected` is the chosen option
+  // ids (>=1 — the confirm is disabled until at least one is picked). The host maps the ids to
+  // labels, records the resolved outcome, and continues the run conveying the choice.
+  | { readonly type: 'selection-decision'; readonly requestId: string; readonly selected: readonly string[] }
   // S001 (bugfix) (additive): the webview→host readiness handshake. Posted once the webview's
   // message listener is attached — on the INITIAL load AND on every VS-Code webview reload
   // (show-after-hide / restore, since the panel has no retainContextWhenHidden). The host
@@ -125,6 +130,7 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'cancel-turn',
   'permission-decision',
   'set-permission-mode',
+  'selection-decision',
   'ready',
 ] as const;
 

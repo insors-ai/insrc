@@ -253,6 +253,37 @@ test('S003 (ux polish): a permission-outcome row does not disturb a mixed transc
   assert.deepEqual(t.map((r) => r.role), ['user', 'permission-outcome', 'assistant']);
 });
 
+// ---- S004 (dev-chat ux polish): selection-outcome transcript row round-trip ----
+
+test('S004 (ux polish): a selection-outcome row (chosen labels) round-trips through the memento store intact', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'selection-outcome', chosen: ['Option A', 'Option C'], at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'selection-outcome');
+  assert.deepEqual(row && 'chosen' in row ? row.chosen : undefined, ['Option A', 'Option C']);
+});
+
+test('S004 (ux polish): a single-choice selection-outcome round-trips through the in-memory store', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'selection-outcome', chosen: ['Yes'], at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'selection-outcome');
+  assert.deepEqual(row && 'chosen' in row ? row.chosen : undefined, ['Yes']);
+});
+
+test('S004 (ux polish): a selection-outcome row does not disturb a mixed transcript replay (order intact)', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'user', text: 'which one?', at: 't1' });
+  store.append(s.id, { role: 'selection-outcome', chosen: ['A'], at: 't2' });
+  store.append(s.id, { role: 'assistant', text: 'ok', at: 't3' });
+  const t = store.get(s.id)!.transcript;
+  assert.deepEqual(t.map((r) => r.role), ['user', 'selection-outcome', 'assistant']);
+});
+
 // ---- S006: per-session editMode (sc4) round-trip ----
 
 test('S006: editMode defaults to auto on create and a review update round-trips through save()/get()', () => {

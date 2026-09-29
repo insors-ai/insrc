@@ -49,6 +49,18 @@ export type TranscriptEntry =
       /** The user's decision on the card. */
       readonly decision: 'approved' | 'rejected';
       readonly at: string;
+    }
+  | {
+      /**
+       * S004 (dev-chat ux polish): the RESOLVED choice of a selection widget (the user confirmed
+       * one or more chips), so a restored session shows a decided, non-actionable chip listing the
+       * chosen label(s) in place of the live-only widget. Plain-serialisable (same as tool-result /
+       * permission-outcome above). `at` is the ISO timestamp, matching every other variant's style.
+       */
+      readonly role: 'selection-outcome';
+      /** The chosen option labels (in confirm order). */
+      readonly chosen: readonly string[];
+      readonly at: string;
     };
 
 export interface ChatSession {

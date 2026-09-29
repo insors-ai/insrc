@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790691441109-v3jg84",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T14:21:44.756Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 263606,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "storyId": "s4",
+    "lldRunId": "wf-1790689691287-45a8sv",
+    "lldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
+    "approvedAt": "2026-09-29T14:22:55.498Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building S004 is the largest of the epic's four stories: a full end-to-end selection round-trip added additively to the one dev-chat pipeline. It threads a new selection-request event + selection-decision protocol message + selection-outcome P1 row through the type scaffold, renders a single/multi selectable card in the webview, parses a fenced ```insrc:select``` marker out of the model's assistant text (buffering partials) as the origin, and wires a host handler that records the persisted outcome and continues the run with a synthesized user turn. The approval path is untouched (k4); everything is verified via the eval'd *WebviewSource + scripted-adapter tests, and the model-steering to actually emit the marker is a deferred tracked follow-up.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Additive type scaffold: selection-request event + selection-decision message + selection RowKinds + selection-outcome TranscriptEntry + markerFor cases",
+        "summary": "Add the co-compiling type/enum scaffold across the module: the selection-request member to TurnEvent + 'selection-request' to TURN_EVENT_KINDS (stream-events.ts); the {type:'selection-decision',requestId,selected[]} member to WebviewToHost + 'selection-decision' to WEBVIEW_TO_HOST_TYPES (protocol.ts); the 'selection-request'+'selection-outcome' RowKind members + SelectionOutcomeRowView (render-registry.ts types); the plain-serialisable { role:'selection-outcome'; chosen; at } TranscriptEntry variant (session-store.ts); and the markers.ts markerFor cases (selection-request -> null, selection-outcome -> null) preserving the exhaustive never-default. Existing members unchanged (k1).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "TurnEvent gains selection-request + TURN_EVENT_KINDS gains 'selection-request'; WebviewToHost gains selection-decision + WEBVIEW_TO_HOST_TYPES gains 'selection-decision'; existing members unchanged.",
+          "RowKind gains 'selection-request' + 'selection-outcome'; a SelectionOutcomeRowView payload exists.",
+          "TranscriptEntry gains the plain-serialisable { role:'selection-outcome'; chosen; at } variant; both stores accept it with no migration.",
+          "markers.ts markerFor returns null for both selection-request and selection-outcome; the _never exhaustive default still compiles.",
+          "tsc compiles the whole scaffold together (no half-added union)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "protocol: 'selection-decision' is in WEBVIEW_TO_HOST_TYPES (exhaustiveness test passes); existing types unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "markerFor returns null for selection-request so a replay does NOT re-surface the pending card; never-default preserved"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Selection card renderer (single/multi) + onSelectionDecision sink + toViewModel dual-input + selection-outcome chip (module + eval'd parity)",
+        "summary": "In render-registry.ts (module AND the eval'd renderRegistryWebviewSource, kept byte-parity): register the selection-request card renderer — the prompt + one selectable control per option (multi absent/false = radio-style single-select, multi:true = checkbox multi-select) + a confirm; add the onSelectionDecision(cb) sink (mirroring onApprovalDecision) that the confirm calls with (requestId, selected[]), guarded so a multi-select confirm posts nothing until >=1 chosen; add the toViewModel dual-input branches (a replayed selection-outcome TranscriptEntry AND the host-emitted live outcome -> one SelectionOutcomeRowView); register the selection-outcome resolved chip renderer (non-actionable, lists chosen labels). Chips keyed by array index (duplicate-id safe). textContent/className only (k1/k3). Extend the parity test with selection-request + selection-outcome samples.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style.",
+          "The confirm calls onSelectionDecision(requestId, selected[]); a multi-select confirm with zero chosen is a no-op until >=1 selected.",
+          "toViewModel maps BOTH a replayed selection-outcome entry and the live outcome to the same SelectionOutcomeRowView; the chip is non-actionable and lists the chosen label(s).",
+          "Both the module and the eval'd renderRegistryWebviewSource gain the branches; the parity test (with new samples) stays green.",
+          "textContent/className only — no innerHTML/remote origin."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style"
+          },
+          {
+            "level": "unit",
+            "name": "The card's confirm calls the decision sink and the webview posts exactly one {type:'selection-decision',requestId,selected:[...ids]}"
+          },
+          {
+            "level": "unit",
+            "name": "A multi-select confirm with zero chosen is a no-op until >=1 option is selected"
+          },
+          {
+            "level": "unit",
+            "name": "textContent/className only; no innerHTML/remote; card appended un-keyed (live-only)"
+          },
+          {
+            "level": "unit",
+            "name": "toViewModel maps BOTH the replayed entry and the live outcome to the same SelectionOutcomeRowView (dual-input); the resolved chip lists the chosen label(s), non-actionable"
+          },
+          {
+            "level": "unit",
+            "name": "The renderRegistryWebviewSource parity test gains selection-request + selection-outcome samples and stays green"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "cli-adapter marker-parse origin (fenced ```insrc:select```, buffer partials, strip marker) + syntax/uniqueness docs",
+        "summary": "Add the mapLine marker-parse branch to claudeMapper AND codexMapper (cli-adapter.ts): detect a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` block in the assistant text, JSON.parse + validate (prompt + non-empty options) inside try/catch, emit a selection-request event, and STRIP the raw marker from the visible assistant-delta. Buffer a partial/streamed marker (unclosed fence) in TurnState so a half-marker never emits and never leaks a partial fence. A malformed marker (bad JSON / missing fields) falls through as ordinary assistant-delta (no throw). A line with no marker behaves exactly as today (lc1). Document the ```insrc:select grammar + the option-id-uniqueness authoring guideline (duplicate ids render by index but authors should keep them unique) near the parser.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A scripted assistant line with a valid ```insrc:select marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker from the visible text.",
+          "A malformed marker (bad JSON or missing prompt/options) emits NO selection-request and leaves the text as an assistant-delta; never throws.",
+          "A marker split across two streamed lines is buffered in TurnState and emits the selection-request only when the closing fence arrives; a half-marker never emits.",
+          "A line with no marker emits the usual events unchanged (lc1); both claudeMapper and codexMapper handle it.",
+          "The ```insrc:select grammar + option-id-uniqueness guideline are documented near the parser."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "mapLine given a scripted line with a valid selection marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker"
+          },
+          {
+            "level": "unit",
+            "name": "A malformed marker emits NO selection-request and leaves the text as an assistant-delta (no throw)"
+          },
+          {
+            "level": "unit",
+            "name": "A marker split across two streamed lines emits only when the closing fence arrives; a half-marker never emits"
+          },
+          {
+            "level": "unit",
+            "name": "A line with NO marker emits the usual events unchanged (lc1)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "chat-panel pendingSelections + selection-decision handler + recordSelectionOutcome + run continuation",
+        "summary": "In chat-panel.ts: register the onSelectionDecision sink alongside onApprovalDecision in the webview bootstrap; add a pendingSelections Map keyed by requestId, populated when a selection-request turn-event is surfaced (append the live card un-keyed, like approval); add a `case 'selection-decision':` onMessage handler that on a pending requestId records a persisted selection-outcome (a recordSelectionOutcome helper that live-emits the outcome turn-event via the same toViewModel/renderer AND pushes the role:'selection-outcome' TranscriptEntry + saves, mirroring S003's recordPermissionOutcome) AND continues the run via a synthesized user turn (runTurn conveying the chosen label(s)/id(s)); an unknown/stale requestId (or duplicate after delete) is a safe no-op. Leave the approval/permission path, pendingPerms, and runTurn's grant path UNTOUCHED (k4). Extend the webview turn-event router with selection-request + selection-outcome.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A selection-request turn-event appends the live card un-keyed and populates pendingSelections keyed by requestId.",
+          "A selection-decision for a pending requestId records a persisted selection-outcome (live-emit + transcript push + save) AND continues the run via a synthesized user turn conveying the choice; the entry is deleted so a duplicate is a no-op.",
+          "An unknown/stale requestId records no outcome and continues no run.",
+          "The approval/permission-decision path, pendingPerms, and runTurn's grant path are byte-identical to today (k4).",
+          "The webview turn-event router renders selection-request + selection-outcome live."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "On a selection-decision for a pending requestId the host records a persisted selection-outcome AND continues the run via a synthesized user turn conveying the choice"
+          },
+          {
+            "level": "unit",
+            "name": "An unknown/stale requestId records no outcome and continues no run; a duplicate decision is a no-op"
+          },
+          {
+            "level": "unit",
+            "name": "The approval path (pendingPerms, grant runTurn) is untouched (k4)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Tests: marker-parse, widget render + relay, host record+continue, round-trip + replay, protocol exhaustiveness",
+        "summary": "Add/extend the colocated tests per the LLD test strategy: cli-adapter.test.ts (valid marker -> event + strip, malformed -> no event, split marker -> emit on close, no-marker unchanged); chat-panel.test.ts eval'd *WebviewSource + fakeChannel (card renders single/multi controls, confirm posts exactly one selection-decision, zero-chosen no-op, host records outcome + continues run via synthesized user turn, unknown-requestId no-op, approval path untouched); session-store.test.ts (selection-outcome round-trips both stores); markers.test.ts (selection-request/selection-outcome -> null); render-registry.test.ts parity samples + dual-input toViewModel + reload replay (pending card does not re-surface); protocol.test.ts ('selection-decision' in WEBVIEW_TO_HOST_TYPES exhaustiveness).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Unit tests cover ac1 (card single/multi + marker-parse origin), ac2 (confirm posts selection-decision + host records + continues run + zero-chosen guard), ac3 (round-trip both stores + reload replay + markerFor->null pending).",
+          "cli-adapter marker-parse tests cover valid/malformed/split/no-marker for both mappers.",
+          "The renderRegistryWebviewSource parity test is extended with selection samples and stays green; protocol exhaustiveness test passes.",
+          "tsc clean and the full vscode-plugin suite passes (live tests skip under no INSRC_LIVE_TESTS)."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "A {role:'selection-outcome',chosen,at} TranscriptEntry round-trips both stores intact"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "The card's confirm calls the decision sink and the webview posts exactly one {type:'selection-decision',requestId,selected:[...ids]}.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "A multi-select confirm with zero chosen is a no-op until >=1 option is selected.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "textContent/className only; no innerHTML/remote; card appended un-keyed (live-only).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "On a selection-decision for a pending requestId the host records a persisted selection-outcome AND continues the run via a synthesized user turn conveying the choice.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "An unknown/stale requestId records no outcome and continues no run; a duplicate decision is a no-op.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The approval path (pendingPerms, grant runTurn) is untouched (k4).",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A {role:'selection-outcome',chosen,at} TranscriptEntry round-trips both stores intact.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "toViewModel maps BOTH the replayed entry and the live outcome to the same SelectionOutcomeRowView (dual-input); the resolved chip lists the chosen label(s), non-actionable.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor returns null for selection-request so a replay does NOT re-surface the pending card; never-default preserved.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "The renderRegistryWebviewSource parity test gains selection-request + selection-outcome samples and stays green.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "mapLine given a scripted line with a valid selection marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A malformed marker emits NO selection-request and leaves the text as an assistant-delta (no throw).",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A marker split across two streamed lines emits only when the closing fence arrives; a half-marker never emits.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A line with NO marker emits the usual events unchanged (lc1).",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "protocol: 'selection-decision' is in WEBVIEW_TO_HOST_TYPES (exhaustiveness test passes); existing types unchanged.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ],
+    "chosenAlternative": "a1"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle — the S004 change surface in vscode-plugin/src/chat/ (current anchors after S003): stream-events.ts TurnEvent + TURN_EVENT_KINDS; protocol.ts WebviewToHost + WEBVIEW_TO_HOST_TYPES + permission-decision template; render-registry.ts RowKind + toViewModel + register + onApprovalDecision + approval card + fallback; session-store.ts TranscriptEntry (role-discriminant, both stores); markers.ts markerFor (exhaustive never-default); chat-panel.ts pendingPerms + sink registration + live approval append + permission-decision handler; cli-adapter.ts mapLine + approval-request emit. Grep-confirmed no selection-* symbol exists today."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 — sc3 interfaceSketch (P1+P2 selection round-trip: SelectionRequestEvent / selection-decision message / selection-outcome RowKind+TranscriptEntry) + the interactionWithShared entry + the resolved openQuestions (fenced ```insrc:select``` grammar; steering deferred; duplicate-id guideline-only); the invariant that the selection surface is additive and separate from the approval/grant path (k4)."
+    }
+  ]
+}

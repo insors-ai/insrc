@@ -135,6 +135,15 @@ interface TurnState {
    * back onto its ToolResultEvent. Absent when the tool exposed no command.
    */
   toolCommands?: Record<string, string>;
+  /**
+   * S004 (dev-chat ux polish): a partially-streamed `insrc:select` marker — the text from an
+   * OPENED fence whose closing fence has not yet arrived in this turn's stream. Buffered here so
+   * a half-marker never emits a selection-request and never leaks a partial fence to the visible
+   * assistant text; flushed (parsed) once the closing fence arrives. See {@link extractSelectionMarkers}.
+   */
+  selectionBuffer?: string;
+  /** S004: monotonically increasing per-turn counter used to mint a unique selection requestId. */
+  selectionSeq?: number;
 }
 
 /**
@@ -236,6 +245,126 @@ export function classifyPermissionDenial(detail: string): 'tool-gate' | 'dir-blo
   return /allowed working directories/i.test(detail) ? 'dir-block' : 'tool-gate';
 }
 
+// ---- S004: the `insrc:select` selection-marker parser -----------------------
+//
+// The provider streams carry NO native selection signal, so a selection request rides
+// the assistant text as a fenced marker the model is asked to emit:
+//
+//   ```insrc:select
+//   {"prompt":"Pick one","options":[{"id":"a","label":"Option A"}],"multi":false}
+//   ```
+//
+// Grammar: a ``` code fence whose info string is EXACTLY `insrc:select`, whose body is a
+// single JSON object { prompt: string (non-empty), options: [{id,label}, …] (non-empty),
+// multi?: boolean }. Option ids SHOULD be unique — the webview keys chips by array index, so
+// duplicate ids still render distinctly but map back ambiguously. A COMPLETE, VALID marker →
+// one SelectionRequestEvent (with a minted requestId) + the raw marker stripped from the
+// visible assistant text. A MALFORMED marker (bad JSON / missing prompt / empty options) →
+// NO event, the raw marker left in the visible text, never a throw. A marker whose closing
+// fence has not yet streamed is BUFFERED in TurnState so a half-marker never emits.
+
+const SELECT_FENCE_INFO = 'insrc:select';
+const SELECT_FENCE_OPEN = '```' + SELECT_FENCE_INFO;
+
+/** A parsed selection marker body -> a SelectionRequestEvent, or null if the body is malformed. */
+function parseSelectionBody(turnId: string, body: string, state: TurnState): TurnEvent | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return null; // not valid JSON -> not a marker (leave the raw text)
+  }
+  if (!isRecord(parsed)) return null;
+  const prompt = parsed['prompt'];
+  if (typeof prompt !== 'string' || prompt === '') return null; // prompt required + non-empty
+  const rawOptions = parsed['options'];
+  if (!Array.isArray(rawOptions) || rawOptions.length === 0) return null; // non-empty options required
+  const options: { id: string; label: string }[] = [];
+  for (const o of rawOptions) {
+    if (!isRecord(o)) return null;
+    const id = o['id'];
+    const label = o['label'];
+    if (typeof id !== 'string' || typeof label !== 'string') return null;
+    options.push({ id, label });
+  }
+  const multi = parsed['multi'] === true;
+  const seq = state.selectionSeq ?? 0;
+  state.selectionSeq = seq + 1;
+  const requestId = `sel-${turnId}-${seq}`;
+  return { kind: 'selection-request', turnId, requestId, prompt, options, ...(multi ? { multi: true } : {}) };
+}
+
+/**
+ * Scan an incoming assistant-text chunk for `insrc:select` fenced markers, prepending any
+ * buffered partial from a prior chunk. Returns the VISIBLE text (markers stripped) plus any
+ * SelectionRequestEvents parsed from complete, valid markers. An opened-but-unclosed marker is
+ * buffered in `state.selectionBuffer` (nothing emitted for it until the closing fence arrives).
+ * Pure over its inputs except for the buffer/seq it threads through `state`; never throws.
+ */
+function extractSelectionMarkers(turnId: string, incoming: string, state: TurnState): { text: string; events: TurnEvent[] } {
+  let buf = (state.selectionBuffer ?? '') + incoming;
+  delete state.selectionBuffer;
+  let visible = '';
+  const events: TurnEvent[] = [];
+  for (;;) {
+    const open = buf.indexOf(SELECT_FENCE_OPEN);
+    if (open === -1) {
+      visible += buf;
+      break;
+    }
+    visible += buf.slice(0, open);
+    const rest = buf.slice(open);
+    const infoEnd = rest.indexOf('\n');
+    if (infoEnd === -1) {
+      // The opening fence line has not finished streaming — buffer from the fence and wait.
+      state.selectionBuffer = rest;
+      break;
+    }
+    // Require the info string to be EXACTLY `insrc:select` (guards `insrc:selectN` false positives).
+    if (rest.slice(3, infoEnd).trim() !== SELECT_FENCE_INFO) {
+      // Not our fence: emit the ``` and keep scanning past it (never an infinite loop — the
+      // backticks are consumed, so the next indexOf cannot re-match at the same spot).
+      visible += rest.slice(0, 3);
+      buf = rest.slice(3);
+      continue;
+    }
+    const close = rest.indexOf('\n```', infoEnd);
+    if (close === -1) {
+      // Opened, not yet closed — buffer the whole marker and wait for the closing fence.
+      state.selectionBuffer = rest;
+      break;
+    }
+    const body = rest.slice(infoEnd + 1, close);
+    const afterFence = rest.indexOf('\n', close + 4); // skip past the closing ``` line
+    const consumedEnd = afterFence === -1 ? rest.length : afterFence + 1;
+    const ev = parseSelectionBody(turnId, body, state);
+    if (ev !== null) {
+      events.push(ev); // valid marker -> emit + strip (already excluded from `visible`)
+    } else {
+      visible += rest.slice(0, consumedEnd); // malformed -> leave the raw marker as visible text
+    }
+    buf = rest.slice(consumedEnd);
+  }
+  return { text: visible, events };
+}
+
+/**
+ * S004: emit assistant text, first extracting any `insrc:select` markers. When there is no fence
+ * in the chunk and no buffered partial, this is byte-identical to today (one assistant-delta, or
+ * none for empty text); otherwise the visible (stripped) text becomes the delta and each complete
+ * marker becomes a SelectionRequestEvent that follows it.
+ */
+function emitAssistantText(turnId: string, raw: string, state: TurnState): TurnEvent[] {
+  if (state.selectionBuffer === undefined && !raw.includes(SELECT_FENCE_OPEN)) {
+    return raw === '' ? [] : [{ kind: 'assistant-delta', turnId, text: raw }];
+  }
+  const { text, events } = extractSelectionMarkers(turnId, raw, state);
+  const out: TurnEvent[] = [];
+  if (text !== '') out.push({ kind: 'assistant-delta', turnId, text });
+  out.push(...events);
+  return out;
+}
+
 /** Build a UnifiedDiff (single hunk) from a claude Edit/Write tool_use input. Best-effort, hunk-shaped. */
 function diffFromClaudeEdit(path: string, input: Record<string, unknown>): UnifiedDiff {
   const before = typeof input['old_string'] === 'string' ? (input['old_string'] as string) : '';
@@ -332,7 +461,9 @@ const claudeMapper: ProviderMapper = {
       for (const block of content) {
         const btype = block['type'];
         if (btype === 'text' && typeof block['text'] === 'string') {
-          out.push({ kind: 'assistant-delta', turnId, text: block['text'] as string });
+          // S004: extract any `insrc:select` marker(s) — the visible text streams as an
+          // assistant-delta, a complete marker becomes a selection-request (raw fence stripped).
+          out.push(...emitAssistantText(turnId, block['text'] as string, state));
         } else if (btype === 'tool_use') {
           const toolName = typeof block['name'] === 'string' ? (block['name'] as string) : 'tool';
           const input = (block['input'] as Record<string, unknown> | undefined) ?? {};
@@ -453,7 +584,8 @@ const codexMapper: ProviderMapper = {
     // codex exec --json emits item/thread events; map the ones we normalize, ignore the rest.
     if (type.endsWith('.delta') || type === 'agent_message_delta') {
       const text = typeof obj['delta'] === 'string' ? (obj['delta'] as string) : typeof obj['text'] === 'string' ? (obj['text'] as string) : '';
-      return text === '' ? [] : [{ kind: 'assistant-delta', turnId, text }];
+      // S004: extract any `insrc:select` marker(s) from the streamed delta (buffered across chunks).
+      return emitAssistantText(turnId, text, state);
     }
     if (type === 'item.completed' || type === 'agent_message') {
       const item = (obj['item'] as Record<string, unknown> | undefined) ?? obj;
@@ -485,7 +617,8 @@ const codexMapper: ProviderMapper = {
         return events;
       }
       const text = typeof item['text'] === 'string' ? (item['text'] as string) : '';
-      return text === '' ? [] : [{ kind: 'assistant-delta', turnId, text }];
+      // S004: a completed assistant message item may also carry an `insrc:select` marker.
+      return emitAssistantText(turnId, text, state);
     }
     if (type === 'turn.completed' || type === 'thread.completed' || type === 'result') {
       return [{ kind: 'done', turnId, ok: obj['is_error'] !== true && obj['error'] === undefined }];

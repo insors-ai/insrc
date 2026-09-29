@@ -104,6 +104,37 @@ export type TurnEvent =
       readonly turnId: string;
       readonly toolName: string;
       readonly decision: 'approved' | 'rejected';
+    }
+  | {
+      /**
+       * S004 (dev-chat ux polish) sc2 (additive): an interactive selection request the model
+       * raised mid-turn via an `insrc:select` fenced marker in its assistant text (parsed by
+       * cli-adapter). Surfaced so the webview shows a single/multi-select widget (radio when
+       * `multi` is absent/false, checkbox when true) with a confirm button, instead of the raw
+       * marker leaking as text. `requestId` is the correlation key the webview's
+       * selection-decision carries back. Live-only (like approval-request): markerFor maps it to
+       * null so it never persists — the RESOLVED choice persists structurally as a
+       * `role:'selection-outcome'` transcript row (k4).
+       */
+      readonly kind: 'selection-request';
+      readonly turnId: string;
+      readonly requestId: string;
+      readonly prompt: string;
+      readonly options: readonly { readonly id: string; readonly label: string }[];
+      readonly multi?: boolean;
+    }
+  | {
+      /**
+       * S004 (dev-chat ux polish) sc2 (additive): the RESOLVED outcome of a selection-request
+       * (the user confirmed one or more chips). HOST-emitted from the selection-decision handler
+       * (not adapter-streamed), so the transcript can replace the live-only widget with a decided,
+       * non-actionable chip listing the chosen label(s). Persisted STRUCTURALLY as a
+       * `role:'selection-outcome'` transcript row (like permission-outcome), so markerFor maps it
+       * to null — it never renders as a flat lifecycle marker (k2).
+       */
+      readonly kind: 'selection-outcome';
+      readonly turnId: string;
+      readonly chosen: readonly string[];
     };
 
 /**
@@ -125,6 +156,8 @@ export const TURN_EVENT_KINDS = [
   'tool-result',
   'approval-request',
   'permission-outcome',
+  'selection-request',
+  'selection-outcome',
 ] as const;
 
 export type TurnEventKind = (typeof TURN_EVENT_KINDS)[number];

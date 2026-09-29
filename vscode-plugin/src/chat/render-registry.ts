@@ -44,6 +44,8 @@ export type RowKind =
   | 'inline-diff'
   | 'approval'
   | 'permission-outcome'
+  | 'selection-request'
+  | 'selection-outcome'
   | 'progress'
   | 'fallback';
 
@@ -114,6 +116,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
     if (entry.role === 'permission-outcome') {
       return { kind: 'permission-outcome', text: entry.toolName, collapsible: false, meta: { toolName: entry.toolName, decision: entry.decision } };
     }
+    // S004 (dev-chat ux polish): a replayed selection-outcome row -> the resolved-chip view-model
+    // (chosen labels). Single-sourced with the live-event branch below (dual-input parity).
+    if (entry.role === 'selection-outcome') {
+      return { kind: 'selection-outcome', text: entry.chosen.join(', '), collapsible: false, meta: { chosen: entry.chosen } };
+    }
     // 'marker' (S008): keep the sc1 marker class so a restored marker row renders identically.
     return entry.cssClass !== undefined
       ? { kind: 'fallback', text: entry.text, cssClass: entry.cssClass, collapsible: false }
@@ -135,6 +142,21 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   // as its replayed transcript twin (dual-input parity, a test pins the two).
   if (entry.kind === 'permission-outcome') {
     return { kind: 'permission-outcome', text: entry.toolName, collapsible: false, meta: { toolName: entry.toolName, decision: entry.decision } };
+  }
+  // S004 (dev-chat ux polish): a live selection-request event -> the card view-model (the widget
+  // renderer reads prompt/options/multi/requestId off meta). `multi` is normalized to a boolean.
+  if (entry.kind === 'selection-request') {
+    return {
+      kind: 'selection-request',
+      text: entry.prompt,
+      collapsible: false,
+      meta: { prompt: entry.prompt, options: entry.options, requestId: entry.requestId, multi: entry.multi === true },
+    };
+  }
+  // S004 (dev-chat ux polish): a live selection-outcome event -> the SAME resolved-chip view-model
+  // as its replayed transcript twin (dual-input parity, a test pins the two).
+  if (entry.kind === 'selection-outcome') {
+    return { kind: 'selection-outcome', text: entry.chosen.join(', '), collapsible: false, meta: { chosen: entry.chosen } };
   }
   return { kind: 'fallback', text: '', collapsible: false };
 }
@@ -176,7 +198,26 @@ export const RENDER_REGISTRY_STYLE =
   // (green approved / red rejected via the approval btn tints). Non-actionable (no buttons).
   `.insrc-permoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:5px 11px;max-width:100%;}` +
   `.insrc-permoutcome__tool{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}` +
-  `.insrc-permoutcome__badge{border:1px solid var(--border-lit);border-radius:7px;padding:2px 9px;font-size:12px;line-height:1.4;}`;
+  `.insrc-permoutcome__badge{border:1px solid var(--border-lit);border-radius:7px;padding:2px 9px;font-size:12px;line-height:1.4;}` +
+  // S004 (dev-chat ux polish): the interactive selection widget (radio/checkbox chips + a confirm
+  // button). Bordered like the approval card so it reads as an action; each option row is clickable,
+  // the ▣/◉ glyph marks the selected state, and the confirm is disabled until ≥1 is chosen.
+  `.insrc-select{border:1px solid rgba(56,189,248,.42);border-radius:10px;background:linear-gradient(180deg,rgba(56,189,248,.08),rgba(56,189,248,.02));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
+  `.insrc-select__prompt{font-weight:600;color:var(--accent2);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-select__options{display:flex;flex-direction:column;gap:5px;}` +
+  `.insrc-select__opt{display:flex;align-items:flex-start;gap:8px;cursor:pointer;border:1px solid var(--border);border-radius:7px;background:var(--panel);padding:5px 10px;}` +
+  `.insrc-select__opt:hover{border-color:var(--accent2);}` +
+  `.insrc-select__opt--on{border-color:rgba(56,189,248,.6);background:rgba(56,189,248,.10);}` +
+  `.insrc-select__ctl{color:var(--accent2);flex:0 0 auto;line-height:1.5;user-select:none;}` +
+  `.insrc-select__label{color:var(--fg);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-select__confirm{align-self:flex-start;cursor:pointer;border:1px solid rgba(56,189,248,.5);color:#bfe6fb;background:rgba(56,189,248,.12);border-radius:7px;padding:4px 14px;line-height:1.4;font-size:13px;font-family:var(--font);}` +
+  `.insrc-select__confirm:hover{filter:brightness(1.15);}` +
+  `.insrc-select__confirm--disabled{opacity:.45;cursor:default;filter:none;}` +
+  `.insrc-select--resolved{border-color:var(--border);background:#0a0d14;}` +
+  // S004: the persisted resolved-selection chip — a ✓ glyph + the chosen label(s). Non-actionable.
+  `.insrc-selectoutcome{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:5px 11px;max-width:100%;}` +
+  `.insrc-selectoutcome__icon{color:var(--accent);flex:0 0 auto;}` +
+  `.insrc-selectoutcome__labels{color:var(--fg-strong);font-family:var(--font);white-space:pre-wrap;word-break:break-word;}`;
 
 /**
  * The webview-embeddable factory source. Evaluating it yields
@@ -218,6 +259,10 @@ export function renderRegistryWebviewSource(): string {
     // onApprovalDecision(cb); the card buttons call it with (requestId, decision). Kept
     // as a factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
     `var DEC=null;function onApprovalDecision(cb){DEC=cb;}` +
+    // S004: the selection-widget decision sink. chat-panel registers a callback via
+    // onSelectionDecision(cb); the widget's confirm button calls it with (requestId, selectedIds).
+    // Factory-level hook so the renderer stays CSP-safe (no postMessage/vscode ref).
+    `var SDEC=null;function onSelectionDecision(cb){SDEC=cb;}` +
     // S003 t2: a message row is role-classed (user vs assistant tone, ac1) and, when long
     // (>3 lines or a long single line), its content is wrapped in the sc1 collapse primitive
     // (default-collapsed 3-line preview, ac2). Short messages render un-wrapped. textContent only (k1).
@@ -279,6 +324,8 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model.
     `if(entry.role==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
+    // S004 (dev-chat ux polish): a replayed selection-outcome row -> the resolved-chip view-model.
+    `if(entry.role==='selection-outcome')return {kind:'selection-outcome',text:(entry.chosen||[]).join(', '),collapsible:false,meta:{chosen:entry.chosen}};` +
     `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
     `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return {kind:'tool-command',text:label,collapsible:false};}` +
@@ -286,6 +333,10 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model (parity).
     `if(entry.kind==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
+    // S004 (dev-chat ux polish): a live selection-request event -> the card view-model (parity with host).
+    `if(entry.kind==='selection-request')return {kind:'selection-request',text:entry.prompt,collapsible:false,meta:{prompt:entry.prompt,options:entry.options,requestId:entry.requestId,multi:entry.multi===true}};` +
+    // S004 (dev-chat ux polish): a live selection-outcome event -> the SAME resolved-chip view-model (parity).
+    `if(entry.kind==='selection-outcome')return {kind:'selection-outcome',text:(entry.chosen||[]).join(', '),collapsible:false,meta:{chosen:entry.chosen}};` +
     `return {kind:'fallback',text:'',collapsible:false};}` +
     // 'fallback' is the existing flat writer: byte-identical to the pre-sc1 render (k2).
     `register('fallback',function(vm){return line(vm&&vm.text!=null?vm.text:'',vm&&vm.cssClass);});` +
@@ -369,6 +420,53 @@ export function renderRegistryWebviewSource(): string {
     `var badge=document.createElement('span');badge.className='insrc-permoutcome__badge insrc-approval__btn--'+(approved?'approve':'deny');` +
     `badge.textContent=approved?'\\u2713 approved':'\\u2717 rejected';chip.appendChild(badge);` +
     `wrap.appendChild(chip);return wrap;});` +
+    // S004 (dev-chat ux polish): the interactive selection widget. prompt/options/multi/requestId ride
+    // vm.meta. Controls are keyed by ARRAY INDEX (so duplicate option ids still render distinctly);
+    // multi:false -> single-select (choosing one clears the others), multi:true -> multi-select. A
+    // confirm button (disabled until >=1 chosen) calls the SDEC sink with (requestId, selectedIds).
+    // Built via line() so it self-appends (like tool-result). textContent/className only (k1).
+    `register('selection-request',function(vm){` +
+    `var meta=(vm&&vm.meta)||{};` +
+    `var rid=meta.requestId!=null?String(meta.requestId):'';` +
+    `var options=Array.isArray(meta.options)?meta.options:[];` +
+    `var multi=meta.multi===true;` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--selection';` +
+    `var card=document.createElement('div');card.className='insrc-select';card.setAttribute('data-request-id',rid);` +
+    `var promptEl=document.createElement('div');promptEl.className='insrc-select__prompt';promptEl.textContent=meta.prompt!=null?String(meta.prompt):'';card.appendChild(promptEl);` +
+    `var list=document.createElement('div');list.className='insrc-select__options';` +
+    `var state=[];var setters=[];` +
+    `var confirm=document.createElement('button');` +
+    `function anyOn(){for(var a=0;a<state.length;a++){if(state[a])return true;}return false;}` +
+    `function refresh(){var none=!anyOn();confirm.disabled=none;confirm.className='insrc-select__confirm'+(none?' insrc-select__confirm--disabled':'');confirm.setAttribute('aria-disabled',none?'true':'false');}` +
+    `options.forEach(function(o,i){` +
+    `state[i]=false;` +
+    `var row=document.createElement('div');row.className='insrc-select__opt';` +
+    `var ctl=document.createElement('span');ctl.className='insrc-select__ctl';ctl.setAttribute('role',multi?'checkbox':'radio');` +
+    `var lbl=document.createElement('span');lbl.className='insrc-select__label';lbl.textContent=o&&o.label!=null?String(o.label):'';` +
+    `function paint(){ctl.textContent=state[i]?(multi?'\\u2611':'\\u25c9'):(multi?'\\u2610':'\\u25cb');ctl.setAttribute('aria-checked',state[i]?'true':'false');row.className='insrc-select__opt'+(state[i]?' insrc-select__opt--on':'');}` +
+    `setters[i]=function(on){state[i]=on;paint();};paint();` +
+    `row.addEventListener('click',function(){if(multi){setters[i](!state[i]);}else{for(var j=0;j<setters.length;j++){setters[j](false);}setters[i](true);}refresh();});` +
+    `row.appendChild(ctl);row.appendChild(lbl);list.appendChild(row);});` +
+    `card.appendChild(list);` +
+    `confirm.textContent='confirm';confirm.setAttribute('aria-label','confirm selection');` +
+    `confirm.addEventListener('click',function(){` +
+    `if(confirm.disabled)return;` +
+    `var chosen=[];for(var i=0;i<state.length;i++){if(state[i]){var o=options[i]||{};chosen.push(o.id!=null?String(o.id):String(i));}}` +
+    `if(chosen.length===0)return;` +
+    `if(SDEC)SDEC(rid,chosen);` +
+    `try{card.className='insrc-select insrc-select--resolved';if(list.parentNode===card)card.removeChild(list);if(confirm.parentNode===card)card.removeChild(confirm);}catch(e){}});` +
+    `refresh();card.appendChild(confirm);` +
+    `wrap.appendChild(card);return wrap;});` +
+    // S004 (dev-chat ux polish): the persisted resolved-selection chip — a ✓ glyph + the chosen
+    // label(s), non-actionable (no controls). Built via line() so it self-appends (like tool-result).
+    `register('selection-outcome',function(vm){` +
+    `var meta=(vm&&vm.meta)||{};` +
+    `var chosen=Array.isArray(meta.chosen)?meta.chosen:[];` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--selectoutcome';` +
+    `var chip=document.createElement('div');chip.className='insrc-selectoutcome';` +
+    `var icon=document.createElement('span');icon.className='insrc-selectoutcome__icon';icon.textContent='\\u2713';chip.appendChild(icon);` +
+    `var txt=document.createElement('span');txt.className='insrc-selectoutcome__labels';txt.textContent=chosen.map(function(c){return String(c);}).join(', ');chip.appendChild(txt);` +
+    `wrap.appendChild(chip);return wrap;});` +
     // S001 t5 (lc1): keyed append. A row rendered with a key is remembered; re-appending the
     // SAME key (a live echo and its session-restored twin) reconciles to the one existing node
     // instead of double-rendering. resetKeys() is called when the transcript is cleared on
@@ -376,6 +474,6 @@ export function renderRegistryWebviewSource(): string {
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
     `function resetKeys(){KEYS={};}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,onSelectionDecision:onSelectionDecision};}`
   );
 }

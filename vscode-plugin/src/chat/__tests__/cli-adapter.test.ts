@@ -845,3 +845,116 @@ test('S004 t5: decide() on an unknown turn is a safe no-op (never throws)', () =
   const adapter = createProviderRegistry(deps).get('claude');
   assert.doesNotThrow(() => adapter.decide('no-such-turn', 'r', 'approve'));
 });
+
+// ---- S004 (dev-chat ux polish): the `insrc:select` selection-marker parse (both mappers) ----
+
+const SEL_JSON = JSON.stringify({ prompt: 'Pick one', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }], multi: false });
+const SEL_MARKER = '```insrc:select\n' + SEL_JSON + '\n```';
+const claudeText = (text: string): string => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text }] } });
+const claudeInit = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-sel' });
+const claudeResult = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-sel' });
+
+test('claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta', async () => {
+  const lines = [claudeInit, claudeText('Here you go:\n' + SEL_MARKER), claudeResult];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  const sel = events.find((e) => e.kind === 'selection-request') as
+    | { kind: 'selection-request'; requestId: string; prompt: string; options: Array<{ id: string; label: string }>; multi?: boolean }
+    | undefined;
+  assert.ok(sel, 'a selection-request event was emitted');
+  assert.equal(sel!.prompt, 'Pick one');
+  assert.deepEqual(sel!.options, [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
+  assert.ok(typeof sel!.requestId === 'string' && sel!.requestId !== '', 'a requestId was minted');
+  assert.equal(sel!.multi, undefined, 'multi:false -> the field is omitted');
+  // The raw marker is stripped from every assistant-delta (the user sees the widget, not the fence).
+  const deltas = events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text);
+  assert.ok(deltas.some((t) => t.includes('Here you go:')), 'the surrounding text still streams');
+  assert.ok(!deltas.some((t) => t.includes('insrc:select') || t.includes('```')), 'no raw fence leaks into a delta');
+});
+
+test('claude: a marker-only text block emits the selection-request with NO empty assistant-delta', async () => {
+  const lines = [claudeInit, claudeText(SEL_MARKER), claudeResult];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal(events.filter((e) => e.kind === 'selection-request').length, 1, 'exactly one selection-request');
+  assert.equal(events.filter((e) => e.kind === 'assistant-delta').length, 0, 'no empty delta for a marker-only block');
+});
+
+test('claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw', async () => {
+  const bad = '```insrc:select\n{not valid json\n```';
+  const lines = [claudeInit, claudeText(bad), claudeResult];
+  const { deps } = depsFor({ lines });
+  let events: TurnEvent[] = [];
+  await assert.doesNotReject(async () => { events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' }))); });
+  assert.equal(events.filter((e) => e.kind === 'selection-request').length, 0, 'malformed -> no selection-request');
+  const deltas = events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text).join('');
+  assert.ok(deltas.includes('insrc:select') && deltas.includes('{not valid json'), 'the raw marker survives as text');
+});
+
+test('claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)', async () => {
+  const part1 = '```insrc:select\n{"prompt":"Pick","opt';
+  const part2 = 'ions":[{"id":"a","label":"A"}],"multi":false}\n```';
+  const lines = [claudeInit, claudeText(part1), claudeText(part2), claudeResult];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  const sels = events.filter((e) => e.kind === 'selection-request');
+  assert.equal(sels.length, 1, 'exactly one selection-request, emitted only when the marker completed');
+  assert.equal((sels[0] as { prompt: string }).prompt, 'Pick');
+  // Neither half leaked: no assistant-delta carries a partial fence or the JSON fragment.
+  const deltas = events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text);
+  assert.equal(deltas.length, 0, 'a split marker with no surrounding prose yields no delta (both halves buffered, not leaked)');
+});
+
+test('claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)', async () => {
+  const lines = [claudeInit, claudeText('just a normal answer'), claudeResult];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal(events.filter((e) => e.kind === 'selection-request').length, 0);
+  assert.deepEqual(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text), ['just a normal answer']);
+});
+
+const codexMsg = (text: string): string => JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text } });
+const codexDelta = (delta: string): string => JSON.stringify({ type: 'agent_message_delta', delta });
+const codexStart = JSON.stringify({ type: 'thread.started', thread_id: 'thread-sel' });
+const codexDone = JSON.stringify({ type: 'turn.completed' });
+
+test('codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped', async () => {
+  const lines = [codexStart, codexMsg('Options:\n' + SEL_MARKER), codexDone];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+  const sel = events.find((e) => e.kind === 'selection-request') as { prompt: string; options: unknown[] } | undefined;
+  assert.ok(sel, 'a selection-request event was emitted');
+  assert.equal(sel!.prompt, 'Pick one');
+  assert.equal(sel!.options.length, 2);
+  const deltas = events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text);
+  assert.ok(!deltas.some((t) => t.includes('insrc:select')), 'no raw fence leaks into a delta');
+});
+
+test('codex: a malformed marker -> NO event, the raw text stays a delta, no throw', async () => {
+  const lines = [codexStart, codexMsg('```insrc:select\nnot json\n```'), codexDone];
+  const { deps } = depsFor({ lines });
+  let events: TurnEvent[] = [];
+  await assert.doesNotReject(async () => { events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' }))); });
+  assert.equal(events.filter((e) => e.kind === 'selection-request').length, 0);
+  assert.ok(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text).join('').includes('insrc:select'), 'raw marker survives');
+});
+
+test('codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence', async () => {
+  const p1 = '```insrc:select\n{"prompt":"P","opti';
+  const p2 = 'ons":[{"id":"x","label":"X"}]}\n```';
+  const lines = [codexStart, codexDelta(p1), codexDelta(p2), codexDone];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+  const sels = events.filter((e) => e.kind === 'selection-request');
+  assert.equal(sels.length, 1, 'exactly one selection-request across the split');
+  assert.equal((sels[0] as { prompt: string }).prompt, 'P');
+  assert.equal(events.filter((e) => e.kind === 'assistant-delta').length, 0, 'no partial fence leaked as a delta');
+});
+
+test('codex: a no-marker delta behaves exactly as today', async () => {
+  const lines = [codexStart, codexDelta('hello '), codexDelta('there'), codexDone];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+  assert.equal(events.filter((e) => e.kind === 'selection-request').length, 0);
+  assert.deepEqual(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text), ['hello ', 'there']);
+});

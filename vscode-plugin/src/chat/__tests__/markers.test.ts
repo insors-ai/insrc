@@ -31,6 +31,10 @@ const SAMPLES: TurnEvent[] = [
   { kind: 'tool-result', turnId: 't', output: '' },
   { kind: 'permission-outcome', turnId: 't', toolName: 'Bash', decision: 'approved' },
   { kind: 'permission-outcome', turnId: 't', toolName: 'Write', decision: 'rejected' },
+  { kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick', options: [{ id: 'a', label: 'A' }] },
+  { kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Pick many', options: [{ id: 'a', label: 'A' }], multi: true },
+  { kind: 'selection-outcome', turnId: 't', chosen: ['A'] },
+  { kind: 'selection-outcome', turnId: 't', chosen: ['A', 'B'] },
 ];
 
 const ALL_CLASSES = new Set(Object.values(MARKER_CLASS));
@@ -114,6 +118,18 @@ test('S003 (ux polish): markerFor(permission-outcome) -> null (persisted structu
   // eslint-disable-next-line no-eval
   const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
   assert.equal(webviewMarkerFor(ev), null);
+});
+
+test('S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)', () => {
+  const req: TurnEvent = { kind: 'selection-request', turnId: 't', requestId: 's', prompt: 'Pick', options: [{ id: 'a', label: 'A' }] };
+  const out: TurnEvent = { kind: 'selection-outcome', turnId: 't', chosen: ['A'] };
+  assert.equal(markerFor(req), null);
+  assert.equal(markerFor(out), null);
+  // The webview mirror agrees (its fall-through maps both unmapped kinds to null too).
+  // eslint-disable-next-line no-eval
+  const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
+  assert.equal(webviewMarkerFor(req), null);
+  assert.equal(webviewMarkerFor(out), null);
 });
 
 test('every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems', () => {

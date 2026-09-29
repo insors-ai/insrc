@@ -65,6 +65,7 @@ interface Registry {
   appendKeyed(vm: unknown, key: string | null): FakeNode | null;
   resetKeys(): void;
   onApprovalDecision(cb: (requestId: string, decision: 'approve' | 'deny') => void): void;
+  onSelectionDecision(cb: (requestId: string, selected: string[]) => void): void;
 }
 function makeRegistry(): { reg: Registry; appended: FakeNode[] } {
   const { document } = fakeDocument();
@@ -249,6 +250,12 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { kind: 'permission-outcome', turnId: 't', toolName: 'Write', decision: 'rejected' },
     { role: 'permission-outcome', toolName: 'Bash', decision: 'approved', at: 't' },
     { role: 'permission-outcome', toolName: 'Write', decision: 'rejected', at: 't' },
+    // S004 (ux polish): selection-request (single + multi) live events, and selection-outcome
+    // live event + its replayed twin.
+    { kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] },
+    { kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Pick many', options: [{ id: 'a', label: 'A' }], multi: true },
+    { kind: 'selection-outcome', turnId: 't', chosen: ['A'] },
+    { role: 'selection-outcome', chosen: ['A', 'B'], at: 't' },
   ];
   for (const s of samples) {
     assert.deepEqual(reg.toViewModel(s), toViewModel(s), `webview/host toViewModel drift on ${JSON.stringify(s)}`);
@@ -587,4 +594,152 @@ test('S001 (bugfix): a table-only response still renders as a table (marked GFM)
   const md = '| Col1 | Col2 |\n| --- | --- |\n| x | y |';
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: md, collapsible: true })!;
   assert.match(mdHtml(row), /<table>/, 'a bare table renders as <table>');
+});
+
+// ---- S004 (dev-chat ux polish): the interactive selection widget + resolved chip ----
+
+test('S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)', () => {
+  const live: TurnEvent = { kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick one', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] };
+  assert.deepEqual(toViewModel(live), {
+    kind: 'selection-request',
+    text: 'Pick one',
+    collapsible: false,
+    meta: { prompt: 'Pick one', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], requestId: 's1', multi: false },
+  });
+  const multi: TurnEvent = { kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Pick many', options: [{ id: 'x', label: 'X' }], multi: true };
+  assert.equal(toViewModel(multi).meta?.['multi'], true, 'multi:true is carried on meta');
+});
+
+test('S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)', () => {
+  const liveEv: TurnEvent = { kind: 'selection-outcome', turnId: 't', chosen: ['A', 'C'] };
+  const replayed: TranscriptEntry = { role: 'selection-outcome', chosen: ['A', 'C'], at: 't' };
+  const expected = { kind: 'selection-outcome', text: 'A, C', collapsible: false, meta: { chosen: ['A', 'C'] } };
+  assert.deepEqual(toViewModel(liveEv), expected, 'live event -> resolved-chip vm');
+  assert.deepEqual(toViewModel(replayed), expected, 'replayed entry -> the identical vm');
+});
+
+test('S004 (ux polish): the selection-request renderer draws radio controls for single-select', () => {
+  const { reg } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Choose', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }] } as TurnEvent);
+  const row = reg.renderRow(vm)!;
+  const card = findByClass(row, 'insrc-select')!;
+  assert.ok(card, 'the widget card is rendered');
+  assert.equal(card.attrs['data-request-id'], 's1', 'the card carries the correlation id');
+  assert.ok(allText(row).includes('Choose'), 'the prompt is shown');
+  // Two option rows, each control is role=radio (single-select).
+  const ctls: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__ctl')) ctls.push(n); n.children.forEach(walk); })(row);
+  assert.equal(ctls.length, 2, 'one control per option');
+  assert.ok(ctls.every((c) => c.attrs['role'] === 'radio'), 'single-select uses radio controls');
+  assert.ok(allText(row).includes('Alpha') && allText(row).includes('Beta'), 'both labels are shown');
+});
+
+test('S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select', () => {
+  const { reg } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Choose many', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], multi: true } as TurnEvent);
+  const row = reg.renderRow(vm)!;
+  const ctls: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__ctl')) ctls.push(n); n.children.forEach(walk); })(row);
+  assert.equal(ctls.length, 2);
+  assert.ok(ctls.every((c) => c.attrs['role'] === 'checkbox'), 'multi-select uses checkbox controls');
+});
+
+test('S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id', () => {
+  const { reg } = makeRegistry();
+  const posted: Array<[string, string[]]> = [];
+  reg.onSelectionDecision((requestId, selected) => posted.push([requestId, selected]));
+  const row = reg.renderRow(reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] } as TurnEvent))!;
+  const confirm = findByClass(row, 'insrc-select__confirm')!;
+  assert.equal(confirm.disabled, true, 'confirm starts disabled (nothing chosen)');
+  // Clicking confirm while disabled posts nothing.
+  confirm.click();
+  assert.equal(posted.length, 0, 'a disabled confirm is a no-op');
+  // Pick the first option, then confirm.
+  const opts: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__opt')) opts.push(n); n.children.forEach(walk); })(row);
+  opts[0]!.click();
+  assert.equal(confirm.disabled, false, 'confirm enables once an option is chosen');
+  confirm.click();
+  assert.deepEqual(posted, [['s1', ['a']]], 'exactly one selection-decision with the chosen id');
+});
+
+test('S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)', () => {
+  const { reg } = makeRegistry();
+  const posted: Array<[string, string[]]> = [];
+  reg.onSelectionDecision((r, s) => posted.push([r, s]));
+  const row = reg.renderRow(reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] } as TurnEvent))!;
+  const opts: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__opt')) opts.push(n); n.children.forEach(walk); })(row);
+  opts[0]!.click();
+  opts[1]!.click(); // switching selection deselects the first
+  findByClass(row, 'insrc-select__confirm')!.click();
+  assert.deepEqual(posted, [['s1', ['b']]], 'only the last-picked id is submitted');
+});
+
+test('S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing', () => {
+  const { reg } = makeRegistry();
+  const posted: Array<[string, string[]]> = [];
+  reg.onSelectionDecision((r, s) => posted.push([r, s]));
+  const row = reg.renderRow(reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's2', prompt: 'Pick many', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], multi: true } as TurnEvent))!;
+  const confirm = findByClass(row, 'insrc-select__confirm')!;
+  // Zero chosen -> confirm disabled -> no post.
+  confirm.click();
+  assert.equal(posted.length, 0, 'multi confirm with zero chosen posts nothing');
+  const opts: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__opt')) opts.push(n); n.children.forEach(walk); })(row);
+  opts[0]!.click();
+  opts[1]!.click(); // multi keeps both
+  confirm.click();
+  assert.deepEqual(posted, [['s2', ['a', 'b']]], 'both chosen ids are submitted');
+});
+
+test('S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable', () => {
+  const { reg } = makeRegistry();
+  const posted: Array<[string, string[]]> = [];
+  reg.onSelectionDecision((r, s) => posted.push([r, s]));
+  const row = reg.renderRow(reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's3', prompt: 'Dup', options: [{ id: 'dup', label: 'First' }, { id: 'dup', label: 'Second' }], multi: true } as TurnEvent))!;
+  const opts: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__opt')) opts.push(n); n.children.forEach(walk); })(row);
+  assert.equal(opts.length, 2, 'both duplicate-id options render as distinct rows');
+  assert.ok(allText(row).includes('First') && allText(row).includes('Second'), 'both distinct labels render');
+  opts[0]!.click();
+  opts[1]!.click();
+  findByClass(row, 'insrc-select__confirm')!.click();
+  assert.deepEqual(posted, [['s3', ['dup', 'dup']]], 'each selected index contributes its id');
+});
+
+test('S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow(reg.toViewModel({ kind: 'selection-request', turnId: 't', requestId: 's1', prompt: 'Pick', options: [{ id: 'a', label: 'A' }] } as TurnEvent))!;
+  const opts: FakeNode[] = [];
+  (function walk(n: FakeNode) { if (n.className.split(/\s+/).includes('insrc-select__opt')) opts.push(n); n.children.forEach(walk); })(row);
+  opts[0]!.click();
+  assert.doesNotThrow(() => findByClass(row, 'insrc-select__confirm')!.click());
+});
+
+test('S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'selection-outcome', turnId: 't', chosen: ['Option A', 'Option C'] } as TurnEvent);
+  const row = reg.renderRow(vm)!;
+  assert.equal(row, appended[0], 'the chip self-appends via line() (like permission-outcome)');
+  const chip = findByClass(row, 'insrc-selectoutcome');
+  assert.ok(chip, 'the chip is rendered');
+  assert.ok(allText(row).includes('Option A') && allText(row).includes('Option C'), 'the chosen labels are shown');
+  // Non-actionable: no buttons anywhere on the chip.
+  assert.ok(!findByTag(row, 'button'), 'the resolved chip has no controls');
+});
+
+test('S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface', () => {
+  // On restore, the transcript carries only the resolved selection-outcome row (the live-only
+  // selection-request is never persisted — markerFor maps it to null). Replaying the stored
+  // transcript therefore renders the chip, never the interactive card.
+  const { reg, appended } = makeRegistry();
+  const transcript: TranscriptEntry[] = [
+    { role: 'user', text: 'which option?', at: 't1' },
+    { role: 'selection-outcome', chosen: ['A'], at: 't2' },
+  ];
+  transcript.forEach((x, i) => reg.appendKeyed(reg.toViewModel(x), 'r' + i));
+  assert.equal(appended.length, 2, 'two rows replayed (user + resolved chip)');
+  assert.ok(!appended.some((n) => findByClass(n, 'insrc-select')), 'no interactive selection card re-surfaces on replay');
+  assert.ok(appended.some((n) => findByClass(n, 'insrc-selectoutcome')), 'the resolved chip is rendered');
 });

@@ -46,6 +46,23 @@ test("S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permissi
   }
 });
 
+test("S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)", () => {
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('selection-decision'), "'selection-decision' is reserved");
+  // Every prior kind is still present, unchanged.
+  for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'ready']) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `existing kind ${k} still present`);
+  }
+});
+
+test('S004 (ux polish): a selection-decision message typechecks with requestId + selected ids', () => {
+  const msg: WebviewToHost = { type: 'selection-decision', requestId: 'sel-1', selected: ['a', 'b'] };
+  assert.equal(msg.type, 'selection-decision');
+  assert.deepEqual(msg.type === 'selection-decision' ? msg.selected : undefined, ['a', 'b']);
+  // A single-select confirm carries exactly one id.
+  const single: WebviewToHost = { type: 'selection-decision', requestId: 'sel-2', selected: ['only'] };
+  assert.deepEqual(single.type === 'selection-decision' ? single.selected : undefined, ['only']);
+});
+
 test('S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode', () => {
   // Without scope (the required-fields form).
   const once: WebviewToHost = { type: 'permission-decision', requestId: 'r1', decision: 'approve' };

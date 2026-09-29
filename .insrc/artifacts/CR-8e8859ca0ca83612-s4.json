@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790694055059-hzhd1z",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T15:00:55.059Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/markers.test.ts",
+        "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/markers.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/session-store.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-store.ts:63",
+            "message": "The plan's t1 literally wrote the selection-outcome TranscriptEntry `at` field as `at: number`, but the build used `at: string` to match the existing tool-result/permission-outcome variants (both `at: string`, session-store.ts:35/43) and the host's now() which returns an ISO string. This is a correct, justified deviation from the plan text (the plan's own parenthetical said 'match the existing at-field style'); `at: number` would have broken now()/persistence. Recording it as an adherence observation for provenance, not a defect.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "The selection-decision continuation conveys the CHOSEN LABELS ('Selected: <labels joined by comma>') rather than option ids, and an unknown/duplicate id falls back to the id text so a choice is never silently dropped. This is a reasonable design choice (labels are human-readable for the model) tied to the resolved duplicate-id openQuestion; noted as an observation so the choice is visible — no change needed.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

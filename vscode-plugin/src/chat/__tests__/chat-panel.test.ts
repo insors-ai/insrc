@@ -1946,3 +1946,93 @@ test('S001 (bugfix): the webview sets the mode control from a restored session',
   const html = fc.html();
   assert.match(html, /if\(m\.mode&&pm\)\{pmode=m\.mode;pm\.value=m\.mode;updatePermSeg\(\);\}/, 'the webview syncs the mode dropdown on session-restored');
 });
+
+// ---- S004 (dev-chat ux polish): selection widget routing + selection-decision --------
+
+test('S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)', () => {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  const html = fc.html();
+  assert.match(html, /onSelectionDecision/, 'wires the selection decision sink');
+  assert.match(html, /type:'selection-decision'/, 'the confirm posts selection-decision');
+  assert.match(html, /ev\.kind==='selection-request'/, 'the live handler routes selection-request through the registry');
+  assert.match(html, /ev\.kind==='selection-outcome'/, 'the live handler routes selection-outcome through the registry');
+  // The approval path is untouched (k4): its sink + card + handler are still wired.
+  assert.match(html, /onApprovalDecision/, 'approval decision sink still wired');
+  assert.match(html, /type:'permission-decision'/, 'approval card still posts permission-decision');
+});
+
+test('S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn', async () => {
+  const fc = fakeChannel();
+  const seen: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 'ts', phase: 'thinking' },
+    { kind: 'selection-request', turnId: 'ts', requestId: 'sel-x', prompt: 'Pick', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }] },
+    { kind: 'done', turnId: 'ts', ok: true },
+  ];
+  const adapter = scriptedAdapter(evs, { onRun: (r) => seen.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-request'));
+  await waitFor(() => seen.length >= 1);
+  fc.send(env('selection-decision', { requestId: 'sel-x', selected: ['b'] }));
+  // The resolved outcome is posted with the chosen LABEL (not the id), and persisted structurally.
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-outcome'));
+  const outcome = turnEvents(fc).find((e) => e.kind === 'selection-outcome') as { chosen: string[] };
+  assert.deepEqual(outcome.chosen, ['Beta'], 'chosen carries the resolved label, not the id');
+  // The run continues via a synthesized user turn naming the choice.
+  await waitFor(() => seen.length >= 2, 2000);
+  assert.match(seen[1]!.prompt, /Beta/, 'the follow-on run conveys the chosen label');
+});
+
+test('S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)', async () => {
+  const fc = fakeChannel();
+  const seen: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => seen.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  assert.doesNotThrow(() => fc.send(env('selection-decision', { requestId: 'nope', selected: ['a'] })));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(!turnEvents(fc).some((e) => e.kind === 'selection-outcome'), 'no outcome recorded for an unknown request');
+  assert.equal(seen.length, 0, 'no run triggered by a stale selection-decision');
+});
+
+test('S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)', async () => {
+  const fc = fakeChannel();
+  const seen: TurnRequest[] = [];
+  const evs: TurnEvent[] = [
+    { kind: 'selection-request', turnId: 'ts', requestId: 'sel-e', prompt: 'Pick', options: [{ id: 'a', label: 'A' }] },
+    { kind: 'done', turnId: 'ts', ok: true },
+  ];
+  const adapter = scriptedAdapter(evs, { onRun: (r) => seen.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => seen.length >= 1);
+  fc.send(env('selection-decision', { requestId: 'sel-e', selected: [] }));
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(!turnEvents(fc).some((e) => e.kind === 'selection-outcome'), 'empty selection posts no outcome');
+  assert.equal(seen.length, 1, 'no follow-on run for an empty selection');
+});

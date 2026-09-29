@@ -85,6 +85,16 @@ export function markerFor(event: TurnEvent): MarkerLine | null {
       // (a role:'permission-outcome' transcript row rendered as a decided chip), never as a
       // flat lifecycle marker — so markerFor maps it to null (k2), like tool-result.
       return null;
+    case 'selection-request':
+      // S004 (dev-chat ux polish): a selection request renders as a live in-chat widget,
+      // not a durable transcript marker — view-time only, never persisted (k4), like
+      // approval-request.
+      return null;
+    case 'selection-outcome':
+      // S004 (dev-chat ux polish): the resolved choice persists STRUCTURALLY (a
+      // role:'selection-outcome' transcript row rendered as a decided chip), never as a
+      // flat lifecycle marker — so markerFor maps it to null (k2), like permission-outcome.
+      return null;
     default: {
       // A future sc2 kind added before this mapper catches up: skip it (no marker), never throw.
       const _never: never = event;

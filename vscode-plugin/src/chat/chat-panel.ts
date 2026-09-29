@@ -136,6 +136,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // with the tool pre-allowed) apart from a working-dir / sandbox-allowlist block (Approve cannot
   // grant a directory — it posts an informational message instead). Cleared on decision.
   const pendingPerms = new Map<string, { toolName: string; command?: string; blockKind: 'tool-gate' | 'dir-block' }>();
+  // S004 (dev-chat ux polish): pending selection requests, requestId -> the widget's options.
+  // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
+  // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
+  const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }> }>();
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -180,6 +184,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     post({ type: 'turn-event', event: { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision } });
     if (session !== undefined) {
       session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
+      deps.store.save(session);
+    }
+  };
+
+  // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
+  // it LIVE as a turn-event the webview renders via the registry (a resolved chip), AND persist it
+  // STRUCTURALLY as a role:'selection-outcome' transcript row (+ save) so a restored session shows the
+  // decided chip instead of the live-only widget. `chosen` carries the LABELS (host-resolved from ids).
+  const recordSelectionOutcome = (requestId: string, chosen: readonly string[]): void => {
+    post({ type: 'turn-event', event: { kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen } });
+    if (session !== undefined) {
+      session.transcript.push({ role: 'selection-outcome', chosen: [...chosen], at: now() });
       deps.store.save(session);
     }
   };
@@ -372,6 +388,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S004 ac2: the approval card's approve/deny buttons post a permission-decision the host
       // relays to the live turn's CLI (adapter.decide). Wired once via the sc1 decision sink.
       `reg.onApprovalDecision(function(requestId,decision){vs.postMessage({v:1,payload:{type:'permission-decision',requestId:requestId,decision:decision}});});` +
+      // S004 (dev-chat ux polish): the selection widget's confirm posts a selection-decision the host
+      // maps back to labels + continues the run. Wired once via the sc1 selection decision sink.
+      `reg.onSelectionDecision(function(requestId,selected){vs.postMessage({v:1,payload:{type:'selection-decision',requestId:requestId,selected:selected}});});` +
       // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
@@ -419,7 +438,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
@@ -613,6 +632,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
             blockKind: classifyPermissionDenial(ev.detail),
           });
+        }
+        // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
+        // requestId) so a later selection-decision can map the chosen ids back to labels.
+        if (ev.kind === 'selection-request') {
+          pendingSelections.set(ev.requestId, { options: ev.options });
         }
         // S006: an observed file-edit -> the governor computes + renders its own diff
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
@@ -828,6 +852,27 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           session.mode = msg.mode;
           if (deps.store.get(session.id) !== undefined) deps.store.save(session);
         }
+        return;
+      }
+      case 'selection-decision': {
+        // S004 (dev-chat ux polish): the user confirmed a selection widget. Look up the pending
+        // request; map the chosen ids back to labels via its options; record the resolved outcome
+        // (persisted chip) and continue the run conveying the choice. An unknown/stale requestId is a
+        // safe no-op (mirrors the permission-decision stale path). The widget guards >=1 selection, so
+        // `selected` is non-empty; still, an all-invalid/empty payload is dropped without a run.
+        if (typeof msg.requestId !== 'string' || !Array.isArray(msg.selected)) return;
+        const pending = pendingSelections.get(msg.requestId);
+        if (pending === undefined) return; // unknown / stale / already answered -> no-op
+        pendingSelections.delete(msg.requestId);
+        const ids = msg.selected.filter((x): x is string => typeof x === 'string');
+        if (ids.length === 0) return; // nothing actually chosen -> no run, no outcome
+        // Map ids -> labels (ids should be unique; a duplicate maps to its first option, and an
+        // unknown id falls back to the id text so the choice is never dropped silently).
+        const labels = ids.map((id) => pending.options.find((o) => o.id === id)?.label ?? id);
+        recordSelectionOutcome(msg.requestId, labels);
+        // Continue the run with a synthesized user message naming the choice. suppressEcho so the
+        // synthetic prompt is not echoed as a user bubble — only the resolved selection chip marks it.
+        void runTurn(`Selected: ${labels.join(', ')}`, undefined, { suppressEcho: true });
         return;
       }
       default:

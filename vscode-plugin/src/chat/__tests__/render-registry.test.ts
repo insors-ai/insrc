@@ -236,6 +236,11 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { kind: 'tool-call', turnId: 't', tool: 'Read' },
     { kind: 'tool-call', turnId: 't', tool: 'x', mcp: { server: 'insrc', name: 'n' } },
     { kind: 'status', turnId: 't', phase: 'thinking' },
+    // S001 (ux polish): tool-result — live event (with + without command) and its replayed twin.
+    { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok' },
+    { kind: 'tool-result', turnId: 't', output: 'no cmd' },
+    { role: 'tool-result', command: 'ls', output: 'a\nb', at: 't' },
+    { role: 'tool-result', output: 'orphan', at: 't' },
   ];
   for (const s of samples) {
     assert.deepEqual(reg.toViewModel(s), toViewModel(s), `webview/host toViewModel drift on ${JSON.stringify(s)}`);
@@ -388,16 +393,68 @@ test('S001 (bugfix): the render source uses marked + sanitizes with guardMd (no 
 
 // ---- S003 t4: collapsible inline-diff + tool-result renderers (k6 c) ----
 
-test('S003 k6 c: inline-diff + tool-result wrap their body in the collapse primitive with a caption', () => {
+test('S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption', () => {
   const { reg } = makeRegistry();
-  for (const kind of ['inline-diff', 'tool-result']) {
-    const row = reg.renderRow({ kind, text: 'line a\nline b', collapsible: true } as unknown as RowViewModel)!;
-    const cap = findByClass(row, 'insrc-caption');
-    assert.ok(cap, `${kind} has a caption`);
-    const wrap = findByClass(row, 'insrc-collapse');
-    assert.ok(wrap, `${kind} wraps its body in the collapse primitive`);
-    assert.match(wrap!.className, /insrc-collapse--collapsed/, `${kind} is default-collapsed (collapsed to caption)`);
-  }
+  const row = reg.renderRow({ kind: 'inline-diff', text: 'line a\nline b', collapsible: true } as unknown as RowViewModel)!;
+  const cap = findByClass(row, 'insrc-caption');
+  assert.ok(cap, 'inline-diff has a caption');
+  const wrap = findByClass(row, 'insrc-collapse');
+  assert.ok(wrap, 'inline-diff wraps its body in the collapse primitive');
+  assert.match(wrap!.className, /insrc-collapse--collapsed/, 'inline-diff is default-collapsed (collapsed to caption)');
+});
+
+// ---- S001 (ux polish): structured tool-result row (command + separator + collapsed output) ----
+
+test('S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)', () => {
+  const live: TurnEvent = { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok\nfine' };
+  const replayed: TranscriptEntry = { role: 'tool-result', command: 'npm test', output: 'ok\nfine', at: 't' };
+  const expected = { kind: 'tool-result', text: 'npm test', collapsible: true, meta: { command: 'npm test', output: 'ok\nfine' } };
+  assert.deepEqual(toViewModel(live), expected, 'live event -> structured tool-result vm');
+  assert.deepEqual(toViewModel(replayed), expected, 'replayed entry -> the identical vm');
+  // A command-less pair: text is '' and meta.command is undefined, consistent across both inputs.
+  const liveNoCmd: TurnEvent = { kind: 'tool-result', turnId: 't', output: 'x' };
+  const replayNoCmd: TranscriptEntry = { role: 'tool-result', output: 'x', at: 't' };
+  assert.deepEqual(toViewModel(liveNoCmd), toViewModel(replayNoCmd), 'command-less live/replayed agree');
+  assert.equal(toViewModel(liveNoCmd).text, '', 'command-less row has empty command text');
+});
+
+test('S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output', () => {
+  const { reg, appended } = makeRegistry();
+  const vm = reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'npm test', output: 'l1\nl2\nl3\nl4' } as TurnEvent);
+  const row = reg.renderRow(vm)!;
+  assert.equal(row, appended[0], 'the tool-result row self-appends via line() (like tool-command)');
+  // The command line is present and visible (NOT inside the collapse wrapper).
+  const cmd = findByClass(row, 'insrc-toolresult__cmd');
+  assert.ok(cmd, 'the command line is rendered');
+  assert.ok(allText(cmd!).includes('npm test'), 'the command text is shown');
+  assert.ok(allText(cmd!).includes('$'), 'a shell $ prompt precedes the command');
+  // A visual separator element sits between the command and the output.
+  assert.ok(findByClass(row, 'insrc-toolresult__sep'), 'a separator element is rendered');
+  // ONLY the output is wrapped in the collapse primitive (default-collapsed 3-line preview).
+  const wrap = findByClass(row, 'insrc-collapse');
+  assert.ok(wrap, 'the output is wrapped in the collapse primitive');
+  assert.match(wrap!.className, /insrc-collapse--collapsed/, 'the output is default-collapsed');
+  const out = findByClass(wrap!, 'insrc-toolresult__out');
+  assert.ok(out, 'the output element sits inside the collapse body');
+  assert.ok(allText(out!).includes('l1\nl2\nl3\nl4'), 'the full output is present (collapsed via CSS clamp)');
+  // The command must NOT be inside the collapse wrapper (it stays always-visible).
+  assert.ok(!findByClass(wrap!, 'insrc-toolresult__cmd'), 'the command line is OUTSIDE the collapse (always visible)');
+});
+
+test('S001 (ux polish): a command-less tool-result renders no command line but still collapses the output', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output: 'just output' } as TurnEvent))!;
+  assert.ok(!findByClass(row, 'insrc-toolresult__cmd'), 'no command line when the command is empty');
+  const wrap = findByClass(row, 'insrc-collapse');
+  assert.ok(wrap && /insrc-collapse--collapsed/.test(wrap.className), 'the output is still collapsed');
+  assert.ok(allText(row).includes('just output'), 'the output text is present');
+});
+
+test('S001 (ux polish): assistant (non-tool) text is NEVER default-collapsed — a short assistant row renders in full, uncollapsed', () => {
+  const { reg } = makeRegistry();
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'a concise answer', collapsible: true })!;
+  assert.ok(!findByClass(row, 'insrc-collapse'), 'a short assistant message is not wrapped in the collapse primitive');
+  assert.ok(mdText(row).includes('a concise answer'), 'the assistant text renders in full');
 });
 
 // ---- S004 t6: the approval-card renderer -------------------------------------

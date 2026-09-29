@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790679119421-k9fel1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T10:51:59.423Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/markers.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-store.test.ts",
+        "vscode-plugin/src/chat/__tests__/stream-events.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/markers.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/session-store.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:124",
+            "message": "Implements the approved LLD/PLAN faithfully and additively: new 'tool-result' ToolResultEvent on the TurnEvent union; toViewModel dual-input branch (module + eval'd webview inline copy IDENTICAL, parity test extended with tool-result samples and passing); renderer keeps the command outside the collapse and wraps ONLY the output in the existing host.collapsible(defaultCollapsed:true); markerFor returns null for tool-result; structural persistence via an additive TranscriptEntry discriminated-union variant round-tripped by both stores; appendEvent structured branch; assistant-text never default-collapsed. All k1/k2/k3 invariants upheld. No adherence gap.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-store.ts:16",
+            "message": "Follows repo conventions: TranscriptEntry widened to a documented discriminated union (readonly fields, exactOptionalPropertyTypes-safe optional command via conditional spread in appendEvent), className/textContent-only CSP-safe DOM in the eval'd webview source (no innerHTML), and the S00x comment-tag style. tsc --noEmit clean under strict mode. No convention issue.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/render-registry.test.ts:395",
+            "message": "Graph grounding for the changed files is diff/file-level only (hollow), so coverage was judged by RUNNING the suite: 287 tests, 283 pass, 0 fail, 4 pre-existing INSRC_LIVE_TESTS-gated skips. New tests cover every ac: adapter emission (claude tool_result with/without command, empty output, codex item.completed), toViewModel dual-input parity (live == replayed, command-less), the renderer (command visible + separator + only-output collapsed), markerFor null, appendEvent structured persist, both-store round-trip + replay, the eval'd *WebviewSource parity (tool-result samples added, NOT weakened), and assistant-text-never-default-collapsed. One pre-existing test that asserted the OLD caption-based tool-result renderer was correctly narrowed to inline-diff only (its contract legitimately changed) with dedicated tool-result renderer tests added — net coverage increased. No gap.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Clean quality: command correlation uses a per-turn state.toolCommands map keyed by tool_use_id (no fragile prose parsing); coerceToolResultOutput handles string and [{type:'text',text}] content shapes; the codex branch returns the existing tool-call PLUS a tool-result only when output is present (output-less item byte-identical to before). Minor observation (not a defect): the tool-result command line uses a hardcoded '$' prompt glyph and green accent — fine for the terminal aesthetic; a future story (S002) may unify prompt styling. No quality concern for S001.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

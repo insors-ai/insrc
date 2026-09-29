@@ -187,6 +187,40 @@ test('S008: user/assistant rows never carry a cssClass', () => {
   }
 });
 
+// ---- S001 (ux polish): structured tool-result transcript row round-trip ----
+
+test('S001 (ux polish): a tool-result row (command + output) round-trips through the memento store intact', () => {
+  const f = fakeMemento();
+  const store = createMementoChatSessionStore({ ...f, now: () => 't', genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'tool-result', command: 'npm test', output: 'ok\n42 passing', at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'tool-result');
+  assert.equal(row && 'command' in row ? row.command : undefined, 'npm test');
+  assert.equal(row && 'output' in row ? row.output : undefined, 'ok\n42 passing');
+});
+
+test('S001 (ux polish): a command-less tool-result row round-trips (command absent) in the in-memory store', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'tool-result', output: 'built', at: 't' });
+  const row = store.get(s.id)?.transcript[0];
+  assert.equal(row?.role, 'tool-result');
+  assert.equal(row && 'output' in row ? row.output : undefined, 'built');
+  assert.equal(row ? 'command' in row : true, false, 'no command key persisted for a command-less row');
+});
+
+test('S001 (ux polish): a tool-result row does not disturb a mixed transcript replay (order + other rows intact)', () => {
+  const store = createInMemoryChatSessionStore({ genId: seqId() });
+  const s = store.create('claude');
+  store.append(s.id, { role: 'user', text: 'run the tests', at: 't1' });
+  store.append(s.id, { role: 'tool-result', command: 'npm test', output: 'ok', at: 't2' });
+  store.append(s.id, { role: 'assistant', text: 'passed', at: 't3' });
+  const t = store.get(s.id)!.transcript;
+  assert.deepEqual(t.map((r) => r.role), ['user', 'tool-result', 'assistant']);
+  assert.equal(t[1]!.role === 'tool-result' ? t[1]!.output : undefined, 'ok');
+});
+
 // ---- S006: per-session editMode (sc4) round-trip ----
 
 test('S006: editMode defaults to auto on create and a review update round-trips through save()/get()', () => {

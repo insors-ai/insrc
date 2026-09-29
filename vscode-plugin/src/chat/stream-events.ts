@@ -53,6 +53,22 @@ export type TurnEvent =
   | { readonly kind: 'error'; readonly turnId: string; readonly message: string }
   | {
       /**
+       * S001 (dev-chat ux polish) sc2 (additive): the OUTPUT a tool produced, surfaced so the
+       * transcript can show the command + a collapsed preview of what it printed (claude's
+       * `type:'user'` tool_result message / codex's completed command-execution output). `command`
+       * carries the correlated command when the adapter can pair it back to the preceding tool_use;
+       * absent otherwise (the row then shows only the output). `exitCode` is the process exit code
+       * when the provider reports one. Persisted structurally (a `role:'tool-result'` transcript
+       * row), not as a flat lifecycle marker (k2) — markerFor maps it to null.
+       */
+      readonly kind: 'tool-result';
+      readonly turnId: string;
+      readonly command?: string;
+      readonly output: string;
+      readonly exitCode?: number;
+    }
+  | {
+      /**
        * S004 sc2 (additive): a tool-permission request the underlying CLI raised
        * mid-turn (claude `--permission-prompts host` control line / codex approval
        * item), surfaced so the webview can show an approve/deny card instead of the
@@ -92,6 +108,7 @@ export const TURN_EVENT_KINDS = [
   'status',
   'done',
   'error',
+  'tool-result',
   'approval-request',
 ] as const;
 

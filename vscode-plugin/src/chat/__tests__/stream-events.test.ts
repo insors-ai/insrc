@@ -101,3 +101,30 @@ test('S001 (bugfix): ApprovalRequestEvent admits an optional command field; othe
   const other: TurnEvent = { kind: 'tool-call', turnId: 't', tool: 'grep' };
   assert.equal(other.kind, 'tool-call');
 });
+
+test("S001 (ux polish): 'tool-result' is reserved in TURN_EVENT_KINDS alongside every prior kind (additive)", () => {
+  for (const k of ['assistant-delta', 'tool-call', 'file-edit', 'status', 'done', 'error', 'approval-request']) {
+    assert.ok(TURN_EVENT_KINDS.includes(k as TurnEventKind), `existing kind ${k} still present (k1)`);
+  }
+  assert.ok(TURN_EVENT_KINDS.includes('tool-result'), "'tool-result' is reserved");
+  const reserved: TurnEventKind = 'tool-result';
+  assert.equal(reserved, 'tool-result');
+});
+
+test('S001 (ux polish): ToolResultEvent constructs with output + optional command/exitCode', () => {
+  // Minimal shape: output only (command/exitCode omitted -> command-less, no exit code).
+  const minimal: TurnEvent = { kind: 'tool-result', turnId: 't', output: 'built ok' };
+  assert.equal(minimal.kind === 'tool-result' ? minimal.output : 'x', 'built ok');
+  assert.equal(minimal.kind === 'tool-result' ? minimal.command : 'x', undefined);
+  assert.equal(minimal.kind === 'tool-result' ? minimal.exitCode : 1, undefined);
+  // Full shape: command + exitCode present.
+  const full: TurnEvent = { kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok\n', exitCode: 0 };
+  if (full.kind === 'tool-result') {
+    assert.equal(full.command, 'npm test');
+    assert.equal(full.output, 'ok\n');
+    assert.equal(full.exitCode, 0);
+  }
+  // An empty-output tool result is still a valid event.
+  const empty: TurnEvent = { kind: 'tool-result', turnId: 't', output: '' };
+  assert.equal(empty.kind === 'tool-result' ? empty.output : 'x', '');
+});

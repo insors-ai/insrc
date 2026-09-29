@@ -13,13 +13,32 @@
 import type { ProviderId } from './cli-adapter.js';
 import type { PermissionMode } from './protocol.js';
 
-export interface TranscriptEntry {
-  readonly role: 'user' | 'assistant' | 'marker';
-  readonly text: string;
-  /** sc1 marker class for a role:'marker' row (S008); absent on user/assistant + pre-S008 rows. */
-  readonly cssClass?: string;
-  readonly at: string;
-}
+/**
+ * A durable transcript row. A discriminated union over `role`:
+ * - `user` / `assistant` — a plain message row carrying `text`.
+ * - `marker` — a lifecycle marker row (S008) carrying `text` + an optional sc1 `cssClass`.
+ * - `tool-result` — S001 (dev-chat ux polish): a structured tool-output row carrying the tool
+ *   `output` and an optional correlated `command` (NO `text`). Plain-serialisable, so it round-trips
+ *   through the Memento with no per-row migration (isSession does no per-row check).
+ *
+ * Every variant carries `at`. Existing user/assistant/marker rows keep their exact shape (k1).
+ */
+export type TranscriptEntry =
+  | {
+      readonly role: 'user' | 'assistant' | 'marker';
+      readonly text: string;
+      /** sc1 marker class for a role:'marker' row (S008); absent on user/assistant + pre-S008 rows. */
+      readonly cssClass?: string;
+      readonly at: string;
+    }
+  | {
+      readonly role: 'tool-result';
+      /** The command the tool ran, when the adapter could correlate it back; absent otherwise. */
+      readonly command?: string;
+      /** The tool's output text (may be empty). */
+      readonly output: string;
+      readonly at: string;
+    };
 
 export interface ChatSession {
   readonly id: string;

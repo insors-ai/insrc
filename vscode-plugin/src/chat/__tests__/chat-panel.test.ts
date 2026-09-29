@@ -413,6 +413,58 @@ test('S004 integration: a status->tool-call(mcp)->status->file-edit->done turn p
   assert.equal(workflowCalls, 0, 'the host invoked no workflow/MCP tool (k8 passthrough)');
 });
 
+test('S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [
+    { kind: 'tool-call', turnId: 't1', tool: 'Bash', command: 'npm test' },
+    { kind: 'tool-result', turnId: 't1', command: 'npm test', output: 'ok\n42 passing' },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+
+  // The tool-result was posted LIVE for the webview structured render.
+  assert.ok(turnEvents(fc).some((e) => e.kind === 'tool-result'), 'the tool-result event was posted live');
+
+  const s = store.get(store.list()[0]!.id)!;
+  const tr = s.transcript.find((r) => r.role === 'tool-result');
+  assert.ok(tr, 'a structured tool-result row was persisted');
+  assert.equal(tr!.role === 'tool-result' ? tr!.command : undefined, 'npm test', 'the command is persisted');
+  assert.equal(tr!.role === 'tool-result' ? tr!.output : undefined, 'ok\n42 passing', 'the output is persisted');
+  // It is NOT persisted as a flat marker row (markerFor -> null).
+  assert.ok(!s.transcript.some((r) => r.role === 'marker' && r.text.includes('npm test')), 'no marker row for the tool result (k2)');
+});
+
+test('S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)', async () => {
+  const fc = fakeChannel();
+  const evs: TurnEvent[] = [
+    { kind: 'assistant-delta', turnId: 't1', text: 'hi' },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+
+  const s = store.get(store.list()[0]!.id)!;
+  assert.ok(!s.transcript.some((r) => r.role === 'tool-result'), 'no tool-result rows when the turn emits none (k1 byte-identical)');
+  assert.deepEqual(s.transcript.map((r) => r.role), ['user', 'assistant', 'marker'], 'the transcript shape is unchanged from pre-feature');
+});
+
 // ---- S005: provider selector + history dropdown + native resume ----
 
 const historyLists = (fc: FakeChannel): unknown[] =>

@@ -404,7 +404,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName}});if(_c){t.appendChild(_c);t.scrollTop=t.scrollHeight;}}` +
@@ -637,6 +637,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // persisting every tick would bloat the durable transcript and replay as noise on
     // restore. The durable lifecycle facts (tool-call/file-edit/done/error) ARE kept.
     if (ev.kind === 'status') return;
+    // S001 (dev-chat ux polish): a tool result persists STRUCTURALLY as a role:'tool-result' row
+    // (command + output), not as a flat marker — so a restored transcript re-renders the command
+    // + collapsed output legibly. markerFor returns null for it, so this branch owns its persistence.
+    if (ev.kind === 'tool-result') {
+      s.transcript.push({
+        role: 'tool-result',
+        ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
+        output: ev.output,
+        at: now(),
+      });
+      return;
+    }
     // Durable markers are single-sourced through markerFor — the SAME mapper the webview
     // uses — so a host row and its live marker never drift. done now persists a marker row
     // (the S003 gap); an unmapped/future kind -> markerFor returns null -> no row.

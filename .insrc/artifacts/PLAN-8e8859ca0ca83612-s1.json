@@ -1,0 +1,344 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790677717473-z8nu6c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T10:31:55.171Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 197659,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "storyId": "s1",
+    "lldRunId": "wf-1790677077127-2bqtr6",
+    "lldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
+    "approvedAt": "2026-09-29T10:36:18.078Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building S001 threads one additive 'tool-result' event through the existing dev-chat pipeline: declare it on the TurnEvent union, emit it from the adapter's tool_result (claude type:'user' + codex item.completed), persist it as a structured transcript entry (with markerFor returning null so it never double-persists as a flat marker), and map+render it as a command/separator/collapsible-output row reusing the existing 'tool-result' RowKind and host.collapsible primitive. The render change also touches the eval'd webview-source copy, so its parity test moves in lockstep; assistant text is confirmed never default-collapsed. Seven small/medium tasks land the type, adapter, persistence, render, and the regression + both-store round-trip tests.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the additive ToolResultEvent to the TurnEvent union",
+        "summary": "In vscode-plugin/src/chat/stream-events.ts add the additive union member ToolResultEvent { readonly kind:'tool-result'; readonly turnId: string; readonly command?: string; readonly output: string; readonly exitCode?: number } and add 'tool-result' to TURN_EVENT_KINDS. No existing member changes shape.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "stream-events.ts declares ToolResultEvent as a TurnEvent member and TURN_EVENT_KINDS includes 'tool-result'",
+          "Existing event kinds are structurally unchanged (k1/lc1)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stream-events: TurnEvent admits the 'tool-result' member and TURN_EVENT_KINDS includes it; existing kinds unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Emit tool-result from the claude/codex adapter",
+        "summary": "In cli-adapter.ts claudeMapper.mapLine add a type:'user'/tool_result handler that emits a ToolResultEvent (output from the tool_result content block; command correlated from the preceding tool_use when available). Add the codex item.completed tool-output path emitting the same shape. Every existing branch (system/assistant->tool-call/result->done/control) is untouched; a line with no tool result is byte-identical.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A claude type:'user'/tool_result line yields one ToolResultEvent with output set (command set when correlatable, else undefined)",
+          "A line with no tool result returns [] or its existing event byte-identical to today",
+          "The codex path emits the same ToolResultEvent shape (provider-agnostic)"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "claudeMapper.mapLine: a claude type:'user'/tool_result line yields one ToolResultEvent { kind:'tool-result', turnId, command?, output }; a line with no tool result returns [] or its existing event byte-identical to today"
+          },
+          {
+            "level": "unit",
+            "name": "claudeMapper.mapLine: the command is correlated onto the event when available; a tool_result with no correlatable command yields command undefined (output still present)"
+          },
+          {
+            "level": "unit",
+            "name": "codex mapper: item.completed carrying tool output yields the same ToolResultEvent shape (provider-agnostic)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the markerFor tool-result null case",
+        "summary": "In markers.ts markerFor add `case 'tool-result': return null;` so the exhaustive switch (never default) keeps compiling with the new kind; tool-result is NOT persisted as a flat marker (it persists structurally). No existing case changes.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "markerFor returns null for a tool-result event",
+          "The exhaustive switch compiles with the new kind; existing cases unchanged (k2)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "markerFor: returns null for a 'tool-result' event (exhaustive switch compiles; no flat marker emitted)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the structured tool-result TranscriptEntry variant",
+        "summary": "In session-store.ts add the additive structured tool-result TranscriptEntry variant (role:'tool-result' + command? + output + at), plain-serialisable and discriminable from the existing role entries; verify both createInMemoryChatSessionStore and createMementoChatSessionStore round-trip it and existing entries are byte-identical.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "TranscriptEntry admits the additive tool-result variant (plain-serialisable)",
+          "A tool-result entry round-trips through both store constructions; existing entries are byte-identical"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-store round-trip: a tool-result TranscriptEntry serialises + restores through BOTH createInMemoryChatSessionStore and createMementoChatSessionStore (plain-serialisable), and existing entries are byte-identical"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Persist tool-result via an explicit appendEvent branch",
+        "summary": "In chat-panel.ts appendEvent add an explicit tool-result branch that pushes the structured tool-result TranscriptEntry (bypassing the markerFor flat path). Existing assistant-delta/status/marker branches are unchanged; status still not persisted.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "appendEvent pushes a structured tool-result entry for a tool-result event (not a flat marker)",
+          "assistant-delta/status/marker branches are unchanged"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "appendEvent: a tool-result event pushes a STRUCTURED tool-result TranscriptEntry (command?, output); assistant-delta/status/marker branches unchanged; status still not persisted"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Map + render the tool-result row and keep parity",
+        "summary": "In render-registry.ts add the toViewModel dual-input branch (live ToolResultEvent AND persisted tool-result entry -> { kind:'tool-result', collapsible:true, meta:{command,output} }), register a 'tool-result' RowRenderer that builds command / separator and wraps ONLY the output in host.collapsible(defaultCollapsed:true), and keep the eval'd renderRegistryWebviewSource inline toViewModel + live-render dispatch in parity; wire 'tool-result' into the chat-panel webview live-render structured branch. Confirm the assistant-text renderer is NOT default-collapsed.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "toViewModel maps a live tool-result event and a replayed tool-result entry to an IDENTICAL RowViewModel (dual-input)",
+          "The registered tool-result renderer shows command + separator + output with ONLY the output default-collapsed to ~3 lines, expandable/re-collapsible",
+          "The eval'd webview source stays in parity with the module (parity test) and the live-render dispatch renders tool-result structurally",
+          "Assistant/non-tool rows are never default-collapsed (ac3)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "toViewModel: a live ToolResultEvent maps to { kind:'tool-result', collapsible:true, meta:{command,output} }; the existing tool-call->tool-command and assistant-delta->assistant-text branches are unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "toViewModel: a replayed tool-result TranscriptEntry maps to an IDENTICAL RowViewModel as its originating live event (dual-input parity)"
+          },
+          {
+            "level": "unit",
+            "name": "tool-result RowRenderer: builds command line + separator + output; ONLY the output is wrapped in host.collapsible(defaultCollapsed:true); command stays outside the collapsible (always visible)"
+          },
+          {
+            "level": "unit",
+            "name": "assistant-text renderer: is NOT default-collapsed (rendered in full)"
+          },
+          {
+            "level": "unit",
+            "name": "renderRegistryWebviewSource parity: the eval'd inline toViewModel/markerFor + live-render dispatch stays in parity with the module source after adding the tool-result branch (parity test)"
+          },
+          {
+            "level": "unit",
+            "name": "renderer isolation: a throwing tool-result renderer falls back to the flat 'fallback' renderer for that one row"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Regression + round-trip tests",
+        "summary": "Add colocated node:test tests: adapter emission (with/without command, empty output, codex), toViewModel dual-input, renderer collapse (output-only, command visible), markerFor null, appendEvent structured persist, both-store round-trip + replay, parity, assistant-never-default-collapsed, and no-tool-output byte-identity.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Tests cover ac1-ac4 across adapter/render/persist/replay via the eval'd *WebviewSource pattern",
+          "The full chat suite passes locally"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "replay: restoring a transcript with a tool-result entry re-renders the same command/separator/output row with default-collapsed output"
+          },
+          {
+            "level": "unit",
+            "name": "ac2 interaction: the output can be expanded and re-collapsed via the chevron (collapse-primitive state toggle)"
+          },
+          {
+            "level": "unit",
+            "name": "The full chat suite passes locally (no-tool-output turns byte-identical; existing approval/marker tests green)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "claudeMapper.mapLine: a claude type:'user'/tool_result line yields one ToolResultEvent { kind:'tool-result', turnId, command?, output }; a line with no tool result returns [] or its existing event byte-identical to today.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "claudeMapper.mapLine: the command is correlated onto the event when available; a tool_result with no correlatable command yields command undefined (output still present).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex mapper: item.completed carrying tool output yields the same ToolResultEvent shape (provider-agnostic).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stream-events: TurnEvent admits the 'tool-result' member and TURN_EVENT_KINDS includes it; existing kinds unchanged.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "toViewModel: a live ToolResultEvent maps to { kind:'tool-result', collapsible:true, meta:{command,output} }; the existing tool-call->tool-command and assistant-delta->assistant-text branches are unchanged.",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "toViewModel: a replayed tool-result TranscriptEntry maps to an IDENTICAL RowViewModel as its originating live event (dual-input parity).",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "tool-result RowRenderer: builds command line + separator + output; ONLY the output is wrapped in host.collapsible(defaultCollapsed:true); command stays outside the collapsible (always visible).",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "assistant-text renderer: is NOT default-collapsed (rendered in full).",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderRegistryWebviewSource parity: the eval'd inline toViewModel/markerFor + live-render dispatch stays in parity with the module source after adding the tool-result branch (parity test).",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderer isolation: a throwing tool-result renderer falls back to the flat 'fallback' renderer for that one row.",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "markerFor: returns null for a 'tool-result' event (exhaustive switch compiles; no flat marker emitted).",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "appendEvent: a tool-result event pushes a STRUCTURED tool-result TranscriptEntry (command?, output); assistant-delta/status/marker branches unchanged; status still not persisted.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-store round-trip: a tool-result TranscriptEntry serialises + restores through BOTH createInMemoryChatSessionStore and createMementoChatSessionStore (plain-serialisable), and existing entries are byte-identical.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "replay: restoring a transcript with a tool-result entry re-renders the same command/separator/output row with default-collapsed output.",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 render-model: render-registry.ts RowKind 'tool-result'(:43)/RowViewModel(:53)/toViewModel dual-input(:101)/host.collapsible primitive(:71); the additive TurnEvent + toViewModel branch + renderer + parity"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 persistence: markers.ts markerFor exhaustive switch(:43-85, null for tool-result); chat-panel appendEvent(:630-649) structured branch; session-store TranscriptEntry(:16) round-tripped by both stores(:106/:195)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 adapter: cli-adapter claudeMapper.mapLine has no type:'user'/tool_result handler today; add it (+codex item.completed) to emit the additive ToolResultEvent"
+    }
+  ]
+}

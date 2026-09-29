@@ -129,6 +129,27 @@ const NOOP_LOGGER: AdapterLogger = { warn: () => {}, error: () => {} };
 /** Mutable per-turn state a mapper may thread across lines (e.g. the captured native session id). */
 interface TurnState {
   sessionId?: string;
+  /**
+   * S001 (dev-chat ux polish): tool_use `id` -> the command it ran, remembered so a later
+   * claude tool_result message (which carries only `tool_use_id`) can correlate the command
+   * back onto its ToolResultEvent. Absent when the tool exposed no command.
+   */
+  toolCommands?: Record<string, string>;
+}
+
+/**
+ * S001 (dev-chat ux polish): coerce a claude tool_result block's `content` into a single output
+ * string. claude sends it either as a plain string or as an array of `{type:'text',text}` blocks;
+ * anything else (or an empty payload) yields '' (an empty-output tool result is still surfaced).
+ */
+function coerceToolResultOutput(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((b) => (isRecord(b) && b['type'] === 'text' && typeof b['text'] === 'string' ? (b['text'] as string) : ''))
+      .join('');
+  }
+  return '';
 }
 
 /** A provider mapper turns ONE native stdout line into zero or more normalized TurnEvents. */
@@ -322,6 +343,11 @@ const claudeMapper: ProviderMapper = {
             // S001 sc2: surface the real command the tool ran (Bash `input.command`), when the
             // provider exposes one; command-less tools omit it and render as the tool name (k2).
             const command = typeof input['command'] === 'string' ? (input['command'] as string) : undefined;
+            // S001 (dev-chat ux polish): remember this tool_use's command keyed by its id, so the
+            // later tool_result message (carrying only tool_use_id) can correlate the command back.
+            if (command !== undefined && typeof block['id'] === 'string' && block['id'] !== '') {
+              (state.toolCommands ??= {})[block['id'] as string] = command;
+            }
             out.push({
               kind: 'tool-call',
               turnId,
@@ -331,6 +357,23 @@ const claudeMapper: ProviderMapper = {
             });
           }
         }
+      }
+      return out;
+    }
+    if (type === 'user') {
+      // S001 (dev-chat ux polish): claude reports a tool's OUTPUT as a `type:'user'` message whose
+      // content carries tool_result block(s). Surface each as a ToolResultEvent, correlating the
+      // command from the preceding tool_use (via tool_use_id) when we tracked one. Previously this
+      // line hit the noise fall-through and returned [] — that was the legibility gap.
+      const message = obj['message'] as { content?: unknown } | undefined;
+      const content = Array.isArray(message?.content) ? (message?.content as Array<Record<string, unknown>>) : [];
+      const out: TurnEvent[] = [];
+      for (const block of content) {
+        if (block['type'] !== 'tool_result') continue;
+        const output = coerceToolResultOutput(block['content']);
+        const tid = typeof block['tool_use_id'] === 'string' ? (block['tool_use_id'] as string) : undefined;
+        const command = tid !== undefined ? state.toolCommands?.[tid] : undefined;
+        out.push({ kind: 'tool-result', turnId, output, ...(command !== undefined ? { command } : {}) });
       }
       return out;
     }
@@ -424,7 +467,22 @@ const codexMapper: ProviderMapper = {
         // field, while `tool` keeps its existing label fallback. Command-less items omit it (k2).
         const command = typeof item['command'] === 'string' ? (item['command'] as string) : undefined;
         const tool = typeof item['tool'] === 'string' ? (item['tool'] as string) : command ?? 'tool';
-        return [{ kind: 'tool-call', turnId, tool, ...(command !== undefined ? { command } : {}) }];
+        const events: TurnEvent[] = [{ kind: 'tool-call', turnId, tool, ...(command !== undefined ? { command } : {}) }];
+        // S001 (dev-chat ux polish): a completed codex command/tool item also carries its OUTPUT
+        // (aggregated_output / output / stdout) — surface it as a ToolResultEvent so the transcript
+        // shows the collapsed result. An output-less completion is byte-identical to today (k2).
+        const rawOut = item['aggregated_output'] ?? item['output'] ?? item['stdout'];
+        if (typeof rawOut === 'string') {
+          const exitCode = typeof item['exit_code'] === 'number' ? (item['exit_code'] as number) : undefined;
+          events.push({
+            kind: 'tool-result',
+            turnId,
+            output: rawOut,
+            ...(command !== undefined ? { command } : {}),
+            ...(exitCode !== undefined ? { exitCode } : {}),
+          });
+        }
+        return events;
       }
       const text = typeof item['text'] === 'string' ? (item['text'] as string) : '';
       return text === '' ? [] : [{ kind: 'assistant-delta', turnId, text }];

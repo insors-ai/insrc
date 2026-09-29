@@ -71,6 +71,11 @@ export function markerFor(event: TurnEvent): MarkerLine | null {
       return { cssClass: MARKER_CLASS.done, label: event.ok ? 'done' : 'done (failed)' };
     case 'error':
       return { cssClass: MARKER_CLASS.error, label: event.message };
+    case 'tool-result':
+      // S001 (dev-chat ux polish): a tool result persists STRUCTURALLY (a role:'tool-result'
+      // transcript row rendered as command + collapsed output), never as a flat lifecycle
+      // marker — so markerFor maps it to null (k2), like approval-request.
+      return null;
     case 'approval-request':
       // Approval requests render as a live in-chat card, not a durable transcript
       // marker — they are view-time only and never persisted (k4).

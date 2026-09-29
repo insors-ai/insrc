@@ -335,6 +335,98 @@ test('codex: a tool_call item without a command omits command (k2)', async () =>
   assert.equal(tc!.command, undefined, 'command is omitted for a command-less item');
 });
 
+// ---- S001 (ux polish): ToolResultEvent emission --------------------------------
+
+const toolResult = (events: TurnEvent[]): { output: string; command?: string; exitCode?: number } | undefined =>
+  events.find((e) => e.kind === 'tool-result') as { output: string; command?: string; exitCode?: number } | undefined;
+
+test('claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'tu-1', name: 'Bash', input: { command: 'npm test' } }] } }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu-1', content: 'ok\n42 passing' }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tr = toolResult(await collect(reg.get('claude').run(REQ({ provider: 'claude' }))));
+  assert.ok(tr, 'a tool-result was emitted');
+  assert.equal(tr!.output, 'ok\n42 passing', 'the tool output text is surfaced');
+  assert.equal(tr!.command, 'npm test', 'the command is correlated from the preceding tool_use (via tool_use_id)');
+});
+
+test('claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    // No preceding tool_use tracked for tu-9 -> command omitted (LLD allows undefined command).
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu-9', content: [{ type: 'text', text: 'line one\n' }, { type: 'text', text: 'line two' }] }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tr = toolResult(await collect(reg.get('claude').run(REQ({ provider: 'claude' }))));
+  assert.ok(tr, 'a tool-result was emitted');
+  assert.equal(tr!.output, 'line one\nline two', 'array text blocks are joined into one output string');
+  assert.equal(tr!.command, undefined, 'no easy correlation -> command omitted (k2)');
+});
+
+test('claude: a tool_result with empty content still emits a tool-result (empty output)', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu-e', content: '' }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tr = toolResult(await collect(reg.get('claude').run(REQ({ provider: 'claude' }))));
+  assert.ok(tr, 'a tool-result was emitted even with empty output');
+  assert.equal(tr!.output, '');
+});
+
+test('claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: 'just prose' }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const events = await collect(reg.get('claude').run(REQ({ provider: 'claude' })));
+  assert.ok(!events.some((e) => e.kind === 'tool-result'), 'a tool_result-less user line emits nothing new');
+});
+
+test('codex: a completed command_execution with output emits both a tool-call and a tool-result', async () => {
+  const lines = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', command: 'ls -la', aggregated_output: 'a.ts\nb.ts', exit_code: 0 } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const events = await collect(reg.get('codex').run(REQ({ provider: 'codex' })));
+  const tc = toolCall(events);
+  assert.ok(tc, 'a tool-call was emitted');
+  assert.equal(tc!.command, 'ls -la');
+  const tr = toolResult(events);
+  assert.ok(tr, 'a tool-result was emitted alongside');
+  assert.equal(tr!.output, 'a.ts\nb.ts', 'the aggregated output is surfaced');
+  assert.equal(tr!.command, 'ls -la', 'the tool-result carries the same command');
+  assert.equal(tr!.exitCode, 0, 'the exit code is surfaced');
+});
+
+test('codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)', async () => {
+  const lines = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', command: 'grep -rn foo src' } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const events = await collect(reg.get('codex').run(REQ({ provider: 'codex' })));
+  assert.ok(toolCall(events), 'a tool-call was emitted');
+  assert.ok(!events.some((e) => e.kind === 'tool-result'), 'no output -> no tool-result (k2)');
+});
+
 // ---- deriveChatTitle (LLM chat titling, option 1) ------------------------------
 
 import { deriveChatTitle } from '../cli-adapter.js';

@@ -103,6 +103,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   if ('role' in entry) {
     if (entry.role === 'user') return { kind: 'user', role: 'user', text: entry.text, collapsible: true };
     if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+    // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model
+    // (command line + separator + collapsed output). Single-sourced with the live-event branch below.
+    if (entry.role === 'tool-result') {
+      return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
+    }
     // 'marker' (S008): keep the sc1 marker class so a restored marker row renders identically.
     return entry.cssClass !== undefined
       ? { kind: 'fallback', text: entry.text, cssClass: entry.cssClass, collapsible: false }
@@ -114,6 +119,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   if (entry.kind === 'tool-call') {
     const label = entry.command ?? (entry.mcp ? `${entry.mcp.server} · ${entry.mcp.name}` : entry.tool);
     return { kind: 'tool-command', text: label, collapsible: false };
+  }
+  // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model as its
+  // replayed transcript twin (dual-input parity, a test pins the two).
+  if (entry.kind === 'tool-result') {
+    return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
   }
   return { kind: 'fallback', text: '', collapsible: false };
 }
@@ -130,6 +140,13 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-collapse__chevron:hover{color:var(--accent);}` +
   `.insrc-collapse__body{flex:1 1 auto;min-width:0;}` +
   `.insrc-collapse--collapsed .insrc-collapse__body{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}` +
+  // S001 (dev-chat ux polish): the tool-result row — a command line (green $ prompt) above a thin
+  // separator, then the collapsed output. The command stays visible; only the output collapses.
+  `.insrc-toolresult{}` +
+  `.insrc-toolresult__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;}` +
+  `.insrc-toolresult__prompt{color:var(--accent);}` +
+  `.insrc-toolresult__sep{height:1px;background:var(--border,#222a36);margin:6px 0;}` +
+  `.insrc-toolresult__out{color:var(--fg);white-space:pre-wrap;word-break:break-word;font-family:var(--font,monospace);}` +
   // S004: the in-chat permission-approval card (k6 i). Icon-only approve/deny buttons
   // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
   `.insrc-approval{border:1px solid rgba(251,191,36,.45);border-radius:10px;background:linear-gradient(180deg,rgba(251,191,36,.09),rgba(251,191,36,.03));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
@@ -238,9 +255,13 @@ export function renderRegistryWebviewSource(): string {
     `if('role' in entry){` +
     `if(entry.role==='user')return {kind:'user',role:'user',text:entry.text,collapsible:true};` +
     `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
+    `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
     `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
     `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
     `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return {kind:'tool-command',text:label,collapsible:false};}` +
+    // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model (parity).
+    `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
     `return {kind:'fallback',text:'',collapsible:false};}` +
     // 'fallback' is the existing flat writer: byte-identical to the pre-sc1 render (k2).
     `register('fallback',function(vm){return line(vm&&vm.text!=null?vm.text:'',vm&&vm.cssClass);});` +
@@ -273,7 +294,21 @@ export function renderRegistryWebviewSource(): string {
     `d.textContent='';d.appendChild(cap);d.appendChild(host.collapsible(body,{defaultCollapsed:true}));` +
     `return d;}` +
     `register('inline-diff',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'diff');});` +
-    `register('tool-result',function(vm,host){return captionRow(vm,host,(vm&&vm.meta&&vm.meta.caption)||'result');});` +
+    // S001 (dev-chat ux polish): a tool-result row shows the command line (always visible), a visual
+    // separator, then the output collapsed to a ~3-line preview (ONLY the output is wrapped in the
+    // sc1 collapse primitive; the command stays outside it). className/textContent only (k1, CSP-safe).
+    `function toolResultRow(vm,host){` +
+    `var meta=(vm&&vm.meta)||{};` +
+    `var cmd=meta.command!=null?String(meta.command):'';` +
+    `var output=meta.output!=null?String(meta.output):'';` +
+    `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--toolresult';` +
+    `if(cmd!==''){var c=document.createElement('div');c.className='insrc-toolresult__cmd';` +
+    `var p=document.createElement('span');p.className='insrc-toolresult__prompt';p.textContent='$';c.appendChild(p);` +
+    `var ct=document.createElement('span');ct.textContent=' '+cmd;c.appendChild(ct);wrap.appendChild(c);}` +
+    `var sep=document.createElement('div');sep.className='insrc-toolresult__sep';wrap.appendChild(sep);` +
+    `var out=document.createElement('div');out.className='insrc-toolresult__out';out.textContent=output;` +
+    `wrap.appendChild(host.collapsible(out,{defaultCollapsed:true}));return wrap;}` +
+    `register('tool-result',function(vm,host){return toolResultRow(vm,host);});` +
     // S004: the approval card (k6 i). requestId/title/detail ride vm.meta (chat-panel's live
     // handler builds the vm from an ApprovalRequestEvent). Icon-only approve(\\u2713)/deny(\\u2717)
     // buttons call the decision sink with (requestId, decision). textContent/className only (k1).

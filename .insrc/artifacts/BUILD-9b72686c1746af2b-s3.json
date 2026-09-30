@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s3",
+    "createdAt": "2026-09-30T08:04:25.863Z",
+    "updatedAt": "2026-09-30T08:04:38.037Z",
+    "approvedAt": "2026-09-30T08:04:38.077Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/diagram-companion-finalize.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/standalone-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T08:04:38.037Z"
+      }
+    ],
+    "summary": "Enriched the BUILD ledger record with an additive optional narrative `summary` (rendered as a `## Summary` omit-slot in renderPlanBuildRecordMd) and wired build-cycle feedback capture through the existing append-only appendFeedback writer. Both additions are omit-slot, so a record carrying neither is byte-identical to the pre-S003 output (k4); persistBuildRecord’s merge and the S002-owned writer are untouched (k5)."
+  }
+}

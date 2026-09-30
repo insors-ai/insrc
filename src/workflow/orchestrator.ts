@@ -1500,14 +1500,70 @@ function designEpicSynthesizer(
 }
 
 /**
- * sc4 (S003) — the AUTHOR-GATES companion render. The synthesizer LLM authors the
+ * S001 (harden-artifact-flows) — the pre-render companion-validation GATE. Runs
+ * the four existing companion validators over whichever authored definitions the
+ * body carries and, on ANY HIGH finding, returns a schema-kind RETRYABLE
+ * `ValidationFailure` whose `details[]` carry the specific error messages — so the
+ * finalizer surfaces it as a `FinalizeResult` failure and the client-driven
+ * synthesize phase re-prompts the author, instead of the render helpers silently
+ * swallowing the finding (k1). Returns `undefined` when every authored definition
+ * is valid (or none is present) — the render helpers then run unchanged. It is
+ * READ-ONLY: it never mutates the author's definition (k2). Only HIGH gates;
+ * MED/LOW never block. The DiagramGenerationError infra-failure path is a separate
+ * concern handled (swallowed) inside each render helper — an infra failure is NOT
+ * an author error and must never reach this gate.
+ */
+export function firstCompanionValidationFailure(body: {
+	readonly erDefinition?:                  ErDefinition | undefined;
+	readonly uxDefinition?:                  UxDefinition | undefined;
+	readonly sequenceDefinition?:            SequenceDefinition | undefined;
+	readonly componentDependencyDefinition?: ComponentDependencyDefinition | undefined;
+	readonly functionalDefinition?:          FunctionalDefinition | undefined;
+}): ValidationResult | undefined {
+	const failFor = (
+		slot:     string,
+		findings: readonly { readonly severity: string; readonly message: string }[],
+	): ValidationResult | undefined => {
+		const highs = findings.filter(f => f.severity === 'HIGH');
+		if (highs.length === 0) return undefined;
+		return {
+			ok:        false,
+			kind:      'schema',
+			message:   `authored ${slot} companion failed validation (${highs.length} HIGH finding${highs.length === 1 ? '' : 's'}); it is not rendered until the definition conforms — fix it and re-submit`,
+			details:   highs.map(f => `${slot}: ${f.message}`),
+			retryable: true,
+		};
+	};
+	if (body.erDefinition !== undefined) {
+		const f = failFor('erDefinition', validateErDefinition(body.erDefinition, body.functionalDefinition));
+		if (f !== undefined) return f;
+	}
+	if (body.uxDefinition !== undefined) {
+		const f = failFor('uxDefinition', validateUxDefinition(body.uxDefinition, body.functionalDefinition));
+		if (f !== undefined) return f;
+	}
+	if (body.sequenceDefinition !== undefined) {
+		const f = failFor('sequenceDefinition', validateSequenceDefinition(body.sequenceDefinition));
+		if (f !== undefined) return f;
+	}
+	if (body.componentDependencyDefinition !== undefined) {
+		const f = failFor('componentDependencyDefinition', validateComponentDependencyDefinition(body.componentDependencyDefinition));
+		if (f !== undefined) return f;
+	}
+	return undefined;
+}
+
+/**
+ * sc4 (S003) — the AUTHOR-GATED companion render. The synthesizer LLM authors the
  * `erDefinition` into the body only when an ER materially aids understanding (the
  * content-gate); finalize renders the companion DETERMINISTICALLY — NO provider
- * here. Given an authored erDefinition that carries no HIGH validation finding, it
- * renders the sibling `er-model.html` via docgen's assembleShell and returns the
- * CompanionArtifactRef the S002 Diagrams slot links. Never throws: a HIGH
- * validation finding or a DiagramGenerationError leaves the erDefinition in-body
- * without a picture (k1/k3). `destPath` is a sibling of the artifact `.md`.
+ * here. The definition's validation is now the finalizer's pre-render gate
+ * (`firstCompanionValidationFailure`), so this helper assumes an already-valid
+ * definition and only renders the sibling `er-model.html` via docgen's
+ * assembleShell, returning the CompanionArtifactRef the Diagrams slot links. Never
+ * throws: a DiagramGenerationError (docgen infra failure) leaves the erDefinition
+ * in-body without a picture (that is NOT an author error). `destPath` is a sibling
+ * of the artifact `.md`.
  */
 async function renderErCompanionForBody(
 	body:     { readonly erDefinition?: ErDefinition | undefined; readonly functionalDefinition?: FunctionalDefinition | undefined },
@@ -1516,13 +1572,9 @@ async function renderErCompanionForBody(
 ): Promise<CompanionArtifactRef | undefined> {
 	const erDef = body.erDefinition;
 	if (erDef === undefined) return undefined;
-	// Deterministic validation of the JSON element; a broken model is NOT rendered
-	// (the ER code-review handler surfaces the breach against the in-body element).
-	const problems = validateErDefinition(erDef, body.functionalDefinition);
-	if (problems.some(f => f.severity === 'HIGH')) {
-		log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: erDefinition has HIGH findings; leaving it in-body without a companion');
-		return undefined;
-	}
+	// S001: validation is the finalizer's pre-render gate now
+	// (firstCompanionValidationFailure) — this helper renders an already-valid
+	// definition. A DiagramGenerationError (infra failure) is still swallowed below.
 	try {
 		return await renderErCompanion(erDef, 'ER model', destPath, { repoPath });
 	} catch (err) {
@@ -1552,13 +1604,9 @@ async function renderUxCompanionForBody(
 ): Promise<CompanionArtifactRef | undefined> {
 	const uxDef = body.uxDefinition;
 	if (uxDef === undefined) return undefined;
-	// Deterministic validation of the JSON element; a broken model is NOT rendered
-	// (the UX code-review judge surfaces the breach against the in-body element).
-	const problems = validateUxDefinition(uxDef, body.functionalDefinition);
-	if (problems.some(f => f.severity === 'HIGH')) {
-		log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: uxDefinition has HIGH findings; leaving it in-body without a companion');
-		return undefined;
-	}
+	// S001: validation is the finalizer's pre-render gate now
+	// (firstCompanionValidationFailure) — this helper renders an already-valid
+	// definition. A DiagramGenerationError (infra failure) is still swallowed below.
 	try {
 		return await renderUxCompanion(uxDef, 'UX mock', destPath, { repoPath });
 	} catch (err) {
@@ -1591,38 +1639,32 @@ async function renderDiagramCompanionsForBody(
 ): Promise<readonly CompanionArtifactRef[]> {
 	const refs: CompanionArtifactRef[] = [];
 
+	// S001: validation is the finalizer's pre-render gate now
+	// (firstCompanionValidationFailure) — render each already-valid definition. A
+	// per-definition DiagramGenerationError (infra failure) is still swallowed so a
+	// valid sibling definition still renders.
 	const seqDef = body.sequenceDefinition;
 	if (seqDef !== undefined) {
-		const problems = validateSequenceDefinition(seqDef);
-		if (problems.some(f => f.severity === 'HIGH')) {
-			log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: sequenceDefinition has HIGH findings; leaving it in-body without a companion');
-		} else {
-			try {
-				refs.push(await renderSequenceCompanion(seqDef, 'Sequence diagram', joinPath(destDir, 'sequence-diagram.html'), { repoPath }));
-			} catch (err) {
-				if (err instanceof DiagramGenerationError) {
-					log.warn({ repoPath, status: err.status }, 'finalize: sequence companion render failed; sequenceDefinition stays in-body without a picture');
-				} else {
-					throw err;
-				}
+		try {
+			refs.push(await renderSequenceCompanion(seqDef, 'Sequence diagram', joinPath(destDir, 'sequence-diagram.html'), { repoPath }));
+		} catch (err) {
+			if (err instanceof DiagramGenerationError) {
+				log.warn({ repoPath, status: err.status }, 'finalize: sequence companion render failed; sequenceDefinition stays in-body without a picture');
+			} else {
+				throw err;
 			}
 		}
 	}
 
 	const compDef = body.componentDependencyDefinition;
 	if (compDef !== undefined) {
-		const problems = validateComponentDependencyDefinition(compDef);
-		if (problems.some(f => f.severity === 'HIGH')) {
-			log.warn({ repoPath, high: problems.filter(f => f.severity === 'HIGH').length }, 'finalize: componentDependencyDefinition has HIGH findings; leaving it in-body without a companion');
-		} else {
-			try {
-				refs.push(await renderComponentCompanion(compDef, 'Component dependencies', joinPath(destDir, 'component-dependency.html'), { repoPath }));
-			} catch (err) {
-				if (err instanceof DiagramGenerationError) {
-					log.warn({ repoPath, status: err.status }, 'finalize: component companion render failed; componentDependencyDefinition stays in-body without a picture');
-				} else {
-					throw err;
-				}
+		try {
+			refs.push(await renderComponentCompanion(compDef, 'Component dependencies', joinPath(destDir, 'component-dependency.html'), { repoPath }));
+		} catch (err) {
+			if (err instanceof DiagramGenerationError) {
+				log.warn({ repoPath, status: err.status }, 'finalize: component companion render failed; componentDependencyDefinition stays in-body without a picture');
+			} else {
+				throw err;
 			}
 		}
 	}
@@ -1741,6 +1783,11 @@ async function finalizeDesignEpic(
 	// erDefinition (the author-gate). Deterministic + provider-free; a sibling of
 	// the HLD.md, matching where synthesize writes it.
 	const hldMd = hldArtifactPaths(intent.repoPath, epicHash, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
+	// S001: surface a HIGH companion-validation finding as a retryable FinalizeResult
+	// failure (the author is re-prompted) instead of the render helpers swallowing
+	// it. Runs before any render/write, so no partial artifact is produced.
+	const companionValidationFailure = firstCompanionValidationFailure(body);
+	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath);
 	// sc4 (S004): a document can carry BOTH an ER diagram and a UX mock — render the
 	// UX companion alongside the ER one and attach both refs.
@@ -2092,6 +2139,11 @@ async function finalizeDesignStory(
 	// sc4 (S003): render + attach the ER companion when the LLM authored an
 	// erDefinition (author-gate). Deterministic; a sibling of the LLD.md.
 	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), 'epic', epicSlug).md;
+	// S001: surface a HIGH companion-validation finding as a retryable FinalizeResult
+	// failure (the author is re-prompted) instead of the render helpers swallowing
+	// it. Runs before any render/write, so no partial artifact is produced.
+	const companionValidationFailure = firstCompanionValidationFailure(body);
+	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
 	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);
@@ -2243,6 +2295,11 @@ async function finalizeStandaloneLld(
 	// sc4 (S003): render + attach the ER companion when the LLM authored an
 	// erDefinition (author-gate). Deterministic; a sibling of the standalone LLD.md.
 	const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), workItemKindOf(meta), epicSlug).md;
+	// S001: surface a HIGH companion-validation finding as a retryable FinalizeResult
+	// failure (the author is re-prompted) instead of the render helpers swallowing
+	// it. Runs before any render/write, so no partial artifact is produced.
+	const companionValidationFailure = firstCompanionValidationFailure(body);
+	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(lldMd), 'er-model.html'), intent.repoPath);
 	// sc4 (S004): render the UX mock companion alongside the ER one; both refs attach.
 	const uxCompanionRef = await renderUxCompanionForBody(body, joinPath(dirname(lldMd), 'ux-mock.html'), intent.repoPath);

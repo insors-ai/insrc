@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790754234838-22uc6t",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T07:43:54.839Z",
+    "model": "client",
+    "elapsedMs": 10,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s1"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/build-step/render.ts",
+        "src/mcp/build-step/types.ts",
+        "src/workflow/__tests__/diagram-companion-finalize.test.ts",
+        "src/workflow/orchestrator.ts",
+        "vscode-plugin/package.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/diagram-companion-finalize.test.ts:1",
+            "message": "The plan promised an integration test proving the DiagramGenerationError infra-swallow path resolves {ok:true} with the companion absent; it was not written at the finalize level. Rationale it is LOW, not a real gap: S001 does NOT modify that defensive catch (it is byte-identical), it is already covered at the helper level by companion/__tests__/render.test.ts + ux-render.test.ts (which stub a non-ok DocGenOutcome to force DiagramGenerationError and assert no file is written), and it cannot be triggered from a VALID definition at the finalize seam (validation is a superset guard, so a validated def renders cleanly) without a render stub that does not exist. All other promised tests are present and the full workflow suite (1077 tests) is green. Note: the graph grounding is hollow (empty testsReaching on just-edited files) and does not include the new companion-validation-gate.test.ts, so coverage was judged by running the suite, not the graph.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

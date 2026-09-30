@@ -70,8 +70,14 @@ export interface BuildRecord {
 		readonly changeLog?:   ChangeLog | undefined;
 		/** S002 (provenance/feedback): append-only, human-authored feedback on the
 		 *  build's changed code (populated out-of-band via `appendFeedback`, never by
-		 *  this writer). Absent → no `## Feedback` section (omit-slot). */
+		 *  this writer). Absent → no `## Feedback` section (omit-slot). S003 starts
+		 *  capturing build-cycle feedback into this same slot via `appendFeedback`. */
 		readonly feedback?:    FeedbackRecord | undefined;
+		/** S003 (harden-artifact-flows): an optional human-readable narrative
+		 *  "what changed and why" for the build, distinct from the per-file
+		 *  `changeLog`. Absent / empty → no `## Summary` section (omit-slot,
+		 *  byte-identity preserved for a record that carries none — k4). */
+		readonly summary?:     string | undefined;
 	};
 }
 
@@ -132,6 +138,14 @@ export function renderPlanBuildRecordMd(rec: BuildRecord): string {
 	lines.push(bits.join('  ·  '));
 	if (rec.body.commit !== undefined) {
 		lines.push('', `**Commit:** ${rec.body.commit}`);
+	}
+	// S003: an optional narrative change summary, reader-first (before the task
+	// list). Omit-slot: the heading is pushed only for a non-empty (trimmed)
+	// summary, mirroring the `## Changes`/`## Feedback` sections below, so a record
+	// without a summary renders byte-identically to the pre-S003 output (k4).
+	const summary = rec.body.summary?.trim() ?? '';
+	if (summary.length > 0) {
+		lines.push('', '## Summary', '', summary);
 	}
 	const tasks = rec.body.tasks ?? [];
 	if (tasks.length > 0) {

@@ -180,6 +180,58 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 	return lines.join('\n');
 }
 
+/** The spec a standalone (no-plan) build's VALIDATE gate verifies. Mirrors
+ *  {@link StandaloneBuildSpec} but for the validate phase: there is no plan task,
+ *  so the verdict is keyed on the Story identity and the gate reads the standalone
+ *  LLD (when present) rather than a per-task acceptance list. */
+export interface StandaloneValidateSpec {
+	readonly storyId:   string;
+	readonly sizeClass: string;
+	/** Relative LLD md path to read (Small only; a Trivial build has no LLD). */
+	readonly lldMdRel?: string | undefined;
+}
+
+/** Render the validate-gate prompt for a STANDALONE (no-plan) build. Same
+ *  skeptical, run-it-yourself contract as the plan-driven validate template, but
+ *  keyed on the Story identity and pointed at the standalone LLD. The verdict JSON
+ *  shape is IDENTICAL (parseVerdict + `passed` are shared), so the daemon parses it
+ *  the same way. */
+export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): string {
+	const lines: string[] = [
+		`# Build validation gate — standalone ${spec.sizeClass} Story \`${spec.storyId}\``,
+		'',
+		`You are the **validation gate** for a standalone build. An implementer claims ` +
+		`to have completed this Story. Decide — **from the actual repository state, not ` +
+		`from any summary** — whether it is genuinely done. Be skeptical.`,
+		'',
+	];
+	if (spec.lldMdRel !== undefined) {
+		lines.push(`## Design (LLD)`, '', `Read \`${spec.lldMdRel}\` — its contract, error paths, and test strategy define what "done" means.`, '');
+	}
+	lines.push(
+		'## Evidence to gather yourself (do NOT trust any summary)',
+		'1. **What actually changed** — `git show --stat HEAD` and `git diff --name-only`.',
+		`2. **Tests pass** — run the Story's tests, then \`${TEST_CMD}\`; read the output.`,
+		`3. **Typecheck** — run \`${TYPECHECK_CMD}\`; it must be clean.`,
+		'4. **Scope** — no changes outside the Story\'s stated surface; shared machinery untouched unless the LLD called for it.',
+		'',
+		'## Verdict — return this JSON exactly',
+		'```json',
+		'{',
+		`  "taskId": "${spec.storyId}",`,
+		'  "passed": false,',
+		'  "testsPassed": false,',
+		'  "typecheckClean": false,',
+		'  "scopeRespected": false,',
+		'  "reason": "<one line: why passed is true or false>"',
+		'}',
+		'```',
+		'`passed` is `true` **only if** the LLD\'s contract is satisfied **and** the tests ' +
+		'pass **and** typecheck is clean **and** scope is respected. **If you are unsure, fail.**',
+	);
+	return lines.join('\n');
+}
+
 // ---------------------------------------------------------------------------
 // Template loading (relative to the insrc root where copy-assets drops prompts)
 // ---------------------------------------------------------------------------

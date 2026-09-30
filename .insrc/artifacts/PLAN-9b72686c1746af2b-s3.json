@@ -1,0 +1,189 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790754939753-driu7z",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T07:58:28.428Z",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 168667,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two",
+    "storyId": "s3",
+    "lldRunId": "wf-1790754396835-tpowdp",
+    "lldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
+    "approvedAt": "2026-09-30T07:58:31.839Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building S003 is a small, single-file change to src/workflow/runners/build/standalone-record.ts: add an additive optional BuildRecord.body.summary and a `## Summary` omit-slot section to renderPlanBuildRecordMd, mirroring the existing `## Changes`/`## Feedback` sections. The in-cycle feedback capture needs no new code — the existing append-only appendFeedback writer already appends to the BUILD json and the renderer already shows `## Feedback`. The tests prove the summary renders + persists, feedback accretes via appendFeedback, the upsert preserves a prior summary, and a record with neither is byte-identical to today.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add BuildRecord.body.summary + the `## Summary` omit-slot render section",
+        "summary": "In src/workflow/runners/build/standalone-record.ts: (a) add `readonly summary?: string | undefined` to the BuildRecord.body interface (additive, optional); (b) in renderPlanBuildRecordMd add a `## Summary` section pushed ONLY when rec.body.summary is a non-empty (trimmed) string, mirroring the existing `## Changes`/`## Feedback` omit-slot pattern, positioned reader-first (after the header/commit line). Do NOT touch mergeWithPrior (its {...prior.body, ...rec.body} already carries the new field and preserves an omitted one) or the S002-owned standalone resolution. In-cycle feedback needs NO new code — the existing appendFeedback writer already appends to the BUILD json and renderPlanBuildRecordMd already renders `## Feedback`.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "BuildRecord.body has an additive optional `summary?: string` field; every existing record json stays valid (no data rewrite)",
+          "renderPlanBuildRecordMd emits a `## Summary` section carrying the narrative only when body.summary is a non-empty string; an empty/whitespace or absent summary emits no heading",
+          "A record with neither summary nor feedback renders byte-identically to the pre-S003 output (k4)",
+          "mergeWithPrior, the persistBuildRecord signature, and the S002-owned standalone resolution are unchanged (sc1 consumed as-is); npx tsc --noEmit is clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "smoke: npx tsc --noEmit is clean after adding body.summary + the `## Summary` omit-slot section"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add unit + integration tests for the summary render + in-cycle feedback capture",
+        "summary": "Add tests (node:test / tsx --test, assert/strict), e.g. src/workflow/runners/build/__tests__/build-record-enrichment.test.ts. Unit: renderPlanBuildRecordMd over hand-built BuildRecords — summary set -> `## Summary` present; empty summary -> no section; summary XOR feedback -> only the present section; neither -> byte-identical golden. Integration (reuse the build-step.test.ts persist harness): persistBuildRecord with body.summary -> json carries summary + md renders `## Summary` (ac1); appendFeedback against the persisted BUILD json -> body.feedback accretes + md renders `## Feedback` (ac2); a re-validate omitting body.summary -> mergeWithPrior preserves the prior summary; persistBuildRecord with neither -> md byte-identical to today (ac3).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Unit tests cover the `## Summary` omit-slot (present / empty / XOR / byte-identical golden) [ac1, ac3]",
+          "Integration tests prove persistBuildRecord writes+renders a summary [ac1], appendFeedback on the persisted BUILD json captures feedback + renders `## Feedback` [ac2], the upsert preserves a prior summary, and the neither-present record is byte-identical [ac3]",
+          "The full workflow + build-step test sweeps run green"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "unit: renderPlanBuildRecordMd with body.summary set -> `## Summary` present; empty/whitespace or absent -> no section"
+          },
+          {
+            "level": "unit",
+            "name": "unit: renderPlanBuildRecordMd with a summary XOR feedback -> only the present section renders"
+          },
+          {
+            "level": "unit",
+            "name": "unit: renderPlanBuildRecordMd with neither summary nor feedback -> byte-identical to the pre-S003 golden render"
+          },
+          {
+            "level": "integration",
+            "name": "integration: persistBuildRecord with body.summary -> json carries summary + md renders `## Summary` (ac1)"
+          },
+          {
+            "level": "integration",
+            "name": "integration: appendFeedback against the persisted BUILD json -> body.feedback accretes + md renders `## Feedback` (ac2)"
+          },
+          {
+            "level": "integration",
+            "name": "integration: a re-validate that omits body.summary -> mergeWithPrior preserves the prior summary"
+          },
+          {
+            "level": "integration",
+            "name": "integration: persistBuildRecord with neither summary nor feedback -> md byte-identical to today (ac3)"
+          },
+          {
+            "level": "smoke",
+            "name": "smoke: npx tsx --test 'src/workflow/**/*.test.ts' + the build-step suite run green"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderPlanBuildRecordMd with body.summary set -> a `## Summary` section carrying the narrative is present",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderPlanBuildRecordMd with body.summary = '' (empty/whitespace) -> NO `## Summary` section (omit-slot)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderPlanBuildRecordMd with a summary XOR feedback -> only the present section renders",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderPlanBuildRecordMd with neither summary nor feedback -> byte-identical to the pre-S003 render (golden string compare)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistBuildRecord with body.summary -> the json carries body.summary and the .md renders `## Summary` (ac1)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "appendFeedback against the persisted BUILD-<hash>-<storyId>.json -> body.feedback accretes the entry and the .md renders `## Feedback` (ac2)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistBuildRecord then a re-validate that omits body.summary -> mergeWithPrior PRESERVES the prior summary (upsert)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistBuildRecord with neither summary nor feedback -> the .md is byte-identical to today (ac3); fail-open on a persist error is unchanged (k5)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails + dataModelChanges — the additive BuildRecord.body.summary field + the `## Summary` omit-slot in renderPlanBuildRecordMd (standalone-record.ts)",
+      "quotedText": "Add readonly summary?: string; renderPlanBuildRecordMd pushes `## Summary` only when non-empty, mirroring `## Changes`/`## Feedback`; mergeWithPrior + persistBuildRecord signature unchanged."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration + invariantsToPreserve — additive omit-slot, byte-identity (k4), fail-open (k5), sc1 consumed unchanged",
+      "quotedText": "A record with neither summary nor feedback renders byte-identically to today; the S002-owned merge/resolution + persistBuildRecord signature are consumed unchanged."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails (appendFeedback) + errorPaths — in-cycle feedback captured via the existing append-only appendFeedback writer against the persisted BUILD json (fail-open)",
+      "quotedText": "appendFeedback appends body.feedback=[...existing,entry]; S003 reuses it in-cycle; renderPlanBuildRecordMd already renders `## Feedback`."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy — unit render tests + integration persist/summary + appendFeedback capture + byte-identity golden, extending build-step.test.ts",
+      "quotedText": "Unit render omit-slot tests + integration persist-summary + appendFeedback-on-BUILD-json + upsert-preserve + byte-identical golden."
+    }
+  ]
+}

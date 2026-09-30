@@ -63,6 +63,11 @@ export interface BuildStepInputValidate {
 	/** Optional epic scope for a structural `target` in a multi-epic dir — see
 	 *  `BuildStepInputImplement.epicHash`. Absent → today's behaviour. */
 	readonly epicHash?: string | undefined;
+	/** Present for a triage-routed no-plan (standalone) build — mirrors
+	 *  `BuildStepInputImplement.standalone`. When set, validate resolves the story
+	 *  identity from this context (bypassing the plan-driven task resolver) and
+	 *  persists the standalone story's BUILD ledger record. Absent → plan-driven. */
+	readonly standalone?: BuildStandaloneContext | undefined;
 }
 
 export type BuildStepInput =

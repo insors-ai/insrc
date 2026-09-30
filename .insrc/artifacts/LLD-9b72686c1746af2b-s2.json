@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790750067728-ftqeit",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T06:42:21.499Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 473731,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "epicHash": "9b72686c1746af2b",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1790749192360-iyxm4i",
+    "hldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "3.1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "BuildStepInputValidate (types.ts:59) currently has no standalone field, while BuildStepInputImplement (types.ts:56) carries standalone?: BuildStandaloneContext.",
+          "evidence": "Confirmed: types.ts:59 `export interface BuildStepInputValidate {` (no standalone field), :56 `readonly standalone?: BuildStandaloneContext | undefined;` on BuildStepInputImplement.",
+          "action": "Accept — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "2.2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "handleValidate resolves via resolveTaskRef at validate.ts:64 and the persist-on-verdict block (persistBuildRecord) is at validate.ts:102, reached only after resolution.",
+          "evidence": "Confirmed: validate.ts:64 `const resolved = resolveTaskRef(...)` and :102 `persistBuildRecord(...)`; collectBuildChangeLog is present in the persist block.",
+          "action": "Accept — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "implement.ts has handleStandaloneImplement resolving identity from a BuildStandaloneContext (the pattern S002 mirrors), with the identity guard around implement.ts:100-113.",
+          "evidence": "Confirmed: implement.ts:70 `function handleStandaloneImplement` + a `BuildStandaloneContext` interface — the standalone identity-resolution pattern S002 mirrors.",
+          "action": "Accept — citation resolves.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "persistBuildRecord is an upsert (mergeWithPrior) that preserves createdAt + approval stamps; collectBuildChangeLog yields the file-level change list; both are consumed unchanged.",
+          "evidence": "Confirmed: standalone-record.ts has `function persistBuildRecord` + `function mergeWithPrior` (the upsert) and collectBuildChangeLog exists — all consumed unchanged.",
+          "action": "Accept — semantic claim holds.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "4",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "sc1 (BUILD ledger record contract) is owned by s2 per the HLD, so this LLD implementing sc1 matches the HLD ownership.",
+          "evidence": "Confirmed: the sc1 'BUILD ledger record contract' exists in the approved HLD and its ownedByStory is s2 (authored + approved this session; the ownedByStory grep returned 0 only because the probe scans src/, not .insrc/artifacts/ where the HLD JSON lives). This LLD implementing sc1 matches the HLD ownership.",
+          "action": "Accept — cross-artifact ownership holds.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5
+      },
+      "reviewedAt": "2026-09-30T06:43:24.703Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-30T06:44:25.932Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "S002 makes the existing BUILD-record writer reachable for a small standalone story. Today build-step validate resolves its target only through the plan-driven task resolver, so a standalone (bugfix-routed) story is rejected before any record is written. This Story adds an optional standalone context to the validate input and a matching branch in the validate handler that resolves the story identity from that context (mirroring the implement phase), then reuses the existing verdict + fail-open persist path so the standalone story lands a BUILD-<hash>-<storyId> record with its file-level change trace. The record shape and writer are unchanged — only its reachability.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Both halves of the Epic are delivered by extending existing seams rather than introducing new machinery, which is why alternative a1 was chosen over tightening the emit schema (a2, schema-duplication drift) or adding a dedicated validation phase (a3, protocol change near a non-goal). For the design-artifact half (S001), the strict companion validators already run at finalize; the framework's single change is to stop the finalize render helpers swallowing a HIGH finding and instead let finalizeArtifact return its existing FinalizeResult failure carrying the validation errors. The client-driven synthesize phase already maps a FinalizeResult failure to a retryable error that re-prompts the author, so surface-and-retry (k1) is achieved with the proven path and the author's definition is only surfaced, never rewritten (k2). Because all four authored companion kinds (ER, UX, sequence, component-dependency) pass through the same finalize helpers, the behaviour is uniform (lc1).\n\nFor the build half (S002 + S003), the framework treats the BUILD ledger record as a shared contract owned by the story that makes it reachable for every story. S002 gives build-step validate a standalone branch that mirrors the existing standalone handling in implement, so a Small standalone story resolves its identity without the plan-driven task resolver and reaches the existing persistBuildRecord upsert + collectBuildChangeLog path (k3), while a persist failure stays fail-open (k5). S003, which depends on S002, extends that same record with a narrative change summary and a build-cycle feedback slot as additive omit-slot sections of the body and its renderer, so a record carrying neither is byte-identical to today's output (k4).",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "BUILD ledger record contract",
+          "purpose": "The persisted BUILD-<epicHash>-<storyId> record shape + its writer, made reachable for every story (S002) and enriched with an optional change summary + feedback (S003). S003 depends on S002, so it consumes the contract its owner establishes.",
+          "interfaceSketch": "// type-level only\ninterface BuildRecord {\n  readonly meta: {\n    readonly workflow: 'build';\n    readonly standalone: boolean;\n    readonly epicHash: string;\n    readonly storyId: string;\n    readonly createdAt: string;\n    readonly updatedAt?: string | undefined;\n    readonly approvedAt?: string | undefined;\n    // ...existing completion/rejection stamps preserved verbatim\n  };\n  readonly body: {\n    readonly tasks?: readonly { readonly id: string; readonly passed?: boolean } []| undefined;\n    readonly changeLog?: ChangeLog | undefined;      // existing (S002 populates for standalone)\n    readonly feedback?: FeedbackRecord | undefined;  // existing field; S003 captures in-cycle\n    readonly summary?: string | undefined;           // NEW (S003) omit-slot narrative change summary\n    // ...existing focus/producesLld/commit\n  };\n}\n// writer stays an upsert; persist failure is fail-open (k5)\ndeclare function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string };",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c1",
+            "c5"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "Private to S002: the build-step validate standalone branch that resolves a Small standalone story's identity (from the standalone inputs) without the plan-driven resolveTaskRef, so it reaches the shared BUILD record writer. The record contract it establishes is shared (sc1); the resolution branch itself is internal."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [],
+          "depends": [],
+          "internal": "Entirely private to S001: the change to the finalize render helpers (renderErCompanionForBody / renderUxCompanionForBody / renderDiagramCompanionsForBody) so a HIGH companion-validation finding yields a finalize failure instead of a swallowed warn, and the plumbing that routes that failure through the existing FinalizeResult -> synthesize retryable-error path. No other story consumes this; S001 has no dependents and no dependencies. The retry semantics themselves are the existing synthesize contract, unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Private to S003: the additive omit-slot rendering of the new summary + feedback sections in the BUILD record markdown renderer, and the capture of build-cycle feedback into the record. It consumes the sc1 record contract established by S002 and extends its body with the optional summary slot; the omit-slot rendering + capture wiring are internal."
+        }
+      ],
+      "rolloutPhase": "Phase A — Foundational fixes (two silent-failure regressions)",
+      "nonFunctional": {
+        "performance": "No new LLM calls. Companion validation is the existing deterministic ajv/validator pass already run at finalize; S001 only changes how its result is propagated. Build-record changes are local filesystem writes as today.",
+        "durability": "The BUILD record writer stays an upsert that preserves createdAt + completion/rejection stamps; a persist failure is swallowed so it never converts a real build verdict into an error (k5).",
+        "observability": "Companion-validation failures move from a silent warn to a first-class, author-visible retry message carrying the specific errors; the existing warn logs may remain for operators."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "BuildStepInputValidate",
+          "signature": "interface BuildStepInputValidate { readonly phase: 'validate'; readonly target: string; readonly repo?: string; readonly epicHash?: string | undefined; readonly standalone?: BuildStandaloneContext | undefined }",
+          "parameters": [
+            {
+              "name": "standalone",
+              "type": "BuildStandaloneContext | undefined",
+              "purpose": "NEW optional field mirroring BuildStepInputImplement.standalone: present for a triage-routed no-plan (standalone) build, carrying the self-minted epicHash + storyId used to key the BUILD record. Absent → today's plan-driven behaviour.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "n/a (interface)",
+            "meaning": "The validate-phase input type, extended additively so the MCP router can thread the already-accepted standalone object into the typed handler."
+          },
+          "errors": [],
+          "preconditions": [
+            "When standalone is present with sizeClass 'small', standalone.epicHash must be set (it locates the story identity)."
+          ],
+          "postconditions": [
+            "The plan-driven fields (target/epicHash) are unchanged; a call with no standalone behaves exactly as today."
+          ]
+        },
+        {
+          "name": "handleValidate",
+          "signature": "handleValidate(input: BuildStepInputValidate): Promise<BuildStepDone | BuildStepError>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "BuildStepInputValidate",
+              "purpose": "The validate request; when input.standalone is present the handler takes the standalone branch instead of the plan-driven resolveTaskRef.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<BuildStepDone | BuildStepError>",
+            "meaning": "Unchanged shape: the daemon-run verdict ({ next:'done', verdict, passed }) or an error. The standalone branch produces the same BuildStepDone; its side effect is persisting the standalone BUILD record."
+          },
+          "errors": [
+            {
+              "type": "BuildStepError('no-repo')",
+              "condition": "No repo resolvable (unchanged)."
+            },
+            {
+              "type": "BuildStepError('no-identity')",
+              "condition": "input.standalone present for a Small build but standalone.epicHash is missing (mirrors implement's identity guard)."
+            },
+            {
+              "type": "BuildStepError('unresolved-target')",
+              "condition": "PLAN-DRIVEN path only (input.standalone absent) — unchanged; the standalone branch never calls resolveTaskRef."
+            },
+            {
+              "type": "BuildStepError('unparseable-verdict')",
+              "condition": "The verdict session emitted no parseable JSON verdict (unchanged, applies to both branches)."
+            }
+          ],
+          "preconditions": [
+            "The repo is registered + indexed (unchanged).",
+            "When input.standalone is present, its epicHash + storyId (default 'S001') identify the standalone story."
+          ],
+          "postconditions": [
+            "When input.standalone is present, on a parseable verdict the handler persists BUILD-<epicHash>-<storyId>.json via persistBuildRecord + collectBuildChangeLog and returns the verdict; a persist failure is swallowed (fail-open) and the verdict is still returned.",
+            "When input.standalone is absent, behaviour is byte-identical to today (resolveTaskRef → existing persist block)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildStepInputValidate",
+        "change": "field-add",
+        "details": "Add an optional `standalone?: BuildStandaloneContext` field, mirroring BuildStepInputImplement.standalone (types.ts:56). Additive + optional: existing plan-driven callers are unaffected. The MCP tool schema already accepts a standalone object on validate; this threads it into the typed input so handleValidate can read it.",
+        "callSites": [
+          "src/mcp/build-step/types.ts:59",
+          "src/mcp/build-step/phases/validate.ts:64"
+        ]
+      },
+      {
+        "entity": "Standalone BUILD ledger record (BUILD-<epicHash>-<storyId>) on the validate path",
+        "change": "invariant-change",
+        "details": "NEW invariant: a small standalone story's validate now WRITES a BUILD record. handleValidate gains a branch (gated on input.standalone) that resolves the identity from the context (sizeClass = ctx.sizeClass ?? 'small', epicHash = ctx.epicHash, storyId = ctx.storyId ?? 'S001'), runs the existing read-only verdict session, and reuses the existing persist-on-verdict block (validate.ts:93-112) with that identity — calling persistBuildRecord + collectBuildChangeLog. The record shape is UNCHANGED (S003 adds summary/feedback, not S002); k4 byte-identity + k5 fail-open are preserved because the existing block is reused verbatim.",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts:93",
+          "src/mcp/build-step/phases/validate.ts:102",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/runners/build/changed-files.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "S002 owns sc1 and establishes its reachability: it makes the existing persistBuildRecord writer (+ collectBuildChangeLog change trace) reach a small standalone story by resolving that story's identity in the validate handler. S002 consumes the record shape unchanged — it adds NO summary/feedback fields (those are S003's additive extension of this same contract), so the record it writes is byte-identical to a plan-driven record's body today (k4)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A standalone validate call for a Small build arrives without standalone.epicHash, so the story identity cannot be resolved.",
+          "detection": "The standalone branch checks standalone.epicHash before resolving identity (mirroring implement's identity guard at implement.ts:100-113); a missing epicHash is caught there, not by resolveTaskRef.",
+          "response": "Return BuildStepError('no-identity') with a message naming the required standalone.epicHash + storyId; do NOT write a BUILD-undefined path.",
+          "userImpact": "The caller re-invokes validate with the standalone epicHash (the same value used for implement). No partial/garbage record is written.",
+          "recoverable": true
+        },
+        {
+          "scenario": "persistBuildRecord throws while writing the standalone BUILD json/md (e.g. a filesystem/permission fault).",
+          "detection": "The existing try/catch that wraps the persist-on-verdict block (validate.ts:106-111) catches the throw and logs a warn; the daemon's parsed verdict is already computed by then.",
+          "response": "Swallow the persist failure (fail-open) and still return { next:'done', verdict, passed } — the verdict is never converted into an error.",
+          "userImpact": "The build verdict is returned as normal; the BUILD record may be absent for that run, but the build itself is not failed. A re-run (upsert) can write it.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A standalone story whose BUILD-<epicHash>-<storyId>.json already exists (a re-validate).",
+          "expected": "persistBuildRecord's upsert (mergeWithPrior) merges on the prior record — preserving the original createdAt and any approval/rejection stamps — rather than clobbering a possibly-completed story."
+        },
+        {
+          "input": "A standalone build whose changed set is empty (no files changed).",
+          "expected": "collectBuildChangeLog returns [] and the changeLog is omitted from the body (omit-slot), so the record renders byte-identically to a no-change record — the same behaviour a plan-driven no-change build gets."
+        },
+        {
+          "input": "A standalone context with no storyId.",
+          "expected": "storyId defaults to 'S001' (mirroring handleStandaloneImplement), so the record is keyed BUILD-<epicHash>-S001."
+        },
+        {
+          "input": "A validate call that carries BOTH a standalone context and a plan-driven target string.",
+          "expected": "The standalone branch is gated on input.standalone being present and takes precedence; the target is ignored for the standalone path (it is only used by the plan-driven resolveTaskRef path)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "When input.standalone is ABSENT, handleValidate behaves byte-identically to today: it calls resolveTaskRef and reaches the existing persist block unchanged — the plan-driven validate path is not altered.",
+          "source": "c1"
+        },
+        {
+          "text": "S002 does not change the BUILD record shape or renderer — it adds NO summary/feedback fields (those are S003's additive omit-slot extension), so a record it writes is byte-identical to a plan-driven record's body today (k4).",
+          "source": "c3"
+        },
+        {
+          "text": "A BUILD-record persist failure is fail-open: it is swallowed and never converts a real build verdict into an error (k5), exactly as the existing plan-driven persist block already behaves.",
+          "source": "c1"
+        },
+        {
+          "text": "persistBuildRecord is an upsert that preserves the original createdAt + completion/rejection stamps on a re-validate, so re-running validate never un-completes or churns a prior standalone record.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "tsx --test (node:test + node:assert/strict) — the daemon repo test runner, matching the existing src/mcp/build-step/__tests__ suites (build-step.test.ts uses _setBuildValidateProviderForTests to stub the verdict session).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the standalone validate branch persists a BUILD record with the change trace (ac1/ac3).",
+          "subjects": [
+            "handleBuildStep({phase:'validate', standalone:{standalone:true, epicHash, storyId:'S001', sizeClass:'small'}}) with a stubbed passing verdict writes BUILD-<epicHash>-S001.json (existsSync) keyed to the story identity (ac1)",
+            "the persisted standalone record carries the file-level changeLog from collectBuildChangeLog when the changed set is non-empty (ac3)",
+            "the returned value is the verdict ({next:'done', verdict, passed}) — same shape as the plan-driven path"
+          ],
+          "fixturesNeeded": [
+            "a tmp repo with a registered .insrc/artifacts + an approved standalone LLD for the story identity",
+            "the _setBuildValidateProviderForTests stub returning a canned JSON verdict",
+            "a git-changed file in the tmp repo so collectBuildChangeLog yields a non-empty list"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove fail-open + identity-guard error paths (ac4).",
+          "subjects": [
+            "a persistBuildRecord throw (stubbed) during the standalone branch is swallowed and the verdict is still returned — the build is not turned into an error (ac4)",
+            "a standalone validate call missing standalone.epicHash returns BuildStepError('no-identity') and writes no BUILD-undefined path"
+          ],
+          "fixturesNeeded": [
+            "a seam to force persistBuildRecord to throw (e.g. an unwritable artifacts dir) or a stubbed writer",
+            "the verdict-session stub"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Regression — the plan-driven validate path is unchanged (no standalone).",
+          "subjects": [
+            "handleBuildStep({phase:'validate', target:'s1/t1'}) (no standalone) still resolves via resolveTaskRef and persists the plan-driven BUILD record exactly as the existing build-step.test.ts:280 test asserts",
+            "a plan-driven validate with an unresolved target still returns BuildStepError('unresolved-target')"
+          ],
+          "fixturesNeeded": [
+            "the existing plan-driven fixtures from build-step.test.ts (approved plan + stubbed verdict)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the completion gate can approve the standalone record (ac2).",
+          "subjects": [
+            "after the standalone validate writes BUILD-<epicHash>-S001.json, approveWorkflowTarget (the completion gate) finds it by the BUILD- prefix and approves it — extending the approve-build-completion.test.ts pattern"
+          ],
+          "fixturesNeeded": [
+            "the tmp repo with the persisted standalone BUILD record + the approve-build-completion harness"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: standalone validate writes BUILD-<epicHash>-S001.json keyed to the story identity (existsSync)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: approveWorkflowTarget finds the persisted standalone BUILD record by BUILD- prefix and approves it (completion gate)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: the persisted standalone record carries the collectBuildChangeLog file-level change list for a non-empty changed set"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: a persistBuildRecord throw is swallowed and the verdict is still returned (fail-open)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1 bundles: BuildStepInputValidate (types.ts:59-66) has no `standalone` field, so handleValidate (validate.ts:59) always calls resolveTaskRef at :64 and returns err('unresolved-target') at :65 for a standalone story — never reaching the persist-on-verdict block at :93-112. implement.ts already dispatches on input.standalone to handleStandaloneImplement (implement.ts:70) which resolves identity from BuildStandaloneContext; validate has no such branch. Net: a small standalone story's build validates but persists NO BUILD record, so the completion gate finds nothing to approve.",
+      "stateAfter": "BuildStepInputValidate carries an optional `standalone?: BuildStandaloneContext` (mirroring implement). handleValidate, when input.standalone is present, resolves the story identity from it (sizeClass ?? 'small', epicHash, storyId ?? 'S001'), skips resolveTaskRef, runs the existing read-only verdict session, and reuses the existing persist-on-verdict block to write BUILD-<epicHash>-<storyId>.json via persistBuildRecord + collectBuildChangeLog. The plan-driven path (no standalone) is unchanged. A small standalone story now lands a BUILD record with its change trace, which the completion gate can approve.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add an optional `standalone?: BuildStandaloneContext` field to the BuildStepInputValidate interface (additive, mirroring BuildStepInputImplement).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Thread the already-accepted `standalone` object from the MCP build-step tool input through the router into the typed BuildStepInputValidate for the validate phase.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In handleValidate, add an early branch gated on `input.standalone` present: resolve epicHash/storyId/sizeClass from the context (mirroring handleStandaloneImplement), returning a 'no-identity' error when a Small build lacks epicHash; when absent, fall through to the existing resolveTaskRef path unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "In the standalone branch, run the existing verdict session and reuse the existing persist-on-verdict block (validate.ts:93-112) with the resolved identity, so persistBuildRecord + collectBuildChangeLog write the record; keep the try/catch fail-open behaviour verbatim.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Extend the build-step tests: assert a standalone validate persists BUILD-<hash>-S001.json with the change-log (ac1/ac3), a persist failure keeps the verdict (ac4), the completion gate approves the record (ac2), and the plan-driven path is unchanged; run the daemon test sweep to confirm green.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The only public-ish surface touched is the internal MCP BuildStepInputValidate type, extended ADDITIVELY with an optional field — every existing plan-driven validate caller (no standalone) is unaffected and behaves byte-identically (resolveTaskRef → existing persist block). No BUILD record shape change (S002 adds no fields; S003 owns that), so existing records + their renderer are untouched. The MCP tool's outer validate schema already accepts a standalone object, so no tool-contract change is visible to callers.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Inline standalone branch in handleValidate, mirroring handleStandaloneImplement",
+        "oneLineSummary": "Add `standalone?: BuildStandaloneContext` to BuildStepInputValidate and give handleValidate an early standalone branch that resolves epicHash/storyId from the context (same defaults as implement), skips resolveTaskRef, runs the existing verdict session, and reaches the existing persistBuildRecord path.",
+        "approach": "BuildStepInputValidate gains an optional `standalone: BuildStandaloneContext` field (the type already used by implement), and the MCP input router threads the accepted standalone object into it. In handleValidate, before the resolveTaskRef call, a branch checks input.standalone: when present it derives the record identity inline exactly as handleStandaloneImplement does (sizeClass = ctx.sizeClass ?? 'small', epicHash = ctx.epicHash, storyId = ctx.storyId ?? 'S001'), runs the existing read-only verdict session, and then reuses the existing persist-on-verdict block (validate.ts:93-112) with that identity to write BUILD-<hash>-<storyId>.json via persistBuildRecord + collectBuildChangeLog.\n\nThe plan-driven path is untouched: when input.standalone is absent, control flows to resolveTaskRef exactly as today. No shared writer or record shape changes — S002 only makes the existing writer reachable for a standalone story.",
+        "pros": [
+          "Smallest change proportionate to an S story: one input field + one guard branch that mirrors the implement pattern",
+          "Zero risk to the plan-driven validate path — the branch is gated strictly on input.standalone being present",
+          "Reuses the existing persist-on-verdict block, collectBuildChangeLog, and persistBuildRecord unchanged (k4/k5 preserved by construction)"
+        ],
+        "cons": [
+          "Duplicates the tiny identity-resolution defaults (sizeClass/epicHash/storyId) that implement also computes, so a future change to those defaults must touch two places"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Extract a shared standalone-identity resolver used by both implement and validate",
+        "oneLineSummary": "Same as a1, but factor the epicHash/storyId/sizeClass derivation into one small shared function that both handleStandaloneImplement and the new validate branch call, so the two phases cannot drift.",
+        "approach": "In addition to a1's input-field + branch, the identity-resolution defaults are lifted out of handleStandaloneImplement into a single shared helper (e.g. a resolveStandaloneIdentity(ctx) returning { epicHash, storyId, sizeClass }). Both the implement standalone path and the new validate standalone branch call it, guaranteeing they resolve identity identically.\n\nEverything else is as a1: the verdict session, persistBuildRecord, collectBuildChangeLog, and the plan-driven path are unchanged.",
+        "pros": [
+          "Eliminates the a1 duplication so implement and validate can never drift on how a standalone identity is resolved — directly serving the HLD's 'mirror implement' intent",
+          "One obvious place to change the resolution rule later"
+        ],
+        "cons": [
+          "Slightly more surface than an S story needs: it refactors the existing implement path (touching working code) to extract a 3-field helper",
+          "The extraction risks a subtle behaviour change in the implement path if the current inline logic has any nuance not captured by the helper"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Rank 2. Functionally equal to a1 and better at preventing implement/validate drift, but it refactors the working implement standalone path to extract a 3-field helper — more surface + a small regression risk to a passing path than an S story warrants. The duplication a1 leaves is trivial (three defaults)."
+      },
+      {
+        "id": "a3",
+        "name": "Minimal ref-shim: build a task ref from the standalone context and fall through to the existing persist block",
+        "oneLineSummary": "Add standalone to BuildStepInputValidate and, when present, synthesize the { epicHash, storyId, taskId } ref directly from the context (bypassing resolveTaskRef and the admission gate), then let the existing verdict + persist block run unchanged.",
+        "approach": "handleValidate, when input.standalone is present, constructs the resolved-ref shape it already uses downstream ({ epicHash: ctx.epicHash, storyId: ctx.storyId ?? 'S001', taskId: ctx.storyId ?? 'S001' }) instead of calling resolveTaskRef, then continues into the unchanged verdict session + persist-on-verdict block. No separate standalone handler function; the only new code is the ref-shim guard.",
+        "pros": [
+          "Fewest new lines — a single guard that produces the ref the rest of handleValidate already expects",
+          "Keeps all persist/verdict logic on one code path (no parallel standalone handler)"
+        ],
+        "cons": [
+          "Skips any standalone admission check that implement's handleStandaloneImplement performs (admitStandaloneBuild), so validate would run even if the standalone LLD is missing/unapproved — weaker than implement's gate",
+          "Hand-shaping the ref shape couples validate to resolveTaskRef's internal ref structure, which could drift if that structure changes"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Rank 3. Meets the acceptance criteria with the fewest lines but is the least faithful to the HLD's 'mirror implement' intent: it omits the admission gate implement applies and hard-couples to the internal ref shape, trading robustness for brevity."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 'validate-phase gap' — src/mcp/build-step/types.ts:59 (BuildStepInputValidate, no standalone), :56 (implement has it), validate.ts:64 (resolveTaskRef), :102 (persistBuildRecord)",
+      "quotedText": "handleValidate always calls resolveTaskRef and bails on a standalone target before reaching the persist-on-verdict block; the block is fail-open."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 'implement standalone pattern' — implement.ts:70 (handleStandaloneImplement), :100 (identity resolution), types.ts:33 (BuildStandaloneContext)",
+      "quotedText": "implement resolves standalone identity from BuildStandaloneContext (sizeClass/epicHash/storyId) — the pattern S002 mirrors in validate."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 'writer + completion gate' — standalone-record.ts (persistBuildRecord upsert + mergeWithPrior), changed-files.ts (collectBuildChangeLog), approve-build-completion.test.ts",
+      "quotedText": "persistBuildRecord is an upsert preserving createdAt/stamps; the completion gate finds records by the BUILD- prefix; S002 consumes all three unchanged."
+    }
+  ]
+}

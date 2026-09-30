@@ -15,6 +15,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -122,6 +123,21 @@ function seedSecondEpic(repo: string): void {
 
 function mkRepo(): string {
 	return mkdtempSync(join(tmpdir(), 'insrc-build-step-'));
+}
+
+/** A git repo with one committed baseline file and one uncommitted modification,
+ *  so `collectBuildChangeLog` (git-diff based) resolves a NON-empty changed set. */
+function mkGitRepoWithChange(): string {
+	const repo = mkRepo();
+	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+	git('init', '-q');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	writeFileSync(join(repo, 'touched.ts'), 'export const v = 1;\n');
+	git('add', '.');
+	git('commit', '-qm', 'baseline');
+	writeFileSync(join(repo, 'touched.ts'), 'export const v = 2;\n');   // uncommitted change
+	return repo;
 }
 
 /** Parse the single text content block back into the BuildStepOutput. */
@@ -315,6 +331,129 @@ test('validate: a BUILD-record persist failure is swallowed — the verdict is s
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done', 'persistence failure never converts a real verdict into an error');
 		assert.equal(out['passed'], true);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// validate — STANDALONE (no-plan) branch (S002): resolves the Story identity
+// from the standalone context, runs the SAME verdict + persist path, and lands
+// a BUILD record for the completion gate — WITHOUT a plan.
+// ---------------------------------------------------------------------------
+
+test('validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone:false, story task)', async () => {
+	const repo = mkRepo();
+	try {
+		// DEF (folder anchor) + LLD (the standalone Small spec) — but NO plan.
+		seedDef(repo); seedLld(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		const env = await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
+		});
+		const out = outputOf(env);
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+		assert.equal((out['verdict'] as { taskId: string }).taskId, 's1');
+
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		assert.ok(existsSync(json), 'a standalone build persisted a BUILD-<epicHash>-<storyId>.json record');
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+		// Byte-identical shape to the plan-driven record (k4/k5): the verdict keys
+		// the story identity as its single task, standalone:false either way.
+		assert.equal(rec.meta['standalone'], false);
+		assert.equal(rec.meta['workflow'], 'build');
+		assert.equal(rec.meta['epicHash'], HASH);
+		assert.equal(rec.meta['storyId'], 's1');
+		assert.deepEqual(rec.body['tasks'], [{ id: 's1', passed: true }]);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set', async () => {
+	const repo = mkGitRepoWithChange();
+	try {
+		seedDef(repo); seedLld(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
+		}));
+		assert.equal(out['next'], 'done');
+
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { body: { changeLog?: { target: { file: string }; author: string }[] } };
+		assert.ok(Array.isArray(rec.body.changeLog), 'a non-empty changed set lands a `changeLog` on the record');
+		const files = rec.body.changeLog!.map(e => e.target.file);
+		assert.ok(files.includes('touched.ts'), `the git-changed file is recorded (got ${JSON.stringify(files)})`);
+		assert.equal(rec.body.changeLog![0]!.author, 'insrc-build');
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('validate[standalone]: a persist failure is swallowed — the verdict is still returned', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo);
+		// Force the persist to throw by making the record json path a DIRECTORY.
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		mkdirSync(json, { recursive: true });
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
+		}));
+		assert.equal(out['next'], 'done', 'a persist failure never converts a real standalone verdict into an error');
+		assert.equal(out['passed'], true);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('validate[standalone]: a Small build with no resolvable identity → err(no-identity)', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo);
+		// Small ⇒ producesLld ⇒ the epicHash must be supplied (it locates the LLD);
+		// omitting it is unrecoverable (never mint a hash for a Small story).
+		const out = outputOf(await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, storyId: 's1', sizeClass: 'small' },
+		}));
+		assert.equal(out['next'], 'error');
+		assert.equal((out['error'] as { code: string }).code, 'no-identity');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('validate[standalone]: the persisted record is approvable by the completion gate', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
+		});
+		// The completion act: approve the persisted BUILD record by its json path.
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		approveArtifactByJsonPath(json);
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
+		assert.equal(typeof rec.meta['approvedAt'], 'string', 'approval stamps approvedAt on the standalone BUILD record');
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s1",
+    "createdAt": "2026-09-30T07:46:01.886Z",
+    "updatedAt": "2026-09-30T07:46:05.203Z",
+    "approvedAt": "2026-09-30T07:46:05.244Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/diagram-companion-finalize.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T07:46:05.203Z"
+      }
+    ]
+  }
+}

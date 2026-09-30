@@ -121,18 +121,22 @@ test('finalize: NEITHER diagram slot → no diagram companion (byte-identical, a
 	rmSync(repo, { recursive: true, force: true });
 });
 
-test('finalize: a malformed (dangling-ref) sequenceDefinition is swallowed; a valid component still renders', async () => {
-	const repo = mkdtempSync(join(tmpdir(), 'diagram-fin-swallow-'));
+test('finalize: a malformed (dangling-ref) sequenceDefinition now SURFACES a retryable failure (S001, was swallowed)', async () => {
+	// S001 (harden-artifact-flows): a HIGH companion-validation finding is no longer
+	// swallowed at render — the pre-render gate makes finalize return a retryable
+	// schema failure so the author is re-prompted, and NO artifact is written (even
+	// though a sibling componentDependencyDefinition here is valid — the whole
+	// artifact is gated, not the one companion).
+	const repo = mkdtempSync(join(tmpdir(), 'diagram-fin-surface-'));
 	const badSeq = { participants: [{ id: 'A' }], messages: [{ from: 'A', to: 'Z', label: 'x' }] };  // Z is undeclared → HIGH
 	const emit = { body: { ...minimalLldBody(), sequenceDefinition: badSeq, componentDependencyDefinition }, citations };
-	const result = await finalizeArtifact(intent(repo), {}, 'wf-swallow', 5, emit, 'client');
-	assert.equal(result.ok, true, 'finalize does not throw on a malformed definition');
-	if (!result.ok) return;
-	const artifact = result.finalized.artifact as LldArtifact;
-	// The bad sequence produced no companion; the valid component still did.
-	assert.equal(artifact.body.companions?.length, 1);
-	assert.match(artifact.body.companions![0]!.relPath, /component-dependency\.html$/);
-	// The malformed definition stays in-body (source of truth), just without a picture.
-	assert.deepEqual(artifact.body.sequenceDefinition, badSeq);
+	const result = await finalizeArtifact(intent(repo), {}, 'wf-surface', 5, emit, 'client');
+	assert.equal(result.ok, false, 'finalize surfaces the HIGH finding as a failure instead of swallowing it');
+	if (result.ok) return;
+	assert.equal(result.failure.ok, false);
+	if (result.failure.ok) return;
+	assert.equal(result.failure.kind, 'schema');
+	assert.equal(result.failure.retryable, true);
+	assert.ok((result.failure.details ?? []).some(d => /sequenceDefinition/.test(d)), 'the specific error is carried in details[]');
 	rmSync(repo, { recursive: true, force: true });
 });

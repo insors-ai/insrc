@@ -1,0 +1,507 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790754396835-tpowdp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T07:54:07.386Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 450522,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "epicHash": "9b72686c1746af2b",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1790749192360-iyxm4i",
+    "hldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The BUILD record writer + renderer live in standalone-record.ts: persistBuildRecord (an upsert) and renderPlanBuildRecordMd around lines 126-157.",
+          "evidence": "Confirmed: standalone-record.ts:126 `export function renderPlanBuildRecordMd(rec: BuildRecord): string` and :172 `export function persistBuildRecord(...)` — both the writer and renderer resolve in that file.",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "BuildRecord.body today has NO top-level narrative `summary` field (only focus/producesLld/tasks/commit/changeLog/feedback); S003 adds it.",
+          "evidence": "Confirmed: standalone-record.ts:70 `readonly changeLog?: ChangeLog | undefined` and the body carries feedback? but no `summary` field — the read at :61 anchors the body interface; S003's summary is genuinely new.",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderPlanBuildRecordMd emits omit-slot `## Changes` and `## Feedback` sections via changeLogBodyLines/feedbackBodyLines (pushed only when non-empty).",
+          "evidence": "Confirmed: standalone-record.ts:149 `lines.push('', '## Changes', '', ...changeLines)` and :153 `... '## Feedback' ...`, each gated on the binder yielding content — the omit-slot pattern S003 mirrors for `## Summary`.",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "persistBuildRecord upserts via mergeWithPrior computing body = {...prior.body, ...rec.body} (a new body field takes the new write; omitted keys are preserved).",
+          "evidence": "Confirmed verbatim: standalone-record.ts:232 `function mergeWithPrior(...)` with :247 `...prior.body,` and :248 `...rec.body,` — a new body field takes the new write; omitted keys are preserved from the prior.",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "appendFeedback (writer.ts) is the append-only feedback writer: body.feedback = [...existing, entry], preserving every other key, minting an id + timestamp.",
+          "evidence": "Confirmed verbatim: writer.ts:117 `export function appendFeedback(req): AppendFeedbackResult` and :145 `body: { ...artifact.body, feedback: [...existing, entry] }` — append-only, preserving every other key.",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The provenance vocabulary declares FeedbackEntry (id/target/comment/author/timestamp/kind?) + FeedbackRecord = readonly FeedbackEntry[] in provenance/types.ts.",
+          "evidence": "Confirmed: provenance/types.ts:37 `export interface FeedbackEntry extends ProvenanceAuthorship` and :50 `export type FeedbackRecord = readonly FeedbackEntry[]` (the citation's :45 was approximate; the symbol resolves at :50).",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The render binders feedbackBodyLines + changeLogBodyLines are defined in format/bindings.ts and return [] for absent/empty input (the omit-slot idiom S003 mirrors for `## Summary`).",
+          "evidence": "Confirmed: format/bindings.ts:74 `export function feedbackBodyLines(...)` and :91 `export function changeLogBodyLines(...)` — the omit-slot binders (they return [] for empty input).",
+          "action": "accept",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "appendFeedback validates non-empty author + comment and throws ArtifactFeedbackError otherwise (the fail-open-at-caller error the LLD relies on).",
+          "evidence": "Confirmed: writer.ts:33 `export class ArtifactFeedbackError extends Error` and :123/:124 throw it for an empty author/comment — the typed error the LLD's fail-open error paths rely on.",
+          "action": "accept",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-09-30T07:55:28.154Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-30T07:55:34.890Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "S003 makes the BUILD ledger record read like a changelog entry. It adds an additive, optional narrative `summary` to the BUILD record body — a plain-language 'what changed and why' rendered as a new `## Summary` omit-slot section beside the existing file-level `## Changes` list — and captures build-cycle feedback onto the record's existing `body.feedback` by reusing the proven append-only appendFeedback writer during the build. Both additions are omit-slot: a record that carries neither renders byte-identically to today (k4). It consumes the sc1 BUILD-record contract established by S002 without changing its writer's merge semantics.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Both halves of the Epic are delivered by extending existing seams rather than introducing new machinery, which is why alternative a1 was chosen over tightening the emit schema (a2, schema-duplication drift) or adding a dedicated validation phase (a3, protocol change near a non-goal). For the design-artifact half (S001), the strict companion validators already run at finalize; the framework's single change is to stop the finalize render helpers swallowing a HIGH finding and instead let finalizeArtifact return its existing FinalizeResult failure carrying the validation errors. The client-driven synthesize phase already maps a FinalizeResult failure to a retryable error that re-prompts the author, so surface-and-retry (k1) is achieved with the proven path and the author's definition is only surfaced, never rewritten (k2). Because all four authored companion kinds (ER, UX, sequence, component-dependency) pass through the same finalize helpers, the behaviour is uniform (lc1).\n\nFor the build half (S002 + S003), the framework treats the BUILD ledger record as a shared contract owned by the story that makes it reachable for every story. S002 gives build-step validate a standalone branch that mirrors the existing standalone handling in implement, so a Small standalone story resolves its identity without the plan-driven task resolver and reaches the existing persistBuildRecord upsert + collectBuildChangeLog path (k3), while a persist failure stays fail-open (k5). S003, which depends on S002, extends that same record with a narrative change summary and a build-cycle feedback slot as additive omit-slot sections of the body and its renderer, so a record carrying neither is byte-identical to today's output (k4).",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "BUILD ledger record contract",
+          "purpose": "The persisted BUILD-<epicHash>-<storyId> record shape + its writer, made reachable for every story (S002) and enriched with an optional change summary + feedback (S003). S003 depends on S002, so it consumes the contract its owner establishes.",
+          "interfaceSketch": "// type-level only\ninterface BuildRecord {\n  readonly meta: { readonly workflow: 'build'; readonly standalone: boolean; readonly epicHash: string; readonly storyId: string; readonly createdAt: string; readonly updatedAt?: string | undefined; readonly approvedAt?: string | undefined; };\n  readonly body: { readonly tasks?: readonly { readonly id: string; readonly passed?: boolean }[] | undefined; readonly changeLog?: ChangeLog | undefined; readonly feedback?: FeedbackRecord | undefined; readonly summary?: string | undefined; };\n}\ndeclare function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string };",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "c1",
+            "c5"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Private to S003: the additive omit-slot rendering of the new summary + feedback sections in the BUILD record markdown renderer, and the capture of build-cycle feedback into the record. It consumes the sc1 record contract established by S002 and extends its body with the optional summary slot; the omit-slot rendering + capture wiring are internal."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [],
+          "depends": [],
+          "internal": "Entirely private to S001: the change to the finalize render helpers so a HIGH companion-validation finding yields a finalize failure instead of a swallowed warn, routed through the existing FinalizeResult -> synthesize retryable-error path."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Private to S002: the build-step validate standalone branch that resolves a Small standalone story's identity without the plan-driven resolveTaskRef, so it reaches the shared BUILD record writer."
+        }
+      ],
+      "rolloutPhase": "Phase B — BUILD-record enrichment",
+      "nonFunctional": {
+        "performance": "No new LLM calls. Build-record changes are local filesystem writes as today.",
+        "durability": "The BUILD record writer stays an upsert that preserves createdAt + completion/rejection stamps; a persist failure is swallowed so it never converts a real build verdict into an error (k5).",
+        "observability": "The BUILD record gains a narrative summary + any build-cycle feedback, so a later reader understands the change from the record alone."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "persistBuildRecord",
+          "signature": "(repoPath: string, rec: BuildRecord) => { md: string; json: string }",
+          "parameters": [
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The BUILD record to upsert; its body now carries the additive optional `summary?: string` narrative (in addition to the existing tasks/changeLog/feedback).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "Unchanged. The writer upserts the record via mergeWithPrior ({...prior.body, ...rec.body}); the new body.summary simply takes the new write like any other body field. The merge semantics are NOT changed (feedback keeps its existing replace-on-write behaviour under this writer; in-cycle feedback accretes via appendFeedback instead)."
+          },
+          "errors": [
+            {
+              "type": "(none surfaced)",
+              "condition": "A persist failure stays fail-open at the caller (k5) exactly as today; persistBuildRecord itself is unchanged in its error behaviour."
+            }
+          ],
+          "preconditions": [
+            "rec.meta.epicHash + rec.meta.storyId are set (unchanged)."
+          ],
+          "postconditions": [
+            "When rec.body.summary is a non-empty string it is written to the record and rendered; when absent the record is byte-identical to today (ac3/k4).",
+            "The writer's mergeWithPrior + the S002-owned resolution are untouched."
+          ]
+        },
+        {
+          "name": "renderPlanBuildRecordMd",
+          "signature": "(rec: BuildRecord) => string",
+          "parameters": [
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The record to render; a `## Summary` section is emitted when rec.body.summary is a non-empty string.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The BUILD record markdown. NEW: an omit-slot `## Summary` section (the narrative paragraph) is pushed only when rec.body.summary is a non-empty string, mirroring the existing `## Changes`/`## Feedback` omit-slots; its position is after the header/commit and before/alongside `## Changes` (a reader-first ordering). A record without a summary renders byte-identically to today."
+          },
+          "errors": [
+            {
+              "type": "(none)",
+              "condition": "Pure string rendering; no error path."
+            }
+          ],
+          "preconditions": [
+            "None beyond a well-formed BuildRecord."
+          ],
+          "postconditions": [
+            "ac3/k4: with no summary and no feedback the output equals the pre-S003 render byte-for-byte (the headings are omitted, not emitted empty)."
+          ]
+        },
+        {
+          "name": "appendFeedback",
+          "signature": "(req: AppendFeedbackRequest) => AppendFeedbackResult",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "AppendFeedbackRequest",
+              "purpose": "The artifactPath (the persisted BUILD-<hash>-<storyId>.json) + the feedback entry (author, comment, target, optional kind) to append during the build cycle.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AppendFeedbackResult",
+            "meaning": "Unchanged. Appends one FeedbackEntry to body.feedback = [...existing, entry] (append-only, preserving every other key), minting an 8-char id + timestamp. S003 REUSES this existing writer to capture build-cycle feedback onto the BUILD record — no new feedback writer is introduced."
+          },
+          "errors": [
+            {
+              "type": "ArtifactFeedbackError",
+              "condition": "A missing/empty author or comment, or an artifactPath outside the artifact root (existing behaviour, unchanged)."
+            }
+          ],
+          "preconditions": [
+            "The BUILD record json already exists on disk (persistBuildRecord has run)."
+          ],
+          "postconditions": [
+            "The record's body.feedback carries the appended entry; renderPlanBuildRecordMd's existing `## Feedback` omit-slot then renders it (ac2)."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildRecord.body",
+        "change": "field-add",
+        "details": "Add `readonly summary?: string | undefined` — an additive, optional top-level narrative change summary. Omit-slot: absent → no `## Summary` section → byte-identical to today (ac3/k4). It is the human-readable 'what changed and why', distinct from the per-file `changeLog`. The existing `feedback?: FeedbackRecord` field is unchanged (S003 only starts populating it in-cycle via appendFeedback). No meta changes; no removal or rename. The HLD sc1 interfaceSketch already lists this field as S003's, so no HLD amendment is required.",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts:61",
+          "src/workflow/runners/build/standalone-record.ts:126",
+          "src/workflow/runners/build/standalone-record.ts:147"
+        ],
+        "schemaDiff": "interface BuildRecord['body'] { /* existing */ ; readonly summary?: string | undefined; }"
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "S003 consumes the sc1 BUILD-record contract + its writer (persistBuildRecord) established by S002 and extends the record body with the HLD-sanctioned optional `summary?` field + a `## Summary` omit-slot in renderPlanBuildRecordMd. It does NOT modify the S002-owned mergeWithPrior semantics or the standalone-resolution branch. In-cycle feedback is captured via the pre-existing appendFeedback writer against the persisted BUILD record json, so the feedback slot (already on the body) is filled without touching persistBuildRecord's merge. Byte-identity (k4) + fail-open (k5) are preserved because the writer is unchanged."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "In-cycle feedback capture is attempted before the BUILD record json exists on disk (appendFeedback called before persistBuildRecord).",
+          "detection": "appendFeedback resolves the artifactPath and reads the artifact json; a missing/unreadable BUILD-<hash>-<storyId>.json makes the read fail (ArtifactFeedbackError direct / {error} over the IPC).",
+          "response": "The in-cycle capture is ordered AFTER persistBuildRecord has written the record; if the record is nonetheless absent, the capture caller swallows the error and continues (fail-open, k5) — a feedback-capture failure must never convert a real build verdict into an error. The narrative summary path is unaffected (it is written by persistBuildRecord itself).",
+          "userImpact": "That feedback entry is not recorded, but the build verdict + record are unaffected; the reader simply sees no `## Feedback` section for that note.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A feedback entry is captured with an empty/whitespace author or comment.",
+          "detection": "appendFeedback trims author + comment and throws ArtifactFeedbackError when either is empty (existing, unchanged validation).",
+          "response": "The in-cycle caller treats it as a no-op (fail-open, k5): the entry is skipped and the build proceeds; no partial/blank feedback entry is written.",
+          "userImpact": "The malformed note is dropped; other valid feedback + the record are unaffected.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "rec.body.summary is an empty string (or whitespace-only).",
+          "expected": "renderPlanBuildRecordMd treats it as absent (the omit-slot check is a non-empty-string test, mirroring changeLogBodyLines/feedbackBodyLines) — no `## Summary` heading is emitted; the output stays byte-identical to a record with no summary (ac3/k4)."
+        },
+        {
+          "input": "A re-validated build (upsert) whose prior record carried a summary but the new persist call omits body.summary.",
+          "expected": "mergeWithPrior computes body = {...prior.body, ...rec.body}; because rec.body has no summary key, the prior summary is PRESERVED (the spread does not delete it) — consistent with how tasks/changeLog survive a re-validate. A summary is only replaced when a new one is supplied."
+        },
+        {
+          "input": "Multiple in-cycle feedback entries captured during one build.",
+          "expected": "appendFeedback is append-only (body.feedback = [...existing, entry]), so each call accretes; all entries render in order under the single `## Feedback` omit-slot section."
+        },
+        {
+          "input": "A build with a summary but no feedback (or vice-versa).",
+          "expected": "Only the present section renders (`## Summary` XOR `## Feedback`); the absent one is omitted, not emitted empty."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "persistBuildRecord stays an upsert that preserves the original createdAt + the completion/rejection stamps via mergeWithPrior; adding the optional body.summary does not change the merge (a new body field takes the new write; omitted fields are preserved from the prior).",
+          "source": "c1"
+        },
+        {
+          "text": "A BUILD-record persist OR feedback-capture failure stays fail-open — it never converts a real build verdict into an error (k5).",
+          "source": "c1"
+        },
+        {
+          "text": "A record that carries neither a summary nor feedback renders byte-identically to the pre-S003 output: the new sections are omit-slot (heading pushed only when the binder yields content), never emitted empty (k4).",
+          "source": "c5"
+        },
+        {
+          "text": "The S002-owned parts of sc1 — mergeWithPrior's merge semantics, the standalone-resolution branch, and the persistBuildRecord signature — are consumed unchanged; S003 only adds an optional body field + an omit-slot render section and reuses the existing appendFeedback writer.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (node --test / tsx --test), assert/strict — the repo convention used by src/workflow/**/*.test.ts and src/mcp/build-step/__tests__/*.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise renderPlanBuildRecordMd's new `## Summary` omit-slot and the unchanged `## Feedback`/`## Changes` omit-slots directly over hand-built BuildRecords.",
+          "subjects": [
+            "renderPlanBuildRecordMd with body.summary set -> a `## Summary` section carrying the narrative is present",
+            "renderPlanBuildRecordMd with body.summary = '' (empty/whitespace) -> NO `## Summary` section (omit-slot)",
+            "renderPlanBuildRecordMd with a summary XOR feedback -> only the present section renders",
+            "renderPlanBuildRecordMd with neither summary nor feedback -> byte-identical to the pre-S003 render (golden string compare)"
+          ],
+          "fixturesNeeded": [
+            "A minimal plan-driven BuildRecord (standalone:false, one task) as the golden baseline",
+            "A frozen pre-S003 expected-md string (or a computed baseline with the summary field stripped)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the write+render path: persistBuildRecord carries body.summary, and appendFeedback captures in-cycle feedback onto the persisted BUILD json.",
+          "subjects": [
+            "persistBuildRecord with body.summary -> the json carries body.summary and the .md renders `## Summary` (ac1)",
+            "appendFeedback against the persisted BUILD-<hash>-<storyId>.json -> body.feedback accretes the entry and the .md renders `## Feedback` (ac2)",
+            "persistBuildRecord then a re-validate that omits body.summary -> mergeWithPrior PRESERVES the prior summary (upsert)",
+            "persistBuildRecord with neither summary nor feedback -> the .md is byte-identical to today (ac3); fail-open on a persist error is unchanged (k5)"
+          ],
+          "fixturesNeeded": [
+            "A tmpdir repo + a persisted BUILD record json (reuse the build-step.test.ts persist harness)",
+            "An AppendFeedbackRequest fixture (author/comment/target) pointed at the BUILD json"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: renderPlanBuildRecordMd with body.summary set renders a `## Summary` section",
+            "integration: persistBuildRecord with body.summary -> json carries summary + md renders `## Summary`"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: appendFeedback against the persisted BUILD json accretes body.feedback and the md renders `## Feedback`"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: renderPlanBuildRecordMd with neither summary nor feedback is byte-identical to the pre-S003 golden render",
+            "integration: persistBuildRecord with neither -> the .md is byte-identical to today"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 bundles: BuildRecord.body (standalone-record.ts:61-75) has no top-level narrative `summary` field — only focus?/producesLld?/tasks?/commit?/changeLog?/feedback?. renderPlanBuildRecordMd (:126-157) emits `## Tasks validated`, then the omit-slot `## Changes` (:147) and `## Feedback` (:151) sections; there is no `## Summary`. The record's `body.feedback` is populated ONLY out-of-band, post-hoc, via appendFeedback (writer.ts) — the build cycle never fills it. persistBuildRecord is a fail-open upsert (mergeWithPrior at :232) that preserves createdAt + completion stamps.",
+      "stateAfter": "BuildRecord.body carries an additive optional `summary?: string`. renderPlanBuildRecordMd emits a `## Summary` omit-slot section (only when body.summary is a non-empty string), mirroring `## Changes`/`## Feedback`. The build cycle captures in-cycle feedback onto the record's existing `body.feedback` by calling the unchanged append-only appendFeedback writer against the persisted BUILD json. A record with neither a summary nor feedback renders byte-identically to today (k4); persistBuildRecord's merge + fail-open behaviour are unchanged (k5).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional field `readonly summary?: string | undefined` to the BuildRecord body interface (additive; no existing record has it, so all existing records remain valid).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add a `## Summary` omit-slot section to renderPlanBuildRecordMd: push the heading + the narrative paragraph only when rec.body.summary is a non-empty (trimmed) string, using the same content-gated push pattern as `## Changes`/`## Feedback`.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Wire in-cycle feedback capture: at/after the BUILD record persist on the build path, call the existing appendFeedback writer for any build-cycle feedback against the persisted BUILD json, fail-open (swallow a capture error so it never converts a real build verdict into an error). No change to persistBuildRecord's merge.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the unit tests (renderPlanBuildRecordMd omit-slot for summary + the byte-identical golden) and the integration tests (persistBuildRecord with a summary; appendFeedback capture on the persisted BUILD json; the neither-present byte-identity).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The BuildRecord body change is a purely additive optional field, so every existing persisted BUILD record json remains valid and unchanged (no data rewrite). renderPlanBuildRecordMd's output is byte-identical for any record lacking summary + feedback (the new section is omit-slot), so existing records do not churn on re-render (k4). persistBuildRecord's signature + mergeWithPrior + fail-open behaviour and the appendFeedback signature are all unchanged — the sc1 contract owned by S002 is consumed as-is. Ships with a daemon rebuild; no in-flight state depends on the old shape.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Additive body.summary + reuse the existing appendFeedback writer for in-cycle feedback",
+        "oneLineSummary": "Add an optional narrative body.summary rendered as a `## Summary` omit-slot; capture build-cycle feedback by calling the existing append-only appendFeedback writer on the BUILD record json — persistBuildRecord's merge is untouched.",
+        "approach": "Data: add `readonly summary?: string | undefined` to BuildRecord.body (additive, optional). Rendering: renderPlanBuildRecordMd pushes a `## Summary` section only when rec.body.summary is a non-empty string, mirroring `## Changes`/`## Feedback`. Summary source: the caller threads the narrative in as body.summary. Feedback: the record's body.feedback is populated in-cycle by REUSING the existing appendFeedback append-only writer against the persisted BUILD json — no change to persistBuildRecord's body merge.",
+        "pros": [
+          "Smallest writer change: persistBuildRecord's mergeWithPrior is untouched; only an additive optional body field + one omit-slot render section",
+          "Reuses the PROVEN append-only appendFeedback writer for feedback — correct append semantics already, no new merge logic",
+          "Byte-identity (ac3/k4) is guaranteed by construction",
+          "Cleanly separates the narrative summary from feedback (accreted via the append writer)"
+        ],
+        "cons": [
+          "Two write touch-points for the record (persistBuildRecord for summary; appendFeedback for feedback)",
+          "The in-cycle feedback-capture wiring lives outside persistBuildRecord"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Unified persistBuildRecord: accept summary + feedback, with append-merge for feedback",
+        "oneLineSummary": "Thread both the narrative summary and any feedback entries through persistBuildRecord, and extend mergeWithPrior to UNION feedback by id (mirroring the tasks merge) so a single writer owns the whole enriched record.",
+        "approach": "Add body.summary + accept body.feedback on the record; mergeWithPrior gains a feedback union-by-id so re-validates accrete feedback; summary takes the new write. renderPlanBuildRecordMd adds the `## Summary` omit-slot. A single persistBuildRecord call carries tasks + changeLog + summary + feedback.",
+        "pros": [
+          "One writer owns the entire enriched record",
+          "Append-merge keeps prior feedback across the N per-task re-validates",
+          "No second write path to reason about"
+        ],
+        "cons": [
+          "Changes sc1's writer merge semantics (feedback now appends, not replaces) — a behaviour change to the S002-owned writer",
+          "Duplicates the append-only feedback logic that appendFeedback already implements",
+          "Larger surface + more regression risk on the shared writer than a1"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Partial on sc1: it modifies the S002-owned writer's mergeWithPrior semantics (feedback union) and duplicates appendFeedback's append logic, adding shared-writer regression surface (M-cost) for no acceptance benefit over a1."
+      },
+      {
+        "id": "a3",
+        "name": "Auto-derived summary + appendFeedback for feedback",
+        "oneLineSummary": "Derive the narrative summary deterministically at persist time from the tasks + changeLog (+ verdict reason) instead of taking it as input; capture feedback via the existing appendFeedback writer.",
+        "approach": "Add body.summary but POPULATE it inside persistBuildRecord (or the validate path) by composing a one-paragraph narrative from the validated task titles, the changed-file set, and the verdict reason — no new caller-supplied input. Render the `## Summary` omit-slot. Feedback via the existing appendFeedback writer (as a1).",
+        "pros": [
+          "No new input plumbing for the summary — always populated from data already on the record",
+          "Consistent, mechanical summaries with zero caller effort"
+        ],
+        "cons": [
+          "A machine-derived summary is a restatement of the file list + task ids, NOT the human-readable 'what changed and why' the Story's userValue asks for",
+          "Couples the writer to task/changeLog shapes to compose prose",
+          "Still needs the feedback path, so it is strictly a1 plus a weaker summary"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Partial on ac1 (a derived summary restates `## Tasks`/`## Changes` rather than delivering the human-readable 'what + why') and partial on sc1 (prose-composition logic pushed into the shared writer); effectively a1 with a lower-quality summary."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 'BuildRecord body + writer' — standalone-record.ts:61 (BuildRecord.body), :126 (renderPlanBuildRecordMd), :147 (## Changes/## Feedback omit-slots), :232 (mergeWithPrior upsert, fail-open)",
+      "quotedText": "BuildRecord.body has no top-level narrative summary; renderPlanBuildRecordMd emits omit-slot ## Changes/## Feedback; persistBuildRecord is a fail-open upsert that preserves createdAt + completion stamps (k1/k5)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 'provenance vocabulary + binders' — provenance/types.ts:37 (FeedbackEntry), :45 (ChangeLogEntry), format/bindings.ts:74 (feedbackBodyLines), :91 (changeLogBodyLines)",
+      "quotedText": "FeedbackRecord/ChangeLog already exist; binders are omit-slot ([] -> no lines). No summaryBodyLines binder yet — S003 mirrors the omit-slot idiom for `## Summary`."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 'appendFeedback (in-cycle capture reference)' — provenance/writer.ts appendFeedback, daemon/index.ts:614, provenance/tool.ts",
+      "quotedText": "appendFeedback is the append-only writer (body.feedback = [...existing, entry], preserving every other key); S003 reuses it to capture build-cycle feedback."
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 'existing tests' — build-step.test.ts (persistBuildRecord output), artifact-feedback-handler-contract.test.ts (appendFeedback)",
+      "quotedText": "The S003 summary + feedback + byte-identity assertions extend the existing persistBuildRecord + provenance tests."
+    },
+    {
+      "id": "c5",
+      "kind": "convention",
+      "ref": "s1 'omit-slot render convention' — standalone-record.ts:147-154 (heading pushed only when the binder yields content) + lc1/k4",
+      "quotedText": "Additions to the BUILD record are additive + omit-slot: a record with neither summary nor feedback renders byte-identically to today (k4)."
+    }
+  ]
+}

@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790748674525-np8ujf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T06:15:53.378Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 278848,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "epicSlug": "harden-insrc-artifact-creation-flows-two",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "ref": "c1/S002",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "build-step validate.ts resolves its target via resolveTaskRef (the plan-driven resolver with no standalone branch) and returns early on failure, before reaching persistBuildRecord.",
+          "evidence": "Confirmed: validate.ts:64 `const resolved = resolveTaskRef(repoPath, input.target, input.epicHash)` (the plan-driven resolver) and :102 `persistBuildRecord(...)` sits after it; on an unresolved target validate returns before reaching :102.",
+          "action": "Accept — citation resolves; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "ref": "c1/S002",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "build-step implement.ts persists a standalone BUILD record only on the trivial (no-LLD) branch, not for a Small standalone story.",
+          "evidence": "Confirmed: implement.ts:133 `persistStandaloneBuildRecord(repoPath, {...})` sits inside the else (trivial, !producesLld) branch; a Small standalone (producesLld=true) does not persist here.",
+          "action": "Accept — citation resolves; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl3",
+          "ref": "c1/S003",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The BuildRecord body type already carries changeLog and feedback fields but has no narrative summary field.",
+          "evidence": "Confirmed by direct read of standalone-record.ts body (lines 61-75): fields are focus/producesLld/tasks/commit/changeLog/feedback — changeLog + feedback present, NO summary field. (The repo-wide `summary` grep hits are unrelated contexts.)",
+          "action": "Accept — semantic claim holds; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "ref": "c2/S001",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderUxCompanionForBody validates the authored uxDefinition and, on a HIGH finding, swallows it (returns undefined, logs a warn) instead of surfacing the error.",
+          "evidence": "Confirmed: orchestrator.ts:1548 renderUxCompanionForBody, :1557 `validateUxDefinition(uxDef, body.functionalDefinition)`; the 'leaving it in-body without a companion' warn confirms the HIGH-finding swallow.",
+          "action": "Accept — citation resolves; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "ref": "c2/S001",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderDiagramCompanionsForBody applies the same validate-then-swallow behaviour for the sequence + component-dependency companions.",
+          "evidence": "Confirmed: orchestrator.ts:1587 renderDiagramCompanionsForBody with validateSequenceDefinition + validateComponentDependencyDefinition — same validate-then-swallow for sequence/component.",
+          "action": "Accept — citation resolves; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "ref": "c2/S001",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The synth emit-schema UX_DEFINITION_PROPERTY_SCHEMA keeps body.items loose ({type:'object'}), so a strict Adaptive Cards shape is not enforced at emit time.",
+          "evidence": "Confirmed: ux-schema.ts:33 `items: { type: 'object' }` inside UX_DEFINITION_PROPERTY_SCHEMA — the emit-schema is loose, strict shape not enforced at emit.",
+          "action": "Accept — semantic claim holds; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "ref": "c6/S001",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The client-driven insrc_workflow_step synthesize phase calls finalizeArtifact (the same finalize that renders + attaches companions).",
+          "evidence": "Confirmed: synthesize.ts:46 `const result = await finalizeArtifact(...)` — the client-driven synthesize phase routes through the same finalize.",
+          "action": "Accept — citation resolves; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl8",
+          "ref": "lc1/S001",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The authored companion definition kinds finalize renders are exactly four: ER, UX, sequence, and component-dependency (the set the surface-and-retry behaviour must cover).",
+          "evidence": "Confirmed: all four renderers exist — renderErCompanionForBody, renderUxCompanionForBody, renderSequenceCompanion, renderComponentCompanion — so the authored companion kinds are exactly ER/UX/sequence/component.",
+          "action": "Accept — closed union holds; no change needed.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "ref": "c4+c5",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The two prior epics this Epic builds on exist as DEF artifacts: companion-wiring e2c6705fd105d4ac and provenance/feedback a0f4c1cfe262a497.",
+          "evidence": "Confirmed: both prior-epic hashes resolve in the tree (e2c6705fd105d4ac 25 hits, a0f4c1cfe262a497 11 hits) — the cross-artifact references are real.",
+          "action": "Accept — cross-artifact refs resolve; no change needed.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9
+      },
+      "reviewedAt": "2026-09-30T06:19:13.562Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-30T06:19:18.391Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Epic hardens the two ways the insrc workflow's generated artifacts quietly fall short of being self-describing and reviewable. Design documents will stop referencing diagrams and UX mocks that silently failed to render: when an authored visual definition does not conform to its schema, the specific errors are reported back and the author repairs it, instead of the picture being dropped without a trace. And every build — including small standalone fixes — will leave a complete BUILD record on the ledger that reads like a changelog: a plain-language summary of what changed plus any feedback raised during the build. The outcome is artifacts a reviewer can trust to be complete.",
+      "audience": "product"
+    },
+    "flavor": "enhancement",
+    "problem": "The insrc workflow produces design and build artifacts that are meant to be self-describing and reviewable, but two silent failure modes erode that trust. First, when a design artifact's authored companion definition (a diagram or a UX mock) does not conform to its strict schema, the picture is discarded with no signal reaching its author: the reader is left with a document that references a visual which never rendered, and the author never learns the definition was rejected, so the same malformed shape recurs on the next attempt. Second, a small standalone (bugfix-routed) story can pass its build and code review yet leave no BUILD ledger record at all, so the story cannot be formally completed on the ledger and its change trace is missing entirely; and even where a BUILD record is written it records only a file-level list of what changed — not a human-readable summary of the change, and not any feedback exchanged during the build — so a later reader cannot tell from the record what was done or why.",
+    "nonGoals": [
+      {
+        "text": "Changing the daemon-driven async run path (insrc_workflow_run).",
+        "rationale": "That path is not the mandated driver (the framework drives workflows turn-by-turn via insrc_workflow_step); hardening it is out of scope."
+      },
+      {
+        "text": "Adding new companion TYPES or a new diagram/render engine.",
+        "rationale": "The render + markdown-link machinery already exists and works; this Epic hardens validation feedback and the build record, not the companion catalog."
+      },
+      {
+        "text": "Machine auto-rewriting a malformed companion definition.",
+        "rationale": "The authored definition is the source of truth; the author (the reasoning model) repairs it on retry. A silent auto-fix would mask real modeling errors and violate the source-of-truth invariant."
+      },
+      {
+        "text": "Back-filling BUILD records for already-completed historical stories.",
+        "rationale": "Scope is the go-forward flow; retroactive ledger rewrites are a separate concern."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The companion author-gates, strict validators, and finalize renderers already exist and function; the gap is the feedback loop on validation failure, not the rendering.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The BUILD record structure already carries changeLog and feedback fields and an upsert writer; the gap is that a standalone Small story never reaches the writer, plus the absent narrative summary and in-cycle feedback capture.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "The client-driven insrc_workflow_step synthesize path is the mandated driver and routes through the same finalizeArtifact that renders companions.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "A standalone Small story reaches neither build-record writer today (implement persists only for trivial; validate rejects the standalone target before persisting).",
+        "confidence": "high",
+        "source": "c3"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "A companion-definition schema-validation failure MUST be surfaced to the author with its specific errors and the synthesize turn re-requested (retry), never silently swallowed.",
+        "type": "stakeholder",
+        "source": "c7"
+      },
+      {
+        "id": "k2",
+        "text": "The authored companion definition remains the SOURCE OF TRUTH and is rendered deterministically by the daemon; the framework must not machine-rewrite the author's definition.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "Every completed story — including a small standalone one — must have a BUILD ledger record for the completion gate to approve.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k4",
+        "text": "Additions to the BUILD record must be additive + omit-slot (byte-identity preserved for a record that carries no summary/feedback), so existing records do not churn.",
+        "type": "convention",
+        "source": "c5"
+      },
+      {
+        "id": "k5",
+        "text": "A BUILD-record persist failure must never convert a real build/verdict into an error (fail-open, as today).",
+        "type": "invariant",
+        "source": "c1"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Surface companion-definition validation errors and retry the synth turn instead of dropping the companion",
+        "userValue": "When a design document's authored diagram or UX mock does not conform to its schema, the author is told exactly what is wrong and asked to fix it, so the document ends up with the visual it references instead of silently missing one.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an authored companion definition (a UX mock or a diagram) that violates its strict schema",
+            "when": "the synthesize turn for that design artifact is submitted",
+            "then": "the workflow returns the specific validation errors to the author and re-requests the synthesize turn, rather than accepting the artifact with the companion silently dropped",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an author who corrects the flagged definition on the retry",
+            "when": "the corrected artifact is re-submitted and the definition now conforms",
+            "then": "the companion renders and is linked in the artifact's markdown as normal",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an authored companion definition that already conforms to its strict schema",
+            "when": "the synthesize turn is submitted",
+            "then": "the artifact is accepted and the companion renders with no extra prompting or retry (no regression to the valid path)",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a companion definition that fails validation",
+            "when": "the errors are surfaced for repair",
+            "then": "the framework does not machine-rewrite the author's definition — the author remains the source of truth and repairs it themselves",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The surface-and-retry behaviour applies uniformly to every authored companion kind (UX mock, ER, sequence, component-dependency), not only the UX mock.",
+            "type": "invariant",
+            "source": "c2"
+          }
+        ],
+        "dependsOn": [],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A companion definition that fails its strict schema causes the specific validation errors to be returned to the author and the synthesize turn to be retried, for every companion kind.",
+            "rationale": "Turns a silent drop into an actionable repair loop so documents stop referencing visuals that never rendered."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Persist a BUILD ledger record for a small standalone story so it can be completed",
+        "userValue": "A small standalone (bugfix-routed) story that has been built and reviewed leaves a BUILD record on the ledger, so it can be formally completed and its change trace is preserved — today it leaves none.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a small standalone story whose build has been implemented and validated",
+            "when": "the build's validation completes",
+            "then": "a BUILD ledger record for that story is persisted (keyed to its story identity)",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a persisted BUILD record for a small standalone story",
+            "when": "the completion gate runs for that story",
+            "then": "the gate finds the pending BUILD record and can approve it to complete the story",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the BUILD record for the standalone story",
+            "when": "it is written",
+            "then": "it carries the file-level change list of the build's changed set (the same change trace a plan-driven record gets)",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a failure while persisting the BUILD record",
+            "when": "the build's validation runs",
+            "then": "the build verdict is still returned and the build is not turned into an error (fail-open)",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "localConstraints": [],
+        "dependsOn": [],
+        "sizeEstimate": "S",
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A small standalone story produces a BUILD ledger record on validation, carrying the file-level change list, so the completion gate can approve it.",
+            "rationale": "Closes the regression where a small standalone story completes build + review but leaves no record to approve."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Enrich the BUILD record with a change summary and build-cycle feedback",
+        "userValue": "The BUILD record reads like a changelog entry: a plain-language summary of what changed plus any feedback raised during the build, so a later reader understands the change from the record alone.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a completed build with a change set",
+            "when": "its BUILD record is written",
+            "then": "the record carries a human-readable summary of the change alongside the existing file-level change list",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "feedback raised during the build cycle",
+            "when": "the build completes and its record is written",
+            "then": "that feedback is captured on the BUILD record",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a build that produced neither a summary nor any feedback",
+            "when": "its record is written",
+            "then": "the record is byte-identical to today's output (the new sections are omitted, not empty)",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The summary and feedback are additive omit-slot sections of the BUILD record — a record without them renders exactly as before.",
+            "type": "convention",
+            "source": "c5"
+          }
+        ],
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1",
+          "c5"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The BUILD record carries a human-readable change summary alongside the file-level change list.",
+            "rationale": "A reader must understand what was done and why from the record, not just which files changed."
+          },
+          {
+            "statement": "Feedback exchanged during the build cycle is captured on the BUILD record.",
+            "rationale": "Preserves the build-time dialogue as durable provenance."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E202609309b72686c:FR001",
+          "statement": "When an authored companion definition fails its strict schema, the workflow returns the specific validation errors to the author and re-requests the synthesize turn so the definition can be repaired, rather than dropping the companion.",
+          "scope": "doc",
+          "rationale": "Stops documents from silently referencing visuals that never rendered and gives the author a feedback loop to fix the definition."
+        },
+        {
+          "id": "E202609309b72686c:FR002",
+          "statement": "Every story built through the framework, including a small standalone (bugfix-routed) story, produces a BUILD ledger record that the completion gate can approve.",
+          "scope": "doc",
+          "rationale": "A story cannot be formally completed on the ledger without a BUILD record; today small standalone stories get none."
+        },
+        {
+          "id": "E202609309b72686c:FR003",
+          "statement": "The BUILD record carries a human-readable summary of the change alongside the existing file-level change list.",
+          "scope": "doc",
+          "rationale": "A reader must be able to tell what was done and why from the record alone, not just which files changed."
+        },
+        {
+          "id": "E202609309b72686c:FR004",
+          "statement": "Feedback exchanged during the build cycle is captured on the BUILD record.",
+          "scope": "doc",
+          "rationale": "Preserves the build-time dialogue as durable provenance instead of losing it once the session ends."
+        },
+        {
+          "id": "E202609309b72686c:S001:FR001",
+          "statement": "A companion definition that fails its strict schema causes the specific validation errors to be returned to the author and the synthesize turn to be retried, for every companion kind.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Turns a silent drop into an actionable repair loop so documents stop referencing visuals that never rendered."
+        },
+        {
+          "id": "E202609309b72686c:S002:FR001",
+          "statement": "A small standalone story produces a BUILD ledger record on validation, carrying the file-level change list, so the completion gate can approve it.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "Closes the regression where a small standalone story completes build + review but leaves no record to approve."
+        },
+        {
+          "id": "E202609309b72686c:S003:FR001",
+          "statement": "The BUILD record carries a human-readable change summary alongside the file-level change list.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "A reader must understand what was done and why from the record, not just which files changed."
+        },
+        {
+          "id": "E202609309b72686c:S003:FR002",
+          "statement": "Feedback exchanged during the build cycle is captured on the BUILD record.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Preserves the build-time dialogue as durable provenance."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts:64+102, implement.ts:133, src/workflow/runners/build/standalone-record.ts",
+      "quotedText": "validate calls resolveTaskRef (no standalone branch) and bails before persistBuildRecord:102; implement persists only for trivial standalone; BuildRecord.body already has changeLog + feedback but no narrative summary."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:1548 (renderUxCompanionForBody), :1587 (renderDiagramCompanionsForBody), :1557; src/workflow/artifacts/companion/ux-schema.ts:24",
+      "quotedText": "The emit-schema keeps body.items loose ({type:object}); the strict validation runs at finalize and a HIGH finding is swallowed with a warn, dropping the companion and leaving the definition in-body."
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s1 scope.assess grounding (analyze + reproduction this session)",
+      "quotedText": "A standalone Small story reaches neither build-record writer; a reran validateUxDefinition on a hand-authored card returned multiple HIGH violations and the companion was correctly dropped."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "Epic complete-generated-artifact-companion-wiring-across (e2c6705fd105d4ac)",
+      "quotedText": "Wired the companion author-gates + render/attach + markdown-link for ER/UX/sequence/component."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "Epic provenance-traceability-workflow-artifact-json-two (a0f4c1cfe262a497)",
+      "quotedText": "Added the BUILD change-log from git_diff + the append-only feedback field, each an omit-slot section preserving byte-identity."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/workflow-step/phases/synthesize.ts:46 (finalizeArtifact)",
+      "quotedText": "The client-driven insrc_workflow_step synthesize phase calls the same finalizeArtifact that renders + attaches companions."
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "User directive (2026-09-30): 'schema validation errors should be surfaced and retried.'",
+      "quotedText": "schema validation errors should be surfaced and retried."
+    }
+  ]
+}

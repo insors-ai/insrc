@@ -13,7 +13,6 @@
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { markerFor, markerWebviewSource } from './markers.js';
 import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-registry.js';
-import { clampSessionTitleWebviewSource } from './session-title.js';
 // S001 (bugfix): the bundled `marked` UMD (committed generated string) — evaluated first in the
 // one nonce'd webview script so `marked.parse` is available to the render registry (no CDN; CSP-safe).
 import { MARKED_SRC } from './webview-marked.js';
@@ -270,9 +269,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-inset);border-bottom:1px solid var(--border);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
       `.chrome .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(74,222,128,.14);flex:0 0 auto;}` +
       `.chrome .title{color:var(--fg-strong);font-weight:600;letter-spacing:.02em;}` +
-      `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}.chrome .seglabel{color:var(--muted);}` +
-      // S001 t6: the active session name in the header, clamped to 32 chars + ellipsis (ac4).
-      `.chrome .sesstitle{max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg);}` +
+      `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}` +
       // The scrolling transcript band (mock .term): the only overflow region, its own padding +
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:radial-gradient(1200px 300px at 50% -10%,rgba(56,189,248,.05),transparent 60%),var(--panel);}` +
@@ -309,19 +306,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `#insrc-input{flex:1 1 auto;min-width:0;resize:none;height:40px;background:transparent;color:var(--fg-strong);caret-color:var(--accent);padding:9px 4px;font-family:var(--font);font-size:13px;line-height:1.5;outline:none;}` +
       `#insrc-input::placeholder{color:var(--dim);}` +
       `.statusbar{display:flex;gap:12px;align-items:center;padding:7px 13px;background:var(--bg-inset);border-top:1px solid var(--border);color:var(--muted);font-size:11.5px;flex-wrap:wrap;flex:0 0 auto;}` +
-      `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}.statusbar .seg b{color:var(--fg);font-weight:500;}.statusbar .ok{color:var(--accent);margin-left:auto;}` +
-      // S004 (k6 i): auto permission mode reads as the mock's amber "auto-approve" pill in the status bar.
+      // ISSUE-6ae99f6e: the functional provider + mode (edits) selects live in the status bar, styled as
+      // segments; the mode seg carries the amber 'auto-approve' pill (S004 k6 i) via .statusbar .perm-auto.
+      `.statusbar .seg{display:inline-flex;align-items:center;gap:5px;}` +
       `.statusbar .perm-auto{color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:2px 9px;}` +
-      // S001 (ISSUE-c96399d1) delta 3: the provider + mode selects now live in the header — mirror the
-      // seg layout + the amber auto pill there so updatePermSeg's 'perm-auto' class still styles.
-      `.chrome .seg{display:inline-flex;align-items:center;gap:5px;}` +
-      `.chrome .perm-auto{color:var(--amber);border:1px solid rgba(251,191,36,.4);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
       `background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:3px 3px,3px 3px;background-repeat:no-repeat;}` +
       `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--bg-alt);color:var(--fg);font-weight:400;}` +
-      // Keep the header session switcher compact so a long session name can't overflow the chrome
-      // (the clamped .sesstitle already shows the active name; this is the switch affordance).
+      // Keep the header session switcher compact so a long session name can't overflow the chrome —
+      // it is the only control in the header now (its selected option shows the active session).
       `.chrome #insrc-history{max-width:16ch;}` +
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
       `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
@@ -405,10 +399,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
       `const hs=document.getElementById('insrc-history');` +
-      // S001 t6: the header session-name clamp (>32 chars -> 32 + ellipsis, ac4), single-sourced
-      // with session-title.ts. VIEW-only: the stored title (history option label) is untouched (k4).
-      `const st=document.getElementById('insrc-sesstitle');` +
-      `const clampTitle=(${clampSessionTitleWebviewSource()});` +
       // S002 (ux-polish): webview-local turn running-state drives the leading '>' prompt send/stop control.
       // ❯ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
       `var running=false;` +
@@ -434,16 +424,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var pmode='manual';` +
       `const pm=document.getElementById('insrc-mode');` +
       `const pmseg=document.getElementById('insrc-modeseg');` +
-      // S001 (ISSUE-c96399d1) delta 3: the read-only status-bar 'edits'/'session' segments are derived
-      // views. editsLabel maps the pmode value to its short word; updSessSeg mirrors the active session
-      // (prefer the header title, fall back to the short id). No new host message — pmode + cur/st exist.
-      `const seEdits=document.getElementById('insrc-statusedits');` +
-      `const seSess=document.getElementById('insrc-statussess');` +
-      `var EDITS_LABEL={manual:'review','edit-auto':'auto-edit',auto:'auto'};` +
-      `function editsLabel(m){return EDITS_LABEL[m]||m||'review';}` +
-      `function updSessSeg(){if(seSess)seSess.textContent=(st&&st.textContent)?st.textContent:(cur?(cur.length>8?cur.slice(0,8):cur):'—');}` +
-      `function updatePermSeg(){if(pmseg)pmseg.className='seg'+(pmode==='auto'?' perm-auto':'');if(seEdits)seEdits.textContent=editsLabel(pmode);}` +
-      `updatePermSeg();updSessSeg();` +
+      // ISSUE-6ae99f6e: the read-only status-bar 'session'/'edits' mirror segments + the '✓ idle' marker
+      // were removed and the provider + mode selects moved into the footer. updatePermSeg now just toggles
+      // the amber auto pill on the mode seg (pmseg); the derived seSess/seEdits views + updSessSeg are gone.
+      `function updatePermSeg(){if(pmseg)pmseg.className='seg'+(pmode==='auto'?' perm-auto':'');}` +
+      `updatePermSeg();` +
       `if(pm)pm.addEventListener('change',function(){pmode=(pm.value==='auto'||pm.value==='edit-auto')?pm.value:'manual';vs.postMessage({v:1,payload:{type:'set-permission-mode',mode:pmode}});updatePermSeg();});` +
       // renderDiff: one row per hunk line via textContent (no innerHTML); add/remove/context
       // class by the +/-/space prefix computeDiff wrote. In review mode append accept/reject
@@ -476,9 +461,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the reconciliation map for the fresh replay.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
-      `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}updSessSeg();}` +
+      `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(st)st.textContent=_ac&&_ac.title?clampTitle(_ac.title):'';updSessSeg();}});` +
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
@@ -510,16 +495,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // classes belong on the inner surface divs, never the root body.
       `<body class="insrc-term">` +
       `<div class="box">` +
-      // Fixed header (mock .chrome): dot + insrc + the session label / active-name / history switcher.
+      // Fixed header (mock .chrome): dot + insrc + ONLY the session dropdown, right-aligned. The
+      // ISSUE-6ae99f6e fix keeps the header to a single control: the #insrc-history session switcher
+      // (its selected option already shows the session — the old 'session' label + active-name text were
+      // duplication). The provider + mode selects live in the footer status bar now.
       `<div class="chrome">` +
       `<span class="dot"></span><span class="title">insrc</span>` +
-      // S001 (ISSUE-c96399d1) delta 3: the FUNCTIONAL provider + mode selects are relocated here into the
-      // header (beside the session/history switcher), moved verbatim (same ids/options/classes) so their
-      // change-handlers + the pmode/updatePermSeg wiring bind unchanged. The status bar below is then a
-      // clean read-only line. The mode seg keeps id 'insrc-modeseg' (pmseg) with an 'edits' label.
-      `<span class="right"><span class="seglabel">session</span><span class="sesstitle" id="insrc-sesstitle"></span><select id="insrc-history" class="segsel ${histCls}" aria-label="history"><option value="">new…</option></select>` +
-      `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
-      `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span></span>` +
+      `<span class="right"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
@@ -534,14 +516,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send · ^C interrupt)"></textarea>` +
       `</div>` +
-      // Status bar (mock .statusbar): S001 (ISSUE-c96399d1) delta 3 — a clean READ-ONLY line
-      // 'session <id> · edits <mode> · ✓ idle', with NO <select> chevrons. The functional provider +
-      // mode selects moved up to the header; these segments are derived views: #insrc-statussess mirrors
-      // the active session, #insrc-statusedits is the pmode→label map (updated by updatePermSeg).
+      // Status bar (mock .statusbar): ISSUE-6ae99f6e — the FUNCTIONAL provider + mode selects live here
+      // now, left-to-right (provider, then the 'edits' approval-mode). Same ids/options/classes as before
+      // so their change-handlers + the pmode/updatePermSeg wiring bind unchanged; the mode seg keeps id
+      // 'insrc-modeseg' (pmseg) so the amber auto pill still styles. No read-only session/edits mirror and
+      // no '✓ idle' marker — the session is shown by the header dropdown and idle/busy by the progress bar.
       `<div class="statusbar">` +
-      `<span class="seg">session <b id="insrc-statussess"></b></span>` +
-      `<span class="seg">edits <b id="insrc-statusedits">review</b></span>` +
-      `<span class="seg ok">✓ idle</span>` +
+      `<span class="seg"><select id="insrc-provider" class="segsel ${provCls}" aria-label="provider"${provDisabled}>${providerOpts}</select></span>` +
+      `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
       `</div>` +
       `</div>` +
       `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`

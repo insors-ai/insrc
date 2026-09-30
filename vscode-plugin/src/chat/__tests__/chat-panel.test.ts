@@ -1040,31 +1040,6 @@ test('S001 lc1: two identical prompts yield two distinct-keyed live user-rows', 
   assert.equal(new Set(keys).size, 2, 'the two identical prompts got two distinct keys (two rows, not deduped)');
 });
 
-// ---- S001 t6: header session-name clamp (ac4) ----
-
-test('S001 ac4: the header embeds the session-name clamp wiring (>32 chars -> ellipsis, view-only)', () => {
-  const fc = fakeChannel();
-  const host = createChatPanelHost({
-    createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
-    store: createInMemoryChatSessionStore(),
-    cwd: () => '/repo',
-    genNonce: () => 'FIXEDNONCE',
-  });
-  host.open();
-  const html = fc.html();
-  // The header carries a dedicated session-title element, fed by the single-sourced clamp.
-  assert.match(html, /id="insrc-sesstitle"/, 'the header has a session-title element');
-  assert.match(html, /const clampTitle=\(function\(s\)/, 'the clamp is embedded inline (single-sourced with session-title.ts)');
-  assert.match(html, /st\.textContent=_ac&&_ac\.title\?clampTitle\(_ac\.title\)/, 'the active session title is rendered through the clamp');
-  assert.match(html, /slice\(0,32\)/, 'the clamp truncates at 32 chars (ac4)');
-  // CSP/one-script/textContent invariants intact.
-  const scripts = html.match(/<script\b/g) ?? [];
-  assert.equal(scripts.length, 1, 'still exactly one inline script');
-  assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
-  assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
-});
-
 // ---- S002 t2: cancel-turn routes to the existing cancelActive() ----
 
 test('S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)', async () => {
@@ -1192,7 +1167,7 @@ test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no in
   });
   host.open();
   const html = fc.html();
-  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-mode', 'insrc-sesstitle']) {
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-provider', 'insrc-history', 'insrc-mode']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one inline script');
@@ -1288,7 +1263,7 @@ test('S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption
   assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'still exactly one inline script');
   assert.match(html, /guardMd\(/, 'assistant markdown is sanitized via guardMd after the marked render');
   assert.doesNotMatch(html, /(?:src|href)\s*=\s*["']?https?:\/\//i, 'no remote resource is loaded (embedded marked ships URLs only in warning strings)');
-  for (const id of ['insrc-term', 'insrc-input', 'insrc-prompt', 'insrc-progress', 'insrc-sesstitle']) {
+  for (const id of ['insrc-term', 'insrc-input', 'insrc-prompt', 'insrc-progress', 'insrc-history']) {
     assert.match(html, new RegExp(`id="${id}"`), `${id} preserved`);
   }
 });
@@ -1360,24 +1335,24 @@ test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
   assert.doesNotMatch(html, /⌘↵ to send/, "the old '⌘↵ to send' placeholder is gone");
 });
 
-test('S001 (fidelity) ac3: the status bar is READ-ONLY (session · edits · ✓ idle); the selects moved to the header', () => {
+test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar', () => {
   const html = fidelityHtml();
   const chrome = html.slice(html.indexOf('<div class="chrome">'), html.indexOf('<div id="insrc-term"'));
   const statusbarFull = html.slice(html.indexOf('<div class="statusbar">'));
   const statusbar = statusbarFull.slice(0, statusbarFull.indexOf('</div>'));
-  // The functional provider + mode selects live in the header (.chrome) now, with ids/options preserved.
-  assert.match(chrome, /<select id="insrc-provider"/, 'the provider select is in the header');
-  assert.match(chrome, /id="insrc-modeseg"/, 'the mode seg is in the header');
-  assert.match(chrome, /<select id="insrc-mode"/, 'the mode select is in the header');
-  assert.match(chrome, /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/, 'the mode options are preserved in the header');
-  // The status bar is read-only: NO <select> chevrons, just session / edits / ✓ idle.
-  assert.doesNotMatch(statusbar, /<select/, 'the status bar has NO <select> (read-only)');
-  assert.match(statusbar, /session <b id="insrc-statussess">/, "the bar shows a read-only 'session' segment");
-  assert.match(statusbar, /edits <b id="insrc-statusedits">/, "the bar shows a read-only 'edits' segment");
-  assert.match(statusbar, /✓ idle/, "the bar keeps the '✓ idle' segment");
-  // The edits label maps the mode value to its short word, re-rendered from pmode.
-  assert.match(html, /EDITS_LABEL=\{manual:'review','edit-auto':'auto-edit',auto:'auto'\}/, 'the mode→label map is manual→review / edit-auto→auto-edit / auto→auto');
-  assert.match(html, /seEdits\.textContent=editsLabel\(pmode\)/, "updatePermSeg re-renders the read-only 'edits' label from pmode");
+  // Header: ONLY the session dropdown (right-aligned). No provider/mode selects, no duplicate session text.
+  assert.match(chrome, /<select id="insrc-history"/, 'the session dropdown is in the header');
+  assert.doesNotMatch(chrome, /<select id="insrc-provider"/, 'the provider select is NOT in the header');
+  assert.doesNotMatch(chrome, /id="insrc-mode(seg)?"/, 'the mode select is NOT in the header');
+  assert.doesNotMatch(chrome, /id="insrc-sesstitle"|class="seglabel"/, 'no duplicate session label/title text in the header');
+  // Footer: the FUNCTIONAL provider + mode selects, left-to-right (provider then the 'edits' mode).
+  assert.match(statusbar, /<select id="insrc-provider"/, 'the provider select is in the footer');
+  assert.match(statusbar, /id="insrc-modeseg">edits <select id="insrc-mode"/, 'the edits (mode) select follows the provider in the footer');
+  assert.match(statusbar, /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/, 'the mode options are preserved in the footer');
+  assert.ok(statusbar.indexOf('insrc-provider') < statusbar.indexOf('insrc-mode'), 'provider is left of the mode select');
+  // The read-only session/edits mirror segments + the ✓ idle marker are gone (dedup + progress conveys idle).
+  assert.doesNotMatch(statusbar, /insrc-statussess|insrc-statusedits/, 'no read-only session/edits mirror segments');
+  assert.doesNotMatch(statusbar, /✓ idle/, 'no ✓ idle marker (the progress bar conveys idle/busy)');
 });
 
 test('S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged', () => {

@@ -1,8 +1,8 @@
 {
   "name": "insrc-vscode",
   "displayName": "insrc",
-  "description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.4.10",
+  "description": "insrc for VS Code \u2014 grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
+  "version": "0.5.1",
   "publisher": "insors",
   "license": "MIT",
   "repository": {
@@ -190,7 +190,7 @@
           "insrc.codeReview.enforce": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "enforce a blocking code-review verdict at Story completion (off ⇒ advisory)",
+            "markdownDescription": "enforce a blocking code-review verdict at Story completion (off \u21d2 advisory)",
             "scope": "machine"
           },
           "insrc.codeReview.freshnessTimeoutMs": {
@@ -219,7 +219,7 @@
         }
       },
       {
-        "title": "Models — tiers",
+        "title": "Models \u2014 tiers",
         "properties": {
           "insrc.models.tiers.core.runner": {
             "type": "string",
@@ -235,7 +235,7 @@
           "insrc.models.tiers.core.model": {
             "type": "string",
             "default": "",
-            "markdownDescription": "core-tier model id (empty ⇒ CLI default, e.g. opus)",
+            "markdownDescription": "core-tier model id (empty \u21d2 CLI default, e.g. opus)",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.runner": {
@@ -286,7 +286,7 @@
         }
       },
       {
-        "title": "Models — shaper",
+        "title": "Models \u2014 shaper",
         "properties": {
           "insrc.models.shaper.maxToolTurns": {
             "type": "number",
@@ -315,36 +315,36 @@
         }
       },
       {
-        "title": "Models — plan depth",
+        "title": "Models \u2014 plan depth",
         "properties": {
           "insrc.models.maxPlanDepth.XS": {
             "type": "number",
             "default": 2,
-            "markdownDescription": "max plan-tree depth — XS-scope roots",
+            "markdownDescription": "max plan-tree depth \u2014 XS-scope roots",
             "scope": "machine"
           },
           "insrc.models.maxPlanDepth.S": {
             "type": "number",
             "default": 3,
-            "markdownDescription": "max plan-tree depth — S-scope roots",
+            "markdownDescription": "max plan-tree depth \u2014 S-scope roots",
             "scope": "machine"
           },
           "insrc.models.maxPlanDepth.M": {
             "type": "number",
             "default": 4,
-            "markdownDescription": "max plan-tree depth — M-scope roots",
+            "markdownDescription": "max plan-tree depth \u2014 M-scope roots",
             "scope": "machine"
           },
           "insrc.models.maxPlanDepth.L": {
             "type": "number",
             "default": 5,
-            "markdownDescription": "max plan-tree depth — L-scope roots",
+            "markdownDescription": "max plan-tree depth \u2014 L-scope roots",
             "scope": "machine"
           },
           "insrc.models.maxPlanDepth.XL": {
             "type": "number",
             "default": 6,
-            "markdownDescription": "max plan-tree depth — XL-scope roots",
+            "markdownDescription": "max plan-tree depth \u2014 XL-scope roots",
             "scope": "machine"
           }
         }
@@ -361,13 +361,13 @@
           "insrc.models.local.embeddingModel": {
             "type": "string",
             "default": "qwen3-embedding:0.6b",
-            "markdownDescription": "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) — read by the embedder",
+            "markdownDescription": "embedder model id ('nomic-ai/nomic-embed-text-v1.5' for ONNX) \u2014 read by the embedder",
             "scope": "machine"
           },
           "insrc.models.local.embeddingDim": {
             "type": "number",
             "default": 1024,
-            "markdownDescription": "embedder dimensions (768 for ONNX) — read by the embedder",
+            "markdownDescription": "embedder dimensions (768 for ONNX) \u2014 read by the embedder",
             "scope": "machine"
           },
           "insrc.models.local.coreModel": {
@@ -379,19 +379,19 @@
           "insrc.models.local.charsPerToken": {
             "type": "number",
             "default": 3,
-            "markdownDescription": "chars→tokens heuristic (local provider)",
+            "markdownDescription": "chars\u2192tokens heuristic (local provider)",
             "scope": "machine"
           },
           "insrc.models.local.embeddingKeepAlive": {
             "type": "string",
             "default": "24h",
-            "markdownDescription": "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) — keeps the hot-path embed model resident during index bursts",
+            "markdownDescription": "Ollama keep_alive for the embedder model ('24h' / '-1' forever / '0' eager-unload) \u2014 keeps the hot-path embed model resident during index bursts",
             "scope": "machine"
           }
         }
       },
       {
-        "title": "Models — per-role tiers",
+        "title": "Models \u2014 per-role tiers",
         "properties": {
           "insrc.models.tasks.design.alternatives.enumerate": {
             "type": "string",

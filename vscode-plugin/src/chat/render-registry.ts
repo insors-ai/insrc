@@ -24,6 +24,7 @@
  */
 import type { TranscriptEntry } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
+import { MARKER_CLASS } from './markers.js';
 
 /** The two conversational roles a message row can carry. */
 export type ChatRole = 'user' | 'assistant';
@@ -97,8 +98,9 @@ export interface RenderRegistry {
  * - transcript role 'user'      -> { kind:'user', role:'user' }        (collapsible)
  * - transcript role 'assistant' -> { kind:'assistant-text', role:'assistant' } (collapsible)
  * - transcript role 'marker'    -> { kind:'fallback', cssClass }       (the sc1 marker row)
+ *   (a persisted tool-call marker -> { kind:'tool-command' } so a replay pairs with its result)
  * - event 'assistant-delta'     -> { kind:'assistant-text', role:'assistant' } (ac2)
- * - event 'tool-call'           -> { kind:'tool-command', text: command ?? tool/mcp } (ac3, never collapsed)
+ * - event 'tool-call'           -> { kind:'tool-command', text: command ?? tool/mcp } (ac3; long commands collapse)
  * - anything else               -> { kind:'fallback', text:'' }
  */
 export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
@@ -121,6 +123,11 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
     if (entry.role === 'selection-outcome') {
       return { kind: 'selection-outcome', text: entry.chosen.join(', '), collapsible: false, meta: { chosen: entry.chosen } };
     }
+    // ISSUE-1163888072faa9f2: a persisted tool-call marker replays as the SAME tool row the live
+    // tool-call drew, so its following tool-result row attaches to it (one row per invocation).
+    if (entry.role === 'marker' && entry.cssClass === MARKER_CLASS.tool) {
+      return { kind: 'tool-command', text: entry.text, collapsible: false };
+    }
     // 'marker' (S008): keep the sc1 marker class so a restored marker row renders identically.
     return entry.cssClass !== undefined
       ? { kind: 'fallback', text: entry.text, cssClass: entry.cssClass, collapsible: false }
@@ -131,12 +138,18 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
   }
   if (entry.kind === 'tool-call') {
     const label = entry.command ?? (entry.mcp ? `${entry.mcp.server} · ${entry.mcp.name}` : entry.tool);
-    return { kind: 'tool-command', text: label, collapsible: false };
+    // ISSUE-1163888072faa9f2: the provider call id (when reported) lets the result pair exactly.
+    return entry.callId !== undefined
+      ? { kind: 'tool-command', text: label, collapsible: false, meta: { callId: entry.callId } }
+      : { kind: 'tool-command', text: label, collapsible: false };
   }
   // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model as its
   // replayed transcript twin (dual-input parity, a test pins the two).
   if (entry.kind === 'tool-result') {
-    return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta: { command: entry.command, output: entry.output } };
+    const meta = entry.callId !== undefined
+      ? { command: entry.command, output: entry.output, callId: entry.callId }
+      : { command: entry.command, output: entry.output };
+    return { kind: 'tool-result', text: entry.command ?? '', collapsible: true, meta };
   }
   // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model
   // as its replayed transcript twin (dual-input parity, a test pins the two).
@@ -180,6 +193,9 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-toolresult__prompt{color:var(--accent);}` +
   `.insrc-toolresult__sep{height:1px;background:var(--border,#222a36);margin:6px 0;}` +
   `.insrc-toolresult__out{color:var(--fg);white-space:pre-wrap;word-break:break-word;font-family:var(--font,monospace);}` +
+  // ISSUE-1163888072faa9f2: a tool row with its result attached stacks command / separator / output.
+  // Doubled class so it outranks chat-panel's `.insrc-toolrow` rule, which is emitted AFTER this style.
+  `.insrc-toolrow.insrc-toolrow--result{flex-direction:column;align-items:stretch;gap:0;}` +
   // S004: the in-chat permission-approval card (k6 i). Icon-only approve/deny buttons
   // (▹ green ✓ / red ✗); the whole card is bordered to read as an action, not prose.
   `.insrc-approval{border:1px solid rgba(251,191,36,.45);border-radius:10px;background:linear-gradient(180deg,rgba(251,191,36,.09),rgba(251,191,36,.03));padding:11px 13px;margin:2px 0;display:flex;flex-direction:column;gap:9px;}` +
@@ -326,11 +342,13 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.role==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     // S004 (dev-chat ux polish): a replayed selection-outcome row -> the resolved-chip view-model.
     `if(entry.role==='selection-outcome')return {kind:'selection-outcome',text:(entry.chosen||[]).join(', '),collapsible:false,meta:{chosen:entry.chosen}};` +
+    // ISSUE-1163888072faa9f2: a persisted tool-call marker replays as the tool row (parity with host).
+    `if(entry.role==='marker'&&entry.cssClass===${JSON.stringify(MARKER_CLASS.tool)})return {kind:'tool-command',text:entry.text,collapsible:false};` +
     `return entry.cssClass!==undefined?{kind:'fallback',text:entry.text,cssClass:entry.cssClass,collapsible:false}:{kind:'fallback',text:entry.text,collapsible:false};}` +
     `if(entry.kind==='assistant-delta')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
-    `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return {kind:'tool-command',text:label,collapsible:false};}` +
+    `if(entry.kind==='tool-call'){var label=entry.command!=null?entry.command:(entry.mcp?(entry.mcp.server+' \\u00b7 '+entry.mcp.name):entry.tool);return entry.callId!==undefined?{kind:'tool-command',text:label,collapsible:false,meta:{callId:entry.callId}}:{kind:'tool-command',text:label,collapsible:false};}` +
     // S001 (dev-chat ux polish): a live tool-result event -> the SAME structured view-model (parity).
-    `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
+    `if(entry.kind==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:entry.callId!==undefined?{command:entry.command,output:entry.output,callId:entry.callId}:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a live permission-outcome event -> the SAME resolved-chip view-model (parity).
     `if(entry.kind==='permission-outcome')return {kind:'permission-outcome',text:entry.toolName,collapsible:false,meta:{toolName:entry.toolName,decision:entry.decision}};` +
     // S004 (dev-chat ux polish): a live selection-request event -> the card view-model (parity with host).
@@ -339,27 +357,41 @@ export function renderRegistryWebviewSource(): string {
     `if(entry.kind==='selection-outcome')return {kind:'selection-outcome',text:(entry.chosen||[]).join(', '),collapsible:false,meta:{chosen:entry.chosen}};` +
     `return {kind:'fallback',text:'',collapsible:false};}` +
     // 'fallback' is the existing flat writer: byte-identical to the pre-sc1 render (k2).
-    `register('fallback',function(vm){return line(vm&&vm.text!=null?vm.text:'',vm&&vm.cssClass);});` +
+    // ISSUE-1163888072faa9f2: a turn's done/error marker (live or replayed) settles its tool rows, so a
+    // call that never got a result can't absorb a later turn's result.
+    `register('fallback',function(vm){var cc=vm&&vm.cssClass;` +
+    `if(cc===${JSON.stringify(MARKER_CLASS.done)}||cc===${JSON.stringify(MARKER_CLASS.error)})PEND=[];` +
+    `return line(vm&&vm.text!=null?vm.text:'',cc);});` +
     // t4 renderers. user/assistant-text render the plain text through line() (the S003 story
     // adds role differentiation + collapse-by-default via the collapsible primitive). The
     // tool-command renderer shows the real command INLINE with the sc1 tool tone and is NEVER
     // collapsed (k6 d).
     // S003 t2: role-differentiated + collapse-when-long (ac1/ac2). t3 extends assistant-text with
     // content-type widgets by passing an inner node to msgRow.
-    `register('user',function(vm,host){return msgRow(vm,host,'user');});` +
+    // ISSUE-1163888072faa9f2: a user row opens a new turn — settle any tool rows left pending (a
+    // cancelled turn persists no done/error marker), so a replay never attaches across turns.
+    `register('user',function(vm,host){PEND=[];return msgRow(vm,host,'user');});` +
     `register('assistant-text',function(vm,host){return msgRow(vm,host,'assistant',renderAssistantMd(vm&&vm.text));});` +
     // S001 (bugfix): tool-call surfaces the REAL command in the mock's bordered `.toolrow` under a
-    // '\\u25b8 tool' role label, with a green `$` prompt (k5 ac3). Never collapsed (k6 d). textContent (k1).
-    `function toolRow(vm){` +
+    // '\\u25b8 tool' role label, with a green `$` prompt (k5 ac3). textContent (k1).
+    // ISSUE-1163888072faa9f2: a long command (isLong) collapses to a 3-line preview via the sc1
+    // chevron; the row node itself is never a collapse wrapper. Each row is queued in PEND so its
+    // tool-result attaches to it instead of drawing a second row that repeats the command.
+    `var PEND=[];` +
+    `function toolCmd(raw,host){` +
+    `var cmd=document.createElement('span');cmd.className='insrc-toolrow__cmd';` +
+    `var p=document.createElement('span');p.className='insrc-toolrow__prompt';p.textContent='$';cmd.appendChild(p);` +
+    `var txt=document.createElement('span');txt.textContent=' '+raw;cmd.appendChild(txt);` +
+    `return isLong(raw)?host.collapsible(cmd,{defaultCollapsed:true}):cmd;}` +
+    `function toolRow(vm,host){` +
     `var raw=vm&&vm.text!=null?vm.text:'';` +
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--tool';` +
     `wrap.appendChild(whoRow('tool','\\u25b8','tool'));` +
     `var box=document.createElement('div');box.className='insrc-toolrow';` +
-    `var cmd=document.createElement('span');cmd.className='insrc-toolrow__cmd';` +
-    `var p=document.createElement('span');p.className='insrc-toolrow__prompt';p.textContent='$';cmd.appendChild(p);` +
-    `var txt=document.createElement('span');txt.textContent=' '+raw;cmd.appendChild(txt);` +
-    `box.appendChild(cmd);wrap.appendChild(box);return wrap;}` +
-    `register('tool-command',function(vm){return toolRow(vm);});` +
+    `var head=toolCmd(raw,host);box.appendChild(head);wrap.appendChild(box);` +
+    `var cid=vm&&vm.meta&&vm.meta.callId!=null?String(vm.meta.callId):'';` +
+    `PEND.push({wrap:wrap,box:box,head:head,cmd:raw,id:cid});if(PEND.length>32)PEND.shift();return wrap;}` +
+    `register('tool-command',function(vm,host){return toolRow(vm,host);});` +
     // S003 t4: tool results + inline diffs collapse to their caption header via the SAME sc1
     // chevron primitive (k6 c). A caption line stays visible; the body is default-collapsed.
     `function captionRow(vm,host,caption){` +
@@ -372,10 +404,26 @@ export function renderRegistryWebviewSource(): string {
     // S001 (dev-chat ux polish): a tool-result row shows the command line (always visible), a visual
     // separator, then the output collapsed to a ~3-line preview (ONLY the output is wrapped in the
     // sc1 collapse primitive; the command stays outside it). className/textContent only (k1, CSP-safe).
+    // ISSUE-1163888072faa9f2: pair the result with its pending tool row and attach the separator +
+    // collapsed output INSIDE it. A result carrying a call id pairs ONLY with the row of that id (an
+    // Edit/Write result has no tool row, so it stays standalone). An id-less result (replay, or a
+    // provider without ids) pairs among id-less rows: same command first, else the oldest (a replayed
+    // row is labelled by tool name). An unpaired result draws the standalone command + output row below.
+    `function takePending(cmd,id){var k;` +
+    `if(id!==''){for(k=0;k<PEND.length;k++){if(PEND[k].id===id)return PEND.splice(k,1)[0];}return null;}` +
+    `var first=-1;for(k=0;k<PEND.length;k++){if(PEND[k].id!=='')continue;if(first<0)first=k;if(cmd!==''&&PEND[k].cmd===cmd)return PEND.splice(k,1)[0];}` +
+    `return first<0?null:PEND.splice(first,1)[0];}` +
     `function toolResultRow(vm,host){` +
     `var meta=(vm&&vm.meta)||{};` +
     `var cmd=meta.command!=null?String(meta.command):'';` +
     `var output=meta.output!=null?String(meta.output):'';` +
+    `var pend=takePending(cmd,meta.callId!=null?String(meta.callId):'');` +
+    `if(pend){pend.box.className='insrc-toolrow insrc-toolrow--result';` +
+    // A replayed row is labelled by tool name; show the real command once the result carries it.
+    `if(cmd!==''&&cmd!==pend.cmd){pend.box.removeChild(pend.head);pend.box.appendChild(toolCmd(cmd,host));}` +
+    `var ps=document.createElement('div');ps.className='insrc-toolresult__sep';pend.box.appendChild(ps);` +
+    `var po=document.createElement('div');po.className='insrc-toolresult__out';po.textContent=output;` +
+    `pend.box.appendChild(host.collapsible(po,{defaultCollapsed:true}));return pend.wrap;}` +
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--toolresult';` +
     `if(cmd!==''){var c=document.createElement('div');c.className='insrc-toolresult__cmd';` +
     `var p=document.createElement('span');p.className='insrc-toolresult__prompt';p.textContent='$';c.appendChild(p);` +
@@ -473,7 +521,7 @@ export function renderRegistryWebviewSource(): string {
     // session-restored, so the fresh replay re-keys from an empty map.
     `var KEYS={};` +
     `function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}` +
-    `function resetKeys(){KEYS={};}` +
+    `function resetKeys(){KEYS={};PEND=[];}` +
     `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,onSelectionDecision:onSelectionDecision};}`
   );
 }

@@ -958,3 +958,37 @@ test('codex: a no-marker delta behaves exactly as today', async () => {
   assert.equal(events.filter((e) => e.kind === 'selection-request').length, 0);
   assert.deepEqual(events.filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text), ['hello ', 'there']);
 });
+
+// ---- ISSUE-1163888072faa9f2: the provider call id rides tool-call + tool-result (live pairing) ----
+
+test('claude: tool-call and its tool-result carry the tool_use id as callId', async () => {
+  const lines = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'tu-1', name: 'Bash', input: { command: 'npm test' } }] } }),
+    JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'tu-1', content: 'ok' }] } }),
+    JSON.stringify({ type: 'result' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal((toolCall(events) as { callId?: string } | undefined)?.callId, 'tu-1');
+  assert.equal((toolResult(events) as { callId?: string } | undefined)?.callId, 'tu-1');
+});
+
+test('codex: a command item with an id carries it as callId on both events; an id-less item omits it', async () => {
+  const lines = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { id: 'item_3', type: 'command_execution', command: 'ls', aggregated_output: 'a' } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const { deps } = depsFor({ lines });
+  const events = await collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+  assert.equal((toolCall(events) as { callId?: string } | undefined)?.callId, 'item_3');
+  assert.equal((toolResult(events) as { callId?: string } | undefined)?.callId, 'item_3');
+  const noId = [
+    JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'command_execution', command: 'ls', aggregated_output: 'a' } }),
+    JSON.stringify({ type: 'turn.completed' }),
+  ];
+  const ev2 = await collect(createProviderRegistry(depsFor({ lines: noId }).deps).get('codex').run(REQ({ provider: 'codex' })));
+  assert.ok(!('callId' in (toolCall(ev2) as object)), 'no id -> callId omitted');
+});

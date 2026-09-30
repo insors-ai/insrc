@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790776321118-ezibva",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T13:52:01.120Z",
+    "model": "client",
+    "elapsedMs": 6,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1163888072faa9f2",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1163888072faa9f2",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/render-registry.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:400",
+            "message": "Accepted note: replayed rows carry no callId and are labelled by tool name, so an id-less replayed result pairs by command else oldest-pending; for out-of-order parallel results a restored chat can show pairs in a different row order than live (each pair internally correct since the head is replaced with the result's command).",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:407",
+            "message": "Accepted note: a replayed row whose result carries no command keeps its tool-name label as '$ <Tool>' — consistent with the existing live rendering of command-less tools.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

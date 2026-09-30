@@ -485,6 +485,7 @@ const claudeMapper: ProviderMapper = {
               tool: toolName,
               ...(mcp ? { mcp } : {}),
               ...(command !== undefined ? { command } : {}),
+              ...(typeof block['id'] === 'string' && block['id'] !== '' ? { callId: block['id'] as string } : {}),
             });
           }
         }
@@ -504,7 +505,13 @@ const claudeMapper: ProviderMapper = {
         const output = coerceToolResultOutput(block['content']);
         const tid = typeof block['tool_use_id'] === 'string' ? (block['tool_use_id'] as string) : undefined;
         const command = tid !== undefined ? state.toolCommands?.[tid] : undefined;
-        out.push({ kind: 'tool-result', turnId, output, ...(command !== undefined ? { command } : {}) });
+        out.push({
+          kind: 'tool-result',
+          turnId,
+          output,
+          ...(command !== undefined ? { command } : {}),
+          ...(tid !== undefined && tid !== '' ? { callId: tid } : {}),
+        });
       }
       return out;
     }
@@ -599,7 +606,11 @@ const codexMapper: ProviderMapper = {
         // field, while `tool` keeps its existing label fallback. Command-less items omit it (k2).
         const command = typeof item['command'] === 'string' ? (item['command'] as string) : undefined;
         const tool = typeof item['tool'] === 'string' ? (item['tool'] as string) : command ?? 'tool';
-        const events: TurnEvent[] = [{ kind: 'tool-call', turnId, tool, ...(command !== undefined ? { command } : {}) }];
+        // ISSUE-1163888072faa9f2: the item id pairs this call's result onto its row (live-only).
+        const callId = typeof item['id'] === 'string' && item['id'] !== '' ? (item['id'] as string) : undefined;
+        const events: TurnEvent[] = [
+          { kind: 'tool-call', turnId, tool, ...(command !== undefined ? { command } : {}), ...(callId !== undefined ? { callId } : {}) },
+        ];
         // S001 (dev-chat ux polish): a completed codex command/tool item also carries its OUTPUT
         // (aggregated_output / output / stdout) — surface it as a ToolResultEvent so the transcript
         // shows the collapsed result. An output-less completion is byte-identical to today (k2).
@@ -612,6 +623,7 @@ const codexMapper: ProviderMapper = {
             output: rawOut,
             ...(command !== undefined ? { command } : {}),
             ...(exitCode !== undefined ? { exitCode } : {}),
+            ...(callId !== undefined ? { callId } : {}),
           });
         }
         return events;

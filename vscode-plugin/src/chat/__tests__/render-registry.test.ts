@@ -235,9 +235,13 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { role: 'assistant', text: 'yo', at: 't' },
     { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' },
     { role: 'marker', text: 'plain', at: 't' },
+    // ISSUE-1163888072faa9f2: a persisted tool-call marker replays as the tool row.
+    { role: 'marker', text: 'Bash', cssClass: 'insrc-term__marker--tool', at: 't' },
     { kind: 'assistant-delta', turnId: 't', text: 'd' },
     { kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls' },
     { kind: 'tool-call', turnId: 't', tool: 'Read' },
+    { kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls', callId: 'tu-1' },
+    { kind: 'tool-result', turnId: 't', command: 'ls', output: 'a', callId: 'tu-1' },
     { kind: 'tool-call', turnId: 't', tool: 'x', mcp: { server: 'insrc', name: 'n' } },
     { kind: 'status', turnId: 't', phase: 'thinking' },
     // S001 (ux polish): tool-result — live event (with + without command) and its replayed twin.
@@ -742,4 +746,120 @@ test('S004 (ux polish): a session-restored replay renders the resolved chip; the
   assert.equal(appended.length, 2, 'two rows replayed (user + resolved chip)');
   assert.ok(!appended.some((n) => findByClass(n, 'insrc-select')), 'no interactive selection card re-surfaces on replay');
   assert.ok(appended.some((n) => findByClass(n, 'insrc-selectoutcome')), 'the resolved chip is rendered');
+});
+
+// ---- ISSUE-1163888072faa9f2: one row per tool invocation + collapsible long commands ----
+
+function countByClass(n: FakeNode, cls: string): number {
+  return (n.className.split(' ').includes(cls) ? 1 : 0) + n.children.reduce((a, c) => a + countByClass(c, cls), 0);
+}
+
+test('ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'npm test' } as TurnEvent));
+  const row = reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'npm test', output: 'l1\nl2\nl3\nl4' } as TurnEvent))!;
+  assert.equal(appended.length, 1, 'no second row is appended for the result');
+  assert.equal(row, appended[0], 'the result returns the existing tool row');
+  assert.equal(countByClass(row, 'insrc-toolrow__cmd'), 1, 'the command is rendered exactly once');
+  assert.ok(!findByClass(row, 'insrc-toolresult__cmd'), 'no repeated result command line');
+  const box = findByClass(row, 'insrc-toolrow')!;
+  assert.match(box.className, /insrc-toolrow--result/, 'the tool row switches to the stacked result layout');
+  assert.ok(findByClass(box, 'insrc-toolresult__sep'), 'a separator sits inside the tool row');
+  const wrap = findByClass(box, 'insrc-collapse')!;
+  assert.match(wrap.className, /insrc-collapse--collapsed/, 'the output is default-collapsed');
+  assert.ok(allText(findByClass(wrap, 'insrc-toolresult__out')!).includes('l1\nl2\nl3\nl4'), 'the output sits inside the collapse');
+});
+
+test('ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'pwd' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Read' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'pwd', output: '/w' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'ls', output: 'a b' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output: 'file body' } as TurnEvent));
+  assert.equal(appended.length, 3, 'three tool rows, no extra result rows');
+  assert.ok(allText(appended[0]!).includes('a b'), 'ls output attaches to the ls row');
+  assert.ok(allText(appended[1]!).includes('/w'), 'pwd output attaches to the pwd row');
+  assert.ok(allText(appended[2]!).includes('file body'), 'the command-less output attaches to the Read row');
+});
+
+test('ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'npm test', output: 'ok' } as TurnEvent));
+  assert.equal(appended.length, 1);
+  assert.ok(findByClass(appended[0]!, 'insrc-toolresult__cmd'), 'the standalone row keeps its command line');
+});
+
+test('ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline', () => {
+  const { reg } = makeRegistry();
+  const long = 'cd /x\necho a\necho b\necho c\necho d';
+  const row = reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: long } as TurnEvent))!;
+  const wrap = findByClass(findByClass(row, 'insrc-toolrow')!, 'insrc-collapse');
+  assert.ok(wrap && /insrc-collapse--collapsed/.test(wrap.className), 'the long command is default-collapsed');
+  assert.ok(findByClass(wrap!, 'insrc-toolrow__cmd'), 'the command sits inside the collapse body');
+  const short = reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls' } as TurnEvent))!;
+  assert.ok(!findByClass(short, 'insrc-collapse'), 'a short command is not collapsible');
+});
+
+test('ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command', () => {
+  const { reg, appended } = makeRegistry();
+  const transcript: TranscriptEntry[] = [
+    { role: 'marker', text: 'Bash', cssClass: 'insrc-term__marker--tool', at: 't' },
+    { role: 'tool-result', command: 'npm test', output: 'ok', at: 't' },
+  ];
+  transcript.forEach((x, i) => reg.appendKeyed(reg.toViewModel(x), 'r' + i));
+  assert.equal(appended.length, 1, 'the replay draws a single tool row');
+  const row = appended[0]!;
+  assert.equal(countByClass(row, 'insrc-toolrow__cmd'), 1, 'one command line');
+  assert.ok(allText(row).includes('npm test'), 'the real command replaces the tool-name label');
+  assert.ok(!allText(row).includes('Bash'), 'the tool-name label is gone');
+  assert.ok(allText(row).includes('ok'), 'the output is attached');
+});
+
+test('ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Bash', command: 'ls' } as TurnEvent));
+  reg.resetKeys();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', command: 'ls', output: 'x' } as TurnEvent));
+  assert.equal(appended.length, 2, 'the result renders its own row after a reset');
+});
+
+test('ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone', () => {
+  const { reg, appended } = makeRegistry();
+  reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't', tool: 'Read', callId: 'tu-read' } as TurnEvent));
+  // An Edit tool_use emits file-edit (no tool row); its command-less result arrives first.
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output: 'file updated', callId: 'tu-edit' } as TurnEvent));
+  reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't', output: 'read body', callId: 'tu-read' } as TurnEvent));
+  assert.equal(appended.length, 2, 'the Read row + a standalone Edit result row');
+  assert.ok(allText(appended[0]!).includes('read body'), 'the Read output attaches to the Read row');
+  assert.ok(!allText(appended[0]!).includes('file updated'), 'the Edit output does NOT attach under the Read row');
+  assert.ok(allText(appended[1]!).includes('file updated'), 'the Edit output renders standalone');
+});
+
+test('ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn\'s result never attaches upstream', () => {
+  for (const cls of ['insrc-term__marker--done', 'insrc-term__marker--error']) {
+    const { reg, appended } = makeRegistry();
+    reg.renderRow(reg.toViewModel({ kind: 'tool-call', turnId: 't1', tool: 'Read' } as TurnEvent)); // never answered
+    reg.renderRow({ kind: 'fallback', text: 'done', cssClass: cls, collapsible: false });
+    reg.renderRow(reg.toViewModel({ kind: 'tool-result', turnId: 't2', output: 'late' } as TurnEvent));
+    assert.equal(appended.length, 3, `after a ${cls} marker the result draws its own row`);
+    assert.ok(!allText(appended[0]!).includes('late'), 'the stale row is untouched');
+  }
+});
+
+test('ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it', () => {
+  assert.match(RENDER_REGISTRY_STYLE, /\.insrc-toolrow\.insrc-toolrow--result\{[^}]*align-items:stretch/, 'doubled-class selector wins align-items/gap');
+});
+
+test('ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns', () => {
+  const { reg, appended } = makeRegistry();
+  const transcript: TranscriptEntry[] = [
+    { role: 'marker', text: 'Read', cssClass: 'insrc-term__marker--tool', at: 't' }, // cancelled: no result, no done
+    { role: 'user', text: 'next', at: 't' },
+    { role: 'tool-result', output: 'late', at: 't' },
+  ];
+  transcript.forEach((x, i) => reg.appendKeyed(reg.toViewModel(x), 'r' + i));
+  assert.equal(appended.length, 3, 'the result draws its own row');
+  assert.ok(!allText(appended[0]!).includes('late'), 'the cancelled turn\'s row is untouched');
 });

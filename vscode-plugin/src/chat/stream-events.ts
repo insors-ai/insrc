@@ -40,6 +40,12 @@ export type TurnEvent =
        * command-less tools — consumers then fall back to the tool name (k2).
        */
       readonly command?: string;
+      /**
+       * ISSUE-1163888072faa9f2 (additive): the provider's id for this call (claude tool_use `id` /
+       * codex item `id`), when reported. The webview pairs the matching ToolResultEvent onto this
+       * call's row by it. Live-only: never persisted into the transcript.
+       */
+      readonly callId?: string;
     }
   | { readonly kind: 'file-edit'; readonly turnId: string; readonly path: string; readonly diff: UnifiedDiff }
   | { readonly kind: 'status'; readonly turnId: string; readonly phase: 'thinking' | 'streaming' | 'tool' | 'editing' }
@@ -66,6 +72,8 @@ export type TurnEvent =
       readonly command?: string;
       readonly output: string;
       readonly exitCode?: number;
+      /** ISSUE-1163888072faa9f2 (additive): the id of the call this result answers, when reported (live-only). */
+      readonly callId?: string;
     }
   | {
       /**

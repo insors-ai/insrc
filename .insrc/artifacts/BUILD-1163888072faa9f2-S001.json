@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "1163888072faa9f2",
+    "storyId": "S001",
+    "createdAt": "2026-09-30T13:41:04.969Z",
+    "updatedAt": "2026-09-30T13:57:05.989Z",
+    "approvedAt": "2026-09-30T13:57:06.056Z"
+  },
+  "body": {
+    "focus": "ISSUE-1163888072faa9f2 (bugfix/small, issue -> build): Merge dev-chat tool result into its tool row and collapse long commands. Render one row per tool invocation: when a tool result arrives, attach its collapsed output to the pending tool row instead of drawing a new row repeating the command; fall back to a standalone result row when no pending tool row exists. Make commands over ~2 lines collapsible via the existing chevron collapse primitive. Keep restored-chat rendering consistent with the live single-row shape. No change to TurnEvent kinds, transcript storage shape, or daemon IPC; bump vscode-plugin 0.5.2 -> 0.5.3.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      }
+    ]
+  }
+}

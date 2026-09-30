@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790769702215-xy3ss2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T12:01:42.216Z",
+    "model": "client",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "71133869f31324f7",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "71133869f31324f7",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "site/css/tui.css",
+        "site/getting-started.html",
+        "site/js/tui.js"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "site/getting-started.html:82",
+            "message": "site/ has no automated test harness (per the LLD test strategy, convention.detect testFiles: none), so this change is covered by manual/deterministic verification rather than unit tests: div 44/44 + section 3/3 + <p> 32/32 balance, `node --check js/tui.js`, a model-id grep matching the code defaults (no 35b-a3b default substitution), and confirming .gs-tabs appears only in getting-started.html. Browser-level checks (tab switching, keyboard, JS-off stacked fallback, mobile) are not runnable in this sandbox and were validated structurally. Observation only — consistent with every prior site/ change.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

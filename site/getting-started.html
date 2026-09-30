@@ -51,24 +51,53 @@
     <thead><tr><th>Requirement</th><th>Why</th><th>Check</th></tr></thead>
     <tbody>
       <tr><td><strong>Node.js 20+</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install. <em>(The IDE plugins can provision a private Node when the system one is unsuitable.)</em></td><td><code>node -v</code></td></tr>
-      <tr><td><strong>Ollama</strong></td><td>local LLM + embeddings — embeddings are local-only, so this is always required.</td><td><code>ollama --version</code></td></tr>
-      <tr><td><strong>claude</strong> and/or <strong>codex</strong> CLI</td><td>cloud LLM access is delegated to these CLIs' OAuth sessions — insrc never makes direct REST calls.</td><td><code>claude --version</code></td></tr>
+      <tr><td><strong>Ollama</strong></td><td>local models. <strong>Required for embeddings</strong> (always local) and <strong>optional for the core reasoning model</strong> — see the two panels below.</td><td><code>ollama --version</code></td></tr>
+      <tr><td><strong>claude</strong> and/or <strong>codex</strong> CLI</td><td>cloud LLM access is delegated to these CLIs' OAuth sessions — insrc never makes direct REST calls. Also how you run the <em>core model</em> in the cloud (no Ollama needed for it).</td><td><code>claude --version</code></td></tr>
       <tr><td><strong>git</strong></td><td>repo discovery, the git tools, and the workflow tracker.</td><td><code>git --version</code></td></tr>
     </tbody>
   </table></div>
 
-  <div class="tip">Pull the two local models — the analyzer core and the embedder:
-    <div class="code" style="margin-top:10px">
-      <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> ollama pull qwen3.6:27b        <span class="c"># analyzer / shaper core model</span>
-<span class="p">$</span> ollama pull qwen3-embedding:0.6b   <span class="c"># embeddings — 1024-dim, local-only</span></code></pre>
-    </div>
-    <p style="margin:10px 0 0">Embeddings are always local. The analyzer model is only needed when your core model tier runs on Ollama (<code>models.tiers.core.runner: ollama</code>) — skip <code>qwen3.6:27b</code> if you drive analyze / workflow reasoning through the <code>claude</code> / <code>codex</code> CLI instead.</p>
+  <h3 id="ollama-context">Ollama — what it's actually for</h3>
+  <div class="tip"><strong>Required for embeddings.</strong> Every indexed repo needs vector embeddings, and embeddings are always computed locally. Pick one embedder:
+    <div class="tablewrap" style="margin-top:10px"><table>
+      <thead><tr><th>Embedder</th><th>Model</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Ollama</strong> <span class="c">(default)</span></td><td><code>qwen3-embedding:0.6b</code></td><td>1024-dim. <code>ollama pull qwen3-embedding:0.6b</code></td></tr>
+        <tr><td><strong>ONNX</strong> <span class="c">(no Ollama)</span></td><td><code>nomic-ai/nomic-embed-text-v1.5</code></td><td>768-dim, runs in-process — no Ollama pull. Select with the installer flag <code>--embedder onnx</code> (or set <code>models.local.embeddingModel</code>).</td></tr>
+      </tbody>
+    </table></div>
   </div>
 
+  <div class="tip"><strong>Optional for the core model.</strong> The <em>core</em> (reasoning) model drives analyze / workflow / build / review. You choose where it runs — so Ollama is only needed for the model if you run it locally:
+    <div class="tablewrap" style="margin-top:10px"><table>
+      <thead><tr><th>Where</th><th>Model</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Local — Ollama</strong></td><td><code>qwen3.6:27b</code> <span class="c">(default)</span><br><code>qwen3.6:35b-a3b</code> <span class="c">(larger)</span></td><td>Set <code>models.tiers.core.runner: ollama</code>, then <code>ollama pull qwen3.6:27b</code>. The larger MoE trades RAM for accuracy.</td></tr>
+        <tr><td><strong>Cloud — CLI</strong></td><td><code>claude</code> <span class="c">(opus / sonnet)</span> or <code>codex</code></td><td>Set <code>models.tiers.core.runner: cli-claude</code> (or <code>cli-codex</code>). No Ollama needed for the model — Ollama then only serves embeddings (or skip it entirely with the ONNX embedder).</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin:10px 0 0">Accuracy is the primary principle: the core tier is never served below the high tier (the <code>coreFloor</code>). Tune tiers &amp; per-role overrides later on the <a href="settings.html">settings page</a>.</p>
+  </div>
+
+  <!-- ==================== surface setup (tabs) ==================== -->
+  <h2 id="setup">Set up your surface</h2>
+  <p>Pick your surface below. Each tab gets you installed and focuses on the one setting that matters most — <strong>choosing your core model</strong>. Everything else (tiers, per-role overrides, embeddings, tracker) lives on the <a href="settings.html">settings page</a>.</p>
+
+  <div class="gs-tabs">
+    <div role="tablist" aria-label="Choose your surface">
+      <button role="tab" type="button" id="tab-cli" aria-controls="cli" aria-selected="true">Terminal only</button>
+      <button role="tab" type="button" id="tab-vscode" aria-controls="vscode" aria-selected="false" tabindex="-1">VS Code</button>
+      <button role="tab" type="button" id="tab-jetbrains" aria-controls="jetbrains" aria-selected="false" tabindex="-1">JetBrains</button>
+    </div>
+
   <!-- ==================== CLI ==================== -->
-  <h2 id="cli">A · CLI &amp; daemon</h2>
+  <section role="tabpanel" id="cli" aria-labelledby="tab-cli">
+  <h3>CLI &amp; daemon</h3>
   <p>The editor-independent path: install the daemon, launch the TUI, index a repo, ask a grounded question, then register the MCP server with your CLI host.</p>
+
+  <div class="tip"><strong>Core model — the key setting.</strong> In the TUI's <strong>Setup</strong> pane (provider &amp; model config), press <kbd>a</kbd> to apply the recommended config and <kbd>p</kbd> to pull any missing local models — or edit <code>~/.insrc/config.json</code>. The core tier is <code>models.tiers.core</code>: <code>runner: ollama</code> + <code>model: qwen3.6:27b</code> to run local, or <code>runner: cli-claude</code> (/<code>cli-codex</code>) for the cloud. Per-role tiering is on the <strong>Tiers</strong> pane; everything deeper → <a href="settings.html">settings guide</a>.
+
+  </div>
 
   <h3 id="cli-install">1 · Install the daemon</h3>
   <p><strong>Release installer (recommended).</strong> The one-line installer verifies prerequisites, clones + builds the daemon into <code>~/.insrc/daemon</code>, and starts it. Update later by re-running it or with <code>~/.insrc/daemon/scripts/daemon-ctl.sh update</code>.</p>
@@ -173,9 +202,15 @@
   <h4 id="mcp-resolution">How the repo is resolved</h4>
   <p>Resolution is <strong>session-aware</strong> for both clients, in order: an explicit <code>repo</code> argument wins; otherwise the server matches its working directory against the registered repos (the session workspace — both clients spawn the server with the workspace as its CWD); otherwise it falls back to an optional <code>INSRC_REPO</code> env for headless / cron use. That's why one global registration with <strong>no <code>INSRC_REPO</code></strong> works everywhere. Either way the repo must be registered with the daemon and finished indexing.</p>
 
+  </section>
   <!-- ==================== VS Code ==================== -->
-  <h2 id="vscode">B · VS Code extension</h2>
+  <section role="tabpanel" id="vscode" aria-labelledby="tab-vscode">
+  <h3>VS Code extension</h3>
   <p>The extension installs and manages the daemon for you, so there's no manual daemon step — just install, accept the onboarding prompts, and use your assistant. Full detail on the <a href="vscode.html">VS Code page</a>.</p>
+
+  <div class="tip"><strong>Core model — the key setting.</strong> Pick your core tier's model with the <code>insrc: Set model tier</code> command, or edit it in <strong>native VS Code Settings</strong> (search <code>insrc</code>). Choose a local Ollama model (<code>qwen3.6:27b</code>) or a cloud runner (<code>cli-claude</code> / <code>cli-codex</code>). Everything else — tiers, per-role overrides, embeddings — is in Settings and the <a href="settings.html">settings guide</a>.
+
+  </div>
 
   <h3 id="vscode-install">1 · Install the extension</h3>
   <p>Open the <strong>Extensions</strong> view (<kbd>⇧⌘X</kbd> / <kbd>Ctrl+Shift+X</kbd>), search <strong>insrc</strong>, and click <strong>Install</strong> — or install <a href="https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode"><code>insors.insrc-vscode</code></a> from the Marketplace. (Pre-release: <strong>⋯ → Install from VSIX…</strong> with a built <code>insrc-vscode-&lt;version&gt;.vsix</code>.)</p>
@@ -192,9 +227,15 @@
   <h3 id="vscode-use">3 · Use it</h3>
   <p>Your assistant now explores the code through insrc's grounded tools. Edit the daemon's config from <strong>native VS Code Settings</strong> (search <code>insrc</code>), pick a tier's model with <code>insrc: Set model tier</code>, and open the status-bar <strong>insrc</strong> item for Detailed Status / Repo Configuration panels. See the <a href="vscode.html">VS Code page</a> and the <a href="settings.html">settings guide</a>.</p>
 
+  </section>
   <!-- ==================== JetBrains ==================== -->
-  <h2 id="jetbrains">C · JetBrains plugin</h2>
+  <section role="tabpanel" id="jetbrains" aria-labelledby="tab-jetbrains">
+  <h3>JetBrains plugin</h3>
   <p>One plugin for IntelliJ IDEA, PyCharm, GoLand &amp; WebStorm (2024.2+). It manages the daemon and wires a JetBrains AI host; setup happens on project open. Full detail on the <a href="plugin.html">JetBrains page</a>.</p>
+
+  <div class="tip"><strong>Core model — the key setting.</strong> Open <strong>Settings → Tools → insrc</strong> (a live config editor) and set the core tier's model — a local Ollama model (<code>qwen3.6:27b</code>) or a cloud runner (<code>cli-claude</code> / <code>cli-codex</code>). The same editor holds tiers, per-role overrides and embeddings; see the <a href="settings.html">settings guide</a> for the full surface.
+
+  </div>
 
   <h3 id="jetbrains-install">1 · Install the plugin</h3>
   <p><strong>Settings → Plugins → Marketplace</strong>, search <strong>insrc</strong>, and click <strong>Install</strong>. (Pre-release: <strong>Settings → Plugins → ⚙ → Install Plugin from Disk…</strong> with a built <code>insrc-jetbrains-&lt;version&gt;.zip</code>.) You also need a JetBrains AI host — <strong>AI Assistant</strong> or <strong>Junie</strong>; without one the plugin stays dormant and re-checks on later project opens.</p>
@@ -209,6 +250,9 @@
 
   <h3 id="jetbrains-use">3 · Use it</h3>
   <p>Your assistant is now grounded per-project. Drive and inspect insrc from <strong>Settings → Tools → insrc</strong> (a live config editor with Daemon / Workflows / Debug pages), the <strong>project-view context menu</strong> (repo status + register), and the <strong>artifact-review tool window</strong> (read, comment on and approve pending workflow artifacts). See the <a href="plugin.html">JetBrains page</a> and the <a href="settings.html">settings guide</a>.</p>
+
+  </section>
+  </div><!-- /.gs-tabs -->
 
   <h2 id="next">Where next</h2>
   <div class="grid">

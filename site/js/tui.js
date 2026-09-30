@@ -148,7 +148,58 @@
     })();
   }
 
+  /* ---- surface sub-tabs (getting-started) ------------------------------ */
+  /* Progressive enhancement: no-op on every page without a .gs-tabs block.
+     Without JS the tablist stays hidden (CSS) and all panels render stacked. */
+  function initTabs() {
+    const box = document.querySelector('.gs-tabs');
+    if (!box) return;
+    const tabs = Array.prototype.slice.call(box.querySelectorAll('[role="tab"]'));
+    if (tabs.length === 0) return;
+    const panels = tabs.map((t) => document.getElementById(t.getAttribute('aria-controls') || ''));
+    if (panels.some((p) => !p)) return; // malformed markup → leave stacked fallback
+
+    function select(i, focus) {
+      tabs.forEach((t, j) => {
+        const on = j === i;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        panels[j].hidden = !on;
+      });
+      if (focus) tabs[i].focus();
+    }
+
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i, false));
+      t.addEventListener('keydown', (e) => {
+        let n = i;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') n = 0;
+        else if (e.key === 'End') n = tabs.length - 1;
+        else return;
+        e.preventDefault(); select(n, true);
+      });
+    });
+
+    box.classList.add('gs-tabs--ready');
+
+    // Activate the tab whose panel matches the URL hash (on load AND on later
+    // same-page #cli / #vscode / #jetbrains clicks from other sections/pages),
+    // then bring the now-visible panel into view; else default to the first tab.
+    function fromHash(scroll) {
+      const id = (location.hash || '').replace(/^#/, '');
+      const i = panels.findIndex((p) => p.id === id);
+      if (i < 0) return false;
+      select(i, false);
+      if (scroll) panels[i].scrollIntoView({ block: 'start' });
+      return true;
+    }
+    if (!fromHash(false)) select(0, false);
+    window.addEventListener('hashchange', () => fromHash(true));
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    initTheme(); initNav(); initNavOverflow(); initCopy(); initAnchors(); initType();
+    initTheme(); initNav(); initNavOverflow(); initCopy(); initAnchors(); initType(); initTabs();
   });
 })();

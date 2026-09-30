@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790768414154-416up7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T11:44:03.450Z",
+    "epicCreatedAt": "2026-09-30T11:44:03.450Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 229285,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "71133869f31324f7",
+    "epicSlug": "rework-site-getting-started-html-1",
+    "storyId": "S001",
+    "lldRunId": "wf-1790767578514-liqlmh",
+    "lldEffectiveHash": "71133869f31324f7484db53f168d804fcb0e7cfd5e2063c36edc08f65b68aa1a",
+    "approvedAt": "2026-09-30T11:44:13.350Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story is a docs-page rework confined to three site/ files. First the Prerequisites section is rewritten around Node + Ollama with the required-embeddings / optional-core split and the grounded model lists. Then a small, accessible tab component is added the site's own way — additive theme-aware CSS in css/tui.css and a self-contained initTabs() beside the existing handlers in js/tui.js — and the three surface quick-starts are folded into its three panels, each leading with core-model setup while keeping the essential install steps and linking deeper config to the settings guide. Everything degrades to stacked, readable content with JS off; verification is manual/visual in a browser (the static site has no automated harness) plus a grep for the exact model ids.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Rewrite the #prerequisites section (Node + Ollama split + model lists)",
+        "summary": "In site/getting-started.html, restructure #prerequisites around Node + Ollama: Ollama REQUIRED for embeddings (Ollama qwen3-embedding:0.6b default + the no-Ollama ONNX nomic-ai/nomic-embed-text-v1.5) and OPTIONAL for the core model (qwen3.6:27b default / qwen3.6:35b-a3b larger / cloud via claude|codex CLI, models.tiers.core.runner). Reuse the existing table/.tip/.code idioms; keep the #prerequisites anchor; keep qwen3.6:27b as the default (do NOT switch to 35b-a3b).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "#prerequisites frames Ollama as REQUIRED for embeddings and OPTIONAL for the core model.",
+          "Embedding models listed: qwen3-embedding:0.6b (Ollama) + nomic-ai/nomic-embed-text-v1.5 (ONNX, no Ollama).",
+          "Core models listed: qwen3.6:27b (default) + qwen3.6:35b-a3b (larger) + cloud via claude/codex CLI; 27b stays the default.",
+          "The #prerequisites anchor + Node.js 20+/claude+codex/git rows are preserved; existing idioms reused."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "#prerequisites shows Node + Ollama; Ollama REQUIRED for embeddings, OPTIONAL for core"
+          },
+          {
+            "level": "smoke",
+            "name": "embedding + core model lists render (qwen3-embedding:0.6b / nomic-embed-text-v1.5 / qwen3.6:27b default / 35b-a3b larger / cloud)"
+          },
+          {
+            "level": "smoke",
+            "name": "grep getting-started.html confirms exact model ids + no 35b-a3b default substitution"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the tab component CSS to css/tui.css",
+        "summary": "Add an additive, theme-aware, component-scoped CSS block for the tabs: a [role=tablist] row, [role=tab] buttons (selected/hover/focus via theme tokens), and [role=tabpanel] show/hide keyed off an 'active' hook class the JS sets. Default (no active class) shows ALL panels stacked (the no-JS fallback). Scope selectors so no other page changes.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Tab styles are additive + scoped to the tab component (no other page's layout changes).",
+          "Selected/hover/focus states use the site's theme tokens (work in light + dark).",
+          "With no 'active' hook class, all [role=tabpanel] are visible (fallback); once active, only the selected panel shows."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "no 'active' class -> all panels visible (fallback); active -> only selected panel shows; light+dark states"
+          },
+          {
+            "level": "smoke",
+            "name": "no horizontal overflow at mobile width; tablist wraps/scrolls"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the initTabs controller to js/tui.js",
+        "summary": "Add a self-contained initTabs() to the IIFE, appended to the existing DOMContentLoaded call list beside initTheme/initCopy WITHOUT modifying them. It queries the tablist, returns early (no-op) when absent, marks the container active, wires tab click + Left/Right/Home/End arrow-key selection, toggles aria-selected on tabs + hidden on panels, defaults to the first tab (Terminal), and activates the tab matching location.hash when it names a panel.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "initTabs no-ops when no [role=tablist] is present (every other page is unaffected).",
+          "Click + arrow-key (Left/Right/Home/End) selection toggles aria-selected + panel hidden correctly; focus is visible.",
+          "The existing initTheme/initCopy/initAnchors handlers are unchanged and still run.",
+          "A location.hash naming a panel activates that tab; otherwise the first tab is active."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "click each tab shows its panel + toggles aria-selected/hidden; keyboard Left/Right/Home/End + visible focus"
+          },
+          {
+            "level": "smoke",
+            "name": "initTabs no-ops on pages without a tablist (index.html, cli.html theme/copy unaffected)"
+          },
+          {
+            "level": "smoke",
+            "name": "location.hash naming a panel activates that tab; else first tab (Terminal)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Restructure the three surface sections into the tab markup",
+        "summary": "Replace the three plain <h2> surface sections (#cli/#vscode/#jetbrains) in getting-started.html with one tab component: a role=tablist of three role=tab buttons (Terminal only / VS Code / JetBrains) + three role=tabpanel panels. Each panel LEADS with the CORE model config step for its surface, KEEPS that surface's essential install/onboarding steps, and routes only DEEPER configuration to the settings.html guide. Keep the top-level #cli/#vscode/#jetbrains ids on the tab/panel elements and preserve existing sub-anchors where practical.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The three surfaces are a single tablist + 3 tabpanels (Terminal only / VS Code / JetBrains).",
+          "Each panel LEADS with the CORE model configuration step AND retains that surface's essential install/onboarding steps; only deeper config links to settings.html.",
+          "The #cli/#vscode/#jetbrains top-level anchor ids are preserved on the tab/panel elements (and existing sub-anchors kept where practical).",
+          "With JS off the panels render stacked + fully readable (content-first)."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "three tabpanels; each panel headlines core-model config + ends with settings.html link"
+          },
+          {
+            "level": "smoke",
+            "name": "JS-off: all panels render stacked + fully readable (content-first fallback)"
+          },
+          {
+            "level": "smoke",
+            "name": "inbound deep-links #cli/#vscode/#jetbrains + #prerequisites still resolve to visible content"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Verify the page + no-regression in a browser",
+        "summary": "Manual/visual verification (no automated harness for site/): open getting-started.html — tab switching + keyboard + JS-off stacked fallback + preserved #cli/#vscode/#jetbrains/#prerequisites anchors + correct model ids (grep); open a couple of other pages (index.html, cli.html) to confirm the shared js/tui.js + css/tui.css additions are inert (theme/copy still work); check no horizontal overflow at mobile width.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Tabs switch on click + keyboard; JS-off shows all panels stacked; anchors still resolve.",
+          "grep getting-started.html confirms qwen3-embedding:0.6b / nomic-ai/nomic-embed-text-v1.5 / qwen3.6:27b / qwen3.6:35b-a3b and no 35b-a3b default substitution.",
+          "Other pages' theme toggle + copy still work; getting-started theme/copy still work; no mobile horizontal overflow."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "getting-started.html theme toggle + .copy buttons still work; other pages (index/cli) theme+copy intact"
+          },
+          {
+            "level": "smoke",
+            "name": "end-to-end: tabs + keyboard + JS-off + anchors + model-id grep + no mobile overflow"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "#prerequisites shows Node + Ollama; Ollama is framed REQUIRED for embeddings and OPTIONAL for the core model",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "embedding models listed: Ollama qwen3-embedding:0.6b + the no-Ollama ONNX nomic-ai/nomic-embed-text-v1.5",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "core models listed: qwen3.6:27b (default) + qwen3.6:35b-a3b (larger) + cloud via claude/codex CLI; 27b remains the default",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "grep getting-started.html confirms the exact model ids and no stray 35b-a3b substitution for the default",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "clicking each tab (Terminal only / VS Code / JetBrains) shows that panel and hides the others; aria-selected + hidden toggle correctly",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "keyboard: Left/Right/Home/End move selection; focus is visible",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "each panel headlines the CORE model configuration for its surface and ends with an 'all other configuration → settings guide' link to settings.html",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "JS-off (disable scripts): all panels render stacked + fully readable (content-first fallback)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "inbound deep-links #cli / #vscode / #jetbrains and #prerequisites still resolve to visible content",
+        "coveredByTaskIds": [
+          "t4",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "other pages that load js/tui.js (e.g. index.html, cli.html) still theme-toggle + copy correctly (tab-init no-ops with no tablist)",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "getting-started.html theme toggle + .copy buttons still work",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "no horizontal overflow at mobile width; tablist wraps/scrolls",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 #prerequisites section rework (site/getting-started.html:49/60/80; model defaults local.ts:51/53, onnx-embedder.ts:52)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 surface sections → sub-tab component (site/getting-started.html:70/177/196/193/211)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 tab component CSS (site/css/tui.css)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 tab controller / initTabs (site/js/tui.js)"
+    }
+  ]
+}

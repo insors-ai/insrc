@@ -1362,11 +1362,33 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   const rule = html.slice(html.indexOf('.chrome #insrc-history{'));
   const decl = rule.slice(0, rule.indexOf('}') + 1);
   assert.match(decl, /background-image:url\("data:image\/svg\+xml,/, 'the history dropdown has an inline SVG icon background');
-  assert.match(decl, /padding-left:20px/, 'left padding clears the icon');
   assert.match(decl, /background-repeat:no-repeat,no-repeat,no-repeat/, 'three background layers: icon + the two arrow gradients');
-  // The plain .segsel arrow-only style stays icon-free (the provider/mode selects do not get the history glyph).
+  // ISSUE-bd2d6b6a: the switcher is a CHIP, so icon + label + arrow read as ONE control. Without the
+  // enclosure the three marks float on the chrome background and the dim detached icon reads as a
+  // SECOND dropdown beside the label+arrow. Assert the enclosure and the icon's place inside it
+  // together — either one alone permits the detached rendering that was reported.
+  assert.match(decl, /border:1px solid var\(--border\)/, 'the chip has a border');
+  assert.match(decl, /border-radius:6px/, 'the chip has a corner radius');
+  assert.match(decl, /background-color:rgba\(255,255,255,\.045\)/, 'the chip has a faint fill');
+  // Both bounds below are DERIVED from the declared rule, so they keep testing the real relationship
+  // if the padding is ever retuned — a hardcoded bound would silently stop measuring anything.
+  const pad = /padding:\d+px (\d+)px \d+px (\d+)px/.exec(decl);
+  assert.ok(pad, 'the chip declares four-value padding (the left value clears the icon)');
+  const padLeft = Number(pad![2]);
+  const iconLeft = /background-position:left (\d+)px center/.exec(decl);
+  assert.ok(iconLeft, 'the icon is positioned from the left edge');
+  const iconX = Number(iconLeft![1]);
+  // The 12px icon must sit INSIDE the chip's left padding: clear of the border, and ending before the
+  // label starts. A bare-edge icon (the pre-fix left 2px) fails the first bound.
+  assert.ok(iconX >= 4, `the icon clears the chip border (was left ${iconX}px)`);
+  assert.ok(iconX + 12 <= padLeft, `the label (padding-left ${padLeft}px) starts after the ${iconX}px icon`);
+  // The icon tone matches the label (--fg #c6cdd8), not --muted: a two-tone dimmer icon reads detached.
+  assert.match(decl, /stroke='%23c6cdd8'/, 'the glyph strokes the label tone, not --muted');
+  // The footer selects KEEP the borderless seg language — the chip is the header switcher only.
   const segsel = html.slice(html.indexOf('.segsel{'));
-  assert.doesNotMatch(segsel.slice(0, segsel.indexOf('}') + 1), /data:image\/svg\+xml/, 'the shared .segsel style has no session icon');
+  const segselDecl = segsel.slice(0, segsel.indexOf('}') + 1);
+  assert.doesNotMatch(segselDecl, /data:image\/svg\+xml/, 'the shared .segsel style has no session icon');
+  assert.match(segselDecl, /border:none/, 'the shared .segsel selects stay borderless (no chip)');
 });
 
 test('ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)', () => {

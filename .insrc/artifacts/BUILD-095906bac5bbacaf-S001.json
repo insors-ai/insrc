@@ -5,7 +5,8 @@
     "epicHash": "095906bac5bbacaf",
     "storyId": "S001",
     "createdAt": "2026-09-30T14:11:54.979Z",
-    "updatedAt": "2026-09-30T14:15:55.524Z"
+    "updatedAt": "2026-09-30T15:10:03.944Z",
+    "approvedAt": "2026-09-30T15:10:03.993Z"
   },
   "body": {
     "focus": "Fix ISSUE-095906bac5bbacaf: the dev-chat webview's CSP (chat-panel.ts renderShell) declares no img-src, so it inherits default-src 'none' and blocks the .chrome #insrc-history data:image/svg+xml background layer — the session dropdown shows only the gradient down-arrow plus an empty 20px gutter. Permit inline data: images in that CSP, keeping default-src 'none', nonce-only script-src, style-src unchanged, and no remote origin loadable. Add regression coverage that ties the glyph's declared image source to the CSP's image policy as ONE invariant (so a blocked-but-declared icon fails the suite), and keep the existing single-nonced-script and no-remote-http(s)-resource assertions green.",

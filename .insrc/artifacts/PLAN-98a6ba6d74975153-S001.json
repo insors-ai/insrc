@@ -1,0 +1,240 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790770607500-6oykbq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T12:19:13.792Z",
+    "epicCreatedAt": "2026-09-30T12:19:13.793Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 146288,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "98a6ba6d74975153",
+    "epicSlug": "update-vs-code-jetbrains-plugin-marketplace",
+    "storyId": "S001",
+    "lldRunId": "wf-1790770074659-svqfc0",
+    "lldEffectiveHash": "98a6ba6d74975153904eacddca8639bc3e6e1913d7f7dc91927dd3383b72f3f0",
+    "approvedAt": "2026-09-30T12:19:30.794Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story is three small, independent documentation edits plus one verification pass. Two touch the VS Code plugin (a new Requirements section + Getting Started link in README.md, and a light reword of the one-line package.json description), one touches the JetBrains source plugin.xml <description> CDATA (an Ollama <li> in the Requirements list + a Getting Started link). No code changes; the only 'tests' are smoke checks — JSON/XML well-formedness, the exact URL present, Ollama facts matching the code defaults, and the diff staying inside the three intended files (never the generated build/ plugin.xml copies).",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add a Requirements section + Getting Started link to the VS Code README",
+        "summary": "In vscode-plugin/README.md, insert a compact '## Requirements' section between the lead paragraph and '## First run': Node, a Claude/AI host, and Ollama with its role split — REQUIRED for local embeddings (default qwen3-embedding:0.6b; ONNX nomic-embed-text-v1.5 no-Ollama alternative) and OPTIONAL for the core model (Ollama qwen3.6:27b, otherwise the claude/codex CLI) — plus a 'Full setup → Getting Started' link to https://insrc.insors.io/getting-started.html. Reuse the existing Markdown heading/list style; additive only, existing content untouched.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "README.md has a new '## Requirements' (or '## Prerequisites') section listing Node, an AI host, and Ollama",
+          "The Ollama entry states REQUIRED for local embeddings and OPTIONAL for the core model, with model facts matching code defaults (qwen3-embedding:0.6b / nomic-embed-text-v1.5 / qwen3.6:27b or claude/codex CLI)",
+          "The exact link https://insrc.insors.io/getting-started.html appears in the README",
+          "No pre-existing README content (lead, First run, command list, uninstall note) is removed or altered in meaning"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "README Requirements section names Ollama (required-embeddings / optional-core) + contains the getting-started URL"
+          },
+          {
+            "level": "smoke",
+            "name": "README Ollama facts match code defaults (qwen3-embedding:0.6b / nomic-embed-text-v1.5 / qwen3.6:27b or claude/codex CLI), no overstatement"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Reword the package.json one-line description",
+        "summary": "Lightly reword vscode-plugin/package.json line-4 `description` to hint at the local-first / Ollama-backed nature. Keep it a single valid JSON string in plain prose (no Markdown link — links don't render in the sidebar blurb).",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json line-4 description reads as local-first / Ollama-backed",
+          "The description contains no Markdown link syntax",
+          "package.json still parses as valid JSON"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "package.json description reads local-first / Ollama-backed as plain prose (no Markdown link)"
+          },
+          {
+            "level": "smoke",
+            "name": "package.json parses as valid JSON after the edit"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add an Ollama <li> + Getting Started link to the JetBrains source plugin.xml <description>",
+        "summary": "In jetbrains-plugin/src/main/resources/META-INF/plugin.xml (the SOURCE descriptor only — never the generated build/**/plugin.xml copies), add an Ollama <li> to the existing Requirements <ul> (required for local embeddings; optional for the core model via the claude/codex CLI) and a short 'Getting started' line linking https://insrc.insors.io/getting-started.html inside the <description> CDATA. Keep the HTML/XML well-formed.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The source plugin.xml Requirements <ul> gains an Ollama <li> (required-embeddings / optional-core wording)",
+          "The exact link https://insrc.insors.io/getting-started.html appears inside the <description> CDATA",
+          "The edit is only in src/main/resources/META-INF/plugin.xml, NOT any jetbrains-plugin/build/**/plugin.xml copy",
+          "plugin.xml remains well-formed XML with a valid CDATA <description>"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "source plugin.xml Requirements <ul> gains an Ollama <li> + the getting-started URL inside the <description> CDATA"
+          },
+          {
+            "level": "smoke",
+            "name": "source plugin.xml stays well-formed XML with a valid CDATA <description>; no build/ copy touched"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify syntax + diff scope",
+        "summary": "Verify package.json parses as JSON, plugin.xml is well-formed XML, both the README and the source plugin.xml contain the exact Getting Started URL, and the diff is limited to the three intended files (no .ts/.kt/.java code file changed, no build/ plugin.xml copy touched).",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "python json.load on vscode-plugin/package.json succeeds",
+          "an XML well-formedness parse of the source plugin.xml succeeds",
+          "grep finds https://insrc.insors.io/getting-started.html in both README.md and the source plugin.xml",
+          "git diff --name-only lists only vscode-plugin/README.md, vscode-plugin/package.json, and jetbrains-plugin/src/main/resources/META-INF/plugin.xml"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "package.json valid JSON + source plugin.xml well-formed XML/CDATA"
+          },
+          {
+            "level": "smoke",
+            "name": "diff limited to README.md + package.json + source plugin.xml (no code file, no build/ copy)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "vscode-plugin/README.md has a Requirements section naming Ollama (required for local embeddings / optional for the core model) + a https://insrc.insors.io/getting-started.html link",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains plugin.xml Requirements <ul> gains an Ollama <li> + a Getting Started link to the same URL",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the package.json line-4 description stays plain prose (no unrendered Markdown link) but reads local-first / Ollama-backed",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the Ollama facts match the code defaults (qwen3-embedding:0.6b, ONNX nomic-embed-text-v1.5, core optional via claude/codex CLI) — no overstatement",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "package.json parses as valid JSON after the description edit",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "plugin.xml stays well-formed XML with a valid <description> CDATA (patchPluginXml/verifyPlugin would fail otherwise) — grep confirms the edit is in src/main/resources/META-INF/plugin.xml, NOT the generated build/ copies",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no code file (.ts/.kt/.java) changed; grep confirms the diff is limited to README.md + package.json + the source plugin.xml",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariant c1 — edit ONLY the source jetbrains-plugin/src/main/resources/META-INF/plugin.xml, never the generated build/**/plugin.xml copies"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariant c2 — docs/prose only, no code file change, no daemon rebuild; effective on next Marketplace publish"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChange — vscode-plugin/README.md: add a Requirements section + Getting Started link"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariant c3 — accurate Ollama facts: required for local embeddings (qwen3-embedding:0.6b / ONNX nomic-embed-text-v1.5), optional for the core model (qwen3.6:27b or claude/codex CLI)"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "plan s1 structural-map — README.md insertion point between the lead paragraph and '## First run'; getting-started URL from site/CNAME (insrc.insors.io)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChange — vscode-plugin/package.json:4: lightly reword the one-line description (plain prose, no link)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChange — jetbrains source plugin.xml <description> CDATA: add an Ollama <li> to the Requirements <ul> + a Getting Started link"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — verify JSON/XML well-formedness + exact URL present + diff scope limited to the three intended files"
+    }
+  ]
+}

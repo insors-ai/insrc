@@ -1,7 +1,7 @@
 {
   "name": "insrc-vscode",
   "displayName": "insrc",
-  "description": "insrc for VS Code \u2014 grounded code-knowledge and the tracked workflow, wired into your AI assistant.",
+  "description": "insrc for VS Code \u2014 local-first, Ollama-backed code-knowledge and the tracked workflow, wired into your AI assistant.",
   "version": "0.5.2",
   "publisher": "insors",
   "license": "MIT",

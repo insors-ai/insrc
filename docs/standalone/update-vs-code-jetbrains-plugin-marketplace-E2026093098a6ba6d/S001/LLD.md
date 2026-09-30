@@ -1,0 +1,159 @@
+<!-- insrc:artifact LLD-98a6ba6d74975153-S001 -->
+
+# LLD: E2026093098a6ba6d:S001
+
+## Summary
+
+**Epic:** `update-vs-code-jetbrains-plugin-marketplace`
+**HLD base run:** `wf-1790770074659-svqfc0`
+**HLD effective hash:** `98a6ba6d7497...`
+
+Update the two plugins' marketplace descriptions so a reader sees the Ollama dependency and can find the full setup. In the VS Code README add a short Requirements section (Node, a Claude/JetBrains AI host, and Ollama — required for local embeddings, optional for the core model) plus a link to the Getting Started page, and lightly note the Ollama-backed local embeddings in the one-line package.json description. In the JetBrains plugin.xml <description>, add an Ollama bullet to the existing Requirements list and a Getting Started link. Docs/prose only — no code behavior — effective on each plugin's next Marketplace publish.
+
+## Contents
+
+1. [HLD context](#1-hld-context)
+2. [Contract details](#2-contract-details)
+3. [Data model changes](#3-data-model-changes)
+4. [Error paths](#4-error-paths)
+5. [Test strategy](#5-test-strategy)
+6. [Migration](#6-migration)
+7. [Alternatives considered](#7-alternatives-considered)
+8. [References](#8-references)
+
+## 1. HLD context
+
+**Framework:** Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.
+**Rollout phase:** standalone
+
+## 2. Contract details
+
+**Surface level:** public
+
+## 3. Data model changes
+
+### 3.1 `vscode-plugin/README.md — Requirements + Getting Started link` — invariant-change
+
+Add a compact '## Requirements' (or '## Prerequisites') section listing Node, a Claude/AI host, and Ollama with its role split — REQUIRED for local embeddings (default qwen3-embedding:0.6b; ONNX no-Ollama alternative available) and OPTIONAL for the core model (runs via the claude/codex CLI otherwise) — plus a 'Full setup → Getting Started' link to https://insrc.insors.io/getting-started.html near the top. Reuse the existing Markdown style; no code file changes.
+
+**Call sites:**
+- `vscode-plugin/README.md`
+
+### 3.2 `vscode-plugin/package.json — one-line description` — invariant-change
+
+Lightly tweak the line-4 `description` to hint at the local-first, Ollama-backed nature (links do not render in the sidebar blurb, so keep it prose). Keep it short and truthful; the rich detail + link live in the README.
+
+**Call sites:**
+- `vscode-plugin/package.json:4`
+
+### 3.3 `jetbrains-plugin/src/main/resources/META-INF/plugin.xml — <description> CDATA` — invariant-change
+
+Add an Ollama <li> to the existing Requirements <ul> (required for local embeddings; optional for the core model, which can run via the claude/codex CLI) and a short 'Getting started' line linking https://insrc.insors.io/getting-started.html. Keep the CDATA/HTML well-formed. Edit ONLY this source file, never the generated jetbrains-plugin/build/**/plugin.xml copies.
+
+**Call sites:**
+- `jetbrains-plugin/src/main/resources/META-INF/plugin.xml`
+
+## 4. Error paths
+
+**Error cases**
+
+- **The JetBrains <description> CDATA is left with malformed HTML/XML after the edit (e.g. an unbalanced <li>/<ul> or a stray angle bracket).** (recoverable)
+  - Detection: The IntelliJ Gradle build (patchPluginXml / verifyPlugin) parses plugin.xml and fails the build on invalid XML/CDATA; a local XML well-formedness check catches it before commit.
+  - Response: Fix the markup until the build/well-formedness check passes; nothing ships until plugin.xml is valid.
+  - User impact: Caught at build time — never reaches the Marketplace.
+- **The Getting Started URL is wrong (typo, wrong path, or a page that doesn't exist).** (recoverable)
+  - Detection: Manual review against the site: the domain is insrc.insors.io (site/CNAME) and the page is getting-started.html (shipped @0964dd8); the exact string https://insrc.insors.io/getting-started.html is grep-checked in both edited files.
+  - Response: Correct the URL to https://insrc.insors.io/getting-started.html.
+  - User impact: A dead link in the description if unnoticed; caught by review + grep.
+
+**Edge cases**
+
+| Input | Expected |
+| :--- | :--- |
+| A reader views the VS Code one-line package.json description in the Extensions sidebar (where Markdown/links do not render). | The description stays readable plain prose (no Markdown link syntax); the clickable Getting Started link lives in the README body, which the Marketplace renders. |
+| The plugin is installed but not yet published with the new description (Marketplace not re-published). | The change is source-only; it appears on the Marketplace only after the next publish of each plugin. No runtime behavior changes in an already-installed plugin. |
+| A reader uses the ONNX embedder (no Ollama) or drives the core model via the claude/codex CLI. | The wording is accurate for them: Ollama is 'required for local embeddings (or use the ONNX option)' and 'optional for the core model', so it does not overstate Ollama as unconditionally mandatory. |
+
+**Invariants to preserve**
+
+- Only the SOURCE JetBrains descriptor jetbrains-plugin/src/main/resources/META-INF/plugin.xml is edited; the generated jetbrains-plugin/build/**/plugin.xml copies are never hand-edited (they are regenerated at build). [[c1]]
+- The change is docs/prose only — no code file changes and no runtime behavior change; it takes effect only on each plugin's next Marketplace publish (no daemon rebuild). [[c2]]
+- The Ollama facts must stay accurate: REQUIRED for local embeddings (default qwen3-embedding:0.6b, ONNX nomic-embed-text-v1.5 as a no-Ollama alternative) and OPTIONAL for the core model (which can run via the claude/codex CLI) — matching the code defaults and the reworked Getting Started page. [[c3]]
+
+## 5. Test strategy
+
+**Test framework:** `Manual/visual review + syntactic validation (test.locate: no automated test asserts marketplace prose). package.json is validated as JSON; plugin.xml <description> CDATA is validated for XML/HTML well-formedness (the IntelliJ patchPluginXml/verifyPlugin gradle tasks do this at build); README renders as Markdown. Plus a grep for the exact Getting Started URL + the Ollama wording. No automated test is added.`
+
+**Test levels**
+
+- **smoke** — Both descriptions link the Getting Started page and highlight the Ollama dependency accurately.
+  - Subjects: `vscode-plugin/README.md has a Requirements section naming Ollama (required for local embeddings / optional for the core model) + a https://insrc.insors.io/getting-started.html link`, `jetbrains plugin.xml Requirements <ul> gains an Ollama <li> + a Getting Started link to the same URL`, `the package.json line-4 description stays plain prose (no unrendered Markdown link) but reads local-first / Ollama-backed`, `the Ollama facts match the code defaults (qwen3-embedding:0.6b, ONNX nomic-embed-text-v1.5, core optional via claude/codex CLI) — no overstatement`
+  - Fixtures: `render vscode-plugin/README.md as Markdown`, `the shipped site page at https://insrc.insors.io/getting-started.html`
+- **smoke** — Nothing is broken syntactically and only the intended source files change.
+  - Subjects: `package.json parses as valid JSON after the description edit`, `plugin.xml stays well-formed XML with a valid <description> CDATA (patchPluginXml/verifyPlugin would fail otherwise) — grep confirms the edit is in src/main/resources/META-INF/plugin.xml, NOT the generated build/ copies`, `no code file (.ts/.kt/.java) changed; grep confirms the diff is limited to README.md + package.json + the source plugin.xml`
+  - Fixtures: `python -c json.load on package.json`, `an XML well-formedness check on plugin.xml`
+
+**Acceptance mapping**
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `vscode README + jetbrains plugin.xml both contain the https://insrc.insors.io/getting-started.html link (smoke)`, `grep confirms the exact URL in both edited files (smoke)` |
+| `ac2` | `vscode README Requirements names Ollama (required-embeddings / optional-core) (smoke)`, `jetbrains Requirements <ul> gains an Ollama <li> (smoke)`, `Ollama facts match code defaults, no overstatement (smoke)` |
+| `ac3` | `package.json valid JSON + plugin.xml well-formed XML/CDATA; edit only in the source plugin.xml, not build/ copies (smoke)`, `no code file changed — diff limited to README.md + package.json + source plugin.xml (smoke)` |
+
+## 6. Migration
+
+**State before:** vscode-plugin/README.md (s1) has an H1 + lead + '## First run' + command list + uninstall note, with NO Requirements/Prerequisites section, NO Ollama mention, and NO getting-started link; vscode-plugin/package.json:4 is a one-line description with no Ollama/local-first hint. The JetBrains plugin.xml <description> (s1) has a Requirements <ul> listing a JetBrains AI host, Node and the daemon — Ollama is absent — and no getting-started link (only a Privacy line saying 'embeddings are computed locally').
+
+**State after:** The VS Code README has a short Requirements section naming Ollama (required for local embeddings / optional for the core model) + a Getting Started link (https://insrc.insors.io/getting-started.html); the package.json one-line description lightly notes the local-first / Ollama-backed nature. The JetBrains plugin.xml <description> Requirements <ul> gains an Ollama <li> and a Getting Started link to the same URL. No code changes; effective on each plugin's next Marketplace publish.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+**Steps**
+
+1. Add a Requirements section + a Getting Started link to vscode-plugin/README.md, reusing the existing Markdown style. — ↩ rollbackable
+2. Lightly reword the vscode-plugin/package.json line-4 description to hint at local-first / Ollama-backed embeddings; keep it valid JSON and plain prose. — ↩ rollbackable
+3. Add an Ollama <li> to the Requirements <ul> and a Getting Started link inside the <description> CDATA of the SOURCE jetbrains-plugin/src/main/resources/META-INF/plugin.xml (never the generated build/ copies); keep the XML/CDATA well-formed. — ↩ rollbackable
+4. Verify: package.json parses as JSON, plugin.xml is well-formed XML, both edited files contain the exact getting-started URL, and no code file changed. (Marketplace publish of each plugin is a separate, later manual step.) — ↩ rollbackable
+
+**Backward compat:** No public code API changes — marketplace description prose only. package.json's `description` field stays a valid string; the JetBrains <description> stays valid CDATA that patchPluginXml/verifyPlugin accept. Nothing about an already-installed plugin's runtime changes; the new text surfaces only on the next Marketplace publish. Rollback is a straight revert of the three files.
+
+## 7. Alternatives considered
+
+### 7.1 a1: Dedicated Requirements/Prerequisites block + a Getting Started link in each description — **CHOSEN**
+
+Add a short 'Requirements' section to the VS Code README (with Ollama + a Getting Started link) and add an Ollama bullet + a Getting Started link to the JetBrains plugin.xml Requirements list.
+
+VS Code README.md: add a compact '## Requirements' (or '## Getting started') block — Node, a JetBrains/Claude AI host, and Ollama (required for local embeddings; optional for the core model, which can run via the claude/codex CLI), with a one-line 'Full setup → Getting Started' link to https://insrc.insors.io/getting-started.html near the top. Optionally tighten the package.json one-line description to mention 'local-first (Ollama-backed embeddings)'. JetBrains plugin.xml <description>: add an Ollama <li> to the existing Requirements <ul> and a short 'Getting started: <a>...</a>' line; keep the CDATA/HTML valid. Point both at the same page for detail.
+
+### 7.2 a2: Inline mention only (fold into existing prose, single link)
+
+Weave the Ollama note into existing sentences (README lead / JetBrains Privacy) and add one inline Getting Started link, with no new section.
+
+VS Code README.md: extend the lead paragraph to note Ollama-backed local embeddings + an inline getting-started link. JetBrains plugin.xml: reword the Privacy line ('embeddings are computed locally') to name Ollama and add an inline link, leaving the Requirements <ul> unchanged.
+
+**Rejected because:** Cheapest but c2 only partial: burying Ollama in a Privacy/lead paragraph does not 'highlight' it and leaves the JetBrains Requirements list — the specific omission the ask flags — unchanged.
+
+## 8. References
+
+- **[[c1]]** `analyze-bundle` `s1 structural-map — vscode-plugin/package.json:4 + vscode-plugin/README.md + site/CNAME` — "Two surfaces: (a) package.json line 4 one-line sidebar blurb; (b) README.md rich Marketplace body with NO Requirements section, NO Ollama mention, NO getting-started link. Domain insrc.insors.io."
+- **[[c2]]** `analyze-bundle` `s1 structural-map — jetbrains-plugin/src/main/resources/META-INF/plugin.xml` — "The <description> CDATA is the single source of truth (build/ copies are generated); Requirements <ul> lists a JetBrains AI host, Node, the daemon — Ollama is NOT listed and there is no getting-starte"
+- **[[c3]]** `analyze-bundle` `s1 capability-facts — src/config/local.ts:51, src/agent/providers/onnx-embedder.ts:52, site/getting-started.html` — "Ollama REQUIRED for embeddings (default qwen3-embedding:0.6b; ONNX nomic-ai/nomic-embed-text-v1.5 alternative); OPTIONAL for the core model (qwen3.6:27b on Ollama, otherwise claude/codex CLI)."
+- **[[c4]]** `analyze-bundle` `s1 test.locate — vscode-plugin/README.md, jetbrains-plugin/src/main/resources/META-INF/plugin.xml` — "No automated test asserts marketplace prose; plugin.xml is validated by verifyPlugin/patchPluginXml for XML/CDATA well-formedness at build."
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 HIGH · 0 MED · 6 LOW** · model `client` · reviewed 2026-09-30T12:15:11.848Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3.2/c1 | citation | LOW | manual | vscode-plugin/package.json line 4 is a one-line `description` field (the sidebar blurb) that currently has no Ollama/local-first hint. | Verified directly: vscode-plugin/package.json:4 is `"description": "insrc for VS Code — grounded code-knowledge and the tracked workflow, wired into your AI assistant."` — a one-line blurb with no Ollama/local-first hint. Confirmed. | No change needed — citation accurate. |
+| 3.1/c1 | citation | LOW | manual | vscode-plugin/README.md exists as the rich Marketplace body and currently has no Requirements/Prerequisites section, no Ollama mention, and no getting-started link. | Verified directly: vscode-plugin/README.md has NO '## Requirements'/'## Prerequisites' section and NO getting-started link. Minor imprecision — the stateBefore says 'NO Ollama mention', but Ollama IS referenced twice in passing (line 38 'Ollama host' under Global options, line 52 'Ollama's installed models'); it is simply not called out as a listed dependency, which is exactly what this design adds. The design intent (add a Requirements block highlighting Ollama) is sound and unaffected. | No design change needed; the build should treat 'add a Requirements section' as additive (the existing incidental Ollama mentions stay). |
+| 3.3/c2 | citation | LOW | manual | The JetBrains plugin descriptor jetbrains-plugin/src/main/resources/META-INF/plugin.xml contains a <description> CDATA with a Requirements list, and that list does NOT currently name Ollama. | Verified directly: jetbrains-plugin/src/main/resources/META-INF/plugin.xml has '<h3>Requirements</h3>' at line 83 and Ollama is mentioned only at line 123 (models list context), NOT in the Requirements list. The 'Requirements list omits Ollama' premise is confirmed — this is the exact gap the story targets. | No change needed — citation accurate. |
+| c3 | citation | LOW | manual | The default local embedding model is the Ollama model qwen3-embedding:0.6b, cited at src/config/local.ts:51. | Verified directly: src/config/local.ts DEFAULTS sets embeddingModel: 'qwen3-embedding:0.6b' (line ~51) and coreModel: 'qwen3.6:27b'. The default embedding + core model facts are accurate. | No change needed — citation accurate. |
+| c3 | citation | LOW | manual | The no-Ollama ONNX embedding alternative is nomic-ai/nomic-embed-text-v1.5, cited at src/agent/providers/onnx-embedder.ts:52. | Verified directly: src/agent/providers/onnx-embedder.ts exports ONNX_EMBEDDING_MODEL = 'nomic-ai/nomic-embed-text-v1.5' (line ~52). The ONNX no-Ollama alternative fact is accurate. | No change needed — citation accurate. |
+| c1 | semantic | LOW | manual | The static site's custom domain is insrc.insors.io (declared in site/CNAME), so the Getting Started URL is https://insrc.insors.io/getting-started.html and site/getting-started.html exists. | Verified directly: site/CNAME contains 'insrc.insors.io' and site/getting-started.html exists (27008 bytes, shipped @0964dd8). The Getting Started URL https://insrc.insors.io/getting-started.html is correct. | No change needed — citation accurate. |

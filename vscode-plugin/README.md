@@ -10,6 +10,20 @@ daemon, wires insrc into your AI host's MCP config, and registers your workspace
 — all consent-gated, all reversible. It opens **no cloud path** and stores **no
 secrets**; every capability reaches the daemon over the local socket.
 
+## Requirements
+
+- **VS Code** and an **AI host** (Claude Code, Cursor, …) that insrc wires its
+  MCP tools into.
+- **Node** — used by the daemon; the extension provisions a private runtime
+  automatically if the system Node is missing or unsuitable.
+- **[Ollama](https://ollama.com)** — **required for local embeddings** (the
+  default embedder is `qwen3-embedding:0.6b`; a no-Ollama ONNX alternative,
+  `nomic-embed-text-v1.5`, is also available). Ollama is **optional for the core
+  model**: run it locally on Ollama (`qwen3.6:27b`) or through your existing
+  `claude` / `codex` CLI instead.
+
+**Full setup → [Getting Started](https://insrc.insors.io/getting-started.html).**
+
 ## First run
 
 On first activation the extension runs one coalesced onboarding flow, prompting

@@ -89,7 +89,14 @@
                 automatically if the system Node is missing or unsuitable.</li>
             <li>The insrc daemon, which the plugin installs and keeps current on first
                 use, with your consent.</li>
+            <li>Ollama &mdash; <b>required for local embeddings</b> (default
+                <code>qwen3-embedding:0.6b</code>; a no-Ollama ONNX alternative,
+                <code>nomic-embed-text-v1.5</code>, is also available), and
+                <b>optional for the core model</b> (run it on Ollama, or through your
+                existing claude / codex CLI instead).</li>
         </ul>
+
+        <p>Full setup &rarr; <a href="https://insrc.insors.io/getting-started.html">Getting Started</a>.</p>
     ]]></description>
 
     <change-notes><![CDATA[

@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790743970777-2e2meb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T05:01:18.322Z",
+    "epicCreatedAt": "2026-09-30T05:01:18.323Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 507506,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c219c7471d79496",
+    "epicSlug": "lld-dev-chat-terminal-prompt-fidelity",
+    "storyId": "S001",
+    "lldRunId": "wf-1790742675507-x3e8ut",
+    "lldEffectiveHash": "7c219c7471d79496afc9b1364d0656853433ed9d62360f6af8c786a9764bbc7f",
+    "approvedAt": "2026-09-30T05:05:19.483Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story is a single presentation-only reshape of the eval'd renderShell webview source in chat-panel.ts, plus additive assertions to its existing *WebviewSource test suite. Two edit passes: first the input row (drop the textarea's box chrome, top-align the ❯, add the interrupt-hint placeholder), then the status bar (relocate the provider + mode selects verbatim into the header so the bar becomes a clean read-only session/edits/idle line). Every element id and the S002 send/stop control are preserved, so no protocol, persistence, or event wiring changes — the tests both prove the three deltas and regression-guard the unchanged behaviour under tsx --test.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Flush 2-line scrolling prompt + interrupt-hint placeholder (deltas 1+2)",
+        "summary": "In renderShell (chat-panel.ts): edit the #insrc-input CSS (:303) to drop the border/border-radius/background box chrome and its :focus border-color rule, and add overflow-y:auto while keeping rows=2 (a flush 2-line scrolling prompt); change #insrc-prompt (:291) align-self:flex-end→flex-start so the ❯ leads the top line only; and change the #insrc-input placeholder (:510) to 'message claude… (⌘↵ send · ^C interrupt)'. Presentation-only; the #insrc-prompt id/role=button/tabindex and setRunning are untouched.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "renderShell's #insrc-input CSS has no border/border-radius/background box and includes overflow-y:auto, keeping rows=2",
+          "#insrc-prompt CSS is align-self:flex-start (not flex-end)",
+          "the #insrc-input placeholder equals 'message claude… (⌘↵ send · ^C interrupt)' and contains '^C interrupt'",
+          "#insrc-prompt keeps id + role=button + tabindex (S002 send/stop control unchanged)"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderShell #insrc-input has no border/box chrome + overflow-y:auto + rows=2 (flush 2-line scroll)"
+          },
+          {
+            "level": "unit",
+            "name": "renderShell #insrc-prompt is align-self:flex-start (❯ on the top line only), keeping id+role=button+tabindex"
+          },
+          {
+            "level": "unit",
+            "name": "renderShell #insrc-input placeholder equals 'message claude… (⌘↵ send · ^C interrupt)' (has '^C interrupt')"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Read-only status bar via relocating provider+mode selects to the header (delta 3)",
+        "summary": "In renderShell (chat-panel.ts): move the #insrc-provider seg (:516) and the #insrc-modeseg span wrapping #insrc-mode (:517) verbatim out of the .statusbar and into the header .chrome region (:497) beside #insrc-history — same ids/options/classes so the :424-460 bootstrap wiring (pmode/pmseg/updatePermSeg/change-handler/session-restored) binds unchanged. Rebuild the .statusbar (:515-518) as read-only segments 'session <id>' + 'edits <mode>' + the existing '✓ idle' seg, with NO <select>. Add a mode→label map (manual→'review', edit-auto→'auto-edit', auto→'auto') for the 'edits' label and re-render it from pmode on the mode change-handler + session-restored (reusing the existing updatePermSeg path; no new message).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          ".statusbar renders read-only 'session <id>' + 'edits <mode>' + '✓ idle' segments and contains NO <select>",
+          "#insrc-provider and #insrc-mode <select>s are emitted inside the header (.chrome) region, retaining their ids, options (manual/edit-auto/auto) and provider option list",
+          "the 'edits <mode>' label maps manual→'review', edit-auto→'auto-edit', auto→'auto' and re-renders from pmode on change + session-restored",
+          "no HostToWebview/WebviewToHost message shape changes (presentation-only)"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderShell .statusbar renders read-only 'session <id>' + 'edits <mode>' + '✓ idle' with no <select>"
+          },
+          {
+            "level": "unit",
+            "name": "renderShell emits #insrc-provider + #insrc-mode <select>s inside the header (.chrome) with ids/options preserved"
+          },
+          {
+            "level": "unit",
+            "name": "the 'edits <mode>' label maps manual→'review' / edit-auto→'auto-edit' / auto→'auto'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extend the renderShell *WebviewSource tests (ac1-ac4) and run the suite",
+        "summary": "Add additive assertions to vscode-plugin/src/chat/__tests__/chat-panel.test.ts over the renderShell source string: the flush-prompt CSS + top-line ❯ (ac1), the interrupt-hint placeholder (ac2), the read-only status bar + header-relocated selects + mode→label mapping (ac3), and re-run the S002 send/stop + provider/mode switching behaviour as a regression (ac4). Run `npm test` (tsx --test) and confirm green.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "new unit assertions cover ac1 (flush prompt CSS + flex-start ❯), ac2 (placeholder), ac3 (read-only bar + relocated selects + label map)",
+          "the S002 send/stop + provider/mode switching regression tests pass unchanged (ac4)",
+          "the full vscode-plugin test suite (tsx --test) passes green"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "regression: S002 send/stop — ❯ click posts one {type:'submit-turn'}, Cmd/Ctrl+Enter sends, empty no-ops, setRunning toggles ❯↔■"
+          },
+          {
+            "level": "unit",
+            "name": "regression: relocated #insrc-mode change posts {type:'set-permission-mode'} + updatePermSeg auto-pill; #insrc-provider change starts a new chat"
+          },
+          {
+            "level": "smoke",
+            "name": "the full vscode-plugin suite runs green under tsx --test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "renderShell()'s #insrc-input CSS no longer has a border/border-radius/background box and includes overflow-y:auto with rows=2 (flush 2-line scrolling prompt)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "#insrc-prompt is top-aligned (align-self:flex-start), so the ❯ leads the first line only — not align-self:flex-end",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the #insrc-prompt element keeps id + role=button + tabindex (unchanged S002 control)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the #insrc-input placeholder is exactly 'message claude… (⌘↵ send · ^C interrupt)' (contains '^C interrupt', no longer 'to send')",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the .statusbar renders read-only segments 'session <id>' + 'edits <mode>' + '✓ idle' and contains NO <select> (no provider/mode dropdown in the bar)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the #insrc-provider + #insrc-mode <select>s are present INSIDE the header (.chrome) region of the source, retaining their ids + options (manual/edit-auto/auto) + the provider option list",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the 'edits <mode>' label maps the mode value to its short word (manual→'review', edit-auto→'auto-edit', auto→'auto')",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the existing S002 tests still pass: clicking #insrc-prompt posts one {type:'submit-turn', text}; Cmd/Ctrl+Enter still sends; empty input no-ops; setRunning toggles ❯↔■ on the one control",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the relocated #insrc-mode change-handler still posts {type:'set-permission-mode', mode} and updatePermSeg still applies the auto amber pill; the #insrc-provider change still starts a new chat with the picked provider",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ],
+    "chosenAlternative": "a2"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — input-row deltas 1+2 (renderShell #insrc-input CSS :303, #insrc-prompt :291, placeholder :510)",
+      "quotedText": "Drop #insrc-input's box chrome + add overflow-y:auto (flush 2-line scroll), top-align #insrc-prompt (❯ top line only), placeholder 'message claude… (⌘↵ send · ^C interrupt)'. S002 send/stop unchanged."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — delta 3: relocate provider+mode selects to the header, read-only statusbar (renderShell :497 header, :515-518 statusbar, :424-460 mode wiring)",
+      "quotedText": "Move #insrc-provider + #insrc-modeseg/#insrc-mode verbatim into .chrome beside #insrc-history; rebuild .statusbar as read-only 'session <id> · edits <mode> · ✓ idle' with no <select>; edits label = pmode mapped (manual→review/edit-auto→auto-edit/auto→auto)."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 — testStrategy (tsx --test *WebviewSource suite in vscode-plugin/src/chat/__tests__/chat-panel.test.ts)",
+      "quotedText": "Extend the renderShell source assertions for ac1-ac3 and re-run the S002 send/stop + provider/mode switching regression (ac4); the full vscode-plugin suite must pass under tsx --test."
+    }
+  ]
+}

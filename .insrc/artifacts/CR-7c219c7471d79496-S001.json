@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790745952322-n5g8v5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T05:25:52.325Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c219c7471d79496",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "7c219c7471d79496",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:309",
+            "message": "Justified deviation from the LLD/plan prose (recorded, not a defect): the LLD said the flush prompt 'includes overflow-y:auto', but the build deliberately OMITS overflow-y:auto and instead pins height:40px (rows=2) so the textarea scrolls its content natively. This is required to preserve the S002 fixed-region invariant that #insrc-term is the panel's ONLY overflow-y:auto region (enforced by the existing test at chat-panel.test.ts:1158). The 2-line-scroll acceptance is still met; the deviation is documented in-code.",
+            "confidence": "high"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": []
+      },
+      {
+        "dimension": "ux",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

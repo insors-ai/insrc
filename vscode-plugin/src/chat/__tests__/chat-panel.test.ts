@@ -1320,6 +1320,76 @@ test('S001 (bugfix): renderShell has the SINGLE merged mode control + wires the 
   assert.match(html, /ev\.kind==='permission-outcome'/, 'the live handler routes permission-outcome to the registry');
 });
 
+// ---------------------------------------------------------------------------
+// S001 (ISSUE-c96399d1) — dev-chat terminal-prompt fidelity: bring the input up
+// to the approved S002 mock. Presentation-only in renderShell; the S002 send/stop
+// control is unchanged. deltas: (1) flush 2-line prompt, (2) interrupt-hint
+// placeholder, (3) read-only status bar (provider + mode selects moved to header).
+// ---------------------------------------------------------------------------
+
+function fidelityHtml(): string {
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  });
+  host.open();
+  return fc.html();
+}
+
+test('S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input has no box chrome, rows=2 kept, ❯ top-aligned', () => {
+  const html = fidelityHtml();
+  const inputCss = html.slice(html.indexOf('#insrc-input{'), html.indexOf('#insrc-input{') + 230);
+  assert.doesNotMatch(inputCss, /border:1px solid/, '#insrc-input drops the border box');
+  assert.doesNotMatch(inputCss, /border-radius/, '#insrc-input drops the rounded box');
+  assert.doesNotMatch(inputCss, /background:var\(--panel\)/, '#insrc-input drops the panel-fill box');
+  assert.match(html, /rows="2"/, 'the textarea keeps rows=2 (the 2-line view)');
+  const promptCss = html.slice(html.indexOf('#insrc-prompt{'), html.indexOf('#insrc-prompt{') + 210);
+  assert.match(promptCss, /align-self:flex-start/, 'the ❯ is top-aligned (leads the first line only)');
+  assert.doesNotMatch(promptCss, /align-self:flex-end/, 'the ❯ is no longer bottom-aligned');
+  // A textarea scrolls its own content natively, so we add NO overflow-y:auto — #insrc-term stays
+  // the panel's single scroll region (the S002 fixed-region layout invariant).
+  assert.equal((html.match(/overflow-y:auto/g) ?? []).length, 1, '#insrc-term stays the ONLY overflow-y:auto region');
+});
+
+test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
+  const html = fidelityHtml();
+  assert.match(html, /placeholder="message claude… \(⌘↵ send · \^C interrupt\)"/, "placeholder reads 'message claude… (⌘↵ send · ^C interrupt)'");
+  assert.doesNotMatch(html, /⌘↵ to send/, "the old '⌘↵ to send' placeholder is gone");
+});
+
+test('S001 (fidelity) ac3: the status bar is READ-ONLY (session · edits · ✓ idle); the selects moved to the header', () => {
+  const html = fidelityHtml();
+  const chrome = html.slice(html.indexOf('<div class="chrome">'), html.indexOf('<div id="insrc-term"'));
+  const statusbarFull = html.slice(html.indexOf('<div class="statusbar">'));
+  const statusbar = statusbarFull.slice(0, statusbarFull.indexOf('</div>'));
+  // The functional provider + mode selects live in the header (.chrome) now, with ids/options preserved.
+  assert.match(chrome, /<select id="insrc-provider"/, 'the provider select is in the header');
+  assert.match(chrome, /id="insrc-modeseg"/, 'the mode seg is in the header');
+  assert.match(chrome, /<select id="insrc-mode"/, 'the mode select is in the header');
+  assert.match(chrome, /<option value="manual">Manual<\/option><option value="edit-auto">Edit Automatically<\/option><option value="auto">Auto<\/option>/, 'the mode options are preserved in the header');
+  // The status bar is read-only: NO <select> chevrons, just session / edits / ✓ idle.
+  assert.doesNotMatch(statusbar, /<select/, 'the status bar has NO <select> (read-only)');
+  assert.match(statusbar, /session <b id="insrc-statussess">/, "the bar shows a read-only 'session' segment");
+  assert.match(statusbar, /edits <b id="insrc-statusedits">/, "the bar shows a read-only 'edits' segment");
+  assert.match(statusbar, /✓ idle/, "the bar keeps the '✓ idle' segment");
+  // The edits label maps the mode value to its short word, re-rendered from pmode.
+  assert.match(html, /EDITS_LABEL=\{manual:'review','edit-auto':'auto-edit',auto:'auto'\}/, 'the mode→label map is manual→review / edit-auto→auto-edit / auto→auto');
+  assert.match(html, /seEdits\.textContent=editsLabel\(pmode\)/, "updatePermSeg re-renders the read-only 'edits' label from pmode");
+});
+
+test('S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged', () => {
+  const html = fidelityHtml();
+  // S002: the leading ❯ is still the send/stop control immediately before the textarea.
+  assert.match(html, /<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯<\/span>\s*<textarea id="insrc-input"/, 'the ❯ send/stop control still leads the input');
+  assert.match(html, /type:'submit-turn'/, 'submit-turn wiring intact');
+  assert.match(html, /type:'set-permission-mode'/, 'the relocated mode control still posts set-permission-mode');
+  assert.match(html, /type:'new-chat'/, 'the relocated provider select still starts a new chat');
+  assert.match(html, /function updatePermSeg\(\)\{if\(pmseg\)pmseg\.className='seg'\+\(pmode==='auto'\?' perm-auto':''/, 'updatePermSeg still applies the auto-pill class');
+});
+
 test("S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)", async () => {
   const fc = fakeChannel();
   const seen: TurnRequest[] = [];

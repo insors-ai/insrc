@@ -20,7 +20,7 @@
  * the only added provider call in the S003 pipeline.
  */
 
-import type { DocumentIR, IrEdge, IrNode } from '../../../docgen/types.js';
+import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
@@ -201,6 +201,65 @@ export function crowsFootToken(slot: ErSlot): string {
 }
 
 /**
+ * Derive the reader-facing narrated sections for an ER companion (S001):
+ * a Purpose section, a per-class Fields & schema section (each attribute's
+ * range + identifier/required/multivalued flags, each relationship's crow's-foot
+ * cardinality), and a Legend. Read-only over the SAME parse the diagram uses; it
+ * does not mutate `erDef`. For an empty-but-valid model the Fields section is
+ * omitted (Purpose + Legend only). The band renderer escapes all this text.
+ */
+function erNarratedSections(erDef: ErDefinition): IrSection[] {
+	const classNames = new Set(Object.keys(erDef.classes));
+	const sorted = [...classNames].sort();
+	const entityWord = sorted.length === 1 ? 'entity' : 'entities';
+	const sections: IrSection[] = [{
+		id:    'purpose',
+		title: 'Purpose',
+		narrativeText:
+			`This entity-relationship diagram shows the data model as ${sorted.length} ${entityWord}` +
+			`${sorted.length > 0 ? ` (${sorted.join(', ')})` : ''} and the relationships between them. ` +
+			`Each box is a class; its scalar slots are listed as attributes and each class-ranged slot is ` +
+			`drawn as a crow's-foot relationship. Use it to understand the persisted shape without opening the source document.`,
+	}];
+
+	const perClass: string[] = [];
+	for (const className of sorted) {
+		const attrs = erDef.classes[className]?.attributes ?? {};
+		const lines: string[] = [];
+		for (const slotName of Object.keys(attrs).sort()) {
+			const slot = attrs[slotName]!;
+			const range = slot.range;
+			if (range !== undefined && range.length > 0 && classNames.has(range)) {
+				lines.push(`  • ${slotName} → ${range} (relationship, ${crowsFootToken(slot)})`);
+				continue;
+			}
+			const flags: string[] = [];
+			if (slot.identifier === true) flags.push('identifier');
+			if (slot.required === true) flags.push('required');
+			if (slot.multivalued === true) flags.push('multivalued');
+			const typ = range !== undefined && range.length > 0 ? range : 'untyped';
+			lines.push(`  • ${slotName}: ${typ}${flags.length > 0 ? ` (${flags.join(', ')})` : ''}`);
+		}
+		perClass.push(lines.length > 0 ? `${className}\n${lines.join('\n')}` : `${className}\n  (no attributes)`);
+	}
+	if (perClass.length > 0) {
+		sections.push({ id: 'fields', title: 'Fields & schema', narrativeText: perClass.join('\n\n') });
+	}
+
+	sections.push({
+		id:    'legend',
+		title: 'Legend',
+		narrativeText:
+			`identifier — the slot that uniquely identifies an instance (primary key).\n` +
+			`required — the slot must be present on every instance.\n` +
+			`multivalued — the slot may hold more than one value.\n` +
+			`Crow's-foot cardinality (on relationships) reads "lower-to-upper": one-to-one, one-to-many, ` +
+			`zero-to-one or zero-to-many, derived from each slot's required/multivalued cardinality.`,
+	});
+	return sections;
+}
+
+/**
  * Transform an ErDefinition into a docgen DocumentIR: each class → an entity
  * IrNode (its scalar-range slots folded into the label as attributes), each
  * class-ranged slot → a relationship IrEdge whose id encodes the crow's-foot
@@ -259,7 +318,7 @@ export function erDefinitionToIr(erDef: ErDefinition): DocumentIR {
 		docType:             ER_DOC_TYPE,
 		scopeDescription:    erDef.id !== undefined && erDef.id.length > 0 ? `ER model: ${erDef.id}` : 'ER model',
 		derived:             { nodes, edges },
-		narrated:            { sections: [] },
+		narrated:            { sections: erNarratedSections(erDef) },
 		generatedAtRevision: 'authored-er',
 	};
 }

@@ -19,7 +19,7 @@
  * Deterministic + provider-free.
  */
 
-import type { DocumentIR, IrEdge, IrNode } from '../../../docgen/types.js';
+import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
@@ -206,6 +206,66 @@ function truncate(s: string): string {
 	return s.length > 40 ? `${s.slice(0, 37)}...` : s;
 }
 
+/** A one-line role description for each supported element type (for the Legend
+ *  and the Elements section). */
+function roleOf(type: UxElement['type']): string {
+	switch (type) {
+		case 'TextBlock':       return 'read-only display text';
+		case 'Image':           return 'an image';
+		case 'Input.Text':      return 'a text input the user fills in';
+		case 'Input.ChoiceSet': return 'a choice/dropdown input';
+		case 'ActionSet':       return 'a row of buttons (submit / open-url actions)';
+		case 'Container':       return 'a vertical grouping of elements';
+		case 'ColumnSet':       return 'a horizontal row of columns';
+		case 'Column':          return 'a vertical group inside a column set';
+	}
+}
+
+/**
+ * Derive the reader-facing narrated sections for a UX-mock companion (S001):
+ * a Purpose section, an Elements & roles section (each card element in document
+ * order, indented by nesting, with its type + a readable label + role), and a
+ * Legend of the element types used. Read-only over the same walk the diagram
+ * uses. For an empty-but-valid card the elements section is omitted (Purpose +
+ * Legend only). The band renderer escapes all this text.
+ */
+function uxNarratedSections(uxDef: UxDefinition): IrSection[] {
+	const rows: string[] = [];
+	const kinds = new Set<UxElement['type']>();
+	const walk = (elements: readonly UxElement[], depth: number): void => {
+		for (const el of elements) {
+			kinds.add(el.type);
+			rows.push(`${'  '.repeat(depth + 1)}• ${labelFor(el)} — ${roleOf(el.type)}`);
+			const children = childrenOf(el);
+			if (children.length > 0) walk(children, depth + 1);
+		}
+	};
+	walk(uxDef.body, 0);
+
+	const sections: IrSection[] = [{
+		id:    'purpose',
+		title: 'Purpose',
+		narrativeText:
+			`This is the intended layout of an Adaptive Card${uxDef.version !== undefined && uxDef.version.length > 0 ? ` (v${uxDef.version})` : ''}. ` +
+			`It lists every element the user sees and each interactive control, so a reader understands what the card ` +
+			`asks for and what each control does without reading the card JSON.`,
+	}];
+
+	if (rows.length > 0) {
+		sections.push({ id: 'fields', title: 'Elements & roles', narrativeText: rows.join('\n') });
+	}
+
+	const legendLines = [...kinds].map(k => `${k} — ${roleOf(k)}.`);
+	sections.push({
+		id:    'legend',
+		title: 'Legend',
+		narrativeText: legendLines.length > 0
+			? legendLines.join('\n')
+			: `TextBlock — read-only display text.\nInput.* — an interactive field.\nActionSet — a row of action buttons.`,
+	});
+	return sections;
+}
+
 /**
  * Transform a UxDefinition into a docgen DocumentIR: the card is the root node,
  * every element is a node, and containment (a container-like element → each child)
@@ -237,7 +297,7 @@ export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {
 		docType:             UX_DOC_TYPE,
 		scopeDescription:    'UX mock',
 		derived:             { nodes, edges },
-		narrated:            { sections: [] },
+		narrated:            { sections: uxNarratedSections(uxDef) },
 		generatedAtRevision: 'authored-ux',
 	};
 }

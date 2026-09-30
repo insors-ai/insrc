@@ -21,7 +21,7 @@
  * Deterministic + provider-free. Mirrors ./er.ts.
  */
 
-import type { DocumentIR, IrEdge, IrNode } from '../../../docgen/types.js';
+import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
 
 // ---------------------------------------------------------------------------
@@ -170,6 +170,63 @@ function breach(location: string, message: string): DimensionFinding {
 export const SEQUENCE_DOC_TYPE = 'call-sequence';
 
 /**
+ * Derive the reader-facing narrated sections for a sequence companion (S001):
+ * a Purpose section, a Participants & message flow section (the ordered call
+ * list, each message's kind + note), and a Legend. Read-only over the same parse
+ * the diagram uses. For an empty-but-valid definition the flow section is omitted
+ * (Purpose + Legend only). The band renderer escapes all this text.
+ */
+function sequenceNarratedSections(seqDef: SequenceDefinition): IrSection[] {
+	const labelOf = (id: string): string => {
+		const p = seqDef.participants.find(pp => pp.id === id);
+		return p?.label !== undefined && p.label.length > 0 ? p.label : id;
+	};
+	const names = seqDef.participants.map(p => labelOf(p.id));
+	const sections: IrSection[] = [{
+		id:    'purpose',
+		title: 'Purpose',
+		narrativeText:
+			`This sequence diagram traces ${seqDef.messages.length} message${seqDef.messages.length === 1 ? '' : 's'} ` +
+			`between ${seqDef.participants.length} participant${seqDef.participants.length === 1 ? '' : 's'}` +
+			`${names.length > 0 ? ` (${names.join(', ')})` : ''}, in call order top to bottom. ` +
+			`Use it to follow the control flow — and where a call recurses or the trace is truncated — without stepping through the code.`,
+	}];
+
+	if (seqDef.participants.length > 0 || seqDef.messages.length > 0) {
+		const lines: string[] = [];
+		if (seqDef.participants.length > 0) {
+			lines.push('Participants:');
+			for (const p of seqDef.participants) {
+				lines.push(`  • ${p.id}${p.label !== undefined && p.label.length > 0 && p.label !== p.id ? ` — ${p.label}` : ''}`);
+			}
+		}
+		if (seqDef.messages.length > 0) {
+			lines.push('Message flow:');
+			seqDef.messages.forEach((m, i) => {
+				const kind = m.kind ?? 'call';
+				const note = m.note !== undefined && m.note.length > 0 ? ` — ${m.note}` : '';
+				lines.push(`  ${i + 1}. ${labelOf(m.from)} → ${labelOf(m.to)}: ${m.label} [${kind}]${note}`);
+			});
+		}
+		for (const t of seqDef.truncations ?? []) {
+			lines.push(`  ⋯ truncated at ${labelOf(t.atParticipant)}: ${t.note}`);
+		}
+		sections.push({ id: 'fields', title: 'Participants & message flow', narrativeText: lines.join('\n') });
+	}
+
+	sections.push({
+		id:    'legend',
+		title: 'Legend',
+		narrativeText:
+			`call — a synchronous request from one participant to another.\n` +
+			`return — a value handed back to the caller.\n` +
+			`recurse — a self/cycle repeat, drawn as a recursion note.\n` +
+			`⋯ truncation — the trace was cut off at that participant (depth limit).`,
+	});
+	return sections;
+}
+
+/**
  * Transform a SequenceDefinition into a docgen DocumentIR: each participant → a
  * 'call-frame' IrNode; each message → an IrEdge (a 'recurse'-kind message's edge
  * id carries the ':repeat' suffix the sequenceDiagram emitter turns into a
@@ -228,7 +285,7 @@ export function sequenceDefinitionToIr(seqDef: SequenceDefinition): DocumentIR {
 		docType:             SEQUENCE_DOC_TYPE,
 		scopeDescription:    seqDef.id !== undefined && seqDef.id.length > 0 ? `Sequence: ${seqDef.id}` : 'Sequence diagram',
 		derived:             { nodes, edges },
-		narrated:            { sections: [] },
+		narrated:            { sections: sequenceNarratedSections(seqDef) },
 		generatedAtRevision: 'authored-sequence',
 	};
 }

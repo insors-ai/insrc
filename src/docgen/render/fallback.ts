@@ -28,6 +28,7 @@
 import { spawn } from 'node:child_process';
 
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
+import { renderNarrativeBand } from './narrative.js';
 
 // ── t1 · oversized predicate ───────────────────────────────────────────────
 
@@ -196,6 +197,11 @@ function escapeHtml(s: string): string {
  * self-contained offline file — no external URL — in the SAME
  * RenderedDocumentShell shape as the primary path, distinguished only by
  * `backend: 'fallback-subprocess'` (ac2). Pure: no I/O.
+ *
+ * S001: at parity with the primary shell, the SAME narrated band (context
+ * sections + the optional escaped source-link) is appended below the diagram
+ * via the shared renderNarrativeBand. An empty band (no sections AND no
+ * sourceLink) is '' → byte-identical to the pre-S001 fallback output.
  */
 export function assembleFallbackShell(
 	ir: DocumentIR,
@@ -203,6 +209,10 @@ export function assembleFallbackShell(
 	svgPanZoom: string,
 	svgPanZoomVersion: string,
 ): RenderedDocumentShell {
+	const narrative = renderNarrativeBand(ir.narrated.sections, ir.narrated.sourceLink);
+	// A narrative band shares the viewport with the diagram; a band-less doc keeps
+	// the full-height diagram (no inline style → byte-identical to before).
+	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
 	const init = `
 (function () {
   var svg = document.querySelector('#docgen-diagram svg');
@@ -227,7 +237,7 @@ export function assembleFallbackShell(
 </head>
 <body>
 <div id="docgen-error"></div>
-<div id="docgen-diagram">${svg}</div>
+<div id="docgen-diagram"${diagramStyle}>${svg}</div>${narrative}
 <script>${svgPanZoom}</script>
 <script>${init}</script>
 </body>

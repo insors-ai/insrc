@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790761838673-v3wvox",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T09:50:38.673Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "97e289e28841db07",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/docgen/render/fallback.ts",
+        "src/docgen/render/shell.ts",
+        "src/docgen/types.ts",
+        "src/workflow/artifacts/companion/component.ts",
+        "src/workflow/artifacts/companion/er.ts",
+        "src/workflow/artifacts/companion/render.ts",
+        "src/workflow/artifacts/companion/sequence.ts",
+        "src/workflow/artifacts/companion/ux.ts",
+        "src/workflow/orchestrator.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/docgen/render/shell.ts:204",
+            "message": "The LLD located the narrated-band render in shell.ts's renderNarrative; the implementation extracts it into a shared src/docgen/render/narrative.ts (renderNarrativeBand) imported by both shell.ts and fallback.ts. This is a faithful, necessary realization of the a1 design — the fallback-parity requirement (t3) cannot import shell.ts (shell imports fallback: the dispatch direction), so the shared band must live in a third module. Byte-identity for the sections-only / no-sourceLink case is preserved (verified by golden tests).",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

@@ -20,7 +20,7 @@
  * Deterministic + provider-free. Mirrors ./er.ts.
  */
 
-import type { DocumentIR, IrEdge, IrNode } from '../../../docgen/types.js';
+import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
 import type { DimensionFinding } from '../../code-review/types.js';
 
 // ---------------------------------------------------------------------------
@@ -142,6 +142,58 @@ function breach(location: string, message: string): DimensionFinding {
 export const COMPONENT_DOC_TYPE = 'component-dependency';
 
 /**
+ * Derive the reader-facing narrated sections for a component-dependency
+ * companion (S001): a Purpose section, a Components & dependencies section (the
+ * modules and each directed dependency edge), and a Legend. Read-only over the
+ * same parse the diagram uses. For an empty-but-valid definition the
+ * components/dependencies section is omitted (Purpose + Legend only). The band
+ * renderer escapes all this text.
+ */
+function componentNarratedSections(compDef: ComponentDependencyDefinition): IrSection[] {
+	const labelOf = (id: string): string => {
+		const c = compDef.components.find(cc => cc.id === id);
+		return c?.label !== undefined && c.label.length > 0 ? c.label : id;
+	};
+	const names = compDef.components.map(c => labelOf(c.id));
+	const sections: IrSection[] = [{
+		id:    'purpose',
+		title: 'Purpose',
+		narrativeText:
+			`This component-dependency map shows ${compDef.components.length} component${compDef.components.length === 1 ? '' : 's'}` +
+			`${names.length > 0 ? ` (${names.join(', ')})` : ''} and the ${compDef.dependencies.length} directed ` +
+			`dependenc${compDef.dependencies.length === 1 ? 'y' : 'ies'} between them (an arrow means "from depends on to"). ` +
+			`Use it to see the module boundaries and what depends on what without tracing imports by hand.`,
+	}];
+
+	if (compDef.components.length > 0 || compDef.dependencies.length > 0) {
+		const lines: string[] = [];
+		if (compDef.components.length > 0) {
+			lines.push('Components:');
+			for (const c of compDef.components) {
+				lines.push(`  • ${c.id}${c.label !== undefined && c.label.length > 0 && c.label !== c.id ? ` — ${c.label}` : ''}`);
+			}
+		}
+		if (compDef.dependencies.length > 0) {
+			lines.push('Dependencies:');
+			for (const d of compDef.dependencies) {
+				const label = d.label !== undefined && d.label.length > 0 ? ` — ${d.label}` : '';
+				lines.push(`  • ${labelOf(d.from)} → ${labelOf(d.to)}${label}`);
+			}
+		}
+		sections.push({ id: 'fields', title: 'Components & dependencies', narrativeText: lines.join('\n') });
+	}
+
+	sections.push({
+		id:    'legend',
+		title: 'Legend',
+		narrativeText:
+			`box — a component (module).\n` +
+			`arrow (→) — a directed dependency: the source depends on the target.`,
+	});
+	return sections;
+}
+
+/**
  * Transform a ComponentDependencyDefinition into a docgen DocumentIR: each
  * component → a 'component' IrNode; each dependency → a 'depends-on' IrEdge. Pure +
  * deterministic: component + dependency order is preserved verbatim, so the same
@@ -184,7 +236,7 @@ export function componentDependencyDefinitionToIr(compDef: ComponentDependencyDe
 		docType:             COMPONENT_DOC_TYPE,
 		scopeDescription:    compDef.id !== undefined && compDef.id.length > 0 ? `Components: ${compDef.id}` : 'Component dependencies',
 		derived:             { nodes, edges },
-		narrated:            { sections: [] },
+		narrated:            { sections: componentNarratedSections(compDef) },
 		generatedAtRevision: 'authored-component',
 	};
 }

@@ -63,6 +63,12 @@ export interface DerivedContent {
 /** LLM-narrated content: prose sections, never part of the diagram. */
 export interface NarratedContent {
 	readonly sections: readonly IrSection[];
+	/** Optional back-reference to the source artifact markdown this document was
+	 *  rendered from (e.g. the sibling HLD.md / LLD.md). Rendered as an escaped
+	 *  `<a>` in the narrated band by both the primary and the oversized-fallback
+	 *  shells. Additive: absent → no link element, and a document with empty
+	 *  `sections` AND no `sourceLink` renders byte-identically to the pre-change shell. */
+	readonly sourceLink?: { readonly label: string; readonly href: string } | undefined;
 }
 
 /**

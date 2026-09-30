@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ER model — Epic / Story</title>
+<style>
+  :root{
+    --accent:#4051b5; --accent-soft:#eef0fb;
+    --bg:#f7f7fa; --surface:#ffffff; --ink:#1c1d22; --muted:#5b5e6b;
+    --border:#e3e4ec; --code:#f0f1f6; --band:#4051b5;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --accent:#93a0f2; --accent-soft:#20233a;
+      --bg:#15161c; --surface:#1d1f27; --ink:#e9eaf1; --muted:#a0a3b5;
+      --border:#2c2e3a; --code:#23252f; --band:#5866cf; color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:940px;margin:0 auto;padding:28px 16px 64px;}
+  .doc-title{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 2px;text-wrap:balance;}
+  .doc-scope{color:var(--muted);font-size:13px;margin:0 0 20px;}
+  /* ── NEW context band (the feature) ─────────────────────────── */
+  .context{background:var(--surface);border:1px solid var(--border);
+    border-top:4px solid var(--band);border-radius:8px;padding:20px 22px;margin-bottom:22px;
+    box-shadow:0 1px 2px rgba(20,20,40,.04);}
+  .context h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+    margin:0 0 14px;font-weight:700;}
+  .context h3{font-size:15px;margin:18px 0 6px;font-weight:650;}
+  .context h3:first-of-type{margin-top:0;}
+  .context p{margin:0 0 10px;color:var(--ink);}
+  .srclink{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+    color:var(--accent);text-decoration:none;background:var(--accent-soft);
+    border:1px solid var(--border);border-radius:999px;padding:5px 13px;margin-top:4px;}
+  .srclink:hover{text-decoration:underline;}
+  .srclink::before{content:"↩";font-weight:700;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 6px;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.02em;text-transform:uppercase;}
+  td code,.k{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:var(--code);padding:1px 6px;border-radius:5px;}
+  .pill{display:inline-block;font-size:11px;font-weight:600;border-radius:5px;padding:1px 7px;}
+  .pill.req{background:#fde8e8;color:#b42318;}
+  .pill.id{background:#e7f3ea;color:#1a7f37;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.req{background:#3a2020;color:#f4a3a3}
+    :root:not([data-theme="light"]) .pill.id{background:#1e3025;color:#8fd3a3}}
+  .legend{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;margin-top:4px;}
+  .legend .sym{font-family:ui-monospace,Menlo,monospace;color:var(--accent);white-space:nowrap;}
+  /* ── diagram ─────────────────────────────────────────────────── */
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:18px;overflow:auto;}
+  .diagram .cap{font-size:12px;color:var(--muted);margin:0 0 10px;letter-spacing:.02em;text-transform:uppercase;}
+  .mermaid{display:flex;justify-content:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="doc-title">ER model — Epic / Story</h1>
+  <p class="doc-scope">docType: <code class="k">er</code> · scope: ER model of the workflow artifact ledger</p>
+
+  <!-- NEW: self-contained context band -->
+  <section class="context">
+    <h2>Context</h2>
+
+    <h3>Purpose</h3>
+    <p>This entity-relationship diagram shows the data model an Epic groups: one Epic owns many
+       Stories, each Story owns many acceptance Criteria. It exists so a reader can understand the
+       persisted shape — the classes, their key fields, and how they relate — without opening the
+       source design document.</p>
+    <a class="srclink" href="../LLD.md">View the source document — LLD.md</a>
+
+    <h3>Fields &amp; schema</h3>
+    <p><strong>Epic</strong></p>
+    <table>
+      <thead><tr><th>Attribute</th><th>Range</th><th>Flags</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>epicHash</code></td><td><code>string</code></td><td><span class="pill id">identifier</span></td><td>Stable hex-16 hash that anchors the Epic folder.</td></tr>
+        <tr><td><code>slug</code></td><td><code>string</code></td><td><span class="pill req">required</span></td><td>Human-readable Epic name.</td></tr>
+        <tr><td><code>stories</code></td><td><code>Story</code></td><td>multivalued</td><td>Relationship → the Stories this Epic owns (1..*).</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px"><strong>Story</strong></p>
+    <table>
+      <thead><tr><th>Attribute</th><th>Range</th><th>Flags</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td><code>string</code></td><td><span class="pill id">identifier</span></td><td>Story id (e.g. S001), unique within the Epic.</td></tr>
+        <tr><td><code>title</code></td><td><code>string</code></td><td><span class="pill req">required</span></td><td>What the Story delivers.</td></tr>
+        <tr><td><code>criteria</code></td><td><code>Criterion</code></td><td>multivalued</td><td>Relationship → acceptance criteria (0..*).</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Legend</h3>
+    <div class="legend">
+      <span class="sym">||──o{</span><span>one-to-many (a parent identifies zero-or-more children)</span>
+      <span class="sym">||──||</span><span>one-to-one</span>
+      <span class="sym">}o──o{</span><span>many-to-many</span>
+      <span class="sym">identifier</span><span>the attribute that uniquely identifies an instance</span>
+      <span class="sym">required</span><span>the attribute must be present on every instance</span>
+    </div>
+  </section>
+
+  <!-- diagram (unchanged from today) -->
+  <section class="diagram">
+    <p class="cap">Diagram</p>
+    <pre class="mermaid">
+erDiagram
+    EPIC ||--o{ STORY : owns
+    STORY ||--o{ CRITERION : "has acceptance"
+    EPIC {
+      string epicHash PK
+      string slug
+    }
+    STORY {
+      string id PK
+      string title
+    }
+    CRITERION {
+      string id PK
+      string text
+    }
+    </pre>
+  </section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  try{
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({startOnLoad:true, theme: dark ? 'dark' : 'default'});
+  }catch(e){}
+</script>
+</body>
+</html>

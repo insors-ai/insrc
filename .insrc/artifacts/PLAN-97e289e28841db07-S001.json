@@ -1,0 +1,355 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790760553796-mfmhlp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-30T09:32:41.912Z",
+    "epicCreatedAt": "2026-09-30T09:32:41.913Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 208109,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "epicSlug": "enrich-docgen-generated-companion-html-artifacts",
+    "storyId": "S001",
+    "lldRunId": "wf-1790758777201-f7hi9w",
+    "lldEffectiveHash": "97e289e28841db075ead532c72d14cf6c14825ff312de4318d5dd5fae53fce5e",
+    "approvedAt": "2026-09-30T09:33:12.565Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story is an additive render-layer change to the docgen companion pipeline. First a one-field type add (narrated.sourceLink), then the shell + fallback learn to render that link and the existing narrative band as an escaped, offline context region (guarded to stay byte-identical when there's no context). Then each of the four companion toIr mappers is taught to fill that band with a Purpose, per-element field explanations, and a legend, and the finalize helpers pass the sibling-.md back-link through. The load-bearing risk is regression, so the tests lean on byte-identity goldens and offline/no-injection assertions rather than new behaviour alone.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add additive optional narrated.sourceLink to DocumentIR",
+        "summary": "In src/docgen/types.ts, add `readonly sourceLink?: { readonly label: string; readonly href: string } | undefined` to the NarratedContent interface. Additive-only; no field removed or renamed.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "NarratedContent declares the optional sourceLink field with the {label, href} shape.",
+          "tsc --noEmit passes with no changes required at any existing IR construction site (field is optional)."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a DocumentIR whose narrated omits sourceLink is still a valid NarratedContent (type/compile smoke)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Render sourceLink in renderNarrative/buildHtml + forward it from assembleShell",
+        "summary": "Extend renderNarrative + buildHtml (shell.ts) to render ir.narrated.sourceLink as an escaped <a> in the context band; add the appended optional sourceLink param to buildHtml and have assembleShell pass ir.narrated.sourceLink. Preserve empty-sections+no-sourceLink byte-identity.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "buildHtml renders an escaped <a> (href + label escapeHtml'd) when sourceLink is present.",
+          "With empty sections AND no sourceLink, buildHtml output is byte-identical to before the change.",
+          "assembleShell forwards ir.narrated.sourceLink to buildHtml."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildHtml renders escaped <a> when sourceLink present"
+          },
+          {
+            "level": "unit",
+            "name": "buildHtml empty-sections+no-sourceLink byte-identical golden"
+          },
+          {
+            "level": "unit",
+            "name": "HTML-special chars escape with no injection"
+          },
+          {
+            "level": "unit",
+            "name": "assembleShell forwards ir.narrated.sourceLink to buildHtml"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Bring assembleFallbackShell to context-band parity",
+        "summary": "Extend assembleFallbackShell (fallback.ts) to render the same narrative sections + escaped source-link region as buildHtml (was svg-only), guarded so the empty-sections+no-sourceLink case stays byte-identical.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "assembleFallbackShell renders narrated.sections + the escaped sourceLink <a> matching buildHtml's band.",
+          "With empty sections and no sourceLink, assembleFallbackShell output is byte-identical to before.",
+          "No remote URL appears in the fallback output."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "assembleFallbackShell parity + empty-case byte-identical golden"
+          },
+          {
+            "level": "unit",
+            "name": "assembleFallbackShell output has no remote URL"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Populate narrated.sections in the 4 companion toIr mappers",
+        "summary": "In er.ts/ux.ts/sequence.ts/component.ts, have each xDefinitionToIr populate narrated.sections with a Purpose section + a per-element field-explanation section + a Legend section, derived read-only from the same definition parse. Implement er first as the reference, then mirror to ux/sequence/component (split a kind into a follow task only if its field-derivation proves non-trivial). Empty-but-valid def -> Purpose + Legend only. Do not mutate the input definition. Carries the invariant-change dataModel item (per-kind section population).",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Each of the 4 mappers returns narrated.sections with Purpose + per-element field-explanation + Legend for a well-formed definition.",
+          "An empty-but-valid definition yields Purpose + Legend with the field section omitted/empty and no throw.",
+          "The input definition object is not mutated (derived nodes/edges + scopeDescription unchanged)."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "erDefinitionToIr sections"
+          },
+          {
+            "level": "unit",
+            "name": "uxDefinitionToIr sections"
+          },
+          {
+            "level": "unit",
+            "name": "sequenceDefinitionToIr sections"
+          },
+          {
+            "level": "unit",
+            "name": "componentDependencyDefinitionToIr sections"
+          },
+          {
+            "level": "unit",
+            "name": "empty-but-valid def -> Purpose+Legend, field section omitted"
+          },
+          {
+            "level": "unit",
+            "name": "read-only: input definition not mutated"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Thread the optional sourceLink through the 4 renderXCompanion opts",
+        "summary": "Add `sourceLink?: { label: string; href: string }` to RenderErCompanionOpts (and the 3 sibling opts) in render.ts; when present, set it onto ir.narrated.sourceLink before assembleShell. repoPath/ofSectionId unchanged; non-ok outcome still throws DiagramGenerationError.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Each renderXCompanion accepts opts.sourceLink and sets ir.narrated.sourceLink before assembleShell.",
+          "Without sourceLink the renderer still writes HTML (backward-safe) and returns the unchanged CompanionArtifactRef shape.",
+          "A non-ok DocGenOutcome still throws DiagramGenerationError and writes no file."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "renderErCompanion with opts.sourceLink writes escaped link (+ 3 siblings)"
+          },
+          {
+            "level": "unit",
+            "name": "renderErCompanion without sourceLink still writes HTML (backward-safe)"
+          },
+          {
+            "level": "unit",
+            "name": "non-ok DocGenOutcome still throws DiagramGenerationError + no file"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Supply the sibling-.md source link from the orchestrator finalize helpers",
+        "summary": "In renderErCompanionForBody / renderUxCompanionForBody / renderDiagramCompanionsForBody (orchestrator.ts), derive the sibling-.md relative link (./HLD.md at the design.epic site, ./LLD.md at the design.story + standalone-LLD sites) from the .md path already in scope and pass it as the sourceLink opt.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Each finalize helper passes { repoPath, sourceLink: { label, href: <relative sibling .md> } } to its renderer.",
+          "The href resolves to ./HLD.md at the finalizeDesignEpic site and ./LLD.md at the design.story + standalone-LLD sites.",
+          "The link is a relative path only (no absolute/remote URL)."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "renderErCompanionForBody/renderUxCompanionForBody/renderDiagramCompanionsForBody via finalizeArtifact: Purpose text + relative ./HLD.md (design.epic) / ./LLD.md (design.story + standalone-LLD) link + Legend present"
+          },
+          {
+            "level": "integration",
+            "name": "no remote URL; nothing inlined into the .md"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "erDefinitionToIr sections",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "uxDefinitionToIr sections",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "sequenceDefinitionToIr sections",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "componentDependencyDefinitionToIr sections",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "empty-but-valid def -> Purpose+Legend, field section omitted",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "read-only: input definition not mutated",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildHtml renders escaped <a> when sourceLink present",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildHtml empty-sections+no-sourceLink byte-identical golden",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "assembleFallbackShell parity + empty-case byte-identical golden",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "HTML-special chars escape with no injection",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderErCompanion with opts.sourceLink writes escaped link (+ 3 siblings)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderErCompanion without sourceLink still writes HTML (backward-safe)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "non-ok DocGenOutcome still throws DiagramGenerationError + no file",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderErCompanionForBody/renderUxCompanionForBody/renderDiagramCompanionsForBody via finalizeArtifact: Purpose text + relative ./HLD.md (design.epic) / ./LLD.md (design.story + standalone-LLD) link + Legend present",
+        "coveredByTaskIds": [
+          "t6",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "no remote URL; nothing inlined into the .md",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 buildHtml/renderNarrative render (src/docgen/render/shell.ts:189)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 buildHtml offline HTML assembly (src/docgen/render/shell.ts:204)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 companion toIr section population (src/workflow/artifacts/companion/er.ts + siblings)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 assembleFallbackShell parity (src/docgen/render/fallback.ts:200)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 renderXCompanion sourceLink opt (src/workflow/artifacts/companion/render.ts:65)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 finalize helpers thread sibling-.md link (src/workflow/orchestrator.ts:1568)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 DocumentIR.narrated.sourceLink field-add (src/docgen/types.ts:76)"
+    }
+  ]
+}

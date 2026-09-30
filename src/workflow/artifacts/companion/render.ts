@@ -20,6 +20,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, relative, sep } from 'node:path';
 
 import { assembleShell } from '../../../docgen/render/shell.js';
+import type { DocumentIR } from '../../../docgen/types.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { ErDefinition } from './er.js';
 import { erDefinitionToIr } from './er.js';
@@ -46,6 +47,21 @@ export class DiagramGenerationError extends Error {
 	}
 }
 
+/** A back-reference to the source artifact markdown, rendered as an escaped `<a>`
+ *  in the companion's narrated band (S001). */
+export interface CompanionSourceLink {
+	readonly label: string;
+	readonly href:  string;
+}
+
+/** Set the source-doc back-link onto an IR's narrated content (S001). Returns
+ *  the IR unchanged when no link is supplied, so a caller that omits it produces
+ *  byte-identical HTML to before. Non-mutating (spreads a fresh narrated). */
+function withSourceLink(ir: DocumentIR, sourceLink?: CompanionSourceLink): DocumentIR {
+	if (sourceLink === undefined) return ir;
+	return { ...ir, narrated: { ...ir.narrated, sourceLink } };
+}
+
 /** Options for renderErCompanion. */
 export interface RenderErCompanionOpts {
 	/** Registered repo root — when supplied, `relPath` is computed relative to it
@@ -53,6 +69,9 @@ export interface RenderErCompanionOpts {
 	readonly repoPath?:    string | undefined;
 	/** The document section id this companion visualizes (bound onto the ref). */
 	readonly ofSectionId?: string | undefined;
+	/** S001: a back-link to the source artifact `.md`; set onto ir.narrated.sourceLink
+	 *  so the rendered HTML links back to the document it visualizes. */
+	readonly sourceLink?:  CompanionSourceLink | undefined;
 }
 
 /**
@@ -68,7 +87,7 @@ export async function renderErCompanion(
 	destPath: string,
 	opts:     RenderErCompanionOpts = {},
 ): Promise<CompanionArtifactRef> {
-	const ir = erDefinitionToIr(erDef);
+	const ir = withSourceLink(erDefinitionToIr(erDef), opts.sourceLink);
 	const outcome = await assembleShell(ir);
 	if (outcome.status !== 'ok') {
 		const reason = 'reason' in outcome ? outcome.reason
@@ -95,6 +114,8 @@ export interface RenderUxCompanionOpts {
 	readonly repoPath?:    string | undefined;
 	/** The document section id this companion visualizes (bound onto the ref). */
 	readonly ofSectionId?: string | undefined;
+	/** S001: a back-link to the source artifact `.md` (see RenderErCompanionOpts). */
+	readonly sourceLink?:  CompanionSourceLink | undefined;
 }
 
 /**
@@ -113,7 +134,7 @@ export async function renderUxCompanion(
 	destPath: string,
 	opts:     RenderUxCompanionOpts = {},
 ): Promise<CompanionArtifactRef> {
-	const ir = uxDefinitionToIr(uxDef);
+	const ir = withSourceLink(uxDefinitionToIr(uxDef), opts.sourceLink);
 	const outcome = await assembleShell(ir);
 	if (outcome.status !== 'ok') {
 		const reason = 'reason' in outcome ? outcome.reason
@@ -141,6 +162,8 @@ export interface RenderDiagramCompanionOpts {
 	readonly repoPath?:    string | undefined;
 	/** The document section id this companion visualizes (bound onto the ref). */
 	readonly ofSectionId?: string | undefined;
+	/** S001: a back-link to the source artifact `.md` (see RenderErCompanionOpts). */
+	readonly sourceLink?:  CompanionSourceLink | undefined;
 }
 
 /**
@@ -160,7 +183,7 @@ export async function renderSequenceCompanion(
 	destPath: string,
 	opts:     RenderDiagramCompanionOpts = {},
 ): Promise<CompanionArtifactRef> {
-	const ir = sequenceDefinitionToIr(seqDef);
+	const ir = withSourceLink(sequenceDefinitionToIr(seqDef), opts.sourceLink);
 	const outcome = await assembleShell(ir);
 	if (outcome.status !== 'ok') {
 		const reason = 'reason' in outcome ? outcome.reason
@@ -198,7 +221,7 @@ export async function renderComponentCompanion(
 	destPath: string,
 	opts:     RenderDiagramCompanionOpts = {},
 ): Promise<CompanionArtifactRef> {
-	const ir = componentDependencyDefinitionToIr(compDef);
+	const ir = withSourceLink(componentDependencyDefinitionToIr(compDef), opts.sourceLink);
 	const outcome = await assembleShell(ir);
 	if (outcome.status !== 'ok') {
 		const reason = 'reason' in outcome ? outcome.reason

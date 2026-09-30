@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>UX mock — Approval card</title>
+<style>
+  :root{
+    --accent:#4051b5; --accent-soft:#eef0fb;
+    --bg:#f7f7fa; --surface:#ffffff; --ink:#1c1d22; --muted:#5b5e6b;
+    --border:#e3e4ec; --code:#f0f1f6; --band:#4051b5; color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --accent:#93a0f2; --accent-soft:#20233a; --bg:#15161c; --surface:#1d1f27;
+      --ink:#e9eaf1; --muted:#a0a3b5; --border:#2c2e3a; --code:#23252f; --band:#5866cf; color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:940px;margin:0 auto;padding:28px 16px 64px;}
+  .doc-title{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 2px;text-wrap:balance;}
+  .doc-scope{color:var(--muted);font-size:13px;margin:0 0 20px;}
+  .context{background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--band);
+    border-radius:8px;padding:20px 22px;margin-bottom:22px;box-shadow:0 1px 2px rgba(20,20,40,.04);}
+  .context h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;font-weight:700;}
+  .context h3{font-size:15px;margin:18px 0 6px;font-weight:650;}
+  .context h3:first-of-type{margin-top:0;}
+  .context p{margin:0 0 10px;}
+  .srclink{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--accent);
+    text-decoration:none;background:var(--accent-soft);border:1px solid var(--border);border-radius:999px;padding:5px 13px;margin-top:4px;}
+  .srclink:hover{text-decoration:underline;} .srclink::before{content:"↩";font-weight:700;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:4px 0 6px;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;font-size:12px;letter-spacing:.02em;text-transform:uppercase;}
+  td code,.k{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:var(--code);padding:1px 6px;border-radius:5px;}
+  .legend{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;margin-top:4px;}
+  .legend .sym{font-family:ui-monospace,Menlo,monospace;color:var(--accent);white-space:nowrap;}
+  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;overflow:auto;}
+  .diagram .cap{font-size:12px;color:var(--muted);margin:0 0 12px;letter-spacing:.02em;text-transform:uppercase;}
+  /* rendered adaptive-card preview */
+  .card{max-width:420px;margin:0 auto;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);}
+  .card .el{padding:12px 16px;border-bottom:1px solid var(--border);}
+  .card .el:last-child{border-bottom:0;}
+  .card .title{font-size:17px;font-weight:700;}
+  .card .sub{color:var(--muted);font-size:13px;}
+  .card .facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;}
+  .card .facts b{color:var(--muted);font-weight:600;}
+  .card .input{border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--muted);font-size:13px;background:var(--bg);}
+  .card .actions{display:flex;gap:10px;}
+  .btn{border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;border:1px solid var(--border);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tag{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--accent);
+    background:var(--accent-soft);border-radius:4px;padding:0 6px;margin-left:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="doc-title">UX mock — Approval card</h1>
+  <p class="doc-scope">docType: <code class="k">ux</code> · scope: AdaptiveCard for the artifact-approval prompt</p>
+
+  <section class="context">
+    <h2>Context</h2>
+
+    <h3>Purpose</h3>
+    <p>This is the approval card the reviewer sees when an artifact is ready to sign off. The mock
+       shows the intended layout and every interactive element, so a reader understands what the
+       user is asked to do and what each control does — without reading the card JSON.</p>
+    <a class="srclink" href="../LLD.md">View the source document — LLD.md</a>
+
+    <h3>Elements &amp; roles</h3>
+    <table>
+      <thead><tr><th>Element</th><th>Type</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Heading</td><td><code>TextBlock</code></td><td>Artifact title (size=Large, weight=Bolder).</td></tr>
+        <tr><td>Subtitle</td><td><code>TextBlock</code></td><td>Epic / Story context, muted.</td></tr>
+        <tr><td>Summary facts</td><td><code>FactSet</code></td><td>Key/value review facts (review verdict, findings).</td></tr>
+        <tr><td>Reviewer note</td><td><code>Input.Text</code></td><td>Optional free-text note captured with the decision.</td></tr>
+        <tr><td>Approve</td><td><code>Action.Submit</code></td><td>Primary action — records approval.</td></tr>
+        <tr><td>Request changes</td><td><code>Action.Submit</code></td><td>Secondary action — sends back with the note.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Legend</h3>
+    <div class="legend">
+      <span class="sym">TextBlock</span><span>read-only display text</span>
+      <span class="sym">FactSet</span><span>a key/value table of facts</span>
+      <span class="sym">Input.*</span><span>an interactive field the user fills in</span>
+      <span class="sym">Action.Submit</span><span>a button that submits the card's inputs</span>
+    </div>
+  </section>
+
+  <section class="diagram">
+    <p class="cap">Card preview</p>
+    <div class="card">
+      <div class="el"><div class="title">LLD — S001: Self-contained companion context</div>
+        <div class="sub">Epic 97e289e2 · Story S001 <span class="tag">TextBlock</span></div></div>
+      <div class="el"><div class="facts">
+        <b>Review</b><span>PASS · 0 HIGH / 0 MED / 12 LOW</span>
+        <b>Stage</b><span>design.story → plan</span>
+      </div><div style="margin-top:8px"><span class="tag">FactSet</span></div></div>
+      <div class="el"><div class="input">Add a review note…</div><div style="margin-top:8px"><span class="tag">Input.Text</span></div></div>
+      <div class="el"><div class="actions">
+        <span class="btn primary">Approve</span><span class="btn">Request changes</span>
+      </div><div style="margin-top:8px"><span class="tag">Action.Submit ×2</span></div></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

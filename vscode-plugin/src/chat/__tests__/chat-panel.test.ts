@@ -1355,6 +1355,20 @@ test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider +
   assert.doesNotMatch(statusbar, /✓ idle/, 'no ✓ idle marker (the progress bar conveys idle/busy)');
 });
 
+test('UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads', () => {
+  const html = fidelityHtml();
+  // The #insrc-history rule adds a data-URI SVG icon as the first background layer + left padding to
+  // clear it — so the dropdown is not just a bare down-arrow. Icon-only selects (provider/mode) keep the plain arrow.
+  const rule = html.slice(html.indexOf('.chrome #insrc-history{'));
+  const decl = rule.slice(0, rule.indexOf('}') + 1);
+  assert.match(decl, /background-image:url\("data:image\/svg\+xml,/, 'the history dropdown has an inline SVG icon background');
+  assert.match(decl, /padding-left:20px/, 'left padding clears the icon');
+  assert.match(decl, /background-repeat:no-repeat,no-repeat,no-repeat/, 'three background layers: icon + the two arrow gradients');
+  // The plain .segsel arrow-only style stays icon-free (the provider/mode selects do not get the history glyph).
+  const segsel = html.slice(html.indexOf('.segsel{'));
+  assert.doesNotMatch(segsel.slice(0, segsel.indexOf('}') + 1), /data:image\/svg\+xml/, 'the shared .segsel style has no session icon');
+});
+
 test('S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged', () => {
   const html = fidelityHtml();
   // S002: the leading ❯ is still the send/stop control immediately before the textarea.

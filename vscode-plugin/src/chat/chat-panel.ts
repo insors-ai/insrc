@@ -316,7 +316,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.segsel:hover{color:var(--accent);}.segsel:disabled{opacity:.5;cursor:default;}.segsel option{background:var(--bg-alt);color:var(--fg);font-weight:400;}` +
       // Keep the header session switcher compact so a long session name can't overflow the chrome —
       // it is the only control in the header now (its selected option shows the active session).
-      `.chrome #insrc-history{max-width:16ch;}` +
+      // A leading clock/history glyph (inline data-URI SVG, muted stroke #6b7688 = --muted) signals
+      // that this dropdown selects a chat session/history — the bare down-arrow alone read as unlabelled.
+      // The three background layers must be redeclared together (icon + the two .segsel arrow gradients).
+      `.chrome #insrc-history{max-width:16ch;padding-left:20px;` +
+      `background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%236b7688' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E"),linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);` +
+      `background-position:left 2px center,calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:12px 12px,3px 3px,3px 3px;background-repeat:no-repeat,no-repeat,no-repeat;}` +
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;}` +
       `.insrc-diff-path{color:var(--dim);padding:4px 10px;background:var(--bg-inset);border-bottom:1px solid var(--border);}` +
       `.insrc-diff-add{background:rgba(74,222,128,.10);color:var(--fg-strong);padding:0 10px;}` +

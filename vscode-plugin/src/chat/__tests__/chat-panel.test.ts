@@ -1369,6 +1369,53 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   assert.doesNotMatch(segsel.slice(0, segsel.indexOf('}') + 1), /data:image\/svg\+xml/, 'the shared .segsel style has no session icon');
 });
 
+test('ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)', () => {
+  const html = fidelityHtml();
+  // The glyph test above asserts the icon is DECLARED. That is not enough on its own: the icon
+  // shipped for two releases while the CSP silently blocked it, because a `background-image:url(...)`
+  // is fetched under `img-src` and `img-src` was absent — so it inherited `default-src 'none'`. The
+  // two sibling linear-gradient arrow layers are not fetches, so they kept painting and the suite
+  // stayed green on an invisible feature. Declaration and policy are therefore asserted HERE as ONE
+  // invariant; splitting them again reopens the defect.
+  const cspMeta = /Content-Security-Policy" content="([^"]*)"/.exec(html);
+  assert.ok(cspMeta, 'a CSP meta is present');
+  const csp = cspMeta![1]!;
+
+  // Effective img-src, with the CSP fallback to default-src that caused the bug.
+  const directive = (name: string): string[] | undefined => {
+    const m = new RegExp(`(?:^|;)\\s*${name}\\s+([^;]+)`).exec(csp);
+    return m ? m[1]!.trim().split(/\s+/) : undefined;
+  };
+  const imgSrc = directive('img-src') ?? directive('default-src') ?? [];
+
+  // Every image the shell declares, scanned off the SHIPPED html: url(...) background layers across
+  // ALL <style> blocks — the shell ships more than one and the glyph is NOT in the first — plus any
+  // <img> in the markup. Gradients are excluded by construction: they are not url() fetches.
+  // Both scans exclude <script>, so the inlined marked bundle can't contribute a spurious scheme.
+  const style = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]!).join('\n');
+  const markup = html.replace(/<script\b[\s\S]*?<\/script>/g, '');
+  const declared = [
+    ...style.matchAll(/url\(\s*["']?([a-z][a-z0-9+.-]*:)/gi),
+    ...markup.matchAll(/<img\b[^>]*\bsrc\s*=\s*["']?([a-z][a-z0-9+.-]*:)/gi),
+  ].map((m) => m[1]!.toLowerCase());
+
+  // Guards the invariant against going vacuous if the glyph is ever dropped.
+  assert.ok(declared.includes('data:'), 'the shell declares at least one data: image (the #insrc-history glyph)');
+
+  for (const scheme of new Set(declared)) {
+    assert.ok(
+      imgSrc.includes(scheme) || imgSrc.includes('*'),
+      `the shell declares an image with scheme ${scheme} but its CSP img-src (${imgSrc.join(' ') || '<none>'}) does not permit it — the browser blocks it and it silently never paints`,
+    );
+  }
+
+  // The relaxation stays narrow: inline data: images only, every other directive untouched.
+  assert.match(csp, /default-src 'none'/, "default-src stays 'none'");
+  assert.match(csp, /img-src data:;/, 'img-src permits inline data: images and nothing more');
+  assert.match(csp, /script-src 'nonce-/, 'scripts stay nonce-only');
+  assert.doesNotMatch(csp, /https?:/, 'no remote origin becomes loadable');
+});
+
 test('S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged', () => {
   const html = fidelityHtml();
   // S002: the leading ❯ is still the send/stop control immediately before the textarea.

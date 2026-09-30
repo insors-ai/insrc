@@ -247,7 +247,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const renderShell = (): string => {
     const nonce = genNonce();
     const style = renderStyle(theme); // a complete <style>…</style> (sc1 palette: --it-* tokens)
-    const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
+    // `img-src data:` is load-bearing, not decoration: the header session switcher paints its
+    // clock/history glyph as an inline data-URI SVG background layer (.chrome #insrc-history below).
+    // A CSS background-image url() is fetched under `img-src`, so without this directive it inherits
+    // `default-src 'none'` and the browser blocks the icon while the sibling linear-gradient arrow
+    // layers (not fetches) still paint — the glyph silently disappears. Scoped to `data:` ONLY: no
+    // remote origin becomes loadable, scripts stay nonce-only, and default-src stays 'none'.
+    const csp = `default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     // The chat-surface LAYOUT (S003), ported VERBATIM from the reviewed S001 design mock
     // (docs/epics/…/S001/mocks.html): a single-dark terminal .box (chrome header · .pad transcript
     // with row/gutter markers · dashed .inputline with a ❯ caret · .statusbar), filling the panel

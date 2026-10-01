@@ -219,7 +219,35 @@ export const DOCS_FR_SOURCE =
   `root.appendChild(g);}` +
   // The sc2 shape. `degradation` is left ABSENT: PLACEMENT is what can degrade,
   // not rendering, so t4 decides the notice.
-  `return {el:root};}`;
+  `return {el:root};}` +
+  // S002/t3 — locate the document's own functional-requirements section in the
+  // POSTED index. CONSUMES sc3's identity and mints none of its own: the value
+  // returned is a slug deriveSectionIndex already produced and stampSlugs has
+  // already written onto a heading element.
+  //
+  // Matched by the title's TAIL, not by equality, because the format engine
+  // supplies a document-position-dependent number — frBodyLines strips the
+  // renderer's own `## Functional requirements` (bindings.ts:27) precisely so the
+  // engine can number it, which renders as `## 2. Functional requirements` on a
+  // DEF. An equality match would never fire on a real document.
+  //
+  // Every miss returns undefined, which is SAFE: the caller takes the fallback
+  // placement rather than substituting in the wrong place. A heading inside a
+  // fenced code block cannot match either, because deriveSectionIndex already
+  // skips fences and the index this reads therefore carries no anchor for it —
+  // this adds NO second markdown scanner, which is what keeps section identity
+  // single-sourced.
+  `var FR_HEADING='functional requirements';` +
+  `function frAnchorSlug(sections){` +
+  `var anchors=(sections&&sections.anchors)||[];` +
+  `for(var i=0;i<anchors.length;i++){` +
+  `var a=anchors[i];` +
+  `if(!a||typeof a.title!=='string'||typeof a.slug!=='string')continue;` +
+  `var t=a.title.toLowerCase().replace(/^\\s+|\\s+$/g,'');` +
+  // The FIRST match in document order, so a document carrying two never
+  // produces an ambiguous target.
+  `if(t.length>=FR_HEADING.length&&t.slice(t.length-FR_HEADING.length)===FR_HEADING)return a.slug;}` +
+  `return undefined;}`;
 
 /**
  * sc2 (S001/t4) — the renderer contract s2, s3 and s4 build their structured

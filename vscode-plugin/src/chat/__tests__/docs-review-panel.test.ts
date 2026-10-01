@@ -904,10 +904,12 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       captured by checking the two source files out at the commit BEFORE t1
  *       and rendering there; t1 reproduced it EXACTLY, which is how "t1 changes
  *       nothing a reviewer sees" was proved rather than asserted.
- *   t2 (this value) 62257 chars / 62301 bytes  8b709d01…6b03b
+ *   t2              62257 chars / 62301 bytes  8b709d01…6b03b
  *       +1996 chars: DOCS_FR_SOURCE inlined after its two siblings, plus six
  *       `.insrc-fr*` CSS rules. Declared, expected, and inert — nothing calls
  *       the renderer until t5.
+ *   t3 (this value) 62661 chars / 62705 bytes  b8d9d5c6…56d60
+ *       +404 chars: frAnchorSlug appended to DOCS_FR_SOURCE. Still inert.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -921,9 +923,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  62257,
-  bytes:  62301,
-  sha256: '8b709d010cd0ff5c29e9dee500725619fc295461ae2e46337c6fbfaadad6b03b',
+  chars:  62661,
+  bytes:  62705,
+  sha256: 'b8d9d5c6bb57f04847c150a41725c2c8b07587c917847661b911ef5446556d60',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1177,4 +1179,92 @@ test('t2: the item CSS fragment references only --it-* variables', () => {
   // The degraded-path neutralisers, which t4 verifies visually.
   assert.match(rules.join(''), /white-space:normal/, 'inherited pre-wrap is neutralised');
   assert.match(rules.join(''), /word-break:normal/);
+});
+
+// ---------------------------------------------------------------------------
+// S002/t3 — locating the document's own functional-requirements section in the
+// POSTED index. This Story READS sc3's identity and mints none of its own, so
+// the tests assert against the index deriveSectionIndex really produces.
+// ---------------------------------------------------------------------------
+
+/** Eval DOCS_FR_SOURCE and return frAnchorSlug. */
+function loadFrAnchor(): (sections: unknown) => string | undefined {
+  const doc = { createElement: (t: string) => frNode(t) };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_FR_SOURCE}; return frAnchorSlug;`);
+  return make(doc) as ReturnType<typeof loadFrAnchor>;
+}
+const anchor = (title: string, slug: string, level = 2) => ({ title, slug, level });
+
+test('t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed', () => {
+  const fr = loadFrAnchor();
+
+  // THE case that matters: the format engine strips the renderer's own heading
+  // (bindings.ts:27 `raw.slice(2)`) so it can supply a numbered one, which is why
+  // an equality match would never fire on a real document.
+  assert.equal(
+    fr({ anchors: [anchor('1. Problem', '1-problem'), anchor('2. Functional requirements', '2-functional-requirements')] }),
+    '2-functional-requirements', 'tail-matches under the engine’s numeric prefix');
+  // An unnumbered heading still matches — the tail is the stable part.
+  assert.equal(fr({ anchors: [anchor('Functional requirements', 'functional-requirements')] }), 'functional-requirements');
+  assert.equal(fr({ anchors: [anchor('  7. FUNCTIONAL REQUIREMENTS  ', 'x')] }), 'x', 'case and surrounding whitespace ignored');
+
+  // FIRST in document order, so a document carrying two never yields an
+  // ambiguous target. deriveSectionIndex keeps both (ordinal-disambiguated), so
+  // this is reachable rather than theoretical.
+  assert.equal(fr({ anchors: [anchor('2. Functional requirements', 'first'), anchor('9. Functional requirements', 'second')] }), 'first');
+
+  // Every miss is `undefined`, which routes the caller to the FALLBACK placement
+  // rather than to a wrong substitution. All of these are safe no-matches.
+  assert.equal(fr({ anchors: [anchor('Outcomes', 'outcomes')] }), undefined, 'a renamed heading does not match');
+  assert.equal(fr({ anchors: [anchor('Functional requirements overview', 'x')] }), undefined, 'a PREFIX is not a tail');
+  assert.equal(fr(undefined), undefined);
+  assert.equal(fr(null), undefined);
+  assert.equal(fr({}), undefined);
+  assert.equal(fr({ anchors: [] }), undefined);
+  assert.equal(fr({ anchors: null }), undefined);
+  // Malformed anchors are skipped, not thrown on, and do not mask a later match.
+  assert.equal(fr({ anchors: [{ slug: 's' }, { title: null, slug: 't' }, anchor('Functional requirements', 'ok')] }), 'ok');
+});
+
+test('t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match', () => {
+  // Driven through the REAL deriveSectionIndex, not a hand-built index — the
+  // point is that this task adds NO second markdown scanner, so the fence
+  // behaviour it relies on is sc3's and cannot drift from it.
+  const md = [
+    '# Doc', '', '```md', '## 2. Functional requirements', '```', '', '## Non-goals', '',
+  ].join('\n');
+  const index = deriveSectionIndex(md);
+  assert.deepEqual(index.anchors.map((a) => a.title), ['Doc', 'Non-goals'],
+    'the fenced heading never became an anchor');
+  assert.equal(loadFrAnchor()(index), undefined, 'so there is nothing for frAnchorSlug to match');
+
+  // And the positive control through the same path: a real heading does match,
+  // and the slug returned is the one deriveSectionIndex minted.
+  const real = deriveSectionIndex(['# Doc', '', '## 2. Functional requirements', '', '- a', '', '## Non-goals'].join('\n'));
+  const slug = loadFrAnchor()(real);
+  assert.equal(slug, '2-functional-requirements');
+  assert.ok(real.anchors.some((a) => a.slug === slug), 'the slug is one sc3 produced, not one this task minted');
+});
+
+test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join, resolve } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const file = join(here, '..', 'docs-sections.ts');
+
+  // Zero imports: the module is pure by construction, which is what lets s3 and
+  // s4 import it too without inheriting anything.
+  const src = readFileSync(file, 'utf8');
+  assert.equal((src.match(/^\s*import\s/gm) ?? []).length, 0, 'docs-sections.ts imports nothing');
+
+  // UNCHANGED by this Story, not merely import-free: compare against the commit
+  // that opened S002's build. This Story consumes section identity and never
+  // edits its source — an edit here would be a scope breach onto s1's contract.
+  const repo = resolve(here, '..', '..', '..', '..');
+  const rel = 'vscode-plugin/src/chat/docs-sections.ts';
+  const atBase = execFileSync('git', ['show', `09e6efa:${rel}`], { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 24 });
+  assert.equal(src, atBase, 'docs-sections.ts is byte-identical to its pre-S002 state');
 });

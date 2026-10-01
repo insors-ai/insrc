@@ -10,8 +10,13 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE } from '../docs-review-panel.js';
-import type { StructuredRenderer } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
+import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
@@ -2172,4 +2177,221 @@ test('t2 (contract): protocol.ts indexes all three off DocsContent rather than r
     // and silently decouples from the daemon's record.
     assert.doesNotMatch(decl, new RegExp(`${k}\\?:\\s*\\{`), `${k}'s shape is never restated inline`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// S003/t3 — sc4's contract, published by s3 and consumed by s3 + s4.
+//
+// These are CONTRACT tests. The properties that matter here are structural —
+// "absent carries nothing", "the mapping is total", "linkOut is reachable in the
+// failure state" — and a structural property is only worth asserting if its
+// violation is detectable. So where a behavioural assertion cannot see the
+// property, the test compiles a deliberately-wrong variant with tsc and requires
+// it to FAIL, rather than asserting something that would pass either way.
+// ---------------------------------------------------------------------------
+
+/**
+ * Typecheck a snippet against the REAL published types and return tsc's output.
+ *
+ * This exists because the plugin's tsconfig EXCLUDES `**``/__tests__/**`, so
+ * `tsc --noEmit` never sees this file and any `@ts-expect-error` written here is
+ * INERT — it would decorate a test without checking anything. A type-level
+ * guarantee is only real if something executes the check, so the probe writes a
+ * file next to the module (relative import resolves) and runs tsc over it.
+ */
+function typecheckAgainstPanel(snippet: string): { ok: boolean; out: string } {
+  const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
+  assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+  const probe = fileURLToPath(new URL(`../__sc4probe_${process.pid}_${Math.random().toString(36).slice(2)}__.ts`, import.meta.url));
+  try {
+    writeFileSync(probe, snippet);
+    const r = spawnSync(
+      process.execPath,
+      [tsc, '--noEmit', '--strict', '--exactOptionalPropertyTypes',
+       '--module', 'nodenext', '--moduleResolution', 'nodenext', '--target', 'es2022', probe],
+      { encoding: 'utf8' },
+    );
+    const out = `${r.stdout}${r.stderr}`;
+    // A probe that failed to START would also exit non-zero, which would make
+    // "tsc rejected it" pass for the wrong reason. Rule that out explicitly.
+    assert.doesNotMatch(out, /Cannot find module '.*typescript|MODULE_NOT_FOUND/, 'the probe itself must run');
+    return { ok: r.status === 0, out };
+  } finally {
+    rmSync(probe, { force: true });
+  }
+}
+
+test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", () => {
+  const absent: CompanionSlotState = { state: 'absent' };
+  // Runtime shape: exactly one own key.
+  assert.deepEqual(Object.keys(absent), ['state']);
+
+  // The property that actually matters is that the TYPE forbids more, so a later
+  // Story cannot reserve space for a companion that does not exist even by
+  // accident. Reading any other member off the narrowed absent arm must be a
+  // COMPILE error against the real published union.
+  for (const member of ['label', 'body', 'linkOut', 'kind', 'reason']) {
+    const { ok, out } = typecheckAgainstPanel(`
+      import type { CompanionSlotState } from './docs-review-panel.js';
+      export function probe(s: CompanionSlotState): unknown {
+        if (s.state === 'absent') return s.${member};
+        return undefined;
+      }
+    `);
+    assert.equal(ok, false, `reading '${member}' off the absent arm must NOT compile`);
+    assert.match(out, /Property '.*' does not exist on type/, `and fail because '${member}' is absent from the arm`);
+  }
+
+  // The positive control: `state` itself IS readable, so the probe is capable of
+  // passing and the failures above are about the members, not a broken probe.
+  const control = typecheckAgainstPanel(`
+    import type { CompanionSlotState } from './docs-review-panel.js';
+    export function probe(s: CompanionSlotState): string { return s.state; }
+  `);
+  assert.equal(control.ok, true, `the probe must accept valid code too — got: ${control.out}`);
+});
+
+test('t3: companionVisualKind maps the closed union TOTALLY — both diagram kinds to diagram, the mock to experience', () => {
+  assert.equal(companionVisualKind('diagram-mermaid'), 'diagram');
+  assert.equal(companionVisualKind('diagram-html'), 'diagram', 'the declared-but-unproduced kind is still labelled');
+  assert.equal(companionVisualKind('ux-mock'), 'experience');
+
+  // Totality over the union as the daemon declares it: every member of
+  // CompanionRefKind is covered, enumerated from the type rather than from a
+  // hand-kept list, so a kind added upstream shows up here.
+  const every: Record<CompanionRefKind, CompanionVisualKind> = {
+    'diagram-mermaid': 'diagram',
+    'diagram-html': 'diagram',
+    'ux-mock': 'experience',
+  };
+  for (const [k, expected] of Object.entries(every) as [CompanionRefKind, CompanionVisualKind][]) {
+    assert.equal(companionVisualKind(k), expected, `${k} must map to ${expected}`);
+  }
+  assert.equal(Object.keys(every).length, 3, 'the union is three members wide');
+});
+
+test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', () => {
+  // The exhaustiveness guarantee is invisible at runtime: a bare `default` would
+  // pass every assertion above while silently swallowing a new kind. So compile a
+  // copy of the mapping with one branch removed and require tsc to REJECT it.
+  // Without this, "the mapping is total" is an unfalsifiable claim.
+  const src = `
+    type Kind = 'diagram-mermaid' | 'diagram-html' | 'ux-mock';
+    type Visual = 'diagram' | 'experience';
+    export function k(kind: Kind): Visual {
+      switch (kind) {
+        case 'diagram-mermaid':
+        case 'diagram-html':
+          return 'diagram';
+        default: {
+          const exhaustive: never = kind;   // 'ux-mock' is unhandled -> must error
+          return exhaustive;
+        }
+      }
+    }
+  `;
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-sc4-exh-'));
+  try {
+    const file = join(dir, 'probe.ts');
+    writeFileSync(file, src);
+    // tsc lives at the REPO ROOT, not under vscode-plugin. Resolved relative to
+    // this file so the probe does not depend on the cwd the suite was started
+    // from — and asserted to exist first, because a missing binary ALSO exits
+    // non-zero and would make the "tsc rejected it" assertion pass for entirely
+    // the wrong reason. (It did, on the first run; the message assertion below is
+    // what caught it.)
+    const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
+    assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+
+    const r = spawnSync(process.execPath, [tsc, '--noEmit', '--strict', file], { encoding: 'utf8' });
+    const out = `${r.stdout}${r.stderr}`;
+    assert.notEqual(r.status, 0, 'tsc must REJECT a mapping that leaves a union member unhandled');
+    assert.match(
+      out,
+      /not assignable to type 'never'/,
+      'and reject it precisely because the never witness cannot absorb the missing member',
+    );
+    // The probe really did compile the code we wrote, rather than failing to start.
+    assert.doesNotMatch(out, /Cannot find module|MODULE_NOT_FOUND/, 'the failure is a type error, not a broken probe');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+
+  // AND the SHIPPED function actually uses that pattern. The probe above compiles
+  // a synthetic copy, so on its own it would stay green even if the real mapping
+  // swapped its `never` witness for a bare `default` — which is precisely the
+  // silent fall-through this Epic has already been bitten by once. Pin the real
+  // declaration.
+  {
+    const src = readFileSync(new URL('../docs-review-panel.ts', import.meta.url), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    const start = src.indexOf('export function companionVisualKind');
+    assert.notEqual(start, -1, 'the mapping is declared');
+    const body = src.slice(start, src.indexOf('\n}', start));
+    assert.match(body, /const exhaustive: never = kind;/,
+      'the shipped mapping must carry the never witness, not a bare default');
+    assert.doesNotMatch(body, /default:\s*\n?\s*return/,
+      'a bare `default: return ...` would absorb a new kind silently');
+  }
+});
+
+test("t3: linkOut is reachable on BOTH non-absent states — the failure state most of all", () => {
+  const link = { relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
+
+  const rendered: CompanionSlotState = {
+    state: 'rendered', kind: 'diagram', label: 'Entity model', body: {}, linkOut: link,
+  };
+  const unshowable: CompanionSlotState = {
+    state: 'unshowable', kind: 'diagram', label: 'Sequence diagram',
+    reason: 'its source record is not available to this surface', linkOut: link,
+  };
+
+  // Readable on both arms after narrowing — the widening over the HLD sketch,
+  // which offered the link only on 'rendered'. A reviewer who cannot see the
+  // diagram is exactly the reviewer who needs the authentic file.
+  if (rendered.state === 'rendered') assert.equal(rendered.linkOut, link);
+  if (unshowable.state === 'unshowable') assert.equal(unshowable.linkOut, link);
+
+  // Optional on both, so a ref-less record still renders and a ref-less failure
+  // is still expressible.
+  const noLink: CompanionSlotState = { state: 'rendered', kind: 'diagram', label: 'Entity model', body: {} };
+  assert.equal('linkOut' in noLink, false, 'absent rather than present-and-undefined');
+});
+
+test("t3: body is `unknown`, matching the shipped StructuredRenderer<T> return shape", () => {
+  // A DOM stub is not an HTMLElement, and the renderers live in a source string
+  // with no TypeScript boundary — so an HTMLElement bound here would be a type the
+  // implementation could not honestly satisfy. Any of these must be assignable.
+  const stub = { tagName: 'svg', children: [] as unknown[], textContent: '' };
+  const slots: CompanionSlotState[] = [
+    { state: 'rendered', kind: 'diagram', label: 'a', body: stub },
+    { state: 'rendered', kind: 'diagram', label: 'b', body: 'a string is assignable to unknown' },
+    { state: 'rendered', kind: 'experience', label: 'c', body: null },
+  ];
+  for (const s of slots) assert.equal(s.state, 'rendered');
+
+  // Source-level: the declaration says `unknown`, and sc2's shipped renderer says
+  // the same — one convention, not two. Comments stripped first, because a scan
+  // that reads prose has produced false results in this repo before.
+  const src = readFileSync(new URL('../docs-review-panel.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  assert.match(src, /readonly body: unknown;/, "sc4's body is unknown");
+  assert.match(src, /readonly el: unknown;/, "and sc2's shipped renderer already made this choice");
+});
+
+test('t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet', () => {
+  // t3 lands the contract s4 depends on, ahead of and independently of any
+  // diagram-specific decision. The slot is built in t4 and mounted in t6; if a
+  // call site existed now, reverting the renderer would not restore the pane.
+  const src = readFileSync(new URL('../docs-review-panel.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  // The only runtime member sc4 publishes is the label derivation, and it is not
+  // called from the panel yet.
+  const calls = src.split('companionVisualKind(').length - 1;
+  assert.equal(calls, 1, 'companionVisualKind is declared once and not yet called from the panel');
+  assert.equal(src.includes('CompanionSlotFactory<'), true, 'the factory interface is declared');
+  assert.match(src, /renderContent\(m\)/, 'renderContent is untouched by t3');
 });

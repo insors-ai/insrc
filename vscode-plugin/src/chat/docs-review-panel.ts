@@ -14,7 +14,7 @@
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
 import type { ChatPanelChannel, ChatPanelLogger } from './chat-panel.js';
-import type { DocsReviewClient } from './docs-review-client.js';
+import type { DocsReviewClient, DocsContent } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 import { deriveSectionIndex, type SectionIndex } from './docs-sections.js';
@@ -346,6 +346,128 @@ export type StructuredRenderer<T> = (record: T) => {
   /** Absent/false unless the record could not be presented structurally. */
   readonly degradation?: { readonly degraded: boolean; readonly notice?: string } | undefined;
 };
+
+// ---------------------------------------------------------------------------
+// sc4 (S003/t3) — THE COMPANION VISUAL SLOT. Owned by s3, consumed by s3 and s4.
+//
+// s4 dependsOn s3, which makes s3 the nearest common ancestor of the two visual
+// Stories and therefore the owner of the frame they share. It exists so S003's
+// diagram and S004's experience mock are labelled peers in one layout and share
+// one failure presentation, and so k3's never-reserve-space rule is expressed
+// ONCE: no record, no slot, no frame, no fetch.
+//
+// Types only here. The diagram's own layout, sizing, theming and SVG primitives
+// stay private to s3 (t4/t5), so s4 reuses this frame without inheriting a single
+// diagram-specific decision.
+// ---------------------------------------------------------------------------
+
+/** One companion reference, derived off the daemon's projected shape rather than
+ *  re-imported, so this file stays one declaration deep from `ArtifactReviewView`
+ *  exactly as DocsContent and the protocol variant do. */
+export type CompanionRef = NonNullable<DocsContent['companions']>[number];
+
+/** The companion kinds a document can reference — the daemon's CLOSED union,
+ *  read off the ref rather than restated, so adding a member upstream surfaces
+ *  here as a compile error instead of an unlabelled slot. */
+export type CompanionRefKind = CompanionRef['kind'];
+
+/**
+ * Which visual a slot holds. COLLAPSES the three companion kinds onto two
+ * reviewer-facing labels: both diagram kinds map to 'diagram', the mock maps to
+ * 'experience'. S004 reads the label from here rather than deciding its own,
+ * which is how "tell a mock apart from a diagram" is met without a second
+ * contract.
+ */
+export type CompanionVisualKind = 'diagram' | 'experience';
+
+/** The link-out to the authentic generated companion file. The pane NEVER reads
+ *  or embeds `relPath`'s content — it only offers it. That is what keeps a
+ *  3.3 MB foreign scripted HTML file, and the path-traversal surface of reading
+ *  an arbitrary body-supplied path, outside this surface entirely. */
+export interface CompanionLinkOut {
+  readonly relPath: string;
+  readonly title: string;
+}
+
+/**
+ * EXACTLY THREE STATES, and the shape of the union is the enforcement:
+ *
+ *   'rendered'   — a visual was built from a record present on the document.
+ *   'unshowable' — a companion was REFERENCED and could not be drawn, named.
+ *   'absent'     — no slot at all.
+ *
+ * `absent` carries NO other member by construction. There is nothing to label,
+ * nothing to link and nothing to size, so a caller cannot reserve space for a
+ * companion that does not exist even by mistake — k3 becomes a type guarantee
+ * rather than a convention a later Story has to remember.
+ *
+ * `linkOut` is optional on BOTH non-absent states, a deliberate widening of the
+ * HLD sketch: the reviewer whose diagram could not be drawn is precisely the one
+ * who most needs the authentic file, so withholding the link in the failure state
+ * would be exactly the wrong way round.
+ *
+ * `body` is `unknown`, not HTMLElement, matching the shipped StructuredRenderer<T>
+ * above. The renderers live in an exported SOURCE STRING with no TypeScript
+ * boundary of its own and are tested against DOM stubs that are deliberately not
+ * HTMLElements; an element bound here would be a type the implementation could
+ * not honestly satisfy.
+ */
+export type CompanionSlotState =
+  | {
+      readonly state: 'rendered';
+      readonly kind: CompanionVisualKind;
+      readonly label: string;
+      readonly body: unknown;
+      readonly linkOut?: CompanionLinkOut | undefined;
+    }
+  | {
+      readonly state: 'unshowable';
+      readonly kind: CompanionVisualKind;
+      readonly label: string;
+      readonly reason: string;
+      readonly linkOut?: CompanionLinkOut | undefined;
+    }
+  | { readonly state: 'absent' };
+
+/**
+ * Build a slot from a structured record plus the ref that may accompany it.
+ *
+ * The record decides whether anything can be DRAWN; the ref decides whether a
+ * failure must be DECLARED, since a ref is the only evidence a visual was meant
+ * to exist. A factory never throws: a malformed record, a dangling reference or a
+ * renderer failure all resolve to 'unshowable', because taking the document down
+ * over an adjunct would invert the rule that the body stays authoritative.
+ */
+export interface CompanionSlotFactory<TRecord> {
+  readonly kind: CompanionVisualKind;
+  build(
+    record: TRecord | undefined,
+    ref: CompanionRef | undefined,
+    anchorSlug: string | undefined,
+  ): CompanionSlotState;
+}
+
+/**
+ * The reviewer-facing label for a companion kind, DERIVED from the ref and never
+ * guessed. Exhaustive over the closed union with a `never` witness in the final
+ * branch: adding a companion kind upstream makes this fail to compile rather than
+ * silently producing an unlabelled slot. Deliberately NO bare `default` — a bare
+ * default is what defeats exhaustiveness checking, and it has produced exactly
+ * that class of silent fall-through on this Epic's surfaces before.
+ */
+export function companionVisualKind(kind: CompanionRefKind): CompanionVisualKind {
+  switch (kind) {
+    case 'diagram-mermaid':
+    case 'diagram-html':
+      return 'diagram';
+    case 'ux-mock':
+      return 'experience';
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
+}
 
 /** Escape a value for safe embedding in an HTML attribute / the CSP meta content. */
 function attr(v: string): string {

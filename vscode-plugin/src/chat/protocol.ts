@@ -14,6 +14,19 @@ import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
 import type { TranscriptEntry, ChatSummary } from './session-store.js';
+import type { SectionIndex } from './docs-sections.js';
+
+/**
+ * sc2 (S001) — whether the structured presentation was unavailable, and the
+ * reviewer-facing sentence saying so. ONE shape, so ac3's notice is a contract
+ * rather than per-Story copy. `degraded: false` pairs with an EMPTY notice; a
+ * non-empty notice never accompanies a successful render. The notice is always
+ * set by textContent, never as markup.
+ */
+export interface RenderDegradation {
+  readonly degraded: boolean;
+  readonly notice:   string;
+}
 
 /** The wire envelope: every message is wrapped with a protocol version for forward-compat. */
 export interface Envelope<T> {
@@ -60,6 +73,16 @@ export type HostToWebview =
       readonly openQuestions: readonly string[];
       readonly blocked: boolean;
       readonly commentable?: boolean;
+      // S001/t5 (additive, same message — NO new message type). `sections` is the
+      // index derived from THE MARKDOWN ON THIS MESSAGE, so the two always travel
+      // together: a superseded open swaps both at once and a stale index can never
+      // be paired with newer markdown.
+      readonly sections?: SectionIndex | undefined;
+      // Whether the structured presentation was unavailable, carried here rather
+      // than inferred in the webview. DISTINCT from `blocked`: a degraded render
+      // still shows the full document and stays approvable; `blocked` means the
+      // reviewer never saw the body at all.
+      readonly degradation?: RenderDegradation | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

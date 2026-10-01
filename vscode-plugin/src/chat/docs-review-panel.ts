@@ -12,11 +12,12 @@
  * All vscode API lives behind the injected {@link ChatPanelChannel}.
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
-import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary } from './protocol.js';
+import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
 import type { ChatPanelChannel, ChatPanelLogger } from './chat-panel.js';
 import type { DocsReviewClient } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
+import { deriveSectionIndex, type SectionIndex } from './docs-sections.js';
 
 /**
  * The artifact kinds the daemon's resolveComment locator (parseArtifactId) supports —
@@ -47,6 +48,11 @@ const NOOP_LOGGER: ChatPanelLogger = { warn: () => {}, error: () => {} };
  *  not be produced. Degraded means PLAINER, never partial. */
 export const DEGRADE_NOTICE =
   'structured view unavailable — showing the document as plain text';
+
+/** The ac3 notice when the body renders but its section index could not be
+ *  derived: the document is fully readable, only navigation is missing. */
+export const SECTION_INDEX_NOTICE =
+  'section navigation unavailable — the document is shown in full';
 
 /**
  * sc2 (S001/t4) — the webview-side body renderer, as source so the shell can
@@ -79,7 +85,7 @@ export const DOCS_BODY_RENDERER_SOURCE =
   `el.innerHTML=marked.parse(s,{gfm:true,breaks:false,headerIds:false,mangle:false});` +
   `guardMd(el);` +
   `el.className='insrc-md';` +
-  `return {el:el,degradation:{degraded:false}};` +
+  `return {el:el,degradation:{degraded:false,notice:''}};` +
   `}catch(e){` +
   `el.className='insrc-docs-plain';` +
   `el.textContent=s;` +
@@ -155,10 +161,42 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
+  /**
+   * Derive the section index for an opened document. A throw here is NOT fatal:
+   * the body still renders, it just has no navigation, so this degrades to an
+   * empty index plus a notice rather than refusing to open the document. That is
+   * the same rule the body renderer follows — degraded means less, never blank.
+   *
+   * NOTE (recorded, not fixed here): openDoc takes no sequence number, so two
+   * quick opens with the first IPC slower will display the wrong document. That
+   * is a PRE-EXISTING gap — the pane's monotonic guard (refreshSeq, :66/:75/:78/:83)
+   * covers refreshPending and the docs-LIST only — and it is out of scope for this
+   * Story, filed separately. What this task does guarantee is narrower and real:
+   * the index and the markdown ride one message, so they can never disagree.
+   */
+  function deriveSections(markdown: string): {
+    sections: SectionIndex;
+    degradation: RenderDegradation | undefined;
+  } {
+    try {
+      return { sections: deriveSectionIndex(markdown), degradation: undefined };
+    } catch (err) {
+      log.warn(`[docs-review] section index failed: ${String(err)}`);
+      return {
+        sections: { anchors: [] },
+        degradation: { degraded: true, notice: SECTION_INDEX_NOTICE },
+      };
+    }
+  }
+
   async function openDoc(artifactId: string): Promise<void> {
     const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
     try {
       const content = await deps.client.content(artifactId);
+      // t5 — derive the index ONCE per opened document (not per interaction) and
+      // post it on the SAME message as the markdown it came from. Deriving it
+      // here, from `content.markdown`, is what makes the two inseparable.
+      const { sections, degradation } = deriveSections(content.markdown);
       post({
         type: 'docs-content',
         artifactId,
@@ -166,6 +204,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         openQuestions: content.openQuestions,
         blocked: content.blocked,
         commentable,
+        sections,
+        // Only when it actually degraded: a successful derivation posts no
+        // degradation at all, so `=== undefined` means "nothing went wrong".
+        ...(degradation !== undefined ? { degradation } : {}),
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);

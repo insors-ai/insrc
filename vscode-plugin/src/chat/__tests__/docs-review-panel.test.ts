@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DEGRADE_NOTICE } from '../docs-review-panel.js';
+import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
@@ -351,7 +352,9 @@ test('t4: the happy path parses through the vendored renderer and scrubs with gu
 
   assert.equal(el['innerHTML'], '<h1># Title</h1>', 'markup came from the vendored parse');
   assert.equal(el['className'], 'insrc-md', 'the container is given the markdown rules’ class');
-  assert.deepEqual(out.degradation, { degraded: false });
+  // The published RenderDegradation shape: degraded:false pairs with an EMPTY
+  // notice — a non-empty notice never accompanies a successful render.
+  assert.deepEqual(out.degradation, { degraded: false, notice: '' });
   // headerIds:false is load-bearing — sc3 owns heading identity, not the renderer.
   assert.deepEqual(calls[0], { gfm: true, breaks: false, headerIds: false, mangle: false });
 });
@@ -434,4 +437,106 @@ test('t4: StructuredRenderer is published and nothing in s1 implements it', asyn
     const src = readFileSync(join(here, '..', f), 'utf8');
     assert.doesNotMatch(src, /:\s*StructuredRenderer</, `${f} declares no StructuredRenderer implementation`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// S001/t5 — the section index + degradation ride the EXISTING docs-content
+// message. The invariant asserted here is the one that is actually true: the
+// index and the markdown travel together on ONE message. It is deliberately NOT
+// asserted via refreshPending's monotonic guard, which covers only the docs-LIST
+// path (docs-review-panel.ts :75/:78/:83) and does not protect openDoc at all.
+// ---------------------------------------------------------------------------
+
+const DOC_MD = ['# Title', '', 'prose', '', '## Section two', '', '### Deeper'].join('\n');
+
+async function openAndGetContent(markdown: string): Promise<Record<string, unknown>> {
+  const fc = fakeChannel();
+  const { client } = fakeClient({ content: () => ({ markdown, openQuestions: [], blocked: false }) });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'posted docs-content for the opened artifact');
+  return msg!.payload;
+}
+
+test('t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it', async () => {
+  const payload = await openAndGetContent(DOC_MD);
+
+  assert.equal(payload['markdown'], DOC_MD, 'the markdown is on the message');
+  const sections = payload['sections'] as { anchors: Array<{ slug: string; title: string; level: number }> };
+  assert.ok(sections, 'the sections index is on the SAME message');
+  assert.deepEqual(
+    sections.anchors.map((a) => [a.title, a.level]),
+    [['Title', 1], ['Section two', 2], ['Deeper', 3]],
+    'derived from that same markdown, in document order',
+  );
+});
+
+test('t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two cannot be paired across documents', async () => {
+  // Open two different documents and check each message is internally consistent:
+  // deriving the index from the message's own markdown reproduces the posted index.
+  for (const md of [DOC_MD, ['# Other doc', '## Only section'].join('\n')]) {
+    const payload = await openAndGetContent(md);
+    const posted = payload['sections'] as { anchors: unknown[] };
+    const rederived = deriveSectionIndex(String(payload['markdown']));
+    assert.deepEqual(posted, rederived, 'the posted index is exactly what this message’s markdown yields');
+  }
+});
+
+test('t5: a document with NO headings posts an empty anchors array', async () => {
+  const payload = await openAndGetContent('just prose, no headings at all\n');
+  assert.deepEqual((payload['sections'] as { anchors: unknown[] }).anchors, [],
+    'empty, so t6 omits the chooser entirely rather than rendering an empty control');
+});
+
+test('t5: a degraded index posts degradation and does NOT set blocked; a fetch failure sets blocked and claims NO degradation', async () => {
+  // (a) A content-fetch failure: blocked, and no degradation claimed.
+  const fc = fakeChannel();
+  const { client } = fakeClient({ content: () => { throw new Error('daemon down'); } });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  const failed = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.blocked === true);
+  assert.ok(failed, 'a fetch failure still posts blocked:true (the fail-closed rule)');
+  assert.equal(failed!.payload['degradation'], undefined,
+    'a fetch failure claims NO render degradation — the reviewer saw nothing, which is a different state');
+
+  // (b) A successful open: not blocked, and no degradation either.
+  const ok = await openAndGetContent(DOC_MD);
+  assert.equal(ok['blocked'], false);
+  assert.equal(ok['degradation'], undefined, 'a clean render posts no degradation at all');
+});
+
+test('t5: source-scan — the index rides the EXISTING docs-content variant; no new message type', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const proto = readFileSync(join(here, '..', 'protocol.ts'), 'utf8');
+
+  // The name list must be unchanged — sections/degradation are MEMBERS, not a type.
+  for (const invented of ['docs-sections', 'docs-index', 'docs-degradation', 'section-index']) {
+    assert.equal(proto.includes(`'${invented}'`), false, `no new message type (${invented})`);
+  }
+  // and the two new members sit inside the docs-content variant.
+  const variant = proto.slice(proto.indexOf("readonly type: 'docs-content'"));
+  assert.match(variant.slice(0, 900), /readonly sections\?:/, 'sections is a member of docs-content');
+  assert.match(variant.slice(0, 900), /readonly degradation\?:/, 'degradation is a member of docs-content');
+});
+
+test('t5: the pre-existing SIX members of the docs-content variant keep their meaning', async () => {
+  const payload = await openAndGetContent(DOC_MD);
+  assert.equal(payload['type'], 'docs-content');
+  assert.equal(payload['artifactId'], 'LLD-abc-s7');
+  assert.equal(payload['markdown'], DOC_MD);
+  assert.deepEqual(payload['openQuestions'], []);
+  assert.equal(payload['blocked'], false);
+  assert.equal(payload['commentable'], true, 'LLD stays commentable');
 });

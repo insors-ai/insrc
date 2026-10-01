@@ -958,9 +958,12 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   t4             64177 chars / 64223 bytes  2e27d071…9618d
  *       +1516 chars: placeFunctionalRequirements appended. Still inert — t5
  *       is what calls it.
- *   t5 (this value) 64385 chars / 64431 bytes  2501089e…ac1d0
+ *   t5             64385 chars / 64431 bytes  2501089e…ac1d0
  *       +208 chars: the ONE call that changes what a reviewer sees, plus the
  *       third level of notice precedence. No longer inert.
+ *   CR fixes (this value) 64501 chars / 64547 bytes  351d6ce2…a2ee0
+ *       +116 chars: ul/li list semantics and one shared frRequirementsOf,
+ *       both from post-build code-review findings fixed rather than recorded.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -974,9 +977,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  64385,
-  bytes:  64431,
-  sha256: '2501089ea924a32d1f15dd938b242e864b3afa9a900a259e73eef0e0300ac1d0',
+  chars:  64501,
+  bytes:  64547,
+  sha256: '351d6ce2eaded2f525215186c12553ba9d31d20cfdacc3f003cee217e38a2ee0',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1026,6 +1029,9 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
  *  reached the DOM via textContent and never through a markup-bearing property. */
 interface FrNode {
   tag: string;
+  // The DOM's own property name, because the shipped source reads `n.tagName`
+  // (frIsHeading) — a stub that only had `tag` would silently answer undefined.
+  tagName: string;
   className: string;
   textContent: string;
   children: FrNode[];
@@ -1036,7 +1042,7 @@ function frNode(tag: string): FrNode {
   const writes: FrNode['writes'] = [];
   const children: FrNode[] = [];
   const n = {
-    tag, children, writes,
+    tag, tagName: tag, children, writes,
     _className: '', _text: '',
     appendChild(c: FrNode) { children.push(c); return c; },
   } as unknown as FrNode & { _className: string; _text: string };
@@ -1503,7 +1509,7 @@ test('t4: all three placement outcomes asserted through the returned discriminat
     const r = place(body, REC, SECTIONS, true);
     assert.equal(r.placed, 'prepended');
     assert.equal(r.degradation, undefined, 'no second notice on an already-degraded body');
-    assert.equal(body.children[0]!.tagName, 'div', 'the block is the FIRST child, above the text');
+    assert.equal(body.children[0]!.tagName, 'ul', 'the block is the FIRST child, above the text');
   }
 
   // PREPENDED because the anchor does not resolve, on a body that rendered FINE.
@@ -1547,7 +1553,7 @@ test('t4: bounded removal — an FR section followed by two further sections kee
   // The built container sits exactly where that prose was: after the FR heading,
   // before the next heading.
   const idx = body.children.findIndex((c) => c.id === '2-functional-requirements');
-  assert.equal(body.children[idx + 1]!.tagName, 'div', 'the container follows the heading');
+  assert.equal(body.children[idx + 1]!.tagName, 'ul', 'the container follows the heading');
   assert.equal(body.children[idx + 2]!.id, '3-non-goals', 'and the next heading follows it immediately');
 });
 
@@ -1560,7 +1566,7 @@ test('t4: removal to end — an FR section that is the last section removes to t
   }
   assert.equal(place(body, REC, SECTIONS, false).placed, 'in-section');
 
-  assert.deepEqual(body.children.map((c) => c.tagName), ['h1', 'h2', 'div'],
+  assert.deepEqual(body.children.map((c) => c.tagName), ['h1', 'h2', 'ul'],
     'removed to the end and appended the container; no off-the-end read, no throw');
   assert.equal(body.children[1], h, 'the heading itself survives');
 });
@@ -1632,7 +1638,7 @@ test('t4: the slug lookup is scoped to the body container, so a same-id element 
   assert.equal(r.placed, 'prepended', 'no heading in THIS container, so it falls back');
   assert.deepEqual(elsewhere.children, [decoy, decoySibling],
     'the decoy and its sibling are untouched — a document-wide lookup would have found the decoy and deleted its sibling');
-  assert.equal(body.children[0]!.tagName, 'div', 'and the block went to the top of the body');
+  assert.equal(body.children[0]!.tagName, 'ul', 'and the block went to the top of the body');
 
   // THE SCOPING ITSELF, asserted directly: frHeadingIn must not see a heading
   // that lives outside the container it was handed, even when a document-wide
@@ -1852,7 +1858,7 @@ test('t5: idempotence — two consecutive docs-content messages with the same re
     artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] },
     ...(fd !== undefined ? { functionalDefinition: fd } : {}),
   });
-  const containers = (w: WebviewRun) => w.body.children.filter((c) => c.tagName === 'div');
+  const containers = (w: WebviewRun) => w.body.children.filter((c) => c.tagName === 'ul');
   const items = (w: WebviewRun) =>
     containers(w).flatMap((c) => c.children).length;
 
@@ -1934,7 +1940,7 @@ test('t5: ordering — stamp, place, then re-read every heading id proves no slu
   // next one — so this is the ordered pipeline's real output, not a no-op.
   const i = w.body.children.findIndex((c) => c.id === '2-functional-requirements');
   assert.ok(i >= 0);
-  assert.equal(w.body.children[i + 1]!.tagName, 'div', 'the built container follows the FR heading');
+  assert.equal(w.body.children[i + 1]!.tagName, 'ul', 'the built container follows the FR heading');
   assert.equal(w.body.children[i + 2]!.id, '3-non-goals', 'and the next heading follows it immediately');
   assert.ok(!w.body.children.some((c) => c.textContent.includes('prose form')), 'the prose it replaced is gone');
 
@@ -1942,4 +1948,91 @@ test('t5: ordering — stamp, place, then re-read every heading id proves no slu
   assert.equal(w.sections.children.length, 1, 'the chooser rendered');
   assert.equal(w.sections.children[0]!.children.length, sections.anchors.length + 1,
     'with one option per anchor plus the placeholder');
+});
+
+// ---------------------------------------------------------------------------
+// Two LLD edge cases that had no test. Both were graded `partial` at the plan
+// audit (cov1) with a note saying they should be folded into t2's set when it
+// was built — and then were not. The post-build code review caught that, so they
+// land here rather than being carried forward as a known gap.
+// ---------------------------------------------------------------------------
+
+test('ac3: the same record rendered twice yields identical identifiers — the cross-document guarantee', () => {
+  // ac3 is "an upstream and a downstream document that both carry the same
+  // requirement show it under the same identifier". It holds because the
+  // renderer is a pure function of the record, and this asserts that directly
+  // instead of leaving the Story's own acceptance criterion untested.
+  //
+  // The fixture is this Epic's REAL record, so the ids asserted are ids the
+  // ledger actually contains rather than ones invented for the test.
+  const REAL = { requirements: [
+    { id: 'E20260929bfe98ff7:FR001', statement: 'A reviewer opening a generated workflow document in VS Code sees its functional requirements as discrete, individually identified outcomes rather than undifferentiated prose.', scope: 'doc' as const },
+    { id: 'E20260929bfe98ff7:S002:FR001', statement: "A reviewer sees each of a document's functional requirements as a separate, individually readable item.", scope: 'item' as const, itemRef: 's2' },
+  ] };
+
+  const upstream = loadFr()(REAL);
+  const downstream = loadFr()(REAL);
+
+  // Both id FORMS, verbatim, with no prefix stripped, no ordinal renumbered and
+  // no segment reformatted.
+  assert.deepEqual(frIds(upstream.el), ['E20260929bfe98ff7:FR001', 'E20260929bfe98ff7:S002:FR001']);
+  assert.deepEqual(frIds(downstream.el), frIds(upstream.el),
+    'the same record yields the same identifiers in a second document');
+
+  // Purity, which is WHY ac3 holds: same input, same output tree, every time.
+  const shape = (n: FrNode): unknown => [n.tagName, n.className, n.textContent, n.children.map(shape)];
+  assert.deepEqual(shape(downstream.el), shape(upstream.el),
+    'the rendering is a pure function of the record');
+
+  // And a DIFFERENT record really does differ, so the equality above is not
+  // trivially true of any two renders.
+  const other = loadFr()({ requirements: [{ id: 'E20260929bfe98ff7:FR002', statement: 'Other.', scope: 'doc' }] });
+  assert.notDeepEqual(frIds(other.el), frIds(upstream.el));
+});
+
+test('a very large record renders every requirement — no pagination, no virtualisation, no truncation', () => {
+  // The LLD requires synchronous construction of one element per requirement,
+  // because truncating would hide commitments from the reviewer at the approval
+  // gate — the one thing this surface must not do. 500 is far beyond the 20 this
+  // Epic's own DEF carries.
+  const N = 500;
+  const big = { requirements: Array.from({ length: N }, (_, i) => ({
+    id: `E20260929bfe98ff7:FR${String(i + 1).padStart(3, '0')}`,
+    statement: `Requirement number ${i + 1}.`,
+    scope: (i % 3 === 0 ? 'item' : 'doc') as 'doc' | 'item',
+    ...(i % 3 === 0 ? { itemRef: `s${(i % 4) + 1}` } : {}),
+  })) };
+
+  const { el } = loadFr()(big);
+  assert.equal(frItems(el).length, N, 'every requirement is rendered');
+  assert.equal(frIds(el).length, N, 'and every identifier with it');
+  // First and last survive — a truncating implementation typically keeps one end.
+  assert.ok(frIds(el).includes('E20260929bfe98ff7:FR001'));
+  assert.ok(frIds(el).includes(`E20260929bfe98ff7:FR${N}`));
+  assert.equal(new Set(frIds(el)).size, N, 'no identifier was dropped or collapsed');
+});
+
+test('the functional-requirement items carry LIST semantics, not just visual separation', () => {
+  // The prose form this replaces is a markdown <ul>, so assistive technology
+  // announces "list, N items". Rendering divs would have made the structured
+  // form look better and navigate WORSE than the prose it replaces — on a Story
+  // whose user value names a non-technical reviewer explicitly.
+  // (post-build code-review ux finding, fixed rather than recorded)
+  const { el } = loadFr()(REC);
+  assert.equal(el.tagName, 'ul', 'the container is a list');
+  for (const item of frItems(el)) {
+    assert.equal(item.tagName, 'li', 'and every requirement is a list item');
+  }
+  // The per-story grouping is programmatic too: a group is an li carrying a
+  // label and a NESTED list, so the structure a screen reader reports matches
+  // the structure the record carries.
+  const groups = frAll(el).filter((n) => n.className === 'insrc-fr-group');
+  assert.equal(groups.length, 2);
+  for (const g of groups) {
+    assert.equal(g.tagName, 'li');
+    assert.ok(g.children.some((c) => c.tagName === 'ul'), 'the group nests its own list');
+  }
+  // Direct children of the outer list are only ever list items — no stray divs,
+  // which would be invalid inside a <ul> and would break the announced count.
+  assert.deepEqual([...new Set(el.children.map((c) => c.tagName))], ['li']);
 });

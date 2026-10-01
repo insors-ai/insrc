@@ -185,7 +185,12 @@ export const DOCS_SECTIONS_SOURCE =
 export const DOCS_FR_SOURCE =
   // One requirement -> one discrete element. textContent ONLY, on every field.
   `function frItem(r){` +
-  `var it=document.createElement('div');it.className='insrc-fr-item';` +
+  // An `li`, not a `div`: the prose form this replaces is a markdown `<ul>`, so
+  // assistive technology announces "list, N items" and offers per-item
+  // navigation. Rendering divs would have made the structured form look better
+  // and navigate WORSE than the prose it replaces — on a Story whose user value
+  // names a non-technical reviewer explicitly. (code-review ux finding)
+  `var it=document.createElement('li');it.className='insrc-fr-item';` +
   `var id=document.createElement('span');id.className='insrc-fr-id';id.textContent=r.id;it.appendChild(id);` +
   `var st=document.createElement('span');st.className='insrc-fr-stmt';st.textContent=r.statement;it.appendChild(st);` +
   `if(typeof r.rationale==='string'&&r.rationale.length>0){` +
@@ -194,11 +199,17 @@ export const DOCS_FR_SOURCE =
   // An entry is renderable only if it can actually be displayed: a non-null
   // object carrying both strings. One bad entry never disqualifies its siblings.
   `function frOk(r){return !!r&&typeof r==='object'&&typeof r.id==='string'&&typeof r.statement==='string';}` +
+  // THE single definition of "absent", shared by the renderer and the placement
+  // gate. It was duplicated in both; they agreed, but a future change to one
+  // would have diverged silently and nothing would have caught it. Same
+  // single-sourcing discipline this Story applied to section identity.
+  // (code-review quality finding)
+  `function frRequirementsOf(record){return (record&&Array.isArray(record.requirements))?record.requirements:[];}` +
   `function renderFunctionalRequirements(record){` +
-  `var root=document.createElement('div');root.className='insrc-fr';` +
+  `var root=document.createElement('ul');root.className='insrc-fr';` +
   // Array.isArray BEFORE any iteration: this repo has already shipped the
   // unguarded version of this bug once, in the UX companion's childrenOf.
-  `var reqs=(record&&Array.isArray(record.requirements))?record.requirements:[];` +
+  `var reqs=frRequirementsOf(record);` +
   `var i,r,key;` +
   // Doc-level first, in RECORD ORDER. Nothing is sorted, deduplicated or
   // renumbered: two entries sharing one FrId both render, because collapsing a
@@ -212,11 +223,14 @@ export const DOCS_FR_SOURCE =
   `groups[key].push(r);}` +
   // A group exists only because it has members, so no empty header is possible.
   `for(i=0;i<order.length;i++){` +
-  `var g=document.createElement('div');g.className='insrc-fr-group';` +
+  // The group is itself an item of the outer list, carrying a label and a nested
+  // list — so the per-story grouping is programmatic, not just visual.
+  `var g=document.createElement('li');g.className='insrc-fr-group';` +
   `var h=document.createElement('div');h.className='insrc-fr-group-label';h.textContent=order[i];g.appendChild(h);` +
+  `var sub=document.createElement('ul');sub.className='insrc-fr';` +
   `var list=groups[order[i]];` +
-  `for(var j=0;j<list.length;j++)g.appendChild(frItem(list[j]));` +
-  `root.appendChild(g);}` +
+  `for(var j=0;j<list.length;j++)sub.appendChild(frItem(list[j]));` +
+  `g.appendChild(sub);root.appendChild(g);}` +
   // The sc2 shape. `degradation` is left ABSENT: PLACEMENT is what can degrade,
   // not rendering, so t4 decides the notice.
   `return {el:root};}` +
@@ -279,8 +293,7 @@ export const DOCS_FR_SOURCE =
   // ABSENT GATE, before ANY createElement call. `undefined`, a non-array and an
   // empty array are all 'absent' — the convention functional-definition.ts
   // states twice (:58, :88), adopted unchanged so client and daemon agree.
-  `var reqs=(record&&Array.isArray(record.requirements))?record.requirements:[];` +
-  `if(reqs.length===0)return {placed:'none'};` +
+  `if(frRequirementsOf(record).length===0)return {placed:'none'};` +
   // A degraded body has no heading elements at all, so it cannot be located;
   // skip the lookup rather than search a tree that has nothing to find.
   `var slug=bodyDegraded?undefined:frAnchorSlug(sections);` +
@@ -523,7 +536,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // (:90), whose `white-space:pre-wrap;word-break:break-word` would otherwise
       // inherit into these items — on precisely the path where this block is the
       // reviewer's only legible access to the commitments. t4 verifies it visually.
-      `.insrc-fr{margin:6px 0;}` +
+      `.insrc-fr{margin:6px 0;padding:0;list-style:none;}` +
       `.insrc-fr-item{border-left:2px solid var(--it-accent);padding:4px 0 4px 10px;margin:6px 0;white-space:normal;word-break:normal;}` +
       `.insrc-fr-id{display:block;color:var(--it-accent);font-family:var(--it-font);font-size:12px;}` +
       `.insrc-fr-stmt{display:block;color:var(--it-fg);font-family:var(--it-font);}` +

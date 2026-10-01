@@ -331,7 +331,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the sole header control and the only one carrying an icon.
       // The three background layers must be redeclared together (icon + the two .segsel arrow
       // gradients); the icon sits inside the chip's left padding, not at its bare edge.
-      `.chrome #insrc-history{max-width:18ch;padding:3px 16px 3px 22px;` +
+      `.chrome #insrc-history{max-width:36ch;padding:3px 16px 3px 22px;` +
       `background-color:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:6px;` +
       `background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='%23c6cdd8' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E"),linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);` +
       `background-position:left 6px center,calc(100% - 6px) 55%,calc(100% - 3px) 55%;background-size:12px 12px,3px 3px,3px 3px;background-repeat:no-repeat,no-repeat,no-repeat;}` +
@@ -420,6 +420,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S002 (ux-polish): webview-local turn running-state drives the leading '>' prompt send/stop control.
       // ❯ (Send) at rest, ■ (Stop) while a turn runs; set on submit, cleared on done/error.
       `var running=false;` +
+      // S001 (74bc0120): the provider select is LOCKED once the active session has context.
+      // Changing it does not switch a session's provider — ChatSession.provider is readonly and
+      // nativeSessionId is a provider-specific resume handle — it posts new-chat, ABANDONING the
+      // current conversation. So it stays usable only on an empty chat, and re-locks on that chat's
+      // first turn. setProvLock is the SOLE writer of the control's disabled property: it captures
+      // the server-rendered capability gate (provDisabled, when no CLI is installed) once at startup
+      // and never enables past it, so the no-CLI gate cannot be re-opened by any lock transition.
+      // Starts LOCKED so a webview that never receives a session message fails safe.
+      `var provLocked=true;var provGate=!!(ps&&ps.disabled);` +
+      `function setProvLock(l){provLocked=l;if(ps)ps.disabled=provGate||provLocked;}` +
       `const sendBtn=document.getElementById('insrc-prompt');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
@@ -479,15 +489,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the reconciliation map for the fresh replay.
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
-      `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}}` +
+      `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
+      `setProvLock(((m.transcript||[]).length)>0);}` +
       // S005: history-list (re)populates the dropdown; labels via textContent (no innerHTML); keep active selected.
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +
+      // S001 (74bc0120): the active session appearing in the PERSISTED history is itself proof of
+      // context — session-store's draft() only enters the store on its first save, i.e. once the
+      // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}if(_ac)setProvLock(true);}});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
       // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
       // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
-      `function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');}` +
+      `function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');setProvLock(true);}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
       // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).

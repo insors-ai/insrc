@@ -1,0 +1,761 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790835774744-vwuj01",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T06:33:34.631Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 639881,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "74bc0120660d539a",
+    "epicSlug": "two-dev-chat-chrome-changes-1",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790835774744-vwuj01",
+    "hldEffectiveHash": "74bc0120660d539a2efca7740944d41ed6d1665e8d324e675e4d9f95ed259d0f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Two changes in one file. (2) is a single CSS value. (1) is behavioural with a real design decision — the lock must be webview-side state because the shell renders once at open while the active session changes at runtime, and it must compose with (not overwrite) the server-rendered provDisabled capability gate. No new message type, protocol field or persisted shape.",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "k1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:398 declares `const provDisabled = available.length === 0 ? ' disabled' : '';` — the capability gate the LLD says is the only render-time writer of the select's disabled attribute.",
+          "evidence": "CONFIRMED verbatim. The read anchor resolved: chat-panel.ts:398 is `const provDisabled = available.length === 0 ? ' disabled' : '';`, exactly as the LLD's c1 quotes it. The capability gate is real and is where the LLD says it is.",
+          "action": "None. Citation c1 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k2",
+          "ref": "2.1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "`provDisabled` is the ONLY construct that writes a disabled attribute onto the provider select in the current source — i.e. exactly one occurrence of the identifier interpolated into the element, and no other `disabled` write targeting #insrc-provider.",
+          "evidence": "CONFIRMED. chat-panel.ts:543 resolves to the provider select with `${provDisabled}` interpolated, and no other construct in the shell writes a disabled attribute onto that element. The LLD's postcondition that the gate and the lock must compose through ONE mutator therefore starts from a true premise — today there is exactly one writer, and the design's job is to keep it that way.",
+          "action": "None. The single-writer premise holds against the current source.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k3",
+          "ref": "c11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:543 emits the provider select with provDisabled interpolated: `<select id=\"insrc-provider\" class=\"segsel ${provCls}\" aria-label=\"provider\"${provDisabled}>${providerOpts}</select>`.",
+          "evidence": "CONFIRMED verbatim. chat-panel.ts:543 reads `<span class=\"seg\"><select id=\"insrc-provider\" class=\"segsel ${provCls}\" aria-label=\"provider\"${provDisabled}>${providerOpts}</select></span>`, matching the LLD's c11 quote.",
+          "action": "None. Citation c11 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k4",
+          "ref": "c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:438 wires the provider select's change event to post a `new-chat` message carrying the chosen provider — i.e. a change today starts a NEW chat rather than switching the current session's provider.",
+          "evidence": "CONFIRMED. chat-panel.ts:438 is the change listener posting `new-chat` with `provider: ps.value`. This is load-bearing for the whole Story: it proves the control does NOT switch a session's provider today but abandons the chat, which is the behaviour the lock gates. The LLD's c5 quote matches.",
+          "action": "None. Citation c5 is accurate and the Story's premise is sound.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k5",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:334 opens the `.chrome #insrc-history` rule with `max-width:18ch;padding:3px 16px 3px 22px;` — the current cap the Story doubles to 36ch, and the chip padding it must leave untouched.",
+          "evidence": "CONFIRMED verbatim. chat-panel.ts:334 is `` `.chrome #insrc-history{max-width:18ch;padding:3px 16px 3px 22px;` + ``. Both the 18ch cap the Story doubles and the four-value chip padding it must preserve are exactly as cited in c4.",
+          "action": "None. Citation c4 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k6",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:480 is the `session-restored` handler, which sets `cur` from the message's sessionId, clears the transcript, calls reg.resetKeys() and replays `m.transcript` row by row — so the webview holds the active session's row count at that point.",
+          "evidence": "CONFIRMED. chat-panel.ts:480 is the `session-restored` handler: it sets `cur` from the message, clears the transcript, calls `reg.resetKeys()` and replays `m.transcript`. The LLD's claim that the webview holds the active session's row count at this point is true, so deriving the lock here needs no new data.",
+          "action": "None. Citation c6 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k7",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:484 is the `history-list` handler, which repopulates the dropdown and re-syncs the provider select's value from the active chat's provider via `if(_ac&&_ac.provider){ps.value=_ac.provider;}`.",
+          "evidence": "CONFIRMED. chat-panel.ts:484 is the `history-list` handler and contains the provider re-sync `if(_ac&&_ac.provider){ps.value=_ac.provider;}`. The LLD's choice of this seam as the second lock transition is grounded.",
+          "action": "None. Citation c7 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k8",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/chat-panel.ts:490 defines `doSubmit` with an empty-input guard FIRST (`if(!box.value.trim())return;`) before posting submit-turn — the ordering the LLD requires the lock transition to sit behind.",
+          "evidence": "CONFIRMED verbatim. chat-panel.ts:490 is `function doSubmit(){if(!box.value.trim())return;...}` — the empty-input guard is genuinely FIRST in the function, so the LLD's ordering precondition (lock transition must sit behind the guard) is implementable exactly as written.",
+          "action": "None. Citation c3 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k9",
+          "ref": "c2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ChatSession declares `readonly provider: ProviderId;` at vscode-plugin/src/chat/session-store.ts:68 — the readonly modifier is what makes re-pointing an existing session at another CLI unsupported, which is the LLD's core justification for locking rather than switching.",
+          "evidence": "CONFIRMED. session-store.ts:66 opens `export interface ChatSession {` and :68 is `readonly provider: ProviderId;`. The readonly modifier is real, which is the LLD's central justification for locking rather than offering a switch.",
+          "action": "None. Citation c2 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k10",
+          "ref": "c8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ChatSession carries `nativeSessionId?: string;` at vscode-plugin/src/chat/session-store.ts:69 — the provider-specific resume handle the LLD cites as reinforcing that a mid-session provider switch cannot carry context.",
+          "evidence": "CONFIRMED verbatim. session-store.ts:69 is `nativeSessionId?: string;`, matching c8.",
+          "action": "None. Citation c8 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k11",
+          "ref": "3.2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "ChatSummary (vscode-plugin/src/chat/session-store.ts:82) has exactly four fields — id, provider, title, updatedAt — and carries NO transcript or row count, which is the LLD's stated reason the lock cannot be derived from the history list.",
+          "evidence": "CONFIRMED. session-store.ts:82 opens `export interface ChatSummary {`. The LLD's NEGATIVE finding — that the summary carries no transcript or row count, so the lock cannot be derived from the history list — holds, and it is what forces the design to read the replayed transcript instead.",
+          "action": "None. Citation c9 is accurate and the constraint it establishes is real.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k12",
+          "ref": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:505 already asserts the provider select is rendered disabled when no CLI is installed — the existing test the LLD requires to stay green UNMODIFIED.",
+          "evidence": "CONFIRMED verbatim. chat-panel.test.ts:505 is the existing `selector disabled when no CLI installed` assertion. The LLD's requirement that this test stay green UNMODIFIED is checkable and is the sharpest available signal that the composition rule was implemented correctly.",
+          "action": "None. Citation c10 is accurate.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k13",
+          "ref": "2.2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The webview script already holds module-local state vars with single mutators that own their DOM consequences — `var running=false;` with `setRunning` updating the send control's textContent, className and aria-label — the in-file precedent the LLD says the lock mirrors.",
+          "evidence": "PARTIALLY CONFIRMED — the substance holds, one of my own anchors was imprecise. `var running=false;` is at :422 as claimed, but I also anchored :420, which is a comment line, and the mutator itself is at :424 (`function setRunning(r){running=r;if(sendBtn){...}}`), not :422. The precedent the LLD relies on — one module-local state var plus one mutator owning every DOM consequence — is real and verified at :422/:424.",
+          "action": "No artifact change. The LLD does not cite these lines; the imprecision is in my review claim's anchors only. Recorded so the next reader of this review does not treat :420/:422 as the mutator's location.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "k14",
+          "ref": "5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The script's element lookups are guarded before use — `if(sendBtn)` inside setRunning and `if(pm)` on the mode control — the existing shape the LLD's missing-element error case says the lock mutator will follow.",
+          "evidence": "MY ANCHOR WAS WRONG, the premise is still true. I anchored `if(sendBtn)` at :422, but :422 is `var running=false;`. The guarded-lookup idiom does exist: inside setRunning at :424 (`if(sendBtn){...}`), and again at :494 and :496 (`if(sendBtn)sendBtn.addEventListener(...)`), plus `if(pm)` at :450 as cited. So the shape the LLD's missing-element error case says the lock mutator will follow is genuinely established in this file.",
+          "action": "No artifact change — the LLD cites none of these lines. Correcting the record here: the guard idiom lives at :424, :494, :496 and :450.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "k15",
+          "ref": "2.1",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The shell is rendered ONCE per webview open — renderShell is invoked from the panel host's open path, not re-invoked per session change — which is the lifecycle premise that rules out alternative a3 and forces the lock to be webview-local runtime state.",
+          "evidence": "CONFIRMED. chat-panel.ts:247 is `const renderShell = (): string => {`. The LLD's lifecycle premise — the shell is built once per open, so nothing session-dependent can be baked into its HTML — is grounded, and it is the premise that eliminates alternative a3 and forces a runtime lock.",
+          "action": "None. The decisive design constraint is verified.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "k16",
+          "ref": "7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The provider select and the session dropdown are the two controls this Story touches, and there is exactly ONE element with id insrc-provider and ONE with id insrc-history in the rendered shell — so the lock and the width change each have a single target.",
+          "evidence": "STALE ANCHOR IN MY CLAIM, premise confirmed. I anchored the session dropdown at :515; :515 is now `` `<div class=\"box\">` + `` because this file gained comment lines earlier today. The select is actually at :522. Re-derived directly: exactly ONE `id=\"insrc-history\"` and exactly ONE `id=\"insrc-provider\"` exist in the shell, so each of the Story's two changes has a single unambiguous target as the LLD assumes.",
+          "action": "No artifact change — the LLD never cites the history select's line number, so no citation in it is affected. Noting the correct line (:522) for anyone working from this review.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16
+      },
+      "reviewedAt": "2026-10-01T06:35:52.547Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-01T06:38:05.896Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Once a chat has something in it, its provider can no longer be changed. Picking a provider today quietly abandons the current conversation and opens a new one — easy to trigger by accident when you only meant to look. The control now stays available on a fresh, empty chat (where choosing a provider is exactly the right move) and locks as soon as that chat takes its first turn; to work with the other CLI you start a new chat from the session dropdown. If no CLI is installed at all the control stays disabled as before. Separately, the session dropdown is twice as wide so longer chat titles are readable."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Designed directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Lock the provider select once a session has context, and widen the session dropdown"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderShell",
+          "signature": "(): string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The complete webview HTML. Two changes: the `.chrome #insrc-history` rule's max-width doubles (18ch -> 36ch), and the nonce'd script gains the provider-lock state plus its single mutator. The provider select's SERVER-RENDERED markup is unchanged — `provDisabled` still interpolates ' disabled' when `deps.providers.available` is empty, and remains the only thing writing that attribute at render time."
+          },
+          "errors": [],
+          "preconditions": [
+            "The shell is rendered ONCE per webview open; the active session changes at runtime, so nothing session-dependent may be baked into the returned HTML."
+          ],
+          "postconditions": [
+            "The lock is CLOSED by default, so a webview that never receives a session message cannot leave the control usable.",
+            "The capability gate and the per-session lock compose through ONE mutator; no other path writes the select's disabled property.",
+            "The `.chrome #insrc-history` chip is otherwise byte-identical — border, fill, radius, padding and the icon's position inside the padding untouched."
+          ]
+        },
+        {
+          "name": "setRunning",
+          "signature": "(r: boolean) => void",
+          "parameters": [
+            {
+              "name": "r",
+              "type": "boolean",
+              "purpose": "Whether a turn is in flight.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged. Listed as the in-file precedent the lock mutator mirrors: one module-local state var, one mutator owning every DOM consequence. The lock does NOT piggyback on it — a turn in flight and a session having context are different facts with different lifetimes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged by this Story."
+          ]
+        },
+        {
+          "name": "doSubmit",
+          "signature": "() => void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Gains one call: after the existing non-empty guard passes and the turn is posted, the lock closes. This covers a fresh chat acquiring its first message, for which no session message is sent."
+          },
+          "errors": [],
+          "preconditions": [
+            "The existing empty-input guard runs FIRST — an empty submit is a no-op today and must not close the lock."
+          ],
+          "postconditions": [
+            "After a non-empty submit the provider select is locked for the rest of that session.",
+            "An empty submit leaves the lock exactly as it was."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ChatSession",
+        "change": "invariant-change",
+        "details": "No field changes. Records and enforces an invariant the type already implies: `provider` is readonly and `nativeSessionId` holds a resume handle minted by one provider's CLI, so a session's provider is fixed at creation and cannot be re-pointed at another CLI. The UI previously offered an action that LOOKED like 'switch this session's provider' but actually abandoned the session; the lock makes the UI agree with the data model. Nothing persisted moves, so existing sessions read back byte-identically.",
+        "schemaDiff": "(none — no field added, removed or retyped)",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts:66",
+          "vscode-plugin/src/chat/session-store.ts:68",
+          "vscode-plugin/src/chat/session-store.ts:69",
+          "vscode-plugin/src/chat/chat-panel.ts:438"
+        ]
+      },
+      {
+        "entity": "ChatSummary",
+        "change": "invariant-change",
+        "details": "No field changes — recorded as a NEGATIVE finding that constrains the design. The summaries shipped on `history-list` carry only id/provider/title/updatedAt and no transcript length, so the lock CANNOT be derived from the history list; it must come from the transcript the webview already holds from `session-restored`.",
+        "schemaDiff": "(none)",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts:82",
+          "vscode-plugin/src/chat/chat-panel.ts:484"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The webview opens and no session message ever arrives, leaving the lock's input undefined.",
+          "detection": "Not detected after the fact — made unrepresentable by initialising the lock CLOSED at script start, before any handler can run. There is no 'unknown' state to notice: the only way to open the lock is a message that positively says the active session has no rows.",
+          "response": "The select stays disabled. Opening or starting a chat produces a session message that settles the lock correctly.",
+          "userImpact": "A control is unavailable until chat state is known — fails toward 'cannot accidentally abandon a conversation', the direction this Story protects.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A submit is posted but the host rejects or drops it, yet the webview already closed the lock.",
+          "detection": "The webview CANNOT detect this: `submit-turn` is fire-and-forget and the host's no-op path returns silently. This is the accepted cost of the optimistic transition recorded against ac3.",
+          "response": "Accept the stale lock rather than add a failure channel. It self-heals — the next `session-restored` or `history-list` re-derives the lock from the real transcript.",
+          "userImpact": "Rarely, the select is locked on a chat with no messages until the user switches session or reopens the panel. Never blocking: starting a new chat is unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The provider select element is absent from the DOM (a future chrome edit moves or removes it).",
+          "detection": "The mutator looks the element up once at startup, as the existing `ps`/`hs`/`sendBtn` lookups do, and guards its writes on presence — the shipped `if(sendBtn)` / `if(pm)` shape.",
+          "response": "The mutator becomes a no-op; the state var still tracks, nothing throws.",
+          "userImpact": "None — a missing control cannot be locked.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A brand-new chat with an empty transcript (the store's `draft`).",
+          "expected": "Lock OPENS — the one moment choosing a provider is meaningful; a change still means 'start a new chat with this provider'."
+        },
+        {
+          "input": "That fresh chat's first non-empty submit.",
+          "expected": "Lock CLOSES immediately, before any response arrives."
+        },
+        {
+          "input": "An empty/whitespace-only submit (the existing trim guard fires).",
+          "expected": "Lock stays OPEN — the guard runs first, so a non-submission cannot lock the control."
+        },
+        {
+          "input": "Switching between two non-empty chats.",
+          "expected": "Lock stays CLOSED, re-derived from the newly replayed transcript rather than carried over."
+        },
+        {
+          "input": "Switching from a chat with history BACK to an empty chat.",
+          "expected": "Lock RE-OPENS — the derivation is per-session and must not latch once closed."
+        },
+        {
+          "input": "No CLI installed, then a session message for an empty chat.",
+          "expected": "Select stays disabled — the capability gate wins; the mutator refuses to enable past the element's initial disabled state."
+        },
+        {
+          "input": "A session title longer than the new 36ch cap.",
+          "expected": "Truncates at 36ch as it did at 18ch; only the cap moves."
+        },
+        {
+          "input": "A session reopened after a reload, replaying a persisted transcript.",
+          "expected": "Lock closes from the replayed rows alone — no new persisted field is read, because none was added."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The provider select is disabled whenever no CLI is installed — a capability gate, not a preference. The new lock must compose with it, never re-enabling what the gate closed, and the existing 'selector disabled when no CLI installed' test must stay green UNMODIFIED.",
+          "source": "c1"
+        },
+        {
+          "text": "On an empty chat, changing the provider still means 'start a new chat with this provider'. The Story locks the control; it does not redefine what the control does when usable.",
+          "source": "c5"
+        },
+        {
+          "text": "A session's provider is fixed at creation (`provider` readonly, `nativeSessionId` provider-specific). Nothing here may introduce a path that re-points an existing session at another CLI.",
+          "source": "c2"
+        },
+        {
+          "text": "The lock is view state and is never persisted. No field is added to ChatSession or ChatSummary; existing sessions need no migration.",
+          "source": "c8"
+        },
+        {
+          "text": "`session-restored` and `history-list` keep their existing effects — transcript replay with resetKeys(), and the re-sync of the select's value. The lock is additive at both seams; neither handler's effects may be altered or reordered.",
+          "source": "c6"
+        },
+        {
+          "text": "The empty-submit no-op is preserved: `doSubmit` returns early on blank input, before any lock transition.",
+          "source": "c3"
+        },
+        {
+          "text": "The `.chrome #insrc-history` chip is unchanged apart from its max-width.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict under tsx (`npx tsx --test 'src/**/__tests__/*.test.ts'` from vscode-plugin). House pattern: build the shell through a fake channel and assert against `fc.html()` — the eval'd *WebviewSource string. The suite never executes the script against a DOM.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the server-rendered facts the suite CAN observe directly.",
+          "subjects": [
+            "`.chrome #insrc-history` declares max-width:36ch — asserted by PARSING the rule body and comparing the extracted cap, not by matching a literal.",
+            "The rest of the chip is unchanged (border, fill, radius, four-value padding, icon position).",
+            "EXISTING, UNMODIFIED: with zero providers the select is still rendered `disabled`. If this test needs editing, the composition rule is wrong.",
+            "With providers available the select is still rendered WITHOUT `disabled` — the lock has not leaked into render time."
+          ],
+          "fixturesNeeded": [
+            "The existing fakeChannel + createChatPanelHost harness.",
+            "A registry with zero available providers.",
+            "A registry with at least one available provider."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Pin the lock's WIRING in the emitted script — the weaker evidence this harness permits, so each assertion must fail if the lock is REMOVED, not merely renamed.",
+          "subjects": [
+            "The lock state is declared CLOSED at startup.",
+            "`session-restored` settles the lock from the replayed transcript's row count.",
+            "`history-list` settles the lock for the active session, with the existing provider re-sync still present and unaltered.",
+            "`doSubmit` closes the lock AFTER its empty-input guard — assert the guard precedes the lock call in the emitted source.",
+            "Exactly ONE construct writes the select's disabled property.",
+            "The mutator refuses to enable past the element's initial disabled state."
+          ],
+          "fixturesNeeded": [
+            "The rendered shell string from the existing harness."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the surrounding behaviour is unchanged, so the lock is additive rather than a reordering.",
+          "subjects": [
+            "A provider change still posts `new-chat` with the chosen provider.",
+            "`session-restored` still clears, resetKeys() and replays in order; `history-list` still rebuilds options and keeps the active session selected.",
+            "An empty submit is still a no-op end to end."
+          ],
+          "fixturesNeeded": [
+            "The existing fakeChannel message-capture harness."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Look at it. Three defects in this module this week shipped green because an assertion could not fail.",
+          "subjects": [
+            "Render the shell headless with a long session title; confirm the dropdown is visibly wider and the title reads further.",
+            "Confirm the chip is otherwise unchanged at the new width."
+          ],
+          "fixturesNeeded": [
+            "Headless Chrome against the dumped shell HTML."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "`session-restored` settles the lock CLOSED for a session with rows",
+            "MUTATION: removing that call fails this test"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "`session-restored` with an empty transcript leaves the lock OPEN",
+            "Switching from a chat with history back to an empty chat re-opens it — the state does not latch"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "`doSubmit` closes the lock after a non-empty submit",
+            "The empty-input guard precedes the lock call in the emitted source",
+            "MUTATION: removing the doSubmit call fails the first of these"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "EXISTING, unmodified: zero providers -> select rendered `disabled`",
+            "Exactly one construct writes the disabled property",
+            "The mutator will not enable past the initial disabled state",
+            "MUTATION: making the mutator enable unconditionally fails the composition assertion"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "The parsed `.chrome #insrc-history` max-width equals 36ch",
+            "The rest of the chip rule is unchanged",
+            "MUTATION: reverting the cap to 18ch fails the parsed-cap assertion",
+            "Headless render with a long session title shows the wider dropdown"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The provider select is live for every session; its only disable is the render-time capability gate (`provDisabled` when `available.length === 0`). A change posts `new-chat`, abandoning the current conversation — consistent with the data model (readonly provider, provider-specific nativeSessionId) but not with what the control looks like it does, so an accidental pick silently discards context. The session dropdown caps its label at 18ch. No webview-local provider state exists.",
+      "stateAfter": "The select is locked whenever the active session has context, and open only on a fresh/empty chat where a change still means 'start a new chat with this provider'. The lock is webview-local view state — one var, one mutator that is the sole writer of the disabled property — settled at three existing transitions and initialised CLOSED so an unmessaged webview fails safe. The capability gate is unchanged and still wins. No message type, protocol field or persisted shape changes. The dropdown cap doubles to 36ch.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Widen the label cap in the existing `.chrome #insrc-history` rule from 18ch to 36ch, changing nothing else.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Declare the lock state in the webview script, initialised LOCKED, beside the existing module-local state vars.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the single mutator owning the disabled property, capturing the element's initial disabled state at startup so the capability gate can never be re-enabled, and guarding writes on element presence.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Call the mutator from `session-restored`, deriving the lock from whether the replayed transcript has rows. Append to the handler's existing work — do not reorder clear/resetKeys/replay.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Call the mutator from `history-list` for the active session, leaving the existing provider re-sync unaltered.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Call the mutator from `doSubmit` to close the lock, AFTER the existing empty-input guard.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Extend coverage per the test strategy; leave the no-CLI capability-gate test UNMODIFIED. Mutation-check every new assertion.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Render the shell headless with a long session title and inspect it.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No compatibility surface moves. renderShell's signature is unchanged; the host/webview message contract gains and loses nothing; ChatSession and ChatSummary are untouched, so persisted sessions read back byte-identically and none needs migrating. The one observable behaviour change is deliberate and IS the Story: on a session with messages the provider select no longer responds. The action it used to offer there — abandoning the conversation for a new one — remains available explicitly via the session dropdown, so nothing previously possible becomes impossible. On an empty chat, and with no CLI installed, behaviour is exactly as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Webview-local lock, derived from the transcript the webview already holds",
+        "oneLineSummary": "One state var plus one mutator in the nonce'd script, set at the three transitions the webview already observes; no host or protocol change.",
+        "approach": "Mirror the shipped `running`/`setRunning` shape. A single webview-local boolean for whether the active session has context, and a single mutator that owns the provider select's disabled state. That mutator is the ONLY writer of the property, so the composition rule lives in one place: it never enables past the element's initial disabled state, which it captures at startup rather than keeping a second copy of `providers.available`. Three transitions drive it, all already handled: `session-restored` (lock follows the replayed transcript's row count), `history-list` (re-settled alongside the existing provider re-sync), and submit (a fresh chat acquiring its first message). Nothing is persisted and nothing new crosses the host boundary.",
+        "pros": [
+          "Zero contract surface — no new message type, field or persisted shape.",
+          "Derived from the same transcript the user can see, so control state and visible conversation cannot disagree.",
+          "The capability gate is preserved STRUCTURALLY: a single mutator that refuses to enable past the initial disabled state cannot be bypassed by a future call site.",
+          "Matches the in-file `running`/`setRunning` idiom.",
+          "Reversible — deleting the var and mutator restores today's behaviour."
+        ],
+        "cons": [
+          "View state, recomputed per webview; a future surface rendering rows outside these transitions would need to call the mutator too.",
+          "Not assertable as live DOM state by the string-based suite — coverage pins script wiring instead.",
+          "The first-turn transition is optimistic: it closes on send, not on host confirmation."
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Host-authoritative lock, carried on the existing session-restored message",
+        "oneLineSummary": "The host decides whether the active session has context and ships a flag on the message it already sends; the webview just applies it.",
+        "approach": "Keep the decision where the session data lives. The host already builds `session-restored` with the session id and full transcript, and already distinguishes a persisted session from an unsaved draft. Add one boolean to that existing message meaning 'this session has context', computed host-side, and have the webview apply it to the select on receipt. The webview holds no derivation logic — it reflects what the host said. The capability gate stays server-rendered and is composed by the webview refusing to enable when the control was rendered disabled.",
+        "pros": [
+          "Decision made where the authoritative data lives.",
+          "Survives any future webview surface automatically.",
+          "Host-side predicate is directly unit-testable against the store — stronger evidence than asserting script text.",
+          "Naturally handles the draft-versus-persisted distinction the store already models."
+        ],
+        "cons": [
+          "Widens the message contract for data the webview already holds — the transcript it would be derived from is on that same message.",
+          "Still needs a webview transition for the first turn (no session-restored is sent then), so it ADDS a second source of truth rather than removing webview logic.",
+          "Two places can disagree about one fact.",
+          "More surface to revert if the behaviour is tuned later."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a3",
+        "name": "Re-render the shell's provider select per session",
+        "oneLineSummary": "Extend the existing server-rendered disabled attribute to cover the per-session case and re-render the control when the session changes.",
+        "approach": "Treat the lock as part of the same server-rendered decision that already produces the capability gate, so there is exactly ONE disable mechanism. The disabled attribute would be computed from both provider availability and the active session's context, and the control (or the shell) re-rendered when the active session changes so the attribute reflects the new session.",
+        "pros": [
+          "One disable mechanism instead of two composing ones — no composition rule to get wrong.",
+          "Assertable by the existing string-based suite exactly like the current capability-gate test.",
+          "No webview-local state to keep in sync."
+        ],
+        "cons": [
+          "Fights the shell's lifecycle — it is rendered ONCE at open, so this needs a full re-render or a new partial-render path that does not exist.",
+          "A full re-render on session switch destroys transcript DOM, scroll position and collapse state — the view state the durability NFR protects.",
+          "Still needs a second trigger for the first turn.",
+          "Largest blast radius for the smallest Story."
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Switching an EXISTING session's provider while keeping its context is not merely out of scope — it is unsupported by the data model (`ChatSession.provider` is readonly; `nativeSessionId` is a provider-specific resume handle). If that capability is ever wanted it needs its own story with a cross-provider context transfer; this Story deliberately does not open that door.",
+      "The first-turn transition is optimistic (closes on send, not on host confirmation), so a host-rejected submit leaves a stale lock until the next session message re-derives it. Accepted as bounded and self-healing. If it proves annoying in use, the host's existing `user-row` echo is available as a confirmed trigger with no new protocol.",
+      "The Story arrived with an empty `acceptanceCriteria` array; ac1-ac5 used throughout are my decomposition of its userValue (lock-when-context, unlock-on-empty, relock-on-first-turn, capability-gate-still-wins, widen-dropdown), not criteria the requester wrote."
+    ],
+    "sequenceDefinition": {
+      "participants": [
+        {
+          "id": "user",
+          "label": "User"
+        },
+        {
+          "id": "webview",
+          "label": "Webview script"
+        },
+        {
+          "id": "select",
+          "label": "Provider select"
+        },
+        {
+          "id": "host",
+          "label": "Host"
+        }
+      ],
+      "messages": [
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "session-restored (sessionId + transcript)"
+        },
+        {
+          "from": "webview",
+          "to": "select",
+          "label": "lock = CLOSED if transcript has rows"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "history-list (chats)"
+        },
+        {
+          "from": "webview",
+          "to": "select",
+          "label": "re-sync value + re-settle lock for active session"
+        },
+        {
+          "from": "user",
+          "to": "webview",
+          "label": "submit (non-empty; guard passes)"
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "submit-turn"
+        },
+        {
+          "from": "webview",
+          "to": "select",
+          "label": "lock = CLOSED (first turn landed)"
+        },
+        {
+          "from": "user",
+          "to": "select",
+          "label": "change (reachable only while OPEN)"
+        },
+        {
+          "from": "select",
+          "to": "host",
+          "label": "new-chat (provider) — unchanged semantic"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/two-dev-chat-chrome-changes-1-E2026100174bc0120/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:398",
+      "quotedText": "const provDisabled = available.length === 0 ? ' disabled' : '';"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts:68",
+      "quotedText": "readonly provider: ProviderId;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:490",
+      "quotedText": "`function doSubmit(){if(!box.value.trim())return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working…');}` +"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:334",
+      "quotedText": "`.chrome #insrc-history{max-width:18ch;padding:3px 16px 3px 22px;` +"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:438",
+      "quotedText": "`ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:480",
+      "quotedText": "`else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();(m.transcript||[]).forEach(function(x,i){reg.appendKeyed(reg.toViewModel(x),'r'+i);});hs.value=cur;setRunning(false);hideProgress();` +"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:484",
+      "quotedText": "`else if(m.type==='history-list'){ … var _ac=(m.chats||[]).filter(function(c){return c.id===cur;})[0];if(_ac&&_ac.provider){ps.value=_ac.provider;}}});` +"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts:69",
+      "quotedText": "nativeSessionId?: string;"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts:82",
+      "quotedText": "export interface ChatSummary {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:505",
+      "quotedText": "assert.match(fc.html(), /<select id=\"insrc-provider\"[^>]*disabled/, 'selector disabled when no CLI installed');"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:543",
+      "quotedText": "`<span class=\"seg\"><select id=\"insrc-provider\" class=\"segsel ${provCls}\" aria-label=\"provider\"${provDisabled}>${providerOpts}</select></span>` +"
+    },
+    {
+      "id": "c12",
+      "kind": "stakeholder",
+      "ref": "User request, 2026-10-01",
+      "quotedText": "for an active session (session that already has context) changing the provider should be disabled. … Make the session dropdown a little wider (2x)"
+    }
+  ]
+}

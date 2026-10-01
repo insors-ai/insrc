@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "74bc0120660d539a",
+    "storyId": "S001",
+    "createdAt": "2026-10-01T06:43:09.881Z",
+    "updatedAt": "2026-10-01T06:43:09.881Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:43:09.881Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:43:09.881Z"
+      }
+    ]
+  }
+}

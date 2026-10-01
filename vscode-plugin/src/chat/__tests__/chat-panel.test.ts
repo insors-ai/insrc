@@ -1101,6 +1101,76 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
 });
 
+// ---- S001 (74bc0120): provider lock + wider session dropdown ----------------
+//
+// The lock is applied by the webview SCRIPT at runtime, and this suite never executes that script
+// against a DOM — it asserts the emitted source. So each assertion below is anchored to a construct
+// that must be PRESENT for the behaviour to exist, and every one was mutation-checked: remove the
+// lock and the matching test goes red. The server-rendered facts (the width, and the untouched
+// no-CLI capability gate) are asserted directly off the html, where the evidence is strongest.
+
+test('S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched', () => {
+  const html = fidelityHtml();
+  const rule = /\.chrome #insrc-history\{([^}]*)\}/.exec(html);
+  assert.ok(rule, 'the .chrome #insrc-history rule is present');
+  const cap = /max-width:(\d+)ch/.exec(rule![1]!);
+  assert.ok(cap, 'the rule declares a max-width in ch');
+  assert.equal(Number(cap![1]), 36, 'the session dropdown spans 36ch');
+  // The chip itself must survive the widening intact (the earlier 6d3f8bc1 / bd2d6b6a work).
+  assert.match(rule![1]!, /border:1px solid var\(--border\)/, 'chip border kept');
+  assert.match(rule![1]!, /border-radius:6px/, 'chip radius kept');
+  assert.match(rule![1]!, /padding:3px 16px 3px 22px/, 'chip padding kept (icon still clears it)');
+  assert.match(rule![1]!, /background-position:left 6px center/, 'the glyph still sits inside the left padding');
+});
+
+test('S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins', () => {
+  const withCli = fidelityHtml();
+  // With a provider available the select is rendered WITHOUT disabled — the lock has not leaked
+  // into render time (it is runtime-only, because the shell is built once at open).
+  const sel = /<select id="insrc-provider"[^>]*>/.exec(withCli);
+  assert.ok(sel, 'the provider select is rendered');
+  assert.doesNotMatch(sel![0], /disabled/, 'not disabled at render time when a CLI is available');
+  // The runtime lock composes with the gate rather than replacing it: provGate captures the
+  // server-rendered disabled state once, and the sole writer ORs it in, so no transition can
+  // re-enable a control the capability gate closed.
+  assert.match(withCli, /var provGate=!!\(ps&&ps\.disabled\);/, 'the capability gate is captured at startup');
+  assert.match(withCli, /ps\.disabled=provGate\|\|provLocked;/, 'the sole writer ORs the gate in — it can never enable past it');
+  // ONE writer only: any other `.disabled =` on the provider select would bypass the composition.
+  assert.equal((withCli.match(/ps\.disabled=/g) ?? []).length, 1, 'exactly one construct writes the select disabled property');
+});
+
+test('S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions', () => {
+  const html = fidelityHtml();
+  // Fails safe: a webview that never receives a session message leaves the control locked.
+  assert.match(html, /var provLocked=true;/, 'the lock is initialised CLOSED');
+  // ac1 + ac2 — derived from the replayed transcript, so an empty chat unlocks and a chat with
+  // rows locks, re-derived per session rather than latching.
+  assert.match(html, /setProvLock\(\(\(m\.transcript\|\|\[\]\)\.length\)>0\);/, 'session-restored settles the lock from the replayed row count');
+  // The active session appearing in the PERSISTED history proves it has context (draft() only
+  // enters the store on first save).
+  assert.match(html, /if\(_ac\)setProvLock\(true\);/, 'history-list re-settles the lock for the active session');
+  // ac3 — a fresh chat re-locks on its first turn, and the empty-input guard must come FIRST so a
+  // blank submit cannot lock the control.
+  // Window the function by LENGTH, not by a brace regex: the body contains braces inside its
+  // postMessage literal, so /\{[^}]*\}/ truncates before the tail.
+  const at = html.indexOf('function doSubmit(){');
+  assert.ok(at >= 0, 'doSubmit is present');
+  const submit = html.slice(at, at + 260);
+  const guardAt = submit.indexOf('!box.value.trim()');
+  const lockAt = submit.indexOf('setProvLock(true)');
+  assert.ok(guardAt >= 0 && lockAt >= 0, 'doSubmit has both the empty guard and the lock call');
+  assert.ok(guardAt < lockAt, 'the empty-input guard precedes the lock — a blank submit cannot lock the control');
+});
+
+test('S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged', () => {
+  const html = fidelityHtml();
+  // The control's meaning when usable is untouched: a change still starts a NEW chat.
+  assert.match(html, /ps\.addEventListener\('change',function\(\)\{if\(ps\.value\)\{vs\.postMessage\(\{v:1,payload:\{type:'new-chat',provider:ps\.value\}\}\);\}\}\);/, 'a provider change still posts new-chat');
+  // session-restored still clears, resets keys and replays; history-list still re-syncs the value.
+  assert.match(html, /reg\.resetKeys\(\);\(m\.transcript\|\|\[\]\)\.forEach/, 'session-restored still resets keys and replays the transcript');
+  assert.match(html, /if\(_ac&&_ac\.provider\)\{ps\.value=_ac\.provider;\}/, 'history-list still re-syncs the provider value');
+});
+
 test('both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({

@@ -18,7 +18,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -186,6 +186,139 @@ test('handleArtifactContent: read-only — no file created or mutated over the f
 		handleArtifactContent({ repo, mdPath: mdRel }, undefined);
 		const after = readdirSync(join(repo, ARTIFACTS_DIR)).sort();
 		assert.deepEqual(after, before);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// S001/t1 (Epic build-vs-code-plugin-ui-integration, sc1) — the four STRUCTURED
+// body records projected onto ArtifactReviewView. Additive + absent-safe: the
+// six pre-existing members are untouched, and `=== undefined` is the single
+// absence test (no null, no empty-object default, no validation).
+// ---------------------------------------------------------------------------
+
+/** A representative body carrying all four structured records. */
+const FD = { commitments: [{ id: 'fr1', statement: 'the pane renders a document as structured' }] };
+const ER = { entities: [{ name: 'Artifact', fields: [{ name: 'id', type: 'string' }] }] };
+const UX = { type: 'AdaptiveCard', version: '1.5', body: [{ type: 'TextBlock', text: 'mock' }] };
+const CO = [{ kind: 'ux-mock', relPath: 'docs/epics/demo/S001/ux-mock.html', title: 'UX mock' }];
+
+test('t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them', () => {
+	const { repo, mdRel } = makeFixture({
+		json: { meta: {}, body: { functionalDefinition: FD, erDefinition: ER, uxDefinition: UX, companions: CO } },
+	});
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		// Verbatim: deep-equal to what the body stored, not a reshaped projection.
+		assert.deepEqual(v.functionalDefinition, FD);
+		assert.deepEqual(v.erDefinition, ER);
+		assert.deepEqual(v.uxDefinition, UX);
+		assert.deepEqual(v.companions, CO);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: an absent body field projects as ABSENT — not null, not an empty object', () => {
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: {} } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		for (const k of ['functionalDefinition', 'erDefinition', 'uxDefinition', 'companions'] as const) {
+			// `=== undefined` is the single absence test, so the KEY must be absent:
+			// a key present with an undefined/null/{} value would defeat it.
+			assert.equal(k in v, false, `${k} must be an absent key, not a present-but-empty one`);
+			assert.equal(v[k], undefined);
+		}
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: a DEF body projects functionalDefinition only and never companions', () => {
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { functionalDefinition: FD } } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		assert.deepEqual(v.functionalDefinition, FD);
+		assert.equal('companions' in v, false, 'nothing is backfilled for a record the body does not carry');
+		assert.equal('erDefinition' in v, false);
+		assert.equal('uxDefinition' in v, false);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: a PLAN body\'s functionalDefinition projects too — the field is not gated on kind', () => {
+	const planId = `PLAN-${HASH}-s1`;
+	const mdRel = `docs/epics/demo-${SEG}/S001/PLAN.md`;
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-artcontent-plan-'));
+	try {
+		const mdAbs = join(repo, mdRel);
+		mkdirSync(join(mdAbs, '..'), { recursive: true });
+		writeFileSync(mdAbs, `<!-- insrc:artifact ${planId} -->\n\n# plan\n`);
+		const dir = join(repo, ARTIFACTS_DIR);
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, `${planId}.json`), JSON.stringify({ meta: {}, body: { functionalDefinition: FD } }));
+
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		assert.equal(v.kind, 'PLAN');
+		assert.deepEqual(v.functionalDefinition, FD, 'a PLAN projects functionalDefinition like any other kind');
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings', () => {
+	const { repo, mdRel } = makeFixture({
+		json: { meta: {}, body: { openQuestions: ['First?'], erDefinition: ER } },
+	});
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		// Widening the view must not disturb any original member.
+		assert.equal(typeof v.artifactId, 'string');
+		assert.equal(v.artifactId, ID);
+		assert.equal(typeof v.kind, 'string');
+		assert.equal(v.kind, 'LLD');
+		assert.equal(v.renderedMarkdown, MD_BODY);          // still byte-verbatim
+		assert.deepEqual(v.openQuestions.map(q => q.text), ['First?']);
+		assert.equal(typeof v.approvable, 'boolean');
+		assert.equal(v.approvable, true);
+		assert.equal(v.blockReason ?? null, null);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path', () => {
+	const src = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'index.ts'), 'utf8');
+	const regs = src.match(/'workflow\.artifactContent':/g) ?? [];
+	assert.equal(regs.length, 1, 'exactly one workflow.artifactContent registration — the widening adds no IPC method');
+	for (const invented of ['workflow.artifactStructured', 'workflow.artifactCompanions', 'workflow.artifactDefinitions']) {
+		assert.equal(src.includes(`'${invented}'`), false, `no new read method (${invented}) may be introduced`);
+	}
+});
+
+test('t1: a malformed structured record travels through rather than failing the read', () => {
+	// Shape-invalid on every record: wrong types, unknown members, a scalar where
+	// an object belongs. The read must still succeed — a malformed record cannot
+	// refuse to open a document (the surface degrades, it does not go blank).
+	const junk = {
+		functionalDefinition: { commitments: 'not-an-array', unexpected: 1 },
+		erDefinition:         42,
+		uxDefinition:         { type: 'NotACard' },
+		companions:           [{ relPath: 7 }, 'not-an-object'],
+	};
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: junk } });
+	try {
+		const r = handleArtifactContent({ repo, mdPath: mdRel }, undefined);
+		assert.ok(!('error' in r), 'a malformed structured record must not fail the read');
+		const v = asView(r);
+		assert.equal(v.renderedMarkdown, MD_BODY, 'the body still reads verbatim');
+		// Verbatim pass-through: no validation, no coercion, no stripping.
+		assert.deepEqual(v.functionalDefinition as unknown, junk.functionalDefinition);
+		assert.deepEqual(v.erDefinition as unknown, junk.erDefinition);
+		assert.deepEqual(v.uxDefinition as unknown, junk.uxDefinition);
+		assert.deepEqual(v.companions as unknown, junk.companions);
 	} finally {
 		cleanup(repo);
 	}

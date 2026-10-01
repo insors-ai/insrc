@@ -31,6 +31,10 @@ import { jsonPathForMd } from './gates.js';
 import { openQuestions, type OpenQuestionStatus } from './questions.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
+import type { FunctionalDefinition } from './artifacts/functional-definition.js';
+import type { ErDefinition } from './artifacts/companion/er.js';
+import type { UxDefinition } from './artifacts/companion/ux.js';
+import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 
 // ---------------------------------------------------------------------------
 // sc2 contract types (internal-shared; mirrored as Kotlin data classes plugin-side)
@@ -49,6 +53,17 @@ export interface ArtifactReviewView {
 	readonly openQuestions:    readonly OpenQuestionRef[];
 	readonly approvable:       boolean;  // false when a review block-verdict stands
 	readonly blockReason?:     string | null;
+	// sc1 (Epic build-vs-code-plugin-ui-integration, S001/t1) — the artifact's
+	// STRUCTURED body records, projected verbatim alongside the rendered markdown
+	// so a review surface can present them as identified items / diagrams / mocks
+	// instead of re-parsing prose. Additive + absent-safe: a body that omits one
+	// projects the field ABSENT (never null, never {}), so `=== undefined` is the
+	// single absence test and a consumer deserializing only the original six is
+	// unaffected. Not gated on `kind` — a PLAN body carries functionalDefinition too.
+	readonly functionalDefinition?: FunctionalDefinition | undefined;
+	readonly erDefinition?:         ErDefinition | undefined;
+	readonly uxDefinition?:         UxDefinition | undefined;
+	readonly companions?:           readonly CompanionArtifactRef[] | undefined;
 }
 
 /** Structured failure the daemon relays verbatim; DISTINCT from a partial view
@@ -166,6 +181,37 @@ export function handleArtifactContent(
 		openQuestions: oq,
 		approvable: !blocked,
 		...(blocked ? { blockReason: summarizeBlock(review!) } : {}),
+		...structuredRecords(body),
+	};
+}
+
+/**
+ * sc1 (S001/t1) — project the four STRUCTURED body records onto the view.
+ *
+ * Deliberately pass-through: the body has already been parsed, so this performs
+ * no additional read, no reshaping, no defaulting and NO VALIDATION. A record
+ * whose shape is invalid travels through rather than failing the read, so one
+ * malformed record can never refuse to open a document — the surface degrades
+ * to prose, it does not go blank.
+ *
+ * Absence is keyed on `undefined` ALONE, and an absent record omits its key
+ * entirely rather than carrying `undefined`: that is what makes a consumer's
+ * `=== undefined` the single absence test under `exactOptionalPropertyTypes`.
+ * A body that literally stores `null` is a malformed record, not an absent one,
+ * so it travels through as written.
+ */
+function structuredRecords(body: Record<string, unknown>): Partial<Pick<
+	ArtifactReviewView, 'functionalDefinition' | 'erDefinition' | 'uxDefinition' | 'companions'
+>> {
+	const fd = body['functionalDefinition'] as FunctionalDefinition | undefined;
+	const er = body['erDefinition']         as ErDefinition | undefined;
+	const ux = body['uxDefinition']         as UxDefinition | undefined;
+	const co = body['companions']           as readonly CompanionArtifactRef[] | undefined;
+	return {
+		...(fd !== undefined ? { functionalDefinition: fd } : {}),
+		...(er !== undefined ? { erDefinition:         er } : {}),
+		...(ux !== undefined ? { uxDefinition:         ux } : {}),
+		...(co !== undefined ? { companions:           co } : {}),
 	};
 }
 

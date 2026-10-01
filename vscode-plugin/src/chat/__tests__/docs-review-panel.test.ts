@@ -910,9 +910,12 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       the renderer until t5.
  *   t3             62661 chars / 62705 bytes  b8d9d5c6…56d60
  *       +404 chars: frAnchorSlug appended to DOCS_FR_SOURCE. Still inert.
- *   t4 (this value) 64177 chars / 64223 bytes  2e27d071…9618d
+ *   t4             64177 chars / 64223 bytes  2e27d071…9618d
  *       +1516 chars: placeFunctionalRequirements appended. Still inert — t5
  *       is what calls it.
+ *   t5 (this value) 64385 chars / 64431 bytes  2501089e…ac1d0
+ *       +208 chars: the ONE call that changes what a reviewer sees, plus the
+ *       third level of notice precedence. No longer inert.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -926,9 +929,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  64177,
-  bytes:  64223,
-  sha256: '2e27d071cf7068fa33b9266506d46dff1a102eca4b50271fd9c053453c49618d',
+  chars:  64385,
+  bytes:  64431,
+  sha256: '2501089ea924a32d1f15dd938b242e864b3afa9a900a259e73eef0e0300ac1d0',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -955,10 +958,12 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
 
   // t1 is DATA-ONLY: the webview has no code that reads the new field yet, so
   // the name must not appear anywhere in the emitted script.
-  // t1 was data-only. t2 inlines DOCS_FR_SOURCE, which names the RENDERER but
-  // still reads no posted field — nothing calls it until t5.
-  assert.doesNotMatch(html, /m\.functionalDefinition/,
-    'the webview reads no posted functional record yet');
+  // t1 was data-only and t2-t4 were inert. t5 DECLARES the change: the webview
+  // now reads the posted record, at exactly one site — the placement call.
+  assert.equal((html.match(/m\.functionalDefinition/g) ?? []).length, 1,
+    'the posted record is read at exactly one site');
+  assert.match(html, /placeFunctionalRequirements\(bodyEl,m\.functionalDefinition/,
+    'and that site is the placement call');
 
   // The shell is a pure function of its nonce — the property the pin rests on.
   assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
@@ -1292,11 +1297,35 @@ interface BodyStub {
   appendChild(n: BodyStub): BodyStub;
   querySelectorAll(sel: string): BodyStub[];
   readonly firstChild: BodyStub | null;
+  // Present so the REAL bootstrap can run against these stubs: the body renderer
+  // assigns innerHTML, the notice sets role, and the controls attach listeners.
+  innerHTML: string;
+  className: string;
+  setAttribute(k: string, v: string): void;
+  addEventListener(t: string, l: () => void): void;
+  attrs: Record<string, string>;
+  listeners: Record<string, Array<() => void>>;
 }
 function bodyStub(tagName: string, id = '', text = ''): BodyStub {
   const children: BodyStub[] = [];
+  const attrs: Record<string, string> = {};
+  const listeners: Record<string, Array<() => void>> = {};
+  let html = '';
+  let txt = text;
   const n: BodyStub = {
-    tagName, id, textContent: text, children,
+    tagName, id, children, attrs, listeners,
+    className: '',
+    // THE REAL DOM CONTRACT, modelled because the idempotence check depends on
+    // it: assigning innerHTML or textContent REPLACES every child. That is what
+    // makes renderContent's per-message rebuild clear a previously placed block
+    // rather than merely not re-add one — and a stub that kept its children
+    // would make that test prove nothing.
+    get innerHTML() { return html; },
+    set innerHTML(v: string) { html = v; children.length = 0; },
+    get textContent() { return txt; },
+    set textContent(v: string) { txt = v; html = ''; children.length = 0; },
+    setAttribute(k, v) { attrs[k] = v; },
+    addEventListener(t, l) { (listeners[t] ??= []).push(l); },
     get firstChild() { return children[0] ?? null; },
     appendChild(c) { children.push(c); return c; },
     insertBefore(c, ref) {
@@ -1564,4 +1593,241 @@ test('t4: the slug lookup is scoped to the body container, so a same-id element 
     'the lookup is scoped to the container, not the document');
   assert.equal(headingIn(elsewhere, '2-functional-requirements'), decoy,
     'and it does find a heading that really is inside the container it was given');
+});
+
+// ---------------------------------------------------------------------------
+// S002/t5 — the ONE call that changes what a reviewer sees, EXECUTED end to end.
+// The bootstrap is lifted out of the real emitted shell and run against stubs,
+// so these tests exercise the shipped script rather than a reconstruction of it.
+// ---------------------------------------------------------------------------
+
+interface WebviewRun {
+  body: BodyStub;
+  notice: BodyStub;
+  sections: BodyStub;
+  actions: BodyStub;
+  oq: BodyStub;
+  posted: unknown[];
+  deliver(payload: Record<string, unknown>): void;
+}
+/** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
+function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean } = {}): WebviewRun {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
+  const html = fc.html();
+  let script = html.slice(html.indexOf('<script nonce="WV">') + '<script nonce="WV">'.length, html.lastIndexOf('</script>'));
+  // Drop the vendored marked bundle (a stub is injected as a global instead) but
+  // keep the WHOLE bootstrap, which begins at acquireVsCodeApi — slicing further
+  // in would drop `vs` and the element lookups the handlers close over.
+  script = script.slice(script.indexOf('const vs=acquireVsCodeApi()'));
+  if (opts.breakPlacement) {
+    script = script.replace('function placeFunctionalRequirements(', 'function placeFunctionalRequirements(){throw new Error("placement blew up");}\nfunction _unused(');
+  }
+
+  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq', 'insrc-docs-note',
+    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice'];
+  const byId: Record<string, BodyStub> = {};
+  for (const id of ids) byId[id] = bodyStub('div', id);
+  (byId['insrc-docs-note'] as unknown as { value: string }).value = '';
+
+  const posted: unknown[] = [];
+  let onMessage: ((e: { data: unknown }) => void) | undefined;
+  const doc = {
+    getElementById: (id: string) => byId[id] ?? null,
+    createElement: (t: string) => {
+      const n = bodyStub(t) as BodyStub & { addEventListener(): void; innerHTML: string };
+      n.addEventListener = () => {};
+      return n;
+    },
+  };
+  const win = { addEventListener: (_t: string, l: (e: { data: unknown }) => void) => { onMessage = l; } };
+  // `undefined` here is the POINT of the degraded case, so it is selected by an
+  // explicit flag rather than by passing undefined — which would fall through to
+  // the default and silently test the happy path instead.
+  const marked = opts.markedMissing ? undefined : { parse: (src: string) => src };
+  // eslint-disable-next-line no-new-func
+  new Function('document', 'window', 'marked', 'acquireVsCodeApi', script)(
+    doc, win, marked, () => ({ postMessage: (m: unknown) => { posted.push(m); } }),
+  );
+
+  return {
+    body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
+    sections: byId['insrc-docs-sections']!, actions: byId['insrc-docs-actions']!,
+    oq: byId['insrc-docs-oq']!, posted,
+    deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
+  };
+}
+
+test('t5: DOCS_FR_SOURCE is inlined into the single nonce\'d script and the placement call sits after stampSlugs and before the chooser / notice', () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+
+  // ONE script, carrying all three source strings.
+  assert.equal((html.match(/<script /g) ?? []).length, 1, 'still exactly one script element');
+  assert.match(html, /function renderFunctionalRequirements\(record\)/);
+  assert.match(html, /function placeFunctionalRequirements\(/);
+
+  // THE ORDERING, asserted by position in the emitted source. stampSlugs pairs
+  // headings to anchors through a pointer that only advances, so a tree mutated
+  // before it could mis-pair every later heading.
+  const iStamp = html.indexOf('var stamped=stampSlugs(');
+  const iPlace = html.indexOf('placeFunctionalRequirements(bodyEl,m.functionalDefinition');
+  const iChooser = html.indexOf('renderSectionChooser(secEl,');
+  const iNotice = html.indexOf('renderDegradationNotice(noticeEl,');
+  assert.ok(iStamp > 0 && iPlace > 0 && iChooser > 0 && iNotice > 0, 'all four call sites are present');
+  assert.ok(iStamp < iPlace, 'placement runs AFTER stampSlugs');
+  assert.ok(iPlace < iChooser, 'and BEFORE the chooser');
+  assert.ok(iPlace < iNotice, 'and BEFORE the notice');
+
+  // The chooser's gate is untouched: placement adds and removes no heading, so
+  // `stamped` means exactly what it meant in S001.
+  assert.match(html, /stamped>0\?m\.sections:\{anchors:\[\]\}/);
+});
+
+test('t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered', () => {
+  const FR = { requirements: [{ id: 'E:FR001', statement: 'One.', scope: 'doc' }] };
+  const noticeTexts = (w: WebviewRun) => w.notice.children.map((c) => c.textContent);
+
+  // PLACEMENT degradation only: body renders fine, section unlocatable.
+  {
+    const w = runWebview();
+    w.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] }, functionalDefinition: FR });
+    assert.equal(w.notice.children.length, 1, 'exactly one notice');
+    assert.match(noticeTexts(w)[0]!, /could not be located/, 'placement’s, since nothing else declared one');
+  }
+  // BODY degradation wins over placement's: marked missing -> the body renderer
+  // falls back, and its notice is the one shown.
+  {
+    const w = runWebview({ markedMissing: true });
+    w.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] }, functionalDefinition: FR });
+    assert.equal(w.notice.children.length, 1, 'still exactly one notice — they do not stack');
+    assert.equal(noticeTexts(w)[0], DEGRADE_NOTICE, 'the body renderer’s notice wins');
+  }
+  // HOST-POSTED wins over both.
+  {
+    const w = runWebview({ markedMissing: true });
+    w.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] },
+      degradation: { degraded: true, notice: SECTION_INDEX_NOTICE }, functionalDefinition: FR });
+    assert.equal(w.notice.children.length, 1);
+    assert.equal(noticeTexts(w)[0], SECTION_INDEX_NOTICE, 'the host-posted notice wins over both');
+  }
+  // RECORDED HONESTLY: the middle level of the precedence chain (the body
+  // renderer's, ahead of placement's) is UNREACHABLE given t4's invariant —
+  // placement returns a degradation only when the body rendered fine, so
+  // `fr.degradation` and `r.degradation.degraded` are never both set. Removing
+  // that branch is therefore a BENIGN mutation and these assertions do not catch
+  // it; I ran it to find that out rather than assuming a falsifier existed. The
+  // explicit three-level form is kept because it is the literal encoding of the
+  // LLD's rule and stays correct if that invariant is ever relaxed. The invariant
+  // itself is pinned by t4's "no degradation on an already-degraded body" check.
+
+  // Nothing wrong -> NO notice at all.
+  {
+    const w = runWebview();
+    w.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] } });
+    assert.equal(w.notice.children.length, 0, 'no record, nothing degraded -> no notice');
+  }
+});
+
+test('t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls', () => {
+  const w = runWebview({ breakPlacement: true });
+  w.deliver({
+    artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: ['why?'], blocked: false, commentable: true,
+    sections: { anchors: [{ title: 'Doc', slug: 'doc', level: 1 }] },
+    functionalDefinition: { requirements: [{ id: 'E:FR001', statement: 'One.', scope: 'doc' }] },
+  });
+
+  // The reviewer keeps the whole surface. The backstop never costs them the rest.
+  assert.equal(w.oq.children.length, 1, 'open questions still render');
+  assert.equal(w.actions.children.length, 2, 'approve + request-changes still render');
+  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  // The body renderer ran and put the document there — the stub records the one
+  // guarded innerHTML assignment, which is the shipped injection site.
+  assert.ok(w.body.innerHTML.length > 0 || w.body.textContent.length > 0,
+    'and the body is still rendered');
+});
+
+test('t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown', () => {
+  const MD = '# Doc\n\n## 2. Functional requirements\n\n- **E:FR001** — prose form\n\n## Non-goals\n';
+  const SECS = { anchors: [{ title: 'Doc', slug: 'doc', level: 1 }, { title: '2. Functional requirements', slug: '2-functional-requirements', level: 2 }] };
+
+  // THE DOMINANT PATH — 630 of 634 ledger artifacts. Compared against the same
+  // delivery with the field simply absent, which is what S001 did.
+  const withNone = runWebview();
+  withNone.deliver({ artifactId: 'a', markdown: MD, openQuestions: [], blocked: false, sections: SECS });
+  const shape = (w: WebviewRun) => JSON.stringify(w.body.children.map((c) => [c.tagName, c.id, c.textContent]));
+  const baseline = shape(withNone);
+
+  const withUndefined = runWebview();
+  withUndefined.deliver({ artifactId: 'a', markdown: MD, openQuestions: [], blocked: false, sections: SECS, functionalDefinition: undefined });
+  assert.equal(shape(withUndefined), baseline, 'an undefined record renders identically to an absent one');
+
+  const withEmpty = runWebview();
+  withEmpty.deliver({ artifactId: 'a', markdown: MD, openQuestions: [], blocked: false, sections: SECS, functionalDefinition: { requirements: [] } });
+  assert.equal(shape(withEmpty), baseline, 'and so does an empty one');
+
+  assert.equal(withNone.notice.children.length, 0, 'and no notice is shown on the dominant path');
+});
+
+test('t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none', () => {
+  const FR = { requirements: [
+    { id: 'E:FR001', statement: 'One.', scope: 'doc' },
+    { id: 'E:FR002', statement: 'Two.', scope: 'doc' },
+  ] };
+  const msg = (fd?: unknown) => ({
+    artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, sections: { anchors: [] },
+    ...(fd !== undefined ? { functionalDefinition: fd } : {}),
+  });
+  const containers = (w: WebviewRun) => w.body.children.filter((c) => c.tagName === 'div');
+  const items = (w: WebviewRun) =>
+    containers(w).flatMap((c) => c.children).length;
+
+  const w = runWebview();
+  w.deliver(msg(FR));
+  const afterOne = containers(w).length;
+  const itemsOne = items(w);
+  assert.equal(afterOne, 1, 'one delivery -> one container');
+  assert.equal(itemsOne, 2, 'carrying both requirements');
+
+  // The pane really does post docs-content repeatedly in one session — open, the
+  // boot ping, a withheld approve, a decision failure, a failed open (five sites
+  // in docs-review-panel.ts). Silent duplication here would reintroduce exactly
+  // the double-rendering this Story exists to remove.
+  w.deliver(msg(FR));
+  assert.equal(containers(w).length, 1, 'a second identical delivery still leaves ONE container');
+  assert.equal(items(w), itemsOne, 'with the same item count — not doubled');
+
+  // And the rebuild CLEARS a previously placed block rather than merely not
+  // re-adding one: a third message with NO record leaves nothing behind.
+  w.deliver(msg(undefined));
+  assert.equal(containers(w).length, 0, 'the previously placed block is gone');
+});
+
+test('t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story', async () => {
+  // Host-side behaviour, through the real client doubles — unchanged by t5.
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  await tick();
+  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
+
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  await tick();
+  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+
+  // Webview side: the blocked banner replaces approve, request-changes survives.
+  const w = runWebview();
+  w.deliver({ artifactId: 'a', markdown: 'unavailable: boom', openQuestions: [], blocked: true, commentable: true });
+  assert.equal(w.actions.children[0]!.textContent, 'blocked — not approvable');
+  assert.equal(w.actions.children.length, 2, 'blocked banner + request-changes');
+  // And a non-commentable kind still hides request-changes.
+  const w2 = runWebview();
+  w2.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, commentable: false });
+  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve']);
 });

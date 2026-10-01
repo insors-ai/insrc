@@ -565,10 +565,31 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // cannot navigate is worse than no chooser, and "no targets" is the same
       // situation as "no headings", which already omits it entirely.
       `var stamped=stampSlugs(bodyEl,m.sections);` +
+      // S002/t5 — THE single line that changes what a reviewer sees. Everything
+      // before this task was additive and inert; reverting this call restores the
+      // S001 surface exactly, with the types, the data path and the renderer all
+      // still in place.
+      //
+      // AFTER stampSlugs is a correctness constraint, not a style one: the
+      // stamper pairs headings to anchors BY TITLE through a pointer that only
+      // advances (:117), so a tree mutated first could mis-pair every later
+      // heading. BEFORE the chooser and the notice because the chooser is gated
+      // on `stamped` (which placement cannot change — it adds and removes no
+      // heading) and the notice may need to carry a placement degradation.
+      //
+      // The try/catch is a BACKSTOP for the unforeseen, not what makes placement
+      // safe: t4 builds before it removes, so a construction throw cannot leave a
+      // half-removed section. What this guard buys is that no failure here costs
+      // the reviewer the chooser, the notice, the open questions or the controls.
+      `var fr={placed:'none'};try{fr=placeFunctionalRequirements(bodyEl,m.functionalDefinition,m.sections,!!r.degradation.degraded);}catch(e){}` +
       `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` +
       // ac3: the notice comes from the POSTED state when the host declared one,
       // and otherwise from this render's own degradation — same shape either way.
-      `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:r.degradation);` +
+      // Notice precedence, extended by ONE level rather than replaced: a
+      // host-posted degradation wins, else the body renderer's, else placement's.
+      // The reviewer is never shown two notices and never shown none when
+      // something went wrong.
+      `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:(r.degradation&&r.degradation.degraded)?r.degradation:(fr.degradation||r.degradation));` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
       `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +

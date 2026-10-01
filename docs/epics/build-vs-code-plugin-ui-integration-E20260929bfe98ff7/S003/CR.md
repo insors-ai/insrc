@@ -1,0 +1,35 @@
+<!-- insrc:artifact CR-bfe98ff7f97178cf-s3 -->
+
+# Code review: bfe98ff7f97178cf:s3
+
+⚠️ **WARN** — HIGH 0 · MED 1 · LOW 6 · model `client`
+
+**Changed files:** 2
+
+## adherence — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:892 | sc4's published CompanionSlotFactory sketch describes build() as taking 'a structured record', singular, while the shipped dgBuildDiagramSlot takes a RECORD BUNDLE ({ erDefinition?, sequenceDefinition? }). The two are reconcilable — TRecord instantiates as the bundle type, so the generic interface is not contradicted — and the widening was forced by a fact the sketch predates: three daemon renderers all stamp kind:'diagram-mermaid', so a ref cannot identify its own source record and the factory must be handed everything the document carries. Recorded because s4 consumes this contract and will instantiate TRecord for the experience slot; it should know the diagram factory reads a bundle rather than one record. |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:721 | ac1's 'positioned with the part of the document that references it' is implemented and now genuinely works (the digit-leading-slug defect fixed in this commit), but it is exercised by NO real document: 0 of the 8 companion refs in the ledger populate ofSectionId, so every real open takes default placement. Recorded as a known limitation rather than a breach — populating ofSectionId is a generation-side change, which this Epic's non-goals exclude. The anchored path is covered by test and by the numbered-heading regression. |
+
+## conventions — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:369 | DOCS_DIAGRAM_SOURCE follows the established DOCS_*_SOURCE convention exactly — ES5 inside a template literal, a `dg` identifier prefix, inlined into the one nonce'd script — so it ADHERES. The observation is about the convention's cost rather than this use of it: ~19KB of behaviour now lives where tsc cannot typecheck it, lint cannot see it, and an identifier collision between two source strings is invisible until runtime. That cost is real and was paid during this Story (see the coverage finding). No deviation found: no console.log, no Promise.all over a provider, every relative import carries .js, tests co-located under __tests__, and the three `http://www.w3.org/2000/svg` occurrences are the XML namespace constant, not a network call. |
+
+## coverage — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1 | NOTHING IN THE SUITE ASSERTS THE FOUR SOURCE STRINGS PARSE TOGETHER IN ONE SCOPE, and this Story hit exactly that failure. At t6 the slot-host const was named dgEl, colliding with the SVG element factory already called dgEl inside DOCS_DIAGRAM_SOURCE — `const dgEl` beside `function dgEl` in the same script is a SyntaxError that would have broken the ENTIRE webview. It was caught only by an ad-hoc `new Function(...)` check run in a shell and never committed. The existing guards do not cover it: tsc cannot see inside a template literal, and the SHELL_BASELINE hash is perfectly stable over a syntactically invalid script. A one-line test constructing `new Function('document','window','marked','acquireVsCodeApi', DOCS_BODY_RENDERER_SOURCE + DOCS_SECTIONS_SOURCE + DOCS_FR_SOURCE + DOCS_DIAGRAM_SOURCE)` would close it, and matters more as S004 adds a fifth string to the same scope. |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:721 | The anchored-placement path is untested against a DEGRADED body. When renderMarkdownBody falls back to plain text there are no heading elements at all, so the id walk finds nothing and the slot takes default placement — almost certainly correct, and the surrounding behaviour is covered, but no test pins it. Cheap to add alongside the existing degradation tests. |
+
+## quality — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:664 | dgClamp is declared INSIDE the per-message loop in dgRenderSeq (the loop opens at :645), so the function declaration is re-evaluated on every iteration. Hoisting makes it correct and the cost is negligible at ledger scale (10 messages), but it reads as an accident rather than a decision and sits apart from the other helpers, which are all declared at the top level of the source string. Moving it beside dgEdgePoint would match the file's own structure. |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:369 | The layout fit calculations depend on hard-coded monospace advance constants (DG_CH_ROW=6.75, DG_CH_HEAD=8.4), chosen deliberately because a webview cannot measure text without a layout pass and a measurement-dependent layout would stop being deterministic. The constants are documented as approximate-and-generous, and the box-fit assertions use the same figures — which is what makes the suite able to catch an overflow at all. The residual risk is that a future font-size change in the CSS would silently invalidate both the layout AND the assertion that guards it, since they share the constant rather than deriving it. Worth a comment linking the CSS font-size to these constants so the coupling is visible at both ends. |
+

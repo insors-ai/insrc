@@ -3511,3 +3511,29 @@ test('t6 FIX: the anchor resolves on a NUMBERED heading — the format every rea
     'the slot anchors to a digit-leading slug instead of silently falling back');
   assert.equal(r.diagram.children.length, 0, 'and did NOT land in the default host');
 });
+
+test('CR/coverage: all four webview source strings PARSE together in one scope', () => {
+  // Closes the MED from the post-build code review, and guards a failure this
+  // Story actually hit: at t6 the slot-host const was named `dgEl`, colliding with
+  // the SVG element factory already called `dgEl` inside DOCS_DIAGRAM_SOURCE.
+  // `const dgEl` beside `function dgEl` in one script is a SyntaxError that would
+  // have broken the ENTIRE webview, and it was caught only by an ad-hoc check that
+  // was never committed.
+  //
+  // Neither existing guard covers this: tsc cannot see inside a template literal,
+  // and SHELL_BASELINE's hash is perfectly stable over a syntactically INVALID
+  // script. This matters more as S004 adds a fifth string to the same scope.
+  const combined = DOCS_BODY_RENDERER_SOURCE + DOCS_SECTIONS_SOURCE + DOCS_FR_SOURCE + DOCS_DIAGRAM_SOURCE;
+  assert.doesNotThrow(
+    () => { new Function('document', 'window', 'marked', 'acquireVsCodeApi', combined); },
+    'the four source strings must coexist in one scope without a syntax or redeclaration error',
+  );
+
+  // The check is only meaningful if it can fail, so prove it catches the exact
+  // shape of the bug it exists for: a const redeclaring a function already there.
+  assert.throws(
+    () => { new Function('document', `${combined}\nconst dgEl = 1;`); },
+    /already been declared|Identifier/,
+    'a redeclaration of an existing identifier must be rejected',
+  );
+});

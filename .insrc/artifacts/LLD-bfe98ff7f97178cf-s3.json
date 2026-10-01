@@ -245,7 +245,16 @@
         "resolvedAt": "2026-10-01T16:06:55.006Z"
       }
     },
-    "approvedAt": "2026-10-01T16:09:20.098Z"
+    "approvedAt": "2026-10-01T16:09:20.098Z",
+    "questionResolutions": {
+      "q841c8f82": {
+        "question": "RESOLVED at the approval gate — the sc1 amendment is ADOPTED IN NARROWED FORM: a `sharedContract.fieldAdd` (breaking:false) adding `sequenceDefinition` ONLY to sc1's projection. WHY THE AMENDMENT: three daemon renderers emit `kind:'diagram-mermaid'` — ER (render.ts:104), sequence (:205), component (:243) — but sc1 projected only the ER source record, and the ledger holds 5 diagram-mermaid refs against 2 erDefinitions and 3 sequenceDefinitions, so without it this Story would tell a reviewer 'a diagram was referenced but could not be shown' on the MAJORITY of documents that carry a diagram — including this Epic's own LLD for s2, whose 'Sequence diagram' companion and whose sequenceDefinition sit in the same body, unprojected. WHY NARROWED: the review's independent recount found `componentDependencyDefinition` in ZERO artifact bodies, so projecting it would buy a third derivation, a third set of fixtures and a third visual check for a record no producer has ever emitted; it is DEFERRED until one does, and is purely additive whenever that happens. CONSEQUENCES: the daemon changes by one line in `structuredRecords` and MUST be rebuilt, and the Story carries TWO derivations (entity model + call sequence), not three. backwardCompat is unchanged and symmetric, so no coordinated release is required.",
+        "status": "resolved",
+        "choice": "Adopt as resolved: daemon line first, then two derivations",
+        "rationale": "Already adjudicated by the user at the S003 approval gate (they chose option 1, the narrowed amendment) and filed as AMD-bfe98ff7f97178cf-1, approved 2026-10-01T16:16:27Z — so this is a settled decision being recorded, not reopened. Projection-first is also the correct order on the evidence: landing the one-line structuredRecords change first means both derivations are exercised against the documents the ledger actually holds (3 sequenceDefinition bodies, including this Epic's own S002 LLD) rather than only against hand-built fixtures. componentDependencyDefinition stays out of scope on 0 producers.",
+        "resolvedAt": "2026-10-01T16:18:15.331Z"
+      }
+    }
   },
   "body": {
     "summary": {

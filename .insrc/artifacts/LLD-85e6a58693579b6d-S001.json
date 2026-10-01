@@ -183,6 +183,13 @@
         "choice": "Hold a1 — server-rendered approximation only",
         "rationale": "Settled with the user in chat, not by default: they were shown the fidelity-vs-visibility trade-off with all three mechanisms and the cost of each, and approved the LLD that chose a1. The deciding argument is the issue's own words — 'degrade visibly rather than vanish' is an explicit requirement, and a1 is the only option that satisfies it unconditionally, because build-time emission means whatever the emitter produced is what the reader sees. a2 inverts exactly that: a script failure yields an empty page, so the whole mock can vanish, not merely an element. The hybrid (option 3) is the honest upgrade path if approximation later proves to mislead reviewers, and nothing in a1 forecloses it — but paying for two semantically-synced render paths now, on a standalone bugfix, buys fidelity nobody has yet asked for. The revisit condition is already recorded in the LLD's open questions, so option 4's bookkeeping would duplicate what the artifact carries.",
         "resolvedAt": "2026-10-01T12:19:38.974Z"
+      },
+      "qfaed73d6": {
+        "question": "SELF-GRADED PARTIAL (cd3): renderUxCompanion's single errors entry carries a sentence where the schema wants a concrete error type, because the honest content is the ABSENCE of errors — DiagramGenerationError becomes unreachable once assembleShell leaves the path. The cleaner form would have been an empty errors array with the explanation in postconditions. The reader is not misled, but the shape is wrong and a reviewer is entitled to say so.",
+        "status": "resolved",
+        "choice": "Empty errors array, explanation in postconditions",
+        "rationale": "Taking the fix I flagged against myself rather than the cheap option. The honest content is an ABSENCE of errors, and an absence belongs in prose that asserts it, not in a field shaped to hold type names — writing a sentence where a type goes is how a schema stops meaning anything. Option 3 (accept the wart) ships an artifact I have already said a reviewer is entitled to block on, which is a strange thing to do voluntarily. Option 4 (widen the schema) is the right root-cause fix for a repeated problem but turns a standalone bugfix into a schema change with its own review, and this is the first time I have hit it. Option 2 is nearly identical to option 1 in effect, since re-deriving the real throw set yields none from the render path — writeFileSync's filesystem failure propagates from renderUxCompanion but is not raised by the emitter — so option 1 says the same thing without implying a list exists to be trimmed.",
+        "resolvedAt": "2026-10-01T12:21:22.081Z"
       }
     }
   },

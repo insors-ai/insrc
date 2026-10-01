@@ -1,0 +1,48 @@
+{
+  "id": "AMD-bfe98ff7f97178cf-1",
+  "epicHash": "bfe98ff7f97178cf",
+  "epicSlug": "build-vs-code-plugin-ui-integration",
+  "hldBaseRunId": "wf-1790840477406-bic923",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc1",
+    "field": {
+      "name": "sequenceDefinition",
+      "type": "SequenceDefinition | undefined",
+      "optional": true,
+      "purpose": "body.sequenceDefinition, projected verbatim like its four siblings, so the review pane can DRAW a call-sequence companion from its source record instead of declaring it unshowable"
+    },
+    "breaking": false
+  },
+  "rationale": "THREE daemon renderers stamp kind:'diagram-mermaid' — ER (render.ts:104), sequence (:205), component (:243) — but sc1 projects only the ER source record, so a ref's CompanionKind cannot identify which record drew it and the pane cannot draw two of the three. A ledger recount found 5 diagram-mermaid refs against 2 erDefinition bodies and 3 sequenceDefinition bodies, so WITHOUT this field S003 renders 'referenced but could not be shown' on the MAJORITY of documents that carry a diagram — including this Epic's own S002 LLD, whose 'Sequence diagram' companion ref and whose sequenceDefinition sit in the same body, unprojected. ADOPTED IN NARROWED FORM at the S003 approval gate: componentDependencyDefinition was proposed alongside this field and DEFERRED, because the same recount found it in ZERO artifact bodies — projecting it would buy a third derivation, fixtures and visual check for a record no producer has ever emitted. It stays purely additive to add when one first appears. Additive and absent-safe: optional, absence stays an absent key, no existing field changes meaning, no new IPC method, no extra round trip (k2/k7). backwardCompat is symmetric — an older extension ignores the field, and this extension reads it as absent against an un-amended daemon — so no coordinated release is required. sc1 is owned by s1, which is why this is filed as a typed amendment rather than built silently from s3.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:203-215"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/render.ts:104,205,243"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/sequence.ts:54-59"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1790868424979-tkzzkx",
+    "storyId": "s3",
+    "stepId": "synthesize"
+  },
+  "proposedAt": "2026-10-01T16:10:49.786Z",
+  "status": "pending"
+}

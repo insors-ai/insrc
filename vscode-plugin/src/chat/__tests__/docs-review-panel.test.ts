@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE } from '../docs-review-panel.js';
+import type { StructuredRenderer } from '../docs-review-panel.js';
 import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
@@ -423,20 +424,64 @@ test('t4: guardMd strips a non-http href and an image src from the rendered body
   assert.equal(img._attrs['srcset'], undefined);
 });
 
-test('t4: StructuredRenderer is published and nothing in s1 implements it', async () => {
+test('t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place — a DELIBERATE narrowing at the first implementer, not an eroded invariant', async () => {
+  // S001 wrote this assertion as "the type is published and NOTHING implements
+  // it", explicitly to hold only until the first implementer arrived. S002 is
+  // that implementer, so the assertion is REWRITTEN, not deleted, and it must
+  // still fail if a renderer appears somewhere unsanctioned. This is the same
+  // kind of scoped, recorded narrowing S001 itself made to the no-innerHTML
+  // assertion — never an incidental relaxation.
+  //
+  // ONE SUBTLETY, recorded rather than hidden, because it would otherwise read
+  // as the invariant quietly surviving: the implementation lives in an exported
+  // SOURCE STRING (DOCS_FR_SOURCE), evaluated in the webview and under
+  // `new Function` in these tests. There is therefore no TypeScript value to
+  // annotate, and S001's literal regex would STILL pass unchanged — which is
+  // exactly why leaving it alone would have been the misleading choice. What
+  // follows asserts the implementation where it actually is.
   const { readFileSync } = await import('node:fs');
   const { fileURLToPath } = await import('node:url');
   const { dirname, join } = await import('node:path');
   const here = dirname(fileURLToPath(import.meta.url));
 
   const panel = readFileSync(join(here, '..', 'docs-review-panel.ts'), 'utf8');
-  assert.match(panel, /export type StructuredRenderer</, 'the sc2 type s2/s3/s4 build against is exported');
+  assert.match(panel, /export type StructuredRenderer</, 'the sc2 type s2/s3/s4 build against is still exported');
 
-  // s1 declares it and implements none: no value is annotated as one anywhere.
-  for (const f of ['docs-review-panel.ts', 'docs-review-client.ts', 'docs-sections.ts', 'markdown-style.ts']) {
+  // IMPLEMENTED, in exactly one place, and named: the functional-requirements
+  // renderer inside DOCS_FR_SOURCE.
+  assert.equal((DOCS_FR_SOURCE.match(/function renderFunctionalRequirements\(/g) ?? []).length, 1,
+    'exactly one implementation of the contract, in DOCS_FR_SOURCE');
+  for (const other of [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE]) {
+    assert.doesNotMatch(other, /function renderFunctionalRequirements\(/,
+      'and it is not duplicated into a sibling source string');
+  }
+
+  // The contract is checked against the REAL evaluated function rather than
+  // asserted about: the annotation below is what makes a renderer that stopped
+  // returning `{ el }` a type error here, instead of a silent drift.
+  const renderer: StructuredRenderer<{ requirements: readonly unknown[] }> =
+    loadFr() as unknown as StructuredRenderer<{ requirements: readonly unknown[] }>;
+  const out = renderer({ requirements: [{ id: 'E:FR001', statement: 'One.', scope: 'doc' }] });
+  assert.ok(out.el, 'the evaluated renderer returns the sc2 shape');
+  assert.equal(out.degradation, undefined,
+    'and declares no degradation — placement, not rendering, is what can degrade');
+
+  // The OTHER three files still declare none. This is the half of S001's
+  // assertion that is unchanged, and the half that keeps catching an
+  // unsanctioned renderer.
+  for (const f of ['docs-review-client.ts', 'docs-sections.ts', 'markdown-style.ts']) {
     const src = readFileSync(join(here, '..', f), 'utf8');
     assert.doesNotMatch(src, /:\s*StructuredRenderer</, `${f} declares no StructuredRenderer implementation`);
   }
+  // And if a TypeScript annotation ever does appear, docs-review-panel.ts is the
+  // ONLY sanctioned home for it — so a renderer added anywhere else on this
+  // surface still turns this red.
+  const chatDir = join(here, '..');
+  const { readdirSync } = await import('node:fs');
+  const annotated = readdirSync(chatDir)
+    .filter((f) => f.endsWith('.ts'))
+    .filter((f) => /:\s*StructuredRenderer</.test(readFileSync(join(chatDir, f), 'utf8')));
+  assert.deepEqual(annotated, [], 'no file on this surface annotates a value as a StructuredRenderer');
 });
 
 // ---------------------------------------------------------------------------

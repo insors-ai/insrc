@@ -1,0 +1,772 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1790671317653-syw7pi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-09-29T08:46:37.128Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 279468,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "n1",
+          "ref": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "marked v4.3.0 is a declared runtime dependency of the VS Code plugin and esbuild bundles it, so a markdown renderer already ships in the VSIX and S001 reuses rather than builds one.",
+          "evidence": "The read anchor is exact: vscode-plugin/package.json:744 reads '\"marked\": \"^4.3.0\"', mirrored at vscode-plugin/package-lock.json:12. The bundler is real: vscode-plugin/esbuild.mjs:56 reads '// Run as a script (`node esbuild.mjs`) -> bundle into ./out.' A markdown renderer already ships in the VSIX, so S001 reuses rather than builds one.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n2",
+          "ref": "c10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "MARKED_SRC in vscode-plugin/src/chat/webview-marked.ts is GENERATED from the npm package by gen-webview-libs.mjs, so the vendored renderer cannot drift from the declared dependency.",
+          "evidence": "vscode-plugin/gen-webview-libs.mjs:30 reads '`export const MARKED_SRC: string = ${JSON.stringify(markedSrc)};\\n`;' — the vendored string is GENERATED from the npm package rather than hand-copied, so it cannot silently drift from the declared dependency. This strengthens the reuse case: the renderer is single-sourced.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n3",
+          "ref": "c10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chat surface's shipped render path is marked.parse into innerHTML, then the guardMd sanitiser, with a textContent fallback on throw — and guardMd is test-pinned.",
+          "evidence": "vscode-plugin/src/chat/render-registry.ts:228 carries the whole pattern in one expression — \"try{div.innerHTML=(typeof marked!=='undefined'&&marked&&marked.parse)?marked.parse(src,...):src;guardMd(div);}catch(e){div.textContent=src;}\" — library render, sanitiser scrub, textContent fallback. It is test-pinned at render-registry.test.ts:384, which asserts /function guardMd\\(/ 'defines the sanitizer'. S001 has a shipped, tested pattern to reuse.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n4",
+          "ref": "c10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "marked REPLACED this plugin's own incomplete hand-rolled markdown parser, which is why the JetBrains hand-rolled conservative-subset renderer is not the reuse target and the extraction was reversed.",
+          "evidence": "render-registry.ts:210 reads '// S001 (bugfix): assistant content is rendered by the bundled `marked` library (GFM: tables,' and :211 '// ordered/nested lists, code, blockquotes — replacing the incomplete hand-rolled parser)'. The single source match is decisive: this plugin already tried a hand-rolled parser and replaced it. Adopting the JetBrains conservative-subset renderer would have regressed the VS Code surface, which is precisely why the extraction was reversed.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n5",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The docs-review surface's contract test still asserts no innerHTML on that surface, so adopting the chat pattern there requires deliberately updating that test.",
+          "evidence": "The read anchor is exact: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:243 reads \"test('rendered shell: one nonce, strict CSP, docs-review surface, no innerHTML', () => {\". The stricter discipline on the docs-review surface is real and still in force, so adopting the chat pattern there is a deliberate, test-changing decision — exactly as k1 now states. (As last round: only the test's name and intent are pinned by this evidence, not its assertion mechanism; the HLD should read the body before amending it.)",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n6",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "INTERNAL CONSISTENCY RESOLVED: the c2 assumption no longer forbids relaxation outright. It now states the discipline may be satisfied as-is OR the marked+guardMd pattern adopted with the contract test updated deliberately per k1, matching k1's own wording, so the two clauses agree and the earlier contradiction is gone.",
+          "evidence": "The contradiction is resolved in the artifact body. The old absolute phrasing 'rather than relaxing it' now survives ONLY in the appended review history — DEF.md:192 (the prior finding row) and :207 (the recorded proposed fix) — and no longer in any live clause. The live assumption at DEF.md:75 ends 'The discipline is never relaxed incidentally', and k1 at DEF.md:82 says 'never an incidental relaxation'. The two now say the same thing in the same direction, so an HLD reading both gets one unambiguous rule: satisfy the discipline as it stands, or adopt the marked+guardMd pattern and update the contract test deliberately in the same change.",
+          "action": "none — verified sound; the earlier MED is resolved",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n7",
+          "ref": "c6",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "ArtifactReviewView still carries no companion or structured-body field, so the k2 additive extension remains required for S003/S004.",
+          "evidence": "src/workflow/artifact-content.ts:45 reads 'export interface ArtifactReviewView {' with renderedMarkdown at :48 ('the artifact's own .md read verbatim (k5/lc1)'). No companion or structured-body field is present, so the k2 additive extension remains necessary for S003/S004 — unaffected by the reversal, which only changed the renderer decision.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n8",
+          "ref": "c11",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "CompanionKind remains a closed three-member union, so S003's lc1 routing of the unproduced diagram-html still applies.",
+          "evidence": "src/workflow/artifacts/companion/types.ts:24 still reads \"export type CompanionKind = 'diagram-mermaid' | 'diagram-html' | 'ux-mock';\". Three members, unchanged, so S003's lc1 routing of the declared-but-unproduced diagram-html to the ac3 cannot-be-shown path remains correct and necessary.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n9",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The review pane's read path remains workflow.pending plus workflow.artifactContent over the shared client.",
+          "evidence": "The docs-review-client.ts read anchor resolved and 'workflow.artifactContent' resolves widely (50 matches, truncated). The read path is unchanged by the reversal; the Epic's own clauses at DEF.md:63 (non-goal 2) and :72 (the c6 assumption) both name workflow.pending / workflow.artifactContent consistently.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n10",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The reversal is internally complete: k7 enumerates exactly two obligations, non-goal 3 rules out both JetBrains rendering and renderer convergence, and no extraction language remains in the Epic body.",
+          "evidence": "The reversal is complete in the body. 'check for both obligations' resolves at DEF.md:88 — k7 now enumerates two obligations, the JetBrains no-regression one having been dropped. 'shared markdown-parser module' returns ZERO matches anywhere. 'EXTRACTS the markdown parser' returns exactly ONE match, at DEF.md:201 — inside the appended review-history table, not a live clause. No extraction language remains in the Epic proper.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n11",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The Story dependency graph is unchanged and acyclic — S002 and S003 depend on S001, S004 on S003 — with S001 resized to M because its renderer is reused while S003/S004 remain L.",
+          "evidence": "Judged from the artifact text supplied to this review, since the grep only confirms the S004 ids exist (5 matches, all within this Epic's DEF): S002 'Depends on: s1', S003 'Depends on: s1', S004 'Depends on: s3' — a tree rooted at S001, no cycle. S001 reads 'size: M' (reduced from L now that its renderer is reused), S002 'size: M', S003 and S004 'size: L' — consistent with diagram and UX-mock rendering remaining net-new.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11
+      },
+      "reviewedAt": "2026-09-29T09:44:36.507Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-09-29T09:44:41.727Z"
+  },
+  "body": {
+    "flavor": "enhancement",
+    "summary": {
+      "prose": "Reviewers in VS Code approve the documents that gate every workflow stage, but the in-editor surface shows them only as flat text. The functional outcomes a document commits to, its reader-oriented structure, and the diagrams and experience mocks it carries are all invisible there — so approvals are given without sight of the content most likely to change the decision. This Epic makes the VS Code review surface show a generated document as it was meant to be read: its functional commitments legible and traceable, its structure navigable, and its visual companions displayed alongside the design they belong to.",
+      "audience": "product"
+    },
+    "problem": "The workflow now ends every stage in a document that carries far more than prose: a structured record of the functional outcomes the work commits to, a body deliberately shaped for human reading, and — where the content warrants it — visual companions that show a data shape or the intended user-facing experience rather than describing it. A reviewer working in VS Code cannot see any of that. The one in-editor surface that lists and opens pending documents renders them as a plain textual shell, so the functional record arrives as undifferentiated text a reviewer cannot scan, check off, or trace from one stage to the next; the body's deliberate structure is flattened back into the wall of text it was reshaped to avoid; and the visual companions — the very parts produced precisely because a picture carries what prose cannot — are not shown at all, leaving a reviewer to approve a design while unable to see the data shape or the experience it commits to. The gap falls exactly at the human-in-the-loop gate the workflow most depends on: the reviewer is asked for an approval that unlocks the next stage, on the strength of a document whose most decision-relevant content is invisible to them where they work. The alternative is to leave the editor and open the files by hand, which is the flow-break the in-editor surface existed to remove, so in practice the review is skimmed or the richer content is simply never consulted. The cost concentrates on VS Code users and on the newest, most decision-bearing parts of every document, and it grows with each document the workflow generates.",
+    "openQuestions": [],
+    "nonGoals": [
+      {
+        "text": "Changing how documents or their companions are generated, or what any of them contain.",
+        "rationale": "Generation was settled by the producing Epic and is already complete; this Epic is purely about what a reviewer is shown. Altering generation here would fork a shipped contract [[c3]]."
+      },
+      {
+        "text": "Introducing a new daemon IPC method or a second, parallel artifact read surface for the review pane.",
+        "rationale": "The pane already reads through workflow.pending / workflow.artifactContent [[c6]] and must keep doing so. This rules out a NEW method or a parallel path; it does NOT rule out extending the existing ArtifactReviewView response with additive optional fields, which S003 and S004 require because that response carries no companion references today - and which serves the JetBrains review panel by the same change."
+      },
+      {
+        "text": "Bringing this rendering to the JetBrains plugin, or converging the two IDE plugins on a single shared markdown renderer.",
+        "rationale": "The JetBrains review panel already has its own hand-rolled renderer at jetbrains-plugin/src/main/resources/insrc-review/markdown-renderer.js. Converging the two IDEs on one renderer is worthwhile but is separate follow-up work carrying its own no-regression risk; folding it in would make this Epic two features rather than one release. This Epic reuses what the VS Code plugin already bundles and touches no other client."
+      },
+      {
+        "text": "Adding annotation, inline commenting, or feedback capture to the VS Code review surface.",
+        "rationale": "Those are distinct reviewer capabilities with their own record-keeping semantics, already framed elsewhere; folding them in would make this Epic two features rather than one release."
+      },
+      {
+        "text": "Making a visual companion a required element of the review surface.",
+        "rationale": "Companion inclusion is content-gated by explicit stakeholder decision [[c4]]; a surface that demanded one would contradict the rule that produced them."
+      },
+      {
+        "text": "Retrofitting the display for documents generated before this change.",
+        "rationale": "The producing Epic is forward-only by stakeholder decision [[c3]]; older documents do not carry the structured content this surface would render, so there is nothing to display for them."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The structured functional record and both companion kinds already exist as concrete, typed content on generated documents, so this work consumes a settled shape rather than negotiating a new one.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "The review pane's existing read path is workflow.pending plus workflow.artifactContent, returning an ArtifactReviewView carrying artifactId, kind, renderedMarkdown, openQuestions and approvable. It carries the document body as a verbatim markdown string but NO companion references and no structured body - sufficient for S001/S002, insufficient for S003/S004. This Epic therefore EXTENDS that existing response ADDITIVELY with the companion references already on disk; it introduces no new IPC method and no second read surface.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "A generated document names its companions through an explicit reference record rather than embedding them: CompanionArtifactRef, carrying kind, relPath, title and an optional ofSectionId, where relPath points at a companion FILE that is a sibling of the artifact .md. CompanionKind is a closed three-member union - diagram-mermaid, diagram-html and ux-mock - of which only diagram-mermaid and ux-mock are produced today; diagram-html is declared but reserved/deferred.",
+        "confidence": "high",
+        "source": "c11"
+      },
+      {
+        "text": "The VS Code review surface already lists pending documents and carries the read-and-approve path, so this work extends a shipped surface rather than introducing one.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "The surface's rendering discipline is fixed and enforced by its own contract test (docs-review-panel.test.ts:243 asserts no innerHTML on that surface). Richer rendering must either satisfy that discipline as it stands, or adopt the marked+guardMd pattern already sanctioned on the chat surface — in which case the contract test must be updated deliberately, as part of the same change, per k1. The discipline is never relaxed incidentally.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The VS Code plugin ALREADY ships a full GFM markdown renderer: marked v4.3.0 is a runtime dependency (vscode-plugin/package.json), vendored as the MARKED_SRC string in vscode-plugin/src/chat/webview-marked.ts so the CSP-locked webview needs no network fetch, and used by the chat surface at vscode-plugin/src/chat/render-registry.ts:228 via marked.parse(...) plus the guardMd sanitiser (:217-220), with a textContent fallback on throw. S001 REUSES that existing renderer rather than building or extracting one. The JetBrains hand-rolled markdown-renderer.js is explicitly NOT the reuse target - render-registry.ts:210-211 records that marked replaced this plugin's own incomplete hand-rolled parser, so adopting a conservative-subset parser would regress it. Diagram and UX-mock rendering remain net-new here.",
+        "confidence": "high",
+        "source": "c10"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Rendered content must stay within the surface's existing single-nonce, strict-CSP discipline. Ad-hoc unsanitised HTML injection is forbidden; the sanctioned route is the pattern already shipped in this plugin - a vendored library render followed by the guardMd scrub and a textContent fallback on failure (vscode-plugin/src/chat/render-registry.ts:217-229). The docs-review surface's own contract test currently asserts no innerHTML at all, so adopting that pattern on that surface is an explicit, deliberate HLD decision that must update the contract test - never an incidental relaxation.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k2",
+        "text": "The review surface must obtain documents and companions through the existing workflow.pending / workflow.artifactContent read path over the shared client. That response may be EXTENDED ADDITIVELY, by adding optional fields to ArtifactReviewView, to carry companion references; no new IPC method or parallel read surface may be introduced, and existing consumers must keep working unchanged.",
+        "type": "contract",
+        "source": "c7"
+      },
+      {
+        "id": "k3",
+        "text": "A visual companion is displayed only when the document actually carries one; the surface must never fabricate, request, or reserve space for an absent companion.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k4",
+        "text": "The document body remains the authoritative content and a companion is always shown as a referenced adjunct to it, never as a replacement for the body.",
+        "type": "stakeholder",
+        "source": "c3"
+      },
+      {
+        "id": "k5",
+        "text": "The functional record as displayed must preserve each requirement's identity exactly as the document carries it, so the displayed outcome can be traced to the same requirement at every other stage.",
+        "type": "invariant",
+        "source": "c8"
+      },
+      {
+        "id": "k6",
+        "text": "All rendering runs locally within the editor; no document or companion content may be sent to an external service to be rendered.",
+        "type": "convention",
+        "source": "c9"
+      },
+      {
+        "id": "k7",
+        "text": "The work is confined to the VS Code plugin and the daemon response it reads, and is enforced as an HLD-OWNED architectural boundary rather than by any single Story's acceptance criteria. The HLD must carry an explicit check for both obligations: (1) no generation-side document or companion contract is altered; (2) the ArtifactReviewView change is additive only, so existing consumers - including the JetBrains review panel - keep working unchanged.",
+        "type": "contract",
+        "source": "c5"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Read a generated document in the editor as a structured, navigable document",
+        "userValue": "A reviewer opens a pending document in VS Code and reads it the way it was written to be read — headings, sections and emphasis intact, with a way to jump to the part they care about — instead of scrolling a wall of flat text.",
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c1",
+          "c2",
+          "c7",
+          "c10"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A reviewer viewing a generated document sees its structural elements presented distinctly rather than as uniform plain text.",
+            "rationale": "The body was deliberately reshaped for human reading; showing it flat discards that work."
+          },
+          {
+            "statement": "A reviewer can move directly to a chosen section of a document without scrolling through the sections before it.",
+            "rationale": "Navigability is what makes a long review document usable at the gate."
+          },
+          {
+            "statement": "A document whose content cannot be presented as structured is still shown in full as readable text rather than failing to open.",
+            "rationale": "A reviewer must never be blocked from reading a pending document by a presentation problem."
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The reviewer's existing ability to list pending documents and complete the read-and-approve path must remain available and unchanged in behaviour throughout this Story.",
+            "type": "contract",
+            "source": "c1"
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a pending generated document whose body carries structural elements such as headings, lists and emphasis",
+            "when": "a reviewer opens it in the editor's review surface",
+            "then": "those elements are presented visually distinctly from one another, so the document reads as a structured document rather than as uniform plain text",
+            "operationalizes": [
+              "k1",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an opened document containing multiple sections",
+            "when": "the reviewer chooses one of its sections from the surface",
+            "then": "the view moves directly to that section without the reviewer scrolling through the intervening content",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a document whose content is malformed or cannot be presented as a structured document",
+            "when": "the reviewer opens it",
+            "then": "the full content is still shown as readable text and the reviewer is told the structured presentation was unavailable, rather than the surface showing nothing or refusing to open",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "any document opened through this surface",
+            "when": "its content is presented",
+            "then": "the content is constructed within the surface's existing content-security discipline and is obtained through the already-available artifact read path, with no new server-side capability introduced",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a reviewer reading an opened document",
+            "when": "they act to approve it",
+            "then": "the existing approval path completes exactly as it did before this Story",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "See a document's functional commitments as discrete, identified, traceable outcomes",
+        "userValue": "A reviewer — including a non-technical one — can see exactly which outcomes the work commits to, read them one at a time with their identifiers, and recognise the same outcome when it reappears in a later document.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c8"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A reviewer sees each of a document's functional requirements as a separate, individually readable item.",
+            "rationale": "A reviewer cannot check off or object to a specific commitment that is buried inside a paragraph."
+          },
+          {
+            "statement": "Each displayed functional requirement shows the identifier the document assigns it, unchanged.",
+            "rationale": "The identifier is what lets the same commitment be recognised across stages and checked at completion."
+          },
+          {
+            "statement": "A document that carries no functional requirements shows no functional-requirements area at all.",
+            "rationale": "An empty section implies something is missing rather than that none were applicable."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a document carrying a set of functional requirements",
+            "when": "a reviewer opens it",
+            "then": "each requirement is presented as its own discrete item, visually separated from the others and from the surrounding prose",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a displayed functional requirement",
+            "when": "the reviewer reads it",
+            "then": "the identifier the document assigns that requirement is shown alongside it, character-for-character as the document carries it",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an upstream and a downstream document that both carry the same functional requirement",
+            "when": "the reviewer opens each in turn",
+            "then": "the requirement appears under the same identifier in both, so the reviewer can recognise it as the same commitment",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a document that carries no functional requirements",
+            "when": "the reviewer opens it",
+            "then": "no functional-requirements area is shown at all, rather than an empty or placeholder one",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "See a document's design diagram where the document carries one",
+        "userValue": "When a design's data shape or structure was judged clearer shown than described, the reviewer sees that diagram while reading the design it belongs to, instead of approving a structure they cannot picture.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c5",
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A reviewer viewing a document that carries a design diagram sees that diagram rendered as a visual, next to the part of the document it depicts.",
+            "rationale": "The diagram exists only because the content was judged clearer shown than described."
+          },
+          {
+            "statement": "A reviewer viewing a document that carries no design diagram sees no diagram area.",
+            "rationale": "Diagrams are content-gated; a reserved slot would reintroduce the noise the gating prevents."
+          },
+          {
+            "statement": "A reviewer is told when a document's diagram exists but cannot be displayed.",
+            "rationale": "A silent omission is indistinguishable from a document that legitimately has no diagram."
+          },
+          {
+            "statement": "The document body remains fully readable whether or not a diagram is shown.",
+            "rationale": "The body is the authoritative content; the diagram is an adjunct to it."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a document that references a design diagram companion",
+            "when": "a reviewer opens the document",
+            "then": "the diagram is resolved from that reference and displayed as a visual within the surface, positioned with the part of the document that references it",
+            "operationalizes": [
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a document that references no design diagram companion",
+            "when": "the reviewer opens it",
+            "then": "no diagram area, placeholder or empty frame is shown, and no attempt is made to obtain a diagram",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a document that references a design diagram whose companion is missing, unreadable, or fails to render",
+            "when": "the reviewer opens it",
+            "then": "the surface states that a diagram was referenced but could not be shown, and the document body remains fully readable",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a diagram being displayed",
+            "when": "it is produced for display",
+            "then": "it is rendered entirely within the editor from content obtained through the existing artifact read path, with no content sent to any external service and no raw markup injected",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "CompanionKind is a closed three-member union - diagram-mermaid, diagram-html and ux-mock. This Story renders diagram-mermaid; the declared-but-unproduced diagram-html must route to this Story's referenced-but-could-not-be-shown path (ac3) rather than falling through silently, so no companion kind can ever render as nothing.",
+            "type": "contract",
+            "source": "c11"
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "See the intended user experience where a document carries an experience mock",
+        "userValue": "When a piece of work has a user-facing surface, the reviewer can see the experience it is meant to deliver while reading the design that must honour it, rather than approving a design against an experience they have never seen.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s3"
+        ],
+        "existingCapabilityRefs": [
+          "c5"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A reviewer viewing a document that carries an experience mock sees that mock displayed as a visual representation of the intended user-facing experience.",
+            "rationale": "The reviewer is being asked to approve a design against an agreed experience; they must be able to see it."
+          },
+          {
+            "statement": "A reviewer can tell the experience mock apart from a design diagram when a document carries both.",
+            "rationale": "The two answer different questions and conflating them would mislead the reviewer about what they are approving."
+          },
+          {
+            "statement": "A reviewer viewing a document with no experience mock sees no experience area.",
+            "rationale": "Only work with a user-facing surface carries a mock; a reserved slot would imply one is missing."
+          },
+          {
+            "statement": "A reviewer is told when an experience mock exists but cannot be displayed.",
+            "rationale": "Silently showing nothing would let a reviewer approve believing no experience was specified."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a document that references an experience mock companion",
+            "when": "a reviewer opens the document",
+            "then": "the mock is resolved from that reference and displayed as a visual representation of the intended experience, alongside the design that must honour it",
+            "operationalizes": [
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a document that carries both a design diagram and an experience mock",
+            "when": "the reviewer opens it",
+            "then": "both are shown and each is labelled so the reviewer can tell which is the structural diagram and which is the intended experience",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a document that references no experience mock",
+            "when": "the reviewer opens it",
+            "then": "no experience area, placeholder or empty frame is shown, and no attempt is made to obtain a mock",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a document that references an experience mock whose companion is missing, unreadable, or fails to render",
+            "when": "the reviewer opens it",
+            "then": "the surface states that an experience mock was referenced but could not be shown, and the document body remains fully readable",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "an experience mock being displayed",
+            "when": "it is produced for display",
+            "then": "it is rendered entirely within the editor from content obtained through the existing artifact read path, within the surface's content-security discipline and with no content sent to any external service",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          }
+        ]
+      }
+    ],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20260929bfe98ff7:FR001",
+          "statement": "A reviewer opening a generated workflow document in VS Code sees its functional requirements as discrete, individually identified outcomes rather than undifferentiated prose.",
+          "scope": "doc",
+          "rationale": "The functional record is the part a non-implementer reviewer is least able to reconstruct from flat text, and it is the thread the workflow later checks completion against."
+        },
+        {
+          "id": "E20260929bfe98ff7:FR002",
+          "statement": "A reviewer can navigate a generated document by its structure rather than scrolling its full length.",
+          "scope": "doc",
+          "rationale": "The documents were deliberately reshaped for human reading; a flat rendering discards that work and returns the reviewer to the original problem."
+        },
+        {
+          "id": "E20260929bfe98ff7:FR003",
+          "statement": "When a document carries a visual companion, the reviewer sees that visual alongside the part of the design it depicts, without leaving the editor.",
+          "scope": "doc",
+          "rationale": "A companion exists only because the content was judged clearer shown than described; not showing it withholds exactly the content that was meant to carry the decision."
+        },
+        {
+          "id": "E20260929bfe98ff7:FR004",
+          "statement": "When a document carries no visual companion, the reviewer's surface shows no empty or placeholder visual area.",
+          "scope": "doc",
+          "rationale": "Companions are content-gated by design; manufacturing a slot for an absent visual would reintroduce the noise the gating exists to prevent."
+        },
+        {
+          "id": "E20260929bfe98ff7:FR005",
+          "statement": "A reviewer can tell, from the surface itself, when a document's companion cannot be shown, instead of silently seeing nothing.",
+          "scope": "doc",
+          "rationale": "A silent omission is indistinguishable from a document that legitimately has no companion, which would let a reviewer approve believing they saw everything."
+        },
+        {
+          "id": "E20260929bfe98ff7:FR006",
+          "statement": "The reviewer can still complete the existing read-and-approve path for a document whose richer content is present.",
+          "scope": "doc",
+          "rationale": "The surface's existing purpose is the approval gate; richer rendering must extend that path rather than displace it."
+        },
+        {
+          "id": "E20260929bfe98ff7:S001:FR001",
+          "statement": "A reviewer viewing a generated document sees its structural elements presented distinctly rather than as uniform plain text.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "The body was deliberately reshaped for human reading; showing it flat discards that work."
+        },
+        {
+          "id": "E20260929bfe98ff7:S001:FR002",
+          "statement": "A reviewer can move directly to a chosen section of a document without scrolling through the sections before it.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Navigability is what makes a long review document usable at the gate."
+        },
+        {
+          "id": "E20260929bfe98ff7:S001:FR003",
+          "statement": "A document whose content cannot be presented as structured is still shown in full as readable text rather than failing to open.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "A reviewer must never be blocked from reading a pending document by a presentation problem."
+        },
+        {
+          "id": "E20260929bfe98ff7:S002:FR001",
+          "statement": "A reviewer sees each of a document's functional requirements as a separate, individually readable item.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "A reviewer cannot check off or object to a specific commitment that is buried inside a paragraph."
+        },
+        {
+          "id": "E20260929bfe98ff7:S002:FR002",
+          "statement": "Each displayed functional requirement shows the identifier the document assigns it, unchanged.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "The identifier is what lets the same commitment be recognised across stages and checked at completion."
+        },
+        {
+          "id": "E20260929bfe98ff7:S002:FR003",
+          "statement": "A document that carries no functional requirements shows no functional-requirements area at all.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "An empty section implies something is missing rather than that none were applicable."
+        },
+        {
+          "id": "E20260929bfe98ff7:S003:FR001",
+          "statement": "A reviewer viewing a document that carries a design diagram sees that diagram rendered as a visual, next to the part of the document it depicts.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "The diagram exists only because the content was judged clearer shown than described."
+        },
+        {
+          "id": "E20260929bfe98ff7:S003:FR002",
+          "statement": "A reviewer viewing a document that carries no design diagram sees no diagram area.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "Diagrams are content-gated; a reserved slot would reintroduce the noise the gating prevents."
+        },
+        {
+          "id": "E20260929bfe98ff7:S003:FR003",
+          "statement": "A reviewer is told when a document's diagram exists but cannot be displayed.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "A silent omission is indistinguishable from a document that legitimately has no diagram."
+        },
+        {
+          "id": "E20260929bfe98ff7:S003:FR004",
+          "statement": "The document body remains fully readable whether or not a diagram is shown.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "The body is the authoritative content; the diagram is an adjunct to it."
+        },
+        {
+          "id": "E20260929bfe98ff7:S004:FR001",
+          "statement": "A reviewer viewing a document that carries an experience mock sees that mock displayed as a visual representation of the intended user-facing experience.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "The reviewer is being asked to approve a design against an agreed experience; they must be able to see it."
+        },
+        {
+          "id": "E20260929bfe98ff7:S004:FR002",
+          "statement": "A reviewer can tell the experience mock apart from a design diagram when a document carries both.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "The two answer different questions and conflating them would mislead the reviewer about what they are approving."
+        },
+        {
+          "id": "E20260929bfe98ff7:S004:FR003",
+          "statement": "A reviewer viewing a document with no experience mock sees no experience area.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Only work with a user-facing surface carries a mock; a reserved slot would imply one is missing."
+        },
+        {
+          "id": "E20260929bfe98ff7:S004:FR004",
+          "statement": "A reviewer is told when an experience mock exists but cannot be displayed.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Silently showing nothing would let a reviewer approve believing no experience was specified."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:49",
+      "quotedText": "createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost — the single injectable host factory (lines 49-279); the plugin's entire artifact-document surface, 13262 bytes, 3 exports."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:243",
+      "quotedText": "rendered shell: one nonce, strict CSP, docs-review surface, no innerHTML"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/make-workflow-framework-s-generated-artifact-E20260927c5824e17/DEF.md (k1, k6)",
+      "quotedText": "The core document body of every artifact type must remain well-structured markdown; any visual (UML/Mermaid or UX/HTML) is a separate companion artifact referenced from the markdown, never inlined into the core body. ... The change is forward-only: it applies to newly generated artifacts and does not migrate or rewrite artifacts already on disk."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/make-workflow-framework-s-generated-artifact-E20260927c5824e17/DEF.md (k3)",
+      "quotedText": "Diagram inclusion is content-gated — the document flow must assess per-document whether a diagram is genuinely useful and only then generate one; diagrams are never mandatory."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:119 + src/workflow/artifacts/companion/er.ts:51",
+      "quotedText": "UxDefinition (interface, ux.ts:119-123) and ErDefinition (interface, er.ts:51-54) — the two companion types generated documents carry."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/index.ts - workflow.artifactContent (ArtifactReviewView at src/workflow/artifact-content.ts:45) + workflow.pending",
+      "quotedText": "ArtifactReviewView carries artifactId, kind, renderedMarkdown, openQuestions, approvable and an optional blockReason - the review pane's actual read surface, reached as workflow.artifactContent with an mdPath, plus workflow.pending, per vscode-plugin/src/chat/docs-review-client.ts. It returns the .md verbatim as a string and carries NO companions array, no erDefinition, no uxDefinition and no functionalDefinition. Note: artifact.get at index.ts:1130 is the session/skill-output store reached by artifactId - NOT this path."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts:110",
+      "quotedText": "the client is built over the shared daemon IPC client (no new capability, k5)"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/functional-definition.ts:26",
+      "quotedText": "FunctionalRequirement (interface, lines 26-35) and FunctionalDefinition (interface, lines 38-40), with FrId and validateFunctionalDefinition — the structured functional record carried on generated documents."
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "CLAUDE.md — project principles",
+      "quotedText": "No direct cloud REST calls from our process. Cloud LLM access happens through the locally-installed claude and codex CLI binaries (via CliProvider)."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/render-registry.ts:228 + vscode-plugin/src/chat/webview-marked.ts + vscode-plugin/package.json",
+      "quotedText": "div.innerHTML=(typeof marked!=='undefined'&&marked&&marked.parse)?marked.parse(src,...):src;guardMd(div); - the chat surface's shipped render path. marked v4.3.0 is a runtime dependency, vendored as MARKED_SRC for the CSP-locked webview. render-registry.ts:210-211: marked replaced 'the incomplete hand-rolled parser'; :221-222: 'k1 relaxed to a library render, kept safe by marked's escaping + the CSP + guardMd'."
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/types.ts",
+      "quotedText": "CompanionArtifactRef — the markdown-to-companion reference record a client resolves to locate a companion."
+    }
+  ]
+}

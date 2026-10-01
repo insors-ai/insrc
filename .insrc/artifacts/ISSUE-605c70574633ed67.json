@@ -20,7 +20,11 @@
     "issueHash": "605c70574633ed67",
     "epicSlug": "bug-docs-review-pane-s-opendoc",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-01T11:43:05.812Z",
+    "parentRef": {
+      "slug": "bug-docs-review-pane-s-opendoc"
+    }
   },
   "body": {
     "title": "Opening two documents quickly can display the wrong one in the docs-review pane",

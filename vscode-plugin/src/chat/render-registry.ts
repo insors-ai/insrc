@@ -300,7 +300,13 @@ export function renderRegistryWebviewSource(): string {
     `var wrap=line('');wrap.textContent='';wrap.className='insrc-msg insrc-msg--'+role;` +
     `wrap.appendChild(role==='user'?whoRow('user','\\u276f','you'):whoRow('assistant','\\u25c6','claude'));` +
     `var bubble=document.createElement('div');bubble.className='insrc-bubble insrc-bubble--'+role;` +
-    `var content=inner||null;var longMsg=isLong(raw);` +
+    // ISSUE-b1c7c1bc: the ASSISTANT row is never default-collapsed, however long it runs (S001 ac3:
+    // 'the assistant-text renderer is NOT default-collapsed (rendered in full)'). Collapsing is a
+    // TOOL-output affordance — it exists so long command output can't bury the conversation — and
+    // burying the model's own answer behind a chevron was never its job. The user row keeps
+    // collapsing when long (a deliberate narrowing: long pastes stay previewable). host.collapsible
+    // itself is untouched and still serves tool-command, tool-result and caption rows.
+    `var content=inner||null;var longMsg=isLong(raw)&&role!=='assistant';` +
     `if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +
     `else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +
     `else{bubble.textContent=raw;}` +

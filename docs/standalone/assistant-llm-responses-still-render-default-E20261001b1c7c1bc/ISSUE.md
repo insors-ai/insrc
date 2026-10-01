@@ -1,0 +1,46 @@
+<!-- insrc:artifact ISSUE-b1c7c1bc57962e97 -->
+
+# Long assistant (LLM) responses still render collapsed to a 3-line preview, against the accepted criterion
+
+## Reproduction
+
+Steps: (1) Open the insrc dev-chat view. (2) Ask anything whose answer runs past three lines (or past ~240 characters) — most substantive answers qualify. (3) Watch the assistant message land.
+
+Observed: the answer renders as a three-line preview behind a collapsed chevron. Reading it requires a click, on every long reply.
+
+Expected: the assistant's own output always renders in full, never collapsed. Collapsing is meant to be a TOOL-output affordance only — it exists so long command output cannot bury the conversation — and was never meant to apply to the model's own prose.
+
+A short assistant reply behaves correctly and always has, which is why the defect is easy to miss in a quick check: the collapse only engages past the length threshold.
+
+## Root cause
+
+The row builder shared by both message roles makes its collapse decision from message length alone and never consults the role. It measures the raw text with the 'is this long' helper — more than three newlines, or more than 240 characters — and, when that is true, wraps the row's content in the shared collapse primitive with the default-collapsed option set. The user row and the assistant row are both registered against that same builder, so the assistant inherits the tool-style treatment.
+
+This is a criterion that was accepted but never implemented, rather than a regression. The owning story states it three separate times: as acceptance criterion ac3, 'assistant-text renderer is NOT default-collapsed (rendered in full)'; as a local constraint, 'Assistant/non-tool rows are never default-collapsed; only the tool-result output sub-element is wrapped in host.collapsible(defaultCollapsed:true)'; and as a named edge case, 'An assistant text response of many lines — Rendered in full, never default-collapsed (ac3)'. The story's own summary likewise promises 'Assistant (non-tool) text keeps rendering in full, never collapsed.' The shared row builder was nevertheless left untouched, so none of that reached the product.
+
+It survived review and sign-off because the test written for the criterion cannot fail. That test renders an assistant row whose text is 'a concise answer' — sixteen characters on one line — and then asserts that no collapse wrapper is present. For that input the length check is false, so the collapse branch is never taken and the assertion holds no matter what the builder does. The test title concedes the gap in its own words ('a short assistant row'), while the criterion it is filed under says never. A test that proves the uncollapsed case for input that was never collapsed is evidence of nothing.
+
+## Fix intent
+
+Make the assistant's own output exempt from default collapsing, so a reply of any length renders in full and needs no click to read. The collapse affordance itself is not being removed or weakened — it keeps serving tool output, tool results and long commands exactly as it does today, which is the role it was introduced for.
+
+Scope call, stated rather than left implicit: this covers the ASSISTANT row only. The reported defect, and the criterion's literal subject, are the model's output; the owning story's local constraint used the broader phrase 'Assistant/non-tool rows', which would also sweep in the user's own messages. Long pasted user messages will therefore keep collapsing. That is a deliberate narrowing, not an oversight, and is recorded here so a later reader does not mistake it for incomplete work.
+
+The test must be corrected as part of the fix, not after it. Coverage has to exercise a message the length check actually classifies as long — otherwise the criterion stays unverified in precisely the way that let this ship. The correction should also keep proving that tool rows still collapse, so the narrowing cannot silently disable the affordance it is carving the assistant out of.
+
+## Citations
+
+- **[[c1]]** `code` `vscode-plugin/src/chat/render-registry.ts:303` — "`var content=inner||null;var longMsg=isLong(raw);` +"
+- **[[c2]]** `code` `vscode-plugin/src/chat/render-registry.ts:304` — "`if(content){bubble.appendChild(longMsg?host.collapsible(content,{defaultCollapsed:true}):content);}` +"
+- **[[c3]]** `code` `vscode-plugin/src/chat/render-registry.ts:305` — "`else if(longMsg){var c=document.createElement('div');c.textContent=raw;bubble.appendChild(host.collapsible(c,{defaultCollapsed:true}));}` +"
+- **[[c4]]** `code` `vscode-plugin/src/chat/render-registry.ts:285` — "`function isLong(s){s=s||'';return s.split('\n').length>3||s.length>240;}` +"
+- **[[c5]]** `code` `vscode-plugin/src/chat/render-registry.ts:374` — "`register('assistant-text',function(vm,host){return msgRow(vm,host,'assistant',renderAssistantMd(vm&&vm.text));});` +"
+- **[[c6]]** `code` `vscode-plugin/src/chat/render-registry.ts:373` — "`register('user',function(vm,host){PEND=[];return msgRow(vm,host,'user');});` +"
+- **[[c7]]** `code` `vscode-plugin/src/chat/render-registry.ts:298` — "`function msgRow(vm,host,role,inner){` +"
+- **[[c8]]** `code` `vscode-plugin/src/chat/__tests__/render-registry.test.ts:472` — "test('S001 (ux polish): assistant (non-tool) text is NEVER default-collapsed — a short assistant row renders in full, uncollapsed', () => {"
+- **[[c9]]** `code` `vscode-plugin/src/chat/__tests__/render-registry.test.ts:474` — "const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'a concise answer', collapsible: true })!;"
+- **[[c10]]** `prior-artifact` `docs/epics/vs-code-dev-chat-ux-polish-E202609298e8859ca/S001/LLD.md:105` — "ac1 command/separator/output; ac2 output default-collapsed to ~3 lines, expandable/re-collapsible via the chevron. The assistant-text renderer is NOT default-collapsed (ac3)."
+- **[[c11]]** `prior-artifact` `docs/epics/vs-code-dev-chat-ux-polish-E202609298e8859ca/S001/LLD.md:223` — "Assistant/non-tool rows are never default-collapsed; only the tool-result output sub-element is wrapped in host.collapsible(defaultCollapsed:true) (ac3)."
+- **[[c12]]** `prior-artifact` `docs/epics/vs-code-dev-chat-ux-polish-E202609298e8859ca/S001/LLD.md:213` — "An assistant text response of many lines. | Rendered in full, never default-collapsed (ac3) — the assistant-text renderer is not wrapped in collapsible(defaultCollapsed:true)."
+- **[[c13]]** `stakeholder` `Dev-chat UX feedback ledger, item #5 (user's own wording)` — "LLM (assistant) output is NEVER collapsed — scopes item #1. … The LLM's own assistant text/message output (assistant-delta) must always render FULLY EXPANDED, never collapsed. So the collapse widget i"
+- **[[c14]]** `stakeholder` `User report, 2026-10-01` — "there was another issue that was supposed to have been fixed, the LLM response should not be collapsed by default. but looks like it is still collapsed."

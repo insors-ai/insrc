@@ -342,10 +342,15 @@ test('S003 ac1: the user and assistant-text renderers emit distinct role tones',
   assert.notEqual(u!.className, a!.className, 'the two roles are visually distinct');
 });
 
-test('S003 ac2: a >3-line message is wrapped in the collapse primitive (default-collapsed); a short one is not', () => {
+// ISSUE-b1c7c1bc: this case originally used an ASSISTANT row, which directly contradicted S001 ac3
+// ('the assistant-text renderer is NOT default-collapsed'). Both criteria were accepted and both
+// tests passed — only because ac3's test used a SHORT message and so never exercised the conflict.
+// ac3 supersedes for the assistant; the long-message collapse behaviour asserted here is real and
+// still owned by the USER row, so the case is retargeted rather than deleted.
+test('S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not', () => {
   const { reg } = makeRegistry();
   const longText = 'l1\nl2\nl3\nl4\nl5';
-  const longRow = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: longText, collapsible: true });
+  const longRow = reg.renderRow({ kind: 'user', role: 'user', text: longText, collapsible: true });
   // S001 (bugfix): the collapse now lives inside the .insrc-bubble, not as a direct child of the row.
   const wrap = findByClass(longRow!, 'insrc-collapse');
   assert.ok(wrap, 'a long message is wrapped in the collapse primitive');
@@ -469,11 +474,47 @@ test('S001 (ux polish): a command-less tool-result renders no command line but s
   assert.ok(allText(row).includes('just output'), 'the output text is present');
 });
 
-test('S001 (ux polish): assistant (non-tool) text is NEVER default-collapsed — a short assistant row renders in full, uncollapsed', () => {
+// ISSUE-b1c7c1bc: this test replaces one that rendered a 16-character assistant message. isLong()
+// is false for that, so the collapse branch was unreachable and the assertion could not fail — the
+// criterion read 'NEVER collapsed' while only the short case was ever proven, and long answers
+// shipped collapsed for two releases. Every case below is now LONG by isLong()'s own definition
+// (>3 newlines or >240 chars), and the tool case guards the other side: exempting the assistant
+// must not quietly disable the collapse affordance that tool output depends on.
+const LONG_LINES = 'line one\nline two\nline three\nline four\nline five';
+const LONG_CHARS = 'x'.repeat(300);
+
+test('S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines', () => {
+  const { reg } = makeRegistry();
+  assert.ok(LONG_LINES.split('\n').length > 3, 'precondition: isLong() classifies this as long (>3 lines)');
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: LONG_LINES, collapsible: true })!;
+  assert.ok(!findByClass(row, 'insrc-collapse'), 'a multi-line assistant message is not wrapped in the collapse primitive');
+  assert.ok(mdText(row).includes('line five'), 'the whole answer renders, down to the last line');
+});
+
+test('S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line', () => {
+  const { reg } = makeRegistry();
+  assert.ok(LONG_CHARS.length > 240, 'precondition: isLong() classifies this as long (>240 chars)');
+  const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: LONG_CHARS, collapsible: true })!;
+  assert.ok(!findByClass(row, 'insrc-collapse'), 'a long single-line assistant message is not wrapped in the collapse primitive');
+  assert.ok(mdText(row).includes(LONG_CHARS), 'the full text renders');
+});
+
+test('S001 (ux polish): a short assistant row still renders in full, uncollapsed', () => {
   const { reg } = makeRegistry();
   const row = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'a concise answer', collapsible: true })!;
   assert.ok(!findByClass(row, 'insrc-collapse'), 'a short assistant message is not wrapped in the collapse primitive');
   assert.ok(mdText(row).includes('a concise answer'), 'the assistant text renders in full');
+});
+
+test('ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows', () => {
+  const { reg } = makeRegistry();
+  // Same LONG input, tool side: a long command must still collapse via the sc1 chevron. If this ever
+  // goes green-by-vacuity too, the affordance has been lost rather than scoped.
+  const toolRow = reg.renderRow({ kind: 'tool-command', text: LONG_LINES, collapsible: false })!;
+  assert.ok(findByClass(toolRow, 'insrc-collapse'), 'a long tool command is still wrapped in the collapse primitive');
+  // And a long USER row keeps collapsing — the narrowing is assistant-only, by design (see the ISSUE).
+  const userRow = reg.renderRow({ kind: 'user', role: 'user', text: LONG_LINES, collapsible: true })!;
+  assert.ok(findByClass(userRow, 'insrc-collapse'), 'a long user message still collapses (deliberate scope)');
 });
 
 // ---- S004 t6: the approval-card renderer -------------------------------------

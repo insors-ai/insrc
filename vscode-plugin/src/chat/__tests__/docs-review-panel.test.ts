@@ -979,6 +979,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       wrote a figure from memory, and both had to be corrected. The delta covers
  *       the source string AND the diagram's CSS fragment: SVG does not inherit a
  *       font colour, so an unstyled box paints black and hides its own labels.
+ *   S003/t5 (+4602 chars, +4602 bytes): the call-sequence derivation and its
+ *       renderer on t4's SVG primitives, plus the lifeline / message / note
+ *       styles. Still INERT. Computed at the fixed nonce, never typed.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -992,9 +995,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  72884,
-  bytes:  72934,
-  sha256: 'a9b6de08f20390bbf89b2f6f02f055074d10c4cf4a952d72993f55a25c025489',
+  chars:  77486,
+  bytes:  77536,
+  sha256: '45b72198708747cbb2f1267a2a1c8dec1fbdeb560ceb26185f501d35a8313403',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -2453,7 +2456,9 @@ function dgNode(tag: string, ns: string | null): DgNode {
 interface DgApi {
   dgDeriveEr(rec: unknown): { nodes: { id: string; attrs: { name: string; range: string; dangling: boolean }[] }[]; edges: { id: string; from: string; to: string; label: string; token: string }[] } | null;
   dgRenderEr(rec: unknown): { el: DgNode } | null;
-  dgBuildDiagramSlot(record: unknown, ref: unknown, anchorSlug: string | undefined): Record<string, unknown>;
+  dgBuildDiagramSlot(records: unknown, ref: unknown, anchorSlug: string | undefined): Record<string, unknown>;
+  dgDeriveSeq(rec: unknown): { nodes: { id: string; label: string }[]; edges: { id: string; from: string; to: string; index: number; kind: string; label: string; note: string }[]; truncations: { at: string; note: string }[] } | null;
+  dgRenderSeq(rec: unknown): { el: DgNode } | null;
   dgCrowsFoot(slot: unknown): string;
   created: DgNode[];
   createdHtml: string[];
@@ -2470,7 +2475,7 @@ function loadDg(): DgApi {
     createElement: (t: string) => { createdHtml.push(t); return dgNode(t, null); },
   };
   // eslint-disable-next-line no-new-func
-  const make = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return {dgDeriveEr:dgDeriveEr,dgRenderEr:dgRenderEr,dgBuildDiagramSlot:dgBuildDiagramSlot,dgCrowsFoot:dgCrowsFoot};`);
+  const make = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return {dgDeriveEr:dgDeriveEr,dgRenderEr:dgRenderEr,dgBuildDiagramSlot:dgBuildDiagramSlot,dgCrowsFoot:dgCrowsFoot,dgDeriveSeq:dgDeriveSeq,dgRenderSeq:dgRenderSeq};`);
   const api = make(doc) as Omit<DgApi, 'created' | 'createdHtml'>;
   return { ...api, created, createdHtml };
 }
@@ -2682,24 +2687,24 @@ test('t4 gate: the four-combination table, asserted through the discriminator AN
   const REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
 
   // ref absent + record absent -> absent
-  const a = dg.dgBuildDiagramSlot(undefined, undefined, undefined);
+  const a = dg.dgBuildDiagramSlot({}, undefined, undefined);
   assert.equal(a['state'], 'absent');
   assert.deepEqual(Object.keys(a), ['state'], 'the absent state carries nothing else');
 
   // ref present + record present -> rendered
-  const b = dg.dgBuildDiagramSlot(REC, REF, undefined);
+  const b = dg.dgBuildDiagramSlot({ erDefinition: REC }, REF, undefined);
   assert.equal(b['state'], 'rendered');
   assert.equal(b['kind'], 'diagram');
   assert.ok(b['body'], 'a body was built');
 
   // ref present + record absent -> unshowable
-  const c = dg.dgBuildDiagramSlot(undefined, REF, undefined);
+  const c = dg.dgBuildDiagramSlot({}, REF, undefined);
   assert.equal(c['state'], 'unshowable');
   assert.match(String(c['reason']), /source record is not available/);
 
   // ref absent + record present -> RENDERED (the contested row, resolved at the
   // approval gate as record-gates-content: the design exists, so show it).
-  const d = dg.dgBuildDiagramSlot(REC, undefined, undefined);
+  const d = dg.dgBuildDiagramSlot({ erDefinition: REC }, undefined, undefined);
   assert.equal(d['state'], 'rendered', 'a record with no companion ref still draws');
   assert.equal('linkOut' in d, false, 'but offers no link, because there is no ref to link to');
 });
@@ -2707,7 +2712,7 @@ test('t4 gate: the four-combination table, asserted through the discriminator AN
 test('t4 gate: absent does ZERO DOM work — no element is created at all', () => {
   const dg = loadDg();
   const before = dg.created.length;
-  const slot = dg.dgBuildDiagramSlot(undefined, undefined, undefined);
+  const slot = dg.dgBuildDiagramSlot({}, undefined, undefined);
   assert.equal(slot['state'], 'absent');
   // ac2 proved as the ABSENCE OF ACTIVITY rather than the absence of something
   // visible — the gate returns before construction, so there is nothing to clean up
@@ -2717,7 +2722,7 @@ test('t4 gate: absent does ZERO DOM work — no element is created at all', () =
 
   // An empty record is absent too, matching the undefined-or-empty convention.
   for (const empty of [{ classes: {} }, { classes: null }, { classes: [] }, {}, null, 42, 'nope']) {
-    assert.equal(dg.dgBuildDiagramSlot(empty, undefined, undefined)['state'], 'absent', `${JSON.stringify(empty)} is absent`);
+    assert.equal(dg.dgBuildDiagramSlot({ erDefinition: empty }, undefined, undefined)['state'], 'absent', `${JSON.stringify(empty)} is absent`);
   }
   assert.equal(dg.created.length, before, 'still nothing created for any malformed record');
 });
@@ -2727,7 +2732,7 @@ test('t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES wha
   // The majority case today: 5 diagram refs against 2 erDefinitions, so most
   // diagram refs point at a record this factory cannot draw.
   const ref = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S002/sequence-diagram.html', title: 'Sequence diagram' };
-  const slot = dg.dgBuildDiagramSlot(undefined, ref, undefined);
+  const slot = dg.dgBuildDiagramSlot({}, ref, undefined);
   assert.equal(slot['state'], 'unshowable');
   assert.equal(slot['label'], 'Sequence diagram', 'the label is the REF\'s title — named, not generic');
   assert.match(String(slot['reason']), /source record is not available to this surface/);
@@ -2740,7 +2745,7 @@ test('t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a 
   const ref = { kind: 'diagram-html', relPath: 'docs/epics/x/S003/thing.html', title: 'Some diagram' };
   // Declared in the companion union and produced by NOTHING today. Routing it
   // explicitly is what stops a future producer turning it on and getting silence.
-  const slot = dg.dgBuildDiagramSlot({ classes: { A: {} } }, ref, undefined);
+  const slot = dg.dgBuildDiagramSlot({ erDefinition: { classes: { A: {} } } }, ref, undefined);
   assert.equal(slot['state'], 'unshowable', 'even with a record present');
   assert.match(String(slot['reason']), /diagram-html/, 'the reason names the kind');
   assert.ok(slot['linkOut'], 'and the authentic file is still reachable');
@@ -2757,7 +2762,7 @@ test('t4 gate: a ux-mock ref is not this factory\'s business — the experience 
   }) as (c: unknown) => unknown;
   assert.equal(dgApi(ux), undefined, 'a ux-mock ref is not a diagram ref');
   assert.equal(dgApi([{ kind: 'diagram-mermaid', relPath: 'a', title: 'b' }])?.constructor, Object);
-  assert.equal(dg.dgBuildDiagramSlot(undefined, undefined, undefined)['state'], 'absent');
+  assert.equal(dg.dgBuildDiagramSlot({}, undefined, undefined)['state'], 'absent');
 });
 
 test('t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one', () => {
@@ -2765,16 +2770,16 @@ test('t4 gate: linkOut is present on rendered AND unshowable whenever a ref exis
   const REC = { classes: { Order: { attributes: { id: { range: 'string' } } } } };
   const ref = { kind: 'diagram-mermaid', relPath: 'docs/x/er.html', title: 'Entity model' };
 
-  const rendered = dg.dgBuildDiagramSlot(REC, ref, undefined);
+  const rendered = dg.dgBuildDiagramSlot({ erDefinition: REC }, ref, undefined);
   assert.deepEqual(rendered['linkOut'], { relPath: 'docs/x/er.html', title: 'Entity model' });
-  const unshowable = dg.dgBuildDiagramSlot(undefined, ref, undefined);
+  const unshowable = dg.dgBuildDiagramSlot({}, ref, undefined);
   assert.deepEqual(unshowable['linkOut'], { relPath: 'docs/x/er.html', title: 'Entity model' });
 
   // No ref -> no link, as an ABSENT key rather than one holding undefined.
-  const noRef = dg.dgBuildDiagramSlot(REC, undefined, undefined);
+  const noRef = dg.dgBuildDiagramSlot({ erDefinition: REC }, undefined, undefined);
   assert.equal('linkOut' in noRef, false);
   // A ref with no usable path yields no link either, rather than an empty one.
-  const badRef = dg.dgBuildDiagramSlot(REC, { kind: 'diagram-mermaid', title: 'x' }, undefined);
+  const badRef = dg.dgBuildDiagramSlot({ erDefinition: REC }, { kind: 'diagram-mermaid', title: 'x' }, undefined);
   assert.equal('linkOut' in badRef, false);
 });
 
@@ -2839,4 +2844,214 @@ test('t4 layout: a box grows to fit its longest row rather than clipping it', ()
     Number(rect.attrs['width']) >= row.textContent.length * 6.75,
     `the box (${rect.attrs['width']}) must be wide enough for its longest row (${row.textContent.length} chars)`,
   );
+});
+
+// ---------------------------------------------------------------------------
+// S003/t5 — THE SEQUENCE DERIVATION, on t4's primitives.
+//
+// This is the half the amendment bought: 3 ledger bodies carry a
+// sequenceDefinition against 2 carrying an erDefinition, and this Epic's own S002
+// LLD is one of them. Its rules differ from the ER side in ways that matter —
+// participants keep DECLARED order, and a message's identity is its INDEX.
+// ---------------------------------------------------------------------------
+
+/** The real ledger sequence record: the document that motivated the amendment. */
+function realSeqRecord(): Record<string, unknown> {
+  const body = JSON.parse(
+    readFileSync(new URL('../../../../.insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json', import.meta.url), 'utf8'),
+  ).body;
+  const sq = body.sequenceDefinition;
+  assert.ok(sq && Array.isArray(sq.participants) && sq.participants.length > 0,
+    'the committed S002 LLD must still carry a real sequenceDefinition');
+  return sq;
+}
+
+test('t5 PARITY: the client sequence derivation matches sequenceDefinitionToIr, daemon as the authority', async () => {
+  const { sequenceDefinitionToIr } = await import('../../../../src/workflow/artifacts/companion/sequence.js');
+  const dg = loadDg();
+  const rec = realSeqRecord();
+
+  const ir = sequenceDefinitionToIr(rec as never);     // AUTHORITY
+  const mine = dg.dgDeriveSeq(rec)!;
+  assert.ok(mine, 'the client derived a model');
+
+  // Participants in DECLARED order — sorting them would destroy the story the
+  // diagram tells, which is the one difference from the ER rules that a shared
+  // implementation would most easily get wrong.
+  const irParticipants = ir.derived.nodes.filter((n) => n.kind === 'call-frame');
+  assert.deepEqual(mine.nodes.map((n) => n.id), irParticipants.map((n) => n.id), 'declared order, not sorted');
+  assert.deepEqual(mine.nodes.map((n) => n.label), irParticipants.map((n) => n.label), 'label falls back to id');
+
+  // Message identity is the INDEX, so two identical calls between one pair stay
+  // distinct — comparing the id set compares from, to, index and the repeat flag.
+  assert.deepEqual(mine.edges.map((e) => e.id), ir.derived.edges.map((e) => e.id), 'edge ids incl. index and :repeat');
+  assert.ok(mine.edges.length >= 10, 'the real record carries its full message list');
+});
+
+test('t5 PARITY: ordering, labels and the :repeat suffix over constructed shapes', async () => {
+  const { sequenceDefinitionToIr } = await import('../../../../src/workflow/artifacts/companion/sequence.js');
+  const dg = loadDg();
+  const fixtures: Record<string, unknown>[] = [
+    { participants: [{ id: 'a' }, { id: 'b' }], messages: [{ from: 'a', to: 'b', label: 'one' }, { from: 'b', to: 'a', label: 'two', kind: 'return' }] },
+    // two IDENTICAL calls: only the index keeps them apart
+    { participants: [{ id: 'a' }, { id: 'b' }], messages: [{ from: 'a', to: 'b', label: 'same' }, { from: 'a', to: 'b', label: 'same' }] },
+    // a recurse carries the :repeat suffix
+    { participants: [{ id: 'a' }], messages: [{ from: 'a', to: 'a', label: 'loop', kind: 'recurse' }] },
+    // declared order is deliberately NOT alphabetical
+    { participants: [{ id: 'zeta', label: 'Zeta' }, { id: 'alpha', label: 'Alpha' }], messages: [{ from: 'zeta', to: 'alpha', label: 'z->a' }] },
+    // a participant with no label falls back to its id
+    { participants: [{ id: 'bare' }, { id: 'x', label: '' }], messages: [] },
+  ];
+  for (const fx of fixtures) {
+    const ir = sequenceDefinitionToIr(fx as never);
+    const mine = dg.dgDeriveSeq(fx)!;
+    assert.deepEqual(mine.nodes.map((n) => n.id), ir.derived.nodes.filter((n) => n.kind === 'call-frame').map((n) => n.id));
+    assert.deepEqual(mine.nodes.map((n) => n.label), ir.derived.nodes.filter((n) => n.kind === 'call-frame').map((n) => n.label));
+    assert.deepEqual(mine.edges.map((e) => e.id), ir.derived.edges.map((e) => e.id));
+  }
+});
+
+test('t5: a message naming an undeclared participant is DROPPED, not fatal — the deliberate divergence', async () => {
+  const { sequenceDefinitionToIr, SequenceDefinitionError } = await import('../../../../src/workflow/artifacts/companion/sequence.js');
+  const dg = loadDg();
+  const rec = {
+    participants: [{ id: 'a' }, { id: 'b' }],
+    messages: [
+      { from: 'a', to: 'b', label: 'resolves' },
+      { from: 'a', to: 'ghost', label: 'dangles' },
+      { from: 'b', to: 'a', label: 'also resolves' },
+    ],
+  };
+  // The daemon rejects it — asserted, so the divergence is pinned on both sides.
+  assert.throws(() => sequenceDefinitionToIr(rec as never), SequenceDefinitionError);
+
+  const mine = dg.dgDeriveSeq(rec)!;
+  assert.deepEqual(mine.edges.map((e) => e.label), ['resolves', 'also resolves'],
+    'the dangling message is dropped and the rest survive');
+  // Index identity is preserved for the surviving messages, so the drop does not
+  // silently renumber the conversation.
+  assert.deepEqual(mine.edges.map((e) => e.index), [0, 2]);
+  assert.ok(dg.dgRenderSeq(rec), 'and it still draws');
+});
+
+test('t5: every participant and every message from the REAL record is rendered, in order', () => {
+  const dg = loadDg();
+  const rec = realSeqRecord();
+  const model = dg.dgDeriveSeq(rec)!;
+  const built = dg.dgRenderSeq(rec)!;
+  const flat = dgFlatten(built.el);
+  const texts = flat.map((n) => n.textContent);
+
+  for (const p of model.nodes) {
+    assert.ok(texts.includes(p.label), `participant "${p.label}" is drawn`);
+  }
+  // Message order is read back off the CONSTRUCTED TREE, not inferred from source
+  // position — the numbering is what makes the order legible to a reviewer.
+  const captions = flat.filter((n) => (n.attrs['class'] ?? '').includes('insrc-dg-msg')).map((n) => n.textContent);
+  assert.equal(captions.length, model.edges.length, 'one caption per message');
+  for (let i = 0; i < model.edges.length; i++) {
+    assert.ok(captions[i]!.startsWith(`${i + 1}. `), `message ${i + 1} is numbered in order`);
+    assert.ok(captions[i]!.includes(model.edges[i]!.label), 'and carries its own label');
+  }
+  // Notes are carried too rather than silently dropped.
+  const noted = model.edges.filter((e) => e.note.length > 0);
+  assert.ok(noted.length > 0, 'the real record carries notes');
+  const noteTexts = flat.filter((n) => (n.attrs['class'] ?? '').includes('insrc-dg-note')).map((n) => n.textContent);
+  for (const e of noted) assert.ok(noteTexts.includes(e.note), 'each note is rendered');
+});
+
+test('t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup', () => {
+  const dg = loadDg();
+  const built = dg.dgRenderSeq(realSeqRecord())!;
+  const flat = dgFlatten(built.el);
+  for (const n of flat) {
+    assert.equal(n.ns, 'http://www.w3.org/2000/svg', `${n.tag} created in the SVG namespace`);
+  }
+  assert.deepEqual(dg.createdHtml, [], 'document.createElement never called');
+  const markup = flat.flatMap((n) => n.writes).filter((w) => w.prop === 'innerHTML' || w.prop === 'outerHTML');
+  assert.deepEqual(markup, [], 'no markup property assigned anywhere');
+  // No record text reaches an attribute — same structural guarantee as the ER side.
+  for (const n of flat) {
+    for (const [k, v] of Object.entries(n.attrs)) {
+      assert.doesNotMatch(v, /[<>&]/, `attribute ${k} carries no record text (got ${v})`);
+    }
+  }
+});
+
+test('t5: an empty or malformed sequence record is ABSENT and creates no element', () => {
+  const dg = loadDg();
+  const before = dg.created.length;
+  for (const bad of [undefined, null, {}, { participants: [] }, { participants: 'nope' }, { participants: [{}] }, 42, 'x']) {
+    assert.equal(dg.dgDeriveSeq(bad), null, `${JSON.stringify(bad)} derives nothing`);
+    assert.equal(dg.dgBuildDiagramSlot({ sequenceDefinition: bad }, undefined, undefined)['state'], 'absent');
+  }
+  assert.equal(dg.created.length, before, 'not one element created for any of them');
+});
+
+test('t5: determinism — the same sequence record renders an identical tree every time', () => {
+  const rec = realSeqRecord();
+  const shape = (api: DgApi): string =>
+    dgFlatten(api.dgRenderSeq(rec)!.el).map((n) => `${n.ns}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+  assert.equal(shape(loadDg()), shape(loadDg()));
+});
+
+test('t5: the factory dispatches on the RECORD present, never on the ref kind', () => {
+  const dg = loadDg();
+  const ER = { classes: { Order: { attributes: { id: { range: 'string' } } } } };
+  const SEQ = realSeqRecord();
+  // The same 'diagram-mermaid' ref accompanies all three — three daemon renderers
+  // stamp that one kind, so the ref cannot possibly say which record drew it.
+  const ref = { kind: 'diagram-mermaid', relPath: 'docs/x/d.html', title: 'Sequence diagram' };
+
+  const seqSlot = dg.dgBuildDiagramSlot({ sequenceDefinition: SEQ }, ref, undefined);
+  assert.equal(seqSlot['state'], 'rendered', 'a sequence record now DRAWS where it used to be unshowable');
+
+  const erSlot = dg.dgBuildDiagramSlot({ erDefinition: ER }, ref, undefined);
+  assert.equal(erSlot['state'], 'rendered');
+
+  const neither = dg.dgBuildDiagramSlot({}, ref, undefined);
+  assert.equal(neither['state'], 'unshowable', 'and the ref alone still cannot draw anything');
+
+  // With both present the ER record wins deterministically rather than by
+  // whichever key happened to be enumerated first.
+  const both = dg.dgBuildDiagramSlot({ erDefinition: ER, sequenceDefinition: SEQ }, ref, undefined);
+  assert.equal(both['state'], 'rendered');
+  const flat = dgFlatten(both['body'] as DgNode);
+  assert.ok(flat.some((n) => n.textContent === 'Order'), 'the entity model is the one drawn');
+});
+
+test('t5: a sequence record with no ref is labelled from the record, not left blank', () => {
+  const dg = loadDg();
+  const slot = dg.dgBuildDiagramSlot({ sequenceDefinition: realSeqRecord() }, undefined, undefined);
+  assert.equal(slot['state'], 'rendered');
+  assert.equal(slot['label'], 'Call sequence', 'a default derived from the kind, never invented per call');
+  assert.equal('linkOut' in slot, false, 'and no link, because there is no ref');
+});
+
+test('t5 layout: no caption escapes the canvas and no two participant heads overlap', () => {
+  const dg = loadDg();
+  const built = dg.dgRenderSeq(realSeqRecord())!;
+  const vb = built.el.attrs['viewBox'].split(' ').map(Number);
+  const [, , width, height] = vb as [number, number, number, number];
+
+  const heads = dgFlatten(built.el).filter((n) => n.tag === 'rect');
+  assert.ok(heads.length >= 2, 'participant heads are drawn');
+  for (let i = 0; i < heads.length; i++) {
+    for (let j = i + 1; j < heads.length; j++) {
+      const a = heads[i]!, b = heads[j]!;
+      const ax = Number(a.attrs['x']), aw = Number(a.attrs['width']);
+      const bx = Number(b.attrs['x']), bw = Number(b.attrs['width']);
+      assert.ok(ax + aw <= bx || bx + bw <= ax, `participant heads ${i} and ${j} overlap`);
+    }
+  }
+  // Every caption fits inside the canvas — the ER renderer's clipping defect in the
+  // other geometry.
+  for (const t of dgFlatten(built.el).filter((n) => n.tag === 'text')) {
+    const cx = Number(t.attrs['x']);
+    const half = (t.attrs['text-anchor'] === 'start' ? 0 : t.textContent.length * 6.75 / 2);
+    assert.ok(cx - half >= -1, `"${t.textContent.slice(0, 30)}" escapes the left edge`);
+    assert.ok(cx + (t.attrs['text-anchor'] === 'start' ? t.textContent.length * 6.75 : half) <= width + 1,
+      `"${t.textContent.slice(0, 30)}" escapes the right edge`);
+    assert.ok(Number(t.attrs['y']) <= height, 'and none escapes the bottom');
+  }
 });

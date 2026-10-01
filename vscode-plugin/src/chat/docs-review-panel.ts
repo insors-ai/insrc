@@ -563,6 +563,126 @@ export const DOCS_DIAGRAM_SOURCE =
   `svg.appendChild(g);}` +
   `return {el:svg};}` +
 
+  // --- the sequence derivation ----------------------------------------------
+  // Re-implements sequenceDefinitionToIr (sequence.ts:243-291). Its rules differ
+  // from the ER one in ways that matter: participants keep their DECLARED ORDER
+  // rather than being sorted (the order IS the story), and a message's identity is
+  // its INDEX, so two identical calls between the same pair stay distinct.
+  //
+  // Same deliberate divergence as the ER side: the daemon THROWS
+  // SequenceDefinitionError on a message naming an undeclared participant, because
+  // it is generating an artifact. This drops that one message and draws the rest.
+  `function dgDeriveSeq(rec){` +
+  `if(!rec||typeof rec!=='object'||(rec instanceof Array))return null;` +
+  `var ps=rec.participants,ms=rec.messages;` +
+  `if(!(ps instanceof Array)||ps.length===0)return null;` +
+  `var nodes=[],ids={},i;` +
+  `for(i=0;i<ps.length;i++){var p=ps[i];` +
+  `if(!p||typeof p!=='object'||typeof p.id!=='string'||p.id.length===0)continue;` +
+  `ids[p.id]=1;` +
+  `nodes.push({id:p.id,label:(typeof p.label==='string'&&p.label.length>0)?p.label:p.id});}` +
+  `if(nodes.length===0)return null;` +
+  `var edges=[];` +
+  `if(ms instanceof Array){for(i=0;i<ms.length;i++){var m=ms[i];` +
+  `if(!m||typeof m!=='object')continue;` +
+  // A dangling endpoint: the daemon throws here, this drops the one message.
+  `if(ids[m.from]!==1||ids[m.to]!==1)continue;` +
+  `var kind=(m.kind==='return'||m.kind==='recurse')?m.kind:'call';` +
+  `edges.push({id:m.from+'->'+m.to+'#'+i+(kind==='recurse'?':repeat':''),` +
+  `from:m.from,to:m.to,index:i,kind:kind,` +
+  `label:(typeof m.label==='string')?m.label:'',` +
+  `note:(typeof m.note==='string'&&m.note.length>0)?m.note:''});}}` +
+  `var truncs=[];` +
+  `if(rec.truncations instanceof Array){for(i=0;i<rec.truncations.length;i++){` +
+  `var t=rec.truncations[i];` +
+  `if(t&&typeof t==='object'&&ids[t.atParticipant]===1&&typeof t.note==='string')` +
+  `truncs.push({at:t.atParticipant,note:t.note});}}` +
+  `return {nodes:nodes,edges:edges,truncations:truncs};}` +
+
+  // Sequence geometry. A lifeline per participant, one row per message.
+  `var DG_SEQ_HEAD=30,DG_SEQ_ROW=40,DG_SEQ_TOP=52,DG_SEQ_COLMIN=150,DG_SEQ_PADX=28;` +
+  `function dgRenderSeq(rec){` +
+  `var model=dgDeriveSeq(rec);if(!model)return null;` +
+  `var i,j;` +
+  // Column width fits the widest participant label AND the widest message caption,
+  // so nothing is clipped — the failure the ER renderer's first visual read caught.
+  `var widest=DG_SEQ_COLMIN;` +
+  `for(i=0;i<model.nodes.length;i++)widest=Math.max(widest,Math.ceil(model.nodes[i].label.length*DG_CH_ROW)+20);` +
+  // COLUMN WIDTH IS DRIVEN BY PARTICIPANT LABELS ONLY. Letting the longest message
+  // note size the columns produced a canvas ~3000px wide and ~250px tall on the
+  // real record — structurally correct and, scaled into a pane, far too small to
+  // read. Captions instead sit on their own row where nothing else competes for the
+  // space, and are CLAMPED to the canvas below, so they may span columns without
+  // escaping. Found by looking at the first render; no assertion could see it.
+  `var colW=widest+DG_SEQ_PADX;` +
+  `var n=model.nodes.length;` +
+  `var width=DG_MARGIN*2+Math.max(n,1)*colW;` +
+  `var height=DG_SEQ_TOP+Math.max(model.edges.length,1)*DG_SEQ_ROW+30+model.truncations.length*18;` +
+  `var svg=dgEl('svg','insrc-dg');` +
+  `svg.setAttribute('viewBox','0 0 '+width+' '+height);` +
+  `svg.setAttribute('width','100%');` +
+  `svg.setAttribute('preserveAspectRatio','xMinYMin meet');` +
+  `var cx={};` +
+  `for(i=0;i<n;i++)cx[model.nodes[i].id]=DG_MARGIN+i*colW+colW/2;` +
+  // Lifelines first, so every arrow and caption paints over them.
+  `for(i=0;i<n;i++){` +
+  `var x=cx[model.nodes[i].id];` +
+  `svg.appendChild(dgLine(x,DG_SEQ_HEAD+6,x,height-12,'insrc-dg-lifeline'));}` +
+  // Participant heads.
+  `for(i=0;i<n;i++){` +
+  `var nd=model.nodes[i];var hx=DG_MARGIN+i*colW+8,hw=colW-16;` +
+  `var g=dgEl('g','insrc-dg-node');` +
+  `var rect=dgEl('rect','insrc-dg-box');` +
+  `rect.setAttribute('x',String(hx));rect.setAttribute('y','6');` +
+  `rect.setAttribute('width',String(hw));rect.setAttribute('height',String(DG_SEQ_HEAD-6));` +
+  `rect.setAttribute('rx','4');` +
+  `g.appendChild(rect);` +
+  `var tx=dgText(hx+hw/2,DG_SEQ_HEAD-9,'insrc-dg-class',nd.label);` +
+  `tx.setAttribute('text-anchor','middle');` +
+  `g.appendChild(tx);` +
+  `svg.appendChild(g);}` +
+  // Messages, in order, each on its own row — the order IS the content.
+  `for(i=0;i<model.edges.length;i++){` +
+  `var e=model.edges[i];var y=DG_SEQ_TOP+i*DG_SEQ_ROW;` +
+  `var x1=cx[e.from],x2=cx[e.to];` +
+  `var g2=dgEl('g','insrc-dg-edge');` +
+  `var lineCls=e.kind==='return'?'insrc-dg-edge-line insrc-dg-edge-return':'insrc-dg-edge-line';` +
+  `if(e.from===e.to){` +
+  // A self-call draws as a visible bracket on its own lifeline rather than a
+  // zero-length arrow, so a recursion is never silently lost.
+  `g2.appendChild(dgLine(x1,y,x1+26,y,lineCls));` +
+  `g2.appendChild(dgLine(x1+26,y,x1+26,y+12,lineCls));` +
+  `g2.appendChild(dgLine(x1+26,y+12,x1,y+12,lineCls));` +
+  `}else{` +
+  `g2.appendChild(dgLine(x1,y,x2,y,lineCls));` +
+  // A head drawn from two short strokes, so direction is readable without markers.
+  `var dir=x2>x1?-1:1;` +
+  `g2.appendChild(dgLine(x2,y,x2+dir*7,y-4,lineCls));` +
+  `g2.appendChild(dgLine(x2,y,x2+dir*7,y+4,lineCls));}` +
+  // Keep a centred caption inside the canvas: a long note centred on a lifeline
+  // near an edge would otherwise run off the side where nothing can clip it.
+  `function dgClamp(mid,text,size){` +
+  `var half=text.length*size/2;` +
+  `if(mid-half<DG_MARGIN)return DG_MARGIN+half;` +
+  `if(mid+half>width-DG_MARGIN)return width-DG_MARGIN-half;` +
+  `return mid;}` +
+  `var rawX=e.from===e.to?x1+30:(x1+x2)/2;` +
+  `var capText=String(e.index+1)+'. '+e.label+(e.kind==='recurse'?'  (repeat)':'');` +
+  `var selfAnchor=e.from===e.to;` +
+  `var cap=dgText(selfAnchor?rawX:dgClamp(rawX,capText,DG_CH_ROW),y-6,'insrc-dg-msg',capText);` +
+  `cap.setAttribute('text-anchor',selfAnchor?'start':'middle');` +
+  `g2.appendChild(cap);` +
+  `if(e.note.length>0){` +
+  `var nt=dgText(selfAnchor?rawX:dgClamp(rawX,e.note,DG_CH_ROW),y+13,'insrc-dg-note',e.note);` +
+  `nt.setAttribute('text-anchor',selfAnchor?'start':'middle');` +
+  `g2.appendChild(nt);}` +
+  `svg.appendChild(g2);}` +
+  // Truncation markers, which say the model itself was cut short.
+  `for(i=0;i<model.truncations.length;i++){` +
+  `var tr=model.truncations[i];` +
+  `svg.appendChild(dgText(cx[tr.at],height-18-i*18,'insrc-dg-note',tr.note));}` +
+  `return {el:svg};}` +
+
   // --- the slot factory ------------------------------------------------------
   // sc4's four-combination gate, stated as a table because ac2 reads on the REF
   // while the HLD sketch read on the RECORD, and the two disagree in both
@@ -577,7 +697,7 @@ export const DOCS_DIAGRAM_SOURCE =
   // DECLARED, because a ref is the only evidence a visual was meant to exist.
   // Dispatch is on the RECORD, never on the ref's kind — three daemon renderers all
   // stamp 'diagram-mermaid', so the kind cannot identify its own source record.
-  `var DG_LABEL_DEFAULT='Entity model';` +
+  `var DG_LABEL_DEFAULT='Entity model';var DG_LABEL_SEQ='Call sequence';` +
   // Only a DIAGRAM ref is this factory's business. A ux-mock ref belongs to the
   // experience slot (S004) and is ignored here, which is what keeps a document
   // carrying both from having its arrangement pre-empted by s3.
@@ -589,14 +709,23 @@ export const DOCS_DIAGRAM_SOURCE =
   `function dgLinkOut(ref){` +
   `if(!ref||typeof ref.relPath!=='string'||ref.relPath.length===0)return undefined;` +
   `return {relPath:ref.relPath,title:(typeof ref.title==='string'&&ref.title.length>0)?ref.title:ref.relPath};}` +
-  `function dgBuildDiagramSlot(record,ref,anchorSlug){` +
+  // TRecord for this factory is the RECORD BUNDLE the pane receives, not one
+  // record: a companion ref cannot say which record drew it (three daemon
+  // renderers all stamp 'diagram-mermaid'), so the factory is handed everything
+  // the document carries and dispatches on what is actually present.
+  `function dgDrawable(records){` +
+  `if(!records||typeof records!=='object')return null;` +
+  `if(dgDeriveEr(records.erDefinition)!==null)return 'er';` +
+  `if(dgDeriveSeq(records.sequenceDefinition)!==null)return 'sequence';` +
+  `return null;}` +
+  `function dgBuildDiagramSlot(records,ref,anchorSlug){` +
   // THE ABSENT GATE COMES FIRST and returns before a single element is created, so
   // "no slot" is provable as the ABSENCE OF DOM ACTIVITY rather than as the absence
   // of something visible. This is the dominant path: 2 of 634 ledger bodies carry
   // an erDefinition.
-  `var drawable=dgDeriveEr(record)!==null;` +
+  `var which=dgDrawable(records);var drawable=which!==null;` +
   `if(!drawable&&!ref)return {state:'absent'};` +
-  `var label=(ref&&typeof ref.title==='string'&&ref.title.length>0)?ref.title:DG_LABEL_DEFAULT;` +
+  `var label=(ref&&typeof ref.title==='string'&&ref.title.length>0)?ref.title:(which==='sequence'?DG_LABEL_SEQ:DG_LABEL_DEFAULT);` +
   `var link=dgLinkOut(ref);` +
   // lc1 — `diagram-html` is DECLARED in the companion union and produced by
   // nothing. It routes to the stated failure rather than falling through silently,
@@ -611,7 +740,7 @@ export const DOCS_DIAGRAM_SOURCE =
   `return {state:'unshowable',kind:'diagram',label:label,reason:'its source record is not available to this surface',linkOut:link,anchorSlug:anchorSlug};}` +
   // A renderer throw must never take the document down over an adjunct, so the
   // whole construction is wrapped and degrades to the same stated failure.
-  `var built=null;try{built=dgRenderEr(record);}catch(err){built=null;}` +
+  `var built=null;try{built=(which==='er')?dgRenderEr(records.erDefinition):dgRenderSeq(records.sequenceDefinition);}catch(err){built=null;}` +
   `if(!built||!built.el){` +
   `return {state:'unshowable',kind:'diagram',label:label,reason:'the design record could not be drawn',linkOut:link,anchorSlug:anchorSlug};}` +
   `var out={state:'rendered',kind:'diagram',label:label,body:built.el,anchorSlug:anchorSlug};` +
@@ -969,6 +1098,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-dg-attr{fill:var(--it-fg);font-family:var(--it-font);font-size:11px;}` +
       `.insrc-dg-attr-dangling{fill:var(--it-dim);font-style:italic;}` +
       `.insrc-dg-edge-line{stroke:var(--it-dim);stroke-width:1;}` +
+      `.insrc-dg-edge-return{stroke-dasharray:4 3;}` +
+      `.insrc-dg-lifeline{stroke:var(--it-dim);stroke-width:1;opacity:0.35;stroke-dasharray:2 4;}` +
+      `.insrc-dg-msg{fill:var(--it-fg);font-family:var(--it-font);font-size:11px;}` +
+      `.insrc-dg-note{fill:var(--it-dim);font-family:var(--it-font);font-size:10px;}` +
       `.insrc-dg-rel{fill:var(--it-dim);font-family:var(--it-font);font-size:11px;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;

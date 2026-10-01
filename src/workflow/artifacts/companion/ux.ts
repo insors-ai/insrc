@@ -179,10 +179,17 @@ export const UX_DOC_TYPE = 'ux';
 /** The nested child elements of a container-like element (Container/Column items,
  *  ColumnSet columns); a leaf element yields []. */
 function childrenOf(el: UxElement): readonly UxElement[] {
+	// The child list is read DEFENSIVELY rather than trusted. The types forbid a
+	// missing or non-array `items`, but a companion renders from a STORED artifact
+	// body, which can predate a schema change or be hand-edited past the type. An
+	// unguarded read here threw a TypeError that took out the whole document —
+	// including the narrated prose, which walks the same tree — so a malformed
+	// sub-tree now degrades to an empty region instead.
+	const list = (v: unknown): readonly UxElement[] => (Array.isArray(v) ? v as readonly UxElement[] : []);
 	switch (el.type) {
-		case 'Container': return el.items;
-		case 'Column':    return el.items;
-		case 'ColumnSet': return el.columns;
+		case 'Container': return list(el.items);
+		case 'Column':    return list(el.items);
+		case 'ColumnSet': return list(el.columns);
 		default:          return [];
 	}
 }
@@ -300,4 +307,197 @@ export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {
 		narrated:            { sections: uxNarratedSections(uxDef) },
 		generatedAtRevision: 'authored-ux',
 	};
+}
+
+// ---------------------------------------------------------------------------
+// S001/t1 (ISSUE-85e6a58693579b6d) — the UX mock LAYOUT emitter.
+//
+// `uxDefinitionToIr` above lowers a card into a node/edge graph, which the
+// shared docgen shell draws as a mermaid diagram. That is the right shape for
+// the ER / sequence / component companions and the WRONG shape for this one: a
+// reviewer opening an "experience mock" was shown boxes labelled with element
+// TYPE NAMES rather than anything resembling the interface.
+//
+// This emitter is the terminal renderer for the UX companion instead. A card is
+// structurally a nested box layout, so it lowers to nested markup directly: each
+// element becomes the thing it DENOTES — text as text, an input as a labelled
+// control, an action set as a row of buttons, a column set as side-by-side
+// columns. Build-time and pure: whatever this function produced is exactly what
+// the reader sees, with no script between the two that could swallow it.
+// ---------------------------------------------------------------------------
+
+/** Escape authored content for embedding as HTML text or an attribute value.
+ *  Authored card content is DATA, never markup — a card must not be able to
+ *  inject structure into its own mock. */
+function esc(v: string): string {
+	return v
+		.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** The container child list, guarded. `childrenOf` trusts the type assertion;
+ *  a STORED card body can carry a malformed `items`, so the read is defensive
+ *  here — a bad sub-tree degrades to an empty region, never to a crash. */
+function safeChildren(el: UxElement): readonly UxElement[] {
+	try {
+		const kids = childrenOf(el);
+		return Array.isArray(kids) ? kids : [];
+	} catch { return []; }
+}
+
+/** One element → the markup that denotes it. EXHAUSTIVE over UxElement: the
+ *  union is closed at eight variants, so a ninth fails the build here first. */
+function elementHtml(el: UxElement): string {
+	switch (el.type) {
+		case 'TextBlock': {
+			const cls = ['ux-text'];
+			if (el.weight === 'bolder')  cls.push('ux-bolder');
+			if (el.weight === 'lighter') cls.push('ux-lighter');
+			if (el.isSubtle === true)    cls.push('ux-subtle');
+			if (el.size !== undefined)   cls.push(`ux-size-${el.size}`);
+			if (el.color !== undefined)  cls.push(`ux-color-${el.color}`);
+			return `<p class="${cls.join(' ')}">${esc(el.text)}</p>`;
+		}
+		case 'Container':
+			return `<div class="ux-container">${childListHtml(el)}</div>`;
+		case 'ColumnSet':
+			return `<div class="ux-columnset">${safeChildren(el).map(elementHtml).join('')}</div>`;
+		case 'Column': {
+			const w = el.width !== undefined ? ` style="flex:${/^\d+$/.test(String(el.width)) ? String(el.width) : '1'} 1 0"` : '';
+			return `<div class="ux-column"${w}>${childListHtml(el)}</div>`;
+		}
+		case 'Image':
+			// A placeholder: the url is SHOWN, never fetched. This is the one element
+			// where a renderer would naturally reach out, and the no-network invariant
+			// is at its sharpest here.
+			return `<div class="ux-image" role="img" aria-label="${esc(el.altText ?? 'image')}">`
+				+ `<span class="ux-image__icon" aria-hidden="true">▣</span>`
+				+ `<span class="ux-image__meta"><span class="ux-image__alt">${esc(el.altText ?? 'image')}</span>`
+				+ `<span class="ux-image__url">${esc(el.url)}</span></span></div>`;
+		case 'Input.Text':
+			return `<label class="ux-field"><span class="ux-label">${esc(el.label ?? el.id)}</span>`
+				+ (el.isMultiline === true
+					? `<span class="ux-input ux-input--multi">${esc(el.placeholder ?? '')}</span>`
+					: `<span class="ux-input">${esc(el.placeholder ?? '')}</span>`)
+				+ `</label>`;
+		case 'Input.ChoiceSet':
+			return `<div class="ux-field"><span class="ux-label">${esc(el.label ?? el.id)}</span>`
+				+ `<div class="ux-choices">`
+				+ el.choices.map(c =>
+					`<span class="ux-choice"><span class="ux-choice__mark" aria-hidden="true">`
+					+ `${el.isMultiSelect === true ? '☐' : '○'}</span>${esc(c.title)}</span>`).join('')
+				+ `</div></div>`;
+		case 'ActionSet':
+			// Submit and OpenUrl must be TELLABLE APART — a reviewer needs to know
+			// which control commits and which navigates. The old node label joined
+			// only the titles, so both collapsed into one indistinguishable string.
+			return `<div class="ux-actions">`
+				+ el.actions.map(a => a.type === 'Action.OpenUrl'
+					? `<span class="ux-btn ux-btn--link" title="${esc(a.url ?? '')}">${esc(a.title)}<span class="ux-btn__glyph" aria-hidden="true"> ↗</span></span>`
+					: `<span class="ux-btn ux-btn--submit">${esc(a.title)}</span>`).join('')
+				+ `</div>`;
+		default: {
+			// EXHAUSTIVENESS, enforced HERE rather than borrowed. Assigning `el` to
+			// `never` compiles only while every variant above is handled, so adding a
+			// ninth to the union fails the build in THIS function. Without it the
+			// bare `default` would silently absorb a new variant — and the build
+			// would still break, but only incidentally, via labelFor/roleOf on the
+			// now-dead IR path, which is precisely the code most likely to be deleted.
+			const unhandled: never = el;
+			void unhandled;
+			// At RUNTIME the arm is still reachable, because a stored card body can
+			// predate a schema change or be hand-edited past the type. Such an element
+			// DEGRADES VISIBLY rather than vanishing: a reviewer must never approve a
+			// design with an invisible hole in it.
+			return `<div class="ux-unknown">unrenderable element: `
+				+ `${esc(String((el as { type?: unknown }).type ?? 'unknown'))}</div>`;
+		}
+	}
+}
+
+/** The children of a container element, or an empty string. */
+function childListHtml(el: UxElement): string {
+	return safeChildren(el).map(elementHtml).join('');
+}
+
+/** Inline stylesheet. Self-contained by construction: no @import, no font fetch,
+ *  no remote anything. Geometry is what makes the mock read as an interface. */
+const UX_MOCK_STYLE = [
+	`*{box-sizing:border-box}`,
+	`body{margin:0;padding:24px;background:#eef1f5;color:#1b1f24;`,
+	`font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}`,
+	`.ux-wrap{max-width:720px;margin:0 auto}`,
+	`.ux-title{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;`,
+	`color:#5b6673;margin:0 0 10px}`,
+	`.ux-card{background:#fff;border:1px solid #d6dbe1;border-radius:8px;padding:18px;`,
+	`box-shadow:0 1px 3px rgba(16,22,26,.08)}`,
+	`.ux-card>*+*{margin-top:10px}`,
+	`.ux-text{margin:0;overflow-wrap:anywhere}`,
+	`.ux-bolder{font-weight:700}.ux-lighter{font-weight:300}.ux-subtle{color:#6b7684}`,
+	`.ux-size-small{font-size:12px}.ux-size-medium{font-size:17px}`,
+	`.ux-size-large{font-size:21px}.ux-size-extraLarge{font-size:26px}`,
+	`.ux-color-accent{color:#1f6feb}.ux-color-good{color:#1a7f37}`,
+	`.ux-color-warning{color:#9a6700}.ux-color-attention{color:#cf222e}`,
+	`.ux-container{border:1px solid #e4e8ec;border-radius:6px;padding:12px;background:#fafbfc}`,
+	`.ux-container>*+*{margin-top:10px}`,
+	`.ux-columnset{display:flex;gap:12px;align-items:flex-start}`,
+	`.ux-column{flex:1 1 0;min-width:0}.ux-column>*+*{margin-top:10px}`,
+	`.ux-columnset:empty,.ux-container:empty{min-height:28px}`,
+	`.ux-image{display:flex;gap:10px;align-items:center;border:1px dashed #c4ccd4;`,
+	`border-radius:6px;padding:10px;background:#f4f6f8;color:#5b6673}`,
+	`.ux-image__icon{font-size:20px;line-height:1}`,
+	`.ux-image__meta{display:flex;flex-direction:column;min-width:0}`,
+	`.ux-image__alt{font-size:13px}`,
+	`.ux-image__url{font-size:11px;color:#8b95a1;overflow-wrap:anywhere}`,
+	`.ux-field{display:block}`,
+	`.ux-label{display:block;font-size:12px;font-weight:600;color:#44505e;margin-bottom:4px}`,
+	`.ux-input{display:block;border:1px solid #c4ccd4;border-radius:5px;padding:7px 10px;`,
+	`background:#fff;color:#8b95a1;font-size:13px;min-height:34px;overflow-wrap:anywhere}`,
+	`.ux-input--multi{min-height:68px}`,
+	`.ux-choices{display:flex;flex-wrap:wrap;gap:14px}`,
+	`.ux-choice{display:inline-flex;align-items:center;gap:6px;font-size:13px}`,
+	`.ux-choice__mark{color:#8b95a1}`,
+	`.ux-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:2px}`,
+	`.ux-btn{display:inline-flex;align-items:center;border-radius:5px;padding:7px 14px;`,
+	`font-size:13px;font-weight:600}`,
+	`.ux-btn--submit{background:#1f6feb;color:#fff}`,
+	`.ux-btn--link{background:#fff;color:#1f6feb;border:1px solid #9dc1f5}`,
+	`.ux-btn__glyph{font-weight:400}`,
+	`.ux-unknown{border:1px dashed #cf222e;border-radius:6px;padding:10px;`,
+	`background:#fff5f5;color:#cf222e;font-size:12px}`,
+	`.ux-notes{margin-top:22px;border-top:1px solid #d6dbe1;padding-top:16px}`,
+	`.ux-note h2{font-size:13px;margin:0 0 6px;color:#1b1f24}`,
+	`.ux-note p{margin:0 0 12px;color:#44505e;white-space:pre-wrap;overflow-wrap:anywhere}`,
+	`.ux-source{font-size:12px;margin-bottom:14px}.ux-source a{color:#1f6feb}`,
+].join('');
+
+/**
+ * Render a UxDefinition as a self-contained offline HTML document showing the
+ * card as an INTERFACE. The narrated prose sections are emitted BESIDE the mock
+ * rather than instead of it — they carry authorial intent a mock alone cannot.
+ *
+ * Pure: no IO, no subprocess, no runtime load, so the same definition always
+ * yields a byte-identical string.
+ */
+export function renderUxMockDocument(
+	uxDef: UxDefinition,
+	title: string,
+	opts: { sourceLink?: { label: string; href: string } | undefined } = {},
+): string {
+	const body = Array.isArray(uxDef.body) ? uxDef.body : [];
+	const cardHtml = body.map(elementHtml).join('');
+	const notes = uxNarratedSections(uxDef)
+		.map(s => `<section class="ux-note"><h2>${esc(s.title)}</h2><p>${esc(s.narrativeText)}</p></section>`)
+		.join('');
+	const link = opts.sourceLink !== undefined
+		? `<p class="ux-source"><a href="${esc(opts.sourceLink.href)}">${esc(opts.sourceLink.label)}</a></p>`
+		: '';
+	return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">`
+		+ `<meta name="viewport" content="width=device-width,initial-scale=1">`
+		+ `<title>${esc(title)}</title><style>${UX_MOCK_STYLE}</style></head><body>`
+		+ `<div class="ux-wrap">`
+		+ `<p class="ux-title">${esc(title)}</p>`
+		+ `<div class="ux-card">${cardHtml}</div>`
+		+ `<div class="ux-notes">${link}${notes}</div>`
+		+ `</div></body></html>`;
 }

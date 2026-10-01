@@ -1,0 +1,1409 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790859894795-rvtgly",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T13:39:59.890Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 2105070,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "epicHash": "bfe98ff7f97178cf",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1790840477406-bic923",
+    "hldEffectiveHash": "33e859ffd0bea6e7dc7aaab7fea3549865f3c5df45d466b64c5818993f17bd31",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "r1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "FunctionalRequirement is declared in src/workflow/artifacts/functional-definition.ts with exactly five members — id, statement, rationale?, scope ('doc'|'item') and itemRef? — and FunctionalDefinition is exactly { requirements: readonly FunctionalRequirement[] }, so the LLD's claim that id, statement and rationale are the only displayable fields and that scope/itemRef carry the grouping is complete rather than partial.",
+          "evidence": "`export interface FunctionalRequirement` and `export interface FunctionalDefinition` each resolve to exactly ONE declaration in src/workflow/artifacts/functional-definition.ts (:26 and :38), and all three read anchors confirm verbatim, including :32 `readonly scope: 'doc' | 'item';`. The member set the LLD treats as complete is the member set the source declares.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "validateFunctionalDefinition is an ASSEMBLY-time check that is not invoked anywhere on the artifact read path — in particular src/workflow/artifact-content.ts does not call it — which is the premise behind the LLD treating the projected record as structurally untrusted on arrival.",
+          "evidence": "The only non-doc, non-test call sites in the `validateFunctionalDefinition` match set are src/workflow/orchestrator.ts:145 (import), :1048 (comment) and :1097 (the call, with the known story/task ids). src/workflow/artifact-content.ts appears NOWHERE in the match set, so the read path genuinely performs no validation. Reads confirm the declaration at :54 and the absent-safe guard at :58 (`if (fd === undefined || fd.requirements.length === 0) return null;`), which is the convention the LLD adopts verbatim for ac4.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderFunctionalRequirementsSection in src/workflow/artifacts/functional-definition.ts generates the Functional-requirements prose from the record: a '## Functional requirements' heading plus one bullet per requirement in the form '- **<id>** — <statement>' with the rationale in italics, doc-level requirements first and per-item requirements grouped under a '**<itemRef>:**' line. This is the rendering the LLD says the webview replaces on screen.",
+          "evidence": "Confirmed verbatim at every anchor: :87 the exported function; :90 the bullet template `- **${r.id}** — ${r.statement}${... _(${r.rationale})_ ...}` (a single repo-wide match); :92 `const lines: string[] = ['## Functional requirements', '']`; :105 `lines.push('', `**${item}:**`, '')` for the per-item group header. The prose rendering the LLD replaces on screen emits exactly the three fields the new renderer must carry across, so the substitution is lossless as claimed.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A per-item requirement whose itemRef is missing or empty is grouped under the literal key '(unassigned)' by the existing prose renderer, which is the behaviour the LLD's edge case says the new renderer must agree with rather than re-invent.",
+          "evidence": "Single repo-wide code match, read confirmed at src/workflow/artifacts/functional-definition.ts:99: `const key = r.itemRef !== undefined && r.itemRef.length > 0 ? r.itemRef : '(unassigned)';`. The existing renderer does bucket an orphan per-item requirement under that literal key, so the LLD's edge case prescribing agreement with it — rather than a second convention — is grounded.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The document format spine declares the functional-requirements section with the heading text 'Functional requirements' and source 'fr', and frBodyLines strips the renderer's own hard-coded heading with raw.slice(2) precisely so the engine can supply a NUMBERED heading — which is why the LLD matches the anchor title by its tail rather than by equality.",
+          "evidence": "`heading: 'Functional requirements'` with `source: 'fr'` resolves in all four formats (formats.ts:36, :58, :79, :100), confirming the LLD's statement that the spine declares the section for define/hld/lld/plan. frBodyLines is confirmed at bindings.ts:23 and the heading strip at :27 `const body = raw.slice(2);` (single repo-wide match). The numbered-heading consequence — and therefore the LLD's decision to tail-match the anchor title rather than compare it for equality — follows directly from that strip.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactReviewView.renderedMarkdown is the artifact's own .md file read VERBATIM via readFileSync with no transformation, and the four structured body records are projected onto the same response by structuredRecords(body) with no validation — the two premises the LLD's 'the pane shows the document as written' invariant and its untrusted-record handling both rest on.",
+          "evidence": "All three probes single-match and all three reads confirmed: artifact-content.ts:52 `readonly renderedMarkdown: string;   // the artifact's own .md read verbatim (k5/lc1)`, :140 `renderedMarkdown = readFileSync(realMd, 'utf8');`, :184 `...structuredRecords(body),`. Both load-bearing premises hold at source: the body shown is the file as written, and the structured records are projected alongside it without validation.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DocsContent in the VS Code plugin declares functionalDefinition by INDEXING off the daemon type as ArtifactReviewView['functionalDefinition'] rather than restating the record shape, and content() forwards it with a conditional spread so an absent record stays an absent KEY — the existing convention the LLD extends one hop further to the webview message.",
+          "evidence": "Both probes are single code matches and both reads now land exactly: docs-review-client.ts:34 `readonly functionalDefinition?: ArtifactReviewView['functionalDefinition'];` (the indexed declaration that prevents drift) and :109 `...(res.functionalDefinition !== undefined ? { functionalDefinition: res.functionalDefinition } : {})` (the absent-key spread). The convention the LLD extends one hop further to the webview message is the convention already in force at the IPC boundary.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The record currently stops at the extension host: vscode-plugin/src/chat/docs-review-panel.ts contains no occurrence of 'functionalDefinition', and the docs-content variant in vscode-plugin/src/chat/protocol.ts has no field for it — so the host→webview hop the LLD adds is genuinely missing rather than already present. (An unqualified identifier grep over this repo is swamped by the docs/ artifact tree, so this absence must be re-derived path-scoped.)",
+          "evidence": "Re-probed path-scoped this time rather than with a bare identifier grep. The docs-content variant's tail is confirmed by the reads at protocol.ts:70 (`readonly type: 'docs-content';`), :80 (`readonly sections?: SectionIndex | undefined;`) and :85 (`readonly degradation?: RenderDegradation | undefined;`), and the `readonly degradation?: RenderDegradation | undefined;` pattern resolves to that single declaration — i.e. the variant ends at `degradation` with no functional-record field. Combined with r7 (the record reaching DocsContent) and r13 (renderContent reading only markdown/sections/degradation), the host→webview hop the LLD adds is genuinely absent today.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "StructuredRenderer<T> is exported from vscode-plugin/src/chat/docs-review-panel.ts and its RETURN TYPE is the widened object form '{ el: unknown; degradation?: { degraded: boolean; notice?: string } | undefined }' — not the HLD sc2 sketch's bare HTMLElement — which is the signature the LLD's renderer is written against.",
+          "evidence": "Confirmed verbatim at vscode-plugin/src/chat/docs-review-panel.ts:155 `export type StructuredRenderer<T> = (record: T) => {`, :157 `readonly el: unknown;` and :159 `readonly degradation?: { readonly degraded: boolean; readonly notice?: string } | undefined;`. The shipped signature is the widened object form, NOT the HLD sc2 sketch's bare HTMLElement, so the LLD is correct to take the signature from LLD-s1, and the `unknown` in its own signatures mirrors the published contract rather than introducing laxity.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r10",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "StructuredRenderer<T> is implemented NOWHERE in code today — no file under vscode-plugin/src contains an annotation of the form ': StructuredRenderer<' — and a test asserts exactly that over docs-review-panel.ts, docs-review-client.ts, docs-sections.ts and markdown-style.ts, which is why the LLD records rewriting that test as a deliberate in-scope contract-test change.",
+          "evidence": "The `: StructuredRenderer<` probe returned ZERO code matches — which is the premise, not a probe failure: the type is annotated nowhere under vscode-plugin/src. The pinning test is confirmed by the reads at docs-review-panel.test.ts:432 (it reads docs-review-panel.ts) and :438 `assert.doesNotMatch(src, /:\\s*StructuredRenderer</, ...)` applied over each of the four listed files. So this Story really is the first implementer, and rewriting that assertion is a genuine, scoped contract-test change rather than a relaxation.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r11",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The emitted docs-review shell contains EXACTLY ONE markup-injection site and the test at docs-review-panel.test.ts:698-705 enforces it: it counts matches of /\\.innerHTML\\s*=/ in the generated html and asserts the count is 1, requires that one site to be 'el.innerHTML=marked.parse', and forbids insertAdjacentHTML / outerHTML / document.write. All four assertions fall inside the artifact's cited range 698-705.",
+          "evidence": "All FOUR assertions now resolve inside the artifact's cited range 698-705, each read confirmed verbatim: :699 `const injections = html.match(/\\.innerHTML\\s*=/g) ?? [];`, :700 `assert.equal(injections.length, 1, 'exactly one markup-injection site — the markdown body');`, :701 `assert.match(html, /el\\.innerHTML=marked\\.parse/, ...)`, :705 `assert.doesNotMatch(html, /insertAdjacentHTML|outerHTML|document\\.write/, 'no other markup path');`. The single injection site itself is confirmed at docs-review-panel.ts:85. This was the prior review's one MED — the cited range stopped at 703 and under-covered the forbid-list assertion at :705 — and the applied widening to 698-705 resolves it: the citation now covers every assertion the artifact's contract-test section relies on.",
+          "action": "none — verified sound; the prior MED is resolved by the applied citation-range widening",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r12",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "stampSlugs pairs rendered headings to posted anchors BY TITLE while advancing a pointer through the index, and leaves an unmatched heading UNSTAMPED — which is the stated reason the LLD requires its placement step to run strictly after stamping (a mutated tree could mis-pair every later heading) and the reason a resolved slug may still have no heading element carrying it.",
+          "evidence": "All three probes single-match and all three reads confirmed: :112 `function stampSlugs(root,sections){`, :117 `var j=p;while(j<anchors.length&&anchors[j].title!==txt)j++;` (title pairing via a pointer that only advances) and :118 `if(j<anchors.length){hs[i].id=anchors[j].slug;p=j+1;n++;}}` (stamped only on a match, so an unmatched heading is left unstamped). Both consequences the LLD depends on are confirmed: the strict after-stamping ordering requirement, and the real possibility of a resolved slug with no heading element carrying it — which is why the prepended fallback needs to exist.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r13",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "renderContent's existing call order is renderMarkdownBody → stampSlugs → renderSectionChooser (gated on the stamped count) → renderDegradationNotice → open questions → controls, and the notice already has a two-level precedence (posted degradation, else the body renderer's) — so the LLD's insertion point for placement and its third, lowest-priority notice source are both real positions in a real pipeline.",
+          "evidence": "The pipeline is confirmed verbatim: :355 `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');`, :362 `var stamped=stampSlugs(bodyEl,m.sections);`, :363 `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);`, :366 `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:r.degradation);`. The insertion point the LLD specifies (after :362, before :363) is real, and the existing two-level notice precedence at :366 is exactly the rule the LLD extends with a third, lowest-priority source — so 'a strict extension, not a replacement' is accurate.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r14",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "renderMarkdownBody returns { el, degradation } — degraded:false on the vendored-parse path and degraded:true with the DEGRADE_NOTICE plus a textContent fallback on throw — so the LLD's bodyDegraded argument is taken from an existing returned value rather than re-inferred, and the degraded body genuinely has no heading elements.",
+          "evidence": "Confirmed verbatim: :76 `export const DOCS_BODY_RENDERER_SOURCE =`, :91 `el.textContent=s;` and :92 `return {el:el,degradation:{degraded:true,notice:DEGRADE_NOTICE}};`. The degraded arm sets textContent on the container and returns the flag, which establishes both LLD premises: `bodyDegraded` comes from an existing return value rather than a re-test, and a degraded body contains no heading elements — so the prepended fallback is the only available placement there, exactly as specified.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r15",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/docs-sections.ts is the SINGLE source of section identity: deriveSectionIndex is ATX-only, skips fenced code with CommonMark fence matching, and falls back to a POSITIONAL 'section-N' slug for a punctuation-only title; createSectionResolver resolves an ofSectionId against the same slugs. The LLD consumes this identity and mints none of its own.",
+          "evidence": "All five probes single-match and all four reads confirmed: :47 `const ATX = /^(#{1,6})[ \\t]+(.*)$/;`, :50 `const FENCE = /^[ \\t]{0,3}(`{3,}|~{3,})(.*)$/;`, :70 `return base.length > 0 ? base : `section-${index + 1}`;` (the deterministic positional fallback), :86 deriveSectionIndex and :136 createSectionResolver. Section identity has exactly one implementation, which is what makes the LLD's 'consume it, mint none' claim meaningful — and what makes the rejected a2's second scanner a real drift risk rather than a stylistic objection.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r16",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The webview-behaviour test harness the LLD extends already exists twice over: loadRenderer builds the body renderer with new Function('marked', DOCS_BODY_RENDERER_SOURCE + '; return renderMarkdownBody') and loadSections does the same for DOCS_SECTIONS_SOURCE against a stub document, with a minimal stubEl of { innerHTML, textContent, className, querySelectorAll }.",
+          "evidence": "The harness exists exactly as described, all four probes single-match: test:326 `function stubEl(): Record<string, unknown> {`, :341 `const make = new Function('marked', `${DOCS_BODY_RENDERER_SOURCE}; return renderMarkdownBody;`);`, :576 `function loadSections(...)` and :582 the `new Function('document', ...)` for DOCS_SECTIONS_SOURCE. The LLD's `loadFr()` is therefore a third instance of a shipped, twice-used pattern, and its commitment to prove webview behaviour by execution rather than by string assertion is already this file's stated convention.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r17",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The repo has already shipped the exact malformed-record failure the LLD guards against: childrenOf in the UX companion needed an Array.isArray guard (a `list()` helper) because a malformed `items` threw and took the whole generated document down — the precedent cited for specifying the Array.isArray check on `requirements` up front.",
+          "evidence": "The precedent is real and both reads confirm it: src/workflow/artifacts/companion/ux.ts:181 `function childrenOf(el: UxElement): readonly UxElement[] {` and :188 `const list = (v: unknown): readonly UxElement[] => (Array.isArray(v) ? v as readonly UxElement[] : []);`. The repo did have to add an Array.isArray guard for this exact failure mode on this exact kind of body-carried record, which grounds the LLD specifying the `requirements` guard up front rather than leaving it to be discovered.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r18",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "DEF-bfe98ff7f97178cf carries the functional record the LLD's test strategy names as its fixture — doc-level ids of the form 'E20260929bfe98ff7:FR001' and per-item ids of the form 'E20260929bfe98ff7:S002:FR001', grouped per story. The wider ledger counts the LLD cites (4 of 31 DEFs carry the record; HLD 0/30, LLD 0/190, PLAN 0/155; 634 total) were derived by counting .insrc/artifacts/*.json and are NOT re-derivable by a repo grep; they are motivational and no prescribed change depends on their exact value.",
+          "evidence": "The fixture is confirmed by the reads: DEF.md:25 `## 2. Functional requirements`, :27 the doc-level `- **E20260929bfe98ff7:FR001** — ...` and :42 the per-item `- **E20260929bfe98ff7:S002:FR001** — ...`. The id grep's matches are all in docs/, which is correct for a cross-artifact premise about a DEF rather than a probe failure. Both id forms and the per-story grouping the renderer must preserve exist in the Epic's own DEF, so the test strategy's instruction to use the real record is actionable. As the premise itself discloses, the ledger counts came from counting .insrc/artifacts/*.json and are not grep-derivable; they are motivational and no prescribed change turns on their exact value.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r19",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The surface's CSS custom properties are scoped to .insrc-term, which is why the shell nests '<body class=\"insrc-term\">' around the surface div, and the body container is a <div id=\"insrc-docs-body\" class=\"insrc-docs-content\"> — so an element the LLD's renderer appends inside that container inherits the --it-* tokens with no new theming scope.",
+          "evidence": "Both reads confirmed: docs-review-panel.ts:390 `<body class=\"insrc-term\">` and :401 `<div id=\"insrc-docs-body\" class=\"insrc-docs-content\" aria-label=\"artifact body\"></div>`, both inside the artifact's cited range 389-403. An element appended inside that container therefore inherits the `--it-*` tokens through the existing `.insrc-term` scope, so the LLD's claim that no new theming scope is required holds — the gotcha that cost S001 real time cannot recur here.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "r20",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "openDoc's fail-closed arm posts blocked:true with a placeholder markdown and NO structured record, and the webview renders a 'blocked — not approvable' banner instead of the approve button — the premise behind the LLD's claim that a reviewer who could not read the body is never shown requirements extracted from it.",
+          "evidence": "All three reads confirmed: :269 `markdown: `unavailable: ${errText(err)}`,`, :271 `blocked: true,` in that same fail-closed post, and :371 the webview branch rendering 'blocked — not approvable' in place of the approve button. The arm carries no structured record, so the LLD's strongest safety property holds at source: a reviewer who never saw the body is never shown a tidy, authoritative-looking list of commitments extracted from it, and approve stays suppressed.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 20
+      },
+      "reviewedAt": "2026-10-01T13:49:23.980Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-01T13:51:45.361Z",
+    "questionResolutions": {
+      "q365d9f24": {
+        "question": "RATIFY REPLACING THE BODY'S GENERATED FR PROSE (s8 graded sbdry3 `passed` with a recorded caveat — this is the LLD's load-bearing decision, not a detail). The chosen alternative a1 replaces, in the rendered DOM, the markdown bullet list beneath the document's own `Functional requirements` heading with a record-built rendering of the SAME requirements. The argument for it: that prose is itself GENERATED from the record (renderFunctionalRequirementsSection; the producing Epic's k2 forbids hand-authoring it), all four fields plus the doc/item grouping carry across losslessly, the markdown the daemon sends is not altered, and k4 ('the document body remains the authoritative content and a companion is always shown as a referenced adjunct') is about COMPANIONS, which this Story renders none of. The argument against it: a reviewer reads a body that is not a one-to-one rendering of the markdown, and a broader reading of k4 would forbid that. Review should either ratify a1 as written, or require the pure-supplement shape a4 (ranked third, scores recorded) — the whole LLD below the choice is unaffected except that the in-section placement and its bounded removal would drop out.",
+        "status": "resolved",
+        "choice": "Ratify a1 as written (in-section replacement)",
+        "rationale": "Ratified in-chat after the choice was presented explicitly at the approval gate. The replaced prose is itself generated from the record by one deterministic function that the producing Epic forbids hand-authoring, so the carry-across is lossless by construction and nothing a human wrote is hidden; the daemon's markdown is unaltered; and k4's clause binds companions, which this Story renders none of. The parity-gate variant was considered and rejected on its own terms: enforcing parity at render time means PARSING the rendered bullet list to compare it against the record, which is precisely the second prose-derived scanner that alternative a2 was eliminated for, and it would insure a premise the single generator already guarantees. The disclosure variant adds scope for a reader the default path already serves.",
+        "resolvedAt": "2026-10-01T13:53:04.075Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A document's functional requirements already reach the review pane twice over: once as the structured record the artifact body carries, and once as the markdown prose that record was generated into. This Story makes the pane show the record instead of the prose, in the place the document puts it. The host forwards the record on the message it already posts when a document opens, and the webview — after rendering the body as it does today — replaces the generated bullet list beneath the document's own `Functional requirements` heading with one constructed element per requirement, each identifier written straight off the record by textContent so it can never be reformatted on the way to the screen. Nothing is added when a document carries no requirements, which is almost every document; and when the body cannot be rendered structurally, or the heading cannot be found, the requirements are shown above the body instead with the reviewer told why, because a plain-text body is exactly where a record-built rendering is the only legible access to them."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework a1 — SOURCE-OF-TRUTH RENDERING. Every display concern in this Epic renders from the structured record the artifact body already carries, never from the generated companion file. The daemon side is one additive widening of ArtifactReviewView (sc1) that projects body.functionalDefinition, body.erDefinition, body.uxDefinition and body.companions through the existing workflow.artifactContent handler; no new IPC method, no second read surface, and no read of any file beyond the artifact JSON already fetched. The client side is governed by one rendering discipline (sc2) — vendored render, guardMd scrub, textContent fallback — applied to the body and extended by DOM-construction renderers for the structured records, which inject no markup at all. Two couplings are lifted to HLD level because no single Story can own them: the section-anchor model (sc3), because CompanionArtifactRef.ofSectionId can only position a visual beside a section if the body renderer and the companion placer agree on the same section identity; and the companion display slot (sc4), because S003 and S004 must render their different visuals into the same three states — present, absent, referenced-but-unshowable — so a reviewer reads them consistently. The generated companion file remains the authentic artifact and stays reachable by link, which preserves its value without letting 3.3 MB of foreign scripted HTML into a strict-CSP surface.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactReviewView structured projection",
+          "purpose": "The single additive widening of the daemon's artifact-content response that carries the four structured body records the pane needs. Owned at s1 because it is the one contract every other Story reads, and every other Story is already downstream of s1. Additive-only by construction: all four fields optional, absent stays absent, and no existing field changes meaning — which is how k2's extend-don't-replace rule and k7's unchanged-existing-consumers obligation are both met.",
+          "interfaceSketch": "// src/workflow/artifact-content.ts — EXISTING fields unchanged, four appended\nexport interface ArtifactReviewView {\n\treadonly artifactId:       string;\n\treadonly kind:             string;\n\treadonly renderedMarkdown: string;\n\treadonly openQuestions:    readonly OpenQuestionRef[];\n\treadonly approvable:       boolean;\n\treadonly blockReason?:     string | null;\n\n\t// --- sc1 additive projection (absent when the body omits the field) ---\n\t/** body.functionalDefinition, verbatim. DEF/HLD/LLD/PLAN may carry it. */\n\treadonly functionalDefinition?: FunctionalDefinition | undefined;\n\t/** body.erDefinition, verbatim. HLD/LLD only. */\n\treadonly erDefinition?:         ErDefinition | undefined;\n\t/** body.uxDefinition, verbatim. HLD/LLD only. */\n\treadonly uxDefinition?:         UxDefinition | undefined;\n\t/** body.companions, verbatim. Used for link-out + ofSectionId placement. */\n\treadonly companions?:           readonly CompanionArtifactRef[] | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Review-surface render discipline",
+          "purpose": "The one sanctioned rendering route for this surface and the explicit, deliberate contract-test change k1 requires. Markup may be injected at exactly one site (the markdown body) via vendored render + guardMd + textContent fallback; every structured record renders by DOM construction and injects no markup. Owned at s1 because it governs every Story's rendering and s2/s3/s4 are all downstream of s1; without a single owner each Story would re-decide its own safety posture.",
+          "interfaceSketch": "// vscode-plugin/src/chat/docs-review-panel.ts — webview render spine\n\n/** The ONE permitted markup-injection site on this surface. Implementations\n *  MUST follow vendored-parse -> guardMd -> textContent-on-throw, the route\n *  k1 sanctions and render-registry.ts:321-332 already ships. */\nexport type MarkdownBodyRenderer = (markdown: string) => HTMLElement;\n\n/** Every structured record renders through this shape: DOM construction only,\n *  no innerHTML, no markup string anywhere. */\nexport type StructuredRenderer<TRecord> = (record: TRecord) => HTMLElement;\n\n/** Shown when MarkdownBodyRenderer falls back, so ac3's 'told the structured\n *  presentation was unavailable' is a contract, not per-Story copy. */\nexport interface RenderDegradation {\n\treadonly degraded: boolean;\n\treadonly notice:   string;\n}\n\n// CONTRACT-TEST CHANGE (deliberate, k1): docs-review-panel.test.ts's blanket\n// no-innerHTML assertion is narrowed to permit exactly one guarded body-render\n// call site and to continue forbidding innerHTML everywhere else on the surface.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2",
+            "c10"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Everything about how a functional requirement looks is private to s2: the per-requirement item layout, the visual separation from surrounding prose, the placement of the identifier relative to the statement, and the decision to render nothing at all when functionalDefinition is absent. s2 owns no contract because no other Story displays the functional record — s3 and s4 render visuals, not requirements. s2's one hard obligation comes from sc2: identifiers are written via textContent straight off the FunctionalRequirement record, never re-derived from rendered prose, which is what makes k5's character-for-character guarantee hold across upstream and downstream documents."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "The pane shell and its existing behaviour stay private to s1: the pending-list rendering and row click handling, the monotonic refreshSeq guard that drops superseded responses, the stale-artifact-id checks on open and decide, the approve / request-changes control wiring and the COMMENTABLE_KINDS gate, the fail-closed rule that suppresses approve when a content load failed, and the panel lifecycle (create, reveal, dispose, in-memory-only pending map). The exact wording of the ac3 degradation notice and the visual styling of headings, lists and emphasis are s1's alone. s1 must leave the approval path byte-identical in behaviour (ac5), so none of this is exposed as a contract."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The diagram renderer itself is private to s3: which vendored diagram library is bundled, how an ErDefinition's classes and slots are walked into that library's input, the diagram's own sizing and theming within its slot, and how a render throw is caught and converted into sc4's 'unshowable' state. s3 publishes only the slot contract, not its diagram internals — so s4 reuses the frame without inheriting any diagram-specific decision. The VSIX size cost of the bundled renderer is s3's to carry and report."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The Adaptive Cards subset renderer is private to s4: which card element types are supported, how an unsupported element degrades, and the mock's internal layout and theming within its slot. Also private is the dual-presence arrangement — how a diagram slot and an experience slot sit together when a document carries both — which s4 decides because it is the only Story that can observe both at once; it does so using the labels sc4 already derives from each ref, so the structural-versus-experience distinction ac2 requires needs no new contract."
+        }
+      ],
+      "rolloutPhase": "Phase B — functional record and design diagram (independent, parallelisable)",
+      "nonFunctional": {
+        "performance": "Document open must stay within one existing IPC round-trip: sc1 adds fields to a response already being fetched, so no additional request is made and no companion file is read. The four projected records are bounded by what the body already holds (a functional record is tens of requirements, an erDefinition tens of classes), so the response grows by kilobytes, not the 3,367,065 bytes a sampled companion file weighs — that payload is deliberately kept out of the pane and reachable only by link. Rendering is synchronous DOM construction in the webview plus one marked parse; the pane's existing monotonic refresh guard continues to drop superseded responses so a slow open cannot overwrite a newer one.",
+        "security": "The surface keeps its single-nonce strict CSP unwidened. Markup is injected at exactly one site — the markdown body, via vendored parse then guardMd with a textContent fallback — and the three structured renderers inject none at all, building DOM and setting textContent. No companion file content is read by the daemon or passed to the webview, which avoids both the foreign-inline-script exposure and the path-traversal surface that reading an arbitrary body-supplied relPath would open. All rendering runs locally from vendored bundles; nothing leaves the editor (k6). The contract test's no-innerHTML assertion is narrowed deliberately to permit the one guarded body render and to keep forbidding innerHTML elsewhere — recorded here as an HLD decision so it can never read as an incidental relaxation.",
+        "observability": "Every degradation is visible to the reviewer rather than silent, because a reviewer who cannot tell that content is missing may approve a document they have not actually seen. A body-render fallback shows the ac3 notice alongside the full text; a companion that is referenced but unshowable renders sc4's 'unshowable' state naming which visual failed, never an empty frame; and the pane's existing logger.warn path continues to carry the underlying cause for diagnosis. The distinction k3 draws is preserved in what is observable: absent means no slot at all, which is deliberately indistinguishable from a document that never had a companion.",
+        "durability": "The pane persists nothing — its pending map is in-memory and discarded on dispose — and this Epic adds no persistence. The artifact JSON remains the single source of truth; the surface is a pure reader, so a restart or reload re-derives everything from the daemon. Because sc1 is additive and all four fields are optional, a document generated before this change projects exactly the fields it has and renders correctly with no migration and no retrofit, and an older client reading a newer response ignores the fields it does not know."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "openDoc",
+          "signature": "async function openDoc(artifactId: string): Promise<void>",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "The pending artifact to fetch and post; unchanged from s1.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once a docs-content message has been posted — either the content message or, on a fetch failure, the fail-closed `blocked:true` one. The return value is unchanged by this Story."
+          },
+          "errors": [
+            {
+              "type": "none-added",
+              "condition": "This Story adds no new throw and no new catch. The existing try/catch around `deps.client.content` is untouched, and reading an optional field off the resolved content cannot throw."
+            }
+          ],
+          "preconditions": [
+            "`pending` contains `artifactId` (enforced by handleMessage before openDoc is called) — unchanged.",
+            "`deps.client.content` resolves a `DocsContent` whose `functionalDefinition` is either an absent key or the record projected verbatim by sc1, with NO validation applied on the read path."
+          ],
+          "postconditions": [
+            "The posted docs-content message carries `functionalDefinition` when, and only when, `content.functionalDefinition !== undefined` — spread conditionally, exactly as `degradation` already is, so an absent record stays an ABSENT KEY rather than a key holding undefined and `=== undefined` means the same thing on both sides of the postMessage boundary.",
+            "The record is forwarded by REFERENCE with no reshaping, no defaulting and no validation, preserving sc1's verbatim-projection rule end to end.",
+            "`markdown`, `sections` and `degradation` continue to ride the SAME message, so the record, the body it belongs to and the index derived from that body can never be paired across two different documents.",
+            "The failure arm is unchanged: a content-fetch throw still posts `blocked:true` with no record, so a reviewer who never saw the body cannot be shown requirements from it."
+          ]
+        },
+        {
+          "name": "DOCS_FR_SOURCE",
+          "signature": "export const DOCS_FR_SOURCE: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The webview-side functional-requirements renderer and its placement logic, carried as SOURCE so the shell inlines it into its single nonce'd script AND the tests `new Function`-evaluate it against a DOM stub. The third member of the family DOCS_BODY_RENDERER_SOURCE (docs-review-panel.ts:76) and DOCS_SECTIONS_SOURCE (:111) established."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "A string constant; evaluating it defines functions and runs nothing."
+            }
+          ],
+          "preconditions": [
+            "Concatenated into the shell's single `<script nonce>` after DOCS_BODY_RENDERER_SOURCE and DOCS_SECTIONS_SOURCE, since its placement step runs after both."
+          ],
+          "postconditions": [
+            "Defines exactly three functions — `frAnchorSlug`, `renderFunctionalRequirements`, `placeFunctionalRequirements` — and declares one notice constant. It contains no `innerHTML`, no `insertAdjacentHTML`, no `outerHTML` and no `document.write`, so the shell's pinned injection-site count stays at exactly one (the body's `el.innerHTML=marked.parse`).",
+            "Written in the same ES5-compatible style as its two siblings (var, function expressions, no template literals), because it is evaluated as a plain script in the webview and by `new Function` in tests."
+          ]
+        },
+        {
+          "name": "renderFunctionalRequirements",
+          "signature": "StructuredRenderer<FunctionalDefinition> = (record) => { readonly el: unknown; readonly degradation?: { degraded: boolean; notice?: string } | undefined }",
+          "parameters": [
+            {
+              "name": "record",
+              "type": "FunctionalDefinition",
+              "purpose": "The projected record — `{ requirements: readonly FunctionalRequirement[] }` — forwarded verbatim from the artifact body. Treated as untrusted shape: sc1 projects it without validation and validateFunctionalDefinition runs only at assembly time.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ el: unknown; degradation?: { degraded: boolean; notice?: string } }",
+            "meaning": "`el` is a constructed container element holding one child per requirement; `degradation` is left ABSENT by this function — placement, not rendering, is what can degrade, so the notice is decided by `placeFunctionalRequirements`. Returning the sc2 shape rather than a bare element is the ratified widening carried by LLD-bfe98ff7f97178cf-s1; the HLD's sc2 interfaceSketch still reads `=> HTMLElement` and is stale."
+          },
+          "errors": [
+            {
+              "type": "none-thrown",
+              "condition": "The renderer never throws. A malformed record degrades to fewer items or to an empty container, which the caller treats as 'nothing to place'. Throwing would take the whole document down with it, and this surface's rule is that degraded means plainer, never blank."
+            }
+          ],
+          "preconditions": [
+            "`record.requirements` is a non-empty array — the caller applies the absent-safe gate (`undefined` or `length === 0` is absent) before calling, mirroring the rule functional-definition.ts states at :58 and :88.",
+            "A `document` global with `createElement` is available (the webview, or the test's DOM stub)."
+          ],
+          "postconditions": [
+            "EVERY string the function puts on screen is written with `textContent`. No value is interpolated into markup and no attribute is built from record data, so an identifier reaches the reviewer character-for-character as the record carries it (ac2) and a hostile statement cannot become markup.",
+            "One discrete child element per requirement, each carrying its identifier and its statement, and its rationale when the record has one — so the rendering is lossless against the markdown form it replaces, which renders exactly those three fields.",
+            "The record's doc/item structure is PRESERVED, not flattened: doc-level requirements are rendered first, then per-item requirements grouped under their `itemRef`, matching the order and grouping renderFunctionalRequirementsSection already produces (functional-definition.ts:92-107). A flat list would silently drop which story a requirement belongs to — information the prose rendering carries today.",
+            "The function is a pure function of the record plus `document.createElement`: the same record always yields the same element tree, which is what makes ac3 hold — two documents carrying the same FrId display the same string.",
+            "No ordering is imposed beyond the record's own: requirements are not sorted, deduplicated or renumbered, so what the reviewer reads is the document's own sequence."
+          ]
+        },
+        {
+          "name": "frAnchorSlug",
+          "signature": "function frAnchorSlug(sections: SectionIndex | undefined): string | undefined",
+          "parameters": [
+            {
+              "name": "sections",
+              "type": "SectionIndex | undefined",
+              "purpose": "The index posted on the same docs-content message, derived by sc3's deriveSectionIndex from THIS document's markdown.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The slug of the document's functional-requirements section, or `undefined` when the document has no such section."
+          },
+          "errors": [
+            {
+              "type": "none-thrown",
+              "condition": "A missing or malformed index yields `undefined`, never a throw."
+            }
+          ],
+          "preconditions": [
+            "None. A `undefined` index, an index with no anchors, or an index whose anchors lack titles are all accepted and answered with `undefined`."
+          ],
+          "postconditions": [
+            "Matches an anchor whose TITLE ends with the format spine's heading text, case-insensitively and ignoring surrounding whitespace — tail-matching rather than equality because the engine prefixes a document-position-dependent number (`## 2. Functional requirements` on a DEF, per formats.ts:36 and bindings.ts:24, which strips the renderer's own hard-coded heading precisely so the engine can supply the numbered one).",
+            "Returns the FIRST such anchor in document order, so a document that somehow carried two never produces an ambiguous target.",
+            "Consumes sc3's identity rather than re-deriving it: the returned value is a slug the index already minted and that stampSlugs has already written onto a heading element. This function mints no identity of its own.",
+            "Returns `undefined` for a renamed or absent heading. That is a SAFE no-match: the caller then takes the fallback placement rather than substituting in the wrong place."
+          ]
+        },
+        {
+          "name": "placeFunctionalRequirements",
+          "signature": "function placeFunctionalRequirements(bodyEl: unknown, record: unknown, sections: unknown, bodyDegraded: boolean): { placed: 'in-section' | 'prepended' | 'none'; degradation?: { degraded: boolean; notice: string } }",
+          "parameters": [
+            {
+              "name": "bodyEl",
+              "type": "HTMLElement",
+              "purpose": "The body container (#insrc-docs-body) as already rendered by renderMarkdownBody and stamped by stampSlugs.",
+              "optional": false
+            },
+            {
+              "name": "record",
+              "type": "FunctionalDefinition | undefined",
+              "purpose": "The posted record, or undefined when the document carries none.",
+              "optional": false
+            },
+            {
+              "name": "sections",
+              "type": "SectionIndex | undefined",
+              "purpose": "The index posted on the same message, used only to find the section's slug.",
+              "optional": false
+            },
+            {
+              "name": "bodyDegraded",
+              "type": "boolean",
+              "purpose": "Whether renderMarkdownBody fell back to plain text — taken from its returned degradation, not re-inferred.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ placed: 'in-section' | 'prepended' | 'none'; degradation?: RenderDegradation }",
+            "meaning": "Which of the three outcomes occurred, and a notice when the reviewer needs to be told the requirements are not where the document puts them. `placed` is returned so the behaviour is directly assertable in a test rather than inferred from the resulting DOM."
+          },
+          "errors": [
+            {
+              "type": "none-thrown",
+              "condition": "Every failure resolves to `placed:'none'` or to the prepended fallback. Nothing this function does may prevent the document from being read."
+            }
+          ],
+          "preconditions": [
+            "Called from renderContent AFTER renderMarkdownBody and AFTER stampSlugs — the order matters and is a correctness constraint, not a style one: stampSlugs pairs rendered headings to posted anchors BY TITLE advancing a pointer through the index (docs-review-panel.ts:111-125), so running the substitution first would remove content the stamper walks and could mis-pair every heading after it."
+          ],
+          "postconditions": [
+            "ABSENT (ac4): when `record` is undefined or `record.requirements` is empty, the function returns `{ placed:'none' }` having created NO element, removed nothing and reserved no space — the body is byte-identical to what s1 renders. This is the dominant path: 4 of 634 ledger artifacts carry the record.",
+            "IN-SECTION (ac1, the normal present case): when the body rendered structurally and `frAnchorSlug` resolves to a slug that `bodyEl` actually has a heading for, the heading's following siblings are removed UP TO BUT NOT INCLUDING the next heading of equal-or-shallower level, and the rendered container is inserted in their place. The heading element, its text, its number and its stamped slug are left untouched, so the section chooser, the anchor target and any future `ofSectionId` resolution keep working with no change to sc3 at all.",
+            "The removal is BOUNDED by that next-heading rule and by the end of the container. A document whose functional-requirements section is followed by further sections keeps every one of them — this is the single destructive operation on the surface and the bound is the thing a test must prove, not assume.",
+            "PREPENDED (the fallback): when a record is present but the substitution cannot be performed — the body degraded to plain text and so has no heading elements, or the anchor does not resolve, or no heading element carries the slug — the rendered container is inserted as the FIRST child of the body instead, so the requirements remain legible. This is what makes the degraded path an improvement rather than a gap: there the body is raw markdown source, and the constructed rendering is the reviewer's only readable access to the commitments.",
+            "The prepended case returns a degradation ONLY when the body itself rendered fine — i.e. the document has requirements whose section could not be located, which is an otherwise-silent anomaly the reviewer should know about. When the body was already degraded, s1's DEGRADE_NOTICE is showing and covers it, so no second notice is produced and the notice area never stacks.",
+            "Idempotent per render: renderContent rebuilds the body from scratch on every docs-content message, so placement never sees a previously placed container."
+          ]
+        },
+        {
+          "name": "renderContent",
+          "signature": "function renderContent(m: { markdown?: string; sections?: SectionIndex; degradation?: RenderDegradation; functionalDefinition?: FunctionalDefinition; openQuestions?: readonly string[]; blocked?: boolean; commentable?: boolean; artifactId?: string }): void",
+          "parameters": [
+            {
+              "name": "m",
+              "type": "the docs-content message payload",
+              "purpose": "Unchanged apart from the one additive field this Story forwards.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Renders the whole surface for one opened document."
+          },
+          "errors": [
+            {
+              "type": "none-added",
+              "condition": "The placement call cannot throw, so no new guard is introduced around it."
+            }
+          ],
+          "preconditions": [
+            "Invoked only from the existing window message listener on a `docs-content` message — unchanged."
+          ],
+          "postconditions": [
+            "The call order becomes: renderMarkdownBody → stampSlugs → placeFunctionalRequirements → renderSectionChooser → renderDegradationNotice → open questions → controls. Placement sits after stamping (so slugs are on the headings it looks for and the stamper is not walking a mutated tree) and before the chooser and the notice (so the chooser is gated on the stamped count, which placement does not change, and the notice can carry a placement degradation).",
+            "The chooser's gate is unaffected: placement never adds or removes a heading element, so `stamped` means exactly what it meant in s1.",
+            "Notice precedence is a strict extension of s1's rule, not a replacement: a host-posted degradation wins, then the body renderer's own, then — only if neither declared one — a placement degradation. A reviewer is therefore never shown two notices and never shown none when something went wrong.",
+            "Everything else on the surface — open questions, the blocked banner, approve, request-changes, the COMMENTABLE_KINDS gate — is untouched, preserving s1's obligation that the approval path behave identically."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "HostToWebview (the `docs-content` variant)",
+        "change": "field-add",
+        "details": "One optional field, `functionalDefinition`, appended to the existing docs-content variant — no new message type, exactly as S001/t5 appended `sections` and `degradation` to this same variant rather than minting a second message. Its type is INDEXED off the client type (`DocsContent['functionalDefinition']`), which is itself indexed off the daemon's `ArtifactReviewView['functionalDefinition']`, so the record's shape is declared once in src/workflow/artifacts/functional-definition.ts and the three layers physically cannot drift. Optional with `| undefined` per the repo's exactOptionalPropertyTypes setting, and populated by a conditional spread so absence is an absent key.",
+        "schemaDiff": "// vscode-plugin/src/chat/protocol.ts — docs-content variant, existing fields unchanged\n  | {\n      readonly type: 'docs-content';\n      readonly artifactId: string;\n      readonly markdown: string;\n      readonly openQuestions: readonly string[];\n      readonly blocked: boolean;\n      readonly commentable?: boolean;\n      readonly sections?: SectionIndex | undefined;\n      readonly degradation?: RenderDegradation | undefined;\n+     // S002 (additive, SAME message). The artifact's functional record, forwarded\n+     // verbatim from DocsContent. Indexed off the client type so this declaration\n+     // cannot drift from the daemon's projection. Absent key when the document\n+     // carries none — which is the common case.\n+     readonly functionalDefinition?: DocsContent['functionalDefinition'];\n    }",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts:70-86 — the variant being extended",
+          "vscode-plugin/src/chat/docs-review-panel.ts:246-259 — openDoc's post, the only producer",
+          "vscode-plugin/src/chat/docs-review-panel.ts:354 — renderContent, the only consumer",
+          "vscode-plugin/src/chat/docs-review-client.ts:24-37 — DocsContent, the type source being indexed"
+        ]
+      },
+      {
+        "entity": "FunctionalDefinition / FunctionalRequirement",
+        "change": "invariant-change",
+        "details": "NO change to the type and no change to any producer — the Epic's generation-side non-goal rules that out. What changes is where the record's invariants are relied upon. validateFunctionalDefinition (functional-definition.ts:54-78) enforces well-formed ids, unique ids and resolvable itemRefs at ASSEMBLY time, inside the daemon, before an artifact is persisted; it is not on the read path, and sc1 projects the body verbatim with no validation. This Story therefore treats the record as STRUCTURALLY UNTRUSTED on arrival: a missing statement, a non-string id, a duplicate id, a per-item requirement with no itemRef and a requirements array that is not an array are all shapes the renderer must survive. That is a change in what the read side may assume, recorded here because it is the assumption most likely to be made silently and wrongly. Equally recorded: the absent-safe convention the record's own module states twice (:58, :88) — `undefined` OR an empty requirements array is ABSENT — is adopted unchanged as this Story's ac4 gate, so client and daemon agree on what 'has no functional requirements' means.",
+        "callSites": [
+          "src/workflow/artifacts/functional-definition.ts:26-40 — the record types",
+          "src/workflow/artifacts/functional-definition.ts:54-78 — assembly-time validation, NOT on the read path",
+          "src/workflow/artifact-content.ts:184 — structuredRecords, the verbatim unvalidated projection",
+          "src/workflow/artifacts/functional-definition.ts:87-110 — the prose rendering this Story replaces on screen"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consumed exactly as s1 shipped it, with no widening. The host reads `content.functionalDefinition` off the DocsContent the existing `workflow.artifactContent` call already returns — no new IPC method, no second read surface, no extra round trip, and no read of any file beyond the artifact JSON the daemon already opens (k2, k7). The record is forwarded by reference without reshaping, defaulting or validation, which is what sc1's verbatim-projection rule requires and is also what makes the character-for-character guarantee survivable: anything this Story did to the record on the way through would be a place for an identifier to change. The absent-key convention sc1 established is carried one hop further, from the IPC boundary across the postMessage boundary, so `=== undefined` is the single absence test at every layer. Nothing on the daemon side changes in this Story — sc1's implementation is untouched."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "This Story is the FIRST implementer of sc2's published `StructuredRenderer<T>`, which s1 exported and deliberately left unimplemented. `renderFunctionalRequirements` is written as `StructuredRenderer<FunctionalDefinition>` and takes its signature from the ratified form in LLD-bfe98ff7f97178cf-s1 — `(record) => { el, degradation? }` — NOT from the HLD's sc2 interfaceSketch, which still reads `=> HTMLElement` and is stale. sc2's hard rule is honoured literally: the renderer builds DOM and sets textContent, assigns no markup anywhere, and the body's single `el.innerHTML=marked.parse` remains the one injection site on the surface — the pinned count of one is unchanged, and the ban on insertAdjacentHTML / outerHTML / document.write is unchanged. The webview code is carried as a third exported source string inlined into the same single nonce'd script, so the CSP is not widened by one character and the behaviour is proved by `new Function` evaluation against a DOM stub rather than by grepping the shell — the discipline s1 adopted after this repo shipped a webview contract that string assertions pronounced green while the behaviour was wrong. ONE DELIBERATE CONTRACT-TEST CHANGE is required and is in scope: the s1 test asserting that no file declares `: StructuredRenderer<` was written to hold only until the first implementer arrived, and this Story is that implementer, so it becomes an assertion that the type is exported AND implemented here — the same kind of explicit, recorded narrowing k1 required for the body renderer, never an incidental relaxation. Note on what is NOT consumed: sc2's placement is s2-private, so the in-section substitution, the prepended fallback and the placement notice are this Story's own decisions, taken inside the boundary that grants s2 'the visual separation from surrounding prose' and 'the decision to render nothing at all when functionalDefinition is absent'."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The body could not be rendered structurally — the vendored `marked` global is missing or its parse threw — so the body container holds the raw markdown source as a single text node and contains no heading elements at all. There is nothing to substitute under.",
+          "detection": "Not re-inferred: `renderMarkdownBody` already returns `{ el, degradation }` and renderContent already holds that result, so the degraded flag is passed into `placeFunctionalRequirements` as `bodyDegraded`. The placement code never re-tests for the vendored global or re-parses anything; one path decides degradation and one value carries it.",
+          "response": "Take the prepended fallback: insert the constructed container as the body's FIRST child, ahead of the plain-text node. Return `placed:'prepended'` with NO degradation of its own, because s1's DEGRADE_NOTICE is already being shown for this document and a second notice would stack two messages about one failure.",
+          "userImpact": "A clear improvement over s1 on this path rather than a gap. The body is unreadable markdown source here — requirements appear as literal `- **E2026…:FR001** — …` noise — so the constructed block is the reviewer's only legible access to the commitments, and it carries the identifiers exactly. The reviewer is still told, by the existing notice, that the structured view of the document was unavailable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The document carries a functional record but no section can be identified for it — a per-repo or per-user format override renamed the `Functional requirements` heading, or the section is genuinely absent from the body even though the record is present.",
+          "detection": "`frAnchorSlug(sections)` returns `undefined` after scanning every posted anchor for a title whose tail matches the format spine's heading text. The scan is over the posted SectionIndex, not over the DOM, so it is decided before anything is touched.",
+          "response": "Prepend the constructed container and return a placement degradation — `{ degraded:true, notice:<placement notice> }` — which renderContent shows because neither the host nor the body renderer declared one. Nothing is removed from the body.",
+          "userImpact": "The reviewer sees every requirement, legibly and with exact identifiers, above the document, and is told they are not in their document position. This is the one case where silence would be genuinely misleading: the body rendered perfectly, so without a notice the reviewer would have no way to tell the block was displaced rather than designed that way.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The anchor resolves to a slug, but no heading element in the rendered body carries it — `stampSlugs` left that heading unstamped because the rendered heading text did not match the indexed anchor title (it pairs by title, advancing a pointer, and deliberately leaves an unmatched heading unstamped rather than mis-stamping it).",
+          "detection": "A lookup for the slug SCOPED TO THE BODY CONTAINER returns nothing. Scoped deliberately rather than via a document-wide id lookup, so an element elsewhere on the surface that happened to share the id could never be mistaken for the section heading and then have its siblings deleted.",
+          "response": "Identical to the previous case: prepend, notice, remove nothing.",
+          "userImpact": "Same as above — requirements shown, displaced, and the displacement declared.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The record survives the read path structurally malformed — `requirements` is not an array (an object, a string, or null). This is reachable, not hypothetical: `validateFunctionalDefinition` runs at ASSEMBLY time inside the daemon and sc1 projects `body.functionalDefinition` verbatim with no validation on the read path, so whatever the body holds arrives here.",
+          "detection": "An `Array.isArray(record.requirements)` test in the absent-safe gate, before any iteration. This repo has already shipped exactly this bug once — an unguarded `childrenOf` in the UX companion threw on a malformed `items` and took the whole generated document down — so the guard is specified here rather than discovered later.",
+          "response": "Treat the record as ABSENT: return `placed:'none'`, construct nothing, remove nothing, show no notice. A record that is not a record is indistinguishable from no record, and the surface's rule for no record is to show no area.",
+          "userImpact": "The document reads exactly as it does today. No crash, no empty frame, no partial list. The malformed record is a producer-side defect that this read-only surface should survive silently rather than editorialise about.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An individual requirement entry is malformed — not an object, or missing a string `id` or a string `statement` — while its siblings are well formed.",
+          "detection": "Per-entry `typeof` checks while building the container: an entry is rendered only if it is a non-null object whose `id` and `statement` are both strings. The check is per entry, not a whole-record precondition, so one bad entry cannot disqualify the rest.",
+          "response": "Skip that entry and render the others. If NO entry survives, the container is empty and placement treats it exactly as absent — `placed:'none'`, nothing inserted — rather than inserting an empty box.",
+          "userImpact": "The reviewer sees every requirement the document actually carries. A dropped entry is invisible on this surface, which is the correct trade: fabricating a placeholder for an entry with no statement would show the reviewer a commitment that does not exist, and this Story's whole premise is that what the reviewer reads is what the document carries.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unanticipated throw inside placement — a DOM method the webview host does not provide, an element shape the code did not expect — after the body has already been rendered.",
+          "detection": "Two layers. Structurally, the code is ORDERED so that nothing is removed until everything is built: the sibling range is computed and the full container is constructed BEFORE the first removal, so a construction throw happens while the document is still intact. Behaviourally, renderContent wraps the single placement call in a try/catch.",
+          "response": "On a throw, leave the body exactly as `renderMarkdownBody` and `stampSlugs` produced it and continue to the chooser, the notice, the open questions and the controls. The catch is a backstop for the one destructive operation on this surface, not a substitute for the ordering that makes it almost unreachable.",
+          "userImpact": "The reviewer reads the document in its s1 form — full prose, full navigation, approval path intact. The worst outcome of this Story's failure is the behaviour that shipped last week, never a half-removed section or a blank pane.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The content fetch failed, so the host took the fail-closed arm and posted `blocked:true` with a placeholder body.",
+          "detection": "No detection is needed in the placement code, and that is the point: the failure arm posts no `functionalDefinition` at all, so the absent-safe gate stops at its first test.",
+          "response": "`placed:'none'`. No requirements are shown.",
+          "userImpact": "A reviewer who never saw the body is never shown requirements extracted from it. Showing a tidy, authoritative-looking list of commitments beside a 'unavailable' body would be the most dangerous thing this Story could do — it would make an unreadable document look reviewable, and approve is already suppressed precisely so it is not approved.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A document whose body carries NO functionalDefinition at all — every HLD, LLD, PLAN, BUILD, CR, ISSUE, SPEC, AMD and EXT in the ledger, and 27 of 31 DEFs.",
+          "expected": "Nothing happens. No element is created, no DOM is read beyond the single absent-safe test, no space is reserved, no heading, no border, no notice — the rendered surface is byte-identical to what s1 produces. This is ac4 and it is the DOMINANT path, not an edge: 4 of 634 ledger artifacts carry the record, so the absent case is what a reviewer sees on essentially every open and the test suite must treat it as the main case."
+        },
+        {
+          "input": "A record present but with `requirements: []`.",
+          "expected": "Identical to absent. The record's own module states this convention twice — `undefined` OR an empty array is absent (functional-definition.ts:58 and :88) — and this Story adopts it unchanged so the client and the daemon cannot disagree about what 'carries no functional requirements' means."
+        },
+        {
+          "input": "The functional-requirements section is followed by further sections — the normal DEF shape, where it sits between `Problem` and `Non-goals`.",
+          "expected": "The removal is bounded to the siblings between the section heading and THE NEXT HEADING ELEMENT OF ANY LEVEL, and that next heading and everything after it survive untouched. This TIGHTENS the rule sketched in the contract step, which said equal-or-shallower: any-level is chosen deliberately because it guarantees that no heading element is ever removed, and therefore that the section chooser can never be left offering an entry whose target no longer exists. The generated FR section contains no sub-headings — it groups per-item requirements under bold `**<itemRef>:**` lines, not headings — so the tighter rule removes exactly the same content on every real document while being safe on documents it was not designed for."
+        },
+        {
+          "input": "The functional-requirements section is the LAST section in the document.",
+          "expected": "Removal runs to the end of the body container and stops. No off-the-end read, no throw."
+        },
+        {
+          "input": "A record of only doc-scope requirements (no `scope:'item'` entries) — or conversely, only item-scope entries.",
+          "expected": "Only the groups that have content are rendered. No empty doc-level area when every requirement is per-item, and no group headers when every requirement is doc-level. An empty group is the same defect as an empty section, one level down."
+        },
+        {
+          "input": "A requirement with `scope:'item'` whose `itemRef` is missing or empty — which `validateFunctionalDefinition` would have rejected at assembly, and which therefore reaches the read path only on a record that was persisted before that check or by a producer that bypassed it.",
+          "expected": "Grouped under a single unassigned bucket, matching exactly what renderFunctionalRequirementsSection already does with the same input (functional-definition.ts:99 keys it to `(unassigned)`). The two renderings of the same record must not disagree about where an orphan requirement belongs — agreeing with the existing behaviour is cheaper and more honest than inventing a second convention."
+        },
+        {
+          "input": "A record containing two requirements with the SAME FrId — another assembly-time rejection that the unvalidated read path can still deliver.",
+          "expected": "BOTH are rendered, in record order, neither dropped and neither merged. The surface's job is to show what the document carries; silently collapsing a duplicate would hide a genuine producer-side defect from the one person positioned to catch it — the reviewer at the approval gate."
+        },
+        {
+          "input": "An identifier containing markdown-active characters — `*`, `_`, backtick, `[` — or a statement containing `<script>alert(1)</script>` or an HTML entity.",
+          "expected": "Rendered character-for-character via textContent, with no parsing and no escaping artefacts, and nothing becomes markup or an attribute. This is the ac2 PROOF case and the whole reason the Story exists: the same id routed through the markdown path (prose generation, then marked's inline parser, then the guardMd scrub) can be silently reformatted, and the current FrId grammar being free of those characters is a property of today's minter, not a guarantee the display layer is entitled to rely on."
+        },
+        {
+          "input": "A document whose markdown contains the text `## Functional requirements` INSIDE a fenced code block — for instance an LLD quoting the format spine.",
+          "expected": "No phantom section. `deriveSectionIndex` already skips fenced regions with CommonMark-correct fence matching, so the posted index carries no anchor for it and `frAnchorSlug` finds nothing. This Story adds no second scanner of its own precisely so this behaviour cannot drift — it consumes sc3's index as the single source of section identity."
+        },
+        {
+          "input": "A document with two headings whose titles both end in `Functional requirements` (a format override that repeats the section, or an authored heading that collides).",
+          "expected": "The FIRST in document order is used. `deriveSectionIndex` already disambiguates identical slugs with an ordinal suffix and drops neither, so both remain navigable; placement simply never has an ambiguous target."
+        },
+        {
+          "input": "An upstream DEF and a downstream document that both carry the requirement `E20260929bfe98ff7:S002:FR001`.",
+          "expected": "The same identifier string is displayed in both, because the rendering is a pure function of the record and the id is copied, never derived, formatted or re-minted. This is ac3, and it holds for the same reason ac2 does."
+        },
+        {
+          "input": "A very large record — well beyond the 20 requirements this Epic's own DEF carries.",
+          "expected": "Synchronous construction of one element per requirement, with no pagination, no virtualisation and no truncation. The record is bounded by what an artifact body holds and the pane already parses the entire markdown of the same document synchronously; truncating would hide commitments from the reviewer, which is the one thing this surface must not do."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The pane shows the document AS WRITTEN. `renderedMarkdown` is the artifact's own .md read verbatim (artifact-content.ts:52, :138-140) and nothing on the read path edits it — this Story does not trim the markdown, does not re-render it on the daemon side, and changes nothing a producer emits. The substitution operates on the RENDERED DOM and swaps one generated projection of the record for another projection of the SAME record, carrying id, statement, rationale and the doc/item grouping across losslessly, so no content a human authored is hidden. A reviewer approving a document has still been shown that document.",
+          "source": "c3"
+        },
+        {
+          "text": "Each requirement's identity is preserved exactly as the document carries it. The identifier is copied from `FunctionalRequirement.id` and written with textContent, never re-derived from rendered prose, never re-minted, never reformatted — which is what makes the same commitment recognisable in the upstream and the downstream document, and traceable to the completion check that reads the same record.",
+          "source": "c8"
+        },
+        {
+          "text": "The surface fabricates nothing for an absent record. No heading, no frame, no placeholder, no reserved space — the absent case is literally the untouched s1 code path. This matters disproportionately because absence is what nearly every document shows: 4 of 634 ledger artifacts carry a functional record.",
+          "source": "c4"
+        },
+        {
+          "text": "Markup is injected at exactly ONE site on this surface — the body's `el.innerHTML=marked.parse`, guarded by guardMd with a textContent fallback. Everything this Story adds is DOM construction with textContent; it assigns no markup, builds no attribute from record data, and uses no insertAdjacentHTML, outerHTML or document.write. The single-nonce strict CSP is not widened by one character, and the test that counts injection sites must still count one.",
+          "source": "c2"
+        },
+        {
+          "text": "The read path stays additive. The record arrives on the response `workflow.artifactContent` already returns and travels on the docs-content message the host already posts — no new IPC method, no parallel read surface, no second round trip, no file read beyond the artifact JSON. Absence stays an ABSENT KEY at every layer, so `=== undefined` is the one absence test from the daemon projection to the webview.",
+          "source": "c7"
+        },
+        {
+          "text": "The approval path behaves identically. Approve, request-changes, the COMMENTABLE_KINDS gate, the blocked banner and the fail-closed suppression after a content-load failure are untouched by this Story, and the fail-closed arm in particular posts no record — so a reviewer who could not read the body is never shown a tidy list of commitments extracted from it.",
+          "source": "c5"
+        },
+        {
+          "text": "The markdown, the section index derived from it and now the functional record all ride ONE message, so they can never be paired across two different documents. This Story adds its field to that same message rather than minting a second one, inheriting the property instead of re-establishing it. (It inherits the known limitation too: `openDoc` still takes no sequence number, so a slow first open can display the wrong document — a pre-existing gap tracked as its own bugfix, deliberately not fixed here.)",
+          "source": "c7"
+        },
+        {
+          "text": "Section identity has exactly one source. Slugs come from `deriveSectionIndex`, are stamped onto headings by `stampSlugs`, and are what an `ofSectionId` resolves against. This Story READS that identity to locate the section and mints none of its own; it never adds, removes or re-stamps a heading element, so the chooser's stamped-count gate means exactly what it meant in s1 and no chooser entry can be left pointing at a target that no longer exists.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test`, run from vscode-plugin/ — the framework every suite in src/chat/__tests__/ uses (docs-review-panel.test.ts 788 lines, docs-sections.test.ts 202, docs-review-client.test.ts 223). Webview code is proved by `new Function` evaluation against a hand-built DOM stub, never by asserting on the emitted HTML string; the fast loop is `npx tsx --test 'src/chat/__tests__/docs-review-panel.test.ts'`.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Execute the webview renderer and its placement logic directly, against a DOM stub, so every branch is RUN rather than grepped for. This is the level that carries the Story: this repo shipped a webview contract that string assertions pronounced green while the behaviour was wrong, and S001 answered that by evaluating DOCS_BODY_RENDERER_SOURCE and DOCS_SECTIONS_SOURCE with `new Function`. The same harness extends to DOCS_FR_SOURCE — a `loadFr()` beside the existing `loadRenderer()` and `loadSections()`.",
+          "subjects": [
+            "renderFunctionalRequirements — one discrete element per requirement; every string written via textContent and NO property assignment that could carry markup; id, statement and rationale all present; doc-level items first, then per-item requirements grouped under their itemRef",
+            "renderFunctionalRequirements on hostile content — an id containing `*`, `_`, backtick and `[`, and a statement containing `<script>alert(1)</script>`, asserted to come back out of the stub character-for-character identical to the input string",
+            "renderFunctionalRequirements on a malformed record — `requirements` not an array, an entry that is not an object, an entry with a non-string id or statement, a `scope:'item'` entry with no itemRef, and two entries sharing one FrId",
+            "frAnchorSlug — matches an anchor whose title ends with the heading text under the engine's numeric prefix (`2. Functional requirements`), ignores case and surrounding whitespace, returns the first of two matches in document order, and returns undefined for an undefined index, an empty index and a renamed heading",
+            "placeFunctionalRequirements — all three outcomes (`in-section`, `prepended`, `none`) asserted through the returned discriminator AND through the resulting stub tree, including the degradation it does and does not return"
+          ],
+          "fixturesNeeded": [
+            "An extension of the existing `node()` stub builder that models a parent with ordered children plus `insertBefore` / `removeChild` / `firstChild`, and a heading child carrying an `id` — enough for the sibling walk and the bounded removal, and no more",
+            "A record fixture taken from this Epic's OWN DEF (DEF-bfe98ff7f97178cf, 20 requirements: 6 doc-level plus per-item groups under s1..s4) rather than a hand-invented one, so the shape under test is a shape the ledger actually contains",
+            "A deliberately hostile record whose ids and statements carry markdown-active and HTML-active characters — the ac2 proof fixture",
+            "A malformed-record fixture set, written as a table so each malformation is one row"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the record actually travels from the daemon response to the webview on the existing message, and that the whole render pipeline composes in the required order. The unit level proves the renderer is correct; this level proves it is reached, and reached with the right thing.",
+          "subjects": [
+            "openDoc — a client whose content() returns a record posts docs-content carrying `functionalDefinition` with the SAME reference and no reshaping, asserted through the existing `openAndGetContent` helper",
+            "openDoc absence — a client returning no record posts a message with NO `functionalDefinition` KEY at all (`'functionalDefinition' in payload === false`), not a key holding undefined; the absent-key convention is the one sc1 established and it must survive the postMessage hop",
+            "openDoc fail-closed — a client whose content() rejects posts `blocked:true` and carries no record",
+            "The shell's bootstrap — DOCS_FR_SOURCE is inlined into the single nonce'd script, and the placement call sits AFTER stampSlugs and BEFORE renderSectionChooser / renderDegradationNotice",
+            "Notice precedence — a host-posted degradation wins over a body degradation wins over a placement degradation, and exactly one notice is ever rendered"
+          ],
+          "fixturesNeeded": [
+            "The existing fakeChannel / fakeClient doubles and the `openAndGetContent(markdown)` helper, extended to let the fake client return a functionalDefinition"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Hold the surface-wide invariants that this Story is most likely to erode, and record the one contract-test change it deliberately makes. These are the assertions that catch a future change, not this one.",
+          "subjects": [
+            "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still `el.innerHTML=marked.parse`; still no insertAdjacentHTML, outerHTML or document.write anywhere — the existing assertion, re-run against a shell that now carries a third source string",
+            "DOCS_FR_SOURCE itself contains no markup-assignment of any kind — asserted on the constant, with comments stripped first, because a source scan that reads prose has produced three false results in this repo already",
+            "THE DELIBERATE CHANGE: S001's assertion that no file declares `: StructuredRenderer<` is rewritten, not deleted. It becomes: the type is still exported, and it is implemented in exactly one place — the functional-requirements renderer — with the other listed files still declaring none. The test was written to hold only until the first implementer arrived; this Story is that implementer, and the replacement must keep failing if a renderer appears somewhere unsanctioned",
+            "The protocol's docs-content variant types `functionalDefinition` by INDEXING off DocsContent (which indexes off ArtifactReviewView), so the three layers cannot drift — asserted as a type-level compile check plus a source assertion that the annotation is the indexed form rather than a restated shape",
+            "docs-sections.ts is unchanged and still has zero imports — this Story consumes section identity and mints none"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove the one destructive operation is bounded. Separated from the renderer level because this is where a defect would be worst and least visible: a removal that runs too far deletes document content the reviewer is about to approve.",
+          "subjects": [
+            "Bounded removal — a body whose FR section is followed by two further sections keeps BOTH, with every sibling after the next heading untouched and the heading elements themselves never removed at any level",
+            "Removal to end — an FR section that is the last section removes to the end of the container without an off-the-end read or a throw",
+            "Heading preservation — the section's own heading element, its text and its stamped id are identical before and after, so the chooser entry and the anchor target still resolve",
+            "Ordering — placement runs after stampSlugs: a test that stamps, places, then re-reads every heading id proves no slug was disturbed",
+            "Build-before-mutate — a record that makes construction throw leaves the body COMPLETELY unmodified (nothing removed), proving the ordering rather than relying on the catch",
+            "The renderContent try/catch backstop — a forced throw inside placement still renders the chooser, the notice, the open questions and the approve / request-changes controls"
+          ],
+          "fixturesNeeded": [
+            "A body-stub fixture whose children are a realistic rendered DEF: h1, p, h2(problem), p, h2(functional-requirements), ul, h2(non-goals), ul, h2(stories), h3, p — so 'the next heading of any level' is exercised by an h3 as well as an h2"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify by MUTATION that each new test can actually fail. Every claim below is only worth what its falsifier proves, and three vacuous tests have shipped green in this repo inside one week — one asserting an item was done when it was never implemented, and a sibling asserting the opposite of its own story's behaviour.",
+          "subjects": [
+            "Delete the absent-safe gate -> the ac4 test must fail (it currently passes trivially, which is exactly the shape a vacuous test takes)",
+            "Replace textContent with a string-concatenation assignment -> the hostile-id test must fail",
+            "Flatten the doc/item grouping -> the grouping test must fail",
+            "Change the removal bound from 'next heading of any level' to 'end of container' -> the bounded-removal test must fail",
+            "Move the placement call before stampSlugs -> the ordering test must fail",
+            "Make frAnchorSlug match on exact equality instead of the title tail -> the numbered-heading test must fail",
+            "Return a degradation from the prepended-after-body-degraded path -> the no-stacked-notice test must fail"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: renderFunctionalRequirements builds ONE discrete element per requirement — asserted as a count against the record's length and as distinct sibling nodes, not as a substring of the rendered text",
+            "unit: doc-level requirements render first and per-item requirements are grouped under their itemRef, matching the grouping the record carries — falsified by flattening",
+            "unit: the constructed items carry their own class so they are styled distinctly from body prose, asserted on the elements rather than on the whole document (a whole-document assertion is unsound here — the stylesheet and the surrounding prose legitimately contain the same words)",
+            "unit (bounded removal): after an in-section placement, the body contains the constructed container and NOT the prose list that was there, so the items are separated from the surrounding prose by the prose being gone rather than merely by styling",
+            "integration: the shell wires the placement into renderContent so the substitution actually happens on an opened document"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: an id containing `*`, `_`, backtick and `[` comes out of the stub byte-identical to the record's value — the central falsifiable claim of this Story, and the one that fails the moment a string concatenation or a parse is introduced",
+            "unit: every string the renderer writes goes through textContent; the test inspects the stub's recorded property writes and asserts no markup-bearing property was ever assigned",
+            "unit: a statement containing `<script>alert(1)</script>` is rendered as text and creates no child element",
+            "contract: DOCS_FR_SOURCE contains no markup assignment (comments stripped before scanning), and the shell's injection-site count is still exactly one",
+            "mutation: replacing textContent with a concatenated-markup assignment must turn the hostile-id test red"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: rendering the SAME requirement record twice — standing in for an upstream and a downstream document — yields the identical id string in both, asserted by equality against the record's own value, since the rendering is a pure function of the record",
+            "unit: a record fixture taken from this Epic's real DEF renders `E20260929bfe98ff7:S002:FR001` exactly, with no prefix stripped, no ordinal renumbered and no segment reformatted",
+            "unit: the renderer sorts, deduplicates and renumbers nothing — output order equals record order, so the same commitment occupies a recognisable place in both documents",
+            "integration: the record forwarded on docs-content is the same reference the client returned, so nothing between the daemon projection and the renderer can alter an identifier"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: an undefined record yields `placed:'none'`, zero createElement calls on the stub and zero mutations of the body — asserted as the absence of any DOM activity, not merely as the absence of a visible section",
+            "unit: a record with `requirements: []` behaves identically to undefined, pinning the absent-safe convention the record's own module states",
+            "unit: a malformed record (`requirements` not an array) is also treated as absent — no empty frame, no partial list",
+            "unit: a record whose every entry is malformed produces an empty container which placement treats as absent, so nothing is inserted",
+            "integration: opening a document with no record produces a shell whose body is byte-identical to the s1 rendering of the same markdown — the strongest available statement of 'no area at all', and the dominant path (4 of 634 ledger artifacts carry the record)",
+            "integration: the posted message has no `functionalDefinition` KEY, so absence is absent rather than undefined-valued",
+            "mutation: deleting the absent-safe gate must turn the ac4 test red — without this, a test that passes by doing nothing proves nothing"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The daemon side is already done and shipped: `ArtifactReviewView` carries `functionalDefinition` projected verbatim from the artifact body by `structuredRecords` (src/workflow/artifact-content.ts:184), with no validation and with absence expressed as an absent key; `DocsContent` mirrors it indexed off the daemon type and `content()` forwards it with the same conditional spread (vscode-plugin/src/chat/docs-review-client.ts:24-37, :96-114). The record therefore reaches the extension host on every open and is DROPPED there — `openDoc` (docs-review-panel.ts:241-274) posts only `{ artifactId, markdown, openQuestions, blocked, commentable, sections, degradation? }`, and the docs-content variant in protocol.ts:70-86 has no field to carry it. What the reviewer sees instead is the record's PROSE projection: `renderFunctionalRequirementsSection` (functional-definition.ts:87-110) generates one markdown bullet per requirement in the form `- **<id>** — <statement> _(<rationale>)_`, the format engine supplies the numbered heading via `frBodyLines` (format/bindings.ts:24) and the `fr` section spec (format/formats.ts:36), and `renderedMarkdown` is that .md read verbatim (artifact-content.ts:52, :138-140). So requirements are already visible and already identified — but by a string that has passed through prose generation, marked's inline parser and the guardMd scrub, and on the degraded path by raw markdown source. `StructuredRenderer<T>` is exported at docs-review-panel.ts:155-161 and implemented nowhere, pinned by a test asserting exactly that (docs-review-panel.test.ts:427-439).",
+      "stateAfter": "The record travels one hop further — onto the existing docs-content message — and the webview renders it where the document puts it. On a document carrying requirements, the generated bullet list beneath the document's own `Functional requirements` heading is replaced by one constructed element per requirement, each identifier written with textContent straight off `FunctionalRequirement.id`, with the record's doc-level / per-item grouping preserved and the heading, its number and its stamped slug untouched. On a document carrying none — the state of 630 of the 634 ledger artifacts — absolutely nothing changes: no element is created and the body is byte-identical to the s1 rendering. When the body degraded to plain text, or the section cannot be located, the block is prepended to the body instead so the requirements stay legible, and the reviewer is told why in the second case. `StructuredRenderer<T>` has its first implementation and its pinning test is rewritten to say so. No daemon code, no generation-side code and no persisted artifact changes at all.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional `functionalDefinition` field to the docs-content variant of `HostToWebview`, typed by INDEXING off `DocsContent['functionalDefinition']` rather than restating the record shape, so protocol → client → daemon stay one declaration deep. Purely a type addition — nothing reads or writes it yet, and no existing consumer is affected because the field is optional.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Forward the record in `openDoc`: spread `functionalDefinition` onto the posted message only when `content.functionalDefinition !== undefined`, exactly as `degradation` is already spread, so an absent record stays an ABSENT KEY across the postMessage boundary. The webview ignores a field it has no code for, so after this step behaviour is unchanged and the data is in place.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the new webview source string holding the renderer, the anchor lookup and the placement logic, and inline it into the shell's single nonce'd script after the two existing source strings. Still inert — it defines functions and nothing calls them — so the surface is unchanged and the injection-site count is verifiably still one before any behaviour flips.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Call placement from `renderContent`, positioned after `stampSlugs` and before the chooser and the notice, wrapped in the backstop catch. This is the step that changes what a reviewer sees, and it is deliberately last and single-line: reverting this one call restores the shipped behaviour exactly while leaving the data path, the types and the renderer in place.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Rewrite the S001 contract test that asserts no file declares `: StructuredRenderer<`. It becomes: the type is still exported, it is implemented in exactly one place — the functional-requirements renderer — and the other listed files still declare none. Recorded as a deliberate, scoped narrowing rather than a deletion, mirroring how the no-innerHTML assertion was narrowed for the body renderer; it must still fail if a renderer appears somewhere unsanctioned.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Rebuild and reinstall the VS Code extension (esbuild bundle + VSIX). There is NO daemon rebuild in this Story — nothing under src/ changes — which is a smaller deployment than S001 required and worth stating plainly so the wrong artefact is not shipped.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes and nothing to migrate. The one type change is an optional field on an internal host→webview message that exists only inside this extension, so there is no external consumer and no versioning concern; the JetBrains review panel reads the daemon IPC, which this Story does not touch at all. Across the IPC boundary the compatibility that matters was already established by sc1 and is merely consumed here: all four projected fields are optional, absence is an absent key, and an older client reading a newer daemon response ignores fields it does not know — so an extension built before this Story and one built after both work against the same daemon, and this extension works against a daemon older than sc1 (it simply never receives a record and renders exactly as S001 does). Forward compatibility is deliberate too: a producer that starts emitting `functionalDefinition` on an HLD, LLD or PLAN — which the format spine already declares an `fr` section for, though no such artifact exists today — needs no change here, because the renderer keys off the record's presence and never off the artifact kind.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "In-place DOM substitution under the document's own Functional requirements heading",
+        "oneLineSummary": "The body renders as today, then the record-built items REPLACE the prose nodes beneath the document's own `Functional requirements` heading — one rendering, in the place the document put it.",
+        "approach": "The docs-content message gains one additive field, `functionalDefinition`, posted from `content.functionalDefinition` exactly as t5 added `sections` and `degradation` to the same message — no new message type, absent stays an absent key. In the webview, renderContent keeps its existing order: renderMarkdownBody writes the body, stampSlugs stamps the heading ids. A new webview function then walks the rendered body for the heading element whose stamped slug matches the FR section (identified from the posted `sections` index by the anchor whose title ends with `Functional requirements`, since the engine prefixes a position-dependent number), removes that heading's following siblings up to the next heading of equal-or-shallower level, and appends in their place a DOM-constructed list built from the record: one item per requirement, each carrying its `id` set by textContent and its `statement`, with per-item requirements grouped under their `itemRef`. The document's heading, its number and its anchor are left untouched, so the section chooser keeps working with no change at all. The renderer is written against the shipped `StructuredRenderer<FunctionalDefinition>` shape, returning `{ el, degradation }`, and carried as a third exported source string beside DOCS_BODY_RENDERER_SOURCE / DOCS_SECTIONS_SOURCE so it is inlined into the one nonce'd script and `new Function`-evaluated by tests. When the record is absent, or when the heading cannot be located, nothing is removed and nothing is constructed — the body stands exactly as s1 renders it.",
+        "pros": [
+          "Each requirement appears exactly ONCE, under the document's own heading, in the position and numbering the document assigns it — there is no second copy for the reviewer to reconcile and no question about which rendering is authoritative.",
+          "The id reaches the screen by textContent straight off the record, satisfying ac2's character-for-character guarantee on the one rendering the reviewer actually reads — not on a duplicate sitting beside a prose-derived one that still shows the mangled form.",
+          "Section navigation needs no change whatsoever: the heading element and its stamped slug are preserved, so the chooser entry, the anchor target and any future `ofSectionId` resolution continue to point at the same place.",
+          "Requires no change to the markdown the daemon sends, honouring the Epic's generation-side non-goal, and no change to deriveSectionIndex, which stays the zero-import pure module s1 shipped.",
+          "Degrades to exactly s1's behaviour on every failure: an absent record, an unlocatable heading or a degraded (plain-text) body all leave the document fully readable with its prose rendering intact."
+        ],
+        "cons": [
+          "It performs DOM surgery on marked's output, which couples s2 to the renderer's emitted tree shape — flat sibling blocks after a heading. That shape is stable for the markdown these artifacts emit, but it is a coupling s1 did not have.",
+          "Locating the section depends on matching the anchor title's tail (`Functional requirements`) because the engine prefixes a document-position-dependent number; a format override that renamed the heading would stop the substitution firing. The failure is safe (nothing is removed, the prose stands) but it is silent.",
+          "The removal step is the one genuinely destructive operation on the surface, so it needs a tight bound — remove to the next heading of equal-or-shallower level, never past it — and a test that proves a document whose FR section is followed by other sections keeps all of them.",
+          "Two renderings exist transiently within one frame (prose, then replacement), so the implementation must be synchronous within renderContent or the reviewer could see a flash of the prose form."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Split render — the body is rendered in two passes around a record-built block",
+        "oneLineSummary": "The markdown is split at the FR section boundary and rendered as two body fragments, with the DOM-constructed requirements block mounted between them, so nothing is ever rendered and then removed.",
+        "approach": "Same additive `functionalDefinition` field on docs-content. In the webview, renderContent splits the markdown string at the FR section's line boundaries — everything before the heading, and everything from the next equal-or-shallower heading onward — then calls the EXISTING renderMarkdownBody twice, into two sibling containers inside #insrc-docs-body, and mounts the DOM-constructed requirements block (heading included, built by textContent from the document's own heading text) between them. The split is computed from the raw markdown with the same ATX scanning discipline docs-sections.ts already uses, including its fenced-code guard, so a `#` inside a code sample cannot cause a false split. stampSlugs runs across the composed container so every heading in both fragments still receives its slug, and the constructed heading is stamped with the slug the index already assigned the FR section. Because the injection site is a single call site in the source (renderMarkdownBody's one `el.innerHTML=marked.parse`), calling it twice leaves the pinned exactly-one-injection-site count untouched.",
+        "pros": [
+          "Nothing is ever rendered and then destroyed: the prose form of the requirements never exists in the DOM at all, so there is no flash and no destructive removal step to bound.",
+          "Avoids coupling to marked's emitted tree shape entirely — the split is computed on the markdown source, which is the input this repo already parses with a tested, fence-aware scanner.",
+          "Each requirement still appears exactly once, in document position, with its id set by textContent off the record.",
+          "Reuses the shipped body renderer unchanged for both fragments, so the guardMd scrub, the degradation contract and the `.insrc-md` styling all apply to the surrounding prose exactly as they do today."
+        ],
+        "cons": [
+          "It introduces a SECOND markdown-boundary scanner in the webview, duplicating logic deriveSectionIndex already owns but in a different language context (the webview source strings are ES5-style and cannot import the module) — two scanners that must agree about fences and ATX forms is a real drift risk for a guarantee s1 deliberately made single-sourced.",
+          "Splitting the body into two containers changes the body's DOM structure, which the markdown stylesheet's descendant rules and any future block-level styling sit on top of — a structural change to s1's surface for a reason s1's owner never saw.",
+          "The degradation contract becomes ambiguous: two renderMarkdownBody calls can produce two different degradation results, and the message shows one notice, so the Story must define how they combine — a new rule where a1 has none.",
+          "The constructed heading is built by s2 rather than rendered from the document, so the heading text and its numbering are now s2's responsibility to reproduce faithfully — exactly the kind of re-derivation the boundary warns against, applied to the heading instead of the id."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "a2 reaches the same reviewer-visible outcome as a1 and avoids the render-then-remove flash, which is a genuine advantage. It loses on two specifics rather than on taste. First, the sc2 score: it duplicates boundary-scanning logic that s1 deliberately made single-sourced, in a context (the ES5 webview source string) that structurally cannot import the single source — so the duplication is permanent, not a refactor away. Second, its own fourth con is self-defeating: because the FR heading is excised with the section, a2 must RECONSTRUCT that heading from the posted index, which means s2 re-deriving the document's heading text and its position-dependent number. The boundary's one hard obligation is that s2 reproduce identity from the record rather than re-derive it from rendered prose; a2 honours that for the id and then breaks it for the heading. a1 simply leaves the real heading element in place."
+      },
+      {
+        "id": "a3",
+        "name": "Host-side excision plus a dedicated structured region",
+        "oneLineSummary": "The host strips the FR section from the markdown whenever it also posts a non-empty record, and the webview renders the record into its own fixed region above the body.",
+        "approach": "Same additive `functionalDefinition` field, but the host does more: in openDoc, when the content carries a non-empty record, it removes the FR section's lines from the markdown before posting and derives the section index from the TRIMMED markdown, so index and body still travel together and still agree. The webview gains one fixed host div (`#insrc-docs-fr`) in the shell, filled by a DOM-constructing renderer written against `StructuredRenderer<FunctionalDefinition>`; the div stays completely empty — no heading, no border, no reserved space — when no record is posted. Everything about the region's layout and the per-requirement item shape is s2-private, as the boundary allows.",
+        "pros": [
+          "The webview logic is the simplest of the in-place-equivalent options: fill one div, or leave it empty. No DOM surgery, no second scanner, no split container.",
+          "The markdown trimming happens in the host, where it is ordinary TypeScript with the full test harness, rather than in an ES5 source string evaluated against a DOM stub.",
+          "The requirements region is structurally independent of the body, so its styling and future evolution (s3/s4 slots, filtering, checking off) cannot be destabilised by a change in what marked emits.",
+          "Each requirement still appears exactly once."
+        ],
+        "cons": [
+          "It breaks the invariant s1 fought for and pinned: `renderedMarkdown` is the artifact's .md read VERBATIM and the body shown is the document as written. Trimming it in the host means the pane now shows a document the artifact does not contain, and a reviewer approving it is approving something they were shown in edited form — a materially worse property than a cosmetic duplication.",
+          "The requirements move OUT of their document position to a fixed region, so the reviewer no longer reads them where the document places them, and the surrounding sections' numbering silently stops matching what the reviewer sees.",
+          "The section index loses the FR anchor (it is derived from the trimmed text), so the chooser silently stops offering a section the document genuinely has — or s2 must synthesise an anchor for its own region, which means s2 minting section identity that sc3 owns.",
+          "Adds host-side markdown manipulation to a host that until now only read and forwarded, enlarging s1's surface for a reason s1's boundary explicitly keeps private."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "a3 scores clean on all four acceptance criteria and still ranks last, which is the clearest signal in this comparison that acceptance criteria are not the only constraints in play. It is eliminated on the sc1 violation, not on preference: having the host rewrite renderedMarkdown breaks the verbatim-source-of-truth property sc1 is built on and k4 states outright, and it does so invisibly — the reviewer cannot tell the body has been edited. The sc2 partial compounds it: the section index derived from the trimmed text loses the FR anchor, so navigation silently stops offering a real section, and the only repair available to s2 would be to mint section identity that sc3 owns. Every benefit a3 offers — one rendering, in a clean independent region, with simple webview logic — is available from a1 at the cost of DOM surgery and from a2 at the cost of a second scanner, neither of which requires editing the document."
+      },
+      {
+        "id": "a4",
+        "name": "Pure supplement — a structured region alongside an untouched body",
+        "oneLineSummary": "The record is rendered into its own region and the document body is left exactly as s1 renders it, accepting that each requirement is shown twice.",
+        "approach": "The minimal shape. The additive `functionalDefinition` field is posted on docs-content; the shell gains one empty host div; a DOM-constructing renderer written against `StructuredRenderer<FunctionalDefinition>` fills it from the record, with one item per requirement, the id set by textContent, and per-item requirements grouped under their itemRef. The body, the section index, the chooser, the degradation notice and the approval controls are untouched. When the record is absent the div stays empty and nothing is constructed.",
+        "pros": [
+          "The smallest and safest diff by a clear margin: nothing existing changes behaviour, so s1's ac5 obligation that the approval path stay byte-identical is trivially preserved.",
+          "Zero coupling to marked's output, to the markdown's line structure, or to section identity — no scanner, no surgery, no split.",
+          "Strictly additive and therefore the easiest to reverse if the Epic's later Stories want the region's space for a slot.",
+          "On the ac3 degraded path it is a genuine improvement with no downside: the body is raw markdown source there, so the structured region is the only readable rendering of the requirements."
+        ],
+        "cons": [
+          "Every requirement appears TWICE on the same surface, once in the body's prose rendering and once in the region, with no indication which is authoritative. On the only four documents in the ledger where the feature fires, the reviewer's experience gets noisier, not clearer.",
+          "ac2's character-for-character guarantee is satisfied only in the region while the body continues to show the prose-derived form beside it — so a reviewer who reads the body still sees the unguaranteed id, and a disagreement between the two renderings would be visible and unexplained.",
+          "ac1's 'visually separated from the surrounding prose' is met in a weak sense — a separate region — while the prose it was meant to be separated FROM remains on screen containing the same content.",
+          "It defers rather than resolves the duplication, which the Epic would then carry into s3 and s4 as a precedent for bolting regions beside the body."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "a4 is the smallest, safest diff and scores clean on ac3, ac4, sc1 and sc2 — it is a defensible choice and would ship without incident. It is ranked third on the two acceptance criteria the Story actually exists for. ac1 and ac2 both score partial for the same underlying reason: a4 adds a correct rendering without removing the incorrect-by-this-Story's-standard one, so the surface ends up carrying two renderings of the same commitments and the character-for-character guarantee covers only one of them. Given that the feature fires on roughly four documents in the entire ledger, doubling the requirement text on exactly those four is a conspicuous cost for a Story whose whole purpose is to make commitments easier to read. Its one real advantage is worth preserving in whatever wins: on the degraded path, where the body is raw markdown source, a record-built rendering is the only legible form of the requirements."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "RATIFY REPLACING THE BODY'S GENERATED FR PROSE (s8 graded sbdry3 `passed` with a recorded caveat — this is the LLD's load-bearing decision, not a detail). The chosen alternative a1 replaces, in the rendered DOM, the markdown bullet list beneath the document's own `Functional requirements` heading with a record-built rendering of the SAME requirements. The argument for it: that prose is itself GENERATED from the record (renderFunctionalRequirementsSection; the producing Epic's k2 forbids hand-authoring it), all four fields plus the doc/item grouping carry across losslessly, the markdown the daemon sends is not altered, and k4 ('the document body remains the authoritative content and a companion is always shown as a referenced adjunct') is about COMPANIONS, which this Story renders none of. The argument against it: a reviewer reads a body that is not a one-to-one rendering of the markdown, and a broader reading of k4 would forbid that. Review should either ratify a1 as written, or require the pure-supplement shape a4 (ranked third, scores recorded) — the whole LLD below the choice is unaffected except that the in-section placement and its bounded removal would drop out.",
+      "CHECKLIST PROVENANCE AND SCORING GAPS, recorded so review judges them rather than discovering them (s8 graded cd1, cd2 and alt2 `partial`). (a) cd1: three of the six api names — `DOCS_FR_SOURCE`, `frAnchorSlug`, `placeFunctionalRequirements` — are NEW, since a Story that adds code must add names; each is anchored to a located symbol (the DOCS_*_SOURCE family at docs-review-panel.ts:76/:111, sc3's SectionIndex at docs-sections.ts:32-39, the body container rendered by DOCS_BODY_RENDERER_SOURCE), and `renderFunctionalRequirements` is sc2's published `StructuredRenderer<T>` applied to `FunctionalDefinition`. (b) cd2: `placeFunctionalRequirements`'s type-level signature declares `unknown` for its DOM and record parameters and `renderFunctionalRequirements` returns `el: unknown`, because this code lives in an exported SOURCE STRING with no TypeScript boundary of its own and is tested against a DOM stub that is deliberately not an HTMLElement — sc2's own published type already makes this choice. Concrete types are given per parameter. (c) alt2: all four alternatives were scored against every Story acceptance criterion and both shared contracts (24 scores), but Epic constraints k1-k7 were not re-scored as their own rows; they appear inside the notes and rationales, and the decisive eliminations are explicit — a3 on an sc1 violation, a4 on ac1/ac2 partials."
+    ],
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "insrc docs review",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "DEF-bfe98ff7f97178cf — build-vs-code-plugin-ui-integration",
+          "isSubtle": true,
+          "size": "small",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "jump to section…   ▾",
+          "isSubtle": true,
+          "size": "small"
+        },
+        {
+          "type": "TextBlock",
+          "text": "1. Problem",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Rendered by the markdown body exactly as S001 ships it — untouched by this Story.",
+          "isSubtle": true,
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "2. Functional requirements",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "The document's own heading, its number and its anchor are left in place; only the generated bullet list beneath it is replaced.",
+          "isSubtle": true,
+          "size": "small",
+          "wrap": true
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "E20260929bfe98ff7:FR001",
+                      "weight": "bolder",
+                      "color": "accent",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "A reviewer opening a generated workflow document in VS Code sees its functional requirements as discrete, individually identified outcomes rather than undifferentiated prose.",
+                      "wrap": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "The functional record is the part a non-implementer reviewer is least able to reconstruct from flat text.",
+              "isSubtle": true,
+              "size": "small",
+              "wrap": true
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "E20260929bfe98ff7:FR002",
+                      "weight": "bolder",
+                      "color": "accent",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "A reviewer can navigate a generated document by its structure rather than scrolling its full length.",
+                      "wrap": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "The documents were deliberately reshaped for human reading; a flat rendering discards that work.",
+              "isSubtle": true,
+              "size": "small",
+              "wrap": true
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "s2:",
+          "weight": "bolder"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Per-item requirements stay grouped under the story they belong to — the record carries scope and itemRef, and a flat list would silently drop that.",
+          "isSubtle": true,
+          "size": "small",
+          "wrap": true
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "ColumnSet",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "E20260929bfe98ff7:S002:FR002",
+                      "weight": "bolder",
+                      "color": "accent",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Each displayed functional requirement shows the identifier the document assigns it, unchanged.",
+                      "wrap": true
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TextBlock",
+              "text": "The identifier is what lets the same commitment be recognised across stages and checked at completion.",
+              "isSubtle": true,
+              "size": "small",
+              "wrap": true
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "3. Non-goals",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "TextBlock",
+          "text": "The next section and everything after it are untouched — the replacement is bounded to the siblings before the next heading of any level.",
+          "isSubtle": true,
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "— — —",
+          "isSubtle": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "The other two states, for comparison",
+          "weight": "bolder",
+          "size": "small"
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "ABSENT (630 of 634 ledger artifacts): no heading, no frame, no reserved space — the body is byte-identical to the S001 rendering.",
+              "wrap": true,
+              "isSubtle": true,
+              "size": "small"
+            },
+            {
+              "type": "TextBlock",
+              "text": "DISPLACED: when the body degraded to plain text, or the section cannot be located, the same block is prepended above the body instead. In the second case only, a notice reads 'functional requirements shown above the document — their section could not be located'.",
+              "wrap": true,
+              "isSubtle": true,
+              "size": "small"
+            }
+          ]
+        },
+        {
+          "type": "ActionSet",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "approve"
+            },
+            {
+              "type": "Action.Submit",
+              "title": "request changes"
+            }
+          ]
+        }
+      ]
+    },
+    "sequenceDefinition": {
+      "id": "s2-render-order",
+      "participants": [
+        {
+          "id": "host",
+          "label": "openDoc (extension host)"
+        },
+        {
+          "id": "client",
+          "label": "DocsReviewClient"
+        },
+        {
+          "id": "webview",
+          "label": "renderContent (webview)"
+        },
+        {
+          "id": "bodyR",
+          "label": "renderMarkdownBody"
+        },
+        {
+          "id": "stamp",
+          "label": "stampSlugs"
+        },
+        {
+          "id": "place",
+          "label": "placeFunctionalRequirements"
+        },
+        {
+          "id": "chrome",
+          "label": "chooser + notice + controls"
+        }
+      ],
+      "messages": [
+        {
+          "from": "host",
+          "to": "client",
+          "label": "content(artifactId)",
+          "kind": "call"
+        },
+        {
+          "from": "client",
+          "to": "host",
+          "label": "DocsContent { markdown, functionalDefinition? }",
+          "kind": "return",
+          "note": "sc1 projection, verbatim and unvalidated; absent stays an absent key"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "post docs-content { markdown, sections, degradation?, functionalDefinition? }",
+          "kind": "call",
+          "note": "ONE message — the record, the body and the index it was derived from can never be paired across two documents"
+        },
+        {
+          "from": "webview",
+          "to": "bodyR",
+          "label": "render the body",
+          "kind": "call"
+        },
+        {
+          "from": "bodyR",
+          "to": "webview",
+          "label": "{ el, degradation }",
+          "kind": "return",
+          "note": "the single markup-injection site on this surface"
+        },
+        {
+          "from": "webview",
+          "to": "stamp",
+          "label": "stamp heading slugs from the posted index",
+          "kind": "call"
+        },
+        {
+          "from": "stamp",
+          "to": "webview",
+          "label": "stamped count",
+          "kind": "return"
+        },
+        {
+          "from": "webview",
+          "to": "place",
+          "label": "place the record (record, sections, bodyDegraded)",
+          "kind": "call",
+          "note": "MUST run after stamping: the stamper pairs headings to anchors by title through a moving pointer, so mutating the tree first could mis-stamp every later heading"
+        },
+        {
+          "from": "place",
+          "to": "webview",
+          "label": "{ placed: 'in-section' | 'prepended' | 'none', degradation? }",
+          "kind": "return",
+          "note": "absent record -> none, and nothing is created or removed"
+        },
+        {
+          "from": "webview",
+          "to": "chrome",
+          "label": "chooser (gated on stamped), notice (host > body > placement), open questions, approve / request-changes",
+          "kind": "call",
+          "note": "unchanged by this Story; placement never adds or removes a heading, so the gate means what it meant in S001"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S002/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/functional-definition.ts:23-40",
+      "quotedText": "FunctionalRequirement { id, statement, rationale?, scope, itemRef? } and FunctionalDefinition { requirements }"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/functional-definition.ts:54-78",
+      "quotedText": "validateFunctionalDefinition runs at assembly time, not on the read path"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/functional-definition.ts:87-110",
+      "quotedText": "renderFunctionalRequirementsSection generates the markdown bullet list this Story replaces on screen"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/format/bindings.ts:14-29",
+      "quotedText": "frBodyLines strips the hard-coded heading so the engine can supply a numbered one"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/format/formats.ts:36",
+      "quotedText": "S({ id: 'fr', heading: 'Functional requirements', source: 'fr' })"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:49-62,138-140,184",
+      "quotedText": "renderedMarkdown is the .md read verbatim; structuredRecords projects the body records without validation"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts:24-37,96-114",
+      "quotedText": "DocsContent indexes its four records off ArtifactReviewView and forwards them with an absent-key spread"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:241-274",
+      "quotedText": "openDoc posts docs-content and currently drops the record"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:76-108,111-145,155-161",
+      "quotedText": "DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE and the published StructuredRenderer<T>"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:354-374",
+      "quotedText": "renderContent, the webview render pipeline this Story inserts one call into"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-sections.ts:32-39,86-125,136-149",
+      "quotedText": "deriveSectionIndex / createSectionResolver — the single source of section identity, zero imports"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts:70-86",
+      "quotedText": "the docs-content variant, extended additively by S001/t5 with sections and degradation"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:318-342,427-439,575-589,698-703",
+      "quotedText": "the eval-against-a-DOM-stub harness, the StructuredRenderer pinning test and the single-injection-site count"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD-bfe98ff7f97178cf-s1",
+      "quotedText": "the ratified widening of the renderer return to { el, degradation }, superseding the HLD sc2 sketch"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "DEF-bfe98ff7f97178cf",
+      "quotedText": "20 functional requirements — 6 doc-level plus per-item groups under s1..s4 — the real record fixture this Story renders"
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace over .insrc/artifacts/*.json",
+      "quotedText": "4 of 31 DEFs carry a functionalDefinition; HLD 0/30, LLD 0/190, PLAN 0/155 — absence is the dominant path"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-605c70574633ed67",
+      "quotedText": "openDoc has no supersede guard — pre-existing, tracked separately, deliberately not fixed here"
+    }
+  ]
+}

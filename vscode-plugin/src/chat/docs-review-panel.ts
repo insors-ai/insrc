@@ -779,8 +779,19 @@ export const DOCS_DIAGRAM_SOURCE =
   `if(!slot||slot.state==='absent')return 'none';` +
   `var frame=dgFrame(slot);` +
   `var slug=slot.anchorSlug;` +
-  `if(slug&&bodyEl&&bodyEl.querySelector){` +
-  `var h=null;try{h=bodyEl.querySelector('#'+slug);}catch(e){h=null;}` +
+  // Found by the post-build code review: `querySelector('#'+slug)` THROWS a
+  // SyntaxError whenever the slug starts with a digit, because a bare CSS
+  // identifier may not. insrc documents number their headings — the format engine
+  // renders `## 2. Contract details`, which slugifies to `2-contract-details` —
+  // so the selector form would have failed on essentially EVERY real document,
+  // silently, since the catch below degrades to default placement. Verified in
+  // Chrome: `document.querySelector('#2-contract-details')` -> SyntaxError.
+  //
+  // Walking children and comparing `id` avoids CSS identifier syntax altogether.
+  // It is also what the body actually is: a flat list of rendered blocks.
+  `if(slug&&bodyEl&&bodyEl.children){` +
+  `var h=null;var kids=bodyEl.children;` +
+  `for(var ci=0;ci<kids.length;ci++){if(kids[ci]&&kids[ci].id===slug){h=kids[ci];break;}}` +
   // Inserted AFTER the heading it was anchored to, so the visual sits with the part
   // of the document that references it.
   `if(h&&h.parentNode){h.parentNode.insertBefore(frame,h.nextSibling);return 'in-section';}}` +

@@ -988,6 +988,10 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       everything t2-t5 added was inert, and reverting this call alone restores
  *       the S002 surface with the types, the data path and both derivations left
  *       in place.
+ *   S003 post-build code review (+51 chars, +51 bytes): the anchor lookup moved
+ *       off `querySelector('#'+slug)`, which THROWS on a digit-leading slug and
+ *       therefore could never anchor on a numbered heading — the format every
+ *       real insrc document uses.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1001,9 +1005,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  79479,
-  bytes:  79531,
-  sha256: '904c85e52d3495cde9ae2ba48e9a4bcb927014c6efd632bb34d58fd24820906e',
+  chars:  79530,
+  bytes:  79582,
+  sha256: '47ed51d04f47ba442818d6886f0479d95505ef8fe17cc21bc16ff030d7e1b933',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1438,9 +1442,19 @@ function bodyStub(tagName: string, id = '', text = ''): BodyStub {
     // Only `#id` is supported, which is all the mount uses. Anything else returns
     // null rather than guessing, so an unsupported selector shows up as a failing
     // anchor rather than a silently wrong match.
+    //
+    // AND IT THROWS WHERE A REAL BROWSER THROWS. A bare CSS identifier may not
+    // begin with a digit, so `querySelector('#2-contract-details')` is a
+    // SyntaxError (verified in Chrome). The permissive stub that simply matched
+    // the string is precisely why a selector-based mount passed every test here
+    // while being unable to anchor on ANY numbered heading — which is every real
+    // insrc document.
     querySelector(sel) {
       if (!sel.startsWith('#')) return null;
       const want = sel.slice(1);
+      if (/^[0-9]/.test(want)) {
+        throw Object.assign(new Error(`'${sel}' is not a valid selector`), { name: 'SyntaxError' });
+      }
       const walk = (x: BodyStub): BodyStub | null => {
         for (const c of x.children) {
           if (c.id === want) return c;
@@ -3470,4 +3484,30 @@ test('t7: every committed evidence image exists at the path its commit claims', 
     assert.ok(st.isFile(), `${name} is a file`);
     assert.ok(st.size > 1000, `${name} is non-trivial (${st.size} bytes)`);
   }
+});
+
+test('t6 FIX: the anchor resolves on a NUMBERED heading — the format every real insrc document uses', () => {
+  // The post-build code review found that querySelector('#'+slug) throws on a
+  // digit-leading identifier, so anchored placement silently never worked on a
+  // numbered heading. The format engine numbers them: `## 2. Contract details`
+  // slugifies to `2-contract-details`.
+  const md = '# Low-level design\n\nIntro.\n\n## 2. Contract details\n\nBody.\n\n## 10. Alternatives considered\n\nMore.\n';
+  const sections = deriveSectionIndex(md);
+  const slugs = sections.anchors.map((a) => a.slug);
+  assert.deepEqual(slugs, ['low-level-design', '2-contract-details', '10-alternatives-considered'],
+    'the slugs really do start with digits — if this changes, the hazard is gone and so is the need for this test');
+
+  const r = runWebview();
+  r.deliver({
+    artifactId: 'a', markdown: md, openQuestions: [], blocked: false, sections,
+    erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: '2-contract-details',
+  });
+
+  // ANCHORED, not fallen back: the slot sits in the body directly after that
+  // heading, and the default host is empty.
+  const idx = r.body.children.findIndex((c) => c.id === '2-contract-details');
+  assert.ok(idx >= 0, 'the numbered heading was stamped');
+  assert.equal(r.body.children[idx + 1]!.className, 'insrc-dg-slot',
+    'the slot anchors to a digit-leading slug instead of silently falling back');
+  assert.equal(r.diagram.children.length, 0, 'and did NOT land in the default host');
 });

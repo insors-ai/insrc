@@ -22,8 +22,10 @@
     "epicSlug": "build-vs-code-plugin-ui-integration",
     "storyId": "s3",
     "hldBaseRunId": "wf-1790840477406-bic923",
-    "hldEffectiveHash": "33e859ffd0bea6e7dc7aaab7fea3549865f3c5df45d466b64c5818993f17bd31",
-    "hldAmendmentsApplied": [],
+    "hldEffectiveHash": "44085ff6e95fa09d01d57261b763704a35b3224657eb1aba74a773b259d98276",
+    "hldAmendmentsApplied": [
+      "AMD-bfe98ff7f97178cf-1"
+    ],
     "review": {
       "artifact": "design.story",
       "stage": "design.story",

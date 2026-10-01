@@ -44,5 +44,7 @@
     "stepId": "synthesize"
   },
   "proposedAt": "2026-10-01T16:10:49.786Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-01T16:16:27.386Z",
+  "approvedBy": "user:in-chat-approval"
 }

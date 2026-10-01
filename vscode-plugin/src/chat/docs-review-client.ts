@@ -33,6 +33,7 @@ export interface DocsContent {
   // view rather than restated, so the two shapes cannot drift.
   readonly functionalDefinition?: ArtifactReviewView['functionalDefinition'];
   readonly erDefinition?: ArtifactReviewView['erDefinition'];
+  readonly sequenceDefinition?: ArtifactReviewView['sequenceDefinition'];
   readonly uxDefinition?: ArtifactReviewView['uxDefinition'];
   readonly companions?: ArtifactReviewView['companions'];
 }
@@ -108,6 +109,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
         // consumer's `=== undefined` check behaves the same on both sides of the IPC.
         ...(res.functionalDefinition !== undefined ? { functionalDefinition: res.functionalDefinition } : {}),
         ...(res.erDefinition !== undefined ? { erDefinition: res.erDefinition } : {}),
+        ...(res.sequenceDefinition !== undefined ? { sequenceDefinition: res.sequenceDefinition } : {}),
         ...(res.uxDefinition !== undefined ? { uxDefinition: res.uxDefinition } : {}),
         ...(res.companions !== undefined ? { companions: res.companions } : {}),
       };

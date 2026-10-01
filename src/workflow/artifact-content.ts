@@ -33,6 +33,7 @@ import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
 import type { FunctionalDefinition } from './artifacts/functional-definition.js';
 import type { ErDefinition } from './artifacts/companion/er.js';
+import type { SequenceDefinition } from './artifacts/companion/sequence.js';
 import type { UxDefinition } from './artifacts/companion/ux.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
 
@@ -62,6 +63,16 @@ export interface ArtifactReviewView {
 	// unaffected. Not gated on `kind` — a PLAN body carries functionalDefinition too.
 	readonly functionalDefinition?: FunctionalDefinition | undefined;
 	readonly erDefinition?:         ErDefinition | undefined;
+	// AMD-bfe98ff7f97178cf-1 (S003) — sharedContract.fieldAdd on sc1, breaking:false.
+	// THREE daemon renderers stamp kind:'diagram-mermaid' (companion/render.ts:104
+	// ER, :205 sequence, :243 component), so a companion ref CANNOT identify which
+	// record drew it and a review surface must dispatch on the RECORD. Projecting
+	// only `erDefinition` left the majority of real diagram documents undrawable —
+	// the ledger holds 5 diagram-mermaid refs against 2 erDefinitions and 3
+	// sequenceDefinitions. `componentDependencyDefinition` is DEFERRED, not
+	// forgotten: 0 artifact bodies carry one, so it is added when a producer first
+	// emits it, on these same additive terms.
+	readonly sequenceDefinition?:   SequenceDefinition | undefined;
 	readonly uxDefinition?:         UxDefinition | undefined;
 	readonly companions?:           readonly CompanionArtifactRef[] | undefined;
 }
@@ -201,15 +212,18 @@ export function handleArtifactContent(
  * so it travels through as written.
  */
 function structuredRecords(body: Record<string, unknown>): Partial<Pick<
-	ArtifactReviewView, 'functionalDefinition' | 'erDefinition' | 'uxDefinition' | 'companions'
+	ArtifactReviewView,
+	'functionalDefinition' | 'erDefinition' | 'sequenceDefinition' | 'uxDefinition' | 'companions'
 >> {
 	const fd = body['functionalDefinition'] as FunctionalDefinition | undefined;
 	const er = body['erDefinition']         as ErDefinition | undefined;
+	const sq = body['sequenceDefinition']   as SequenceDefinition | undefined;
 	const ux = body['uxDefinition']         as UxDefinition | undefined;
 	const co = body['companions']           as readonly CompanionArtifactRef[] | undefined;
 	return {
 		...(fd !== undefined ? { functionalDefinition: fd } : {}),
 		...(er !== undefined ? { erDefinition:         er } : {}),
+		...(sq !== undefined ? { sequenceDefinition:   sq } : {}),
 		...(ux !== undefined ? { uxDefinition:         ux } : {}),
 		...(co !== undefined ? { companions:           co } : {}),
 	};

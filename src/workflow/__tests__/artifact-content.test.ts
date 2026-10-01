@@ -224,7 +224,7 @@ test('t1: an absent body field projects as ABSENT — not null, not an empty obj
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: {} } });
 	try {
 		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
-		for (const k of ['functionalDefinition', 'erDefinition', 'uxDefinition', 'companions'] as const) {
+		for (const k of ['functionalDefinition', 'erDefinition', 'sequenceDefinition', 'uxDefinition', 'companions'] as const) {
 			// `=== undefined` is the single absence test, so the KEY must be absent:
 			// a key present with an undefined/null/{} value would defeat it.
 			assert.equal(k in v, false, `${k} must be an absent key, not a present-but-empty one`);
@@ -242,6 +242,7 @@ test('t1: a DEF body projects functionalDefinition only and never companions', (
 		assert.deepEqual(v.functionalDefinition, FD);
 		assert.equal('companions' in v, false, 'nothing is backfilled for a record the body does not carry');
 		assert.equal('erDefinition' in v, false);
+		assert.equal('sequenceDefinition' in v, false);
 		assert.equal('uxDefinition' in v, false);
 	} finally {
 		cleanup(repo);
@@ -319,6 +320,112 @@ test('t1: a malformed structured record travels through rather than failing the 
 		assert.deepEqual(v.erDefinition as unknown, junk.erDefinition);
 		assert.deepEqual(v.uxDefinition as unknown, junk.uxDefinition);
 		assert.deepEqual(v.companions as unknown, junk.companions);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// S003/t1 (Epic build-vs-code-plugin-ui-integration, AMD-bfe98ff7f97178cf-1) —
+// `sequenceDefinition` joins sc1's projection as a FIFTH structured record.
+//
+// WHY the field exists: three daemon renderers all stamp kind:'diagram-mermaid'
+// (companion/render.ts:104 ER, :205 sequence, :243 component), so a companion
+// ref cannot identify which record drew it. Projecting only `erDefinition` left
+// the MAJORITY of real diagram documents undrawable by a review surface.
+//
+// The amendment is additive on exactly the terms the existing four use, so the
+// tests below assert the same three properties the S001 suite does — verbatim
+// projection, absent-key absence, and no change to any existing member — with
+// the verbatim case driven by a REAL ledger record rather than a hand-invented
+// one, because a fixture that happens to round-trip proves less than the actual
+// shape a producer emits.
+// ---------------------------------------------------------------------------
+
+/** The real sequence record this Epic's own S002 LLD carries: the counterexample
+ *  that motivated the amendment (a 'Sequence diagram' companion ref whose source
+ *  record sc1 did not project). Read from the committed ledger so the shape under
+ *  test is a producer's, not a test author's. */
+function realLedgerSequenceDefinition(): unknown {
+	const ledger = join(process.cwd(), ARTIFACTS_DIR, 'LLD-bfe98ff7f97178cf-s2.json');
+	const raw = readFileSync(ledger, 'utf8');       // throws loudly if the ledger entry is gone
+	const body = (JSON.parse(raw) as { body?: Record<string, unknown> }).body ?? {};
+	const sq = body['sequenceDefinition'];
+	assert.ok(sq !== undefined && typeof sq === 'object',
+		'the committed S002 LLD must still carry a sequenceDefinition — it is the real record this projection was added for');
+	return sq;
+}
+
+test('t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body', () => {
+	const SQ = realLedgerSequenceDefinition();
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { sequenceDefinition: SQ } } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		// Deep-equal to what the body stored, not merely present and not reshaped:
+		// the projection is a pass-through, and a producer's real record is the
+		// only input that can prove it did not quietly normalize anything.
+		assert.deepEqual(v.sequenceDefinition as unknown, SQ);
+		// And it really is the non-trivial shape — a record with participants and
+		// ordered messages, so a round-trip of `{}` could not have passed this.
+		const sq = v.sequenceDefinition as unknown as { participants?: unknown[]; messages?: unknown[] };
+		assert.ok(Array.isArray(sq.participants) && sq.participants.length > 0, 'real record carries participants');
+		assert.ok(Array.isArray(sq.messages) && sq.messages.length > 0, 'real record carries ordered messages');
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}', () => {
+	// The dominant case: only 3 artifact bodies in the whole ledger carry one.
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'] } } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		// `'k' in v === false` is the assertion that matters: a key present with an
+		// undefined value would type-check yet defeat `=== undefined` as the single
+		// absence test under exactOptionalPropertyTypes.
+		assert.equal('sequenceDefinition' in v, false, 'sequenceDefinition must be an ABSENT KEY');
+		assert.equal(v.sequenceDefinition, undefined);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: adding sequenceDefinition left every pre-existing projected record unchanged', () => {
+	// k7 (unchanged existing consumers) + the insrc-ide fork, which MIRRORS this
+	// IPC payload shape: the addition is safe across repos only because nothing
+	// existing moved. Asserted by projecting a body carrying all five and checking
+	// the original four still come back exactly as the S001 suite expects.
+	const SQ = realLedgerSequenceDefinition();
+	const { repo, mdRel } = makeFixture({
+		json: { meta: {}, body: { functionalDefinition: FD, erDefinition: ER, sequenceDefinition: SQ, uxDefinition: UX, companions: CO } },
+	});
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		assert.deepEqual(v.functionalDefinition, FD);
+		assert.deepEqual(v.erDefinition, ER);
+		assert.deepEqual(v.uxDefinition, UX);
+		assert.deepEqual(v.companions, CO);
+		assert.deepEqual(v.sequenceDefinition as unknown, SQ);
+		// The six pre-sc1 members are also untouched by the addition.
+		assert.equal(typeof v.artifactId, 'string');
+		assert.equal(typeof v.kind, 'string');
+		assert.equal(typeof v.renderedMarkdown, 'string');
+		assert.ok(Array.isArray(v.openQuestions));
+		assert.equal(typeof v.approvable, 'boolean');
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('t1: a malformed sequenceDefinition travels through as written — the read path validates nothing', () => {
+	// validateErDefinition and its peers run at ASSEMBLY, inside the generating
+	// workflow; the read path is a pass-through. S003's client renderer therefore
+	// has to shape-check before it draws, which is why this is pinned here.
+	const junk = { participants: 'not-an-array', messages: 42 };
+	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { sequenceDefinition: junk } } });
+	try {
+		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		assert.deepEqual(v.sequenceDefinition as unknown, junk, 'no validation, no defaulting, no coercion');
 	} finally {
 		cleanup(repo);
 	}

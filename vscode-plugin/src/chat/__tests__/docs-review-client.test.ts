@@ -186,7 +186,7 @@ test('t2: content() on a view carrying none of the four yields all four ABSENT',
       : { error: 'x' },
   );
   const content = await createDocsReviewClient(client).content('docs/x/DEF.md');
-  for (const k of ['functionalDefinition', 'erDefinition', 'uxDefinition', 'companions'] as const) {
+  for (const k of ['functionalDefinition', 'erDefinition', 'sequenceDefinition', 'uxDefinition', 'companions'] as const) {
     // An absent key, not a key holding undefined — so `=== undefined` is the
     // single absence test on this side of the IPC too.
     assert.equal(k in content, false, `${k} must be absent, not present-but-empty`);
@@ -220,4 +220,72 @@ test('t2: source-scan — no new rpc method name appears in docs-review-client',
     ['workflow.approve', 'workflow.artifactContent', 'workflow.pending', 'workflow.resolveComment'],
     'the widening rides the existing four IPCs — no new rpc method name',
   );
+});
+
+// ---------------------------------------------------------------------------
+// S003/t1 (AMD-bfe98ff7f97178cf-1) — `sequenceDefinition` is carried through on
+// the same terms as the four sc1 siblings: reference-identical pass-through on
+// presence, an ABSENT KEY on absence, and INDEXED off ArtifactReviewView rather
+// than restated so the daemon and client shapes cannot drift.
+// ---------------------------------------------------------------------------
+
+const SQ = {
+  id: 's2-render-order',
+  participants: [{ id: 'host', label: 'openDoc (extension host)' }, { id: 'webview', label: 'renderContent (webview)' }],
+  messages: [{ from: 'host', to: 'webview', label: 'docs-content' }],
+};
+
+test('t2/s3: content() carries sequenceDefinition through by REFERENCE, unmodified', async () => {
+  const view = {
+    artifactId: 'LLD-bfe98ff7f97178cf-s2',
+    kind: 'LLD',
+    renderedMarkdown: '# LLD\nbody',
+    openQuestions: [],
+    approvable: true,
+    sequenceDefinition: SQ,
+  };
+  const { client } = fakeIpc((m) => (m === 'workflow.artifactContent' ? view : { error: 'x' }));
+  const content = await createDocsReviewClient(client).content('docs/x/LLD.md');
+
+  // Reference equality is the assertion that matters: a clone would deep-equal
+  // and still prove the pass-through had reshaped something.
+  assert.deepEqual(content.sequenceDefinition, SQ);
+  assert.equal(content.sequenceDefinition, view.sequenceDefinition);
+});
+
+test('t2/s3: a view carrying sequenceDefinition but no other record leaves the other four ABSENT', async () => {
+  // The real shape of this Epic's own S002 LLD: a sequence record and companions,
+  // no erDefinition. Nothing may be backfilled for the records it does not carry.
+  const { client } = fakeIpc((m) =>
+    m === 'workflow.artifactContent'
+      ? { artifactId: 'x', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true, sequenceDefinition: SQ }
+      : { error: 'x' },
+  );
+  const content = await createDocsReviewClient(client).content('docs/x/LLD.md');
+  assert.equal(content.sequenceDefinition, SQ);
+  for (const k of ['functionalDefinition', 'erDefinition', 'uxDefinition', 'companions'] as const) {
+    assert.equal(k in content, false, `${k} must stay absent when only sequenceDefinition is carried`);
+  }
+});
+
+test('t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rather than restating it', () => {
+  // A SOURCE SCAN, because the property is structural: an independently restated
+  // type would compile and pass every behavioural test above while being free to
+  // drift from the daemon's. Comments are stripped first — a scan that reads prose
+  // has produced false results in this repo before.
+  const src = readFileSync(new URL('../docs-review-client.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  assert.match(
+    src,
+    /readonly sequenceDefinition\?: ArtifactReviewView\['sequenceDefinition'\];/,
+    'the field must be indexed off the daemon view, like its four siblings',
+  );
+  // And all five siblings are indexed the same way — no odd one out.
+  for (const k of ['functionalDefinition', 'erDefinition', 'sequenceDefinition', 'uxDefinition', 'companions']) {
+    assert.ok(
+      src.includes(`readonly ${k}?: ArtifactReviewView['${k}'];`),
+      `${k} must be declared as ArtifactReviewView['${k}']`,
+    );
+  }
 });

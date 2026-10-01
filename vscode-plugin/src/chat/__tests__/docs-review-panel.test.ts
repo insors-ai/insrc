@@ -908,8 +908,11 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       +1996 chars: DOCS_FR_SOURCE inlined after its two siblings, plus six
  *       `.insrc-fr*` CSS rules. Declared, expected, and inert — nothing calls
  *       the renderer until t5.
- *   t3 (this value) 62661 chars / 62705 bytes  b8d9d5c6…56d60
+ *   t3             62661 chars / 62705 bytes  b8d9d5c6…56d60
  *       +404 chars: frAnchorSlug appended to DOCS_FR_SOURCE. Still inert.
+ *   t4 (this value) 64177 chars / 64223 bytes  2e27d071…9618d
+ *       +1544 chars: placeFunctionalRequirements appended. Still inert — t5
+ *       is what calls it.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -923,9 +926,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  62661,
-  bytes:  62705,
-  sha256: 'b8d9d5c6bb57f04847c150a41725c2c8b07587c917847661b911ef5446556d60',
+  chars:  64177,
+  bytes:  64223,
+  sha256: '2e27d071cf7068fa33b9266506d46dff1a102eca4b50271fd9c053453c49618d',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1267,4 +1270,267 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
   const rel = 'vscode-plugin/src/chat/docs-sections.ts';
   const atBase = execFileSync('git', ['show', `09e6efa:${rel}`], { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 24 });
   assert.equal(src, atBase, 'docs-sections.ts is byte-identical to its pre-S002 state');
+});
+
+// ---------------------------------------------------------------------------
+// S002/t4 — PLACEMENT. The only destructive operation in this Story, so the
+// bound is PROVED rather than assumed: a removal that runs too far deletes
+// document content the reviewer is about to approve.
+// ---------------------------------------------------------------------------
+
+/** A body-container stub with ORDERED children, insertBefore/removeChild/firstChild
+ *  and a querySelectorAll that finds headings — enough for the sibling walk and
+ *  the bounded removal, and no more. Counts createElement calls so "zero DOM
+ *  activity" is assertable as an absence rather than inferred from the tree. */
+interface BodyStub {
+  tagName: string;
+  id: string;
+  textContent: string;
+  children: BodyStub[];
+  insertBefore(n: BodyStub, ref: BodyStub | null): BodyStub;
+  removeChild(n: BodyStub): BodyStub;
+  appendChild(n: BodyStub): BodyStub;
+  querySelectorAll(sel: string): BodyStub[];
+  readonly firstChild: BodyStub | null;
+}
+function bodyStub(tagName: string, id = '', text = ''): BodyStub {
+  const children: BodyStub[] = [];
+  const n: BodyStub = {
+    tagName, id, textContent: text, children,
+    get firstChild() { return children[0] ?? null; },
+    appendChild(c) { children.push(c); return c; },
+    insertBefore(c, ref) {
+      const i = ref === null ? children.length : children.indexOf(ref);
+      children.splice(i < 0 ? children.length : i, 0, c);
+      return c;
+    },
+    removeChild(c) {
+      const i = children.indexOf(c);
+      assert.ok(i >= 0, 'removeChild was called with a node that is not a child');
+      children.splice(i, 1);
+      return c;
+    },
+    querySelectorAll(sel) {
+      const want = new Set(sel.split(',').map((t) => t.trim().toLowerCase()));
+      const walk = (x: BodyStub): BodyStub[] =>
+        x.children.flatMap((c) => [...(want.has(c.tagName.toLowerCase()) ? [c] : []), ...walk(c)]);
+      return walk(n);
+    },
+  };
+  return n;
+}
+
+/** Eval DOCS_FR_SOURCE and return placeFunctionalRequirements + the createElement count. */
+function loadPlace(opts: { throwOnCall?: number } = {}) {
+  const made: string[] = [];
+  const doc = {
+    createElement(t: string) {
+      made.push(t);
+      if (opts.throwOnCall !== undefined && made.length === opts.throwOnCall) {
+        throw new Error('construction blew up');
+      }
+      return bodyStub(t);
+    },
+  };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_FR_SOURCE}; return placeFunctionalRequirements;`);
+  return {
+    place: make(doc) as (b: unknown, r: unknown, s: unknown, d: boolean) =>
+      { placed: string; degradation?: { degraded: boolean; notice: string } },
+    made,
+  };
+}
+
+/** A realistic rendered DEF body: the FR section sits between two others, and
+ *  the last section carries an h3 so "the next heading of ANY level" is
+ *  exercised by a deeper heading as well as a sibling-level one. */
+function renderedBody(): { body: BodyStub; heading: BodyStub } {
+  const body = bodyStub('div');
+  const h1 = bodyStub('h1', 'doc', 'Doc');
+  const p0 = bodyStub('p', '', 'intro');
+  const hProblem = bodyStub('h2', '1-problem', '1. Problem');
+  const pProblem = bodyStub('p', '', 'the problem');
+  const hFr = bodyStub('h2', '2-functional-requirements', '2. Functional requirements');
+  const ulFr = bodyStub('ul', '', '- **E:FR001** — prose form');
+  const pFr = bodyStub('p', '', 'more prose in the FR section');
+  const hNon = bodyStub('h2', '3-non-goals', '3. Non-goals');
+  const ulNon = bodyStub('ul', '', 'non-goals');
+  const hStories = bodyStub('h2', '4-stories', '4. Stories');
+  const h3 = bodyStub('h3', '4-1-s001', '4.1 S001');
+  const pEnd = bodyStub('p', '', 'end');
+  for (const c of [h1, p0, hProblem, pProblem, hFr, ulFr, pFr, hNon, ulNon, hStories, h3, pEnd]) body.appendChild(c);
+  return { body, heading: hFr };
+}
+
+const SECTIONS = {
+  anchors: [
+    { title: 'Doc', slug: 'doc', level: 1 },
+    { title: '1. Problem', slug: '1-problem', level: 2 },
+    { title: '2. Functional requirements', slug: '2-functional-requirements', level: 2 },
+    { title: '3. Non-goals', slug: '3-non-goals', level: 2 },
+    { title: '4. Stories', slug: '4-stories', level: 2 },
+  ],
+};
+
+test('t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld', () => {
+  // NONE — the dominant path. Asserted as the ABSENCE OF DOM ACTIVITY: zero
+  // createElement calls, not merely "no visible section". A gate that ran after
+  // building would still pass a tree assertion while allocating.
+  for (const absent of [undefined, null, { requirements: [] }, { requirements: 'nope' }, {}]) {
+    const { place, made } = loadPlace();
+    const { body } = renderedBody();
+    const before = body.children.slice();
+    const r = place(body, absent, SECTIONS, false);
+    assert.equal(r.placed, 'none', `absent: ${JSON.stringify(absent)}`);
+    assert.equal(made.length, 0, 'zero createElement calls — nothing was built');
+    assert.deepEqual(body.children, before, 'and the body is untouched');
+    assert.equal(r.degradation, undefined);
+  }
+
+  // A record whose every entry is malformed builds an EMPTY container, which is
+  // treated exactly as absent rather than inserted as an empty box.
+  {
+    const { place } = loadPlace();
+    const { body } = renderedBody();
+    const before = body.children.slice();
+    const r = place(body, { requirements: [null, 42, { id: 7 }] }, SECTIONS, false);
+    assert.equal(r.placed, 'none', 'an all-malformed record places nothing');
+    assert.deepEqual(body.children, before);
+  }
+
+  // IN-SECTION — the normal present case.
+  {
+    const { place } = loadPlace();
+    const { body } = renderedBody();
+    const r = place(body, REC, SECTIONS, false);
+    assert.equal(r.placed, 'in-section');
+    assert.equal(r.degradation, undefined, 'a successful substitution declares nothing');
+  }
+
+  // PREPENDED after a DEGRADED body: shown, because here it is the reviewer's
+  // only legible access — but NO degradation, because s1's notice already covers
+  // it and a second would stack two messages about one failure.
+  {
+    const { place } = loadPlace();
+    const body = bodyStub('div');
+    body.appendChild(bodyStub('#text', '', '# raw markdown source'));
+    const r = place(body, REC, SECTIONS, true);
+    assert.equal(r.placed, 'prepended');
+    assert.equal(r.degradation, undefined, 'no second notice on an already-degraded body');
+    assert.equal(body.children[0]!.tagName, 'div', 'the block is the FIRST child, above the text');
+  }
+
+  // PREPENDED because the anchor does not resolve, on a body that rendered FINE.
+  // This is the one case where silence would mislead: the reviewer could not
+  // otherwise tell the block was displaced rather than designed that way.
+  {
+    const { place } = loadPlace();
+    const { body } = renderedBody();
+    const r = place(body, REC, { anchors: [{ title: 'Outcomes', slug: 'outcomes', level: 2 }] }, false);
+    assert.equal(r.placed, 'prepended');
+    assert.equal(r.degradation?.degraded, true);
+    assert.match(r.degradation!.notice, /could not be located/);
+  }
+});
+
+test('t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed', () => {
+  const { place } = loadPlace();
+  const { body } = renderedBody();
+  const headingsBefore = body.children.filter((c) => /^h[1-6]$/.test(c.tagName));
+  assert.equal(headingsBefore.length, 6, 'h1 + four h2 + one h3');
+
+  assert.equal(place(body, REC, SECTIONS, false).placed, 'in-section');
+
+  // EVERY heading survives, at every level — this is what guarantees the section
+  // chooser can never be left offering an entry whose target no longer exists.
+  const headingsAfter = body.children.filter((c) => /^h[1-6]$/.test(c.tagName));
+  assert.deepEqual(headingsAfter, headingsBefore, 'no heading element was removed, at any level');
+
+  // The two sections AFTER the FR section keep their content.
+  const texts = body.children.map((c) => c.textContent);
+  assert.ok(texts.includes('non-goals'), 'the Non-goals content survives');
+  assert.ok(texts.includes('end'), 'the Stories content survives');
+  // And so does everything BEFORE it.
+  assert.ok(texts.includes('intro'));
+  assert.ok(texts.includes('the problem'));
+
+  // Only the FR section's own prose is gone.
+  assert.ok(!texts.includes('- **E:FR001** — prose form'), 'the generated bullet list is gone');
+  assert.ok(!texts.includes('more prose in the FR section'), 'and so is the rest of that section');
+
+  // The built container sits exactly where that prose was: after the FR heading,
+  // before the next heading.
+  const idx = body.children.findIndex((c) => c.id === '2-functional-requirements');
+  assert.equal(body.children[idx + 1]!.tagName, 'div', 'the container follows the heading');
+  assert.equal(body.children[idx + 2]!.id, '3-non-goals', 'and the next heading follows it immediately');
+});
+
+test('t4: removal to end — an FR section that is the last section removes to the end of the container without throwing', () => {
+  const { place } = loadPlace();
+  const body = bodyStub('div');
+  const h = bodyStub('h2', '2-functional-requirements', '2. Functional requirements');
+  for (const c of [bodyStub('h1', 'doc', 'Doc'), h, bodyStub('ul', '', 'prose'), bodyStub('p', '', 'tail prose')]) {
+    body.appendChild(c);
+  }
+  assert.equal(place(body, REC, SECTIONS, false).placed, 'in-section');
+
+  assert.deepEqual(body.children.map((c) => c.tagName), ['h1', 'h2', 'div'],
+    'removed to the end and appended the container; no off-the-end read, no throw');
+  assert.equal(body.children[1], h, 'the heading itself survives');
+});
+
+test('t4: heading preservation — the heading element, its text and its stamped id are identical before and after', () => {
+  const { place } = loadPlace();
+  const { body, heading } = renderedBody();
+  const text = heading.textContent;
+  const id = heading.id;
+
+  place(body, REC, SECTIONS, false);
+
+  // The SAME object, not an equal one: the chooser's jumpToSection resolves by
+  // id against the live element, so identity is what keeps navigation working.
+  assert.ok(body.children.includes(heading), 'the very same heading element is still in the body');
+  assert.equal(heading.textContent, text, 'its text is unchanged');
+  assert.equal(heading.id, id, 'and its stamped slug still resolves');
+});
+
+test('t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified', () => {
+  // Force the throw mid-construction, AFTER the absent gate has passed and while
+  // the container is being built. If any removal happened first, the body would
+  // come back short.
+  const { place } = loadPlace({ throwOnCall: 3 });
+  const { body } = renderedBody();
+  const before = body.children.slice();
+  const texts = body.children.map((c) => c.textContent);
+
+  assert.throws(() => place(body, REC, SECTIONS, false), /construction blew up/,
+    'the throw propagates to the caller, whose try/catch is the backstop');
+
+  // THE POINT: nothing was removed. This proves the ORDERING, not the catch —
+  // t5's try/catch cannot un-delete a node.
+  assert.deepEqual(body.children, before, 'the body is byte-for-byte the tree it was');
+  assert.deepEqual(body.children.map((c) => c.textContent), texts);
+});
+
+test('t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched', () => {
+  const { place } = loadPlace();
+  // A heading carrying the FR slug that lives OUTSIDE the body container, with
+  // siblings that must never be deleted. A document-wide getElementById would
+  // find it and start removing.
+  const elsewhere = bodyStub('div');
+  const decoy = bodyStub('h2', '2-functional-requirements', 'decoy heading');
+  const decoySibling = bodyStub('p', '', 'must survive');
+  elsewhere.appendChild(decoy);
+  elsewhere.appendChild(decoySibling);
+
+  // The body itself has NO such heading, so placement must fall back.
+  const body = bodyStub('div');
+  body.appendChild(bodyStub('h2', '1-problem', '1. Problem'));
+  body.appendChild(bodyStub('p', '', 'body prose'));
+
+  const r = place(body, REC, SECTIONS, false);
+
+  assert.equal(r.placed, 'prepended', 'no heading in THIS container, so it falls back');
+  assert.deepEqual(elsewhere.children, [decoy, decoySibling], 'the decoy and its sibling are untouched');
+  assert.equal(body.children[0]!.tagName, 'div', 'and the block went to the top of the body');
 });

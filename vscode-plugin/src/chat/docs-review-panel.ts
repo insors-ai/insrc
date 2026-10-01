@@ -247,7 +247,75 @@ export const DOCS_FR_SOURCE =
   // The FIRST match in document order, so a document carrying two never
   // produces an ambiguous target.
   `if(t.length>=FR_HEADING.length&&t.slice(t.length-FR_HEADING.length)===FR_HEADING)return a.slug;}` +
-  `return undefined;}`;
+  `return undefined;}` +
+  // S002/t4 — PLACEMENT. The only destructive operation in this Story, and the
+  // only code path that could make a reviewer read LESS of a document than the
+  // artifact contains, so everything here is bounded and ordered deliberately.
+  //
+  // Three outcomes, returned as a discriminator so a test can assert the
+  // BEHAVIOUR rather than infer it from the resulting tree:
+  //   'none'       absent record -> nothing created, nothing removed. The
+  //                dominant path: 630 of 634 ledger artifacts carry no record.
+  //   'in-section' the generated bullet list beneath the document's own heading
+  //                is replaced by the record-built container.
+  //   'prepended'  the block goes above the body instead, because the body
+  //                degraded to plain text (no headings to substitute under) or
+  //                the section could not be located.
+  //
+  // ORDERING IS THE SAFETY PROPERTY: the sibling range is computed and the
+  // container fully BUILT before the first removeChild, so a construction throw
+  // leaves the document completely intact. The caller's try/catch (t5) is a
+  // backstop for the unforeseen, not the thing that makes this safe.
+  `var FR_PLACEMENT_NOTICE='functional requirements shown above the document — their section could not be located';` +
+  `function frIsHeading(n){var t=(n&&n.tagName)?String(n.tagName).toLowerCase():'';` +
+  `return t==='h1'||t==='h2'||t==='h3'||t==='h4'||t==='h5'||t==='h6';}` +
+  // SCOPED to the body container, deliberately NOT document.getElementById: an
+  // element elsewhere on the surface that happened to share the id could
+  // otherwise have its siblings deleted.
+  `function frHeadingIn(bodyEl,slug){` +
+  `var hs=(bodyEl&&bodyEl.querySelectorAll)?bodyEl.querySelectorAll('h1,h2,h3,h4,h5,h6'):[];` +
+  `for(var i=0;i<hs.length;i++){if(hs[i]&&hs[i].id===slug)return hs[i];}return null;}` +
+  `function placeFunctionalRequirements(bodyEl,record,sections,bodyDegraded){` +
+  // ABSENT GATE, before ANY createElement call. `undefined`, a non-array and an
+  // empty array are all 'absent' — the convention functional-definition.ts
+  // states twice (:58, :88), adopted unchanged so client and daemon agree.
+  `var reqs=(record&&Array.isArray(record.requirements))?record.requirements:[];` +
+  `if(reqs.length===0)return {placed:'none'};` +
+  // A degraded body has no heading elements at all, so it cannot be located;
+  // skip the lookup rather than search a tree that has nothing to find.
+  `var slug=bodyDegraded?undefined:frAnchorSlug(sections);` +
+  `var head=slug?frHeadingIn(bodyEl,slug):null;` +
+  // BUILD BEFORE MUTATE.
+  `var built=renderFunctionalRequirements(record).el;` +
+  // Every entry malformed -> an empty container. Treat it exactly as absent
+  // rather than inserting an empty box.
+  `if(!built.children||built.children.length===0)return {placed:'none'};` +
+  `if(head){` +
+  `var kids=bodyEl.children||[];var start=-1,i;` +
+  `for(i=0;i<kids.length;i++){if(kids[i]===head){start=i;break;}}` +
+  `if(start>=0){` +
+  // The bound: stop at the next heading of ANY level, or the end of the
+  // container. Any-level rather than equal-or-shallower so NO heading element is
+  // ever removed, which is what guarantees the section chooser can never be left
+  // offering an entry whose target no longer exists.
+  `var stop=start+1;while(stop<kids.length&&!frIsHeading(kids[stop]))stop++;` +
+  // Capture the doomed nodes AND the insertion reference BEFORE removing
+  // anything: `children` is live in the real DOM, so indices shift under us.
+  `var doomed=[],j;for(j=start+1;j<stop;j++)doomed.push(kids[j]);` +
+  `var ref=kids[stop]||null;` +
+  `for(j=0;j<doomed.length;j++)bodyEl.removeChild(doomed[j]);` +
+  `if(ref)bodyEl.insertBefore(built,ref);else bodyEl.appendChild(built);` +
+  // The heading element, its text and its stamped slug are untouched.
+  `return {placed:'in-section'};}}` +
+  // FALLBACK. On the degraded path this block is the reviewer's ONLY legible
+  // access to the commitments, so it is shown rather than withheld.
+  `bodyEl.insertBefore(built,bodyEl.firstChild||null);` +
+  // A notice ONLY when the body itself rendered fine — that is the case where
+  // silence would mislead, because the reviewer would have no way to tell the
+  // block was displaced rather than designed that way. When the body already
+  // degraded, s1's DEGRADE_NOTICE is showing and a second notice would stack.
+  `if(bodyDegraded)return {placed:'prepended'};` +
+  `return {placed:'prepended',degradation:{degraded:true,notice:FR_PLACEMENT_NOTICE}};}`;
 
 /**
  * sc2 (S001/t4) — the renderer contract s2, s3 and s4 build their structured
@@ -460,7 +528,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-fr-id{display:block;color:var(--it-accent);font-family:var(--it-font);font-size:12px;}` +
       `.insrc-fr-stmt{display:block;color:var(--it-fg);font-family:var(--it-font);}` +
       `.insrc-fr-why{color:var(--it-dim);font-family:var(--it-font);font-size:12px;margin-top:3px;}` +
-      `.insrc-fr-group-label{color:var(--it-fg);font-family:var(--it-font);margin:10px 0 2px;}` +
+      `.insrc-fr-group-label{color:var(--it-fg);font-family:var(--it-font);font-weight:600;margin:12px 0 2px;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');

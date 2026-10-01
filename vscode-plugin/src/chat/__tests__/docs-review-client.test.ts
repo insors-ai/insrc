@@ -9,6 +9,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createDocsReviewClient } from '../docs-review-client.js';
 
 interface Call { method: string; params: unknown }
@@ -132,4 +134,90 @@ test('every method throws on the daemon { error } arm (never a silent empty resu
   await assert.rejects(() => c.content('x'), /repo unresolved/);
   await assert.rejects(() => c.approve('x'), /repo unresolved/);
   await assert.rejects(() => c.comment('x', 'n'), /repo unresolved/);
+});
+
+// ---------------------------------------------------------------------------
+// S001/t2 (Epic build-vs-code-plugin-ui-integration, sc1) — the four STRUCTURED
+// records carried through content() UNCHANGED. s1 consumes none of them; these
+// tests are the verified pass-through s2/s3/s4 inherit, so each asserts
+// byte-identity rather than mere presence.
+// ---------------------------------------------------------------------------
+
+const FD = { commitments: [{ id: 'fr1', statement: 'read a document as structured' }] };
+const ER = { entities: [{ name: 'Artifact', fields: [{ name: 'id', type: 'string' }] }] };
+const UX = { type: 'AdaptiveCard', version: '1.5', body: [{ type: 'TextBlock', text: 'mock' }] };
+const CO = [{ kind: 'ux-mock', relPath: 'docs/epics/x/S007/ux-mock.html', title: 'UX mock' }];
+
+test('t2: content() round-trips a view carrying all four structured records, each one unmodified', async () => {
+  const view = {
+    artifactId: 'LLD-abc-s7',
+    kind: 'LLD',
+    renderedMarkdown: '# LLD\nbody',
+    openQuestions: [],
+    approvable: true,
+    functionalDefinition: FD,
+    erDefinition: ER,
+    uxDefinition: UX,
+    companions: CO,
+  };
+  const { client } = fakeIpc((m) => (m === 'workflow.artifactContent' ? view : { error: 'x' }));
+  const content = await createDocsReviewClient(client).content('docs/x/LLD.md');
+
+  // Byte-identical on the far side: deep-equal AND reference-equal, since a
+  // pass-through must not clone or reshape (s2/s3/s4 rely on exactly this).
+  assert.deepEqual(content.functionalDefinition, FD);
+  assert.deepEqual(content.erDefinition, ER);
+  assert.deepEqual(content.uxDefinition, UX);
+  assert.deepEqual(content.companions, CO);
+  assert.equal(content.functionalDefinition, view.functionalDefinition);
+  assert.equal(content.erDefinition, view.erDefinition);
+  assert.equal(content.uxDefinition, view.uxDefinition);
+  assert.equal(content.companions, view.companions);
+  // the three pre-existing members keep their current meaning
+  assert.equal(content.markdown, '# LLD\nbody');
+  assert.deepEqual(content.openQuestions, []);
+  assert.equal(content.blocked, false);
+});
+
+test('t2: content() on a view carrying none of the four yields all four ABSENT', async () => {
+  const { client } = fakeIpc((m) =>
+    m === 'workflow.artifactContent'
+      ? { artifactId: 'x', kind: 'DEF', renderedMarkdown: 'b', openQuestions: [], approvable: true }
+      : { error: 'x' },
+  );
+  const content = await createDocsReviewClient(client).content('docs/x/DEF.md');
+  for (const k of ['functionalDefinition', 'erDefinition', 'uxDefinition', 'companions'] as const) {
+    // An absent key, not a key holding undefined — so `=== undefined` is the
+    // single absence test on this side of the IPC too.
+    assert.equal(k in content, false, `${k} must be absent, not present-but-empty`);
+    assert.equal(content[k], undefined);
+  }
+});
+
+test('t2: content() still throws on the daemon { error } arm — unavailable stays distinguishable from empty', async () => {
+  const { client } = fakeIpc(() => ({ error: 'repo unresolved' }));
+  const c = createDocsReviewClient(client);
+  await assert.rejects(() => c.content('docs/x/LLD.md'), /repo unresolved/);
+  // and an EMPTY-but-valid view is NOT an error — the two stay distinct.
+  const { client: ok } = fakeIpc((m) =>
+    m === 'workflow.artifactContent'
+      ? { artifactId: 'x', kind: 'DEF', renderedMarkdown: '', openQuestions: [], approvable: true }
+      : { error: 'x' },
+  );
+  const empty = await createDocsReviewClient(ok).content('docs/x/DEF.md');
+  assert.equal(empty.markdown, '');
+  assert.equal(empty.blocked, false);
+});
+
+test('t2: source-scan — no new rpc method name appears in docs-review-client', async () => {
+  const src = readFileSync(
+    join(import.meta.dirname, '..', 'docs-review-client.ts'),
+    'utf8',
+  );
+  const methods = [...src.matchAll(/'(workflow\.[A-Za-z.]+)'/g)].map((m) => m[1]).sort();
+  assert.deepEqual(
+    [...new Set(methods)],
+    ['workflow.approve', 'workflow.artifactContent', 'workflow.pending', 'workflow.resolveComment'],
+    'the widening rides the existing four IPCs — no new rpc method name',
+  );
 });

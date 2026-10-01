@@ -25,6 +25,16 @@ export interface DocsContent {
   readonly markdown: string;
   readonly openQuestions: readonly string[];
   readonly blocked: boolean;
+  // sc1 (Epic build-vs-code-plugin-ui-integration, S001/t2) — the artifact's
+  // STRUCTURED body records, carried through from ArtifactReviewView UNCHANGED:
+  // no reshaping, no validation, no defaulting. s1 consumes none of them; they
+  // are mirrored here so s2 (functional commitments), s3 (diagrams) and s4 (UX
+  // mocks) never have to reopen this file. Each type is INDEXED off the daemon
+  // view rather than restated, so the two shapes cannot drift.
+  readonly functionalDefinition?: ArtifactReviewView['functionalDefinition'];
+  readonly erDefinition?: ArtifactReviewView['erDefinition'];
+  readonly uxDefinition?: ArtifactReviewView['uxDefinition'];
+  readonly companions?: ArtifactReviewView['companions'];
 }
 
 /** The vscode-free client the docs-review host drives over the shared daemon IPC. */
@@ -93,6 +103,13 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
         markdown: res.renderedMarkdown,
         openQuestions: res.openQuestions.map((q) => q.text),
         blocked: !res.approvable,
+        // Strict pass-through (t2): each record is forwarded byte-identical, and an
+        // absent one stays an ABSENT KEY rather than a key holding undefined, so a
+        // consumer's `=== undefined` check behaves the same on both sides of the IPC.
+        ...(res.functionalDefinition !== undefined ? { functionalDefinition: res.functionalDefinition } : {}),
+        ...(res.erDefinition !== undefined ? { erDefinition: res.erDefinition } : {}),
+        ...(res.uxDefinition !== undefined ? { uxDefinition: res.uxDefinition } : {}),
+        ...(res.companions !== undefined ? { companions: res.companions } : {}),
       };
     },
 

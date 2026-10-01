@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "createdAt": "2026-10-01T14:39:06.841Z",
+    "updatedAt": "2026-10-01T15:05:52.669Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ]
+  }
+}

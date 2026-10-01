@@ -982,6 +982,12 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   S003/t5 (+4602 chars, +4602 bytes): the call-sequence derivation and its
  *       renderer on t4's SVG primitives, plus the lifeline / message / note
  *       styles. Still INERT. Computed at the fixed nonce, never typed.
+ *   S003/t6 (+1993 chars, +1995 bytes): the mount — dgFrame/dgMountSlot, the
+ *       `insrc-docs-diagram` host, the slot-frame styles, and THE ONE CALL that
+ *       changes what a reviewer sees. This is the task that DECLARES the change:
+ *       everything t2-t5 added was inert, and reverting this call alone restores
+ *       the S002 surface with the types, the data path and both derivations left
+ *       in place.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -995,9 +1001,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  77486,
-  bytes:  77536,
-  sha256: '45b72198708747cbb2f1267a2a1c8dec1fbdeb560ceb26185f501d35a8313403',
+  chars:  79479,
+  bytes:  79531,
+  sha256: '904c85e52d3495cde9ae2ba48e9a4bcb927014c6efd632bb34d58fd24820906e',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1365,6 +1371,12 @@ interface BodyStub {
   removeChild(n: BodyStub): BodyStub;
   appendChild(n: BodyStub): BodyStub;
   querySelectorAll(sel: string): BodyStub[];
+  // S003/t6 — the mount anchors via `#slug` and inserts after the heading, so
+  // the stub must model the parent link and the sibling order too. A stub
+  // missing these would make the anchored path silently take the fallback.
+  querySelector(sel: string): BodyStub | null;
+  parentNode: BodyStub | null;
+  readonly nextSibling: BodyStub | null;
   readonly firstChild: BodyStub | null;
   // Present so the REAL bootstrap can run against these stubs: the body renderer
   // assigns innerHTML, the notice sets role, and the controls attach listeners.
@@ -1423,7 +1435,42 @@ function bodyStub(tagName: string, id = '', text = ''): BodyStub {
         x.children.flatMap((c) => [...(want.has(c.tagName.toLowerCase()) ? [c] : []), ...walk(c)]);
       return walk(n);
     },
+    // Only `#id` is supported, which is all the mount uses. Anything else returns
+    // null rather than guessing, so an unsupported selector shows up as a failing
+    // anchor rather than a silently wrong match.
+    querySelector(sel) {
+      if (!sel.startsWith('#')) return null;
+      const want = sel.slice(1);
+      const walk = (x: BodyStub): BodyStub | null => {
+        for (const c of x.children) {
+          if (c.id === want) return c;
+          const found = walk(c);
+          if (found) return found;
+        }
+        return null;
+      };
+      return walk(n);
+    },
+    parentNode: null,
+    get nextSibling() {
+      const p = n.parentNode;
+      if (!p) return null;
+      const i = p.children.indexOf(n);
+      return i >= 0 ? (p.children[i + 1] ?? null) : null;
+    },
   };
+  // Keep the parent link current however children arrive, since the mount reads
+  // `h.parentNode` and `h.nextSibling` off a heading the body renderer created.
+  const adopt = (c: BodyStub): BodyStub => { c.parentNode = n; return c; };
+  const origAppend = n.appendChild.bind(n);
+  const origInsert = n.insertBefore.bind(n);
+  n.appendChild = (c) => origAppend(adopt(c));
+  n.insertBefore = (c, ref) => origInsert(adopt(c), ref);
+  const desc = Object.getOwnPropertyDescriptor(n, 'innerHTML')!;
+  Object.defineProperty(n, 'innerHTML', {
+    get: desc.get!,
+    set(v: string) { desc.set!.call(n, v); for (const c of children) c.parentNode = n; },
+  });
   return n;
 }
 
@@ -1686,10 +1733,12 @@ interface WebviewRun {
   actions: BodyStub;
   oq: BodyStub;
   posted: unknown[];
+  diagram: BodyStub;
+  created: string[];
   deliver(payload: Record<string, unknown>): void;
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; breakDiagram?: boolean; countCreates?: boolean } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -1702,19 +1751,34 @@ function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean } 
   if (opts.breakPlacement) {
     script = script.replace('function placeFunctionalRequirements(', 'function placeFunctionalRequirements(){throw new Error("placement blew up");}\nfunction _unused(');
   }
+  // Force the slot build to throw, so the backstop is exercised against the REAL
+  // bootstrap rather than against a reconstruction of it.
+  if (opts.breakDiagram) {
+    script = script.replace('function dgBuildDiagramSlot(', 'function dgBuildDiagramSlot(){throw new Error("slot build blew up");}\nfunction _unusedDg(');
+  }
 
   const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq', 'insrc-docs-note',
-    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice'];
+    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   (byId['insrc-docs-note'] as unknown as { value: string }).value = '';
 
   const posted: unknown[] = [];
+  const created: string[] = [];
   let onMessage: ((e: { data: unknown }) => void) | undefined;
   const doc = {
     getElementById: (id: string) => byId[id] ?? null,
     createElement: (t: string) => {
+      created.push(t);
       const n = bodyStub(t) as BodyStub & { addEventListener(): void; innerHTML: string };
+      n.addEventListener = () => {};
+      return n;
+    },
+    // Present so an SVG build inside the real bootstrap works, and so a test can
+    // count what the slot path created — ac2 is proved by the ABSENCE of calls.
+    createElementNS: (_ns: string, t: string) => {
+      created.push(`ns:${t}`);
+      const n = bodyStub(t) as BodyStub & { addEventListener(): void };
       n.addEventListener = () => {};
       return n;
     },
@@ -1744,6 +1808,7 @@ function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean } 
     body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
     sections: byId['insrc-docs-sections']!, actions: byId['insrc-docs-actions']!,
     oq: byId['insrc-docs-oq']!, posted,
+    diagram: byId['insrc-docs-diagram']!, created,
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
   };
 }
@@ -3054,4 +3119,275 @@ test('t5 layout: no caption escapes the canvas and no two participant heads over
       `"${t.textContent.slice(0, 30)}" escapes the right edge`);
     assert.ok(Number(t.attrs['y']) <= height, 'and none escapes the bottom');
   }
+});
+
+// ---------------------------------------------------------------------------
+// S003/t6 — THE MOUNT. The single call that changes what a reviewer sees.
+//
+// Driven through the SHIPPED bootstrap lifted out of the emitted shell, not a
+// reconstruction of it: this repo shipped a webview contract that string
+// assertions pronounced green while the behaviour was wrong.
+// ---------------------------------------------------------------------------
+
+const DG_MD = '# Low-level design\n\nIntro.\n\n## Data model changes\n\nBody.\n';
+const DG_SECTIONS = deriveSectionIndex(DG_MD);
+const DG_ER = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
+const DG_SEQ = { participants: [{ id: 'a', label: 'Host' }, { id: 'b', label: 'Webview' }], messages: [{ from: 'a', to: 'b', label: 'post' }] };
+const DG_REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
+
+/** Every node under a stub, root first. */
+function allOf(n: BodyStub): BodyStub[] { return [n, ...n.children.flatMap(allOf)]; }
+const slotsIn = (r: WebviewRun): BodyStub[] =>
+  [...allOf(r.diagram), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
+
+test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap', () => {
+  // ref absent + record absent -> nothing anywhere
+  let r = runWebview();
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  assert.equal(slotsIn(r).length, 0, 'no ref + no record -> no slot');
+
+  // ref present + record present -> rendered
+  r = runWebview();
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] });
+  let slot = slotsIn(r)[0];
+  assert.ok(slot, 'ref + record -> a slot');
+  assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'), 'and it carries a drawn diagram');
+
+  // ref present + record absent -> unshowable, NAMED
+  r = runWebview();
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, companions: [DG_REF] });
+  slot = slotsIn(r)[0];
+  assert.ok(slot, 'ref alone -> a slot');
+  const why = allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!;
+  assert.match(why.textContent, /could not be shown here/);
+  assert.match(why.textContent, /source record is not available/);
+  assert.equal(allOf(slot!).some((n) => n.tagName === 'svg'), false, 'and nothing is drawn');
+
+  // ref ABSENT + record present -> RENDERED (the contested row, q7f574776)
+  r = runWebview();
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER });
+  slot = slotsIn(r)[0];
+  assert.ok(slot, 'a record with no companion ref still draws — record gates content');
+  assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'));
+  assert.equal(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), false, 'and offers no link');
+});
+
+test('t6 ac2: the dominant path does ZERO DOM work and leaves the body region untouched', () => {
+  // The positive control must be the ANCHORED case: an unanchored slot goes to the
+  // dedicated host and leaves the body identical BY DESIGN, so comparing against it
+  // would make the body assertion below unfalsifiable.
+  const probe = runWebview();
+  probe.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const anchorSlug = probe.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id)[1]!;
+  const withSlot = runWebview();
+  withSlot.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: anchorSlug,
+  });
+  const bodyWithSlot = withSlot.body.children.map((c) => `${c.tagName}:${c.textContent}`);
+
+  const bare = runWebview();
+  const before = bare.created.length;
+  bare.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+
+  // The slot path created nothing: no svg namespace call at all, and no slot div.
+  assert.equal(bare.created.filter((t) => t.startsWith('ns:')).length, 0, 'not one createElementNS call');
+  assert.equal(bare.diagram.children.length, 0, 'the slot host is empty');
+  assert.equal(slotsIn(bare).length, 0);
+  assert.ok(bare.created.length > before, 'the rest of the surface still rendered');
+
+  // And the BODY REGION is what it would be without this Story: the slot never
+  // enters the body on the default path.
+  const bodyBare = bare.body.children.map((c) => `${c.tagName}:${c.textContent}`);
+  assert.deepEqual(bodyBare, ['h1:Low-level design', 'p:Intro.', 'h2:Data model changes', 'p:Body.']);
+  assert.notDeepEqual(bodyWithSlot, bodyBare, 'the comparison is capable of telling them apart');
+});
+
+test("t6: `classes: {}` and an empty sequence record are ABSENT, not an empty frame", () => {
+  for (const records of [
+    { erDefinition: { classes: {} } },
+    { sequenceDefinition: { participants: [], messages: [] } },
+    { erDefinition: { classes: {} }, sequenceDefinition: { participants: [] } },
+  ]) {
+    const r = runWebview();
+    r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, ...records });
+    assert.equal(slotsIn(r).length, 0, `${JSON.stringify(records)} must reserve no space`);
+    assert.equal(r.created.filter((t) => t.startsWith('ns:')).length, 0);
+  }
+});
+
+test('t6: diagram-html routes to the stated failure (lc1), never a silent nothing', () => {
+  const r = runWebview();
+  r.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER,
+    companions: [{ kind: 'diagram-html', relPath: 'docs/x/t.html', title: 'Some diagram' }],
+  });
+  const slot = slotsIn(r)[0];
+  assert.ok(slot, 'a declared-but-unproduced kind still produces a slot');
+  assert.match(allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!.textContent, /diagram-html/);
+  assert.ok(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), 'the authentic file stays reachable');
+});
+
+test('t6: the link-out is offered in the FAILURE state, where it matters most', () => {
+  const r = runWebview();
+  r.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    companions: [{ kind: 'diagram-mermaid', relPath: 'docs/x/S002/sequence-diagram.html', title: 'Sequence diagram' }],
+  });
+  const slot = slotsIn(r)[0]!;
+  const link = allOf(slot).find((n) => n.className === 'insrc-dg-slot-link');
+  assert.ok(link, 'a reviewer who cannot see the diagram is the one who most needs the file');
+  assert.match(link!.textContent, /sequence-diagram\.html/);
+});
+
+test('t6: the slot build runs AFTER stampSlugs — every heading id is undisturbed', () => {
+  const plain = runWebview();
+  plain.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const idsBefore = plain.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id);
+
+  const anchored = runWebview();
+  anchored.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: idsBefore[1],
+  });
+  // Re-READ every heading id after the mount inserted a node into the body: the
+  // stamper pairs by title through a pointer that only advances, so mounting first
+  // would mis-pair every later heading.
+  const idsAfter = anchored.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id);
+  assert.deepEqual(idsAfter, idsBefore, 'slugs are identical with the slot inserted');
+  assert.ok(idsBefore.every((i) => i.length > 0), 'and they were really stamped');
+});
+
+test('t6 placement: a resolving anchor mounts beside that heading; a stale one falls back rather than dropping', () => {
+  const probe = runWebview();
+  probe.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const targetSlug = probe.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id)[1]!;
+
+  // RESOLVES -> in the body, immediately after the heading it names.
+  const anchored = runWebview();
+  anchored.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: targetSlug,
+  });
+  const idx = anchored.body.children.findIndex((c) => c.id === targetSlug);
+  assert.ok(idx >= 0, 'the heading is present');
+  assert.equal(anchored.body.children[idx + 1]!.className, 'insrc-dg-slot', 'the slot sits directly after it');
+  assert.equal(anchored.diagram.children.length, 0, 'and not in the default host');
+
+  // STALE -> the default host, still visible. 0 of 8 real refs carry ofSectionId,
+  // so this is the path every real document takes today.
+  const stale = runWebview();
+  stale.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: 'no-such-section',
+  });
+  assert.equal(slotsIn(stale).length, 1, 'the visual is NOT dropped');
+  assert.equal(stale.diagram.children.length, 1, 'it falls back to the default position');
+});
+
+test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none', () => {
+  const r = runWebview();
+  const msg = { artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
+  r.deliver(msg);
+  const first = slotsIn(r).length;
+  r.deliver(msg);
+  assert.equal(first, 1, 'one slot after the first message');
+  assert.equal(slotsIn(r).length, 1, 'still exactly one after the second — the host is cleared, not appended to');
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  assert.equal(slotsIn(r).length, 0, 'and a message carrying neither clears it');
+
+  // The same, ANCHORED into the body, where the body rebuild is what clears it.
+  const probe = runWebview();
+  probe.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const slug = probe.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id)[1]!;
+  const a = runWebview();
+  const anchoredMsg = { ...msg, diagramAnchorSlug: slug };
+  a.deliver(anchoredMsg); a.deliver(anchoredMsg);
+  assert.equal(slotsIn(a).length, 1, 'one slot in the body after two identical renders');
+});
+
+test('t6 resilience: a forced throw in the slot build leaves all five other surfaces intact', () => {
+  const r = runWebview({ breakDiagram: true });
+  r.deliver({
+    artifactId: 'LLD-x', markdown: DG_MD, openQuestions: ['Still open?'], blocked: false,
+    commentable: true, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF],
+  });
+  // 1 body, 2 chooser, 3 notice (silent — nothing degraded), 4 open questions,
+  // 5 BOTH controls. A failure in an adjunct costs the reviewer none of them.
+  assert.ok(r.body.children.length >= 4, 'the body still rendered');
+  assert.ok(r.sections.children.length > 0, 'the chooser still rendered');
+  assert.equal(r.oq.children.length, 1, 'the open question still rendered');
+  const labels = r.actions.children.map((c) => c.textContent);
+  assert.deepEqual(labels, ['approve', 'request changes'], 'both controls still rendered');
+  assert.equal(slotsIn(r).length, 0, 'and no half-built slot was left behind');
+});
+
+test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged', () => {
+  // With a diagram present, so the regression is checked on the NEW path.
+  const r = runWebview();
+  const base = { markdown: DG_MD, openQuestions: [], sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
+
+  r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: true });
+  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+
+  r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: false });
+  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve'], 'the COMMENTABLE_KINDS gate still hides request-changes');
+
+  r.deliver({ ...base, artifactId: 'LLD-x', blocked: true, commentable: true });
+  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
+  assert.equal(r.actions.children.map((c) => c.textContent).includes('approve'), false, 'approve stays suppressed');
+});
+
+test('t6 regression: the HOST decision path still reaches the daemon unchanged', async () => {
+  // The webview harness makes addEventListener a no-op on created elements, so a
+  // click cannot be driven through a button there. The host end is where the
+  // behaviour actually lives, and it is exercised through the real client doubles.
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client }).open();
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  await tick();
+  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  await tick();
+  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+});
+
+test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
+  // openDoc already withholds the records on that arm; this proves the webview end
+  // too — a reviewer who never saw the body is never shown a diagram drawn from it.
+  const r = runWebview();
+  r.deliver({ artifactId: 'LLD-x', markdown: 'unavailable: daemon unreachable', openQuestions: [], blocked: true, commentable: true });
+  assert.equal(slotsIn(r).length, 0);
+  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
+});
+
+test('t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce\'d script and the call sits between stampSlugs and the chooser', () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+
+  assert.equal((html.match(/<script /g) ?? []).length, 1, 'still exactly ONE script element');
+  assert.match(html, /function dgBuildDiagramSlot\(/);
+  assert.match(html, /function dgMountSlot\(/);
+
+  const stamp = html.indexOf('var stamped=stampSlugs(');
+  const mount = html.indexOf('dgPlaced=dgMountSlot(');
+  const chooser = html.indexOf('renderSectionChooser(secEl');
+  assert.ok(stamp > 0 && mount > 0 && chooser > 0, 'all three call sites are present');
+  assert.ok(stamp < mount, 'the mount runs AFTER stampSlugs');
+  assert.ok(mount < chooser, 'and BEFORE the chooser');
+});
+
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const repo = fileURLToPath(new URL('../../../../', import.meta.url));
+  // Compared against the commit BEFORE this Epic's S003 work began, so the claim is
+  // about the whole Story and not just this task.
+  const shipped = execFileSync('git', ['show', '8908338:vscode-plugin/src/chat/docs-sections.ts'], { cwd: repo, encoding: 'utf8' });
+  const now = readFileSync(new URL('../docs-sections.ts', import.meta.url), 'utf8');
+  assert.equal(now, shipped, 'sc3 is CONSUMED as shipped; the resolver is called, never reimplemented');
 });

@@ -110,6 +110,14 @@ export type HostToWebview =
       readonly erDefinition?: DocsContent['erDefinition'];
       readonly sequenceDefinition?: DocsContent['sequenceDefinition'];
       readonly companions?: DocsContent['companions'];
+      // S003/t6 — the slug the diagram companion's `ofSectionId` resolved to in
+      // THIS document, resolved HOST-SIDE with sc3's shipped createSectionResolver
+      // and posted alongside. Deliberately not re-derived in the webview: the
+      // resolver matches an ofSectionId against both the anchor slug AND the slug a
+      // raw title would produce, so a webview-side match would mint a SECOND,
+      // weaker section identity — exactly what sc3 exists to prevent. Absent when
+      // there is no ref, no ofSectionId, or it names no section here.
+      readonly diagramAnchorSlug?: string | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

@@ -17,7 +17,7 @@ import type { ChatPanelChannel, ChatPanelLogger } from './chat-panel.js';
 import type { DocsReviewClient, DocsContent } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
-import { deriveSectionIndex, type SectionIndex } from './docs-sections.js';
+import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
  * The artifact kinds the daemon's resolveComment locator (parseArtifactId) supports —
@@ -745,7 +745,47 @@ export const DOCS_DIAGRAM_SOURCE =
   `return {state:'unshowable',kind:'diagram',label:label,reason:'the design record could not be drawn',linkOut:link,anchorSlug:anchorSlug};}` +
   `var out={state:'rendered',kind:'diagram',label:label,body:built.el,anchorSlug:anchorSlug};` +
   `if(link)out.linkOut=link;` +
-  `return out;}`;
+  `return out;}` +
+
+  // --- mounting ---------------------------------------------------------------
+  // Builds the visible frame and puts it where it belongs. Three outcomes, returned
+  // as a discriminator so a test asserts the BEHAVIOUR rather than inferring it:
+  //   'none'       absent -> the host is cleared and nothing is created.
+  //   'in-section' anchored beside the heading the ref named.
+  //   'default'    the dedicated host above the body, because there was no
+  //                anchor or it named no section in this document.
+  //
+  // The host is cleared FIRST and unconditionally, which is what makes a re-render
+  // idempotent: the body is rebuilt from markdown on every message, so anything
+  // placed inside it vanishes on its own, but this host persists and would
+  // otherwise accumulate a slot per render.
+  `function dgFrame(slot){` +
+  `var box=document.createElement('div');box.className='insrc-dg-slot';` +
+  `var head=document.createElement('div');head.className='insrc-dg-slot-head';` +
+  `head.textContent=slot.label;box.appendChild(head);` +
+  `if(slot.state==='rendered'){box.appendChild(slot.body);}` +
+  `else{var why=document.createElement('div');why.className='insrc-dg-slot-why';` +
+  // NAMED, not generic: a silent omission is indistinguishable from a document
+  // that legitimately has no diagram, which is the whole point of ac3.
+  `why.textContent='This diagram could not be shown here \u2014 '+slot.reason+'.';` +
+  `box.appendChild(why);}` +
+  `if(slot.linkOut){var a=document.createElement('div');a.className='insrc-dg-slot-link';` +
+  `a.textContent='Full version: '+slot.linkOut.relPath;box.appendChild(a);}` +
+  `return box;}` +
+  `function dgMountSlot(hostEl,bodyEl,slot){` +
+  `if(hostEl){while(hostEl.firstChild)hostEl.removeChild(hostEl.firstChild);}` +
+  // ac2's dominant path: return before ANY element is created, so "no slot" is the
+  // absence of DOM activity rather than the absence of something visible.
+  `if(!slot||slot.state==='absent')return 'none';` +
+  `var frame=dgFrame(slot);` +
+  `var slug=slot.anchorSlug;` +
+  `if(slug&&bodyEl&&bodyEl.querySelector){` +
+  `var h=null;try{h=bodyEl.querySelector('#'+slug);}catch(e){h=null;}` +
+  // Inserted AFTER the heading it was anchored to, so the visual sits with the part
+  // of the document that references it.
+  `if(h&&h.parentNode){h.parentNode.insertBefore(frame,h.nextSibling);return 'in-section';}}` +
+  `if(hostEl){hostEl.appendChild(frame);return 'default';}` +
+  `return 'none';}`;
 
 // ---------------------------------------------------------------------------
 // sc4 (S003/t3) — THE COMPANION VISUAL SLOT. Owned by s3, consumed by s3 and s4.
@@ -957,6 +997,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // post it on the SAME message as the markdown it came from. Deriving it
       // here, from `content.markdown`, is what makes the two inseparable.
       const { sections, degradation } = deriveSections(content.markdown);
+      // The FIRST diagram-kind companion is this slot's ref; a ux-mock ref belongs
+      // to the experience slot (S004) and is not this Story's to place.
+      const diagramRef = (content.companions ?? []).find(
+        (c) => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html',
+      );
+      const diagramAnchorSlug = createSectionResolver(sections)(diagramRef?.ofSectionId);
       post({
         type: 'docs-content',
         artifactId,
@@ -998,6 +1044,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         ...(content.companions !== undefined
           ? { companions: content.companions }
           : {}),
+        // S003/t6 — resolve the diagram ref's ofSectionId HERE, with sc3's shipped
+        // resolver over the index derived from THIS markdown, and post the slug.
+        // Resolving in the webview would have to re-implement slugify and the
+        // title-alias rule, minting a second section identity; this consumes the
+        // one that already exists. An unresolvable id yields undefined and the slot
+        // falls back to its default position rather than being dropped.
+        ...(diagramAnchorSlug !== undefined ? { diagramAnchorSlug } : {}),
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
@@ -1103,6 +1156,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-dg-msg{fill:var(--it-fg);font-family:var(--it-font);font-size:11px;}` +
       `.insrc-dg-note{fill:var(--it-dim);font-family:var(--it-font);font-size:10px;}` +
       `.insrc-dg-rel{fill:var(--it-dim);font-family:var(--it-font);font-size:11px;}` +
+      // The slot frame. `--it-*` only, and no shorthand carrying an undefined
+      // var() — the S001 gotcha that makes a border vanish silently.
+      `.insrc-dg-slot{border:1px solid var(--it-accent);border-radius:4px;padding:8px 10px;margin:10px 0;}` +
+      `.insrc-dg-slot-head{color:var(--it-accent);font-family:var(--it-font);font-weight:600;font-size:12px;margin-bottom:6px;}` +
+      `.insrc-dg-slot-why{color:var(--it-fg);font-family:var(--it-font);font-size:12px;white-space:normal;word-break:normal;}` +
+      `.insrc-dg-slot-link{color:var(--it-dim);font-family:var(--it-font);font-size:11px;margin-top:6px;white-space:normal;word-break:break-word;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
@@ -1116,6 +1175,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const actEl=document.getElementById('insrc-docs-actions');` +
       `const secEl=document.getElementById('insrc-docs-sections');` +
       `const noticeEl=document.getElementById('insrc-docs-notice');` +
+      `const dgHostEl=document.getElementById('insrc-docs-diagram');` +
       `var current='';` +
       // docs-list: one clickable row per pending artifact (textContent only, no innerHTML).
       `function renderList(items){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
@@ -1160,6 +1220,27 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // half-removed section. What this guard buys is that no failure here costs
       // the reviewer the chooser, the notice, the open questions or the controls.
       `var fr={placed:'none'};try{fr=placeFunctionalRequirements(bodyEl,m.functionalDefinition,m.sections,!!r.degradation.degraded);}catch(e){}` +
+      // S003/t6 — THE single line that changes what a reviewer sees in this Story.
+      // Everything t2-t5 added was additive and inert; reverting this call restores
+      // the S002 surface exactly, with the types, the data path and BOTH derivations
+      // still in place.
+      //
+      // AFTER stampSlugs for the same reason placement is: the stamper pairs
+      // headings to anchors through a pointer that only advances, so a tree mutated
+      // first could mis-pair every later heading — and this inserts a node INTO the
+      // body when it anchors. BEFORE the chooser, which is gated on `stamped`, a
+      // count this cannot change: the slot adds and removes no heading.
+      //
+      // The try/catch is a BACKSTOP for the unforeseen. What makes it safe is that
+      // the factory never throws by design and the frame is built completely before
+      // it is inserted; what the guard buys is that no failure here costs the
+      // reviewer the body, the chooser, the notice, the open questions or the
+      // controls.
+      `var dgSlot={state:'absent'};` +
+      `try{dgSlot=dgBuildDiagramSlot(` +
+      `{erDefinition:m.erDefinition,sequenceDefinition:m.sequenceDefinition},` +
+      `dgPickRef(m.companions),m.diagramAnchorSlug);}catch(e){dgSlot={state:'absent'};}` +
+      `var dgPlaced='none';try{dgPlaced=dgMountSlot(dgHostEl,bodyEl,dgSlot);}catch(e){dgPlaced='none';}` +
       `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` +
       // ac3: the notice comes from the POSTED state when the host declared one,
       // and otherwise from this render's own degradation — same shape either way.
@@ -1202,6 +1283,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // A DIV, not a <pre>: marked emits newline-separated block elements, so a
       // preformatted container would render a literal blank line between every
       // block and set headings in the monospace face at body size.
+      `<div id="insrc-docs-diagram" aria-label="design diagram"></div>` +
       `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
       `<textarea id="insrc-docs-note" rows="2" aria-label="request-changes note"></textarea>` +

@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DEGRADE_NOTICE } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE } from '../docs-review-panel.js';
 import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
@@ -736,4 +736,33 @@ test('t6: approve and request-changes still reach workflow.approve / workflow.re
     const msg = f.posted.filter((p) => p.payload.type === 'docs-content').find((p) => p.payload.artifactId === `${kind}-x-s1`);
     assert.equal(msg!.payload['commentable'], expected, `${kind} commentable=${expected}`);
   }
+});
+
+test('t5: a DEGRADED index posts degradation and does NOT set blocked — the branch the earlier test never reached', async () => {
+  // Force deriveSections' catch branch with a malformed daemon response: a view
+  // whose markdown is missing makes deriveSectionIndex throw on .split(). The
+  // document must still open — only navigation is lost.
+  const fc = fakeChannel();
+  const { client } = fakeClient({
+    content: () => ({ markdown: undefined as unknown as string, openQuestions: [], blocked: false }),
+  });
+  createDocsReviewHost({ createPanel: () => fc.channel, client }).open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'the document still opens — a derivation failure never refuses it');
+
+  const deg = msg!.payload['degradation'] as { degraded: boolean; notice: string } | undefined;
+  assert.ok(deg, 'a degraded derivation posts degradation');
+  assert.equal(deg!.degraded, true);
+  assert.equal(deg!.notice, SECTION_INDEX_NOTICE, 'and says which capability was lost');
+
+  // THE POINT: degraded is NOT blocked. The reviewer who sees plain text and the
+  // reviewer who saw nothing at all are different states.
+  assert.equal(msg!.payload['blocked'], false, 'a render/index degradation does NOT set blocked');
+  assert.deepEqual((msg!.payload['sections'] as { anchors: unknown[] }).anchors, [],
+    'and the index degrades to empty rather than to garbage');
 });

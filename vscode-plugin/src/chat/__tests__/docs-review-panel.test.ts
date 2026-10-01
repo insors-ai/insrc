@@ -1321,7 +1321,16 @@ function bodyStub(tagName: string, id = '', text = ''): BodyStub {
     // rather than merely not re-add one — and a stub that kept its children
     // would make that test prove nothing.
     get innerHTML() { return html; },
-    set innerHTML(v: string) { html = v; children.length = 0; },
+    set innerHTML(v: string) {
+      html = v;
+      children.length = 0;
+      // Parse the harness's `TAG\ttext` convention into real child elements, so
+      // the shipped bootstrap walks a tree rather than an opaque string.
+      for (const line of v.split('\n')) {
+        const i = line.indexOf('\t');
+        if (i > 0) children.push(bodyStub(line.slice(0, i), '', line.slice(i + 1)));
+      }
+    },
     get textContent() { return txt; },
     set textContent(v: string) { txt = v; html = ''; children.length = 0; },
     setAttribute(k, v) { attrs[k] = v; },
@@ -1645,7 +1654,18 @@ function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean } 
   // `undefined` here is the POINT of the degraded case, so it is selected by an
   // explicit flag rather than by passing undefined — which would fall through to
   // the default and silently test the happy path instead.
-  const marked = opts.markedMissing ? undefined : { parse: (src: string) => src };
+  //
+  // The stub parse emits a `TAG\ttext` line per block and the body stub's
+  // innerHTML setter builds real children from it, so the bootstrap gets an
+  // element tree with HEADINGS — without which stampSlugs has nothing to stamp
+  // and the ordering behaviour cannot be observed at all.
+  const marked = opts.markedMissing ? undefined : {
+    parse: (src: string) => src.split('\n').filter((l) => l.trim() !== '').map((l) => {
+      const h = /^(#{1,6})\s+(.*)$/.exec(l);
+      if (h) return `h${h[1]!.length}\t${h[2]}`;
+      return `${l.startsWith('- ') ? 'ul' : 'p'}\t${l}`;
+    }).join('\n'),
+  };
   // eslint-disable-next-line no-new-func
   new Function('document', 'window', 'marked', 'acquireVsCodeApi', script)(
     doc, win, marked, () => ({ postMessage: (m: unknown) => { posted.push(m); } }),
@@ -1740,10 +1760,16 @@ test('t5: the renderContent try/catch backstop — a forced throw inside placeme
     functionalDefinition: { requirements: [{ id: 'E:FR001', statement: 'One.', scope: 'doc' }] },
   });
 
-  // The reviewer keeps the whole surface. The backstop never costs them the rest.
+  // ALL FOUR named surfaces, after the build gate pointed out that only two were
+  // being proved. A backstop that silently cost the reviewer the chooser would
+  // have passed the earlier version of this test.
   assert.equal(w.oq.children.length, 1, 'open questions still render');
   assert.equal(w.actions.children.length, 2, 'approve + request-changes still render');
   assert.deepEqual(w.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.equal(w.sections.children.length, 1, 'the section CHOOSER still renders');
+  assert.equal(w.sections.children[0]!.tagName, 'select');
+  assert.equal(w.notice.children.length, 0,
+    'and the NOTICE host is reached and left empty — a throw declares nothing, since the body rendered fine');
   // The body renderer ran and put the document there — the stub records the one
   // guarded innerHTML assignment, which is the shipped injection site.
   assert.ok(w.body.innerHTML.length > 0 || w.body.textContent.length > 0,
@@ -1830,4 +1856,45 @@ test('t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked 
   const w2 = runWebview();
   w2.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, commentable: false });
   assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve']);
+});
+
+test('t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed', () => {
+  // THE BEHAVIOURAL ordering test the plan named, which the first pass replaced
+  // with a source-position scan (build-gate finding). A scan cannot see whether
+  // the ORDER actually preserved the stamping; this drives the shipped bootstrap
+  // and re-reads every heading id after placement has run.
+  const MD = ['# Doc', '## 1. Problem', '- problem detail',
+    '## 2. Functional requirements', '- **E:FR001** — prose form', '- **E:FR002** — more prose',
+    '## 3. Non-goals', '- a non-goal'].join('\n');
+  const sections = deriveSectionIndex(MD);
+  const FR = { requirements: [
+    { id: 'E:FR001', statement: 'One.', scope: 'doc' },
+    { id: 'E:FR002', statement: 'Two.', scope: 'doc' },
+  ] };
+
+  const w = runWebview();
+  w.deliver({ artifactId: 'a', markdown: MD, openQuestions: [], blocked: false, sections, functionalDefinition: FR });
+
+  // EVERY heading still carries the slug deriveSectionIndex minted for it, in
+  // document order. If placement had run before stampSlugs it would have removed
+  // the nodes the stamper walks, and the pointer — which only advances — would
+  // mis-pair every heading after the FR section.
+  const headings = w.body.children.filter((c) => /^h[1-6]$/.test(c.tagName));
+  assert.deepEqual(headings.map((h) => h.textContent), sections.anchors.map((a) => a.title),
+    'all four headings survive, in document order');
+  assert.deepEqual(headings.map((h) => h.id), sections.anchors.map((a) => a.slug),
+    'and every one carries the slug sc3 minted for it');
+
+  // The substitution really happened, in place, between its own heading and the
+  // next one — so this is the ordered pipeline's real output, not a no-op.
+  const i = w.body.children.findIndex((c) => c.id === '2-functional-requirements');
+  assert.ok(i >= 0);
+  assert.equal(w.body.children[i + 1]!.tagName, 'div', 'the built container follows the FR heading');
+  assert.equal(w.body.children[i + 2]!.id, '3-non-goals', 'and the next heading follows it immediately');
+  assert.ok(!w.body.children.some((c) => c.textContent.includes('prose form')), 'the prose it replaced is gone');
+
+  // And the chooser is driven by a stamped count that placement did not change.
+  assert.equal(w.sections.children.length, 1, 'the chooser rendered');
+  assert.equal(w.sections.children[0]!.children.length, sections.anchors.length + 1,
+    'with one option per anchor plus the placeholder');
 });

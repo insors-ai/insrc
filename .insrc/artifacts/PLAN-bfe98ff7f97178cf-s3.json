@@ -1,0 +1,1128 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790871565513-5vn83n",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T16:31:11.644Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 706088,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "storyId": "s3",
+    "lldRunId": "wf-1790868424979-tkzzkx",
+    "lldEffectiveHash": "44085ff6e95fa09d01d57261b763704a35b3224657eb1aba74a773b259d98276",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "t8 / c39",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The VS Code extension's VSIX baseline is 241,713 bytes — the figure t8 must compute its size delta against and the number alternative a3's >10x rejection rested on.",
+          "evidence": "CONFIRMED EXACTLY, and this was the figure most at risk of being a typed-from-memory number. `stat` across every VSIX in vscode-plugin/ finds exactly one at 241,713 bytes: insrc-vscode-0.5.8.vsix — and vscode-plugin/package.json declares version 0.5.8, so the cited baseline is the CURRENT extension artefact rather than a stale one. For contrast the older builds sit at 93,646 (0.4.1), 232,626 (0.4.10) and 232,865 (0.4.11), so the number is not a coincidental match to some historical build. The >10x claim that eliminated alternative a3 therefore rests on a real measurement: ~3 MB against 241,713 bytes.",
+          "action": "none — verified sound. One note for t8's execution: because 241,713 is the CURRENT version's artefact, t8 must compute its delta against the pre-change VSIX specifically (not against whatever the newest file happens to be after a rebuild writes a new one), which the acceptance check already requires by saying the delta is COMPUTED from the two artefacts.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p2",
+          "ref": "t2 / t4 / t5 — the shell baseline pin",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "A pinned shell baseline already exists in the docs-review test suite carrying a sha256 plus character and byte counts, so t2 can assert byte-identity against it and t4/t5 must update it when they move it.",
+          "evidence": "CONFIRMED. `SHELL_BASELINE` is declared at docs-review-panel.test.ts:978 carrying chars: 64501, bytes: 64547 and sha256: '351d6ce2eaded2f525215186c12553ba9d31d20cfdacc3f003cee217e38a2ee0', and it is asserted at :1000 (sha256), :1004 (character length) and :1005 (Buffer.byteLength UTF-8), with the render taken at a FIXED nonce via renderShellFor(SHELL_BASELINE.nonce) at :994 — the nonce-fixing that an earlier Story got wrong. A delta history is maintained in comments at :953-965 attributing each increment to the task that caused it (+1996 for DOCS_FR_SOURCE inlined, +404 for frAnchorSlug, +1516 for placeFunctionalRequirements, +208 for the one call that changes the surface, +116 for list semantics). So t2 has a real pin to assert byte-identity against, and t4/t5 have an established convention for updating it with a stated delta.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p3",
+          "ref": "LLD testFramework carried into t8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The docs-review-panel test suite currently holds 64 tests and the plugin sweep stands at 682 passing / 4 skipped — the counts t8 must restate after the Story.",
+          "evidence": "CONFIRMED on the count that matters: `grep -c '^test('` over docs-review-panel.test.ts returns exactly 64, matching the stated suite size. The plugin-sweep figure (682 pass / 4 skipped) is carried from the LLD's testFramework section and is not re-derivable by grep without running the suite; t8's acceptance check requires the count to be STATED after a real run rather than restated from this plan, which is the correct handling for a number only execution can produce.",
+          "action": "none — verified sound. t8 must report the sweep count from an actual run, not copy 682 forward.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p4",
+          "ref": "t6 — the backstop catch and the stampSlugs ordering",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "renderContent already wraps its structured-record placement in a try/catch backstop and performs it strictly after stampSlugs, so t6 extends an established pattern rather than inventing one.",
+          "evidence": "CONFIRMED verbatim in shipped code. docs-review-panel.ts:580 is `var stamped=stampSlugs(bodyEl,m.sections);` and :597 is `var fr={placed:'none'};try{fr=placeFunctionalRequirements(bodyEl,m.functionalDefinition,m.sections,!!r.degradation.degraded);}catch(e){}` — strictly after the stamp and wrapped in exactly the backstop catch the plan describes. The comment at :586-588 states the reason in the plan's own terms: 'AFTER stampSlugs is a correctness constraint, not a style one: the stamper pairs headings to anchors BY TITLE through a pointer that only advances (:117), so a tree mutated first could mis-pair every later' heading. So t6 extends a proven pattern rather than inventing one, and the ordering constraint is load-bearing for a documented reason.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p5",
+          "ref": "t4 — DOCS_DIAGRAM_SOURCE as the fourth member",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly three exported DOCS_*_SOURCE webview source strings exist today, so DOCS_DIAGRAM_SOURCE is the FOURTH member of that family and the shell's single-injection-site count must survive its addition.",
+          "evidence": "CONFIRMED. Exactly three exported source strings exist — DOCS_BODY_RENDERER_SOURCE (:76), DOCS_SECTIONS_SOURCE (:111), DOCS_FR_SOURCE (:185) — so DOCS_DIAGRAM_SOURCE is genuinely the fourth member of a located family rather than an invented name. The single-injection-site premise also holds: `innerHTML` appears three times in the file and only :85 is an assignment (the guarded `marked.parse`), the other two being comments, with no outerHTML / insertAdjacentHTML / document.write anywhere. t4's requirement that the count stay at exactly one after a fourth string joins the script is therefore a real, currently-true invariant.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p6",
+          "ref": "t1 / c2 — the projected record set",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "ArtifactReviewView currently projects exactly FOUR structured body records and none of them is sequenceDefinition, so t1's change is a fifth additive field rather than an edit to an existing one.",
+          "evidence": "CONFIRMED. artifact-content.ts:203-204 types structuredRecords as `Partial<Pick<ArtifactReviewView, 'functionalDefinition' | 'erDefinition' | 'uxDefinition' | 'companions'>>` and :206-214 reads and conditionally spreads exactly those four, declared on the interface at :63-66. `sequenceDefinition` appears NOWHERE in the file, so t1 adds a fifth field rather than editing an existing one — which is what makes the change additive and the insrc-ide mirror safe without a coordinated release.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p7",
+          "ref": "t5 / t7 — the real records the visual checks must use",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The ledger holds exactly 2 bodies carrying an erDefinition (of 3 and 8 classes) and 3 carrying a sequenceDefinition, so t4/t5/t7's visual reads have real records available and t7's '3-class and 8-class' pair is exhaustive of the ER records that exist.",
+          "evidence": "CONFIRMED by an independent recount over every .insrc/artifacts/*.json body: exactly 2 bodies carry an erDefinition — HLD-e2c6705fd105d4ac with 3 classes and HLD-bfe98ff7f97178cf with 8 — and exactly 3 carry a sequenceDefinition (HLD-9b72686c, LLD-bfe98ff7f97178cf-s2, LLD-74bc0120-S001). So t7's '3-class and 8-class' pair is exhaustive of the ER records that exist, t4's 'densest record the ledger holds' is accurate at 8 classes, and t5 has a real sequence record to render. The 8 companion refs split {diagram-mermaid: 5, ux-mock: 3} with ZERO carrying ofSectionId, which is why t6's anchored-placement path is implemented but exercised only by a synthetic fixture — a limitation the plan states rather than hides.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p8",
+          "ref": "t6 — sc3 consumed as shipped",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "createSectionResolver is shipped at vscode-plugin/src/chat/docs-sections.ts:136-149, so t6 consumes section identity rather than minting it and docs-sections.ts can come out byte-identical.",
+          "evidence": "CONFIRMED. `export function createSectionResolver(index: SectionIndex): SectionResolver` is at docs-sections.ts:136 and the file is 149 lines, so the cited 136-149 span is exact and covers the whole function; deriveSectionIndex sits at :86 in the same module. Both halves of sc3 are shipped, so t6 reads section identity rather than minting it and the 'docs-sections.ts comes out BYTE-IDENTICAL' acceptance check is achievable rather than aspirational.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p9",
+          "ref": "t1 vs t8 — which artefact ships which change",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "t1 is the ONLY task in the plan that modifies a file under src/ (the daemon tree), which is what makes the daemon rebuild t1's alone and the extension rebuild t8's alone; every other task touches only vscode-plugin/.",
+          "evidence": "CONFIRMED by the task decomposition against the real tree. Only t1's targets live under src/ — artifact-content.ts (:63-66 and :203-215) — while every other task's targets are under vscode-plugin/: protocol.ts and docs-review-panel.ts openDoc (t2), the sc4 types (t3), DOCS_DIAGRAM_SOURCE and the factory (t4/t5), renderContent (t6), the test suite and evidence (t7), and the VSIX (t8). The split is real, which is what makes 'the daemon rebuild is t1's and the extension rebuild is t8's' a correct instruction rather than a guess. This matters operationally: the project ships daemon changes via a daemon update and plugin changes via a VSIX rebuild, and conflating them has previously made a correct change appear broken.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "p10",
+          "ref": "t7 — the evidence-commit precedent",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S002 committed screenshot evidence under its own Story directory, establishing the headless-screenshot route and the committed-evidence convention that t7 follows for S003.",
+          "evidence": "CONFIRMED. docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S002/evidence/ exists and holds committed PNGs including t7-state-absent.png, t7-state-in-section.png, t7-state-prepended.png and t4-degraded-path.png — so the headless-screenshot-then-read route and the per-state committed-evidence convention are both established precedent that t7 follows rather than invents. Incidentally corroborated in the same directory: S002's sequence-diagram.html is 3,370,719 bytes, which substantiates the plan summary's '3.3 MB generated companion' and the whole premise that the pane must render from the record instead of embedding that file.",
+          "action": "none — verified sound",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10
+      },
+      "reviewedAt": "2026-10-01T16:33:48.119Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-01T16:39:10.312Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story means moving a record one hop further than it already travels and then drawing it. Two of the three structured records the pane needs already reach the extension host and are dropped there, so the data work is a projection line in the daemon (the approved amendment), three optional fields on an existing message, and a conditional spread — no new IPC, no second round trip, and no read of the 3.3 MB generated companion. The drawing work is a fourth inlined source string that builds SVG element by element with createElementNS and textContent, so the surface's single markup-injection site stays single. The ordering is deliberately defensive: everything lands INERT, and exactly one call at the end changes what a reviewer sees, so a revert of that one line restores the shipped pane. The real risk is not a failing test but a passing one — every DOM stub in this suite is CSS-blind, so overlap, clipping and mis-attached edges are invisible to assertions and the drawing must be screenshotted and read back as an image before it ships."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Project sequenceDefinition through sc1 and rebuild the daemon",
+        "summary": "Land the approved amendment AMD-bfe98ff7f97178cf-1: add `sequenceDefinition?: SequenceDefinition | undefined` to ArtifactReviewView beside its four siblings (artifact-content.ts:63-66) and one conditional-spread line in structuredRecords (:203-215), in exactly the shape the existing four use so absence stays an ABSENT KEY. Mirror it on DocsContent (docs-review-client.ts:34-37) INDEXED off the daemon type rather than restated. componentDependencyDefinition is explicitly NOT added (0 producer bodies). This is the ONLY task that changes a file under src/, so the daemon must be rebuilt — and the live end-to-end confirmation is recorded as a MANUAL check, not as something the build gate can attest, because that sandbox cannot execute anything.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "RUNNABLE IN-PROCESS: a unit test calls structuredRecords directly over the REAL ledger body .insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json and asserts sequenceDefinition comes back VERBATIM (deep-equal to the body's own value, not merely present)",
+          "RUNNABLE IN-PROCESS: a body WITHOUT the field yields a response with no such key — asserted as `'sequenceDefinition' in view === false`, never a null/falsy check",
+          "DocsContent's field is written as `ArtifactReviewView['sequenceDefinition']` rather than restated, matching the four shipped siblings so the shapes cannot drift",
+          "ADDITIVE-ONLY, stated deliberately for the cross-repo mirror: every new field optional, absence an absent key, and NO existing field of ArtifactReviewView changed in name, type or meaning — so the insrc-ide fork, which mirrors this IPC payload shape, needs no coordinated change. Provable by diffing the interface; the conclusion is recorded in the task note so a future reader sees the mirror was considered, not missed",
+          "MANUAL, recorded not attested: after `daemon-ctl.sh update`/rebuild, one real document carrying a sequenceDefinition is opened through the live daemon and the field is confirmed to arrive. The result is written into the task note, explicitly flagged as a manual verification the gate did not run"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "structuredRecords: projects sequenceDefinition VERBATIM from the real LLD-bfe98ff7f97178cf-s2 body (deep-equal, not merely present)"
+          },
+          {
+            "level": "unit",
+            "name": "structuredRecords: a body without sequenceDefinition yields no such key ('sequenceDefinition' in view === false)"
+          },
+          {
+            "level": "unit",
+            "name": "structuredRecords: the four pre-existing records project unchanged — no existing field altered in name, type or meaning"
+          },
+          {
+            "level": "unit",
+            "name": "DocsContent.sequenceDefinition is indexed off ArtifactReviewView rather than restated"
+          },
+          {
+            "level": "live",
+            "name": "MANUAL post-rebuild: a real sequenceDefinition-carrying document arrives through the live daemon (result recorded in the task note, not gate-attested)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Carry the diagram records onto the docs-content message",
+        "summary": "Add three optional fields to the docs-content variant of HostToWebview (protocol.ts), each typed by INDEXING off DocsContent so protocol → client → daemon stay one declaration deep: `erDefinition`, `sequenceDefinition`, `companions`. Forward them in openDoc by conditional spread beside the existing degradation/functionalDefinition spreads. The webview has no code for them yet, so the rendered surface must be UNCHANGED — and because nothing is inlined into the script yet, the S002 shell baseline is still the correct pin here.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "openDoc forwards all three records BY REFERENCE on the existing docs-content message — no new message type, no new IPC method, no second round trip",
+          "An absent record is an ABSENT KEY in the posted payload, asserted with `'erDefinition' in payload === false` rather than a loose falsy check",
+          "openDoc's FAIL-CLOSED arm posts blocked:true and carries NONE of the three records — so a reviewer who could not read the body can never be shown a diagram drawn from it",
+          "The emitted shell is BYTE-IDENTICAL to the pinned S002 baseline (sha256 + char + byte counts unchanged): this task moves data, not pixels, and nothing has joined the script yet",
+          "The full docs-review suite still passes with NO test modified"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "openDoc: forwards erDefinition, sequenceDefinition and companions BY REFERENCE on the existing docs-content message"
+          },
+          {
+            "level": "integration",
+            "name": "openDoc: an absent record stays an ABSENT KEY across postMessage ('erDefinition' in payload === false)"
+          },
+          {
+            "level": "integration",
+            "name": "openDoc: the fail-closed arm posts blocked:true and carries NO records and NO companions"
+          },
+          {
+            "level": "unit",
+            "name": "shell: emitted HTML is byte-identical to the pinned S002 baseline (sha256 + char + byte) — this task moves data, not pixels"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Publish sc4's companion-slot contract (types only)",
+        "summary": "Publish the contract s3 OWNS and s4 consumes: CompanionVisualKind ('diagram' | 'experience'), the three-state CompanionSlotState, CompanionSlotFactory<TRecord> and CompanionLinkOut. Two deliberate widenings over the HLD sketch: `body` typed `unknown` to match sc2's shipped StructuredRenderer<T> (docs-review-panel.ts:343-348), and `linkOut` optional on BOTH non-absent states, because the reviewer whose diagram could not be drawn is the one who most needs the authentic file. Type-only, consumed by nothing yet, so s4's dependency lands independently of any diagram-specific decision.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The 'absent' state carries NO other member, so no caller can read a label, body or link from it — k3's never-reserve-space rule as a type guarantee rather than a convention",
+          "CompanionVisualKind's mapping is TOTAL over the closed CompanionKind union: 'diagram-mermaid' and 'diagram-html' → 'diagram', 'ux-mock' → 'experience'; a new union member would be a compile error here, not an unlabelled slot",
+          "`linkOut` is declared optional on BOTH 'rendered' and 'unshowable'",
+          "`body: unknown` matches the shipped StructuredRenderer<T> return shape rather than introducing an HTMLElement bound a source string cannot satisfy",
+          "tsc passes with no change to any existing type"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc4 types: the 'absent' state carries no label, body or link — a type-level assertion that nothing downstream can read one"
+          },
+          {
+            "level": "unit",
+            "name": "sc4 types: CompanionVisualKind's mapping is TOTAL over the closed CompanionKind union (exhaustiveness, no bare default)"
+          },
+          {
+            "level": "unit",
+            "name": "sc4 types: linkOut is optional on BOTH 'rendered' and 'unshowable'"
+          },
+          {
+            "level": "unit",
+            "name": "sc4 types: body is `unknown`, matching the shipped StructuredRenderer<T> return shape"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "The renderer spine: SVG primitives, slot factory, and the ER derivation (INERT)",
+        "summary": "Add DOCS_DIAGRAM_SOURCE as the fourth member of the DOCS_*_SOURCE family and inline it into the single nonce'd script after its three siblings. This task carries the SPINE: the SVG writer (createElementNS + textContent only), the slot factory implementing the four-combination gate, and the ER derivation re-implementing erDefinitionToIr's rules. Layout iterates the SORTED CLASS LIST, never edges, so a cyclic or self-referencing model cannot fail to terminate. INERT — functions are defined and nothing calls them, so the surface is unchanged. THE SHELL BASELINE MOVES HERE. Its own mutations are run here, and the ER drawing gets its FIRST visual read here, in isolation, before anything is wired.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "PARITY, with a named mechanism and a stated authority: a SHARED fixture module under the daemon test tree is imported directly by a daemon-side erDefinitionToIr call AND loaded into the `new Function`-evaluated client derivation in the plugin test. The DAEMON output is the expected value and the client must MATCH it, so a client drift fails rather than redefining correctness",
+          "A DANGLING range omits that ONE edge and still draws every box and every other edge — the deliberate divergence from the daemon's ErDefinitionError throw at er.ts:291-294, asserted as intended and commented at the source",
+          "A self-referencing slot and a CYCLIC class graph both terminate and draw",
+          "Every SVG element is created via createElementNS with the SVG namespace and every label written via textContent — proved by a recording stub that captures the calls, so 'no markup' is EXECUTED, not grepped",
+          "A hostile class/slot name containing `<script>`, `&` and angle brackets renders character-for-character as text and creates no element and no attribute",
+          "DOCS_DIAGRAM_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write — scanned with COMMENTS STRIPPED FIRST, because a source scan that reads prose has produced false results in this repo before",
+          "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still the guarded vendored body parse",
+          "The shell baseline is UPDATED IN THIS COMMIT with sha256 + char + byte counts captured at a FIXED nonce, and the delta COMPUTED (an earlier Story pinned a hash captured at a different nonce and typed a figure from memory — neither is acceptable)",
+          "FIRST VISUAL READ: the 8-class REAL ledger erDefinition is rendered in isolation, screenshotted headless and the image READ — boxes not overlapping, edges connecting the boxes they name, no clipped labels. Catching layout defects here costs one task, not two",
+          "MUTATIONS RUN AND REVERTED, each turning its named test RED: build the slot with innerHTML (no-markup + injection-count); treat a dangling range as fatal (omit-one-edge); drive layout by edge traversal (cyclic test hangs/fails); change one client derivation rule (parity)",
+          "The surface is otherwise unchanged — nothing calls the new functions yet"
+        ],
+        "derivedFrom": [
+          "c12",
+          "c13",
+          "c14",
+          "c15",
+          "c16",
+          "c17",
+          "c18",
+          "c19",
+          "c20",
+          "c21",
+          "c22",
+          "c23",
+          "c24",
+          "c42"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "PARITY: daemon erDefinitionToIr is authoritative and the client derivation MATCHES its node set and edge set over a shared fixture module"
+          },
+          {
+            "level": "unit",
+            "name": "derivation: class-ranged slot becomes an edge; scalar-ranged and rangeless slots become attributes on the box"
+          },
+          {
+            "level": "unit",
+            "name": "derivation: a DANGLING range omits that one edge and still draws every box and every other edge (deliberate divergence from the daemon throw)"
+          },
+          {
+            "level": "unit",
+            "name": "derivation: cardinality flags in every combination produce the daemon's crow's-foot token"
+          },
+          {
+            "level": "unit",
+            "name": "layout: a self-referencing slot and a cyclic class graph both terminate and draw (sorted class list, never edge traversal)"
+          },
+          {
+            "level": "unit",
+            "name": "layout: determinism — the same record renders an identical element tree every time"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: every SVG element via createElementNS with the SVG namespace and every label via textContent, proved by a recording stub"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: a hostile class/slot name (<script>, &, backticks, angle brackets) comes back character-for-character and creates no element or attribute"
+          },
+          {
+            "level": "unit",
+            "name": "ac4: no attribute value is built from record text"
+          },
+          {
+            "level": "unit",
+            "name": "contract: DOCS_DIAGRAM_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write — scanned with comments stripped FIRST"
+          },
+          {
+            "level": "unit",
+            "name": "contract: the emitted shell still has EXACTLY ONE `.innerHTML=` and it is still the guarded vendored parse, after a fourth source string joins the script"
+          },
+          {
+            "level": "unit",
+            "name": "gate: the factory's four-combination table asserted in isolation, through the discriminator AND through what was built"
+          },
+          {
+            "level": "unit",
+            "name": "gate: 'absent' does ZERO DOM work — no createElement call, reached before any construction"
+          },
+          {
+            "level": "unit",
+            "name": "gate: a diagram-mermaid ref with no projected record routes to 'unshowable' with a reason that NAMES what was referenced"
+          },
+          {
+            "level": "unit",
+            "name": "gate: diagram-html routes to 'unshowable' naming the kind (lc1), never a silent nothing"
+          },
+          {
+            "level": "unit",
+            "name": "gate: linkOut present on BOTH 'rendered' and 'unshowable' whenever a ref exists, absent when there is no ref"
+          },
+          {
+            "level": "unit",
+            "name": "shell: the moved baseline is pinned at a FIXED nonce with sha256 + char + byte COMPUTED, not typed"
+          },
+          {
+            "level": "smoke",
+            "name": "FIRST VISUAL READ: the 8-class real erDefinition rendered in isolation, screenshotted and the image read — no overlap, no clipping, edges connecting the named boxes"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: build the slot with innerHTML → the no-markup AND injection-count tests go RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: treat a dangling range as fatal → the omit-one-edge test goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: drive layout by edge traversal → the cyclic-model test hangs or goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: change one client derivation rule → the PARITY test goes RED"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "The sequence derivation on the same primitives (INERT)",
+        "summary": "Add the call-sequence derivation — participants and ordered messages — on top of t4's SVG primitives and slot factory, as its own task with its own fixtures and its own visual read. This is the half of the Story the amendment bought: 3 ledger bodies carry a sequenceDefinition versus 2 carrying an erDefinition, and this Epic's own S002 LLD is one of them. Still INERT. The shell baseline MOVES AGAIN here and is updated in this commit.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A REAL ledger sequenceDefinition (LLD-bfe98ff7f97178cf-s2.json) renders: every participant appears, and messages are drawn in the record's order with their direction preserved",
+          "Message ORDER is asserted behaviourally — read back off the constructed element tree, not inferred from source position",
+          "The derivation reuses t4's SVG primitives rather than introducing a second element-construction route; createElementNS + textContent still hold, proved by the same recording stub",
+          "An empty or malformed sequence record (no participants, or participants not an array) is treated as ABSENT by the factory and creates no element",
+          "FIRST VISUAL READ for this kind: rendered in isolation, screenshotted and the image READ — participants and message order legible and unambiguous",
+          "MUTATION RUN AND REVERTED: reversing or shuffling the message order turns the ordering test RED",
+          "The shell baseline is updated in this commit with the delta computed",
+          "The surface is still unchanged — nothing calls it yet"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c9",
+          "c12",
+          "c20",
+          "c21",
+          "c23"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sequence derivation: every participant from the REAL s2 sequenceDefinition appears, with message direction preserved"
+          },
+          {
+            "level": "unit",
+            "name": "sequence derivation: message ORDER read back off the constructed element tree, not inferred from source position"
+          },
+          {
+            "level": "unit",
+            "name": "sequence derivation: reuses t4's createElementNS + textContent primitives — same recording stub, no second construction route"
+          },
+          {
+            "level": "unit",
+            "name": "sequence derivation: an empty or malformed record is treated as ABSENT and creates no element"
+          },
+          {
+            "level": "unit",
+            "name": "sequence derivation: determinism — identical element tree on repeat renders"
+          },
+          {
+            "level": "smoke",
+            "name": "FIRST VISUAL READ: a real sequenceDefinition rendered in isolation, screenshotted and read — participants and message order legible"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: reverse or shuffle the message order → the ordering test goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "shell: baseline updated again in this commit, delta computed"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Mount the slot from renderContent — the one call that changes what a reviewer sees",
+        "summary": "Call the factory from renderContent AFTER stampSlugs (the pointer-advance constraint the shipped code states at :586) and before the chooser and the notice, wrapped in the backstop catch S002 established, then mount the slot: anchored beside the heading whose slug the ref's ofSectionId resolved to via sc3's shipped createSectionResolver (docs-sections.ts:136-149), at the defined default position otherwise. Deliberately a single call and deliberately last, so reverting it restores the shipped surface while leaving the types, the data path and both derivations in place. The gate's own mutations run here.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "THE FOUR-COMBINATION GATE asserted as a TABLE, one row per (ref × record): absent+absent → 'absent'; present+present → 'rendered'; present+absent → 'unshowable'; absent+present → 'rendered' (the resolved contested row, q7f574776 — record gates content)",
+          "ac2's dominant path proved as ZERO DOM ACTIVITY: for a document with no ref and no record the slot path makes NO createElement call at all, and the rendered BODY REGION plus the slot host are unchanged relative to the IMMEDIATELY PRECEDING commit — pinned against the CURRENT post-renderer baseline, not against S002's, which the source-string tasks have already moved",
+          "`classes: {}` and an empty sequence record are treated as ABSENT, matching the undefined-or-empty convention the repo states twice",
+          "A diagram-mermaid ref with no projected record routes to 'unshowable' with a reason that NAMES what was referenced, and `diagram-html` routes there too per lc1 — never a silent nothing",
+          "A forced throw inside the slot build leaves the body, the chooser, the notice, the open questions and BOTH approval controls intact — all five surfaces asserted",
+          "IDEMPOTENCE: two consecutive docs-content messages with the same record leave exactly ONE slot with the same content; a third carrying neither leaves none — against a stub whose innerHTML/textContent assignment REPLACES children, or the test is meaningless",
+          "An ofSectionId that resolves mounts the slot beside that heading; one that does not resolve mounts it at the DEFAULT position rather than dropping the visual (the live path — 0 of 8 real refs carry the field)",
+          "docs-sections.ts comes out BYTE-IDENTICAL — this Story mints no section identity",
+          "The approval path, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before the Story",
+          "MUTATIONS RUN AND REVERTED, each turning its named test RED: delete the absent gate (zero-DOM-activity); dispatch on the ref's kind instead of the record present (sequence-diagram unshowable); drop the diagram-html branch (lc1); drop linkOut from 'unshowable' (link-in-failure-state)"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c15",
+          "c19",
+          "c24",
+          "c25",
+          "c26",
+          "c27",
+          "c28",
+          "c29",
+          "c30",
+          "c31",
+          "c41"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "mounted gate: the four-combination table driven through the SHIPPED bootstrap, including the contested absent-ref/present-record row rendering"
+          },
+          {
+            "level": "integration",
+            "name": "ac2 dominant path: no ref and no record → zero createElement calls from the slot path and the body region unchanged vs the immediately preceding commit"
+          },
+          {
+            "level": "integration",
+            "name": "mounted: `classes: {}` and an empty sequence record are treated as ABSENT"
+          },
+          {
+            "level": "integration",
+            "name": "mounted: the slot build runs AFTER stampSlugs (pointer-advance constraint), proved by re-reading every heading id"
+          },
+          {
+            "level": "integration",
+            "name": "mounted: DOCS_DIAGRAM_SOURCE is inlined into the single nonce'd script and evaluated by the real bootstrap"
+          },
+          {
+            "level": "integration",
+            "name": "IDEMPOTENCE: two identical docs-content messages leave exactly ONE slot; a third carrying neither leaves none (stub models innerHTML REPLACING children)"
+          },
+          {
+            "level": "integration",
+            "name": "resilience: a forced throw in the slot build leaves body, chooser, notice, open questions and BOTH approval controls intact — all five surfaces"
+          },
+          {
+            "level": "integration",
+            "name": "placement: a resolving ofSectionId anchors beside that heading; a stale one falls back to the default position rather than dropping the visual"
+          },
+          {
+            "level": "unit",
+            "name": "docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity"
+          },
+          {
+            "level": "integration",
+            "name": "regression: the approval path, COMMENTABLE_KINDS gate and blocked banner behave identically to before the Story"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: delete the absent gate → the ac2 zero-DOM-activity test goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: dispatch on the ref's kind instead of the record present → the sequence-diagram unshowable test goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: drop the diagram-html branch → the lc1 test goes RED"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION: drop linkOut from the 'unshowable' state → the link-in-failure-state test goes RED"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Full-surface visual verification across all three states, with evidence committed",
+        "summary": "The whole-surface pass that CONFIRMS rather than discovers, now that t4 and t5 have each already read their own drawing in isolation. Every DOM stub is CSS-blind and geometry-blind, so overlap, clipping, mis-attached edges and arrows pointing nowhere are invisible to every assertion in the suite — and all of them destroy the only thing this Story delivers. Render the real shell with real ledger records, screenshot headless, READ the images back, and commit them under S003/evidence/.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Both REAL erDefinitions (3-class and 8-class) rendered in the mounted surface: boxes do not overlap, every edge visibly connects the two boxes it names, no label is clipped or escapes its box, crow's-foot ends distinguishable — confirmed by READING the image",
+          "A REAL sequenceDefinition in the mounted surface: participants and ordered messages legible, order visually unambiguous",
+          "The 'unshowable' state: the reason text is legible and the link-out is visibly reachable",
+          "The 'absent' state: nothing is drawn and the body renders exactly as it does without the Story",
+          "A self-referencing and a cyclic model read back as images and draw sensibly — the shapes most likely to produce a nonsense picture",
+          "A document carrying BOTH a diagram ref and a ux-mock ref (the real shape of LLD-bfe98ff7f97178cf-s2) shows the diagram slot only and leaves the experience slot to s4 — s3 must not pre-empt that arrangement",
+          "All state images committed under S003/evidence/ at the paths the commit message CLAIMS — verified against the tree, after a wrong-path evidence commit had to be amended in S002"
+        ],
+        "derivedFrom": [
+          "c23",
+          "c32",
+          "c33",
+          "c34",
+          "c35",
+          "c36"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "VISUAL: the 3-class real erDefinition in the mounted shell — image read back for overlap, clipping, edge attachment and crow's-foot legibility"
+          },
+          {
+            "level": "smoke",
+            "name": "VISUAL: the 8-class real erDefinition — the densest record the ledger holds, where a hand-written layout fails first"
+          },
+          {
+            "level": "smoke",
+            "name": "VISUAL: a real sequenceDefinition in the mounted shell — participants and message order legible and unambiguous"
+          },
+          {
+            "level": "smoke",
+            "name": "VISUAL: the 'unshowable' state — reason text legible and link-out visibly reachable"
+          },
+          {
+            "level": "smoke",
+            "name": "VISUAL: the 'absent' state — nothing drawn and the body identical to the no-Story rendering"
+          },
+          {
+            "level": "smoke",
+            "name": "VISUAL: self-referencing and cyclic models read back as images and draw sensibly"
+          },
+          {
+            "level": "integration",
+            "name": "a document with BOTH a diagram ref and a ux-mock ref shows the diagram slot only, leaving the experience slot to s4"
+          },
+          {
+            "level": "unit",
+            "name": "evidence: every committed image exists at the path the commit message claims (verified against the tree)"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Rebuild the extension, report the size delta, confirm the sweep",
+        "summary": "The shipping act, which must come last: rebuild and reinstall the extension (esbuild bundle + VSIX) and report the size delta against the 241,713-byte baseline — the figure alternative a3 was rejected on, and therefore the number that proves the DOM-construction route kept its central promise. Also restate which artefact had to be rebuilt for which change, since conflating the daemon rebuild (t1) with the extension rebuild makes a correct change look broken.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "The extension is rebuilt and the VSIX size delta is COMPUTED from the two artefacts and reported — never typed from memory",
+          "The delta is a few KB, not megabytes, confirming the DOM-construction route avoided a3's >10x cost",
+          "The full plugin sweep passes and its count is stated, as is the docs-review suite's",
+          "The daemon rebuild (t1) and the extension rebuild (this task) are both named in the completion note, with which change each one ships"
+        ],
+        "derivedFrom": [
+          "c37",
+          "c38",
+          "c39",
+          "c40"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the full plugin sweep passes and its count is stated, as is the docs-review suite's"
+          },
+          {
+            "level": "live",
+            "name": "the VSIX is rebuilt and its size delta against the 241,713-byte baseline is COMPUTED from the two artefacts and reported"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "The FOUR-COMBINATION GATE asserted as a table, one row per (ref present/absent × record present/absent): absent+absent -> 'absent'; present+present -> 'rendered'; present+absent -> 'unshowable'; absent+present -> 'rendered'. Each row asserted through the returned discriminator AND through what was built",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "'absent' does ZERO DOM work — no createElement call at all, asserted as the absence of activity rather than the absence of a visible frame, and reached before any construction",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "The 'absent' state carries no other field, so no caller can read a label, a body or a link from it",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "linkOut is present on BOTH 'rendered' and 'unshowable' whenever a ref exists, and absent when there is no ref",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "CompanionVisualKind is derived from the ref's CompanionKind — 'diagram-mermaid' and 'diagram-html' -> 'diagram', 'ux-mock' -> 'experience' — and the mapping is total over the closed union",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "diagram-html routes to 'unshowable' with a reason naming the kind (lc1), never to a silent nothing",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A diagram-mermaid ref with no projected record (the sequence/component majority case) routes to 'unshowable' with a reason that NAMES what was referenced rather than a generic failure",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "PARITY: the client derivation and `erDefinitionToIr` are run over the SAME fixtures and asserted to produce the same node set and the same edge set (class-ranged slot -> edge; every other slot -> an attribute on the box). This is the test that makes the duplication safe rather than merely acknowledged",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A slot whose range names a defined class becomes an edge; a scalar-ranged slot and a rangeless slot both become attributes",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A DANGLING range omits that one edge and still draws every box and every other edge — the deliberate divergence from the daemon, which throws ErDefinitionError there",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cardinality flags in every combination produce the same crow's-foot token the daemon derives, so the in-pane picture and the generated companion say the same thing about the same relationship",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A self-referencing slot and a cyclic class graph both terminate and draw — the layout is driven by the sorted class list, never by edge traversal",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Determinism: the same record renders an identical element tree every time, with no randomness and no measurement-dependent reflow",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Every SVG element is created via createElementNS with the SVG namespace, and every label is written via textContent — asserted by a recording stub that captures property writes, so 'no markup assignment' is EXECUTED rather than grepped",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "A class name and a slot name containing `<script>`, `&`, backticks and angle brackets come back character-for-character identical and create no element and no attribute",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "DOCS_DIAGRAM_SOURCE contains no innerHTML, outerHTML, insertAdjacentHTML or document.write — scanned with comments stripped first, because a source scan that reads prose has produced four false results in this repo already",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still the guarded vendored parse, after a FOURTH source string joins the single nonce'd script",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "No attribute value is built from record text",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "openDoc forwards erDefinition and companions by REFERENCE on the existing docs-content message, with absence staying an ABSENT KEY ('erDefinition' in payload === false)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "openDoc's fail-closed arm posts blocked:true and carries NO records and NO companions",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DOCS_DIAGRAM_SOURCE is inlined into the single nonce'd script, and the slot build runs AFTER stampSlugs for the same pointer-advance reason S002's placement does",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A document with no companions and no record renders a body byte-identical to what S002 ships — the dominant path, proved as the main case",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "IDEMPOTENCE: two consecutive docs-content messages with the same record leave exactly ONE slot with the same content; a third carrying neither leaves none",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A forced throw inside the slot build still renders the body, the chooser, the notice, the open questions and BOTH approval controls — all four surfaces, not two",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "The approval path, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "An ofSectionId that resolves mounts the slot beside that heading; one that does not resolve mounts it at the default position rather than dropping it",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Render the real shell with a REAL ledger erDefinition, screenshot it headless, and READ the image: boxes do not overlap, every edge visibly connects the two boxes it names, no label is clipped or escapes its box, and the crow's-foot ends are distinguishable",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "The same for the 8-class record, which is the largest the ledger holds — density is where a hand-written layout fails first",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "The 'unshowable' state: the reason text is legible and the link-out is visibly reachable",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "The 'absent' state: nothing is drawn, and the body renders exactly as it does without the Story",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "A self-referencing and a cyclic model, read back as images — the shapes most likely to produce a nonsense drawing",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Delete the absent gate -> the ac2 zero-DOM-activity test must fail",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Make the factory dispatch on the ref's kind instead of the record present -> the sequence-diagram unshowable test must fail",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Drop the diagram-html branch -> the lc1 test must fail",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Build the slot with innerHTML instead of createElementNS -> the no-markup and injection-count tests must fail",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Treat a dangling range as fatal (daemon behaviour) -> the omit-one-edge test must fail",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Drive the layout by edge traversal instead of the sorted class list -> the cyclic-model test must hang or fail",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Drop linkOut from the 'unshowable' state -> the link-in-failure-state test must fail",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Change one client derivation rule -> the PARITY test against erDefinitionToIr must fail",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sharedContract sc1 — ArtifactReviewView structured projection (consumed)",
+      "quotedText": "Consumed as shipped for `erDefinition` and `companions`: read off the DocsContent the existing workflow.artifactContent call already returns, forwarded by reference with no reshaping, defaulting or validation"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "AMD-bfe98ff7f97178cf-1 — approved sharedContract.fieldAdd on sc1 adding sequenceDefinition (breaking:false)",
+      "quotedText": "adding `sequenceDefinition?: SequenceDefinition | undefined`; componentDependencyDefinition DEFERRED on 0 producer bodies"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 1 — land the adopted sc1 amendment in structuredRecords and rebuild the daemon"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "plan s3 resolved openQuestion q841c8f82 — projection-first, exactly two derivations",
+      "quotedText": "Make the plan's first task the one-line `structuredRecords` change that projects `sequenceDefinition` through sc1, plus the required daemon rebuild"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "plan s3 context.assemble — cross-repo IPC mirror obligation and the build gate's inability to execute",
+      "quotedText": "ArtifactReviewView is part of the IPC payload contract that the insrc-ide fork mirrors; the build stage's validate gate cannot execute anything in its sandbox"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges[0] — HostToWebview docs-content variant field-add"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails api openDoc — conditional-spread forwarding, absence stays an absent key, fail-closed carries no records"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration steps 2-3 — protocol field-add then openDoc forwarding with the shell unchanged"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sharedContract sc4 — companion visual slot (OWNED by s3, consumed by s4)",
+      "quotedText": "Exactly three states. 'absent' is NOT a state that renders an empty frame — it is the absence of a slot, which is how k3 is enforced structurally"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 4 — publish sc4's types ahead of and independently of the renderer"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 openQuestion q9395ca99 (cd2) — `unknown` typing matches sc2's shipped StructuredRenderer<T>"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sharedContract sc2 — review-surface render discipline (one markup-injection site; structured renderers inject none)"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails api DOCS_DIAGRAM_SOURCE — the fourth member of the DOCS_*_SOURCE family"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails api renderErDiagram — StructuredRenderer<ErDefinition> with deterministic sorted-class-list layout"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails api CompanionSlotFactory — the four-combination gate",
+      "quotedText": "ref absent + record absent -> 'absent'; ref present + record present -> 'rendered'; ref present + record absent -> 'unshowable'; ref absent + record present -> 'rendered'"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 5 — add the source string INERT; the shell baseline moves in the same commit"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths — dangling class range omits one edge; cyclic and self-referencing models must terminate"
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges[1] — ErDefinition invariant-change: validateErDefinition runs at assembly only, so a malformed record reaches the client unvalidated"
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges[2] — CompanionArtifactRef/CompanionKind invariant-change: three renderers stamp one kind, so dispatch must be on the RECORD"
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths — a structurally malformed record resolves to 'unshowable' with a ref or 'absent' without one, before any element is created"
+    },
+    {
+      "id": "c21",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — split the oversized renderer task into spine and sequence derivation",
+      "quotedText": "t4 IS OVERSIZED and bundles four separable deliverables"
+    },
+    {
+      "id": "c22",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — name the parity mechanism and make the daemon authoritative",
+      "quotedText": "the DAEMON output is the expected value and the client must MATCH it, so a client drift fails rather than redefining correctness"
+    },
+    {
+      "id": "c23",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — pull a first visual read forward into the renderer tasks",
+      "quotedText": "THE VISUAL CHECK COMES TOO LATE TO BE CHEAP"
+    },
+    {
+      "id": "c24",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — run each mutation at the task that makes the claim, not in a trailing batch",
+      "quotedText": "THE PLAN CONTRADICTS ITS OWN DISCIPLINE"
+    },
+    {
+      "id": "c25",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 sharedContract sc3 — section anchor model, consumed as shipped (createSectionResolver)"
+    },
+    {
+      "id": "c26",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails api renderContent — build the slot after stampSlugs, inside the backstop catch"
+    },
+    {
+      "id": "c27",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 6 — the single call that changes what a reviewer sees, deliberately last"
+    },
+    {
+      "id": "c28",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths — fail-closed arm carries no records; a renderer throw degrades to 'unshowable'; a stale ofSectionId falls back to default placement"
+    },
+    {
+      "id": "c29",
+      "kind": "step-output",
+      "ref": "plan s3 resolved openQuestion q7f574776 — record gates content on the contested row",
+      "quotedText": "The ref-absent / record-present row renders the diagram from the entity-model record"
+    },
+    {
+      "id": "c30",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — re-scope the baseline claim to the current post-renderer pin",
+      "quotedText": "AN IMPRECISE BASELINE CLAIM"
+    },
+    {
+      "id": "c31",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 invariantsToPreserve — body stays authoritative, nothing fabricated or reserved, approval path behaves identically, one source of section identity"
+    },
+    {
+      "id": "c32",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy smoke level — the check this Story cannot ship without",
+      "quotedText": "A green suite proves the elements exist, not that the picture is legible"
+    },
+    {
+      "id": "c33",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 acceptance ac1 — the referenced design diagram is displayed as a visual, positioned with the part of the document that references it"
+    },
+    {
+      "id": "c34",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 acceptance ac3 — a referenced-but-unshowable companion is stated, with the body still fully readable"
+    },
+    {
+      "id": "c35",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 7 — verify the drawing visually and commit the evidence"
+    },
+    {
+      "id": "c36",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 edge case — two refs on one document: s3 renders the diagram slot only and leaves the arrangement to s4"
+    },
+    {
+      "id": "c37",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 nonFunctional — the VSIX cost is s3's to carry and report"
+    },
+    {
+      "id": "c38",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration step 8 — rebuild and report, naming which artefact ships which change"
+    },
+    {
+      "id": "c39",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 alternative a3 reasonRejected — ~3 MB on a 241,713-byte extension, a >10x increase, for two documents"
+    },
+    {
+      "id": "c40",
+      "kind": "step-output",
+      "ref": "plan s3 tasks.critique — the trailing task holds only what genuinely must come last",
+      "quotedText": "Leave t7 holding only what genuinely must come last: the extension VSIX rebuild and the computed size delta"
+    },
+    {
+      "id": "c41",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 acceptance ac2 — a document referencing no design diagram companion shows no diagram area and attempts no fetch"
+    },
+    {
+      "id": "c42",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 acceptance ac4 — no raw markup is injected and nothing is fetched; the record is the only input"
+    }
+  ]
+}

@@ -911,7 +911,7 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   t3             62661 chars / 62705 bytes  b8d9d5c6…56d60
  *       +404 chars: frAnchorSlug appended to DOCS_FR_SOURCE. Still inert.
  *   t4 (this value) 64177 chars / 64223 bytes  2e27d071…9618d
- *       +1544 chars: placeFunctionalRequirements appended. Still inert — t5
+ *       +1516 chars: placeFunctionalRequirements appended. Still inert — t5
  *       is what calls it.
  *
  * A task that legitimately changes the shell updates these constants in the same
@@ -1321,9 +1321,12 @@ function bodyStub(tagName: string, id = '', text = ''): BodyStub {
 }
 
 /** Eval DOCS_FR_SOURCE and return placeFunctionalRequirements + the createElement count. */
-function loadPlace(opts: { throwOnCall?: number } = {}) {
+function loadPlace(opts: { throwOnCall?: number; getElementById?: (id: string) => BodyStub | undefined } = {}) {
   const made: string[] = [];
   const doc = {
+    // Present so a document-wide-lookup mutation can actually FIND something and
+    // do damage, rather than throwing on a missing method.
+    getElementById: (id: string) => opts.getElementById?.(id) ?? null,
     createElement(t: string) {
       made.push(t);
       if (opts.throwOnCall !== undefined && made.length === opts.throwOnCall) {
@@ -1513,7 +1516,19 @@ test('t4: build-before-mutate — a record that makes construction throw leaves 
 });
 
 test('t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched', () => {
-  const { place } = loadPlace();
+  // Honest about what this proves, after the build gate pushed on it and the
+  // push turned out to be half-right. The gate observed that the stub had no
+  // getElementById, so a document-wide mutation would THROW rather than damage
+  // the decoy. Adding one revealed something better: a document-wide lookup
+  // STILL cannot damage anything, because a second, independent guard
+  // (`start>=0`) only proceeds when the heading is a direct child of the body.
+  //
+  // So this test asserts the end-to-end safety property, and the frHeadingIn
+  // assertion below asserts the SCOPING itself — the part a document-wide
+  // lookup actually falsifies. Defence in depth, tested in two places, rather
+  // than one assertion claiming to cover both.
+  let decoyRef: BodyStub | undefined;
+  const { place } = loadPlace({ getElementById: (id) => (id === '2-functional-requirements' ? decoyRef : undefined) });
   // A heading carrying the FR slug that lives OUTSIDE the body container, with
   // siblings that must never be deleted. A document-wide getElementById would
   // find it and start removing.
@@ -1522,6 +1537,7 @@ test('t4: the slug lookup is scoped to the body container, so a same-id element 
   const decoySibling = bodyStub('p', '', 'must survive');
   elsewhere.appendChild(decoy);
   elsewhere.appendChild(decoySibling);
+  decoyRef = decoy;
 
   // The body itself has NO such heading, so placement must fall back.
   const body = bodyStub('div');
@@ -1531,6 +1547,21 @@ test('t4: the slug lookup is scoped to the body container, so a same-id element 
   const r = place(body, REC, SECTIONS, false);
 
   assert.equal(r.placed, 'prepended', 'no heading in THIS container, so it falls back');
-  assert.deepEqual(elsewhere.children, [decoy, decoySibling], 'the decoy and its sibling are untouched');
+  assert.deepEqual(elsewhere.children, [decoy, decoySibling],
+    'the decoy and its sibling are untouched — a document-wide lookup would have found the decoy and deleted its sibling');
   assert.equal(body.children[0]!.tagName, 'div', 'and the block went to the top of the body');
+
+  // THE SCOPING ITSELF, asserted directly: frHeadingIn must not see a heading
+  // that lives outside the container it was handed, even when a document-wide
+  // lookup would find one. This is the assertion a document-wide implementation
+  // genuinely fails.
+  // eslint-disable-next-line no-new-func
+  const headingIn = new Function('document', `${DOCS_FR_SOURCE}; return frHeadingIn;`)({
+    getElementById: (id: string) => (id === '2-functional-requirements' ? decoy : null),
+    createElement: (t: string) => bodyStub(t),
+  }) as (b: unknown, slug: string) => unknown;
+  assert.equal(headingIn(body, '2-functional-requirements'), null,
+    'the lookup is scoped to the container, not the document');
+  assert.equal(headingIn(elsewhere, '2-functional-requirements'), decoy,
+    'and it does find a heading that really is inside the container it was given');
 });

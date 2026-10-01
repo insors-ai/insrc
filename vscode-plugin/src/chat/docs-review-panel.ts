@@ -457,6 +457,25 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         ...(content.functionalDefinition !== undefined
           ? { functionalDefinition: content.functionalDefinition }
           : {}),
+        // S003/t2 — the diagram records and the companion refs ride the SAME
+        // message, forwarded by REFERENCE on exactly the terms above: no clone,
+        // no reshaping, no defaulting, no validation. The read path does not
+        // validate either (validateErDefinition runs at ASSEMBLY inside the
+        // generating workflow), so a malformed record arrives here intact and the
+        // webview renderer is what must shape-check before it draws.
+        //
+        // Conditionally spread, so an absent record stays an ABSENT KEY across
+        // the postMessage boundary rather than a key holding undefined — the same
+        // single absence test (`=== undefined`) on both sides.
+        ...(content.erDefinition !== undefined
+          ? { erDefinition: content.erDefinition }
+          : {}),
+        ...(content.sequenceDefinition !== undefined
+          ? { sequenceDefinition: content.sequenceDefinition }
+          : {}),
+        ...(content.companions !== undefined
+          ? { companions: content.companions }
+          : {}),
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);

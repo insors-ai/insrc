@@ -95,6 +95,21 @@ export type HostToWebview =
       // none — which is the common case — so `=== undefined` means the same thing
       // on both sides of the postMessage boundary as it does across the IPC.
       readonly functionalDefinition?: DocsContent['functionalDefinition'];
+      // S003/t2 (additive, SAME message again — no new message type, no second
+      // round trip). The DIAGRAM source records plus the companion refs, each
+      // INDEXED off DocsContent so protocol -> client -> daemon stay one
+      // declaration deep and cannot drift. ABSENT KEY when the document carries
+      // none, which is the dominant case.
+      //
+      // Both records travel because a companion ref CANNOT identify which one
+      // drew it: three daemon renderers all stamp kind:'diagram-mermaid'
+      // (companion/render.ts:104 ER, :205 sequence, :243 component), so the
+      // webview dispatches on the RECORD present, never on the ref's kind.
+      // `companions` rides along for the link-out to the authentic generated file
+      // and for ofSectionId placement — the pane never reads that file's content.
+      readonly erDefinition?: DocsContent['erDefinition'];
+      readonly sequenceDefinition?: DocsContent['sequenceDefinition'];
+      readonly companions?: DocsContent['companions'];
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

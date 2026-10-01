@@ -2036,3 +2036,140 @@ test('the functional-requirement items carry LIST semantics, not just visual sep
   // which would be invalid inside a <ul> and would break the announced count.
   assert.deepEqual([...new Set(el.children.map((c) => c.tagName))], ['li']);
 });
+
+// ---------------------------------------------------------------------------
+// S003/t2 — the DIAGRAM records and the companion refs travel one hop further,
+// onto the EXISTING docs-content message. Pure data movement: the webview has no
+// code for them yet, so the rendered surface must be unchanged, which is what the
+// SHELL_BASELINE pin above asserts for this commit.
+//
+// Both records travel because a companion ref cannot identify which one drew it —
+// three daemon renderers all stamp kind:'diagram-mermaid' — so the webview will
+// dispatch on the RECORD present (t4/t6), never on the ref's kind.
+// ---------------------------------------------------------------------------
+
+/** The real shape this Epic's own S002 LLD carries: a sequence record, NO
+ *  erDefinition, and two companion refs (ux-mock + diagram-mermaid). Confirmed
+ *  live over the daemon IPC in t1. */
+const SEQ_RECORD = {
+  id: 's2-render-order',
+  participants: [{ id: 'host', label: 'openDoc (extension host)' }, { id: 'webview', label: 'renderContent (webview)' }],
+  messages: [{ from: 'host', to: 'webview', label: 'docs-content' }],
+};
+const ER_RECORD = { classes: { Artifact: { attributes: { id: { range: 'string', identifier: true } } } } };
+const COMPANIONS = [
+  { kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' },
+  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S002/sequence-diagram.html', title: 'Sequence diagram' },
+];
+
+test('t2: all three records are forwarded by REFERENCE on the existing docs-content message', async () => {
+  const payload = await openWithContent({
+    markdown: '# Doc', openQuestions: [], blocked: false,
+    erDefinition: ER_RECORD, sequenceDefinition: SEQ_RECORD, companions: COMPANIONS,
+  });
+
+  // Reference identity, not deep equality: a clone would deep-equal and still
+  // prove the forward had rebuilt the record on the way through.
+  assert.equal(payload['erDefinition'], ER_RECORD, 'erDefinition forwarded by reference');
+  assert.equal(payload['sequenceDefinition'], SEQ_RECORD, 'sequenceDefinition forwarded by reference');
+  assert.equal(payload['companions'], COMPANIONS, 'companions forwarded by reference');
+  // Still ONE message of the SAME type — no new message type, no second post.
+  assert.equal(payload['type'], 'docs-content');
+});
+
+test('t2: openDoc posts exactly ONE docs-content message per open — no second round trip', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({
+    content: async () => ({
+      markdown: '# Doc', openQuestions: [], blocked: false,
+      erDefinition: ER_RECORD, sequenceDefinition: SEQ_RECORD, companions: COMPANIONS,
+    }),
+  });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+
+  const forThisDoc = fc.posted.filter(
+    (p) => p.payload.type === 'docs-content' && p.payload.artifactId === 'LLD-abc-s7',
+  );
+  assert.equal(forThisDoc.length, 1, 'the records ride the existing message rather than prompting another');
+});
+
+test("t2: an absent record stays an ABSENT KEY ('erDefinition' in payload === false)", async () => {
+  // The dominant case: only 2 of 634 ledger bodies carry an erDefinition and 3 a
+  // sequenceDefinition, so almost every real open takes this path.
+  const payload = await openWithContent({ markdown: '# Doc', openQuestions: [], blocked: false });
+
+  for (const k of ['erDefinition', 'sequenceDefinition', 'companions'] as const) {
+    // A `{ k: undefined }` spread would satisfy `=== undefined` while failing
+    // this, which is why the key test is the one that matters.
+    assert.equal(k in payload, false, `${k} must be an ABSENT KEY, not an undefined-valued one`);
+    assert.equal(payload[k], undefined);
+  }
+  // Otherwise the message is exactly what it was before this task.
+  assert.equal(payload['markdown'], '# Doc');
+  assert.equal(payload['blocked'], false);
+});
+
+test('t2: a document carrying ONLY a sequence record leaves erDefinition absent — the real S002 shape', async () => {
+  const payload = await openWithContent({
+    markdown: '# Doc', openQuestions: [], blocked: false,
+    sequenceDefinition: SEQ_RECORD, companions: COMPANIONS,
+  });
+  assert.equal(payload['sequenceDefinition'], SEQ_RECORD);
+  assert.equal(payload['companions'], COMPANIONS);
+  // A diagram-mermaid ref is present while the ER record is NOT — the exact
+  // combination that made the amendment necessary, and the one the renderer must
+  // resolve by dispatching on the record rather than on the ref's kind.
+  assert.equal('erDefinition' in payload, false, 'nothing is backfilled for the record this document lacks');
+  const kinds = (payload['companions'] as { kind: string }[]).map((c) => c.kind);
+  assert.ok(kinds.includes('diagram-mermaid'), 'the ref whose source record is the sequence one');
+});
+
+test('t2: the fail-closed arm posts blocked:true and carries NONE of the three records', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({ content: () => { throw new Error('daemon unreachable'); } });
+  const host = createDocsReviewHost({
+    createPanel: () => fc.channel, client, logger: { warn: () => {}, error: () => {} },
+  });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'posted docs-content for the failed open');
+
+  assert.equal(msg!.payload['blocked'], true, 'the fail-closed arm is unchanged');
+  // The safety property that matters most on this surface: a reviewer who never
+  // saw the body must never be shown an authoritative-looking DIAGRAM drawn from
+  // it. Approve is already suppressed; the records must be absent too.
+  for (const k of ['erDefinition', 'sequenceDefinition', 'companions'] as const) {
+    assert.equal(k in msg!.payload, false, `a document the reviewer could not read carries no ${k}`);
+  }
+});
+
+test('t2 (contract): protocol.ts indexes all three off DocsContent rather than restating them', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const proto = readFileSync(join(here, '..', 'protocol.ts'), 'utf8');
+
+  // Scoped to the docs-content variant, so a match elsewhere in a file that
+  // declares many variants cannot satisfy this.
+  const variant = proto.slice(proto.indexOf("readonly type: 'docs-content'"));
+  const decl = variant.slice(0, variant.indexOf('\n    }'));
+
+  for (const k of ['erDefinition', 'sequenceDefinition', 'companions']) {
+    assert.ok(
+      decl.includes(`readonly ${k}?: DocsContent['${k}'];`),
+      `${k} must use the INDEXED form so protocol -> client -> daemon stay one declaration deep`,
+    );
+    // A hand-copied shape is the failure this guards: it compiles, looks right,
+    // and silently decouples from the daemon's record.
+    assert.doesNotMatch(decl, new RegExp(`${k}\\?:\\s*\\{`), `${k}'s shape is never restated inline`);
+  }
+});

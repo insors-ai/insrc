@@ -25,7 +25,7 @@ import { getLogger } from '../../../shared/logger.js';
 import type { ErDefinition } from './er.js';
 import { erDefinitionToIr } from './er.js';
 import type { UxDefinition } from './ux.js';
-import { uxDefinitionToIr } from './ux.js';
+import { renderUxMockDocument } from './ux.js';
 import type { SequenceDefinition } from './sequence.js';
 import { sequenceDefinitionToIr } from './sequence.js';
 import type { ComponentDependencyDefinition } from './component.js';
@@ -120,13 +120,17 @@ export interface RenderUxCompanionOpts {
 
 /**
  * sc4 (S004) — render the UX mock companion for `uxDef` to `destPath` (a sibling of
- * the artifact `.md`). Mirrors renderErCompanion: builds the IR (uxDefinitionToIr),
- * awaits the SAME docgen assembleShell render seam, and on `status:'ok'` writes the
- * self-contained offline HTML + returns the `kind:'ux-mock'` CompanionArtifactRef
- * the core markdown LINKS (never inlines — ac1/k1).
+ * the artifact `.md`), writing the self-contained offline HTML and returning the
+ * `kind:'ux-mock'` CompanionArtifactRef the core markdown LINKS (never inlines —
+ * ac1/k1).
  *
- * @throws DiagramGenerationError on a non-ok DocGenOutcome (nothing is written; the
- *   uxDefinition stays validated in-body without a picture, mirroring S003).
+ * UNLIKE the three DIAGRAM companions it does not build a DocumentIR and does not
+ * go through assembleShell (ISSUE-85e6a58693579b6d / S001): a card is a nested box
+ * layout, not a graph, so it renders through its own layout emitter instead. That
+ * emitter is pure and build-time, which is why this function no longer has a
+ * render failure mode — the DiagramGenerationError it used to raise on a non-ok
+ * DocGenOutcome is unreachable from here. A filesystem failure from the write
+ * still propagates, exactly as before.
  */
 export async function renderUxCompanion(
 	uxDef:    UxDefinition,
@@ -134,17 +138,18 @@ export async function renderUxCompanion(
 	destPath: string,
 	opts:     RenderUxCompanionOpts = {},
 ): Promise<CompanionArtifactRef> {
-	const ir = withSourceLink(uxDefinitionToIr(uxDef), opts.sourceLink);
-	const outcome = await assembleShell(ir);
-	if (outcome.status !== 'ok') {
-		const reason = 'reason' in outcome ? outcome.reason
-			: 'symbol' in outcome ? `not found: ${outcome.symbol}`
-			: 'depthUsed' in outcome ? `truncated at depth ${outcome.depthUsed}`
-			: 'unknown';
-		throw new DiagramGenerationError(outcome.status, reason);
-	}
+	// S001/t1-t2 (ISSUE-85e6a58693579b6d): the UX companion no longer borrows the
+	// DIAGRAM pipeline. It used to lower the card into a DocumentIR of nodes and
+	// edges and hand that to assembleShell, which draws a mermaid graph — so an
+	// "experience mock" was published as a picture of the card's JSON. It now goes
+	// through its own layout emitter, which renders each element as the thing it
+	// denotes. Build-time and pure, so whatever the emitter produced is exactly
+	// what the reader sees; there is no runtime step between the two that could
+	// swallow it. assembleShell is UNTOUCHED and still serves the ER, sequence and
+	// component companions.
+	const html = renderUxMockDocument(uxDef, title, { sourceLink: opts.sourceLink });
 	mkdirSync(dirname(destPath), { recursive: true });
-	writeFileSync(destPath, outcome.value.html, 'utf8');
+	writeFileSync(destPath, html, 'utf8');
 	const relPath = toRepoRelative(destPath, opts.repoPath);
 	log.info({ destPath, relPath }, 'UX mock companion rendered');
 	return {

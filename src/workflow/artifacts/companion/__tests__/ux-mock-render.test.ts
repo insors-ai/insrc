@@ -223,8 +223,27 @@ test('t1: the emitter is PURE — the same definition yields a byte-identical st
 	assert.doesNotMatch(first, /<link\b/, 'no external stylesheet');
 });
 
-test('t1: renderUxCompanion is NOT yet changed — t1 adds the emitter and wires nothing', () => {
+test('t3: renderUxCompanion is now WIRED to the emitter and off the diagram seam', () => {
+	// MIGRATED from t1, where this asserted the opposite. At t1 the emitter was
+	// deliberately unwired, so "nothing calls it yet" was the staging invariant. t2
+	// flipped it, which made that assertion correctly FAIL — a staging assertion
+	// that outlives its stage is noise, so it is restated for the post-flip world
+	// rather than deleted.
 	const src = readFileSync(join(import.meta.dirname, '..', 'render.ts'), 'utf8');
-	assert.match(src, /await assembleShell\(ir\)/, 'the companion still uses the old pipeline at this task');
-	assert.doesNotMatch(src, /renderUxMockDocument/, 'nothing calls the new emitter yet');
+	// Slice the FUNCTION BODY only. Slicing to the next export over-reaches into
+	// renderSequenceCompanion's doc comment, which legitimately still mentions the
+	// assembleShell seam — that companion is still on it, which is the point.
+	const start = src.indexOf('export async function renderUxCompanion');
+	const body = src.slice(start, src.indexOf('\n}', start) + 2);
+
+	assert.match(body, /renderUxMockDocument\(/, 'the companion renders through the layout emitter');
+	// Assert on the CALL form, not the bare word: the function's own comment
+	// explains that assembleShell is untouched and still serves the other three
+	// companions, so a naive word-search reads the prose rather than the code.
+	// Third time this session a comment has tripped a source-scan written too loosely.
+	assert.doesNotMatch(body, /await assembleShell\(/, 'and no longer CALLS the diagram seam');
+	// The other three companions still do — that is the blast-radius guarantee.
+	assert.equal((src.match(/await assembleShell\(ir\)/g) ?? []).length, 3,
+		'exactly three companions remain on assembleShell: ER, sequence, component');
 });
+

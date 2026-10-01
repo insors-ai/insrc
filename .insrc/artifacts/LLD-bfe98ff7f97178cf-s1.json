@@ -1,0 +1,1073 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790845995236-65aw2w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T09:30:52.211Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1056917,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "epicHash": "bfe98ff7f97178cf",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1790840477406-bic923",
+    "hldEffectiveHash": "33e859ffd0bea6e7dc7aaab7fea3549865f3c5df45d466b64c5818993f17bd31",
+    "hldAmendmentsApplied": [],
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "n1",
+          "ref": "2.1 ArtifactReviewView",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ArtifactReviewView in src/workflow/artifact-content.ts currently declares exactly six members — artifactId, kind, renderedMarkdown, openQuestions, approvable, blockReason — and none of the four structured records, so the LLD's widening is additive rather than a restatement.",
+          "evidence": "All five read anchors resolved. src/workflow/artifact-content.ts:45 is `export interface ArtifactReviewView {`, :46 is artifactId, :49 is openQuestions, :51 is blockReason and :52 is the closing brace — six members, no more. The grep for the four structured fields returned 24 source matches, every one of them elsewhere (artifacts/define.ts:85, hld.ts:109, companion/assess.ts:38, companion/generate.ts:39-40 …) and none in artifact-content.ts. The widening is genuinely additive.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n2",
+          "ref": "2.2 handleArtifactContent",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The 'workflow.artifactContent' IPC method is registered at src/daemon/index.ts:698 and delegates to handleArtifactContent at :700, so the LLD's claim that no new IPC method is needed rests on an existing registration.",
+          "evidence": "The registration chain resolved exactly as cited: src/daemon/index.ts:698 is `'workflow.artifactContent': async (params) => {`, :699 dynamically imports handleArtifactContent and :700 calls it. The surrounding comment at :694 describes it as a 'pure read (handleArtifactContent) path-guarded under docs/'. The claim that no new IPC method is needed rests on a registration that demonstrably exists.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n3",
+          "ref": "7 Migration / stateBefore",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The docs-review pane currently renders the document body as plain text with a single statement, bodyEl.textContent=m.markdown, at vscode-plugin/src/chat/docs-review-panel.ts:186 — the one line the Story replaces.",
+          "evidence": "docs-review-panel.ts:186 reads \"`function renderContent(m){bodyEl.textContent=m.markdown||'';` +\" and the grep confirms it is the SOLE `bodyEl.textContent` occurrence in the repo. The Story's premise that one line is what flattens the document, and the one line it replaces, is exact.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n4",
+          "ref": "5 Error paths / invariants",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The sanctioned render sequence exists at vscode-plugin/src/chat/render-registry.ts — guardMd defined at :321 and the full parse-then-guard-then-textContent-fallback performed at :332 — so sc2 reuses a shipped pattern rather than inventing one.",
+          "evidence": "Both anchors resolved verbatim. render-registry.ts:321 is \"`function guardMd(el){try{` +\" and :332 carries the complete sequence — the vendored parse, then guardMd(div), then the textContent fallback in the catch. `function guardMd(` has exactly one source occurrence, so there is no ambiguity about which definition sc2 reuses.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n5",
+          "ref": "5 Error paths / invariants",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shipped marked invocation passes headerIds:false, so the existing render emits no heading ids — the stated reason sc3 must supply anchor identity itself rather than inheriting it.",
+          "evidence": "render-registry.ts:332 contains `headerIds:false` verbatim, and the grep for `headerIds:\\s*false` found exactly one source occurrence — that line. sc3's reason for existing is confirmed: reusing the shipped config emits no heading ids, so ac2 would have no anchor targets.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n6",
+          "ref": "5 Error paths / invariants",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Injecting the vendored markdown bundle into a single nonce'd script tag preserves the one-script invariant: chat-panel.ts:561 performs exactly that injection, and the chat-panel suite asserts scripts.length===1 against the result.",
+          "evidence": "The substance is confirmed and the count in my prose is wrong. chat-panel.ts:561 reads exactly `<script nonce=\"${nonce}\">${MARKED_SRC}\\n;${bootstrap}</script></body></html>`, and webview-marked.ts:10 declares MARKED_SRC as marked v4.3.0 — so the injection pattern is as cited. But the grep for `scripts.length, 1` returned SIX source matches in chat-panel.test.ts (:314, :362, :489, :779 and two more), where the LLD repeatedly says 'five separate chat-panel assertions'. The prescribed change is unaffected — whether five or six assertions prove it, the one-script invariant provably survives the injection — so this is an imprecise premise rather than a defect.",
+          "action": "Correct the count from five to six wherever the LLD states it, so a reader who re-runs the grep is not left wondering which assertion was missed.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Evidence-derived: the grep over the repo returned six source occurrences of `scripts.length, 1` in chat-panel.test.ts, not five. Mechanical numeral correction with no design impact.",
+            "artifactEdits": [
+              {
+                "find": "five separate chat-panel assertions of scripts.length===1 pass against it",
+                "replace": "six separate chat-panel assertions of scripts.length===1 pass against it"
+              },
+              {
+                "find": "five separate chat-panel assertions of scripts.length===1 pass;",
+                "replace": "six separate chat-panel assertions of scripts.length===1 pass;"
+              },
+              {
+                "find": "a combination five passing chat-panel assertions already prove holds",
+                "replace": "a combination six passing chat-panel assertions already prove holds"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "n7",
+          "ref": "4 sc2 interaction",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The narrowing form the LLD adopts is a shipped precedent, not an invention: chat-panel.test.ts:1242 asserts the guard is PRESENT via assert.match(html, /guardMd\\(/) rather than asserting innerHTML is absent.",
+          "evidence": "Confirmed, with a note on where the probe landed. The two read anchors returned the test's declaration (:1242, `test('S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin', () => {`) and its closing brace (:1259), not the assertion line itself. The assertion is nonetheless established: the grep for 'assistant markdown is sanitized via guardMd' returned six source occurrences in chat-panel.test.ts, and the body of this test was read directly earlier in the session and carries `assert.match(html, /guardMd\\(/, 'assistant markdown is sanitized via guardMd after the marked render')`. The precedent the LLD adopts — assert the guard is present rather than assert the primitive is absent — is real and shipped in multiple tests, not a single one.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n8",
+          "ref": "7 Migration / stateBefore",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The blanket assertion sc2 must replace sits in the test declared at vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:243, whose body forbids the string innerHTML anywhere in the generated html.",
+          "evidence": "The premise is right about WHAT and one line off about WHERE. The read at :243 returned the test declaration, `test('rendered shell: one nonce, strict CSP, docs-review surface, no innerHTML', () => {`, and :254 is its closing brace. The blanket assertion itself lives at docs-review-panel.test.ts:253 — the grep pinned it exactly: `assert.doesNotMatch(html, /innerHTML/, 'no innerHTML in the webview script');`. The LLD's migration stateBefore attributes the forbidding to ':243', which points at the test rather than the assertion. The prescribed change is unaffected (the test is correctly identified and must be narrowed either way), but the build will edit a specific line and should be sent to the right one. This is the same class of imprecision the s8 audit already flagged for sc2.",
+          "action": "Attribute the blanket assertion to its real line, :253, while keeping :243 as the test it sits in, so the build's edit lands on the assertion rather than the declaration.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Evidence-derived: the grep located `assert.doesNotMatch(html, /innerHTML/, 'no innerHTML in the webview script');` at docs-review-panel.test.ts:253, while the read confirms :243 is the test declaration. Both line numbers are now known exactly.",
+            "artifactEdits": [
+              {
+                "find": "its contract test at docs-review-panel.test.ts:243 forbids the string `innerHTML` anywhere in the generated html via a blanket assert.doesNotMatch",
+                "replace": "its contract test declared at docs-review-panel.test.ts:243 forbids the string `innerHTML` anywhere in the generated html via a blanket assert.doesNotMatch at :253"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "n9",
+          "ref": "5 Error paths / invariants",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The pane behaviours the Story must leave unchanged all exist at the cited anchors: the monotonic guard refreshSeq at docs-review-panel.ts:66 and :75, COMMENTABLE_KINDS at :25, and the fail-closed blocked:true arms at :117/:139/:155.",
+          "evidence": "Every behaviour the Story must leave unchanged resolved at the cited anchor. docs-review-panel.ts:25 is `const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);`, :66 is `let refreshSeq = 0;`, :75 is `const mySeq = ++refreshSeq;`, with supersede-drops at :78 (carrying the comment 'superseded by a newer refresh — drop this response') and :83. The fail-closed arms are at :117, :139 and :155, and `blocked: true` has exactly three source occurrences — those three. The inventory is complete and exact.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n10",
+          "ref": "6 Test strategy / ac5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A dedicated regression test already pins the fail-closed rule the Story must keep green, declared at vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:179.",
+          "evidence": "docs-review-panel.test.ts:179 resolved to `test('HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)', asy…` — the exact regression the LLD relies on for ac5. It exists, it is named for the behaviour, and the Story's obligation is to keep it green rather than to write it.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n11",
+          "ref": "3.1 / 7 backwardCompat",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The JetBrains panel is unaffected by the widened response because DaemonGateway.kt:1517 parseView builds ArtifactReviewViewDto by pulling six named keys field-by-field out of a Map<String, Any?>, with no reflective bind and no unknown-key rejection.",
+          "evidence": "The load-bearing backward-compatibility claim is fully confirmed. DaemonGateway.kt:1517 is `private fun parseView(data: Map<String, Any?>): ArtifactReviewViewDto {`, :1522 is `return ArtifactReviewViewDto(`, :1525 is `renderedMarkdown = str(data[\"renderedMarkdown\"]),` — a field-by-field pull from a string-keyed map — and the DTO itself is declared at :73. There is no reflective bind and no unknown-key rejection, so extra keys on the wire are ignored and the JetBrains panel is genuinely unaffected by the widening.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n12",
+          "ref": "3.1 / 2.1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The artifact bodies already declare the four records the projection carries, at the cited lines: hld.ts 109/115/118/121, lld.ts 155/164/167/171, and define.ts 85 for functionalDefinition only. PLAN also carries functionalDefinition, at plan.ts:91.",
+          "evidence": "All six read anchors resolved to exactly the expected declarations: hld.ts:109 functionalDefinition? and :118 companions?, lld.ts:155 functionalDefinition? and :171 uxDefinition?, define.ts:85 functionalDefinition?, and plan.ts:91 functionalDefinition? — confirming the PLAN case the LLD calls out, which the HLD's original comment had omitted and which was corrected there by an earlier auto-fix.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n13",
+          "ref": "2.11 DocsContent",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "DocsContent exists in vscode-plugin/src/chat/docs-review-client.ts with exactly three members today — markdown, openQuestions, blocked — so adding four optional pass-through members is additive there too.",
+          "evidence": "DocsContent is declared at vscode-plugin/src/chat/docs-review-client.ts:24 with its three members immediately below — `readonly markdown: string` at :25, `readonly blocked: boolean` at :27 — and the read at :28 returned the closing brace, bounding the interface at :24-28. Exactly three members today, so adding four optional pass-through members is additive there as the LLD states.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n14",
+          "ref": "2.9 deriveSectionIndex",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "deriveSectionIndex does not exist yet — it is net-new code this Story introduces, and no symbol of that name is present in the repo today.",
+          "evidence": "Confirmed by three clean negatives: `deriveSectionIndex`, `SectionAnchor` and `SectionResolver` each returned ZERO source matches (their 9-11 total hits are all in the design documents that propose them). The names are genuinely net-new and collide with nothing in the repo — which both validates the LLD's framing of them as new code and removes any risk of shadowing an existing symbol.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n15",
+          "ref": "6 Test strategy",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "node:test is the repo's test framework for this surface, so the Story's strategy extends an existing pattern rather than introducing a runner.",
+          "evidence": "`from 'node:test'` returned 48 source matches and `from 'node:assert/strict'` 49, across src/ and vscode-plugin/src/ alike. node:test is unambiguously the repo's framework, so the Story's test strategy extends the existing pattern rather than introducing a runner.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 13
+      },
+      "reviewedAt": "2026-10-01T09:33:55.955Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-01T09:37:53.349Z",
+    "reviewOverride": {
+      "reason": "User approved in chat and ratified the open design question. Review was 0 HIGH / 2 MED / 13 LOW — no finding alleges a build-breaking defect, and both MEDs were AUTO-FIXES ALREADY APPLIED to the artifact before approval: (1) the one-script precedent was stated as five chat-panel assertions where the grep found six; (2) the blanket no-innerHTML assertion was attributed to docs-review-panel.test.ts:243, which is the test declaration — the assertion is at :253, now corrected so the build edits the right line. Body verified free of the stale count after application; the remaining 'five' occurrences are the appended review report correctly quoting the original premise. The 13 LOW all verified sound against real source, including the load-bearing backward-compatibility claim: DaemonGateway.kt:1517 parseView builds ArtifactReviewViewDto by pulling six named keys field-by-field out of a Map<String, Any?> with no reflective bind and no unknown-key rejection, so the additive widening cannot break the JetBrains panel. Also confirmed clean: deriveSectionIndex, SectionAnchor and SectionResolver return zero source matches, so the net-new names shadow nothing. SEPARATELY RATIFIED by the user: the MarkdownBodyRenderer signature widening from sc2's published `(markdown: string) => HTMLElement` to `{ el, degradation }`, so ac3's degradation notice is carried by the contract rather than inferred per caller. Ratified as a strengthening within sc2's intent rather than requiring a sharedContract.fieldAdd amendment — s2, s3 and s4 consume the widened shape as published in this LLD.",
+      "at": "2026-10-01T09:37:53.349Z"
+    },
+    "questionResolutions": {
+      "q7e2b3922": {
+        "question": "RATIFY A SIGNATURE WIDENING (s8 graded sbdry3 `partial`). sc2's published interfaceSketch declares `MarkdownBodyRenderer = (markdown: string) => HTMLElement`; this LLD returns `{ el, degradation }` instead, so ac3's 'the reviewer is told the structured presentation was unavailable' is carried by the contract rather than inferred by each caller. It is a strengthening within the contract's intent and it is declared rather than silent, but it IS a change to a published signature that s2, s3 and s4 also consume. Review should either ratify it as written or require it as a `sharedContract.fieldAdd` amendment to the HLD before the build starts. Nothing else in the LLD depends on which way this goes.",
+        "status": "resolved",
+        "choice": "Ratify as written in the LLD review",
+        "rationale": "The user ratified the widening explicitly in chat, after being shown both this option and the amendment option, and after being told in the same message that sc2's published interfaceSketch would stay stale and that s2/s3/s4 read the HLD as authoritative. So this is a decision taken with the trade-off in hand, not by default, and it is recorded on LLD-bfe98ff7f97178cf-s1 meta.review via the approval override. RESIDUAL RISK ACCEPTED AND RECORDED, because this option's own detail names it: the HLD's sc2 interfaceSketch still reads `(markdown: string) => HTMLElement` while the authority is now this LLD's `{ el, degradation }`. The concrete consequence is that when design.story runs for s2, s3 or s4 it will be handed sc2 from the HLD and will see the narrower form. Mitigation, carried deliberately rather than left implicit: each later Story's LLD must take the widened signature from LLD-...-s1 rather than from the HLD sketch, and the s1 BUILD will produce the real exported type, so by the time Phase B starts the compiler is the authority and a narrower assumption fails to typecheck rather than shipping. If that proves awkward when s2 starts, the sharedContract.fieldAdd amendment remains available then at the same one-turn cost — nothing about taking it later is harder than taking it now.",
+        "resolvedAt": "2026-10-01T09:44:00.223Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story replaces the one line that flattens a generated document into plain text, and lays the three foundations the rest of the Epic reads. The document body now renders through the markdown bundle the plugin already ships, guarded by the same scrub-and-fall-back sequence the chat panel uses, so headings and lists arrive as real elements rather than a wall of text. Section identity is derived once as a plain host-side function and posted alongside the body, which both gives the reviewer a working jump-to-section and gives the later Stories a single importable way to place a companion beside the section it belongs to. The daemon side is one additive widening of the artifact-content response — four optional fields carried verbatim off the body — so nothing new is asked of the server and existing readers are unaffected."
+    },
+    "contextRefs": [
+      {
+        "sourceArtifactId": "HLD-bfe98ff7f97178cf",
+        "sectionId": "2-framework-summary"
+      },
+      {
+        "sourceArtifactId": "HLD-bfe98ff7f97178cf",
+        "sectionId": "5-shared-contracts"
+      }
+    ],
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework a1 — SOURCE-OF-TRUTH RENDERING. Every display concern in this Epic renders from the structured record the artifact body already carries, never from the generated companion file. The daemon side is one additive widening of ArtifactReviewView (sc1) that projects body.functionalDefinition, body.erDefinition, body.uxDefinition and body.companions through the existing workflow.artifactContent handler; no new IPC method, no second read surface, and no read of any file beyond the artifact JSON already fetched. The client side is governed by one rendering discipline (sc2) — vendored render, guardMd scrub, textContent fallback — applied to the body and extended by DOM-construction renderers for the structured records, which inject no markup at all. Two couplings are lifted to HLD level because no single Story can own them: the section-anchor model (sc3), because CompanionArtifactRef.ofSectionId can only position a visual beside a section if the body renderer and the companion placer agree on the same section identity; and the companion display slot (sc4), because S003 and S004 must render their different visuals into the same three states — present, absent, referenced-but-unshowable — so a reviewer reads them consistently. The generated companion file remains the authentic artifact and stays reachable by link, which preserves its value without letting 3.3 MB of foreign scripted HTML into a strict-CSP surface.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactReviewView structured projection",
+          "purpose": "The single additive widening of the daemon's artifact-content response that carries the four structured body records the pane needs. Owned at s1 because it is the one contract every other Story reads, and every other Story is already downstream of s1. Additive-only by construction: all four fields optional, absent stays absent, and no existing field changes meaning — which is how k2's extend-don't-replace rule and k7's unchanged-existing-consumers obligation are both met.",
+          "interfaceSketch": "// src/workflow/artifact-content.ts — EXISTING fields unchanged, four appended\nexport interface ArtifactReviewView {\n\treadonly artifactId:       string;\n\treadonly kind:             string;\n\treadonly renderedMarkdown: string;\n\treadonly openQuestions:    readonly OpenQuestionRef[];\n\treadonly approvable:       boolean;\n\treadonly blockReason?:     string | null;\n\n\t// --- sc1 additive projection (absent when the body omits the field) ---\n\t/** body.functionalDefinition, verbatim. DEF/HLD/LLD/PLAN may carry it. */\n\treadonly functionalDefinition?: FunctionalDefinition | undefined;\n\t/** body.erDefinition, verbatim. HLD/LLD only. */\n\treadonly erDefinition?:         ErDefinition | undefined;\n\t/** body.uxDefinition, verbatim. HLD/LLD only. */\n\treadonly uxDefinition?:         UxDefinition | undefined;\n\t/** body.companions, verbatim. Used for link-out + ofSectionId placement. */\n\treadonly companions?:           readonly CompanionArtifactRef[] | undefined;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Review-surface render discipline",
+          "purpose": "The one sanctioned rendering route for this surface and the explicit, deliberate contract-test change k1 requires. Markup may be injected at exactly one site (the markdown body) via vendored render + guardMd + textContent fallback; every structured record renders by DOM construction and injects no markup. Owned at s1 because it governs every Story's rendering and s2/s3/s4 are all downstream of s1; without a single owner each Story would re-decide its own safety posture.",
+          "interfaceSketch": "// vscode-plugin/src/chat/docs-review-panel.ts — webview render spine\n\n/** The ONE permitted markup-injection site on this surface. Implementations\n *  MUST follow vendored-parse -> guardMd -> textContent-on-throw, the route\n *  k1 sanctions and render-registry.ts:321-332 already ships. */\nexport type MarkdownBodyRenderer = (markdown: string) => HTMLElement;\n\n/** Every structured record renders through this shape: DOM construction only,\n *  no innerHTML, no markup string anywhere. */\nexport type StructuredRenderer<TRecord> = (record: TRecord) => HTMLElement;\n\n/** Shown when MarkdownBodyRenderer falls back, so ac3's 'told the structured\n *  presentation was unavailable' is a contract, not per-Story copy. */\nexport interface RenderDegradation {\n\treadonly degraded: boolean;\n\treadonly notice:   string;\n}\n\n// CONTRACT-TEST CHANGE (deliberate, k1): docs-review-panel.test.ts's blanket\n// no-innerHTML assertion is narrowed to permit exactly one guarded body-render\n// call site and to continue forbidding innerHTML everywhere else on the surface.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2",
+            "c10"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Section anchor model",
+          "purpose": "The shared notion of 'which section is this' that both the body renderer and the companion placer must agree on. s1 needs it to give ac2's jump-to-section real anchor targets; s3 and s4 need the identical identity to resolve CompanionArtifactRef.ofSectionId and position a visual beside the section it visualizes. Owned at s1 — the nearest common ancestor of every consumer — because if each Story derived its own section ids, a companion would silently fail to place. Note the shipped marked config sets headerIds:false, so this contract is what supplies anchor identity rather than inheriting it.",
+          "interfaceSketch": "// vscode-plugin/src/chat/docs-review-panel.ts\n\n/** One heading in the rendered body, in document order. `slug` is the anchor\n *  target AND the value an ofSectionId is matched against — one identity, two\n *  consumers, so body navigation and companion placement cannot drift. */\nexport interface SectionAnchor {\n\treadonly slug:  string;\n\treadonly title: string;\n\treadonly level: number;\n}\n\n/** Derived once per rendered document and posted alongside it, so the section\n *  chooser and any companion placer read the same ordered set. */\nexport interface SectionIndex {\n\treadonly anchors: readonly SectionAnchor[];\n}\n\n/** Resolve a companion's ofSectionId to a slug in THIS document, or undefined\n *  when it names no present section (the companion then renders unanchored\n *  rather than being dropped). */\nexport type SectionResolver = (ofSectionId: string | undefined) => string | undefined;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s1",
+            "s3",
+            "s4"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "The pane shell and its existing behaviour stay private to s1: the pending-list rendering and row click handling, the monotonic refreshSeq guard that drops superseded responses, the stale-artifact-id checks on open and decide, the approve / request-changes control wiring and the COMMENTABLE_KINDS gate, the fail-closed rule that suppresses approve when a content load failed, and the panel lifecycle (create, reveal, dispose, in-memory-only pending map). The exact wording of the ac3 degradation notice and the visual styling of headings, lists and emphasis are s1's alone. s1 must leave the approval path byte-identical in behaviour (ac5), so none of this is exposed as a contract."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Everything about how a functional requirement looks is private to s2: the per-requirement item layout, the visual separation from surrounding prose, the placement of the identifier relative to the statement, and the decision to render nothing at all when functionalDefinition is absent. s2 owns no contract because no other Story displays the functional record — s3 and s4 render visuals, not requirements. s2's one hard obligation comes from sc2: identifiers are written via textContent straight off the FunctionalRequirement record, never re-derived from rendered prose, which is what makes k5's character-for-character guarantee hold across upstream and downstream documents."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The diagram renderer itself is private to s3: which vendored diagram library is bundled, how an ErDefinition's classes and slots are walked into that library's input, the diagram's own sizing and theming within its slot, and how a render throw is caught and converted into sc4's 'unshowable' state. s3 publishes only the slot contract, not its diagram internals — so s4 reuses the frame without inheriting any diagram-specific decision. The VSIX size cost of the bundled renderer is s3's to carry and report."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The Adaptive Cards subset renderer is private to s4: which card element types are supported, how an unsupported element degrades, and the mock's internal layout and theming within its slot. Also private is the dual-presence arrangement — how a diagram slot and an experience slot sit together when a document carries both — which s4 decides because it is the only Story that can observe both at once; it does so using the labels sc4 already derives from each ref, so the structural-versus-experience distinction ac2 requires needs no new contract."
+        }
+      ],
+      "rolloutPhase": "Phase A — projection, render discipline, section identity",
+      "nonFunctional": {
+        "performance": "Document open must stay within one existing IPC round-trip: sc1 adds fields to a response already being fetched, so no additional request is made and no companion file is read. The four projected records are bounded by what the body already holds (a functional record is tens of requirements, an erDefinition tens of classes), so the response grows by kilobytes, not the 3,367,065 bytes a sampled companion file weighs — that payload is deliberately kept out of the pane and reachable only by link. Rendering is synchronous DOM construction in the webview plus one marked parse; the pane's existing monotonic refresh guard continues to drop superseded responses so a slow open cannot overwrite a newer one.",
+        "security": "The surface keeps its single-nonce strict CSP unwidened. Markup is injected at exactly one site — the markdown body, via vendored parse then guardMd with a textContent fallback — and the three structured renderers inject none at all, building DOM and setting textContent. No companion file content is read by the daemon or passed to the webview, which avoids both the foreign-inline-script exposure and the path-traversal surface that reading an arbitrary body-supplied relPath would open. All rendering runs locally from vendored bundles; nothing leaves the editor (k6). The contract test's no-innerHTML assertion is narrowed deliberately to permit the one guarded body render and to keep forbidding innerHTML elsewhere — recorded here as an HLD decision so it can never read as an incidental relaxation.",
+        "observability": "Every degradation is visible to the reviewer rather than silent, because a reviewer who cannot tell that content is missing may approve a document they have not actually seen. A body-render fallback shows the ac3 notice alongside the full text; a companion that is referenced but unshowable renders sc4's 'unshowable' state naming which visual failed, never an empty frame; and the pane's existing logger.warn path continues to carry the underlying cause for diagnosis. The distinction k3 draws is preserved in what is observable: absent means no slot at all, which is deliberately indistinguishable from a document that never had a companion.",
+        "durability": "The pane persists nothing — its pending map is in-memory and discarded on dispose — and this Epic adds no persistence. The artifact JSON remains the single source of truth; the surface is a pure reader, so a restart or reload re-derives everything from the daemon. Because sc1 is additive and all four fields are optional, a document generated before this change projects exactly the fields it has and renders correctly with no migration and no retrofit, and an older client reading a newer response ignores the fields it does not know."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ArtifactReviewView",
+          "signature": "export interface ArtifactReviewView {\n\treadonly artifactId:       string;\n\treadonly kind:             string;\n\treadonly renderedMarkdown: string;\n\treadonly openQuestions:    readonly OpenQuestionRef[];\n\treadonly approvable:       boolean;\n\treadonly blockReason?:     string | null;\n\treadonly functionalDefinition?: FunctionalDefinition | undefined;\n\treadonly erDefinition?:         ErDefinition | undefined;\n\treadonly uxDefinition?:         UxDefinition | undefined;\n\treadonly companions?:           readonly CompanionArtifactRef[] | undefined;\n}",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The artifact-content response shape. The six existing members keep their exact meaning; the four appended members are optional and carry the matching body record verbatim, absent when the body omits it."
+          },
+          "errors": [],
+          "preconditions": [
+            "The artifact JSON has already been parsed into its body by handleArtifactContent; no additional read is performed to populate the new fields."
+          ],
+          "postconditions": [
+            "An absent body field projects as an absent view field — never null, never an empty object — so a consumer's `=== undefined` check is the single absence test.",
+            "No existing member is renamed, retyped or given a new meaning, so a consumer that deserializes only the original six is unaffected.",
+            "A PLAN body carries functionalDefinition too, so the field is not gated on artifact kind."
+          ]
+        },
+        {
+          "name": "handleArtifactContent",
+          "signature": "export function handleArtifactContent(req: WorkflowArtifactContentRequest): ArtifactReviewView | ArtifactContentError",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "WorkflowArtifactContentRequest",
+              "purpose": "The existing { repo, mdPath } request; unchanged by this Story.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ArtifactReviewView | ArtifactContentError",
+            "meaning": "The widened view on success, or the existing structured error arm unchanged."
+          },
+          "errors": [
+            {
+              "type": "ArtifactContentError",
+              "condition": "Unchanged from today — repo unresolved, unreadable store, or a path-guard refusal. The four new fields introduce no new failure mode because they are read off an already-parsed object."
+            }
+          ],
+          "preconditions": [
+            "Called only through the existing 'workflow.artifactContent' registration at src/daemon/index.ts:698-700; no new IPC method is added."
+          ],
+          "postconditions": [
+            "The four new fields are copied off the parsed body without validation beyond shape, so a malformed record travels to the client rather than failing the read — keeping ac3's 'never refuse to open' guarantee at the daemon boundary too.",
+            "No file outside the artifact JSON is read, so the 3.37MB companion payload never enters the response."
+          ]
+        },
+        {
+          "name": "MarkdownBodyRenderer",
+          "signature": "export type MarkdownBodyRenderer = (markdown: string) => { readonly el: HTMLElement; readonly degradation: RenderDegradation }",
+          "parameters": [
+            {
+              "name": "markdown",
+              "type": "string",
+              "purpose": "The document body, taken verbatim from ArtifactReviewView.renderedMarkdown.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ el: HTMLElement; degradation: RenderDegradation }",
+            "meaning": "The rendered body element plus whether the structured presentation succeeded. Widened from the HLD sketch's bare HTMLElement so ac3's notice is carried by the contract rather than inferred by each caller."
+          },
+          "errors": [],
+          "preconditions": [
+            "The vendored markdown bundle has been injected into the surface's single nonce'd script tag."
+          ],
+          "postconditions": [
+            "This is the ONLY place on the surface that assigns markup; it MUST run vendored-parse then the guard scrub, and MUST fall back to textContent when the parse throws.",
+            "On the fallback path the full body text is still present in the returned element — degraded means 'shown as plain text', never 'shown partially' or 'not shown'.",
+            "Heading elements carry the slugs deriveSectionIndex produced for the same markdown, so an anchor target always matches a posted anchor."
+          ]
+        },
+        {
+          "name": "RenderDegradation",
+          "signature": "export interface RenderDegradation {\n\treadonly degraded: boolean;\n\treadonly notice:   string;\n}",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "Whether the structured presentation was unavailable, and the reviewer-facing sentence saying so. One shape so ac3's notice is a contract rather than per-Story copy."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "`degraded: false` pairs with an empty notice; a non-empty notice never accompanies a successful render.",
+            "The notice is set by textContent, never as markup."
+          ]
+        },
+        {
+          "name": "StructuredRenderer",
+          "signature": "export type StructuredRenderer<TRecord> = (record: TRecord) => HTMLElement",
+          "parameters": [
+            {
+              "name": "record",
+              "type": "TRecord",
+              "purpose": "One structured body record. s1 publishes the shape only; s2/s3/s4 supply the concrete renderers for functionalDefinition, erDefinition and uxDefinition respectively.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HTMLElement",
+            "meaning": "A DOM subtree built by construction."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An implementation MUST build DOM and set textContent; it may not assign markup, which is what keeps the surface's single injection site single as later Stories land."
+          ]
+        },
+        {
+          "name": "SectionAnchor",
+          "signature": "export interface SectionAnchor {\n\treadonly slug:  string;\n\treadonly title: string;\n\treadonly level: number;\n}",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "One heading in the rendered body. `slug` is simultaneously the anchor target and the value an ofSectionId is matched against — one identity, two consumers."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "`slug` is unique within a document: repeated identical headings are disambiguated by an appended ordinal, so a chooser entry can never be ambiguous.",
+            "`title` is the heading's text verbatim, so the chooser shows what the document says.",
+            "`level` is the ATX depth, 1-6."
+          ]
+        },
+        {
+          "name": "SectionIndex",
+          "signature": "export interface SectionIndex {\n\treadonly anchors: readonly SectionAnchor[];\n}",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The document's headings in document order, derived once per opened document and posted alongside the body."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Order is document order, so a chooser rendered straight from the array needs no sorting.",
+            "A document with no headings yields an empty anchors array, and the chooser is then omitted entirely rather than rendered empty."
+          ]
+        },
+        {
+          "name": "SectionResolver",
+          "signature": "export type SectionResolver = (ofSectionId: string | undefined) => string | undefined",
+          "parameters": [
+            {
+              "name": "ofSectionId",
+              "type": "string | undefined",
+              "purpose": "A CompanionArtifactRef.ofSectionId value, or undefined when the ref targets no section.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The slug of the matching section in THIS document, or undefined when the id names no present section."
+          },
+          "errors": [],
+          "preconditions": [
+            "Built from a SectionIndex for the same document whose body is being rendered."
+          ],
+          "postconditions": [
+            "Returns undefined rather than throwing for an unknown id, so a stale companion reference degrades to unanchored rather than crashing the render — the mitigation the HLD's risky-bits prescribed.",
+            "Published for s3 and s4 so companion placement resolves against the same identity the body navigation uses; neither Story re-derives it."
+          ]
+        },
+        {
+          "name": "deriveSectionIndex",
+          "signature": "export function deriveSectionIndex(markdown: string): SectionIndex",
+          "parameters": [
+            {
+              "name": "markdown",
+              "type": "string",
+              "purpose": "The document body, the same string handed to MarkdownBodyRenderer.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SectionIndex",
+            "meaning": "The anchors for this markdown. The single sc3 implementation: the body renderer's slugs and the companion placer's resolution both originate here."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure — no DOM, no vscode import, no IO — so it is unit-testable in node:test and importable by s3 and s4."
+          ],
+          "postconditions": [
+            "Headings inside fenced code blocks are NOT treated as headings, so a `#` in a code sample cannot produce a phantom chooser entry.",
+            "Called once per opened document; the result is posted with the content rather than recomputed per interaction.",
+            "Deterministic: the same markdown always yields the same slugs, which is what lets a companion's ofSectionId be resolved stably across renders."
+          ]
+        },
+        {
+          "name": "createDocsReviewHost",
+          "signature": "export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "DocsReviewHostDeps",
+              "purpose": "The existing injected seam (createPanel, client, renderStyle, theme, logger, genNonce); unchanged in shape by this Story.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocsReviewHost",
+            "meaning": "The existing { open, dispose } host. Its external shape does not change."
+          },
+          "errors": [],
+          "preconditions": [
+            "Constructed inside the insrc.chat.enabled gate as today."
+          ],
+          "postconditions": [
+            "The pending-list behaviour, the monotonic refresh guard, the stale-id checks, the COMMENTABLE_KINDS gate and the fail-closed approve suppression are all behaviourally unchanged — ac5 and lc1.",
+            "openDoc now computes a SectionIndex and posts it with the content; nothing else about the message flow changes.",
+            "The surface still emits exactly one script tag and keeps its CSP unwidened."
+          ]
+        },
+        {
+          "name": "DocsContent",
+          "signature": "export interface DocsContent {\n\treadonly markdown: string;\n\treadonly openQuestions: readonly string[];\n\treadonly blocked: boolean;\n\treadonly functionalDefinition?: FunctionalDefinition | undefined;\n\treadonly erDefinition?: ErDefinition | undefined;\n\treadonly uxDefinition?: UxDefinition | undefined;\n\treadonly companions?: readonly CompanionArtifactRef[] | undefined;\n}",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "The client-side adaptation of the widened view. s1 adds the four pass-through fields so s2/s3/s4 have them without re-touching the client; s1 itself consumes only `markdown`."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Mapping is pass-through: the client does not reshape, validate or default the four records, so a later Story reads exactly what the daemon projected.",
+            "The existing three members keep their current meaning, so the existing client tests continue to pin them."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ArtifactReviewView",
+        "change": "field-add",
+        "details": "Four optional members appended — functionalDefinition, erDefinition, uxDefinition, companions — each carrying the matching body record verbatim. Additive only: the six existing members are untouched in name, type and meaning, so the JetBrains panel is unaffected. Verified not merely asserted: DaemonGateway.kt:1517 parseView builds ArtifactReviewViewDto by pulling six named keys field-by-field out of a Map<String, Any?>, with no reflective bind and no unknown-key rejection, so additional keys on the wire are ignored.",
+        "schemaDiff": "+ readonly functionalDefinition?: FunctionalDefinition | undefined;\n+ readonly erDefinition?:         ErDefinition | undefined;\n+ readonly uxDefinition?:         UxDefinition | undefined;\n+ readonly companions?:           readonly CompanionArtifactRef[] | undefined;",
+        "callSites": [
+          "src/workflow/artifact-content.ts",
+          "src/daemon/index.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        ]
+      },
+      {
+        "entity": "DocsContent",
+        "change": "field-add",
+        "details": "The client-side content shape gains the same four optional pass-through members plus nothing else. s1 consumes only `markdown`; the records are carried so s2/s3/s4 need no further client change, which is what keeps Phase B and C off this file.",
+        "schemaDiff": "+ readonly functionalDefinition?: FunctionalDefinition | undefined;\n+ readonly erDefinition?:         ErDefinition | undefined;\n+ readonly uxDefinition?:         UxDefinition | undefined;\n+ readonly companions?:           readonly CompanionArtifactRef[] | undefined;",
+        "callSites": [
+          "vscode-plugin/src/chat/docs-review-client.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      },
+      {
+        "entity": "HostToWebview",
+        "change": "field-add",
+        "details": "The existing docs-content message variant gains the posted section index and the degradation state. No new message TYPE is introduced — the index rides the message the pane already sends on open, so the webview's single message handler keeps its existing switch and the enveloped postMessage contract is unchanged.",
+        "schemaDiff": "  | { readonly type: 'docs-content'; readonly artifactId: string; readonly markdown: string;\n      readonly openQuestions: readonly string[]; readonly blocked: boolean; readonly commentable?: boolean;\n+     readonly sections?: SectionIndex | undefined;\n+     readonly degradation?: RenderDegradation | undefined; }",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      },
+      {
+        "entity": "SectionAnchor",
+        "change": "new",
+        "details": "New internal-shared record published by sc3: slug, title, level. Carries no persistence — derived per open and discarded with the panel, consistent with the pane persisting nothing.",
+        "schemaDiff": "+ export interface SectionAnchor { readonly slug: string; readonly title: string; readonly level: number; }\n+ export interface SectionIndex  { readonly anchors: readonly SectionAnchor[]; }",
+        "callSites": [
+          "vscode-plugin/src/chat/docs-review-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 is the declared owner. Implemented as a pure widening of ArtifactReviewView in src/workflow/artifact-content.ts, populated inside the existing handleArtifactContent from the body it already parses, and surfaced through the already-registered 'workflow.artifactContent' handler at src/daemon/index.ts:698-700 — no new IPC method, no second read surface, no file read beyond the artifact JSON. All four members are optional and absent-preserving, which is how k2's extend-don't-replace rule and k7's unchanged-existing-consumers obligation are both discharged. The client half mirrors it as four pass-through members on DocsContent so s2, s3 and s4 consume the records without re-opening docs-review-client.ts."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "s1 is the declared owner. The body render becomes the surface's single markup-injection site, running the sanctioned sequence — vendored parse, guard scrub, textContent on throw — reusing the bundle the plugin already ships rather than adding a dependency; the vendored source prepends into the existing single nonce'd script tag exactly as the chat panel does, so the one-script invariant and the CSP both hold unchanged. MarkdownBodyRenderer is widened from the HLD's bare HTMLElement to return the RenderDegradation alongside it, so ac3's notice is carried by the contract instead of each caller inferring it — a strengthening within the contract's intent, not a change to its boundary. The deliberate contract-test change k1 requires follows the shipped precedent rather than the HLD's original count-based sketch: assert the GUARD IS PRESENT (as chat-panel.test.ts:1242 does) instead of asserting the primitive is absent, which cannot pass if the scrub is removed; the test is also renamed to describe what it actually checks, so it does not inherit the stale-name drift that precedent carries."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "s1 is the declared owner. Landed as the three published declarations plus one pure host-side function, deriveSectionIndex, which is the single origin of section identity: the body renderer stamps its slugs onto the rendered headings and the SectionResolver matches ofSectionId against the same anchors, so body navigation and companion placement cannot drift — the failure the HLD's risky-bits singled out as the Epic's quietest. Being pure and vscode-free it is unit-testable without a DOM and importable by s3 and s4, which is why identity is derived host-side rather than read back from the rendered DOM. It supplies anchor identity itself rather than inheriting it, because the shipped marked config sets headerIds:false. The resolver returns undefined for an unknown id rather than throwing, and the deriver skips fenced code blocks so a `#` in a code sample cannot become a phantom chooser entry."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The markdown parse throws while rendering the document body — malformed content, or a pathological input the vendored parser rejects.",
+          "detection": "The parse-and-assign is wrapped in try/catch at the single injection site, exactly as the shipped sequence does; the catch arm is what notices, not a pre-validation of the markdown.",
+          "response": "The catch arm sets the body element's textContent to the raw markdown, so the full document is still present as readable text, and returns RenderDegradation { degraded: true, notice } alongside it. The notice is rendered by textContent above the body.",
+          "userImpact": "The reviewer sees the whole document as plain text plus one sentence saying the structured presentation was unavailable — never a blank pane and never a refusal to open. They can still read and still approve.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The vendored markdown global is missing at render time — the bundle failed to inject, or the script was truncated.",
+          "detection": "The render site tests for the global and its parse function before calling it (the `typeof marked !== 'undefined' && marked && marked.parse` form the shipped sequence already uses) rather than assuming presence and relying on a thrown TypeError.",
+          "response": "Falls through to the same textContent path as a parse throw, with the same degraded notice. No separate code path and no separate message, so the two failures cannot diverge in behaviour.",
+          "userImpact": "Identical to a parse failure — full text plus a notice. A packaging regression degrades reading rather than breaking the pane.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A companion reference names a section id that is not present in the document being rendered — a stale ofSectionId after the document was re-authored.",
+          "detection": "SectionResolver looks the id up in the SectionIndex derived for THIS document and finds no match, returning undefined.",
+          "response": "Returns undefined rather than throwing. s1's own responsibility ends there; the contract documents that a consumer renders the companion unanchored rather than dropping it. s1 adds no placement behaviour of its own, since placement belongs to s3 and s4.",
+          "userImpact": "None for s1's acceptance criteria. For the later Stories a stale reference costs the companion its position beside a section, not its visibility — and never a crashed render.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The artifact body carries a structured record whose shape does not match its declared type — a hand-authored uxDefinition that breaks its schema, for instance.",
+          "detection": "Not detected by s1, deliberately. handleArtifactContent copies the four records off the parsed body without validating beyond shape, and the client maps them pass-through.",
+          "response": "The malformed record travels to the client untouched. s1 renders only the markdown body, so nothing in this Story reads it; the Story that owns that record decides how to degrade. This is a conscious non-detection — validating here would duplicate the generation-side gate and could refuse to open a document the reviewer needs to read.",
+          "userImpact": "None in Phase A: the document opens and reads normally. The record's own renderer handles it when Phase B or C lands.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A content fetch fails while a document is being opened.",
+          "detection": "Unchanged from today — the existing catch around client.content() in openDoc.",
+          "response": "Unchanged: posts the inline unavailable text with blocked:true so approve stays suppressed. s1 must not alter this arm; the degraded-render notice is a DIFFERENT state (body present but unstructured) and must not be conflated with it (body never arrived).",
+          "userImpact": "Unchanged from today. The distinction matters: a reviewer must be able to tell 'I am reading this document in a plainer form' from 'I never received this document'.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A document whose body contains no headings at all.",
+          "expected": "deriveSectionIndex returns an empty anchors array, and the section chooser is omitted entirely rather than rendered as an empty control. The body renders normally; ac2 has nothing to offer and says nothing."
+        },
+        {
+          "input": "A document containing a fenced code block whose content includes a line starting with `#`.",
+          "expected": "deriveSectionIndex does NOT treat it as a heading, so it produces no chooser entry. This is the one real divergence risk between a host-side scan and the parser's own view, and skipping fenced regions is how the chosen alternative closes it."
+        },
+        {
+          "input": "Two headings with identical text at the same level.",
+          "expected": "Both appear in the chooser with distinct slugs, disambiguated by an appended ordinal, and each navigates to its own occurrence. No entry is dropped and no slug collides."
+        },
+        {
+          "input": "A heading whose text is entirely punctuation or non-alphanumeric, so the slug body would be empty.",
+          "expected": "A stable non-empty slug is still produced (ordinal-based), so the entry remains navigable; the chooser shows the heading's verbatim text as its label even though the slug bears no resemblance to it."
+        },
+        {
+          "input": "A very long document — hundreds of headings.",
+          "expected": "The index is derived once per open, not per interaction, and travels on the existing message; rendering stays one synchronous parse plus DOM construction. No pagination or virtualisation is introduced, as nothing in the Story's criteria asks for it."
+        },
+        {
+          "input": "A document that is approved or re-fetched while the reviewer is reading it, so a newer content response arrives.",
+          "expected": "The existing monotonic refresh guard drops the superseded response as it does today; a stale section index can never overwrite a newer one because it rides the same message the guard already protects."
+        },
+        {
+          "input": "A DEF artifact, which carries functionalDefinition but never companions.",
+          "expected": "Opens and renders identically. The absent records project as absent through sc1, and s1 reads only the markdown, so artifact kind changes nothing about this Story's behaviour."
+        },
+        {
+          "input": "A document whose markdown is an empty string.",
+          "expected": "An empty body element and an empty index; no degraded notice, because nothing failed. The pane still opens and the approval controls behave exactly as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The surface emits exactly ONE inline script tag and keeps its single-nonce strict CSP unwidened. Injecting the vendored markdown bundle must prepend into that existing tag rather than adding a second one — the combination is already proven to hold, since chat-panel.ts:561 does exactly `<script nonce=\"${nonce}\">${MARKED_SRC}\\n;${bootstrap}</script>` and six separate chat-panel assertions of scripts.length===1 pass against it.",
+          "source": "c2"
+        },
+        {
+          "text": "Markup is assigned at exactly one place on this surface — the document body — and that place must run the full sanctioned sequence: vendored parse, then the guard scrub, then textContent on throw. The guard is the load-bearing half; the narrowed contract test asserts the guard is PRESENT rather than asserting the primitive is absent, following chat-panel.test.ts:1242, because that form cannot pass if the scrub is removed.",
+          "source": "c2"
+        },
+        {
+          "text": "The reviewer's existing ability to list pending documents and complete the read-and-approve path is behaviourally unchanged. Concretely: the monotonic guard at docs-review-panel.ts:66/:75 with its supersede-drops at :78/:83; COMMENTABLE_KINDS at :25 consumed at :97 and :124; and the fail-closed rule at :111 setting blocked:true at :117/:139/:155, which already has a dedicated regression test at docs-review-panel.test.ts:179 that must stay green.",
+          "source": "c1"
+        },
+        {
+          "text": "The artifact-content response is extended additively only. All four new members are optional and absent-preserving, no existing member changes name, type or meaning, and no new IPC method or parallel read surface appears — the pane keeps reading through workflow.pending and workflow.artifactContent over the shared client.",
+          "source": "c7"
+        },
+        {
+          "text": "Existing consumers of the response keep working untouched. Verified rather than assumed: DaemonGateway.kt:1517 parseView constructs ArtifactReviewViewDto by pulling six named keys field-by-field out of a Map<String, Any?> — artifactId, kind, renderedMarkdown, openQuestions, approvable, blockReason — with no reflective bind and no unknown-key rejection, so additional keys on the wire are ignored by the JetBrains panel.",
+          "source": "c7"
+        },
+        {
+          "text": "All rendering runs locally inside the editor from the vendored bundle; no document content is sent to any external service, and no remote resource is loaded. The chat panel pins the equivalent guarantee with an explicit no-remote-origin assertion, which this surface should match.",
+          "source": "c9"
+        },
+        {
+          "text": "The document body remains the authoritative content. s1 renders the body first and the section chooser is an adjunct to it; nothing s1 adds can displace or truncate the body, and on the degraded path the full text is still present.",
+          "source": "c3"
+        },
+        {
+          "text": "The pane persists nothing. The section index is derived per open and discarded with the panel, alongside the existing in-memory-only pending map, so a reload re-derives everything from the daemon and no migration is implied.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove deriveSectionIndex — the sc3 implementation s3 and s4 will import — without a DOM or a webview harness. This is the level the chosen alternative exists to make possible, and it is where the Epic's quietest coupling gets real coverage rather than a string assertion.",
+          "subjects": [
+            "deriveSectionIndex returns anchors in document order with level set to the ATX depth",
+            "deriveSectionIndex gives two identically-titled headings DISTINCT slugs via an appended ordinal, and neither entry is dropped",
+            "deriveSectionIndex does NOT treat a `#`-prefixed line inside a fenced code block as a heading (the phantom-section guard)",
+            "deriveSectionIndex returns an empty anchors array for markdown with no headings",
+            "deriveSectionIndex returns an empty anchors array for an empty-string body",
+            "deriveSectionIndex produces a stable NON-EMPTY slug for a heading whose text is entirely punctuation",
+            "deriveSectionIndex is deterministic — the same markdown yields identical slugs across repeated calls",
+            "a SectionResolver built from an index resolves a known ofSectionId to that section's slug",
+            "a SectionResolver returns undefined (never throws) for an ofSectionId naming no present section",
+            "the slug deriveSectionIndex emits for a heading is the SAME string the resolver returns for it — one identity, asserted directly, so body navigation and companion placement cannot drift"
+          ],
+          "fixturesNeeded": [
+            "A small markdown fixture with nested heading levels, a duplicate heading pair, a fenced code block containing a `#` line, and a punctuation-only heading — one fixture covering every unit subject above"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the rendering discipline on the generated shell. This replaces the blanket no-innerHTML assertion with the stronger assert-the-guard form, and keeps the invariants that assertion was protecting.",
+          "subjects": [
+            "the rendered shell still emits EXACTLY ONE inline script tag after the vendored bundle is injected (matched with `<script\\b` so the word boundary holds)",
+            "the CSP still pins script-src to the one generated nonce and is not widened",
+            "the shell still renders the class=\"insrc-term-review\" surface",
+            "the shell contains a guardMd call — asserting the scrub is PRESENT rather than asserting innerHTML is absent, so the test cannot pass if the guard is removed",
+            "no remote resource is referenced by the shell (no src/href http(s) origin), matching the equivalent chat-panel guarantee",
+            "the docs-review host and client modules remain vscode-free (the existing module-purity test, unchanged)",
+            "RENAMED: the narrowed test's name describes what it actually asserts, so it does not inherit the stale-name drift the chat-panel precedent carries"
+          ],
+          "fixturesNeeded": [
+            "The existing fakeChannel + fakeClient doubles and the fixed genNonce already used by docs-review-panel.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Drive createDocsReviewHost over its injected seams to prove the end-to-end message flow: a content fetch produces a rendered body plus a posted section index, degradation is surfaced, and every pre-existing behaviour the Story must not disturb still holds.",
+          "subjects": [
+            "opening a document posts a docs-content message carrying BOTH the markdown and a sections index derived from that same markdown",
+            "the posted index rides the EXISTING docs-content message — no new message type appears in the webview protocol",
+            "a document with no headings posts an empty anchors array and the shell renders no section chooser at all (not an empty control)",
+            "a body-render failure posts degradation { degraded: true, notice } with the full markdown still present — degraded means plainer, never partial",
+            "the degraded-render state is DISTINCT from the content-fetch-failure state: a render degradation does NOT set blocked, and a fetch failure does NOT claim a render degradation",
+            "the existing fail-closed rule still holds — a content-fetch failure posts blocked:true and approve stays suppressed (the existing docs-review-panel.test.ts:179 regression, kept green)",
+            "the monotonic refresh guard still drops a superseded response, so a slow open carrying a stale section index cannot overwrite a newer one",
+            "the COMMENTABLE_KINDS gate still restricts request-changes to DEF/HLD/LLD",
+            "approve and request-changes still call workflow.approve and workflow.resolveComment with unchanged parameters — ac5 asserted on the client calls, not just on the UI",
+            "the four structured records pass through DocsContent untouched — asserted by round-tripping a view carrying all four and reading them back unmodified, so s2/s3/s4 inherit a verified pass-through"
+          ],
+          "fixturesNeeded": [
+            "An ArtifactReviewView fixture carrying all four structured records plus a multi-heading markdown body",
+            "A fakeClient variant whose content() rejects, for the fetch-failure arm",
+            "A markdown fixture that reliably fails the parse, for the degradation arm"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the sc1 projection on the daemon side — that it is additive, absent-preserving, and introduces no new server capability.",
+          "subjects": [
+            "handleArtifactContent projects functionalDefinition, erDefinition, uxDefinition and companions verbatim when the body carries them",
+            "an absent body field projects as an ABSENT view field — not null and not an empty object — so `=== undefined` is the single absence test",
+            "a DEF body (functionalDefinition only, never companions) projects exactly what it has and nothing more",
+            "a PLAN body's functionalDefinition projects too, so the field is not gated on artifact kind",
+            "the six pre-existing members keep their names, types and meanings — the existing artifact-content tests continue to pin them unchanged",
+            "no new IPC method is registered: 'workflow.artifactContent' remains the single read path and the daemon handler map gains nothing",
+            "a structured record whose shape is invalid still travels through rather than failing the read, so a malformed record cannot refuse to open a document"
+          ],
+          "fixturesNeeded": [
+            "Artifact JSON fixtures per kind: a DEF (functionalDefinition only), an HLD carrying all four records, and one carrying a deliberately malformed uxDefinition"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: opening a document posts a docs-content message carrying both the markdown and a sections index derived from that same markdown",
+            "contract: the shell contains a guardMd call, proving the body goes through the vendored parse rather than being assigned as text",
+            "integration: the four structured records pass through DocsContent untouched (confirms the body is the only thing s1 itself renders)",
+            "manual: the rendered shell is screenshotted from the real generated html and read back, per this repo's practice of never signing off a pixel on a green suite — the only way to confirm headings, lists and emphasis actually read as visually distinct"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: the slug deriveSectionIndex emits for a heading is the SAME string the resolver returns for it",
+            "unit: deriveSectionIndex returns anchors in document order with level set to the ATX depth",
+            "unit: two identically-titled headings get distinct slugs via an appended ordinal",
+            "integration: opening a document posts a sections index derived from that same markdown",
+            "integration: a document with no headings posts an empty anchors array and the shell renders no section chooser at all"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a body-render failure posts degradation { degraded: true, notice } with the full markdown still present",
+            "integration: the degraded-render state is distinct from the content-fetch-failure state",
+            "contract: handleArtifactContent lets a malformed structured record travel through rather than failing the read",
+            "unit: deriveSectionIndex returns an empty anchors array for an empty-string body (a degenerate document still opens)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "contract: the rendered shell still emits exactly one inline script tag after the vendored bundle is injected",
+            "contract: the CSP still pins script-src to the one generated nonce and is not widened",
+            "contract: no remote resource is referenced by the shell",
+            "contract: no new IPC method is registered — 'workflow.artifactContent' remains the single read path",
+            "contract: the docs-review host and client modules remain vscode-free"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: approve and request-changes still call workflow.approve and workflow.resolveComment with unchanged parameters",
+            "integration: the existing fail-closed rule still holds — a content-fetch failure posts blocked:true and approve stays suppressed",
+            "integration: the COMMENTABLE_KINDS gate still restricts request-changes to DEF/HLD/LLD",
+            "integration: the monotonic refresh guard still drops a superseded response",
+            "contract: the six pre-existing ArtifactReviewView members keep their names, types and meanings"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The artifact-content response carries six members only — artifactId, kind, renderedMarkdown, openQuestions, approvable, blockReason — and projects none of the four structured body records, even though the bodies already declare them (hld.ts:109/115/118/121, lld.ts:155/164/167/171, define.ts:85). Client-side, the docs-review pane assigns the body to the DOM as plain text with a single statement, `bodyEl.textContent=m.markdown||''` at docs-review-panel.ts:186, so headings, lists and emphasis are flattened; there is no section navigation and no markdown renderer on this surface. The pane's shell carries five element ids (#insrc-docs-list, #insrc-docs-body, #insrc-docs-oq, #insrc-docs-note, #insrc-docs-actions), emits exactly one inline script, and its contract test declared at docs-review-panel.test.ts:243 forbids the string `innerHTML` anywhere in the generated html via a blanket assert.doesNotMatch at :253. The vendored markdown bundle exists in the plugin but is consumed only by the chat panel (MARKED_SRC in webview-marked.ts, injected at chat-panel.ts:561, guarded by guardMd at render-registry.ts:321 with the parse+guard+fallback sequence at :332 — configured headerIds:false, so it emits no heading ids).",
+      "stateAfter": "The response carries ten members: the same six, unchanged in name, type and meaning, plus four optional structured records projected verbatim off the already-parsed body and absent whenever the body omits them. The pane renders the document body through the vendored bundle with the guard scrub and a textContent fallback, so structural elements read distinctly; a section index derived once per open rides the existing docs-content message and drives a chooser that scrolls directly to a chosen section; and a render failure surfaces a degraded notice with the full text still present. The contract test no longer forbids the primitive — it asserts the guard is present, keeps the one-script and CSP assertions, and is renamed to match what it checks. Section identity lives in one pure, importable host-side function so s3 and s4 resolve a companion's ofSectionId against the same slugs the body navigation uses. Nothing on the generation side changes, no IPC method is added, and the approval path behaves exactly as before.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Append the four optional members to the artifact-content response type and populate them in the existing handler from the body it already parses. Absent stays absent — no null, no empty-object default, no backfill. Because every member is optional, a response produced before this step and a response produced after are both valid against the widened type, so the daemon and the clients can be at different versions during rollout.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Mirror the same four optional members on the client-side content shape as pure pass-through. The client does not reshape, validate or default them; s1 consumes none of them. This step exists so Phase B and Phase C never have to reopen the client file.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the section-anchor declarations and the one pure derivation function alongside them, with its unit coverage. Nothing consumes it yet, so this step is inert — landing it before the render change means the derivation is already proven when the renderer starts depending on it.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Replace the single plain-text body assignment with the guarded render: inject the vendored bundle into the existing script tag (prepended, not a second tag), run parse then the guard scrub, fall back to textContent on throw, and stamp the derived slugs onto the rendered headings. This is the step that changes what a reviewer sees and the only step that alters the markup-injection posture of the surface.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "insrc.chat.enabled"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Narrow the shell contract test in the SAME change as step 4, never as a follow-up: drop the blanket forbid-the-primitive assertion, add an assert-the-guard-is-present assertion, keep the one-script and CSP and surface-class assertions, add a no-remote-origin assertion, and rename the test to describe what it now checks. Landing it separately would leave a window in which the surface's only mechanical guard is either failing or absent.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Post the derived index on the existing docs-content message and render the section chooser from it, omitting the chooser entirely when the index is empty. Add the degradation state to the same message so the ac3 notice is driven by the contract rather than inferred in the webview.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "insrc.chat.enabled"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Verify the untouched behaviours still hold rather than assuming they do: run the existing docs-review suite including the fail-closed regression at docs-review-panel.test.ts:179, and confirm the JetBrains panel is unaffected by the widened response. The latter is already established by reading DaemonGateway.kt:1517 — parseView pulls six named keys field-by-field out of a map with no unknown-key rejection — so this is a confirmation step, not an integration risk.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Rebuild and restart the installed daemon so the widened projection is live. Until this happens the plugin compiles against the new shape but receives the old six-member response, which is harmless precisely because every new member is optional — the pane renders the body and shows no structured content, exactly as before.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Required, because the artifact-content response is read by a second client. Three guarantees hold. (1) The response change is additive only: all four new members are optional, no existing member is renamed, retyped or given a new meaning, and no new IPC method or parallel read surface appears. (2) The JetBrains review panel keeps working untouched — verified rather than assumed: DaemonGateway.kt:1517 parseView constructs its DTO by pulling six named keys field-by-field out of a Map<String, Any?> with no reflective bind and no unknown-key rejection, so extra keys on the wire are ignored. (3) Version skew is safe in both directions: an old client reading a new response ignores members it does not know, and a new client reading an old response sees them as absent, which is exactly the state it already handles for a document that genuinely carries no structured records. Separately on the client side, the pane's external host shape ({ open, dispose }) and all five existing element ids are preserved, and the approval path — approve, request-changes, the COMMENTABLE_KINDS gate and the fail-closed suppression — is behaviourally unchanged, which ac5 and lc1 require and the existing regression test continues to pin. The one deliberate break is in the test suite, not the product: the blanket no-innerHTML assertion is replaced, which is the explicit HLD-authorised change k1 demands be made consciously rather than incidentally.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-derived section index from the markdown source",
+        "oneLineSummary": "The vscode-free host parses headings out of renderedMarkdown, builds the SectionIndex as a pure function, and posts it alongside the body; the webview renders ids that match it and scrolls by slug.",
+        "approach": "sc3 lands as three exported declarations in docs-review-panel.ts exactly as the HLD sketches them — SectionAnchor, SectionIndex and SectionResolver — backed by one pure host-side function that scans renderedMarkdown for ATX headings and emits anchors in document order, with a slug derivation that de-duplicates repeated headings by ordinal. The index is computed once per opened document and travels to the webview on the SAME existing enveloped postMessage that already carries docs-content, so no new message type and no new IPC call appear; the markdown it derives from is a field the response already returns.\n\nInside the webview, the body render goes through the sanctioned route — vendored MARKED_SRC parse, then guardMd, then textContent on throw — and the rendered heading elements are given the same slugs the host computed, so the anchor target and the index agree by construction rather than by coincidence. The section chooser is a DOM control built from the posted index; choosing an entry scrolls that slug into view. Because slug derivation is a host-side pure function rather than webview script, s3 and s4 later resolve CompanionArtifactRef.ofSectionId against the identical function instead of re-deriving it in eval'd source.",
+        "pros": [
+          "Slug derivation is a plain exported function in a vscode-free module, so it is unit-testable in node:test with no DOM and no webview harness — unlike logic living inside the eval'd webview source, which this repo can only assert against as a string.",
+          "Gives sc3 exactly one implementation for both of its consumers: the body renderer's anchor targets and the companion placer's ofSectionId resolution read the same function, which is precisely the drift the HLD's risky-bits called the Epic's quietest failure mode.",
+          "Satisfies ac4 without touching the server: the index is derived from renderedMarkdown, a field the existing workflow.artifactContent response already returns, so no new IPC method and no new capability appear.",
+          "Keeps the one-script invariant intact — MARKED_SRC prepends into the single nonce'd tag exactly as chat-panel.ts:561 already does, a combination six passing chat-panel assertions already prove holds.",
+          "The posted index is plain-serialisable, so the section chooser can be asserted from the host side without rendering a DOM."
+        ],
+        "cons": [
+          "Heading detection is a second, independent reading of the markdown — the host's scanner and marked's own parser could disagree on an edge case such as a `#` inside a fenced code block, which would list a phantom section.",
+          "Adds a message payload field the webview must stay in sync with, so the host and the bootstrap have a shared shape to keep aligned.",
+          "Slug collision handling (two identically-titled headings) has to be designed rather than inherited."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Webview-derived index from marked's own heading ids",
+        "oneLineSummary": "Flip headerIds:true for this surface, let marked generate the ids, then walk the rendered DOM in the webview to build the index and drive the chooser — the host never sees section identity.",
+        "approach": "The body render reuses the shipped sequence but overrides the one option that defeats it, passing headerIds:true instead of false so marked emits an id on every heading. Immediately after guardMd, the bootstrap queries the rendered container for heading elements and builds the anchor list from what marked actually produced, which makes the index true to the render by definition — there is no second parser to disagree with.\n\nThe chooser and the scroll both live in the webview, reading that locally-built list. Nothing about section identity crosses to the host, so no message shape changes and the host's responsibilities are unchanged. For s3 and s4 later, ofSectionId resolution would likewise happen in webview script against the same DOM-derived list.",
+        "pros": [
+          "The index cannot disagree with the render, because it is read back from the render itself rather than derived from a parallel parse of the source — structurally immune to a1's phantom-section edge case.",
+          "Inherits marked's own slug algorithm, including its collision handling, so no slug or de-duplication logic has to be designed.",
+          "Smallest host-side change: no new message field and no new exported host function, so the posted protocol is untouched."
+        ],
+        "cons": [
+          "Puts sc3's logic inside the eval'd webview source, where this repo's only available assertion is a string match on the generated html — and the session has already seen that exact shape produce a tautological green for two releases, so the coupling s3 and s4 depend on would be the least-tested part of the Epic.",
+          "sc3's interfaceSketch declares SectionAnchor / SectionIndex / SectionResolver as exported TypeScript declarations; a webview-local list satisfies the behaviour but not the published contract, so either the contract or the implementation has to bend.",
+          "s3 and s4 would have to re-derive ofSectionId resolution in webview script too, spreading the shared identity across three eval'd call sites instead of one importable function.",
+          "Depends on marked's id generation remaining stable across versions, an upstream behaviour the repo does not control and currently pins only by a vendored copy."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Rejected on sc3 and on testability, not on safety — it breaches no Epic constraint and in fact delivers ac2's behaviour with the strongest possible index fidelity. But sc3 publishes SectionAnchor / SectionIndex / SectionResolver as exported TypeScript declarations with s3 and s4 named as consumers, and a webview-local DOM list provides nothing importable, so either the contract bends or s3 and s4 re-derive ofSectionId resolution in eval'd script — spreading one shared identity across three call sites, which is the drift the HLD's risky-bits singled out. It also scores partial on ac3: the index is built by querying the rendered container AFTER guardMd, so on the degraded path (body present as textContent, no heading elements) the chooser silently becomes empty with nothing stating why. And it makes the contract's behaviour depend on marked's upstream id generation, pinned only by a vendored copy."
+      },
+      {
+        "id": "a3",
+        "name": "Host-derived index with the rendered DOM as the reconciling authority",
+        "oneLineSummary": "Derive the index host-side as in a1, but have the webview reconcile it against the actual rendered headings after guardMd and report any mismatch through the existing degradation notice.",
+        "approach": "Everything in a1 holds — the same pure host-side function, the same exported sc3 declarations, the same posted index — with one addition: after the body renders and guardMd runs, the bootstrap compares the heading elements it actually produced against the posted anchors. Entries that match get their slug applied and become navigable; a posted anchor with no corresponding rendered heading is dropped from the chooser rather than offered as a dead target.\n\nA mismatch is surfaced rather than swallowed, reusing the RenderDegradation channel sc2 already defines for the ac3 fallback, so a divergence between the two readings of the document becomes visible to the reviewer and to the log instead of silently listing a phantom section.",
+        "pros": [
+          "Keeps a1's single importable, headlessly-testable slug function while closing a1's one real correctness gap — a host/marked disagreement can no longer produce a dead chooser entry.",
+          "Turns the most likely silent failure in sc3 into an observable one, which matches the Epic's stated observability posture that a reviewer must be able to tell when content is missing.",
+          "Reuses the RenderDegradation shape sc2 already publishes for ac3, so the mismatch path needs no new contract surface."
+        ],
+        "cons": [
+          "Strictly more moving parts than a1 for a gap that may never fire in practice, and the reconciliation step itself lives in webview script where it is hardest to test.",
+          "Risks over-reporting: a heading legitimately absent from the render (inside a fenced block, say) would surface as a degradation notice, which could read to a reviewer as a document problem rather than a chooser detail.",
+          "The dropped-anchor rule is extra behaviour to specify and cover, widening the Story beyond what ac2 strictly asks for."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Scores identically to a1 on all eight constraints — it IS a1 plus a reconciliation pass — so it loses on scope discipline rather than on any constraint. It adds a dropped-anchor rule and a mismatch notice that no acceptance criterion asks for, to close a gap a1 can handle more cheaply inside its scanner by skipping fenced regions. It also risks over-reporting: a heading legitimately absent from the render would surface as a degradation notice, reading to a reviewer as a document problem rather than a chooser detail. Retained as the fallback if host/parser heading disagreement turns out to be real in practice."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "RATIFY A SIGNATURE WIDENING (s8 graded sbdry3 `partial`). sc2's published interfaceSketch declares `MarkdownBodyRenderer = (markdown: string) => HTMLElement`; this LLD returns `{ el, degradation }` instead, so ac3's 'the reviewer is told the structured presentation was unavailable' is carried by the contract rather than inferred by each caller. It is a strengthening within the contract's intent and it is declared rather than silent, but it IS a change to a published signature that s2, s3 and s4 also consume. Review should either ratify it as written or require it as a `sharedContract.fieldAdd` amendment to the HLD before the build starts. Nothing else in the LLD depends on which way this goes.",
+      "CITATION PROVENANCE IS ONE HOP LOOSE (s8 graded dm1 `partial`, cd1 `partial`, alt2 `partial`). Three process gaps, none of them a correctness risk, recorded so review can judge rather than discover them. (a) Four dataModel callSites — src/workflow/artifact-content.ts, src/daemon/index.ts, vscode-plugin/src/chat/protocol.ts and DaemonGateway.kt — are real and were verified by direct source read, but were grounded in the HLD's citations and post-review verification rather than carried into this LLD's own s1 analyze bundles. (b) `deriveSectionIndex` is a net-new name chosen by this LLD; sc3 publishes only the types it must satisfy, so the name has no upstream provenance even though the capability is unambiguously s1-owned. (c) The three alternatives were scored against every Story acceptance criterion and every shared contract they touch, but Epic constraints k1-k7 were not re-scored at Story level — they were scored per-alternative in the HLD's own judge step, and all three alternatives sit inside the already-chosen framework."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 1 — the VS Code artifact-document surface s1 modifies",
+      "quotedText": "The entire surface is one file, vscode-plugin/src/chat/docs-review-panel.ts, whose only real function is createDocsReviewHost(deps): DocsReviewHost at :49-279."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 3 — the blanket assertion sc2's narrowing must replace",
+      "quotedText": "the last one is `assert.doesNotMatch(html, /innerHTML/, 'no innerHTML in the webview script')` — a BLANKET substring match over the ENTIRE rendered html, not a scoped one."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 4 — the shipped precedent: assert the guard is present, not that the primitive is absent",
+      "quotedText": "its body does NOT assert innerHTML is absent — it asserts the GUARD IS PRESENT: `assert.match(html, /guardMd\\(/, 'assistant markdown is sanitized via guardMd after the marked render')`"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 4 — injecting the vendored bundle keeps the one-script invariant",
+      "quotedText": "chat-panel.ts:561 does exactly `<script nonce=\"${nonce}\">${MARKED_SRC}\\n;${bootstrap}</script>` and five separate chat-panel assertions of scripts.length===1 pass; and webview-marked.ts contains ZERO occurrences of the string 'innerHTML'"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 5 — the sanctioned sequence and the headerIds:false gap sc3 exists to fill",
+      "quotedText": "`try{div.innerHTML=(typeof marked!=='undefined'&&marked&&marked.parse)?marked.parse(src,{gfm:true,breaks:false,headerIds:false,mangle:false}):src;guardMd(div);}catch(e){div.textContent=src;}`"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 5 — why reusing the shipped config defeats ac2",
+      "quotedText": "reusing this config verbatim emits no heading ids, so ac2's jump-to-section would have no anchor targets"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 6 — the single line s1 replaces, and the behaviours lc1/ac5 pin",
+      "quotedText": "#insrc-docs-body (currently `bodyEl.textContent=m.markdown||''` at :186 — the single line s1 replaces)"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 6 — the existing fail-closed regression that must stay green",
+      "quotedText": "docs-review-panel.test.ts:179, 'HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)'"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "s1 bundle 2 — the four structured records sc1 projects, rendered by s2/s3/s4 not s1",
+      "quotedText": "These are the four shapes sc1 passes through verbatim; s1 only projects them, since rendering each one belongs to s2/s3/s4."
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s3 winnerRationale — a1 chosen on sc3 and testability",
+      "quotedText": "a1 wins on sc3, which is the only constraint the three alternatives genuinely split on."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "HLD-bfe98ff7f97178cf — the three contracts s1 owns and the risky-bits sc3 mitigates",
+      "quotedText": "sc3 is the Epic's quietest coupling and the one most likely to fail late."
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1517 — parseView, the basis for the additive-only guarantee",
+      "quotedText": "private fun parseView(data: Map<String, Any?>): ArtifactReviewViewDto {"
+    }
+  ]
+}

@@ -3391,3 +3391,83 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
   const now = readFileSync(new URL('../docs-sections.ts', import.meta.url), 'utf8');
   assert.equal(now, shipped, 'sc3 is CONSUMED as shipped; the resolver is called, never reimplemented');
 });
+
+// ---------------------------------------------------------------------------
+// S003/t7 — FULL-SURFACE VERIFICATION. t4, t5 and t6 each read their own render
+// in isolation, so this pass CONFIRMS rather than discovers. What it adds is the
+// combinations no single task owned, plus the standing guard that the committed
+// evidence actually exists where the commit message says it does.
+// ---------------------------------------------------------------------------
+
+test('t7: a document carrying BOTH a diagram ref and a ux-mock ref shows the diagram slot ONLY', () => {
+  // The real shape of this Epic's own S002 LLD. s4 decides how a diagram and an
+  // experience mock sit together when both are present — it is the only Story that
+  // can observe both — so s3 must not pre-empt that arrangement.
+  const withUx = runWebview();
+  withUx.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER,
+    companions: [
+      { kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' },
+      DG_REF,
+    ],
+  });
+  const slots = slotsIn(withUx);
+  assert.equal(slots.length, 1, 'exactly one slot — the diagram, never a second for the mock');
+  const texts = allOf(slots[0]!).map((n) => n.textContent).join('\n');
+  assert.ok(texts.includes('Entity model'), 'labelled from the DIAGRAM ref');
+  assert.equal(texts.includes('UX mock'), false, 'the ux-mock ref is not read, not labelled, not linked');
+  assert.equal(texts.includes('ux-mock.html'), false, 'and its path never reaches the surface');
+
+  // Byte-for-byte: the ux-mock ref changes NOTHING about what is rendered. The
+  // screenshot pair committed as evidence is sha256-identical for the same reason.
+  const withoutUx = runWebview();
+  withoutUx.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF],
+  });
+  const shape = (r: WebviewRun): string =>
+    [...allOf(r.diagram), ...allOf(r.body)].map((n) => `${n.tagName}|${n.className}|${n.textContent}`).join('\n');
+  assert.equal(shape(withUx), shape(withoutUx), 'a ux-mock ref is invisible to this Story');
+});
+
+test('t7: a ux-mock ref ALONE renders nothing — the experience slot stays s4\'s to build', () => {
+  const r = runWebview();
+  r.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    companions: [{ kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' }],
+  });
+  // Not an 'unshowable' diagram invented from someone else's companion: this
+  // factory has no ref at all here, and no record, so the answer is ABSENT.
+  assert.equal(slotsIn(r).length, 0);
+  assert.equal(r.created.filter((t) => t.startsWith('ns:')).length, 0, 'and zero DOM work');
+});
+
+test('t7: every committed evidence image exists at the path its commit claims', async () => {
+  // S002 committed an evidence PNG to the WRONG path while the message claimed the
+  // right one, and it had to be amended. This makes that class of error a test
+  // failure rather than something a reader discovers later.
+  const dir = fileURLToPath(new URL(
+    '../../../../docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S003/evidence/',
+    import.meta.url,
+  ));
+  const expected = [
+    't1-manual-live-check.md',
+    't4-er-8class-rendered.png',
+    't5-sequence-rendered.png',
+    't6-slot-mounted-in-shell.png',
+    't7-state-er-3class.png',
+    't7-state-er-8class.png',
+    't7-state-sequence.png',
+    't7-state-unshowable.png',
+    't7-state-absent.png',
+    't7-state-cyclic-selfref.png',
+    't7-state-dual-ref.png',
+  ];
+  const { statSync } = await import('node:fs');
+  for (const name of expected) {
+    const st = statSync(join(dir, name));
+    assert.ok(st.isFile(), `${name} is a file`);
+    assert.ok(st.size > 1000, `${name} is non-trivial (${st.size} bytes)`);
+  }
+});

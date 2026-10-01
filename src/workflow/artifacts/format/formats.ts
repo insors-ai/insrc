@@ -63,6 +63,7 @@ export const HLD_FORMAT: DocumentFormat = {
 		S({ id: 'nonFunctional', heading: 'Non-functional targets' }),
 		S({ id: 'rollout',     heading: 'Rollout' }),
 		S({ id: 'alternatives', heading: 'Alternatives considered' }),
+		S({ id: 'ux',          heading: 'UX', source: 'extension', contentGuidance: 'NAMED extension point — S004 UX section/mock reference.' }),
 		S({ id: 'references',  heading: 'References', required: true }),
 		S({ id: 'openQuestions', heading: 'Open questions' }),
 		S({ id: 'feedback',    heading: 'Feedback', contentGuidance: 'Post-hoc human-authored feedback appended after authoring; never authored by the synthesizer.' }),

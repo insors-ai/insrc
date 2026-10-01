@@ -11,6 +11,10 @@
  * a UX definition emits BOTH sibling companions in their own extension slots. Mirrors
  * the S003 companion+renderer integration coverage. ac1.
  *
+ * ISSUE-1fc9e41abd47443f: the same two guarantees for an HLD. HLD_FORMAT previously
+ * declared no UX extension slot, so a ux-mock ref was recorded on the body and then
+ * silently dropped at render — generated, paid for, and unreachable by the reviewer.
+ *
  * Run: npx tsx --test --test-force-exit src/workflow/artifacts/companion/__tests__/ux-integration.test.ts
  */
 
@@ -25,6 +29,7 @@ import type { ErDefinition } from '../er.js';
 import type { UxDefinition } from '../ux.js';
 import type { CompanionArtifactRef } from '../types.js';
 import { renderLldMarkdown, type LldArtifact, type LldBody } from '../../lld.js';
+import { renderHldMarkdown, type HldArtifact, type HldBody } from '../../hld.js';
 
 const validEr: ErDefinition = {
 	classes: {
@@ -84,4 +89,60 @@ test('finalize seam: a body with BOTH an ER and a UX definition emits BOTH compa
 	assert.match(md, /\[UX mock\]\(ux-mock\.html\)/);
 	assert.ok(md.indexOf('ER model') < md.indexOf('UX mock'), 'the ER slot precedes the UX slot');
 	rmSync(repo, { recursive: true, force: true });
+});
+
+// --- ISSUE-1fc9e41abd47443f: the HLD must link its ux-mock companion like the LLD does ---
+
+const baseHld: HldBody = {
+	frameworkSummary: 'f',
+	architectureShape: 'a',
+	sharedContracts: [],
+	storyBoundaries: [{ storyId: 's1', owns: [], depends: [], internal: 'i' }],
+	nonFunctional: {},
+	rolloutOverview: { phases: [], orderingRationale: 'o', riskyBits: [] },
+	alternativesConsidered: [{ id: 'a1', name: 'A', oneLineSummary: 's', approach: 'x', pros: [], cons: [], costEstimate: 'S' }],
+	chosenAlternative: 'a1',
+	openQuestions: [],
+} as unknown as HldBody;
+
+const hldArtifact = (body: HldBody): HldArtifact => ({
+	meta: { workflow: 'design.epic', runId: 'r', repoPath: '/repo', createdAt: '2026-07-18T00:00:00.000Z', schemaVersion: 1, epicHash: 'e1a2b3c4d5e6f7a8' } as unknown as HldArtifact['meta'],
+	body,
+	citations: [],
+});
+
+test('HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-hld-'));
+	const dest = join(repo, 'ux-mock.html');
+	const uxRef = await renderUxCompanion(validUx, 'UX mock', dest, { repoPath: repo });
+	assert.equal(uxRef.kind, 'ux-mock');
+	assert.ok(existsSync(dest), 'the sibling ux-mock HTML companion is written');
+
+	const md = renderHldMarkdown(hldArtifact({ ...baseHld, uxDefinition: validUx, companions: [uxRef] } as unknown as HldBody));
+	assert.match(md, /## \d+\. UX/);
+	assert.match(md, new RegExp(`\\[UX mock\\]\\(${uxRef.relPath.replace('.', '\\.')}\\)`));
+	assert.ok(!md.includes('"AdaptiveCard"'), 'the card JSON is never inlined into the core markdown');
+	rmSync(repo, { recursive: true, force: true });
+});
+
+test('HLD: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'ux-integration-hld-'));
+	const erRef: CompanionArtifactRef = await renderErCompanion(validEr, 'ER model', join(repo, 'er-model.html'), { repoPath: repo });
+	const uxRef: CompanionArtifactRef = await renderUxCompanion(validUx, 'UX mock', join(repo, 'ux-mock.html'), { repoPath: repo });
+
+	const md = renderHldMarkdown(hldArtifact({ ...baseHld, erDefinition: validEr, uxDefinition: validUx, companions: [erRef, uxRef] } as unknown as HldBody));
+	assert.match(md, /\[ER model\]\(er-model\.html\)/);
+	assert.match(md, /\[UX mock\]\(ux-mock\.html\)/);
+	assert.ok(md.indexOf('ER model') < md.indexOf('UX mock'), 'the Diagrams slot precedes the UX slot');
+	rmSync(repo, { recursive: true, force: true });
+});
+
+test('HLD: a body with NO ux-mock companion renders no UX section at all (absent-safe, byte-identical)', () => {
+	const withoutUx = renderHldMarkdown(hldArtifact(baseHld));
+	assert.ok(!/## \d+\. UX/.test(withoutUx), 'no UX heading when the body carries no ux-mock companion');
+	assert.ok(!withoutUx.includes('ux-mock'), 'no stray ux-mock reference');
+
+	// An empty companions array must behave exactly like an absent one.
+	const emptyCompanions = renderHldMarkdown(hldArtifact({ ...baseHld, companions: [] } as unknown as HldBody));
+	assert.equal(emptyCompanions, withoutUx, 'companions: [] renders byte-identically to companions absent');
 });

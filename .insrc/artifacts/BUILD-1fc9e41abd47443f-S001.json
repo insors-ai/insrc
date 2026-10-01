@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "1fc9e41abd47443f",
+    "storyId": "S001",
+    "createdAt": "2026-10-01T08:19:31.101Z",
+    "updatedAt": "2026-10-01T09:06:07.797Z",
+    "approvedAt": "2026-10-01T09:06:07.863Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-1fc9e41abd47443f — an HLD never links its UX-mock companion. Give HLD_FORMAT (src/workflow/artifacts/format/formats.ts) the UX extension section its LLD sibling already declares, and bind that slot in src/workflow/artifacts/hld.ts to the existing uxCompanionBodyLines from format/bindings.ts, mirroring lld.ts:461-462. Today HLD_FORMAT declares only the 'diagrams' extension section, bound at hld.ts:220 to companionBodyLines, which filters to kind 'diagram-mermaid' | 'diagram-html' (bindings.ts:41) and therefore drops every 'ux-mock' ref silently. MUST be additive and absent-safe: reuse the existing `const l = ...; return l.length > 0 ? { lines: l } : { omit: true };` binding convention so an HLD carrying no ux-mock companion omits the section and renders byte-identically to today. Do NOT add a new helper, type or contract; do NOT touch CompanionArtifactRef, HldBody.companions, the artifact JSON, the generation side, or the already-correct LLD path. Add a test mirroring the LLD's UX-slot coverage: an HLD body with a ux-mock companion renders a link to it, and an HLD body without one renders no UX section at all. Run the workflow test subset and tsc.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/assets/artifacts/formats/hld.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T09:06:07.797Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T09:06:07.797Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/format/formats.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T09:06:07.797Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/hld.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T09:06:07.797Z"
+      }
+    ]
+  }
+}

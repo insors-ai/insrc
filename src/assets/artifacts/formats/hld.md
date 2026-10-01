@@ -41,6 +41,11 @@ NAMED extension point — S003 component diagram companion.
 <!-- insrc:section id=alternatives source=body numbered -->
 ## Alternatives considered
 
+<!-- insrc:section id=ux source=extension numbered -->
+## UX
+
+NAMED extension point — S004 UX section/mock reference.
+
 <!-- insrc:section id=references source=body required numbered -->
 ## References
 

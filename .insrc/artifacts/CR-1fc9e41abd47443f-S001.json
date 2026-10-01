@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790843368306-ahouxg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T08:29:28.306Z",
+    "model": "client",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1fc9e41abd47443f",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1fc9e41abd47443f",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/assets/artifacts/formats/hld.md",
+        "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts",
+        "src/workflow/artifacts/format/formats.ts",
+        "src/workflow/artifacts/hld.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/assets/artifacts/formats/hld.md:44",
+            "message": "The fix is correct and complete, but it diverges from the approved ISSUE's root cause — and the divergence is the interesting part. ISSUE-1fc9e41abd47443f diagnosed the defect as HLD_FORMAT in src/workflow/artifacts/format/formats.ts. That constant is only the FALLBACK: renderHldMarkdown calls resolveDocumentFormat('hld', repoPath), which loads through a three-tier cascade (repo override -> user override -> bundled src/assets/artifacts/formats/hld.md) and uses the in-code constant ONLY when no template resolves. The live defect was therefore in the bundled template, which the ISSUE never names. This was caught empirically: the formats.ts + hld.ts edits alone left the test red with no UX section in the rendered output, and only adding the template section turned it green. The built change is right; the tracked record's rootCause is incomplete and should be amended so a future reader does not repeat the same wrong first edit.",
+            "expectationRef": "ISSUE-1fc9e41abd47443f rootCause",
+            "counterpartRef": "src/workflow/artifacts/format/template-loader.ts:139",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/hld.ts:226",
+            "message": "Every stated invariant from the fixIntent holds. No new helper, type or contract was introduced — uxCompanionBodyLines is imported and reused unchanged. CompanionArtifactRef, HldBody.companions, the artifact JSON, the generation side and the LLD path are all untouched; the diff is confined to one template asset, one format constant, one binding line and one test file. The absent-safe requirement is satisfied by reusing the existing omit-on-empty convention verbatim, and is now pinned by a test asserting that companions:[] renders byte-identically to companions absent.",
+            "expectationRef": "ISSUE-1fc9e41abd47443f fixIntent",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/hld.ts:27",
+            "message": "Mirrors the LLD sibling precisely rather than inventing a parallel shape. The import extends the existing single-line bindings import in the same order the LLD uses (citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines); the binding at :226 reproduces the `const l = ...; return l.length > 0 ? { lines: l } : { omit: true };` convention used by every other optional binding in the same object; and the template section at hld.md:44 copies lld.md:44-47 including its `source=extension numbered` attributes and the NAMED-extension-point guidance line. Slot ordering also matches the LLD — ux sits between alternatives and references in both the template and the constant, so the two formats stay structurally parallel.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/format/formats.ts:66",
+            "message": "The new tests exercise the LIVE path only. Because renderHldMarkdown resolves its format through the template cascade, all three new tests validate the bundled hld.md asset; the in-code HLD_FORMAT constant edited at this line is never rendered through, since the fallback only engages when no template resolves. The duplication is inherent to the existing cascade design rather than introduced here, but it means a future edit that removes the ux section from the constant — or that lets the two drift — would not be caught by any test. Worth a parity assertion over the two sources if this drift class recurs; not blocking, since the live path is the one that renders documents.",
+            "counterpartRef": "src/assets/artifacts/formats/hld.md:44",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts:117",
+            "message": "Coverage for the defect itself is complete and mirrors the LLD's. Three tests were added alongside the existing LLD pair: a ux-mock companion renders a UX section and a LINK with the card JSON never inlined; a body carrying BOTH an ER and a UX definition renders both in their own slots with the Diagrams slot ordered first; and a body with no ux-mock renders no UX section at all. The third is the regression-proof one — it asserts both the absent case and that companions:[] is byte-identical to companions absent, which is exactly the absent-safe guarantee the ISSUE required. Verified green: 5/5 in this file, and the change is also confirmed end-to-end on a real artifact (the regenerated HLD-bfe98ff7f97178cf now links its ux-mock).",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts:95",
+            "message": "The HLD test fixtures lean on `as unknown as HldBody` casts to build a minimal body and to spread in uxDefinition/erDefinition/companions. This matches the file's existing style — the LLD fixtures use the same cast for meta — and keeps the fixtures small, but it does mean a future change to HldBody's required fields would not fail these tests at compile time. Acceptable for a render-layer test whose subject is the markdown output rather than the type, and consistent with the surrounding file; noting it so the pattern is a deliberate choice rather than an unexamined one.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifacts/companion/__tests__/ux-integration.test.ts:6",
+            "message": "The module doc comment was extended rather than left stale, recording the ISSUE id and the one-line reason the HLD path differed (no UX extension slot declared, so a recorded ref was silently dropped at render). That matches the file-header convention used across this repo's tests and means the next reader of this file learns why the HLD cases exist without finding the ISSUE record first.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 6
+    }
+  }
+}

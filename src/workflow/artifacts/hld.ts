@@ -24,7 +24,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import type { FeedbackRecord } from './provenance/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
-import { citationBodyLines, frBodyLines, companionBodyLines, feedbackBodyLines } from './format/bindings.js';
+import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines, feedbackBodyLines } from './format/bindings.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { ErDefinition } from './companion/er.js';
 import type { UxDefinition } from './companion/ux.js';
@@ -223,6 +223,7 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 		nonFunctional:  () => { const l = nfLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
 		rollout:        () => { const l = rolloutLines(); return l.length > 0 ? { lines: l } : { omit: true }; },
 		alternatives:   () => body.alternativesConsidered.length > 0 ? { items: body.alternativesConsidered.map(altItem) } : { omit: true },
+		ux:             () => { const l = uxCompanionBodyLines(body.companions); return l.length > 0 ? { lines: l } : { omit: true }; },
 		references:     () => ({ lines: citationBodyLines(artifact.citations) }),
 		openQuestions:  () => body.openQuestions.length > 0 ? { lines: body.openQuestions.map(q => `- ${q}`) } : { omit: true },
 		feedback:       () => { const l = feedbackBodyLines(body.feedback); return l.length > 0 ? { lines: l } : { omit: true }; },

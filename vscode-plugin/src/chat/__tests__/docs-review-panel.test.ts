@@ -893,29 +893,54 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
     'nor imported directly from the daemon type, which would bypass DocsContent');
 });
 
-test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere', () => {
-  // This REPLACES the vacuous "nothing changed" check the plan critique rejected.
-  // It compares against a CAPTURED baseline for a fixed nonce, so it genuinely
-  // fails if this task touches renderShell, the bootstrap or the mdStyle block.
-  const render = (): string => {
-    const fc = fakeChannel();
-    const { client } = fakeClient();
-    createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'FIXED-NONCE' }).open();
-    return fc.html();
-  };
+/**
+ * The PRE-S002 emitted shell, for nonce 'FIXED-NONCE': 60261 chars / 60305 UTF-8
+ * bytes, sha256 d65b6e826c4435a5d8d7b011f406ff51e4f5b2c516fe5732b70b01acd4e058ec.
+ * CAPTURED by checking the two source files out at the commit BEFORE t1 and
+ * rendering the shell there, then pinned here — so this is a real baseline rather
+ * than a same-build repeatability check — the vacuous shape the plan critique
+ * rejected, which compares render() to render() and passes no matter what the
+ * shell says.
+ *
+ * A task that LEGITIMATELY changes the shell (t2 adds a source string, t5 adds a
+ * call) updates these three constants in the same commit that changes it, and
+ * says why. That is the point: it turns every shell change into a declared one.
+ */
+const SHELL_BASELINE = {
+  nonce:  'FIXED-NONCE',
+  chars:  60261,
+  bytes:  60305,
+  sha256: 'd65b6e826c4435a5d8d7b011f406ff51e4f5b2c516fe5732b70b01acd4e058ec',
+} as const;
 
-  const html = render();
-  // Deterministic for a fixed nonce — the property the baseline comparison rests on.
-  assert.equal(html, render(), 'the shell is a pure function of its nonce');
+function renderShellFor(nonce: string): string {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => nonce }).open();
+  return fc.html();
+}
+
+test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere', async () => {
+  const { createHash } = await import('node:crypto');
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+
+  // THE baseline comparison. Any edit to renderShell, the bootstrap, the mdStyle
+  // block or the inlined source strings moves this hash.
+  assert.equal(
+    createHash('sha256').update(html, 'utf8').digest('hex'),
+    SHELL_BASELINE.sha256,
+    't1 is data-only: the emitted shell is unchanged from the captured pre-S002 baseline',
+  );
+  // Reported alongside the hash so a failure says HOW it moved, not just that it did.
+  assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
+  assert.equal(Buffer.byteLength(html, 'utf8'), SHELL_BASELINE.bytes, 'shell length in UTF-8 bytes');
 
   // t1 is DATA-ONLY: the webview has no code that reads the new field yet, so
   // the name must not appear anywhere in the emitted script.
   assert.doesNotMatch(html, /functionalDefinition/,
     'the webview bootstrap reads no functional record after t1');
 
-  // The surface invariants t1 must leave untouched.
-  assert.equal((html.match(/\.innerHTML\s*=/g) ?? []).length, 1,
-    'still exactly one markup-injection site');
-  assert.match(html, /<body class="insrc-term">/);
-  assert.match(html, /<div id="insrc-docs-body" class="insrc-docs-content"/);
+  // The shell is a pure function of its nonce — the property the pin rests on.
+  assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
+  assert.notEqual(html, renderShellFor('OTHER-NONCE'), 'and the nonce really is in it');
 });

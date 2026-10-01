@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DEGRADE_NOTICE } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DEGRADE_NOTICE } from '../docs-review-panel.js';
 import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
@@ -539,4 +539,201 @@ test('t5: the pre-existing SIX members of the docs-content variant keep their me
   assert.deepEqual(payload['openQuestions'], []);
   assert.equal(payload['blocked'], false);
   assert.equal(payload['commentable'], true, 'LLD stays commentable');
+});
+
+// ---------------------------------------------------------------------------
+// S001/t6 — slug stamping, the section chooser and jump-to-section, exercised by
+// EVALUATING the webview source against a small DOM stub. The chooser is a real
+// control with real behaviour, so it is tested by using it, not by grepping for
+// its markup.
+// ---------------------------------------------------------------------------
+
+interface StubNode {
+  tagName: string; id: string; className: string; textContent: string; value: string;
+  children: StubNode[]; attrs: Record<string, string>; listeners: Record<string, () => void>;
+  scrolled: boolean;
+  appendChild(c: StubNode): void; removeChild(c: StubNode): void;
+  setAttribute(k: string, v: string): void;
+  addEventListener(k: string, fn: () => void): void;
+  scrollIntoView(): void;
+  readonly firstChild: StubNode | undefined;
+}
+function node(tagName = 'div'): StubNode {
+  const n: StubNode = {
+    tagName, id: '', className: '', textContent: '', value: '',
+    children: [], attrs: {}, listeners: {}, scrolled: false,
+    appendChild(c) { this.children.push(c); },
+    removeChild(c) { this.children = this.children.filter((x) => x !== c); },
+    setAttribute(k, v) { this.attrs[k] = v; },
+    addEventListener(k, fn) { this.listeners[k] = fn; },
+    scrollIntoView() { this.scrolled = true; },
+    get firstChild() { return this.children[0]; },
+  };
+  return n;
+}
+
+/** Eval DOCS_SECTIONS_SOURCE with a stub `document`, returning its three functions. */
+function loadSections(byId: Record<string, StubNode> = {}) {
+  const doc = {
+    createElement: (t: string) => node(t),
+    getElementById: (id: string) => byId[id],
+  };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_SECTIONS_SOURCE}; return {stampSlugs:stampSlugs,renderSectionChooser:renderSectionChooser,jumpToSection:jumpToSection,renderDegradationNotice:renderDegradationNotice};`);
+  return make(doc) as {
+    stampSlugs(root: unknown, sections: unknown): number;
+    renderSectionChooser(host: StubNode, sections: unknown, onPick: (s: string) => void): boolean;
+    jumpToSection(slug: string): boolean;
+    renderDegradationNotice(host: StubNode, d: unknown): boolean;
+  };
+}
+
+/** A body stub whose querySelectorAll('h1..h6') returns the given headings. */
+function bodyWithHeadings(titles: string[]): { root: { querySelectorAll(s: string): StubNode[] }; heads: StubNode[] } {
+  const heads = titles.map((t) => { const h = node('h2'); h.textContent = t; return h; });
+  return { root: { querySelectorAll: () => heads }, heads };
+}
+
+test('t6: rendered headings carry the slugs derived for the SAME markdown — every target matches a posted anchor', () => {
+  const md = ['# Plan', '## Tasks', '## Tasks', '### ???'].join('\n');
+  const index = deriveSectionIndex(md);
+  const { root, heads } = bodyWithHeadings(index.anchors.map((a) => a.title));
+
+  const stamped = loadSections().stampSlugs(root, index);
+  assert.equal(stamped, index.anchors.length, 'every heading got a slug');
+
+  const posted = new Set(index.anchors.map((a) => a.slug));
+  heads.forEach((h, i) => {
+    assert.equal(h.id, index.anchors[i]!.slug, 'the stamped id is the derived slug');
+    assert.ok(posted.has(h.id), 'the anchor target matches a POSTED anchor');
+  });
+  // the duplicate pair really did get distinct targets.
+  assert.notEqual(heads[1]!.id, heads[2]!.id);
+});
+
+test('t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-targeted', () => {
+  // marked understands setext headings; deriveSectionIndex is ATX-only, so the
+  // rendered list can be longer. Pairing by title keeps the rest correct.
+  const index = deriveSectionIndex(['# Alpha', '## Beta'].join('\n'));
+  const { root, heads } = bodyWithHeadings(['Alpha', 'Surprise', 'Beta']);
+
+  loadSections().stampSlugs(root, index);
+  assert.equal(heads[0]!.id, 'alpha');
+  assert.equal(heads[1]!.id, '', 'an unindexed heading gets no id rather than a wrong one');
+  assert.equal(heads[2]!.id, 'beta', 'and the following heading still lands on its own slug');
+});
+
+test('t6: a document with NO headings renders no chooser AT ALL — not an empty control', () => {
+  const host = node();
+  const rendered = loadSections().renderSectionChooser(host, deriveSectionIndex('just prose'), () => {});
+  assert.equal(rendered, false);
+  assert.equal(host.children.length, 0, 'no select, no placeholder, no empty control');
+});
+
+test('t6: the chooser labels each entry with the heading VERBATIM and jumps to the chosen slug', () => {
+  const md = ['# Low-level design', '## Contract details', '### Error paths'].join('\n');
+  const index = deriveSectionIndex(md);
+
+  const host = node();
+  const picked: string[] = [];
+  const api = loadSections();
+  assert.equal(api.renderSectionChooser(host, index, (s) => picked.push(s)), true);
+
+  const sel = host.children[0]!;
+  assert.equal(sel.tagName, 'select');
+  assert.equal(sel.attrs['aria-label'], 'jump to section');
+  // option 0 is the placeholder; the rest are the headings, verbatim.
+  const labels = sel.children.slice(1).map((o) => o.textContent.trim());
+  assert.deepEqual(labels, ['Low-level design', 'Contract details', 'Error paths'],
+    'each entry shows what the document says');
+  assert.deepEqual(sel.children.slice(1).map((o) => o.value), index.anchors.map((a) => a.slug));
+
+  // choosing one relays its slug...
+  sel.value = 'contract-details';
+  sel.listeners['change']!();
+  assert.deepEqual(picked, ['contract-details']);
+
+  // ...and the jump moves the view DIRECTLY to that element.
+  const target = node('h2');
+  const jumped = loadSections({ 'contract-details': target }).jumpToSection('contract-details');
+  assert.equal(jumped, true);
+  assert.equal(target.scrolled, true, 'scrolled straight to the section');
+  // an unknown slug is a no-op, never a throw.
+  assert.equal(loadSections().jumpToSection('nope'), false);
+});
+
+test('t6: the chooser placeholder selection does NOT fire a jump', () => {
+  const host = node();
+  const picked: string[] = [];
+  const api = loadSections();
+  api.renderSectionChooser(host, deriveSectionIndex('# One'), (s) => picked.push(s));
+  const sel = host.children[0]!;
+  sel.value = '';              // the 'jump to section…' placeholder
+  sel.listeners['change']!();
+  assert.deepEqual(picked, [], 'picking the placeholder is not a navigation');
+});
+
+test('t6: the ac3 notice appears when degraded and is ABSENT when not', () => {
+  const api = loadSections();
+
+  const host = node();
+  assert.equal(api.renderDegradationNotice(host, { degraded: true, notice: DEGRADE_NOTICE }), true);
+  assert.equal(host.children.length, 1);
+  assert.equal(host.children[0]!.textContent, DEGRADE_NOTICE, 'set by textContent, never markup');
+  assert.equal(host.children[0]!.attrs['role'], 'status');
+
+  // a clean render clears it rather than leaving a stale notice behind
+  assert.equal(api.renderDegradationNotice(host, { degraded: false, notice: '' }), false);
+  assert.equal(host.children.length, 0);
+  assert.equal(api.renderDegradationNotice(host, undefined), false);
+  assert.equal(host.children.length, 0);
+});
+
+test('t6: the shell still has exactly ONE markup-injection site after the chooser and notice', () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+
+  // Count assignments to innerHTML in the webview source: exactly one, the body.
+  const injections = html.match(/\.innerHTML\s*=/g) ?? [];
+  assert.equal(injections.length, 1, 'exactly one markup-injection site — the markdown body');
+  assert.match(html, /el\.innerHTML=marked\.parse/, 'and it is the guarded vendored parse');
+  // the chooser + notice are DOM-constructed.
+  assert.match(html, /createElement\('select'\)/);
+  assert.match(html, /createElement\('option'\)/);
+  assert.doesNotMatch(html, /insertAdjacentHTML|outerHTML|document\.write/, 'no other markup path');
+});
+
+test('t6: approve and request-changes still reach workflow.approve / workflow.resolveComment unchanged, and the COMMENTABLE_KINDS gate holds', async () => {
+  // approve path
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  await tick();
+  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still passes the artifact id unchanged');
+
+  // request-changes path
+  const fc2 = fakeChannel();
+  const { client: c2, calls: calls2 } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc2.channel, client: c2 }).open();
+  await tick();
+  fc2.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'tighten it' }));
+  await tick();
+  assert.deepEqual(calls2.comment, [{ id: 'LLD-abc-s7', note: 'tighten it' }], 'resolveComment params unchanged');
+
+  // the gate: DEF/HLD/LLD commentable, others not
+  for (const [kind, expected] of [['DEF', true], ['HLD', true], ['LLD', true], ['PLAN', false], ['ISSUE', false]] as const) {
+    const f = fakeChannel();
+    const { client: c } = fakeClient({ pending: () => [{ id: `${kind}-x-s1`, kind, title: 't', status: 'pending' }] });
+    createDocsReviewHost({ createPanel: () => f.channel, client: c }).open();
+    await tick();
+    f.send(env('open-doc', { artifactId: `${kind}-x-s1` }));
+    await tick();
+    const msg = f.posted.filter((p) => p.payload.type === 'docs-content').find((p) => p.payload.artifactId === `${kind}-x-s1`);
+    assert.equal(msg!.payload['commentable'], expected, `${kind} commentable=${expected}`);
+  }
 });

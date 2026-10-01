@@ -93,6 +93,56 @@ export const DOCS_BODY_RENDERER_SOURCE =
   `}}`;
 
 /**
+ * sc3 consumption (S001/t6) — slug stamping, the section chooser and
+ * jump-to-section, as source so the shell inlines it AND the tests `eval` it.
+ *
+ * Everything here is built by DOM CONSTRUCTION with textContent only and injects
+ * NO markup, which is what keeps the surface's single injection site single: the
+ * markdown body (renderMarkdownBody) remains the one place markup is assigned.
+ *
+ * Stamping pairs rendered headings with posted anchors BY TITLE, advancing a
+ * pointer through the index, rather than by position alone. Position alone would
+ * silently mis-stamp if the renderer ever emitted a heading the deriver did not
+ * index — marked understands setext headings (underlined with === / ---) while
+ * deriveSectionIndex is ATX-only, so the two lists are not guaranteed to be the
+ * same length. An unmatched heading is left UNSTAMPED, so an anchor target always
+ * matches a posted anchor rather than pointing somewhere arbitrary.
+ */
+export const DOCS_SECTIONS_SOURCE =
+  `function stampSlugs(root,sections){` +
+  `var anchors=(sections&&sections.anchors)||[];if(!anchors.length)return 0;` +
+  `var hs=root.querySelectorAll('h1,h2,h3,h4,h5,h6');var p=0,n=0;` +
+  `for(var i=0;i<hs.length&&p<anchors.length;i++){` +
+  `var txt=(hs[i].textContent||'').trim();` +
+  `var j=p;while(j<anchors.length&&anchors[j].title!==txt)j++;` +
+  `if(j<anchors.length){hs[i].id=anchors[j].slug;p=j+1;n++;}}` +
+  `return n;}` +
+  `function renderSectionChooser(host,sections,onPick){` +
+  `while(host.firstChild)host.removeChild(host.firstChild);` +
+  // No headings -> NO control at all, not an empty one.
+  `var anchors=(sections&&sections.anchors)||[];if(!anchors.length)return false;` +
+  `var sel=document.createElement('select');sel.id='insrc-docs-sections-select';` +
+  `sel.setAttribute('aria-label','jump to section');` +
+  `var first=document.createElement('option');first.value='';first.textContent='jump to section…';` +
+  `sel.appendChild(first);` +
+  `for(var i=0;i<anchors.length;i++){var o=document.createElement('option');` +
+  `o.value=anchors[i].slug;` +
+  // The heading's VERBATIM text, indented by depth. textContent only.
+  `o.textContent=new Array(Math.max(1,anchors[i].level)).join('  ')+anchors[i].title;` +
+  `sel.appendChild(o);}` +
+  `sel.addEventListener('change',function(){if(sel.value)onPick(sel.value);});` +
+  `host.appendChild(sel);return true;}` +
+  `function jumpToSection(slug){var t=document.getElementById(slug);` +
+  // Move the view DIRECTLY there rather than scrolling through the document.
+  `if(t&&t.scrollIntoView)t.scrollIntoView({block:'start'});return !!t;}` +
+  `function renderDegradationNotice(host,degradation){` +
+  `while(host.firstChild)host.removeChild(host.firstChild);` +
+  `if(!degradation||!degradation.degraded)return false;` +
+  `var d=document.createElement('div');d.className='insrc-docs-notice';` +
+  `d.setAttribute('role','status');` +
+  `d.textContent=degradation.notice||'';host.appendChild(d);return true;}`;
+
+/**
  * sc2 (S001/t4) — the renderer contract s2, s3 and s4 build their structured
  * renderers against. PUBLISHED HERE AND IMPLEMENTED NOWHERE in s1: this Story
  * renders only the markdown body, so the type exists so the later Stories share
@@ -275,6 +325,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The plain-text fallback container: preserve the document's own newlines
       // (it is markdown source at that point) without the <pre> geometry.
       `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;font-family:var(--it-font);color:var(--it-fg);}` +
+      `.insrc-docs-notice{color:var(--it-warn);border:1px solid var(--it-border);padding:4px 8px;margin:4px 0;font-size:12px;}` +
+      `#insrc-docs-sections select{background:var(--it-bg);color:var(--it-fg);border:1px solid var(--it-border);font-family:var(--it-font);font-size:12px;padding:2px 4px;margin:4px 0;max-width:100%;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
@@ -286,6 +338,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const oqEl=document.getElementById('insrc-docs-oq');` +
       `const noteEl=document.getElementById('insrc-docs-note');` +
       `const actEl=document.getElementById('insrc-docs-actions');` +
+      `const secEl=document.getElementById('insrc-docs-sections');` +
+      `const noticeEl=document.getElementById('insrc-docs-notice');` +
       `var current='';` +
       // docs-list: one clickable row per pending artifact (textContent only, no innerHTML).
       `function renderList(items){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
@@ -297,7 +351,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // docs-content: render the verbatim body + open questions + block banner + the
       // approve/request-changes controls (controls hidden while blocked).
       DOCS_BODY_RENDERER_SOURCE +
-      `function renderContent(m){renderMarkdownBody(bodyEl,m.markdown||'');` +
+      DOCS_SECTIONS_SOURCE +
+      `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
+      // Stamp first, so every chooser entry has a target to jump to.
+      `stampSlugs(bodyEl,m.sections);` +
+      `renderSectionChooser(secEl,m.sections,jumpToSection);` +
+      // ac3: the notice comes from the POSTED state when the host declared one,
+      // and otherwise from this render's own degradation — same shape either way.
+      `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:r.degradation);` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
       `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +
@@ -324,6 +385,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<body class="insrc-term">` +
       `<div class="${cls}">` +
       `<div id="insrc-docs-list" class="${listCls}" aria-label="pending artifacts"></div>` +
+      // t6: the section chooser and the ac3 notice. Both are filled by DOM
+      // construction with textContent — never markup — and the chooser host stays
+      // EMPTY (no control at all) for a document with no headings.
+      `<div id="insrc-docs-sections" aria-label="sections"></div>` +
+      `<div id="insrc-docs-notice" aria-live="polite"></div>` +
       // A DIV, not a <pre>: marked emits newline-separated block elements, so a
       // preformatted container would render a literal blank line between every
       // block and set headings in the monospace face at body size.

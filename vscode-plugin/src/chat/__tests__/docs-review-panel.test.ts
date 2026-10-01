@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -969,6 +969,16 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   CR fixes (this value) 64501 chars / 64547 bytes  351d6ce2…a2ee0
  *       +116 chars: ul/li list semantics and one shared frRequirementsOf,
  *       both from post-build code-review findings fixed rather than recorded.
+ *   S003/t4 (+8383 chars, +8387 bytes): DOCS_DIAGRAM_SOURCE inlined after
+ *       its three siblings — the ER derivation, the deterministic grid layout, the
+ *       createElementNS/textContent SVG writer and sc4's slot factory. Still
+ *       INERT: the functions are defined and nothing calls them, so the RENDERED
+ *       surface is unchanged even though the shell is not. The figures above were
+ *       COMPUTED from the emitted shell at this fixed nonce, not typed — an
+ *       earlier Story pinned a hash captured at a DIFFERENT nonce and separately
+ *       wrote a figure from memory, and both had to be corrected. The delta covers
+ *       the source string AND the diagram's CSS fragment: SVG does not inherit a
+ *       font colour, so an unstyled box paints black and hides its own labels.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -982,9 +992,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  64501,
-  bytes:  64547,
-  sha256: '351d6ce2eaded2f525215186c12553ba9d31d20cfdacc3f003cee217e38a2ee0',
+  chars:  72884,
+  bytes:  72934,
+  sha256: 'a9b6de08f20390bbf89b2f6f02f055074d10c4cf4a952d72993f55a25c025489',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -2394,4 +2404,439 @@ test('t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet', (
   assert.equal(calls, 1, 'companionVisualKind is declared once and not yet called from the panel');
   assert.equal(src.includes('CompanionSlotFactory<'), true, 'the factory interface is declared');
   assert.match(src, /renderContent\(m\)/, 'renderContent is untouched by t3');
+});
+
+// ---------------------------------------------------------------------------
+// S003/t4 — THE RENDERER SPINE. Derivation, SVG construction and the slot gate.
+//
+// The derivation is a SECOND implementation of rules the daemon already owns, in a
+// source string that cannot import the daemon module. So the first test here pins
+// both against SHARED fixtures with the DAEMON AS THE AUTHORITY — without it,
+// "they agree" would be a comment rather than a property.
+// ---------------------------------------------------------------------------
+
+/** An SVG-aware recording node: captures every property write AND the namespace
+ *  it was created in, so "built by createElementNS, labelled by textContent" is
+ *  executed rather than grepped. */
+interface DgNode {
+  ns: string | null;
+  tag: string;
+  tagName: string;
+  textContent: string;
+  attrs: Record<string, string>;
+  children: DgNode[];
+  writes: Array<{ prop: string; value: unknown }>;
+  appendChild(c: DgNode): DgNode;
+  setAttribute(k: string, v: string): void;
+}
+function dgNode(tag: string, ns: string | null): DgNode {
+  const writes: DgNode['writes'] = [];
+  const children: DgNode[] = [];
+  const attrs: Record<string, string> = {};
+  const n = {
+    ns, tag, tagName: tag, children, writes, attrs,
+    _text: '',
+    appendChild(c: DgNode) { children.push(c); return c; },
+    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
+  } as unknown as DgNode & { _text: string };
+  Object.defineProperty(n, 'textContent', {
+    get() { return n._text; },
+    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
+  });
+  // Present ONLY to be caught: any write is recorded and asserted against.
+  for (const prop of ['innerHTML', 'outerHTML']) {
+    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
+  }
+  return n as DgNode;
+}
+
+interface DgApi {
+  dgDeriveEr(rec: unknown): { nodes: { id: string; attrs: { name: string; range: string; dangling: boolean }[] }[]; edges: { id: string; from: string; to: string; label: string; token: string }[] } | null;
+  dgRenderEr(rec: unknown): { el: DgNode } | null;
+  dgBuildDiagramSlot(record: unknown, ref: unknown, anchorSlug: string | undefined): Record<string, unknown>;
+  dgCrowsFoot(slot: unknown): string;
+  created: DgNode[];
+  createdHtml: string[];
+}
+
+/** Evaluate DOCS_DIAGRAM_SOURCE against a recording document stub. */
+function loadDg(): DgApi {
+  const created: DgNode[] = [];
+  const createdHtml: string[] = [];
+  const doc = {
+    createElementNS: (ns: string, t: string) => { const n = dgNode(t, ns); created.push(n); return n; },
+    // Present so a renderer reaching for the HTML factory is RECORDED rather than
+    // crashing — an SVG renderer must never use it, and a test can prove it didn't.
+    createElement: (t: string) => { createdHtml.push(t); return dgNode(t, null); },
+  };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return {dgDeriveEr:dgDeriveEr,dgRenderEr:dgRenderEr,dgBuildDiagramSlot:dgBuildDiagramSlot,dgCrowsFoot:dgCrowsFoot};`);
+  const api = make(doc) as Omit<DgApi, 'created' | 'createdHtml'>;
+  return { ...api, created, createdHtml };
+}
+
+/** Flatten a built tree for assertions. */
+function dgFlatten(n: DgNode, out: DgNode[] = []): DgNode[] {
+  out.push(n);
+  for (const c of n.children) dgFlatten(c, out);
+  return out;
+}
+
+/** Rebuild the DAEMON's node-label format from the client's derived attributes, so
+ *  the attribute derivation is compared and not just the node ids. */
+function dgDaemonStyleLabel(node: { id: string; attrs: { name: string; range: string }[] }): string {
+  const parts = node.attrs.map((a) => (a.range.length > 0 ? `${a.name}: ${a.range}` : a.name));
+  return parts.length > 0 ? `${node.id} (${parts.join(', ')})` : node.id;
+}
+
+test('t4 PARITY: the client derivation matches erDefinitionToIr over shared fixtures, with the daemon as the authority', async () => {
+  // Both the fixtures AND the daemon derivation are imported here, so neither side
+  // can be fed an input the other never saw and the expected values are produced by
+  // the real daemon code rather than restated by hand.
+  const { PARITY_FIXTURES } = await import('../../../../src/workflow/artifacts/companion/__tests__/fixtures/er-parity.js');
+  const { erDefinitionToIr } = await import('../../../../src/workflow/artifacts/companion/er.js');
+  const dg = loadDg();
+
+  assert.ok(PARITY_FIXTURES.length >= 9, 'the shared fixture set covers the derivation rules');
+
+  for (const fx of PARITY_FIXTURES) {
+    const ir = erDefinitionToIr(fx.record);          // AUTHORITY
+    const mine = dg.dgDeriveEr(fx.record);           // must match
+    assert.ok(mine, `${fx.name}: the client derived a model`);
+
+    // Node ids, in order. Both sides must sort classes or this comparison is
+    // meaningless in the first place.
+    assert.deepEqual(
+      mine!.nodes.map((n) => n.id),
+      ir.derived.nodes.map((n) => n.id),
+      `${fx.name}: node set and order (${fx.why})`,
+    );
+
+    // Node LABELS, which is where the attribute-vs-edge split actually shows up:
+    // a slot wrongly classified would move between the label and the edge set.
+    assert.deepEqual(
+      mine!.nodes.map(dgDaemonStyleLabel),
+      ir.derived.nodes.map((n) => n.label),
+      `${fx.name}: attribute derivation (${fx.why})`,
+    );
+
+    // Edge ids encode from, slot name, to AND the crow's-foot token, so comparing
+    // the id set compares all four at once.
+    assert.deepEqual(
+      [...mine!.edges.map((e) => e.id)].sort(),
+      [...ir.derived.edges.map((e) => e.id)].sort(),
+      `${fx.name}: edge set incl. cardinality tokens (${fx.why})`,
+    );
+  }
+});
+
+test('t4: a class-ranged slot becomes an edge; scalar, rangeless and unknown-shaped slots become attributes', () => {
+  const dg = loadDg();
+  const m = dg.dgDeriveEr({
+    classes: {
+      Order: { attributes: { id: { range: 'string' }, bare: {}, placedBy: { range: 'Customer' } } },
+      Customer: { attributes: { id: { range: 'string' } } },
+    },
+  })!;
+  assert.deepEqual(m.edges.map((e) => e.id), ['Order.placedBy->Customer:zero-to-one']);
+  const order = m.nodes.find((n) => n.id === 'Order')!;
+  assert.deepEqual(order.attrs.map((a) => a.name), ['bare', 'id'], 'slots sorted, the relationship excluded');
+  assert.equal(order.attrs.find((a) => a.name === 'bare')!.range, '', 'a rangeless slot keeps an empty range');
+});
+
+test('t4: a DANGLING range loses only its relationship — every box and every other edge still draw', async () => {
+  const { DANGLING_FIXTURE } = await import('../../../../src/workflow/artifacts/companion/__tests__/fixtures/er-parity.js');
+  const { erDefinitionToIr, ErDefinitionError } = await import('../../../../src/workflow/artifacts/companion/er.js');
+  const dg = loadDg();
+
+  // THE DAEMON TREATS THIS AS FATAL, which is the behaviour being diverged from —
+  // asserted rather than assumed, so the divergence is pinned on both sides.
+  assert.throws(() => erDefinitionToIr(DANGLING_FIXTURE), ErDefinitionError,
+    'the daemon rejects a dangling range because it is generating an artifact');
+
+  // The client does not: it shows the reviewer what it legibly can.
+  const m = dg.dgDeriveEr(DANGLING_FIXTURE)!;
+  assert.deepEqual(m.nodes.map((n) => n.id), ['Customer', 'Order'], 'every box still drawn');
+  assert.deepEqual(m.edges.map((e) => e.id), ['Order.placedBy->Customer:zero-to-one'],
+    'the resolvable edge survives and the dangling one is not invented');
+  const order = m.nodes.find((n) => n.id === 'Order')!;
+  const shipped = order.attrs.find((a) => a.name === 'shippedVia')!;
+  assert.ok(shipped, 'the dangling slot is still listed, so the reviewer sees it exists');
+  assert.equal(shipped.dangling, true, 'and is marked dangling rather than passed off as a normal scalar');
+  // It renders, which is the whole point of diverging.
+  assert.ok(dg.dgRenderEr(DANGLING_FIXTURE), 'the diagram draws despite the dangling reference');
+});
+
+test("t4: cardinality flags produce the daemon's crow's-foot token in every combination", async () => {
+  const { crowsFootToken } = await import('../../../../src/workflow/artifacts/companion/er.js');
+  const dg = loadDg();
+  const slots = [
+    {}, { required: true }, { multivalued: true }, { required: true, multivalued: true },
+    { minimum_cardinality: 0 }, { minimum_cardinality: 1 }, { minimum_cardinality: 3 },
+    { maximum_cardinality: 1 }, { maximum_cardinality: 2 },
+    { required: true, minimum_cardinality: 0 },        // explicit min beats `required`
+    { multivalued: true, maximum_cardinality: 1 },     // explicit max beats `multivalued`
+  ];
+  for (const slot of slots) {
+    assert.equal(dg.dgCrowsFoot(slot), crowsFootToken(slot),
+      `token must match the daemon for ${JSON.stringify(slot)}`);
+  }
+});
+
+test('t4: a self-reference and a 3-cycle both terminate and draw — layout iterates the sorted class list', () => {
+  const dg = loadDg();
+  // If the layout walked edges to place nodes, either of these would not return.
+  const selfRef = dg.dgRenderEr({ classes: { Node: { attributes: { parent: { range: 'Node' }, kids: { range: 'Node', multivalued: true } } } } });
+  assert.ok(selfRef, 'a self-referencing model draws');
+  const loop = dg.dgRenderEr({ classes: { A: { attributes: { b: { range: 'B' } } }, B: { attributes: { c: { range: 'C' } } }, C: { attributes: { a: { range: 'A' } } } } });
+  assert.ok(loop, 'a cyclic model draws');
+
+  // A self-edge is drawn as a visible loop rather than silently dropped or
+  // collapsed to a zero-length line.
+  const flat = dgFlatten(selfRef!.el);
+  const lines = flat.filter((n) => n.tag === 'line');
+  const degenerate = lines.filter((l) => l.attrs['x1'] === l.attrs['x2'] && l.attrs['y1'] === l.attrs['y2']);
+  assert.equal(degenerate.length, 0, 'no zero-length line stands in for a self-reference');
+  assert.ok(lines.length >= 3, 'the self-reference is drawn as a multi-segment loop');
+});
+
+test('t4: determinism — the same record renders an identical element tree every time', () => {
+  const rec = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
+  const shape = (api: DgApi): string =>
+    dgFlatten(api.dgRenderEr(rec)!.el)
+      .map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`)
+      .join('\n');
+  // Two independent evaluations, so no cached state can make them agree.
+  assert.equal(shape(loadDg()), shape(loadDg()), 'no randomness, no measurement-dependent reflow');
+});
+
+test('t4 ac4: every element is createElementNS in the SVG namespace and every label is textContent', () => {
+  const dg = loadDg();
+  const built = dg.dgRenderEr({
+    classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } },
+  })!;
+  const flat = dgFlatten(built.el);
+  assert.ok(flat.length > 5, 'a non-trivial tree was built');
+
+  // Namespace on EVERY node, and the HTML factory never touched.
+  for (const n of flat) {
+    assert.equal(n.ns, 'http://www.w3.org/2000/svg', `${n.tag} must be created in the SVG namespace`);
+  }
+  assert.deepEqual(dg.createdHtml, [], 'document.createElement was never called — this is an SVG renderer');
+
+  // EXECUTED proof of "no markup": not one write to a markup-bearing property
+  // anywhere in the tree, recorded by the stub rather than inferred from source.
+  const markupWrites = flat.flatMap((n) => n.writes).filter((w) => w.prop === 'innerHTML' || w.prop === 'outerHTML');
+  assert.deepEqual(markupWrites, [], 'no markup property was ever assigned');
+  // And text really did arrive via textContent.
+  const textWrites = flat.flatMap((n) => n.writes).filter((w) => w.prop === 'textContent');
+  assert.ok(textWrites.length >= 4, 'labels are written through textContent');
+});
+
+test('t4 ac4: hostile class and slot names survive character-for-character and reach no attribute', () => {
+  const dg = loadDg();
+  const hostile = '<script>alert(1)</script>';
+  const slot = 'a & b';
+  const built = dg.dgRenderEr({ classes: { [hostile]: { attributes: { [slot]: { range: 'string' }, ref: { range: 'Plain' } } }, Plain: {} } })!;
+  const flat = dgFlatten(built.el);
+
+  const texts = flat.map((n) => n.textContent);
+  assert.ok(texts.includes(hostile), 'the class name is present verbatim as TEXT');
+  assert.ok(texts.some((t) => t.includes(slot)), 'the slot name is present verbatim as TEXT');
+
+  // SVG is XML, so an unescaped `<` in an attribute would be a parse hazard. No
+  // attribute value anywhere may carry record text — this is the structural half of
+  // ac4, and it is why geometry is the only thing setAttribute ever receives.
+  for (const n of flat) {
+    for (const [k, v] of Object.entries(n.attrs)) {
+      assert.doesNotMatch(v, /script|&|</, `attribute ${k} must not carry record text (got ${v})`);
+      assert.ok(!v.includes(hostile) && !v.includes(slot), `attribute ${k} must not carry a record name`);
+    }
+  }
+});
+
+test('t4 contract: DOCS_DIAGRAM_SOURCE assigns no markup, and the shell still has EXACTLY ONE innerHTML', () => {
+  // Comments stripped FIRST. A scan that reads prose has produced false results in
+  // this repo before, and this file's comments discuss innerHTML at length.
+  const code = DOCS_DIAGRAM_SOURCE
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  for (const bad of ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'document.write']) {
+    assert.ok(!code.includes(bad), `DOCS_DIAGRAM_SOURCE must not contain ${bad}`);
+  }
+  // Positive control: the scan can see real content, so "no match" is not an
+  // artefact of having stripped everything.
+  assert.ok(code.includes('createElementNS'), 'the stripped source still contains its real code');
+
+  // And the surface-wide invariant after a FOURTH source string joined the script.
+  const html = renderShellFor('NONCE-X');
+  const assignments = html.match(/\.innerHTML\s*=/g) ?? [];
+  assert.equal(assignments.length, 1, 'exactly one markup-injection site on the whole surface');
+  assert.match(html, /el\.innerHTML=marked\.parse\(/, 'and it is still the guarded vendored body parse');
+  assert.ok(html.includes('dgRenderEr'), 'the fourth source string really is inlined into the shell');
+});
+
+test('t4 gate: the four-combination table, asserted through the discriminator AND what was built', () => {
+  const dg = loadDg();
+  const REC = { classes: { Order: { attributes: { id: { range: 'string' } } } } };
+  const REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
+
+  // ref absent + record absent -> absent
+  const a = dg.dgBuildDiagramSlot(undefined, undefined, undefined);
+  assert.equal(a['state'], 'absent');
+  assert.deepEqual(Object.keys(a), ['state'], 'the absent state carries nothing else');
+
+  // ref present + record present -> rendered
+  const b = dg.dgBuildDiagramSlot(REC, REF, undefined);
+  assert.equal(b['state'], 'rendered');
+  assert.equal(b['kind'], 'diagram');
+  assert.ok(b['body'], 'a body was built');
+
+  // ref present + record absent -> unshowable
+  const c = dg.dgBuildDiagramSlot(undefined, REF, undefined);
+  assert.equal(c['state'], 'unshowable');
+  assert.match(String(c['reason']), /source record is not available/);
+
+  // ref absent + record present -> RENDERED (the contested row, resolved at the
+  // approval gate as record-gates-content: the design exists, so show it).
+  const d = dg.dgBuildDiagramSlot(REC, undefined, undefined);
+  assert.equal(d['state'], 'rendered', 'a record with no companion ref still draws');
+  assert.equal('linkOut' in d, false, 'but offers no link, because there is no ref to link to');
+});
+
+test('t4 gate: absent does ZERO DOM work — no element is created at all', () => {
+  const dg = loadDg();
+  const before = dg.created.length;
+  const slot = dg.dgBuildDiagramSlot(undefined, undefined, undefined);
+  assert.equal(slot['state'], 'absent');
+  // ac2 proved as the ABSENCE OF ACTIVITY rather than the absence of something
+  // visible — the gate returns before construction, so there is nothing to clean up
+  // and no space can be reserved. This is the dominant path.
+  assert.equal(dg.created.length, before, 'not one createElementNS call');
+  assert.deepEqual(dg.createdHtml, [], 'and not one createElement call either');
+
+  // An empty record is absent too, matching the undefined-or-empty convention.
+  for (const empty of [{ classes: {} }, { classes: null }, { classes: [] }, {}, null, 42, 'nope']) {
+    assert.equal(dg.dgBuildDiagramSlot(empty, undefined, undefined)['state'], 'absent', `${JSON.stringify(empty)} is absent`);
+  }
+  assert.equal(dg.created.length, before, 'still nothing created for any malformed record');
+});
+
+test('t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES what was referenced', () => {
+  const dg = loadDg();
+  // The majority case today: 5 diagram refs against 2 erDefinitions, so most
+  // diagram refs point at a record this factory cannot draw.
+  const ref = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S002/sequence-diagram.html', title: 'Sequence diagram' };
+  const slot = dg.dgBuildDiagramSlot(undefined, ref, undefined);
+  assert.equal(slot['state'], 'unshowable');
+  assert.equal(slot['label'], 'Sequence diagram', 'the label is the REF\'s title — named, not generic');
+  assert.match(String(slot['reason']), /source record is not available to this surface/);
+  // The link-out matters most precisely here.
+  assert.deepEqual(slot['linkOut'], { relPath: ref.relPath, title: ref.title });
+});
+
+test('t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a silent nothing', () => {
+  const dg = loadDg();
+  const ref = { kind: 'diagram-html', relPath: 'docs/epics/x/S003/thing.html', title: 'Some diagram' };
+  // Declared in the companion union and produced by NOTHING today. Routing it
+  // explicitly is what stops a future producer turning it on and getting silence.
+  const slot = dg.dgBuildDiagramSlot({ classes: { A: {} } }, ref, undefined);
+  assert.equal(slot['state'], 'unshowable', 'even with a record present');
+  assert.match(String(slot['reason']), /diagram-html/, 'the reason names the kind');
+  assert.ok(slot['linkOut'], 'and the authentic file is still reachable');
+});
+
+test('t4 gate: a ux-mock ref is not this factory\'s business — the experience slot stays s4\'s', () => {
+  const dg = loadDg();
+  const ux = [{ kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' }];
+  // dgPickRef selects only diagram kinds, so a ux-mock-only document yields no ref
+  // for this factory. With no record either, that must be ABSENT — not an
+  // unshowable diagram invented from someone else's companion.
+  const dgApi = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
+    createElementNS: () => dgNode('x', 'ns'), createElement: () => dgNode('x', null),
+  }) as (c: unknown) => unknown;
+  assert.equal(dgApi(ux), undefined, 'a ux-mock ref is not a diagram ref');
+  assert.equal(dgApi([{ kind: 'diagram-mermaid', relPath: 'a', title: 'b' }])?.constructor, Object);
+  assert.equal(dg.dgBuildDiagramSlot(undefined, undefined, undefined)['state'], 'absent');
+});
+
+test('t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one', () => {
+  const dg = loadDg();
+  const REC = { classes: { Order: { attributes: { id: { range: 'string' } } } } };
+  const ref = { kind: 'diagram-mermaid', relPath: 'docs/x/er.html', title: 'Entity model' };
+
+  const rendered = dg.dgBuildDiagramSlot(REC, ref, undefined);
+  assert.deepEqual(rendered['linkOut'], { relPath: 'docs/x/er.html', title: 'Entity model' });
+  const unshowable = dg.dgBuildDiagramSlot(undefined, ref, undefined);
+  assert.deepEqual(unshowable['linkOut'], { relPath: 'docs/x/er.html', title: 'Entity model' });
+
+  // No ref -> no link, as an ABSENT key rather than one holding undefined.
+  const noRef = dg.dgBuildDiagramSlot(REC, undefined, undefined);
+  assert.equal('linkOut' in noRef, false);
+  // A ref with no usable path yields no link either, rather than an empty one.
+  const badRef = dg.dgBuildDiagramSlot(REC, { kind: 'diagram-mermaid', title: 'x' }, undefined);
+  assert.equal('linkOut' in badRef, false);
+});
+
+test('t4 layout: no row escapes its box, and no two boxes overlap — the defects the first visual read caught', async () => {
+  // BOTH of these shipped in the first draft of this renderer and were invisible to
+  // every assertion in this suite: relationship rows ran straight through the right
+  // border of a fixed-width box, and edge captions were swallowed by boxes that
+  // painted after them. A screenshot found them; these assertions keep them found.
+  const dg = loadDg();
+  const er = JSON.parse(
+    readFileSync(new URL('../../../../.insrc/artifacts/HLD-bfe98ff7f97178cf.json', import.meta.url), 'utf8'),
+  ).body.erDefinition;
+
+  const built = dg.dgRenderEr(er)!;
+  const groups = built.el.children.filter((g) => g.tag === 'g');
+  const boxes: { x: number; y: number; w: number; h: number }[] = [];
+
+  for (const g of groups) {
+    const rect = g.children.find((c) => c.tag === 'rect');
+    if (!rect) continue;                     // an edge group carries no box
+    const bx = Number(rect.attrs['x']), by = Number(rect.attrs['y']);
+    const bw = Number(rect.attrs['width']), bh = Number(rect.attrs['height']);
+    boxes.push({ x: bx, y: by, w: bw, h: bh });
+
+    for (const t of g.children.filter((c) => c.tag === 'text')) {
+      // Monospace advance, taken slightly GENEROUS so the assertion fails before a
+      // real glyph would cross the border rather than after.
+      const perChar = (t.attrs['class'] ?? '').includes('insrc-dg-class') ? 8.4 : 6.75;
+      const left = Number(t.attrs['x']);
+      const right = left + t.textContent.length * perChar;
+      assert.ok(left >= bx, `"${t.textContent}" starts left of its box`);
+      assert.ok(right <= bx + bw, `"${t.textContent}" (${Math.round(right)}) escapes its box right edge (${bx + bw})`);
+      assert.ok(Number(t.attrs['y']) >= by && Number(t.attrs['y']) <= by + bh, `"${t.textContent}" escapes vertically`);
+    }
+  }
+
+  assert.equal(boxes.length, Object.keys(er.classes).length, 'one box per class in the real 8-class record');
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i]!, b = boxes[j]!;
+      const disjoint = a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+      assert.ok(disjoint, `boxes ${i} and ${j} overlap`);
+    }
+  }
+});
+
+test('t4 layout: a box grows to fit its longest row rather than clipping it', () => {
+  const dg = loadDg();
+  // The failing shape from the visual read: a relationship whose rendered row is far
+  // wider than any sensible fixed width.
+  const built = dg.dgRenderEr({
+    classes: {
+      A: { attributes: { aVeryLongRelationshipNameIndeed: { range: 'AnotherRatherLongClassName', multivalued: true } } },
+      AnotherRatherLongClassName: { attributes: { x: { range: 'string' } } },
+    },
+  })!;
+  const g = built.el.children.find((c) => c.tag === 'g' && c.children.some((k) => k.tag === 'rect'))!;
+  const rect = g.children.find((c) => c.tag === 'rect')!;
+  const row = g.children.find((c) => c.tag === 'text' && c.textContent.includes('→'))!;
+  assert.ok(row, 'the relationship row is rendered');
+  assert.ok(
+    Number(rect.attrs['width']) >= row.textContent.length * 6.75,
+    `the box (${rect.attrs['width']}) must be wide enough for its longest row (${row.textContent.length} chars)`,
+  );
 });

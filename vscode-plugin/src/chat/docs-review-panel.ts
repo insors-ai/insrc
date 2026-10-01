@@ -347,6 +347,277 @@ export type StructuredRenderer<T> = (record: T) => {
   readonly degradation?: { readonly degraded: boolean; readonly notice?: string } | undefined;
 };
 
+/**
+ * S003/t4 — DOCS_DIAGRAM_SOURCE. The FOURTH member of the DOCS_*_SOURCE family,
+ * inlined into the same single nonce'd script as its three siblings, so the strict
+ * CSP is not widened by one character.
+ *
+ * Draws the design diagram FROM THE STRUCTURED RECORD, never from the generated
+ * companion file (a sampled one is 3,370,719 bytes of foreign scripted HTML). SVG
+ * is built element by element with `createElementNS` and every label written via
+ * `textContent`, so this file injects NO markup at all and the surface's single
+ * injection site — the markdown body's guarded `marked.parse` — stays single.
+ * That matters more in SVG than in HTML: SVG is XML, so an unescaped `<` in a
+ * class name would be a parse hazard if markup were ever built by concatenation.
+ *
+ * INERT in this commit: the functions are defined and nothing calls them, so the
+ * rendered surface is unchanged. t6 adds the one call that mounts a slot.
+ *
+ * `dg` prefix throughout — a fifth source string arrives with S004 and all of
+ * them share one scope.
+ */
+export const DOCS_DIAGRAM_SOURCE =
+  // The LinkML scalar types a slot `range` may name to still be an ATTRIBUTE.
+  // MUST match er.ts:68-73 exactly: parity with the daemon derivation is the
+  // property that keeps the in-pane picture and the generated companion telling
+  // the same story about the same model, and a drift here changes an edge into an
+  // attribute silently.
+  `var DG_SCALARS={string:1,integer:1,boolean:1,float:1,double:1,decimal:1,` +
+  `time:1,date:1,datetime:1,date_or_datetime:1,` +
+  `uri:1,uriorcurie:1,curie:1,ncname:1,objectidentifier:1,nodeidentifier:1,` +
+  `jsonpointer:1,jsonpath:1,sparqlpath:1};` +
+  `var DG_NS='http://www.w3.org/2000/svg';` +
+  // Geometry. Fixed numbers only — no value here is ever derived from record
+  // text, which is half of why no attribute can carry injected content.
+  `var DG_COLS=3,DG_BOXW_MIN=180,DG_ROWH=16,DG_HEADH=24,DG_PADX=56,DG_PADY=52,DG_MARGIN=16;` +
+  // Monospace advance widths at the two font sizes the box uses. Approximate by
+  // design: the webview cannot measure text without a layout pass, and a
+  // measurement-dependent layout would stop being deterministic. Slightly
+  // generous, so a row is padded rather than clipped.
+  `var DG_CH_ROW=6.75,DG_CH_HEAD=8.4;` +
+
+  // --- crow's-foot token -----------------------------------------------------
+  // The daemon's crowsFootToken (er.ts:195-201), rule for rule: an explicit
+  // minimum_cardinality wins over `required`, an explicit maximum_cardinality over
+  // `multivalued`, and anything above 1 (or unbounded) reads as 'many'.
+  `function dgCrowsFoot(slot){` +
+  `var min=(slot&&typeof slot.minimum_cardinality==='number')?slot.minimum_cardinality:((slot&&slot.required===true)?1:0);` +
+  `var maxRaw=(slot&&typeof slot.maximum_cardinality==='number')?slot.maximum_cardinality:((slot&&slot.multivalued===true)?Infinity:1);` +
+  `var lower=min>=1?'one':'zero';` +
+  `var upper=(maxRaw===Infinity||maxRaw>1)?'many':'one';` +
+  `return lower+'-to-'+upper;}` +
+
+  // --- the ER derivation -----------------------------------------------------
+  // Re-implements erDefinitionToIr (er.ts:273-324). The duplication is
+  // UNAVOIDABLE — this runs in a webview and cannot import the daemon module — so
+  // the mitigation is a parity test pinning both against shared fixtures with the
+  // DAEMON as the authority, not a comment promising they agree.
+  //
+  // Rules, identical to the daemon's: classes in sorted order, slots in sorted
+  // order; a slot whose `range` names a DEFINED CLASS becomes an edge; every other
+  // slot folds into the box's attribute list as `name: range`, or the bare name
+  // when the range is empty.
+  //
+  // ONE DELIBERATE DIVERGENCE: a range that is neither a defined class nor a known
+  // scalar is a DANGLING reference, and the daemon THROWS ErDefinitionError there
+  // (er.ts:291-294). The client must not: the daemon is generating an artifact and
+  // owes referential integrity, while this code owes the reviewer whatever it can
+  // legibly show. So the dangling slot loses the relationship it would have implied
+  // and is listed as a plain attribute — every box and every other edge still draw.
+  `function dgDeriveEr(rec){` +
+  `var classes=(rec&&typeof rec==='object'&&!(rec instanceof Array)&&rec.classes&&typeof rec.classes==='object'&&!(rec.classes instanceof Array))?rec.classes:null;` +
+  `if(!classes)return null;` +
+  `var names=[];for(var k in classes){if(Object.prototype.hasOwnProperty.call(classes,k))names.push(k);}` +
+  `if(names.length===0)return null;` +
+  `names.sort();` +
+  `var defined={};for(var n=0;n<names.length;n++)defined[names[n]]=1;` +
+  `var nodes=[],edges=[];` +
+  `for(var i=0;i<names.length;i++){` +
+  `var cn=names[i];var cls=classes[cn]||{};` +
+  `var attrs=(cls&&typeof cls==='object'&&cls.attributes&&typeof cls.attributes==='object'&&!(cls.attributes instanceof Array))?cls.attributes:{};` +
+  `var slotNames=[];for(var sk in attrs){if(Object.prototype.hasOwnProperty.call(attrs,sk))slotNames.push(sk);}` +
+  `slotNames.sort();` +
+  `var attrList=[],rels=[];` +
+  `for(var j=0;j<slotNames.length;j++){` +
+  `var sn=slotNames[j];var slot=attrs[sn];` +
+  `if(!slot||typeof slot!=='object'){attrList.push({name:sn,range:''});continue;}` +
+  `var range=(typeof slot.range==='string')?slot.range:'';` +
+  // A defined class -> a relationship edge.
+  `if(range.length>0&&defined[range]===1){rels.push({name:sn,range:range,slot:slot});continue;}` +
+  // Scalar, empty, OR DANGLING -> an attribute. The dangling case is where the
+  // daemon throws and this does not; see the note above.
+  `attrList.push({name:sn,range:range,identifier:slot.identifier===true,dangling:(range.length>0&&DG_SCALARS[range]!==1)});}` +
+  `var relRows=[];for(var q=0;q<rels.length;q++){relRows.push({name:rels[q].name,to:rels[q].range,token:dgCrowsFoot(rels[q].slot)});}` +
+  `nodes.push({id:cn,attrs:attrList,rels:relRows});` +
+  `for(var r=0;r<rels.length;r++){` +
+  `var rel=rels[r];` +
+  `edges.push({id:cn+'.'+rel.name+'->'+rel.range+':'+dgCrowsFoot(rel.slot),from:cn,to:rel.range,label:rel.name,token:dgCrowsFoot(rel.slot)});}}` +
+  `return {nodes:nodes,edges:edges};}` +
+
+  // --- layout ----------------------------------------------------------------
+  // Driven by the SORTED NODE LIST on a fixed grid — never by walking edges. That
+  // is a correctness property, not a style choice: a cyclic class graph and a
+  // self-referencing slot are both ordinary data models (a tree, a parent/child
+  // graph), and an edge-driven placement would fail to terminate on either.
+  // Deterministic by construction: no randomness, no measurement, no reflow, so
+  // the same record always draws the same picture and a visual check is repeatable.
+  `function dgRowText(nd){` +
+  `var rows=[],k;` +
+  `for(k=0;k<nd.attrs.length;k++){var a=nd.attrs[k];rows.push(a.range.length>0?(a.name+': '+a.range):a.name);}` +
+  `for(k=0;k<nd.rels.length;k++){var r=nd.rels[k];rows.push(r.name+' → '+r.to+' ('+r.token+')');}` +
+  `return rows;}` +
+  `function dgLayout(model){` +
+  `var pos={},i,k;` +
+  // Each box is sized to ITS OWN content. A fixed width clipped the longest
+  // relationship rows straight through the border on the first visual read —
+  // visible in a screenshot, invisible to every assertion in the suite.
+  `var want={};` +
+  `for(i=0;i<model.nodes.length;i++){` +
+  `var nd=model.nodes[i];var rows=dgRowText(nd);var longest=0;` +
+  `for(k=0;k<rows.length;k++)longest=Math.max(longest,rows[k].length);` +
+  `want[nd.id]=Math.max(DG_BOXW_MIN,Math.ceil(longest*DG_CH_ROW)+20,Math.ceil(nd.id.length*DG_CH_HEAD)+20);}` +
+  // Column width is the widest box in that column, so columns stay aligned and
+  // two boxes can never overlap however uneven their content.
+  `var colW={};` +
+  `for(i=0;i<model.nodes.length;i++){var c=i%DG_COLS;colW[c]=Math.max(colW[c]||0,want[model.nodes[i].id]);}` +
+  `var colX={},ax=DG_MARGIN,cc=0;` +
+  `while(colW[cc]!==undefined){colX[cc]=ax;ax+=colW[cc]+DG_PADX;cc++;}` +
+  `for(i=0;i<model.nodes.length;i++){` +
+  `var n2=model.nodes[i];var col=i%DG_COLS,row=Math.floor(i/DG_COLS);` +
+  `var h=DG_HEADH+Math.max(n2.attrs.length+n2.rels.length,1)*DG_ROWH+8;` +
+  `pos[n2.id]={x:colX[col],y:0,w:colW[col],h:h,col:col,row:row};}` +
+  // Row heights are the max box height in that row, so rows never overlap however
+  // uneven the attribute counts are.
+  `var rowH={};for(i=0;i<model.nodes.length;i++){var p=pos[model.nodes[i].id];rowH[p.row]=Math.max(rowH[p.row]||0,p.h);}` +
+  `var rowY={},acc=DG_MARGIN,rr=0;` +
+  `while(rowH[rr]!==undefined){rowY[rr]=acc;acc+=rowH[rr]+DG_PADY;rr++;}` +
+  `for(i=0;i<model.nodes.length;i++){var q=pos[model.nodes[i].id];q.y=rowY[q.row];}` +
+  `return {pos:pos,width:ax-DG_PADX+DG_MARGIN,height:acc-DG_PADY+DG_MARGIN};}` +
+
+  // --- SVG primitives --------------------------------------------------------
+  // createElementNS for every element, setAttribute for GEOMETRY ONLY (numbers and
+  // fixed class names), textContent for every label. No record text ever reaches an
+  // attribute, and no markup string is built anywhere in this file.
+  `function dgEl(name,cls){var e=document.createElementNS(DG_NS,name);if(cls)e.setAttribute('class',cls);return e;}` +
+  `function dgText(x,y,cls,s){var t=dgEl('text',cls);t.setAttribute('x',String(x));t.setAttribute('y',String(y));t.textContent=String(s);return t;}` +
+  `function dgLine(x1,y1,x2,y2,cls){var l=dgEl('line',cls);l.setAttribute('x1',String(x1));l.setAttribute('y1',String(y1));l.setAttribute('x2',String(x2));l.setAttribute('y2',String(y2));return l;}` +
+
+  // Clip the segment between two box centres to the boxes' borders, so an edge
+  // visibly STARTS and ENDS at the two boxes it names rather than vanishing under
+  // them — the difference between a readable diagram and a pile of lines.
+  `function dgEdgePoint(box,tx,ty){` +
+  `var cx=box.x+box.w/2,cy=box.y+box.h/2;var dx=tx-cx,dy=ty-cy;` +
+  `if(dx===0&&dy===0)return {x:cx,y:cy};` +
+  `var sx=dx===0?Infinity:(box.w/2)/Math.abs(dx),sy=dy===0?Infinity:(box.h/2)/Math.abs(dy);` +
+  `var s=Math.min(sx,sy);return {x:cx+dx*s,y:cy+dy*s};}` +
+
+  // --- the ER renderer -------------------------------------------------------
+  // One box per class carrying its attributes, one arrow per class-ranged slot
+  // labelled with the slot name and the daemon's crow's-foot token. Returns the
+  // sc2 StructuredRenderer shape: `{ el, degradation? }`.
+  `function dgRenderEr(rec){` +
+  `var model=dgDeriveEr(rec);if(!model)return null;` +
+  `var lay=dgLayout(model);` +
+  `var svg=dgEl('svg','insrc-dg');` +
+  `svg.setAttribute('viewBox','0 0 '+lay.width+' '+lay.height);` +
+  `svg.setAttribute('width','100%');` +
+  `svg.setAttribute('preserveAspectRatio','xMinYMin meet');` +
+  // Edges first so boxes paint over the line ends, which keeps a label from being
+  // crossed by the edge it belongs to.
+  // Lines carry the TOPOLOGY only. The captions live inside the source box (see
+  // the relationship rows below) rather than floating on the line.
+  //
+  // That is a correction, not a preference. The first visual read of this renderer
+  // showed captions swallowed by boxes that painted after them; moving the captions
+  // on top then showed them covering the boxes' own attribute rows, and three
+  // captions leaving one box still smeared into each other. A caption anchored
+  // inside its box cannot collide with anything by construction, and the reviewer
+  // reads the relationship next to the entity that owns it.
+  `var g,i;` +
+  `for(i=0;i<model.edges.length;i++){` +
+  `var e=model.edges[i];var a=lay.pos[e.from],b=lay.pos[e.to];if(!a||!b)continue;` +
+  `g=dgEl('g','insrc-dg-edge');` +
+  `if(e.from===e.to){` +
+  // A self-reference draws as a visible loop on its own box rather than a
+  // zero-length line, so the relationship is not silently lost.
+  `var lx=a.x+a.w,ly=a.y+a.h/2;` +
+  `g.appendChild(dgLine(lx,ly,lx+22,ly,'insrc-dg-edge-line'));` +
+  `g.appendChild(dgLine(lx+22,ly,lx+22,ly-20,'insrc-dg-edge-line'));` +
+  `g.appendChild(dgLine(lx+22,ly-20,lx,ly-20,'insrc-dg-edge-line'));` +
+  `}else{` +
+  `var p1=dgEdgePoint(a,b.x+b.w/2,b.y+b.h/2),p2=dgEdgePoint(b,a.x+a.w/2,a.y+a.h/2);` +
+  `g.appendChild(dgLine(p1.x,p1.y,p2.x,p2.y,'insrc-dg-edge-line'));}` +
+  `svg.appendChild(g);}` +
+  `for(i=0;i<model.nodes.length;i++){` +
+  `var nd=model.nodes[i];var p=lay.pos[nd.id];` +
+  `g=dgEl('g','insrc-dg-node');` +
+  `var rect=dgEl('rect','insrc-dg-box');` +
+  `rect.setAttribute('x',String(p.x));rect.setAttribute('y',String(p.y));` +
+  `rect.setAttribute('width',String(p.w));rect.setAttribute('height',String(p.h));` +
+  `rect.setAttribute('rx','4');` +
+  `g.appendChild(rect);` +
+  `g.appendChild(dgLine(p.x,p.y+DG_HEADH,p.x+p.w,p.y+DG_HEADH,'insrc-dg-box-rule'));` +
+  `g.appendChild(dgText(p.x+10,p.y+17,'insrc-dg-class',nd.id));` +
+  `for(var j=0;j<nd.attrs.length;j++){` +
+  `var at=nd.attrs[j];` +
+  `var label=at.range.length>0?(at.name+': '+at.range):at.name;` +
+  `if(at.identifier)label=label+'  (id)';` +
+  `g.appendChild(dgText(p.x+10,p.y+DG_HEADH+14+j*DG_ROWH,at.dangling?'insrc-dg-attr insrc-dg-attr-dangling':'insrc-dg-attr',label));}` +
+  // The relationships this class owns, named inside the box that owns them, with
+  // the daemon's crow's-foot token. The arrow on the canvas shows WHERE it goes;
+  // this row says what it is called and how many.
+  `for(var rI=0;rI<nd.rels.length;rI++){` +
+  `var rl=nd.rels[rI];` +
+  `g.appendChild(dgText(p.x+10,p.y+DG_HEADH+14+(nd.attrs.length+rI)*DG_ROWH,'insrc-dg-rel',` +
+  `rl.name+' \u2192 '+rl.to+' ('+rl.token+')'));}` +
+  `svg.appendChild(g);}` +
+  `return {el:svg};}` +
+
+  // --- the slot factory ------------------------------------------------------
+  // sc4's four-combination gate, stated as a table because ac2 reads on the REF
+  // while the HLD sketch read on the RECORD, and the two disagree in both
+  // directions. Resolved at the approval gate as RECORD GATES CONTENT:
+  //
+  //   ref absent  + record absent   -> 'absent'      (zero DOM work)
+  //   ref present + record present  -> 'rendered'
+  //   ref present + record absent   -> 'unshowable'  (named, with the link-out)
+  //   ref absent  + record present  -> 'rendered'    (the design exists; show it)
+  //
+  // The record decides what can be DRAWN; the ref decides whether a failure must be
+  // DECLARED, because a ref is the only evidence a visual was meant to exist.
+  // Dispatch is on the RECORD, never on the ref's kind — three daemon renderers all
+  // stamp 'diagram-mermaid', so the kind cannot identify its own source record.
+  `var DG_LABEL_DEFAULT='Entity model';` +
+  // Only a DIAGRAM ref is this factory's business. A ux-mock ref belongs to the
+  // experience slot (S004) and is ignored here, which is what keeps a document
+  // carrying both from having its arrangement pre-empted by s3.
+  `function dgPickRef(companions){` +
+  `if(!companions||!(companions instanceof Array))return undefined;` +
+  `for(var i=0;i<companions.length;i++){var c=companions[i];` +
+  `if(c&&typeof c==='object'&&(c.kind==='diagram-mermaid'||c.kind==='diagram-html'))return c;}` +
+  `return undefined;}` +
+  `function dgLinkOut(ref){` +
+  `if(!ref||typeof ref.relPath!=='string'||ref.relPath.length===0)return undefined;` +
+  `return {relPath:ref.relPath,title:(typeof ref.title==='string'&&ref.title.length>0)?ref.title:ref.relPath};}` +
+  `function dgBuildDiagramSlot(record,ref,anchorSlug){` +
+  // THE ABSENT GATE COMES FIRST and returns before a single element is created, so
+  // "no slot" is provable as the ABSENCE OF DOM ACTIVITY rather than as the absence
+  // of something visible. This is the dominant path: 2 of 634 ledger bodies carry
+  // an erDefinition.
+  `var drawable=dgDeriveEr(record)!==null;` +
+  `if(!drawable&&!ref)return {state:'absent'};` +
+  `var label=(ref&&typeof ref.title==='string'&&ref.title.length>0)?ref.title:DG_LABEL_DEFAULT;` +
+  `var link=dgLinkOut(ref);` +
+  // lc1 — `diagram-html` is DECLARED in the companion union and produced by
+  // nothing. It routes to the stated failure rather than falling through silently,
+  // so no companion kind can ever render as nothing if a producer turns it on.
+  `if(ref&&ref.kind==='diagram-html'){` +
+  `return {state:'unshowable',kind:'diagram',label:label,reason:'this companion kind (diagram-html) cannot be drawn in the review pane',linkOut:link,anchorSlug:anchorSlug};}` +
+  `if(!drawable){` +
+  // A ref with no record the client can draw from — today the MAJORITY case for
+  // diagram refs. The reason NAMES what was referenced instead of failing
+  // generically, because a silent omission is indistinguishable from a document
+  // that legitimately has no diagram.
+  `return {state:'unshowable',kind:'diagram',label:label,reason:'its source record is not available to this surface',linkOut:link,anchorSlug:anchorSlug};}` +
+  // A renderer throw must never take the document down over an adjunct, so the
+  // whole construction is wrapped and degrades to the same stated failure.
+  `var built=null;try{built=dgRenderEr(record);}catch(err){built=null;}` +
+  `if(!built||!built.el){` +
+  `return {state:'unshowable',kind:'diagram',label:label,reason:'the design record could not be drawn',linkOut:link,anchorSlug:anchorSlug};}` +
+  `var out={state:'rendered',kind:'diagram',label:label,body:built.el,anchorSlug:anchorSlug};` +
+  `if(link)out.linkOut=link;` +
+  `return out;}`;
+
 // ---------------------------------------------------------------------------
 // sc4 (S003/t3) — THE COMPANION VISUAL SLOT. Owned by s3, consumed by s3 and s4.
 //
@@ -683,6 +954,22 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-fr-stmt{display:block;color:var(--it-fg);font-family:var(--it-font);}` +
       `.insrc-fr-why{color:var(--it-dim);font-family:var(--it-font);font-size:12px;margin-top:3px;}` +
       `.insrc-fr-group-label{color:var(--it-fg);font-family:var(--it-font);font-weight:600;margin:12px 0 2px;}` +
+      // S003/t4 — the diagram. `--it-*` variables ONLY, for the same reason the FR
+      // block uses them: an undefined var() inside a shorthand invalidates the whole
+      // declaration, which is how a border or a colour vanishes silently.
+      //
+      // SVG does NOT inherit `fill`/`stroke` from a font colour, so a box with no
+      // explicit fill paints solid black and swallows its own labels. These rules are
+      // therefore load-bearing rather than decorative, and t4 reads a screenshot to
+      // confirm it — no assertion in the suite can see a black rectangle.
+      `.insrc-dg{display:block;max-width:100%;margin:8px 0;overflow:visible;}` +
+      `.insrc-dg-box{fill:var(--it-bg);stroke:var(--it-accent);stroke-width:1;}` +
+      `.insrc-dg-box-rule{stroke:var(--it-accent);stroke-width:1;opacity:0.55;}` +
+      `.insrc-dg-class{fill:var(--it-accent);font-family:var(--it-font);font-size:13px;font-weight:600;}` +
+      `.insrc-dg-attr{fill:var(--it-fg);font-family:var(--it-font);font-size:11px;}` +
+      `.insrc-dg-attr-dangling{fill:var(--it-dim);font-style:italic;}` +
+      `.insrc-dg-edge-line{stroke:var(--it-dim);stroke-width:1;}` +
+      `.insrc-dg-rel{fill:var(--it-dim);font-family:var(--it-font);font-size:11px;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
@@ -711,6 +998,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // S002/t2 — inlined after its two siblings, since its placement step (t5)
       // runs after both. INERT at t2: defined, nothing calls it yet.
       DOCS_FR_SOURCE +
+      // S003/t4 — the fourth source string joins the SAME single nonce'd script.
+      // INERT: it defines the derivation, the SVG writer and the slot factory, and
+      // nothing calls them yet, so the rendered surface is unchanged by this commit.
+      DOCS_DIAGRAM_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be

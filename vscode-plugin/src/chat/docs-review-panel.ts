@@ -15,6 +15,8 @@ import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } 
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary } from './protocol.js';
 import type { ChatPanelChannel, ChatPanelLogger } from './chat-panel.js';
 import type { DocsReviewClient } from './docs-review-client.js';
+import { MARKED_SRC } from './webview-marked.js';
+import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 
 /**
  * The artifact kinds the daemon's resolveComment locator (parseArtifactId) supports —
@@ -40,6 +42,66 @@ export interface DocsReviewHost {
 
 const VIEW_TYPE = 'insrc.docsReviewPanel';
 const NOOP_LOGGER: ChatPanelLogger = { warn: () => {}, error: () => {} };
+
+/** The ac3 notice shown beside the full body text when the structured render could
+ *  not be produced. Degraded means PLAINER, never partial. */
+export const DEGRADE_NOTICE =
+  'structured view unavailable — showing the document as plain text';
+
+/**
+ * sc2 (S001/t4) — the webview-side body renderer, as source so the shell can
+ * inline it into its single nonce'd script AND the tests can `eval` it against a
+ * stub DOM. Exported for that second reason: this repo has shipped a webview
+ * contract that string assertions pronounced green while the behaviour was
+ * wrong, so the fallback path is proved by RUNNING it, not by grepping for it.
+ *
+ * `guardMd` is the sanctioned scrub, carried verbatim from render-registry.ts:321
+ * (drop non-http(s) hrefs, open the rest safely, strip image sources). The parse
+ * call mirrors render-registry.ts:332 including `headerIds:false` — heading
+ * identity comes from sc3's deriveSectionIndex, never from the renderer.
+ *
+ * `renderMarkdownBody` returns `{ el, degradation }` per the ratified widening
+ * (not the HLD sketch's bare HTMLElement), so ac3's "the reviewer is told the
+ * structured presentation was unavailable" is carried BY THE CONTRACT instead of
+ * re-inferred by each caller. A parse throw and a missing vendored global take
+ * the SAME code path and produce the SAME message — one path, one notice — and
+ * either way the FULL body text is present: degraded is plainer, never partial.
+ */
+export const DOCS_BODY_RENDERER_SOURCE =
+  `var DEGRADE_NOTICE=${JSON.stringify(DEGRADE_NOTICE)};` +
+  `function guardMd(el){try{` +
+  `var as=el.querySelectorAll('a');for(var i=0;i<as.length;i++){var hr=as[i].getAttribute('href')||'';if(/^https?:/i.test(hr)){as[i].setAttribute('rel','noopener noreferrer');as[i].setAttribute('target','_blank');}else{as[i].removeAttribute('href');}}` +
+  `var ig=el.querySelectorAll('img');for(var j=0;j<ig.length;j++){ig[j].removeAttribute('src');ig[j].removeAttribute('srcset');}` +
+  `}catch(e){}}` +
+  `function renderMarkdownBody(el,src){var s=src||'';` +
+  `try{` +
+  `if(typeof marked==='undefined'||!marked||!marked.parse)throw new Error('vendored markdown renderer unavailable');` +
+  `el.innerHTML=marked.parse(s,{gfm:true,breaks:false,headerIds:false,mangle:false});` +
+  `guardMd(el);` +
+  `el.className='insrc-md';` +
+  `return {el:el,degradation:{degraded:false}};` +
+  `}catch(e){` +
+  `el.className='insrc-docs-plain';` +
+  `el.textContent=s;` +
+  `return {el:el,degradation:{degraded:true,notice:DEGRADE_NOTICE}};` +
+  `}}`;
+
+/**
+ * sc2 (S001/t4) — the renderer contract s2, s3 and s4 build their structured
+ * renderers against. PUBLISHED HERE AND IMPLEMENTED NOWHERE in s1: this Story
+ * renders only the markdown body, so the type exists so the later Stories share
+ * one shape rather than inventing three.
+ *
+ * Every implementation MUST build DOM and set textContent — it may NOT assign
+ * markup. That is what keeps the surface's single injection site single as
+ * s2/s3/s4 land: the markdown body is the one place markup is ever injected.
+ */
+export type StructuredRenderer<T> = (record: T) => {
+  /** The constructed element, built by DOM construction with textContent only. */
+  readonly el: unknown;
+  /** Absent/false unless the record could not be presented structurally. */
+  readonly degradation?: { readonly degraded: boolean; readonly notice?: string } | undefined;
+};
 
 /** Escape a value for safe embedding in an HTML attribute / the CSP meta content. */
 function attr(v: string): string {
@@ -163,6 +225,15 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const renderShell = (): string => {
     const nonce = genNonce();
     const style = renderStyle(theme);
+    // The markdown element rules the rendered body needs. renderStyle emits CSS
+    // custom properties and surface classes only — no element rules — and the
+    // .insrc-md stylesheet is not in scope on this surface, so they come from the
+    // ONE shared rule set (markdown-style.ts) with this surface's own tokens.
+    const mdStyle = `<style>${renderMarkdownStyle(DOCS_REVIEW_MARKDOWN_TOKENS)}` +
+      // The plain-text fallback container: preserve the document's own newlines
+      // (it is markdown source at that point) without the <pre> geometry.
+      `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;font-family:var(--it-font);color:var(--it-fg);}` +
+      `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
     const listCls = surfaceClass('history-dropdown');
@@ -183,7 +254,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `if(!(items&&items.length)){var e=document.createElement('div');e.className='insrc-diff-ctx';e.textContent='no pending artifacts';listEl.appendChild(e);}}` +
       // docs-content: render the verbatim body + open questions + block banner + the
       // approve/request-changes controls (controls hidden while blocked).
-      `function renderContent(m){bodyEl.textContent=m.markdown||'';` +
+      DOCS_BODY_RENDERER_SOURCE +
+      `function renderContent(m){renderMarkdownBody(bodyEl,m.markdown||'');` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
       `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +
@@ -200,14 +272,25 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-      `${style}</head>` +
-      `<body class="${cls}">` +
+      `${style}${mdStyle}</head>` +
+      // The `--it-*` tokens renderTerminalStyle emits are scoped to `.insrc-term`,
+      // so the surface div has to sit INSIDE an .insrc-term element to inherit
+      // them — exactly as the reviewed mock does
+      // (mocks/docs-review.html: <body class="insrc-term"><div class="insrc-term-review">).
+      // The shell previously put the surface class straight on <body>, leaving
+      // every var(--it-…) in this pane undefined.
+      `<body class="insrc-term">` +
+      `<div class="${cls}">` +
       `<div id="insrc-docs-list" class="${listCls}" aria-label="pending artifacts"></div>` +
-      `<pre id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></pre>` +
+      // A DIV, not a <pre>: marked emits newline-separated block elements, so a
+      // preformatted container would render a literal blank line between every
+      // block and set headings in the monospace face at body size.
+      `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
       `<textarea id="insrc-docs-note" rows="2" aria-label="request-changes note"></textarea>` +
       `<div id="insrc-docs-actions"></div>` +
-      `<script nonce="${nonce}">${bootstrap}</script></body></html>`
+      `</div>` +
+      `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`
     );
   };
 

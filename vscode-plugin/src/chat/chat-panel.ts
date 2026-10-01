@@ -16,6 +16,7 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 // S001 (bugfix): the bundled `marked` UMD (committed generated string) — evaluated first in the
 // one nonce'd webview script so `marked.parse` is available to the render registry (no CDN; CSP-safe).
 import { MARKED_SRC } from './webview-marked.js';
+import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import type { ProviderRegistry, ProviderId } from './cli-adapter.js';
 // S001 (bugfix): a value import — the pure classifier that tells a tool-permission gate apart from
@@ -362,24 +363,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-toolrow__cmd{color:var(--fg-strong);white-space:pre-wrap;word-break:break-word;font-family:var(--font);}` +
       `.insrc-toolrow__prompt{color:var(--accent);}` +
       // rendered markdown reads as "rendered": the sans face, mock spacing, cyan inline code chips.
-      // S001 (bugfix): styles target `marked`'s HTML output tags (the .insrc-md container wraps it).
-      `.insrc-md{font-family:var(--sans);color:var(--fg);font-size:13.5px;line-height:1.6;}` +
-      `.insrc-md>*:first-child{margin-top:0;}.insrc-md>*:last-child{margin-bottom:0;}` +
-      `.insrc-md h1,.insrc-md h2,.insrc-md h3,.insrc-md h4,.insrc-md h5,.insrc-md h6{font-family:var(--sans);color:var(--fg-strong);font-weight:600;margin:8px 0 6px;font-size:14px;}` +
-      `.insrc-md p{margin:0 0 8px;}` +
-      `.insrc-md ul,.insrc-md ol{margin:0 0 8px;padding-left:20px;}.insrc-md li{margin:2px 0;}.insrc-md li>p{margin:0;}` +
-      // GFM tables (were rendering as raw pipes). Wide tables scroll in place inside the bubble.
-      `.insrc-md table{border-collapse:collapse;margin:4px 0 8px;font-size:12.5px;display:block;overflow-x:auto;max-width:100%;}` +
-      `.insrc-md th,.insrc-md td{border:1px solid var(--border);padding:4px 9px;text-align:left;vertical-align:top;}` +
-      `.insrc-md th{background:var(--bg-inset);color:var(--fg-strong);font-weight:600;white-space:nowrap;}` +
-      `.insrc-md blockquote{border-left:2px solid var(--border-lit);margin:4px 0 8px;padding:2px 0 2px 10px;color:var(--muted);}` +
-      // inline code = a chip; code inside a fenced block resets that chip styling.
-      `.insrc-md code{font-family:var(--font);font-size:12px;background:#0a0d14;border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:var(--accent2);}` +
-      `.insrc-md pre{background:#0a0d14;border:1px solid var(--border);border-radius:6px;padding:8px 10px;overflow-x:auto;font-family:var(--font);margin:4px 0 8px;}` +
-      `.insrc-md pre code{background:none;border:none;padding:0;color:var(--fg);font-size:12.5px;}` +
-      `.insrc-md a{color:var(--accent2);text-decoration:underline;}` +
-      `.insrc-md hr{border:none;border-top:1px solid var(--border);margin:8px 0;}` +
-      `.insrc-md strong{color:var(--fg-strong);}.insrc-md em{font-style:italic;color:var(--fg-strong);}` +
+      // The markdown element rules now live in ONE place — markdown-style.ts — because
+      // the docs-review surface renders marked output too (S001/t4). Extracted, not
+      // copied: emitted output here is byte-identical to the previous inline rules,
+      // verified by a dedicated test, and this surface keeps its own `:root` palette.
+      renderMarkdownStyle(CHAT_MARKDOWN_TOKENS) +
       // JSON widget: a bordered code surface with key/value/punct tones (mock .jsonw).
       `.insrc-json{font-family:var(--font);border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;font-size:12.5px;line-height:1.55;}` +
       `.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--accent);}.insrc-json .insrc-json-punct{color:var(--dim);}` +

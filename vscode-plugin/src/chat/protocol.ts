@@ -15,6 +15,12 @@ import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
 import type { TranscriptEntry, ChatSummary } from './session-store.js';
 import type { SectionIndex } from './docs-sections.js';
+// S002 sc1: the docs-content variant types its functional record by INDEXING off
+// DocsContent (which itself indexes off the daemon's ArtifactReviewView), so the
+// record's shape is declared ONCE in the daemon and the three layers cannot drift.
+// `import type` is erased at compile, so the protocol<->client type cycle is not a
+// runtime cycle and this file stays type-only / vscode-free.
+import type { DocsContent } from './docs-review-client.js';
 
 /**
  * sc2 (S001) — whether the structured presentation was unavailable, and the
@@ -83,6 +89,12 @@ export type HostToWebview =
       // still shows the full document and stays approvable; `blocked` means the
       // reviewer never saw the body at all.
       readonly degradation?: RenderDegradation | undefined;
+      // S002 (additive, SAME message — no new message type, exactly as t5 added
+      // `sections` and `degradation` above). The artifact's functional record,
+      // forwarded verbatim from DocsContent. ABSENT KEY when the document carries
+      // none — which is the common case — so `=== undefined` means the same thing
+      // on both sides of the postMessage boundary as it does across the IPC.
+      readonly functionalDefinition?: DocsContent['functionalDefinition'];
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

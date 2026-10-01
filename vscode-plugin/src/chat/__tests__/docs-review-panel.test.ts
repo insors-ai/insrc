@@ -786,3 +786,136 @@ test('t6: a DEGRADED body renders NO chooser — entries whose targets do not ex
   assert.equal(rendered, false);
   assert.equal(host.children.length, 0);
 });
+
+// ---------------------------------------------------------------------------
+// S002/t1 — the functional record travels from the daemon response to the
+// webview on the EXISTING docs-content message. Data-only: after this task the
+// webview has no code that reads the field, and that is asserted rather than
+// assumed, so "t1 changed nothing a reviewer sees" is a check and not a claim.
+// ---------------------------------------------------------------------------
+
+/** A realistic record, shaped like the one this Epic's own DEF carries: doc-level
+ *  requirements first, then per-item ones bound to a story via itemRef. */
+const FR_RECORD = {
+  requirements: [
+    { id: 'E20260929bfe98ff7:FR001', statement: 'A reviewer sees discrete outcomes.', scope: 'doc' as const },
+    { id: 'E20260929bfe98ff7:S002:FR002', statement: 'Each shows its identifier, unchanged.', scope: 'item' as const, itemRef: 's2' },
+  ],
+};
+
+/** Open a document whose client returns `content`, and give back the posted payload. */
+async function openWithContent(content: DocsContent): Promise<Record<string, unknown>> {
+  const fc = fakeChannel();
+  const { client } = fakeClient({ content: () => content });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'posted docs-content for the opened artifact');
+  return msg!.payload;
+}
+
+test('t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped', async () => {
+  const payload = await openWithContent({
+    markdown: '# Doc', openQuestions: [], blocked: false, functionalDefinition: FR_RECORD,
+  });
+
+  // SAME REFERENCE, not a deep-equal copy. Identity is the point: anything that
+  // rebuilt the record on the way through would be a place an identifier could
+  // change, which is exactly what this Story exists to prevent.
+  assert.equal(payload['functionalDefinition'], FR_RECORD,
+    'the record is forwarded by reference — no clone, no reshaping, no defaulting');
+  // And nothing was added to or removed from it in transit.
+  assert.deepEqual(payload['functionalDefinition'], FR_RECORD);
+});
+
+test("t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)", async () => {
+  const payload = await openWithContent({ markdown: '# Doc', openQuestions: [], blocked: false });
+
+  // ABSENT KEY, not a key holding undefined. sc1 established this convention at
+  // the IPC boundary; t1 carries it one hop further so `=== undefined` means the
+  // same thing on both sides of postMessage. A `{ functionalDefinition: undefined }`
+  // spread would pass a `=== undefined` test while failing this one.
+  assert.equal('functionalDefinition' in payload, false,
+    'absence is an ABSENT KEY, not an undefined-valued one');
+  // Guard against the weaker assertion being mistaken for this one.
+  assert.equal(payload['functionalDefinition'], undefined);
+  // The message is otherwise unchanged — the dominant path (630 of 634 ledger
+  // artifacts carry no record) posts exactly what it posted before.
+  assert.equal(payload['markdown'], '# Doc');
+  assert.equal(payload['blocked'], false);
+});
+
+test('t1: a content() rejection still posts blocked:true and carries no record', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({
+    content: () => { throw new Error('daemon unreachable'); },
+  });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client, logger: { warn: () => {}, error: () => {} } });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'posted docs-content for the failed open');
+
+  assert.equal(msg!.payload['blocked'], true, 'the fail-closed arm is unchanged');
+  // The strongest safety property on this surface: a reviewer who never saw the
+  // body is never shown a tidy, authoritative-looking list of commitments
+  // extracted from it. Approve is already suppressed; the record must be absent too.
+  assert.equal('functionalDefinition' in msg!.payload, false,
+    'a document the reviewer could not read carries no requirements');
+});
+
+test('t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const proto = readFileSync(join(here, '..', 'protocol.ts'), 'utf8');
+
+  // Scoped to the docs-content variant so a match elsewhere in the file cannot
+  // satisfy this check (the file declares many variants).
+  const variant = proto.slice(proto.indexOf("readonly type: 'docs-content'"));
+  const decl = variant.slice(0, variant.indexOf('\n    }'));
+
+  assert.match(decl, /readonly functionalDefinition\?: DocsContent\['functionalDefinition'\];/,
+    'the annotation is the INDEXED form, so protocol -> client -> daemon stay one declaration deep');
+  // A hand-copied shape is the failure this guards: it would compile and look
+  // right while silently decoupling from the daemon's record.
+  assert.doesNotMatch(decl, /functionalDefinition\?:\s*\{/,
+    'the record shape is never restated inline');
+  assert.doesNotMatch(decl, /functionalDefinition\?:\s*FunctionalDefinition/,
+    'nor imported directly from the daemon type, which would bypass DocsContent');
+});
+
+test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere', () => {
+  // This REPLACES the vacuous "nothing changed" check the plan critique rejected.
+  // It compares against a CAPTURED baseline for a fixed nonce, so it genuinely
+  // fails if this task touches renderShell, the bootstrap or the mdStyle block.
+  const render = (): string => {
+    const fc = fakeChannel();
+    const { client } = fakeClient();
+    createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'FIXED-NONCE' }).open();
+    return fc.html();
+  };
+
+  const html = render();
+  // Deterministic for a fixed nonce — the property the baseline comparison rests on.
+  assert.equal(html, render(), 'the shell is a pure function of its nonce');
+
+  // t1 is DATA-ONLY: the webview has no code that reads the new field yet, so
+  // the name must not appear anywhere in the emitted script.
+  assert.doesNotMatch(html, /functionalDefinition/,
+    'the webview bootstrap reads no functional record after t1');
+
+  // The surface invariants t1 must leave untouched.
+  assert.equal((html.match(/\.innerHTML\s*=/g) ?? []).length, 1,
+    'still exactly one markup-injection site');
+  assert.match(html, /<body class="insrc-term">/);
+  assert.match(html, /<div id="insrc-docs-body" class="insrc-docs-content"/);
+});

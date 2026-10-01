@@ -258,6 +258,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         // Only when it actually degraded: a successful derivation posts no
         // degradation at all, so `=== undefined` means "nothing went wrong".
         ...(degradation !== undefined ? { degradation } : {}),
+        // S002/t1 — the functional record rides THIS message, beside the markdown
+        // it belongs to, so the two can never be paired across two documents.
+        // Forwarded by REFERENCE: no clone, no reshaping, no defaulting and no
+        // validation, which is what sc1's verbatim-projection rule requires and
+        // what makes the character-for-character id guarantee survivable (anything
+        // done to the record here would be a place for an identifier to change).
+        // Spread conditionally for the same reason `degradation` is: an absent
+        // record stays an ABSENT KEY rather than a key holding undefined.
+        ...(content.functionalDefinition !== undefined
+          ? { functionalDefinition: content.functionalDefinition }
+          : {}),
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);

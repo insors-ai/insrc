@@ -1,0 +1,817 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790856039227-ub48xn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T12:12:33.669Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 714398,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "epicSlug": "design-correction-issue-85e6a58693579b6d-ux-mock",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790856039227-ub48xn",
+    "hldEffectiveHash": "f3ad9692525304bf8ebc03f62ee758203f6d823ea1533c7770071f3ae29b3dd8",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "n1",
+          "ref": "3.1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "uxDefinitionToIr at src/workflow/artifacts/companion/ux.ts:275 returns DocumentIR and populates it with graph primitives — nodes.push at :288, a kind:'contains' edge at :289, and derived:{nodes,edges} at :299.",
+          "evidence": "CONFIRMED in substance with ONE line number off by one. ux.ts:275 is `export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {`, :288 is `nodes.push({ id, label: labelFor(el), kind: el.type });` and :289 is the `kind: 'contains'` edge — all three verbatim. But :298 reads `scopeDescription: 'UX mock',`; the `derived: { nodes, edges },` line the LLD cites is at :299. I confirmed by reading :296-301 directly.",
+          "action": "Correct the LLD's `derived` anchor from ux.ts:298 to ux.ts:299. The PREMISE is unaffected — the return object does carry `derived: { nodes, edges }` and that is the whole load-bearing point — so this is a citation slip, not a design error. Worth fixing because a one-off anchor is exactly what erodes trust in a citation chain that is otherwise exact.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "The cited content exists and says what the LLD claims; only the line number is wrong by one, because :298 is the preceding scopeDescription field. A reader following the anchor lands one line short of the evidence.",
+            "artifactEdits": [
+              {
+                "find": "and derived:{nodes,edges} at :299",
+                "replace": "and derived:{nodes,edges} at :299"
+              },
+              {
+                "find": "and returns them as `derived: { nodes, edges }` at :299",
+                "replace": "and returns them as `derived: { nodes, edges }` at :299"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "n2",
+          "ref": "3.3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "labelFor at ux.ts:191-202 returns strings naming the element's own TYPE — :193 returns `TextBlock: \"<text>\"`, :197 the ActionSet arm joining only action titles, :199 the bare string 'ColumnSet'.",
+          "evidence": "CONFIRMED verbatim on every anchor. ux.ts:191 `function labelFor(el: UxElement): string {`, :193 `case 'TextBlock':       return \\`TextBlock: \"${truncate(el.text)}\"\\`;`, :197 `case 'ActionSet':       return \\`ActionSet (${el.actions.map(a => a.title).join(', ')})\\`;` and :199 `case 'ColumnSet':       return 'ColumnSet';`. labelFor has exactly one definition in source.",
+          "action": "No change. This is the artifact's strongest single piece of evidence — :197 shows the ActionSet arm joining only titles, which is precisely why Action.Submit and Action.OpenUrl are today indistinguishable and why the LLD makes that a named invariant-change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "UxElement at ux.ts:108-117 is a CLOSED union of exactly EIGHT variants — UxTextBlock, UxContainer, UxColumnSet, UxColumn, UxImage, UxInputText, UxInputChoiceSet, UxActionSet — which is what makes exhaustive coverage a compile-time property.",
+          "evidence": "CONFIRMED exactly, and the count is exact. ux.ts:108 `export type UxElement =` followed by :109-:116 listing UxTextBlock, UxContainer, UxColumnSet, UxColumn, UxImage, UxInputText, UxInputChoiceSet and UxActionSet — EIGHT members, with :116 carrying the terminating semicolon. The 11 `export interface Ux*` declarations include UxChoice (:80), UxAction (:95) and UxDefinition, which are correctly NOT union members — the LLD says so explicitly, calling them member records carried by UxInputChoiceSet and UxActionSet.",
+          "action": "No change. The closed-union claim is the foundation of the design's strongest property (exhaustive coverage as a compile-time check) and it is exact, including the distinction between union variants and member records.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n4",
+          "ref": "3.1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "childrenOf at ux.ts:181-188 encodes the nesting rule as exactly THREE container cases — items for Container, items for Column, columns for ColumnSet — with every other variant returning an empty list.",
+          "evidence": "CONFIRMED verbatim. ux.ts:181 declares childrenOf, :183 `case 'Container': return el.items;`, :184 `case 'Column':    return el.items;`, :185 `case 'ColumnSet': return el.columns;`, :186 `default:          return [];`. Exactly three container cases, everything else empty — as the LLD states.",
+          "action": "No change. This matters because the LLD requires the new emitter to reuse this nesting rule rather than re-derive it, which is what keeps order and nesting correct by construction.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n5",
+          "ref": "2.1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "renderUxCompanion at render.ts:131 ALREADY returns kind:'ux-mock' — it does not stamp a diagram kind — so the ref vocabulary needs no change and no consumer is affected. This is the LLD's stated correction to the approved ISSUE's triage signal.",
+          "evidence": "CONFIRMED, and this is the LLD's most consequential correction. render.ts:131 `export async function renderUxCompanion(`, :137 `const ir = withSourceLink(uxDefinitionToIr(uxDef), opts.sourceLink);`, :138 `const outcome = await assembleShell(ir);`. The returned kind is at render.ts:151 — `kind:    'ux-mock',` — the ONLY occurrence of that literal in source. The approved ISSUE's triage signal claimed this function 'currently stamps a diagram kind'; it does not.",
+          "action": "No change to the design. One small accuracy note: the LLD's open question cites this as 'render.ts:151' while the grep resolves the line to :151. Immaterial — the claim is that the ref already carries kind:'ux-mock', which is confirmed — but it is the second one-off anchor in the artifact, alongside n1's.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n6",
+          "ref": "6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "assembleShell at src/docgen/render/shell.ts:255 is unconditionally a DIAGRAM shell: it loads the mermaid runtime and, when oversized(ir), falls back to toGraphvizDot(ir) rendered as SVG at :270. Neither branch lays out a document.",
+          "evidence": "CONFIRMED verbatim. shell.ts:255 `export async function assembleShell(`, :269 `if (oversized(ir)) {`, :270 `const result = await renderer.renderSvg(toGraphvizDot(ir));`. Both branches are graph renderers — the mermaid runtime load and the graphviz subprocess fallback — so the LLD's claim that this function has no layout path, and that a UX IR 'could not render as a mock even in principle', holds.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n7",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "assembleShell is depended on by THREE other companions besides UX — the ER, sequence and component renderers in src/workflow/artifacts/companion/render.ts — which is the blast-radius fact that eliminated alternative a3.",
+          "evidence": "CONFIRMED, and I re-derived it directly because the engine's grep hit the 50-match cap and returned zero companion-module hits. src/workflow/artifacts/companion/render.ts calls assembleShell at FOUR sites — :91, :138, :187 and :225 — one per companion, matching the four render functions declared at :84 renderErCompanion, :131 renderUxCompanion, :180 renderSequenceCompanion and :225 renderComponentCompanion. So removing UX from that seam leaves exactly THREE other dependents, precisely as the LLD states.",
+          "action": "No change. This is the constraint (b1) that eliminated alternative a3, so it being exact matters more than most — and it is.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "context-sections.test.ts:82 pins that an EMPTY card body still yields narrated section titles of exactly ['Purpose','Legend'] — the prose contract the fix must preserve.",
+          "evidence": "CONFIRMED verbatim at context-sections.test.ts:82. The surrounding lines show the same assertion for the er (:81), sequence (:83) and component (:84) mappers, so ['Purpose','Legend'] is a uniform contract across all four companions — which strengthens the LLD's invariant rather than weakening it: breaking it on the UX path would make UX the odd one out.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "ux-integration.test.ts pins the link-not-inline invariant twice, at :75 and :124, each asserting the card JSON is never inlined into the core markdown.",
+          "evidence": "CONFIRMED verbatim at both anchors. ux-integration.test.ts:75 and :124 each read `assert.ok(!md.includes('\"AdaptiveCard\"'), 'the card JSON is never inlined into the core markdown');`. The link-not-inline invariant is pinned exactly twice, as the LLD says.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n10",
+          "ref": "5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Existing fixtures already exercise an Input.Text alongside a TextBlock — ux-render.test.ts:29-30 and ux-integration.test.ts:43-44 — so input rendering is testable against cards that predate the fix.",
+          "evidence": "CONFIRMED verbatim. ux-render.test.ts:29-30 are `{ type: 'TextBlock', text: 'Filter tags' },` and `{ type: 'Input.Text', id: 'q', label: 'Query' },`; ux-integration.test.ts:43-44 are the same shape with `id: 'customer', label: 'Customer'`. Input rendering is therefore testable against fixtures that predate the fix, exactly as the test strategy claims.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n11",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "No Adaptive Cards RENDERER is a dependency anywhere — only the JSON schema ships, loaded by loadAdaptiveCardsSchema for ajv validation — so alternative a2 would have been net-new dependency weight rather than adoption of something present.",
+          "evidence": "CONFIRMED by absence, which is the point. A grep for 'adaptivecards' returns ZERO matches anywhere in the repo, while loadAdaptiveCardsSchema resolves to adaptive-cards.ts:46 and is consumed at ux.ts:26 and ux.ts:153 for validation. So the repo carries the Adaptive Cards SCHEMA and no renderer — alternative a2 would have been net-new dependency weight, as the LLD scored it.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n12",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The proposed new symbol renderUxMockDocument does not exist anywhere in the source tree today, so the LLD declares it as new rather than asserting an existing API.",
+          "evidence": "CONFIRMED. `renderUxMockDocument` returns TWO matches, both in docs/ prose (this LLD and its generated companion) and ZERO in source. The name is genuinely new and collides with nothing, so declaring it as a `new` dataModel entity rather than asserting it in the api section was the correct call.",
+          "action": "No change.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n13",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ~3.37MB companion size the LLD cites is real and current: the ux-mock.html this very LLD generated measures 3,370,121 bytes, and Epic bfe98ff7's measured 3,371,391 — both produced by the diagram path the fix replaces.",
+          "evidence": "CONFIRMED by direct measurement rather than by the probe, which was a poor choice on my part — 'mermaid' over src/ cannot measure a generated artifact in docs/. Measured directly: the ux-mock.html this LLD itself generated is 3,370,121 bytes and Epic bfe98ff7's is 3,371,391 bytes, both produced by the diagram path. The ~3.37MB figure the LLD cites is current, not historical.",
+          "action": "No change. Worth noting the artifact now carries its OWN before-state: this LLD generated a 3.37MB node-diagram mock of a card designed to exercise all eight variants, which makes regenerating that exact file the honest after-shot once the fix lands — and the LLD's migration step 5 already calls for precisely that.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13
+      },
+      "reviewedAt": "2026-10-01T12:14:54.418Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-01T12:17:17.241Z",
+    "questionResolutions": {
+      "qf1b19e98": {
+        "question": "FIDELITY VS GUARANTEED VISIBILITY — the one decision a reviewer may legitimately want to reverse. a1 produces an APPROXIMATION of the interface; a2 (vendoring Microsoft's renderer) would produce the real thing. a2 was rejected because it moves rendering into a viewer-side script, so a script failure shows an empty page — the opposite of the issue's explicit 'degrade visibly rather than vanish' requirement. If pixel-accurate fidelity is later judged more important than a guaranteed-visible artifact, a2 is the alternative to revisit, and nothing in this design forecloses it.",
+        "status": "resolved",
+        "choice": "Hold a1 — server-rendered approximation only",
+        "rationale": "Settled with the user in chat, not by default: they were shown the fidelity-vs-visibility trade-off with all three mechanisms and the cost of each, and approved the LLD that chose a1. The deciding argument is the issue's own words — 'degrade visibly rather than vanish' is an explicit requirement, and a1 is the only option that satisfies it unconditionally, because build-time emission means whatever the emitter produced is what the reader sees. a2 inverts exactly that: a script failure yields an empty page, so the whole mock can vanish, not merely an element. The hybrid (option 3) is the honest upgrade path if approximation later proves to mislead reviewers, and nothing in a1 forecloses it — but paying for two semantically-synced render paths now, on a standalone bugfix, buys fidelity nobody has yet asked for. The revisit condition is already recorded in the LLD's open questions, so option 4's bookkeeping would duplicate what the artifact carries.",
+        "resolvedAt": "2026-10-01T12:19:38.974Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The experience mock stops being a diagram. Today the authored card is lowered into the same node-and-edge representation the ER and component diagrams use, and drawn by the shared Mermaid shell — so a reviewer who opens it sees boxes labelled with element type names rather than anything resembling an interface. This Story gives the UX companion its own terminal renderer: a pure function that walks the card and emits a self-contained HTML document in which each element appears as the thing it denotes — text as text, inputs as labelled controls, an action set as a row of buttons, a column set as side-by-side columns. Because the element union is closed at eight variants, total coverage becomes a compile-time property rather than a hope, and the companion sheds the inlined diagram runtimes it no longer needs."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone bugfix — no parent HLD. Designed directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour and no adjacent story boundaries to stay clear of; the scope boundary that matters instead is src/docgen/render/shell.ts, which three other companions depend on and which this Story must not modify.",
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Render the ux-mock companion as an interface approximation instead of a node diagram"
+      },
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderUxCompanion",
+          "signature": "renderUxCompanion(uxDef: UxDefinition, title: string, destPath: string, opts?: RenderUxCompanionOpts): Promise<CompanionArtifactRef>",
+          "parameters": [
+            {
+              "name": "uxDef",
+              "type": "UxDefinition",
+              "purpose": "The authored card — the source of truth for the mock. Unchanged by this Story.",
+              "optional": false
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "purpose": "The companion's title, carried onto the returned ref and shown as the document heading.",
+              "optional": false
+            },
+            {
+              "name": "destPath",
+              "type": "string",
+              "purpose": "Absolute path the companion HTML is written to. Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RenderUxCompanionOpts",
+              "purpose": "Existing options — repoPath, ofSectionId, sourceLink. Shape unchanged; sourceLink is now consumed by the new emitter rather than by withSourceLink.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<CompanionArtifactRef>",
+            "meaning": "The same ref shape as today, with the same kind:'ux-mock'. NOTHING about the returned value changes — the reason no consumer, including either IDE plugin and Epic bfe98ff7's S003/S004, is affected."
+          },
+          "errors": [
+            {
+              "type": "(no error type is raised by the render path)",
+              "condition": "The emitter is a pure string-building function with no runtime load, no subprocess and no oversize branch, so DiagramGenerationError becomes unreachable from this function. A filesystem failure from the write still propagates as today."
+            }
+          ],
+          "preconditions": [
+            "The card has already passed Adaptive Cards schema validation upstream; this function does not re-validate."
+          ],
+          "postconditions": [
+            "The file at destPath is a complete, self-contained HTML document that fetches nothing — no external stylesheet, no script, no remote image.",
+            "The returned ref is byte-equivalent to what the current implementation returns for the same inputs.",
+            "The emitted document no longer embeds the Mermaid or svg-pan-zoom runtimes, so it is expected to be smaller than the current ~3.37MB by orders of magnitude.",
+            "Calling it twice with the same UxDefinition writes byte-identical files."
+          ]
+        },
+        {
+          "name": "uxDefinitionToIr",
+          "signature": "uxDefinitionToIr(uxDef: UxDefinition): DocumentIR",
+          "parameters": [
+            {
+              "name": "uxDef",
+              "type": "UxDefinition",
+              "purpose": "The authored card.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "The structural element-tree graph, unchanged in shape."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "This function is NO LONGER on the companion path — renderUxCompanion stops calling it. Retained because uxNarratedSections and the ['Purpose','Legend'] contract pinned at context-sections.test.ts:82 are reached through it.",
+            "The new emitter is AUTHORITATIVE for what a reviewer sees; uxDefinitionToIr is authoritative for nothing user-facing after this Story. Stated explicitly so the two renderers cannot silently diverge in meaning.",
+            "Its narrated-sections output continues to be produced and is consumed by the new emitter, so the prose contract survives without duplication."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "renderUxMockDocument",
+        "change": "new",
+        "details": "NEW, and declared here rather than in contractDetails.api because that section admits only symbols already present in the analyze bundles — this one does not exist yet. The terminal renderer for the UX companion: a pure function from the authored card to a complete HTML document string. It walks the card with the SAME nesting rule childrenOf already encodes (items for Container and Column, columns for ColumnSet, nothing for the other five), so element order and nesting are preserved by construction rather than by a parallel traversal that could drift. It emits the rendered mock and the narrated prose sections together, the prose BESIDE the mock rather than instead of it. All styling is inlined; nothing is fetched.",
+        "schemaDiff": "+ export function renderUxMockDocument(uxDef: UxDefinition, title: string, opts?: { sourceLink?: CompanionSourceLink }): string",
+        "callSites": [
+          "src/workflow/artifacts/companion/render.ts",
+          "src/workflow/artifacts/companion/ux.ts"
+        ]
+      },
+      {
+        "entity": "UxElement",
+        "change": "invariant-change",
+        "details": "No field changes — the union keeps its eight variants (UxTextBlock, UxContainer, UxColumnSet, UxColumn, UxImage, UxInputText, UxInputChoiceSet, UxActionSet) at ux.ts:108-117. What changes is the INVARIANT: the union becomes exhaustively consumed by the emitter, so adding a ninth variant to the schema must fail the TypeScript build until it is given a rendering. This converts 'every element type renders as something' from an aspiration into a checked property.",
+        "schemaDiff": "(no shape change; the exhaustive-switch obligation is new)",
+        "callSites": [
+          "src/workflow/artifacts/companion/ux.ts",
+          "src/workflow/artifacts/companion/ux-schema.ts"
+        ]
+      },
+      {
+        "entity": "UxAction",
+        "change": "invariant-change",
+        "details": "Carried, not changed. Its two action types ('Action.Submit' and 'Action.OpenUrl') must render DISTINGUISHABLY, because a reviewer needs to tell a submit from a navigation. Today both collapse into one node label via labelFor's ActionSet arm (ux.ts:197), which joins only the titles.",
+        "callSites": [
+          "src/workflow/artifacts/companion/ux.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The card carries an element whose type is not one of the eight the union admits — reachable because the companion renders from the stored artifact body, which can predate a schema change or be hand-edited.",
+          "detection": "The emitter's element switch reaches its DEFAULT arm. Nothing else notices — there is no re-validation step and the upstream ajv pass happened at authoring time, against whatever schema shipped then.",
+          "response": "Emit a VISIBLE placeholder in document flow carrying the unrecognised type string, styled so it reads as a gap in the mock rather than as content. Never skip the element, never throw, never substitute neighbouring content.",
+          "userImpact": "The reviewer sees that something was authored here which the renderer could not draw, and what type it was — strictly better than a silent omission (approving a design with an invisible hole) or a throw (one element making the whole document unopenable).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A container element carries children of an unexpected shape — a Container whose items is absent or not an array, which the types forbid but a stored JSON body can still contain.",
+          "detection": "The recursion reads the container's child list and finds a non-array or absent value; the traversal guards the read rather than assuming the type assertion held.",
+          "response": "Render the container as an empty grouped region and continue with the rest of the card.",
+          "userImpact": "The reviewer still gets the whole surrounding mock; one region reads as empty, which is visible, rather than the document failing to open.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The destination path cannot be written — a read-only directory or permissions failure.",
+          "detection": "The writeFileSync call in renderUxCompanion throws, exactly as today.",
+          "response": "Propagate unchanged. This Story adds no handling the current implementation lacks.",
+          "userImpact": "Identical to today — no regression and no new behaviour.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A card with an EMPTY body array.",
+          "expected": "A valid, openable document carrying the title and the narrated prose sections, with an explicitly empty mock region — the case context-sections.test.ts:82 already pins at the IR level, which must not regress to a blank file."
+        },
+        {
+          "input": "Deeply nested containers — Container inside Column inside ColumnSet inside Container.",
+          "expected": "Nesting preserved to full depth with no truncation. Deliberately no depth limit: unlike the graph path with its oversized(ir) subprocess fallback, a nested-markup emitter has no reason to degrade with depth."
+        },
+        {
+          "input": "A ColumnSet whose columns array is empty.",
+          "expected": "An empty row that still reads as a row — usually an authoring mistake worth seeing, not a vanished element."
+        },
+        {
+          "input": "An Image whose url points at a remote host.",
+          "expected": "A labelled placeholder showing url and altText. The URL is NEVER fetched — the no-network invariant at its sharpest, since an image is the one element a renderer would naturally reach out for."
+        },
+        {
+          "input": "Element text containing HTML metacharacters — <script>, &, quotes — in a TextBlock or a choice title.",
+          "expected": "Rendered as literal text. Authored content is DATA, not markup: escaped on the way in, so a card can never inject structure into its own mock. Inputs, choice titles, action titles, image alt text and the document title all take the same treatment."
+        },
+        {
+          "input": "A very long unbroken string in a TextBlock.",
+          "expected": "It wraps or scrolls within its region rather than forcing the whole mock wide — a layout destroyed by one long token misrepresents the interface."
+        },
+        {
+          "input": "Two cards differing only in element ORDER.",
+          "expected": "Visibly different documents. Order is part of the authored design, preserved by construction rather than sorted or grouped by type."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The returned CompanionArtifactRef keeps kind:'ux-mock' and the same relPath/title/ofSectionId shape — what makes this Story invisible to every consumer.",
+          "source": "c4"
+        },
+        {
+          "text": "The card JSON is NEVER inlined into the core markdown; the document links to its companion. Pinned at ux-integration.test.ts:75 and :124; both must keep passing untouched.",
+          "source": "c7"
+        },
+        {
+          "text": "The narrated prose sections survive, including for an empty card body — context-sections.test.ts:82 asserts exactly ['Purpose','Legend']. The prose moves BESIDE the mock; it must not be dropped.",
+          "source": "c7"
+        },
+        {
+          "text": "The companion stays a single self-contained offline file that fetches nothing — today by inlining runtimes, after the fix by needing none. The property is preserved while its cost is removed.",
+          "source": "c6"
+        },
+        {
+          "text": "src/docgen/render/shell.ts is NOT modified. Any build editing that file has left this Story's scope.",
+          "source": "c6"
+        },
+        {
+          "text": "Rendering stays deterministic and build-time — same definition, byte-identical output, no subprocess and nothing that varies by viewer. A build introducing a script-driven render has silently switched to the rejected alternative.",
+          "source": "c1"
+        },
+        {
+          "text": "uxDefinitionToIr continues to exist with the same DocumentIR return shape, because uxNarratedSections is reached through it. Removing or reshaping it is out of scope.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (`npx tsx --test 'src/**/__tests__/*.test.ts'`), co-located under src/workflow/artifacts/companion/__tests__/ — the convention the five existing UX test files follow. Headless Chrome for the one visual check, matching the screenshot-and-read-back practice this repo adopted after string-asserting webview tests produced a tautological green for two releases.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the element→markup mapping variant by variant — where total coverage is proved: eight variants, each asserted to produce the thing it denotes rather than a label naming itself.",
+          "subjects": [
+            "a TextBlock renders its text as content, not as a 'TextBlock: \"…\"' caption",
+            "an Input.Text renders a labelled text control carrying its label and placeholder",
+            "an Input.ChoiceSet renders a labelled control listing every choice title",
+            "an ActionSet renders one button per action, with Action.Submit and Action.OpenUrl DISTINGUISHABLE",
+            "an Image renders a labelled placeholder carrying url and altText, with no fetch of that url",
+            "a Container renders a visibly grouped region containing its children",
+            "a ColumnSet renders its Columns side by side rather than stacked",
+            "a Column renders as a region inside its ColumnSet, preserving its width hint",
+            "source-scan: the element switch is EXHAUSTIVE over UxElement — a ninth variant would fail the build"
+          ],
+          "fixturesNeeded": [
+            "The canonical all-eight-variants card authored as this LLD's own uxDefinition — it exists so the fixture and the design illustration are the same object",
+            "The existing cards at ux-render.test.ts:29-30 and ux-integration.test.ts:43-44, reused unchanged so the fix is proved against fixtures predating it"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Pin the error and edge behaviour — particularly degradation, the constraint that decided the design and so the one most firmly tested.",
+          "subjects": [
+            "an element outside the union emits a VISIBLE placeholder naming that type, with surrounding elements still rendered",
+            "an unrecognised element never throws and never silently disappears",
+            "a Container whose items is malformed renders an empty group and the rest of the card survives",
+            "an empty card body yields an openable document with title and narrated prose, not a blank file",
+            "an empty ColumnSet renders a visible empty row",
+            "deep nesting is preserved to full depth with no truncation",
+            "text containing <script>, & and quotes renders as LITERAL TEXT",
+            "a long unbroken token wraps or scrolls within its region",
+            "two cards differing only in ORDER produce different documents"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the companion still behaves as a companion — the artifact-level invariants.",
+          "subjects": [
+            "the written document fetches NOTHING: no external stylesheet, script src, remote image or http(s) origin anywhere",
+            "renderUxCompanion returns a ref byte-equivalent to today's, still kind:'ux-mock'",
+            "the document no longer contains the mermaid or svg-pan-zoom runtimes and is dramatically smaller than ~3.37MB — asserted as a bound, not a fixed number",
+            "DETERMINISM: rendering the same definition twice produces byte-identical files",
+            "the narrated prose sections appear ALONGSIDE the mock, not instead of it",
+            "ux-integration's :75 and :124 assertions pass UNCHANGED",
+            "context-sections' empty-card ['Purpose','Legend'] assertion passes UNCHANGED",
+            "source-scan: src/docgen/render/shell.ts is absent from the Story's diff"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Establish what no string assertion can: that the artifact READS as an interface. This level exists because the defect being fixed was invisible to a fully green suite — every unit test of the old renderer passed while it produced a node graph.",
+          "subjects": [
+            "manual: render the canonical card through the real renderUxCompanion, screenshot headlessly and READ THE IMAGE BACK — text reads as text, columns sit side by side, inputs read as labelled controls, actions read as buttons, the image reads as a labelled placeholder, the container groups visibly",
+            "manual: regenerate Epic bfe98ff7's HLD ux-mock.html and read it back — the artifact whose appearance opened this issue is the honest before/after",
+            "the full daemon sweep passes, with any pre-existing unrelated failure named explicitly"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "DERIVED CRITERION — the Story carries no formal acceptance criteria, so ac1-ac9 are taken from the approved ISSUE's fix intent and named here so each is provably mapped. ac1 = each element appears as the thing it denotes rather than as a labelled node.",
+            "the eight per-variant unit tests",
+            "manual: screenshot the canonical card and read it back"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "ac2 = nesting and element order are preserved.",
+            "deep nesting preserved to full depth",
+            "a ColumnSet renders side by side rather than stacked",
+            "two cards differing only in order produce different documents"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "ac3 = every element type the schema admits renders as something.",
+            "source-scan: the element switch is exhaustive over the eight variants",
+            "the eight per-variant unit tests"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "ac4 = an unrecognised element degrades VISIBLY rather than vanishing — the constraint that decided the design.",
+            "an element outside the union emits a visible placeholder naming its type",
+            "an unrecognised element never throws and its siblings still render",
+            "a malformed container renders an empty group and the rest survives"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "ac5 = one self-contained offline file that fetches nothing.",
+            "no external stylesheet, script src, remote image or http(s) origin in the document",
+            "a remote image url renders as a placeholder and is never fetched",
+            "the document no longer contains the mermaid or svg-pan-zoom runtimes"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "ac6 = deterministic output for a given definition.",
+            "rendering the same definition twice produces byte-identical files"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "ac7 = the link-not-inline companion ref contract is preserved.",
+            "the returned ref is byte-equivalent to today's, still kind:'ux-mock'",
+            "ux-integration's :75 and :124 assertions pass unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "ac8 = the narrated prose accompanies the mock rather than substituting for it.",
+            "the narrated sections appear alongside the mock in the rendered document",
+            "context-sections' empty-card assertion passes unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "ac9 = the three diagram companions are not put at risk — the blast-radius constraint that eliminated alternative a3.",
+            "source-scan: src/docgen/render/shell.ts is absent from the Story's diff",
+            "the full daemon sweep passes with no new failure"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "renderUxCompanion (render.ts:131-156) calls withSourceLink(uxDefinitionToIr(uxDef), opts.sourceLink) and hands the DocumentIR to assembleShell (shell.ts:255). uxDefinitionToIr (ux.ts:275-303) populates derived:{nodes,edges} with one node per element labelled by labelFor (ux.ts:191-202, type-name strings) and a 'contains' edge per parent/child. assembleShell inlines the Mermaid and svg-pan-zoom runtimes and draws the graph, falling back to a graphviz subprocess when oversized(ir). The written file is a node diagram plus a prose inventory, ~3.37MB (ux-mock.html for Epic bfe98ff7 measured 3,371,391 bytes). The returned ref already carries kind:'ux-mock'. Generated ux-mock.html files from this path exist in the tree today.",
+      "stateAfter": "renderUxCompanion calls the new terminal emitter instead of assembleShell, writing a self-contained HTML document in which each of the eight variants appears as the thing it denotes, nesting and order preserved, narrated prose beside the mock. No Mermaid or svg-pan-zoom runtime is embedded, so the file shrinks by orders of magnitude. The returned ref is byte-identical to before. uxDefinitionToIr still exists and returns the same DocumentIR but is off the visual path. shell.ts is untouched, so the ER, sequence and component companions behave exactly as today.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the new emitter alongside the existing path without wiring it in. Nothing changes for any caller: the function exists and is unit-testable while renderUxCompanion still produces the old output. This ordering makes the step reversible by deletion rather than by revert.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Switch renderUxCompanion's body from the assembleShell pipeline to the new emitter — the single behavioural flip. Everything before is additive; everything after is verification or regeneration.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Migrate the existing UX tests to assert rendered OUTPUT rather than graph structure. The four files pinning current behaviour move with the change; the assertions that must NOT move are ux-integration's :75/:124 and context-sections' ['Purpose','Legend'], which are invariants rather than descriptions of the old renderer.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "REGENERATE the stale generated artifacts. Every ux-mock.html already in the tree was produced by the diagram path and does not change by itself — a companion is only rewritten when its source document is re-rendered. Start with the one that opened this issue (Epic bfe98ff7's HLD). Recoverable from git rather than reversible as an in-place toggle.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Verify visually before declaring done: render the canonical card through the real path, screenshot headlessly and read the image back. Listed as a migration action rather than left to the suite because the defect being corrected was invisible to a fully green suite.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Rebuild and restart the installed daemon so the corrected renderer runs when the next document is approved. Until then the repository holds the fix while the running daemon keeps emitting node diagrams.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No consumer-visible contract changes — the central fact, and why this Story is safe to land independently. renderUxCompanion keeps its signature and returns a ref byte-equivalent to today's, still kind:'ux-mock' with the same relPath/title/ofSectionId, so both IDE plugins and Epic bfe98ff7's S003/S004 (all of which consume refs, not companion bodies) are unaffected. uxDefinitionToIr remains exported with an unchanged signature and return shape, and the narrated-sections contract reached through it is preserved. assembleShell is not modified, so the ER, sequence and component companions carry no risk. The ONE visible change is intended: the BODY of a ux-mock.html written after this Story differs from one written before. Previously-generated files are not migrated automatically — they are rewritten only when their source document is re-rendered — which is why regeneration is an explicit migration step. DiagramGenerationError becomes unreachable from this function; nothing catches it specifically today, so this narrows behaviour rather than changing an API.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Dedicated layout emitter beside the IR lowering",
+        "oneLineSummary": "uxDefinitionToIr stops being the UX path: a new UX-owned function turns the card into a self-contained HTML document of nested laid-out elements, and renderUxCompanion calls it instead of assembleShell.",
+        "approach": "Treat a card as what it structurally is — a nested box layout — and give the UX companion its own terminal renderer rather than borrowing the graph one. Each of the eight UxElement variants maps to the markup that denotes it, with childrenOf's existing three container cases driving the recursion so nesting and order are preserved by construction. The narrated prose is emitted alongside the mock. renderUxCompanion's seam changes from assembleShell(uxDefinitionToIr(uxDef)) to the new emitter; its ref return is untouched.\n\nWHY CHOSEN: a1 is the only alternative with no `partial` and no `violates` across all eight constraints; a2 violates i5 and a3 violates b1. Both losses are disqualifications rather than preferences. a2 moves rendering into a script that runs in the viewer, so the emitted file contains the card JSON and a bundle rather than the rendered elements — a script failure yields an empty page, and the issue's fix intent explicitly requires failure to degrade VISIBLY rather than vanish. a3 widens assembleShell, which the ER, sequence and component companions all depend on, risking three shipped companions to repair one. Where a1 does NOT win is recorded rather than glossed: a2 beats it on coverage in absolute terms (the full Adaptive Cards specification versus our eight-variant subset) and on fidelity (the real thing versus an approximation); a3 beats it on structural tidiness (the existing withSourceLink and narrated-sections plumbing apply without special-casing). a1 wins on i5 and b1 plus two clear advantages: it REMOVES weight — the diagram runtimes become unnecessary, so the artifact should shrink substantially from 3,371,391 bytes — and the closed UxElement union makes total coverage a compile-time property, so a future variant fails the build until mapped rather than silently falling through.",
+        "pros": [
+          "The output is a document, which is the shape the artifact is supposed to be.",
+          "Self-contained and offline by construction, and the file gets dramatically SMALLER — the diagram runtimes stop being needed.",
+          "Deterministic trivially — a pure function with no subprocess or layout solver.",
+          "Zero blast radius on shell.ts, so the three other companions are untouched.",
+          "Total coverage is checkable: the closed eight-variant union makes an exhaustive switch a compile-time property."
+        ],
+        "cons": [
+          "We own the element→markup mapping and its styling forever, including future schema growth.",
+          "It is an APPROXIMATION, not what Adaptive Cards itself would draw.",
+          "Two renderers for one definition if uxDefinitionToIr is kept — a maintenance seam needing an explicit authority rule, settled in the contract above."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Vendor the Adaptive Cards renderer",
+        "oneLineSummary": "Inline Microsoft's own card renderer into the companion shell, feed it the card JSON, and let it draw the card exactly as the real surface would.",
+        "approach": "Keep the card as the unit and delegate rendering to the library that defines the format. The companion HTML embeds the vendored bundle plus the card JSON, and on load the renderer builds the card into the page — the way the chat surface already inlines a vendored markdown bundle. Element coverage comes free from the full specification. REJECTED on the degradation constraint: rendering moves from build time to viewer runtime, so a script failure shows an empty page rather than a visibly degraded one.",
+        "pros": [
+          "Highest fidelity by definition — no approximation gap to explain.",
+          "Coverage is complete and stays complete; new variants need no mapping work.",
+          "Smallest change to the authoring contract — the uxDefinition stays exactly a card."
+        ],
+        "cons": [
+          "A net-new vendored dependency where none exists today, landing in a file already ~3.37MB.",
+          "Rendering becomes RUNTIME rather than build-time — the output HTML would contain only the card JSON and the bundle, not the rendered elements.",
+          "Determinism moves out of our control: output can change under a dependency upgrade.",
+          "The result carries Microsoft's visual language, not the product's.",
+          "Degradation gets WORSE: a script failure shows an empty page — the opposite of what the issue requires."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a3",
+        "name": "Teach the shared docgen shell a layout document type",
+        "oneLineSummary": "Extend DocumentIR and assembleShell with a layout docType so the shared shell can emit nested laid-out regions as well as graphs, and route the UX companion through it.",
+        "approach": "Keep every companion on one rendering spine and widen that spine rather than forking it. DocumentIR gains a representation for nested laid-out content, assembleShell gains a branch emitting it as positioned markup, and uxDefinitionToIr is rewritten to populate it. renderUxCompanion's body is unchanged apart from what the IR carries. REJECTED on blast radius: assembleShell is depended on by three other, working companions.",
+        "pros": [
+          "One rendering spine for all four companions — a single place for offline-shell concerns.",
+          "A future layout companion gets the capability free rather than forking an emitter.",
+          "The existing withSourceLink and narrated-sections plumbing apply without special-casing."
+        ],
+        "cons": [
+          "The largest blast radius: assembleShell is depended on by the ER, sequence and component companions — risking three shipped companions to fix one.",
+          "It widens a type built for graphs; a layout branch sits awkwardly inside an abstraction not made for it.",
+          "The UX companion keeps carrying inlined diagram runtimes it no longer needs, so ~3.37MB stays.",
+          "Speculative generality — there is no second layout companion today."
+        ],
+        "costEstimate": "L"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "FIDELITY VS GUARANTEED VISIBILITY — the one decision a reviewer may legitimately want to reverse. a1 produces an APPROXIMATION of the interface; a2 (vendoring Microsoft's renderer) would produce the real thing. a2 was rejected because it moves rendering into a viewer-side script, so a script failure shows an empty page — the opposite of the issue's explicit 'degrade visibly rather than vanish' requirement. If pixel-accurate fidelity is later judged more important than a guaranteed-visible artifact, a2 is the alternative to revisit, and nothing in this design forecloses it.",
+      "SELF-GRADED PARTIAL (cd3): renderUxCompanion's single errors entry carries a sentence where the schema wants a concrete error type, because the honest content is the ABSENCE of errors — DiagramGenerationError becomes unreachable once assembleShell leaves the path. The cleaner form would have been an empty errors array with the explanation in postconditions. The reader is not misled, but the shape is wrong and a reviewer is entitled to say so.",
+      "SELF-GRADED PARTIAL (ep3): all seven invariantsToPreserve carry cN source ids matching the required pattern, and each invariant is genuinely drawn from a named s1 bundle — but the s1 bundles are keyed by KIND, not numbered c1..c7, so the mapping is positional rather than a formal link the engine can verify. Every invariant is real and traceable; a reader simply cannot resolve 'c6' to 'the assembleShell bundle' from the artifact alone.",
+      "SELF-GRADED PARTIAL (alt2): the checklist asks that alternatives be scored against Story acceptance criteria, Epic constraints and HLD shared contracts — and all three arrays are EMPTY for this standalone bugfix. I scored against eight constraints derived from the approved issue's invariants plus a blast-radius constraint (b1) that is mine rather than the issue's. That is more useful than scoring against nothing, but it is a substitution, and it deserves attention precisely because b1 is what eliminated a3.",
+      "CORRECTION TO THE APPROVED ISSUE, recorded rather than silently designed around: the issue's triage signal claimed renderUxCompanion 'currently stamps a diagram kind'. Reading render.ts:151 shows it already returns kind:'ux-mock'. The defect is strictly the HTML body, not the ref vocabulary — which NARROWS this Story: no consumer-visible ref contract changes, and the 'external-contract' blast radius the triage cited does not exist."
+    ],
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Experience mock — what the companion should render",
+          "weight": "bolder",
+          "size": "large",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "This card is deliberately authored to exercise ALL EIGHT element variants, so it doubles as the canonical fixture for the fix. Rendered by the current implementation it appears as a node graph; rendered by the corrected one it should look like the interface below.",
+          "wrap": true,
+          "isSubtle": true
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Left column",
+                  "weight": "bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "A ColumnSet must render side by side, not stacked — the element the current renderer flattens most visibly.",
+                  "wrap": true
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Right column",
+                  "weight": "bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "Image",
+                  "url": "https://example.invalid/placeholder.png",
+                  "altText": "An image renders as a labelled placeholder; the URL is never fetched.",
+                  "size": "medium"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "A Container groups its children visibly",
+              "weight": "bolder",
+              "wrap": true
+            },
+            {
+              "type": "Input.Text",
+              "id": "query",
+              "label": "Query",
+              "placeholder": "an input renders as a labelled control, not as a node caption"
+            },
+            {
+              "type": "Input.ChoiceSet",
+              "id": "severity",
+              "label": "Severity",
+              "isMultiSelect": false,
+              "choices": [
+                {
+                  "title": "HIGH",
+                  "value": "high"
+                },
+                {
+                  "title": "MED",
+                  "value": "med"
+                },
+                {
+                  "title": "LOW",
+                  "value": "low"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ActionSet",
+          "actions": [
+            {
+              "type": "Action.Submit",
+              "title": "Approve"
+            },
+            {
+              "type": "Action.OpenUrl",
+              "title": "Open the source document",
+              "url": "https://example.invalid/doc"
+            }
+          ]
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/design-correction-issue-85e6a58693579b6d-ux-mock-E2026100185e6a586/S001/ux-mock.html",
+        "title": "UX mock"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step how-does-it-work over src/workflow/artifacts/companion (6 explorations, repoIndexedAt 2026-10-01T11:41:00Z)",
+      "quotedText": "The decisive fact is the RETURN TYPE of the first function: DocumentIR. That is the same intermediate representation the diagram mappers in this module produce"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:288",
+      "quotedText": "nodes.push({ id, label: labelFor(el), kind: el.type });"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:275",
+      "quotedText": "export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/render.ts:131",
+      "quotedText": "export async function renderUxCompanion("
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:108",
+      "quotedText": "export type UxElement ="
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts:255",
+      "quotedText": "export async function assembleShell("
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/__tests__/context-sections.test.ts:82",
+      "quotedText": "assert.deepEqual(titles(uxDefinitionToIr({ type: 'AdaptiveCard', body: [] }).narrated.sections), ['Purpose', 'Legend']);"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:181",
+      "quotedText": "function childrenOf(el: UxElement): readonly UxElement[] {"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/ux-mock-companion-does-not-produce-E2026100185e6a586/ISSUE.md — fix intent",
+      "quotedText": "an element the renderer does not understand must degrade visibly rather than vanish"
+    }
+  ]
+}

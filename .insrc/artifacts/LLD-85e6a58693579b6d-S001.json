@@ -190,6 +190,13 @@
         "choice": "Empty errors array, explanation in postconditions",
         "rationale": "Taking the fix I flagged against myself rather than the cheap option. The honest content is an ABSENCE of errors, and an absence belongs in prose that asserts it, not in a field shaped to hold type names — writing a sentence where a type goes is how a schema stops meaning anything. Option 3 (accept the wart) ships an artifact I have already said a reviewer is entitled to block on, which is a strange thing to do voluntarily. Option 4 (widen the schema) is the right root-cause fix for a repeated problem but turns a standalone bugfix into a schema change with its own review, and this is the first time I have hit it. Option 2 is nearly identical to option 1 in effect, since re-deriving the real throw set yields none from the render path — writeFileSync's filesystem failure propagates from renderUxCompanion but is not raised by the emitter — so option 1 says the same thing without implying a list exists to be trimmed.",
         "resolvedAt": "2026-10-01T12:21:22.081Z"
+      },
+      "q72d6575e": {
+        "question": "SELF-GRADED PARTIAL (ep3): all seven invariantsToPreserve carry cN source ids matching the required pattern, and each invariant is genuinely drawn from a named s1 bundle — but the s1 bundles are keyed by KIND, not numbered c1..c7, so the mapping is positional rather than a formal link the engine can verify. Every invariant is real and traceable; a reader simply cannot resolve 'c6' to 'the assembleShell bundle' from the artifact alone.",
+        "status": "resolved",
+        "choice": "Name the bundle inside each invariant",
+        "rationale": "The defect is precisely that a reader cannot resolve 'c6' from the artifact alone, so the fix belongs at the point of use. Naming the bundle inside each invariant's own text means the annotation travels with the line even when quoted in isolation — which is how invariants actually get read downstream, one at a time in a build prompt, not as a list beside a legend. Option 2's crosswalk closes the same gap but creates a second place that drifts: the next person to add an eighth invariant updates one list and not the other, and a stale crosswalk is worse than none. Option 3 is the real root-cause fix and I would take it if this recurred, but re-keying the s1 bundle contract to make the link engine-verifiable means moving the producer, the schema and the gate together, which is not something a standalone bugfix should drag along. Option 4 knowingly carries a partial I have already graded into a stage where a reviewer may block on it, having been told exactly where to look.",
+        "resolvedAt": "2026-10-01T12:22:52.580Z"
       }
     }
   },

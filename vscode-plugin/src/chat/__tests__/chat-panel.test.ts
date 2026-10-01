@@ -1101,7 +1101,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
 });
 
-test('S002 (ux-polish) t4: the assistant bubble spans ~90% (bumped from 88%); user bubble (82%) + wrapper (100%) unchanged', () => {
+test('both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -1112,9 +1112,22 @@ test('S002 (ux-polish) t4: the assistant bubble spans ~90% (bumped from 88%); us
   });
   host.open();
   const html = fc.html();
-  assert.match(html, /\.insrc-bubble--assistant\{[^}]*max-width:90%/, 'assistant bubble max-width is 90%');
-  assert.doesNotMatch(html, /\.insrc-bubble--assistant\{[^}]*max-width:88%/, 'the old 88% assistant cap is gone');
-  assert.match(html, /\.insrc-bubble--user\{[^}]*max-width:82%/, 'user bubble stays 82%');
+  // Both bubbles fill the row: the 90% assistant / 82% user caps are gone, so a user prompt and the
+  // answer below it align on BOTH edges instead of stepping in by different amounts.
+  const cap = (role: string): string => {
+    const m = new RegExp(`\\.insrc-bubble--${role}\\{([^}]*)\\}`).exec(html);
+    assert.ok(m, `the .insrc-bubble--${role} rule is present`);
+    const w = /max-width:(\d+)%/.exec(m![1]!);
+    assert.ok(w, `.insrc-bubble--${role} declares a max-width`);
+    return w![1]!;
+  };
+  assert.equal(cap('assistant'), '100', 'assistant bubble spans the full row');
+  assert.equal(cap('user'), '100', 'user bubble spans the full row');
+  // No purple rail on the assistant card. Asserted on the RULE BODY, not the whole document, so the
+  // --magenta token staying in use elsewhere (the assistant role label) cannot mask a regression here.
+  const asst = /\.insrc-bubble--assistant\{([^}]*)\}/.exec(html)![1]!;
+  assert.doesNotMatch(asst, /border-left/, 'the assistant bubble has no left rail');
+  assert.doesNotMatch(asst, /--magenta/, 'the assistant bubble carries no magenta accent');
   assert.match(html, /\.insrc-msg\{[^}]*max-width:100%/, 'the .insrc-msg wrapper stays 100%');
 });
 

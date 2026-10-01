@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790835361904-4vtgw7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T06:16:01.904Z",
+    "model": "client",
+    "elapsedMs": 2,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d3f8bc1f6c78a2a",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6d3f8bc1f6c78a2a",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:356",
+            "message": "Pass-state is locally verified rather than gate-attested, and all three edits are genuinely exercised. Locally: `npx tsc --noEmit` clean and `npx tsx --test 'src/**/__tests__/*.test.ts'` at 615 tests / 611 pass / 0 fail / 4 skipped. Two INDEPENDENT mutation checks were run so neither assertion rides on the other: restoring the 90% assistant cap fails with 'assistant bubble spans the full row', and restoring only border-left:2px solid var(--magenta) while leaving the width at 100% fails with 'the assistant bubble has no left rail'. The result was also rendered in headless Chrome against the real stylesheet and inspected — both rows now align on both edges with no rail. The daemon validate gate returned passed:false solely because its sandbox blocks every executing command; it confirmed the contract by inspection (scopeRespected:true) and independently caught a real defect in this Story — see the quality finding.",
+            "expectationRef": ".insrc-bubble--user / .insrc-bubble--assistant (vscode-plugin/src/chat/chat-panel.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:1104",
+            "message": "Graph grounding is hollow as usual for this module: both changed entries are whole-file diff entities with testsReaching: [] and no caller/callee edges, because the CSS under review lives inside the template string renderShell emits rather than in indexed symbols. Treating those empty edges as a coverage gap would manufacture a finding against the very file that contains the new assertions. Coverage was judged by execution, by the two mutation checks above, and by visual inspection of the render.",
+            "expectationRef": "diff:vscode-plugin/src/chat/chat-panel.test.ts",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:1104",
+            "message": "The test title contradicted its own assertions in the first cut of this change: it still read 'the assistant bubble spans ~90% (bumped from 88%); user bubble (82%) + wrapper (100%) unchanged' while the body asserted 100%/100% and no rail. The daemon validate gate caught it ('the rewritten test's title still claims 90%/82% while asserting 100%/100%') and it was corrected before commit. Worth recording rather than silently fixing, because a stale title is exactly how a suite drifts into lying about what it covers — the same failure mode, in a different place, as the vacuous assertions this and the preceding two Stories were filed against.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:355",
+            "message": "`.insrc-msg--user{align-items:flex-end}` is now visually inert: the user bubble fills the row, so there is no free space for the flex-end alignment to act on. It still correctly right-aligns the 'you' role label above the bubble, so it is NOT dead code and removing it would change the header alignment. Left in place deliberately and noted here so a later reader does not mistake it for leftover, or delete it expecting no visual effect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 4
+    }
+  }
+}

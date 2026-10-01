@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "6d3f8bc1f6c78a2a",
+    "storyId": "S001",
+    "createdAt": "2026-10-01T06:09:05.570Z",
+    "updatedAt": "2026-10-01T06:13:15.401Z"
+  },
+  "body": {
+    "focus": "Dev-chat message bubbles span the full available width and the assistant bubble loses its purple left lining. Set .insrc-bubble--user max-width 82% -> 100%, .insrc-bubble--assistant max-width 90% -> 100%, and remove border-left:2px solid var(--magenta) from the assistant rule (chat-panel.ts:356/:358). Presentation-only: no markup, renderer, view-model, event or persistence change. Update/extend the bubble tests to pin both full-width caps and the absence of the magenta rail.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:13:15.401Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:13:15.401Z"
+      }
+    ]
+  }
+}

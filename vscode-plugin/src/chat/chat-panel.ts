@@ -353,9 +353,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.insrc-who{font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;white-space:normal;}` +
       `.insrc-who .insrc-glyph{font-size:12px;}` +
       `.insrc-msg--user{align-items:flex-end;}.insrc-who--user{color:var(--user);}` +
-      `.insrc-bubble--user{background:rgba(138,180,255,.08);border:1px solid rgba(138,180,255,.30);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:82%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--user{background:rgba(138,180,255,.08);border:1px solid rgba(138,180,255,.30);border-radius:10px 10px 2px 10px;padding:9px 12px;color:var(--fg-strong);max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       `.insrc-who--assistant{color:var(--magenta);}` +
-      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-left:2px solid var(--magenta);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:90%;white-space:pre-wrap;word-break:break-word;}` +
+      `.insrc-bubble--assistant{background:var(--bg-inset);border:1px solid var(--border);border-radius:2px 10px 10px 10px;padding:10px 13px;max-width:100%;white-space:pre-wrap;word-break:break-word;}` +
       // tool-call: the mock's bordered .toolrow with a green $ prompt, under a cyan '▸ tool' label.
       `.insrc-who--tool{color:var(--accent2);}` +
       `.insrc-toolrow{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;background:#0a0d14;padding:8px 11px;max-width:100%;}` +

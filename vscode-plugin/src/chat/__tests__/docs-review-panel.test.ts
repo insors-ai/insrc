@@ -766,3 +766,23 @@ test('t5: a DEGRADED index posts degradation and does NOT set blocked — the br
   assert.deepEqual((msg!.payload['sections'] as { anchors: unknown[] }).anchors, [],
     'and the index degrades to empty rather than to garbage');
 });
+
+test('t6: a DEGRADED body renders NO chooser — entries whose targets do not exist are worse than none', () => {
+  // On the fallback path the body is plain text, so no heading element exists to
+  // stamp. The shell must gate the chooser on what was actually stamped, not on
+  // what the host posted, or every entry becomes a dead control.
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+
+  assert.match(html, /var stamped=stampSlugs\(/, 'the stamped count is captured');
+  assert.match(html, /stamped>0\?m\.sections:\{anchors:\[\]\}/,
+    'the chooser is gated on the stamped count, so a degraded body renders no chooser');
+
+  // And the gate's downstream behaviour: an empty index renders nothing at all.
+  const host = node();
+  const rendered = loadSections().renderSectionChooser(host, { anchors: [] }, () => {});
+  assert.equal(rendered, false);
+  assert.equal(host.children.length, 0);
+});

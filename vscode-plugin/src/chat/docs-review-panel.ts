@@ -353,9 +353,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       DOCS_BODY_RENDERER_SOURCE +
       DOCS_SECTIONS_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
-      // Stamp first, so every chooser entry has a target to jump to.
-      `stampSlugs(bodyEl,m.sections);` +
-      `renderSectionChooser(secEl,m.sections,jumpToSection);` +
+      // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
+      // path the body is plain text with no heading elements, so nothing can be
+      // stamped — rendering the chooser anyway would offer entries whose targets
+      // do not exist and whose selection silently does nothing. A chooser that
+      // cannot navigate is worse than no chooser, and "no targets" is the same
+      // situation as "no headings", which already omits it entirely.
+      `var stamped=stampSlugs(bodyEl,m.sections);` +
+      `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` +
       // ac3: the notice comes from the POSTED state when the host declared one,
       // and otherwise from this render's own degradation — same shape either way.
       `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:r.degradation);` +

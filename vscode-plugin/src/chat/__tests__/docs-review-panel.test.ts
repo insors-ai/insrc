@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE } from '../docs-review-panel.js';
 import { deriveSectionIndex } from '../docs-sections.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
@@ -894,10 +894,23 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
 });
 
 /**
- * The PRE-S002 emitted shell, for nonce 'FIXED-NONCE': 60261 chars / 60305 UTF-8
- * bytes, sha256 d65b6e826c4435a5d8d7b011f406ff51e4f5b2c516fe5732b70b01acd4e058ec.
- * CAPTURED by checking the two source files out at the commit BEFORE t1 and
- * rendering the shell there, then pinned here — so this is a real baseline rather
+ * The emitted shell for nonce 'FIXED-NONCE', pinned so every change to it is a
+ * DECLARED change rather than an accident. A real baseline, not a same-build
+ * repeatability check — the vacuous shape the plan critique rejected, which
+ * compares render() to render() and passes no matter what the shell says.
+ *
+ * History, so the pin reads as evidence rather than as a magic number:
+ *   t1 (data-only)  60261 chars / 60305 bytes  d65b6e82…058ec
+ *       captured by checking the two source files out at the commit BEFORE t1
+ *       and rendering there; t1 reproduced it EXACTLY, which is how "t1 changes
+ *       nothing a reviewer sees" was proved rather than asserted.
+ *   t2 (this value) 62257 chars / 62301 bytes  8b709d01…6b03b
+ *       +1996 chars: DOCS_FR_SOURCE inlined after its two siblings, plus six
+ *       `.insrc-fr*` CSS rules. Declared, expected, and inert — nothing calls
+ *       the renderer until t5.
+ *
+ * A task that legitimately changes the shell updates these constants in the same
+ * commit and says why, as t2 does here. That is the point.
  * than a same-build repeatability check — the vacuous shape the plan critique
  * rejected, which compares render() to render() and passes no matter what the
  * shell says.
@@ -908,9 +921,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  60261,
-  bytes:  60305,
-  sha256: 'd65b6e826c4435a5d8d7b011f406ff51e4f5b2c516fe5732b70b01acd4e058ec',
+  chars:  62257,
+  bytes:  62301,
+  sha256: '8b709d010cd0ff5c29e9dee500725619fc295461ae2e46337c6fbfaadad6b03b',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -937,10 +950,231 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
 
   // t1 is DATA-ONLY: the webview has no code that reads the new field yet, so
   // the name must not appear anywhere in the emitted script.
-  assert.doesNotMatch(html, /functionalDefinition/,
-    'the webview bootstrap reads no functional record after t1');
+  // t1 was data-only. t2 inlines DOCS_FR_SOURCE, which names the RENDERER but
+  // still reads no posted field — nothing calls it until t5.
+  assert.doesNotMatch(html, /m\.functionalDefinition/,
+    'the webview reads no posted functional record yet');
 
   // The shell is a pure function of its nonce — the property the pin rests on.
   assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
   assert.notEqual(html, renderShellFor('OTHER-NONCE'), 'and the nonce really is in it');
+});
+
+// ---------------------------------------------------------------------------
+// S002/t2 — the functional-requirements renderer, EXECUTED against a DOM stub
+// rather than grepped for. The repo shipped a webview contract that string
+// assertions pronounced green while the behaviour was wrong; S001 answered that
+// by evaluating the source strings with `new Function`, and this extends it.
+// ---------------------------------------------------------------------------
+
+/** A node stub that records every property WRITE, so a test can prove a value
+ *  reached the DOM via textContent and never through a markup-bearing property. */
+interface FrNode {
+  tag: string;
+  className: string;
+  textContent: string;
+  children: FrNode[];
+  writes: Array<{ prop: string; value: unknown }>;
+  appendChild(c: FrNode): FrNode;
+}
+function frNode(tag: string): FrNode {
+  const writes: FrNode['writes'] = [];
+  const children: FrNode[] = [];
+  const n = {
+    tag, children, writes,
+    _className: '', _text: '',
+    appendChild(c: FrNode) { children.push(c); return c; },
+  } as unknown as FrNode & { _className: string; _text: string };
+  Object.defineProperty(n, 'className', {
+    get() { return n._className; },
+    set(v: string) { n._className = v; writes.push({ prop: 'className', value: v }); },
+  });
+  Object.defineProperty(n, 'textContent', {
+    get() { return n._text; },
+    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
+  });
+  // innerHTML / outerHTML exist ONLY to be caught: a write to either is recorded
+  // and asserted against, so "no markup assignment" is executed, not grepped.
+  for (const prop of ['innerHTML', 'outerHTML']) {
+    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
+  }
+  return n as FrNode;
+}
+
+/** Eval DOCS_FR_SOURCE with a stub `document`, returning renderFunctionalRequirements. */
+function loadFr(): (record: unknown) => { el: FrNode; degradation?: unknown } {
+  const doc = { createElement: (t: string) => frNode(t) };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_FR_SOURCE}; return renderFunctionalRequirements;`);
+  return make(doc) as ReturnType<typeof loadFr>;
+}
+
+/** Every node in the tree, root first. */
+function frAll(n: FrNode): FrNode[] {
+  return [n, ...n.children.flatMap(frAll)];
+}
+const frItems = (root: FrNode): FrNode[] => frAll(root).filter((n) => n.className === 'insrc-fr-item');
+const frIds = (root: FrNode): string[] =>
+  frAll(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
+const frGroupLabels = (root: FrNode): string[] =>
+  frAll(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
+
+const REC = {
+  requirements: [
+    { id: 'E:FR001', statement: 'Doc-level one.', scope: 'doc', rationale: 'because one' },
+    { id: 'E:FR002', statement: 'Doc-level two.', scope: 'doc' },
+    { id: 'E:S002:FR001', statement: 'Item one for s2.', scope: 'item', itemRef: 's2' },
+    { id: 'E:S003:FR001', statement: 'Item one for s3.', scope: 'item', itemRef: 's3' },
+    { id: 'E:S002:FR002', statement: 'Item two for s2.', scope: 'item', itemRef: 's2' },
+  ],
+};
+
+test('t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups', () => {
+  const { el } = loadFr()(REC);
+
+  // DISCRETE ELEMENTS, counted — not a substring of the rendered text, which
+  // would pass for a single blob containing all five statements.
+  assert.equal(frItems(el).length, 5, 'one element per requirement');
+  assert.deepEqual(frIds(el), ['E:FR001', 'E:FR002', 'E:S002:FR001', 'E:S002:FR002', 'E:S003:FR001'],
+    'doc-level first in record order, then per-item grouped by itemRef');
+
+  // Grouping is preserved, not flattened — the information the prose rendering
+  // carries today and a flat list would silently drop.
+  assert.deepEqual(frGroupLabels(el), ['s2', 's3'], 'groups in first-appearance order');
+  assert.equal(frGroupLabels(el).length, 2, 'no group without members');
+
+  // All three displayable fields survive, so the substitution is lossless against
+  // the markdown form it replaces.
+  const texts = frAll(el).map((n) => n.textContent);
+  assert.ok(texts.includes('Doc-level one.'));
+  assert.ok(texts.includes('because one'), 'the rationale is carried');
+  assert.equal(frAll(el).filter((n) => n.className === 'insrc-fr-why').length, 1,
+    'and only where the record has one');
+
+  // EXECUTED, not grepped: every write that put a string on screen was textContent.
+  const written = frAll(el).flatMap((n) => n.writes);
+  assert.ok(written.length > 0, 'the stub recorded writes');
+  assert.deepEqual([...new Set(written.map((w) => w.prop))].sort(), ['className', 'textContent'],
+    'no markup-bearing property was ever assigned');
+});
+
+test('t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element', () => {
+  const HOSTILE_ID = 'E2026*_`[]:FR_001*';
+  const HOSTILE_STMT = '<script>alert(1)</script> & <b>bold</b>';
+  const { el } = loadFr()({
+    requirements: [{ id: HOSTILE_ID, statement: HOSTILE_STMT, scope: 'doc' }],
+  });
+
+  // THE central falsifiable claim of this Story. The same id routed through the
+  // markdown path (prose generation -> marked -> guardMd) can be reformatted;
+  // this one cannot, because it is copied and never parsed.
+  assert.deepEqual(frIds(el), [HOSTILE_ID], 'the identifier is byte-identical to the record value');
+  const stmt = frAll(el).find((n) => n.className === 'insrc-fr-stmt');
+  assert.ok(stmt);
+  assert.equal(stmt!.textContent, HOSTILE_STMT, 'the statement is text, not markup');
+
+  // The <script> became TEXT, not a node: one id span + one statement span only.
+  assert.equal(frItems(el)[0]!.children.length, 2, 'no element was created from the markup');
+  assert.equal(frAll(el).flatMap((n) => n.writes).filter((w) => w.prop !== 'className' && w.prop !== 'textContent').length, 0,
+    'nothing was assigned through innerHTML/outerHTML');
+});
+
+test("t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId", () => {
+  const fr = loadFr();
+
+  // All of these ARRIVE: validateFunctionalDefinition runs at assembly inside the
+  // daemon and sc1 projects the body verbatim with no validation on the read path.
+  for (const bad of [undefined, null, {}, { requirements: undefined }, { requirements: null },
+    { requirements: 'nope' }, { requirements: {} }, { requirements: 42 }]) {
+    const { el } = fr(bad);
+    assert.equal(frItems(el).length, 0, `empty container for ${JSON.stringify(bad)}`);
+  }
+
+  // One bad entry never disqualifies its well-formed siblings.
+  const { el } = fr({
+    requirements: [
+      { id: 'E:FR001', statement: 'Good.', scope: 'doc' },
+      null, 'string', 42,
+      { id: 7, statement: 'non-string id', scope: 'doc' },
+      { id: 'E:FR002', statement: { not: 'a string' }, scope: 'doc' },
+      { id: 'E:FR003', statement: 'Also good.', scope: 'doc' },
+    ],
+  });
+  assert.deepEqual(frIds(el), ['E:FR001', 'E:FR003'], 'the renderable entries render; the rest are skipped');
+
+  // ORPHAN itemRef -> the SAME literal key the prose renderer uses
+  // (functional-definition.ts:99), so the two renderings of one record cannot
+  // disagree about where an orphan belongs.
+  const orphan = fr({
+    requirements: [
+      { id: 'E:S:FR001', statement: 'No itemRef.', scope: 'item' },
+      { id: 'E:S:FR002', statement: 'Empty itemRef.', scope: 'item', itemRef: '' },
+    ],
+  });
+  assert.deepEqual(frGroupLabels(orphan.el), ['(unassigned)'],
+    'orphans bucket under the prose renderer’s own key, not an invented one');
+  assert.equal(frItems(orphan.el).length, 2);
+
+  // DUPLICATE ids: BOTH render, in record order, neither dropped nor merged.
+  // Collapsing one would hide a real producer-side defect from the reviewer at
+  // the approval gate — the one person positioned to catch it.
+  const dup = fr({
+    requirements: [
+      { id: 'E:FR001', statement: 'First.', scope: 'doc' },
+      { id: 'E:FR001', statement: 'Second, same id.', scope: 'doc' },
+    ],
+  });
+  assert.deepEqual(frIds(dup.el), ['E:FR001', 'E:FR001'], 'a duplicate is shown, not silently collapsed');
+  assert.deepEqual(
+    frAll(dup.el).filter((n) => n.className === 'insrc-fr-stmt').map((n) => n.textContent),
+    ['First.', 'Second, same id.'], 'and both statements survive, in record order');
+});
+
+test('t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell\'s injection-site count is still exactly one', () => {
+  // Comments stripped BEFORE scanning: a source scan that reads prose has
+  // produced three false results in this repo already (/\bdocument\./ matching a
+  // doc comment, /TextBlock:/ and /assembleShell/ matching narrative text).
+  const code = DOCS_FR_SOURCE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  for (const banned of [/innerHTML/, /outerHTML/, /insertAdjacentHTML/, /document\.write/, /\.setAttribute\(/]) {
+    assert.doesNotMatch(code, banned, `DOCS_FR_SOURCE assigns no markup (${banned})`);
+  }
+  assert.match(code, /textContent=/, 'and it does write text');
+
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+  assert.equal((html.match(/\.innerHTML\s*=/g) ?? []).length, 1,
+    'the shell still has exactly one markup-injection site after a third source string');
+  assert.match(html, /el\.innerHTML=marked\.parse/, 'and it is still the guarded vendored parse');
+  assert.match(html, /function renderFunctionalRequirements\(record\)/, 'DOCS_FR_SOURCE is inlined');
+});
+
+test('t2: the item CSS fragment references only --it-* variables', () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  const html = fc.html();
+
+  // Scoped to the `.insrc-fr*` rules: the whole document legitimately contains
+  // other namespaces (chat's stylesheet is not here, but the mock markup and
+  // prose are), so a whole-document assertion would be unsound.
+  const rules = html.match(/\.insrc-fr[^{]*\{[^}]*\}/g) ?? [];
+  assert.ok(rules.length >= 5, `found the item rules (got ${rules.length})`);
+  for (const rule of rules) {
+    for (const v of rule.match(/var\(--[a-z-]+\)/g) ?? []) {
+      assert.match(v, /^var\(--it-/, `${rule} uses only --it-* (found ${v})`);
+    }
+  }
+  // The specific names, so a typo'd variable is caught too — an undefined var()
+  // inside a shorthand invalidates the whole declaration, silently.
+  const known = ['--it-fg', '--it-bg', '--it-dim', '--it-accent', '--it-border', '--it-font', '--it-warn', '--it-err', '--it-sel', '--it-line', '--it-size'];
+  for (const rule of rules) {
+    for (const v of rule.match(/--it-[a-z-]+/g) ?? []) {
+      assert.ok(known.includes(v), `${v} is a real token emitted by renderTerminalStyle`);
+    }
+  }
+  // The degraded-path neutralisers, which t4 verifies visually.
+  assert.match(rules.join(''), /white-space:normal/, 'inherited pre-wrap is neutralised');
+  assert.match(rules.join(''), /word-break:normal/);
 });

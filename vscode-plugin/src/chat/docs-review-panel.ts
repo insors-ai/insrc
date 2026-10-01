@@ -143,6 +143,85 @@ export const DOCS_SECTIONS_SOURCE =
   `d.textContent=degradation.notice||'';host.appendChild(d);return true;}`;
 
 /**
+ * S002/t2 — the functional-requirements renderer, as SOURCE so the shell inlines
+ * it into its single nonce'd script AND the tests `new Function`-evaluate it
+ * against a stub DOM. The third member of the family DOCS_BODY_RENDERER_SOURCE
+ * (:76) and DOCS_SECTIONS_SOURCE (:111) established, written in the same
+ * ES5-compatible style for the same reason: it runs as a plain script in the
+ * webview and under `new Function` in node:test.
+ *
+ * `renderFunctionalRequirements` is the FIRST implementation of sc2's published
+ * `StructuredRenderer<FunctionalDefinition>`. It builds DOM and sets textContent
+ * and assigns no markup anywhere, so the surface's single injection site — the
+ * markdown body's `el.innerHTML=marked.parse` — stays single.
+ *
+ * Every string the reviewer reads is copied straight off the record. That is the
+ * whole point of the Story: the same identifier reaching the screen through the
+ * markdown path (prose generation -> marked's inline parser -> the guardMd scrub)
+ * can be silently reformatted, and today's FrId grammar being free of
+ * markdown-active characters is a property of the minter, not a guarantee the
+ * display layer is entitled to lean on.
+ *
+ * The record is treated as STRUCTURALLY UNTRUSTED: validateFunctionalDefinition
+ * (functional-definition.ts:54) runs at ASSEMBLY time inside the daemon, and sc1
+ * projects body.functionalDefinition verbatim with no validation, so a malformed
+ * `requirements`, a malformed entry, a duplicate id and an orphan itemRef all
+ * ARRIVE here rather than being impossible.
+ *
+ * Two deliberate agreements with the prose renderer it replaces on screen
+ * (functional-definition.ts:87-110), so the two renderings of one record can
+ * never disagree:
+ *   - per-item requirements group under their `itemRef`, and an orphan falls into
+ *     the same literal `(unassigned)` bucket (:99);
+ *   - groups appear in first-appearance order, as the prose renderer's Map does.
+ * And one deliberate DIVERGENCE: the prose renderer drops an entry whose `scope`
+ * is neither 'doc' nor 'item'; this renderer treats anything that is not 'item'
+ * as doc-level, so a malformed scope shows the commitment rather than hiding it.
+ * Showing more is safe here; hiding a commitment from the reviewer at the
+ * approval gate is not.
+ *
+ * Nothing calls this yet — t5 wires it in. Defined and inlined, inert.
+ */
+export const DOCS_FR_SOURCE =
+  // One requirement -> one discrete element. textContent ONLY, on every field.
+  `function frItem(r){` +
+  `var it=document.createElement('div');it.className='insrc-fr-item';` +
+  `var id=document.createElement('span');id.className='insrc-fr-id';id.textContent=r.id;it.appendChild(id);` +
+  `var st=document.createElement('span');st.className='insrc-fr-stmt';st.textContent=r.statement;it.appendChild(st);` +
+  `if(typeof r.rationale==='string'&&r.rationale.length>0){` +
+  `var ra=document.createElement('div');ra.className='insrc-fr-why';ra.textContent=r.rationale;it.appendChild(ra);}` +
+  `return it;}` +
+  // An entry is renderable only if it can actually be displayed: a non-null
+  // object carrying both strings. One bad entry never disqualifies its siblings.
+  `function frOk(r){return !!r&&typeof r==='object'&&typeof r.id==='string'&&typeof r.statement==='string';}` +
+  `function renderFunctionalRequirements(record){` +
+  `var root=document.createElement('div');root.className='insrc-fr';` +
+  // Array.isArray BEFORE any iteration: this repo has already shipped the
+  // unguarded version of this bug once, in the UX companion's childrenOf.
+  `var reqs=(record&&Array.isArray(record.requirements))?record.requirements:[];` +
+  `var i,r,key;` +
+  // Doc-level first, in RECORD ORDER. Nothing is sorted, deduplicated or
+  // renumbered: two entries sharing one FrId both render, because collapsing a
+  // duplicate would hide a producer-side defect from the reviewer.
+  `for(i=0;i<reqs.length;i++){r=reqs[i];if(frOk(r)&&r.scope!=='item')root.appendChild(frItem(r));}` +
+  // Then per-item groups, in first-appearance order.
+  `var order=[],groups={};` +
+  `for(i=0;i<reqs.length;i++){r=reqs[i];if(!frOk(r)||r.scope!=='item')continue;` +
+  `key=(typeof r.itemRef==='string'&&r.itemRef.length>0)?r.itemRef:'(unassigned)';` +
+  `if(!Object.prototype.hasOwnProperty.call(groups,key)){groups[key]=[];order.push(key);}` +
+  `groups[key].push(r);}` +
+  // A group exists only because it has members, so no empty header is possible.
+  `for(i=0;i<order.length;i++){` +
+  `var g=document.createElement('div');g.className='insrc-fr-group';` +
+  `var h=document.createElement('div');h.className='insrc-fr-group-label';h.textContent=order[i];g.appendChild(h);` +
+  `var list=groups[order[i]];` +
+  `for(var j=0;j<list.length;j++)g.appendChild(frItem(list[j]));` +
+  `root.appendChild(g);}` +
+  // The sc2 shape. `degradation` is left ABSENT: PLACEMENT is what can degrade,
+  // not rendering, so t4 decides the notice.
+  `return {el:root};}`;
+
+/**
  * sc2 (S001/t4) — the renderer contract s2, s3 and s4 build their structured
  * renderers against. PUBLISHED HERE AND IMPLEMENTED NOWHERE in s1: this Story
  * renders only the markdown body, so the type exists so the later Stories share
@@ -338,6 +417,22 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;font-family:var(--it-font);color:var(--it-fg);}` +
       `.insrc-docs-notice{color:var(--it-warn);border:1px solid var(--it-border);padding:4px 8px;margin:4px 0;font-size:12px;}` +
       `#insrc-docs-sections select{background:var(--it-bg);color:var(--it-fg);border:1px solid var(--it-border);font-family:var(--it-font);font-size:12px;padding:2px 4px;margin:4px 0;max-width:100%;}` +
+      // S002/t2 — the functional-requirement items. `--it-*` ONLY: the chat
+      // surface's `--sans`/`--fg-strong`/`--border` names are undefined here, and
+      // an undefined var() inside a shorthand invalidates the whole declaration,
+      // which is how borders and colours vanish silently (the S001 gotcha).
+      //
+      // `white-space:normal;word-break:normal` are not decoration. On the degraded
+      // path renderMarkdownBody sets `.insrc-docs-plain` on the BODY CONTAINER
+      // (:90), whose `white-space:pre-wrap;word-break:break-word` would otherwise
+      // inherit into these items — on precisely the path where this block is the
+      // reviewer's only legible access to the commitments. t4 verifies it visually.
+      `.insrc-fr{margin:6px 0;}` +
+      `.insrc-fr-item{border-left:2px solid var(--it-accent);padding:4px 0 4px 10px;margin:6px 0;white-space:normal;word-break:normal;}` +
+      `.insrc-fr-id{display:block;color:var(--it-accent);font-family:var(--it-font);font-size:12px;}` +
+      `.insrc-fr-stmt{display:block;color:var(--it-fg);font-family:var(--it-font);}` +
+      `.insrc-fr-why{color:var(--it-dim);font-family:var(--it-font);font-size:12px;margin-top:3px;}` +
+      `.insrc-fr-group-label{color:var(--it-fg);font-family:var(--it-font);margin:10px 0 2px;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
@@ -363,6 +458,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // approve/request-changes controls (controls hidden while blocked).
       DOCS_BODY_RENDERER_SOURCE +
       DOCS_SECTIONS_SOURCE +
+      // S002/t2 — inlined after its two siblings, since its placement step (t5)
+      // runs after both. INERT at t2: defined, nothing calls it yet.
+      DOCS_FR_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be

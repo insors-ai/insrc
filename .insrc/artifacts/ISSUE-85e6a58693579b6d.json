@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1790855746772-inrcz5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-01T11:57:40.327Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 113554,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "85e6a58693579b6d",
+    "epicSlug": "ux-mock-companion-does-not-produce",
+    "standalone": true,
+    "magnitude": "sized",
+    "approvedAt": "2026-10-01T12:00:18.135Z",
+    "parentRef": {
+      "slug": "make-workflow-framework-s-generated-artifact",
+      "storyId": "s4"
+    }
+  },
+  "body": {
+    "title": "The experience mock is published as a diagram of the card's JSON, not as a mock of the interface",
+    "reproduction": "Author any document whose body carries a `uxDefinition`, approve it, and open the generated `ux-mock.html` sibling.\n\nObserved: the page shows a Mermaid node graph whose boxes are labelled with ELEMENT TYPE NAMES — `TextBlock: \"insrc docs review — a pending…\"`, `Container`, `ColumnSet` — wired together by containment arrows, followed by a prose section that re-lists the same elements as bullets (`TextBlock: \"…\" — read-only display text`). Nothing on the page resembles a user interface: no laid-out text, no input controls, no buttons, no columns.\n\nConcretely, the mock generated for Epic bfe98ff7's own HLD renders as a single row of small near-identical boxes above a large empty area, over an \"Elements & roles\" bullet list. A reviewer opening it to see what the feature will look like learns only what JSON the author wrote.\n\nExpected: a reader opens the experience mock and sees an approximation of the interface — text laid out as text, inputs as input controls, an action set as buttons, a column set as side-by-side columns. That is what both the ref kind (`ux-mock`) and the document section (\"Experience mock\" / \"UX\") promise.",
+    "rootCause": "The UX companion shares the DIAGRAM pipeline with the ER, sequence and component companions, and that pipeline has no layout path.\n\n`uxDefinitionToIr` (src/workflow/artifacts/companion/ux.ts:275-303) returns a `DocumentIR` and fills it with graph primitives, not layout. It seeds a root node for the card, then walks the element tree pushing one node per element and one edge per parent/child relationship — `nodes.push({ id, label: labelFor(el), kind: el.type })` at :288 and `edges.push({ id: ..., from: parentId, to: id, kind: 'contains' })` at :289 — and returns them as `derived: { nodes, edges }` at :298. That is the same shape `erDefinitionToIr` (er.ts:273) and `componentDependencyDefinitionToIr` (component.ts:207) produce.\n\n`labelFor` (ux.ts:191-202) is the clearest evidence the output is an inventory of the JSON rather than a rendering of it: for each element it returns a string naming the element's own type — `TextBlock: \"<text>\"`, `Container`, `ColumnSet`, `Column (<width>)`, `Input.Text #<id>`. The element's content becomes a caption on a graph node instead of becoming content.\n\n`assembleShell` (src/docgen/render/shell.ts:255) then renders that IR, and it is unconditionally a diagram shell: it loads the Mermaid runtime, and for an oversized IR falls back to `toGraphvizDot(ir)` rendered as SVG. Both branches draw a graph; neither lays out a document. So the IR a UX definition produces could not render as a mock even in principle.\n\nFinally, nothing in the repository can render an Adaptive Card. Only the Adaptive Cards JSON SCHEMA ships, loaded by `loadAdaptiveCardsSchema` (adaptive-cards.ts) for ajv validation — the card is validated for well-formedness and then diagrammed.\n\nThis is pre-existing and affects every ux-mock ever generated. It is not introduced by Epic bfe98ff7; it was surfaced by inspecting the companion that Epic's own HLD produced.",
+    "fixIntent": "Make the experience mock show the experience: the generated companion should present the authored card as an approximation of the interface, where each element appears as the thing it denotes rather than as a labelled node — text as laid-out text, an input as an input control, an action set as buttons, a column set as side-by-side columns, a container as a visually grouped region — preserving the card's nesting and element order.\n\nThe companion must keep the properties the surrounding system already relies on: a single self-contained offline file with no network fetches, deterministic output for a given definition, and the existing reference contract by which a document links to its companion rather than inlining it. Every element type the UX schema admits must render as something; an element the renderer does not understand must degrade visibly rather than vanish, so a reviewer is never shown a mock that silently omits part of the authored design.\n\nThe explanatory prose the companion already carries should remain available, because it is the part a reviewer reads to understand intent — but it should accompany the rendered mock rather than substitute for it.\n\nDELIBERATELY NOT DECIDED HERE: whether to vendor an existing Adaptive Cards renderer, author a deterministic wireframe emitter, or extend the document-generation shell with a layout document type. Those have materially different costs in bundle size, fidelity and ongoing maintenance, and choosing between them is the design stage's job. The routing title attached to this record leans toward one of the three; the design stage should score all three on their merits rather than treat that phrasing as a decision already taken.\n\nSequencing: this must land before Epic bfe98ff7's Story S004, which displays this artifact in the review pane — shipping that Story against the current renderer would put a node graph behind a label reading \"experience mock\".",
+    "feedback": [
+      {
+        "id": "db97e5c3",
+        "author": "subho@insors.io (via Claude, design.story S001)",
+        "timestamp": "2026-10-01T12:25:37.447Z",
+        "target": {
+          "file": "src/workflow/artifacts/companion/render.ts",
+          "segment": {
+            "startLine": 151,
+            "endLine": 151
+          }
+        },
+        "comment": "CORRECTION to this issue's triage signal. The signal asserted that renderUxCompanion 'currently stamps a diagram kind' and cited an external-contract blast radius on that basis. Reading the function shows otherwise: render.ts:151 is `kind:    'ux-mock',` and it is the ONLY occurrence of that literal in source, so the companion ref vocabulary is ALREADY correct. The defect is strictly the generated HTML BODY. This NARROWS the work: no consumer-visible ref contract changes, and neither IDE plugin nor Epic bfe98ff7's S003/S004 — all of which consume refs rather than companion bodies — is affected. Everything else in this record (reproduction, root cause, fix intent) stands as approved. Recorded as feedback rather than by amending the approved body, so the ledger carries the correction without re-opening the approval gate. The approved S001 LLD additionally pins kind:'ux-mock' with a regression assertion, so this fact stops having to be re-read off a file line by hand.",
+        "kind": "comment"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:275",
+      "quotedText": "export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:288",
+      "quotedText": "nodes.push({ id, label: labelFor(el), kind: el.type });"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:289",
+      "quotedText": "edges.push({ id: `${parentId}->${id}`, from: parentId, to: id, kind: 'contains' });"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:298",
+      "quotedText": "derived:             { nodes, edges },"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:193",
+      "quotedText": "case 'TextBlock':       return `TextBlock: \"${truncate(el.text)}\"`;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/ux.ts:199",
+      "quotedText": "case 'ColumnSet':       return 'ColumnSet';"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts:255",
+      "quotedText": "export async function assembleShell("
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts:270",
+      "quotedText": "const result = await renderer.renderSvg(toGraphvizDot(ir));"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/er.ts:273",
+      "quotedText": "export function erDefinitionToIr(erDef: ErDefinition): DocumentIR {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/render.ts:131",
+      "quotedText": "renderUxCompanion("
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/er-schema.ts:62",
+      "quotedText": "kind:        { enum: ['diagram-mermaid', 'diagram-html', 'ux-mock'] },"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step how-does-it-work over src/workflow/artifacts/companion (6 explorations, repoIndexedAt 2026-10-01T11:41:00Z)",
+      "quotedText": "The decisive fact is the RETURN TYPE of the first function: DocumentIR. That is the same intermediate representation the diagram mappers in this module produce"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/HLD.md — UX section",
+      "quotedText": "Experience mock — s4, sc4 slot labelled 'experience', peer to the diagram"
+    }
+  ]
+}

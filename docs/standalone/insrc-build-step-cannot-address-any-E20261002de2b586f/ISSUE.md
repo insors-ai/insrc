@@ -1,0 +1,67 @@
+<!-- insrc:artifact ISSUE-de2b586f80943e39 -->
+
+# Resolve bugfix-chain task refs from the ISSUE anchor when no DEF exists
+
+## Reproduction
+
+Take any bugfix routed as `sized`, which produces the chain ISSUE -> LLD -> PLAN with a task-bearing plan. ISSUE-93081bff91ae5108 is the live example: its approved PLAN carries ten tasks t1..t10.
+
+STEPS. Call `insrc_build_step` with `{ phase: 'implement', target: 's1/t1', epicHash: '93081bff91ae5108' }`.
+
+OBSERVED. `{ next: 'error', error: { code: 'unresolved-target', message: "insrc_build_step: could not resolve target 's1/t1'. Pass a task issue (#N / owner/repo#N), a hierarchical task id, or a structural label (s1/t3)." } }`.
+
+The same error was then reproduced on two further calls, both actually executed rather than inferred: the same request with `target: 'S001/t1'` (matching the story id the artifacts are actually named with), and `{ phase: 'validate', target: 's1/t1', epicHash: '93081bff91ae5108' }`. All three return byte-identical errors. So every task-level target form fails, in both build phases, and no task of the approved plan can be implemented or validated.
+
+EXPECTED. The target resolves to task t1 of story S001 under that epic hash, and the implement prompt is returned.
+
+SCOPE. Not specific to one story: every one of the 25 `S001` stories in this repo's artifact tree lacks a DEF file — an enumeration over `.insrc/artifacts` pairing each `PLAN-<hash>-S001.json` against a sibling `DEF-<hash>.json` returns 0 with and 25 without. Those all shipped only because they were classified `small` or `trivial` and went through the standalone no-plan bypass, which skips task resolution altogether. A `sized` bugfix is the first case that produces addressable tasks, so it is the first to hit this.
+
+## Root cause
+
+Epic identity in the resolver is anchored EXCLUSIVELY on a `DEF-<hash>.json` file, and a bugfix chain never writes one — it writes `ISSUE-<hash>.json`. There are three DEF-only gates, and investigating the code corrected the diagnosis this report started with.
+
+The cause was initially reported as the DEF read inside `buildRef` (resolve.ts:138-142), which reads `DEF-<hash>.json` and returns null unless its meta carries both `epicSlug` and `createdAt`. That gate is real, but it is NOT the first one hit, and control never reaches it on the failing path. `resolveByLabel` (resolve.ts:267) begins by calling `listEpicHashes` (resolve.ts:121-128), whose body enumerates hashes by matching `DEF_RE` against the directory listing and pushing only DEF matches. A bugfix epic therefore does not appear in that list at all, so the scoped prefix filter at :274-275 finds zero matches and returns null at :276 before `buildRef` is called. The same enumeration gates the hierarchical path, which also calls `listEpicHashes` at :251.
+
+So the DEF-less epic is INVISIBLE to the resolver, not merely under-described by it. The distinction is load-bearing rather than pedantic: a correction applied only to `buildRef` would leave the epic absent from enumeration and the defect would persist unchanged. Both gates must be addressed — the enumeration must know such an epic exists, and the builder must be able to read its identity.
+
+What makes this a small correction rather than a schema problem is that the ISSUE artifact already carries exactly the two fields the builder needs — `ISSUE-93081bff91ae5108.json`'s meta contains `epicSlug: 'build-ledger-record-s-provenance-broken'` and `createdAt: '2026-10-02T09:15:19.460Z'`. Nothing new has to be recorded; an existing shape simply is not being read.
+
+A THIRD, SUBORDINATE defect sits nearby and should not be confused with the blocking one: `LLD_RE` and `PLAN_RE` (resolve.ts:75-76) match only lowercase `s\d+`, while the bugfix chain mints story id `S001`. These two regexes are used only at :210 and :222, inside the issue-number resolution path, which is NOT the path that failed above. It is a latent defect that would surface when resolving a bugfix story by GitHub issue number, and it belongs in the same correction — but it is not why the build is blocked.
+
+## Fix intent
+
+Make a bugfix-chain epic resolvable by letting the resolver fall back to the ISSUE artifact as the epic's identity anchor when no DEF exists, so an approved PLAN's tasks become addressable through the normal task-level target forms. This covers both DEF-only gates — the epic must become visible to hash enumeration, and its slug and creation timestamp must be readable for id minting — and additionally makes a bugfix story resolvable by issue number, which the lowercase-only story-id patterns prevent today.
+
+The correction must be ADDITIVE: an epic that has a DEF keeps resolving exactly as it does today, with the ISSUE path consulted only in the DEF's absence, so no existing epic chain changes behaviour. It must introduce no new persisted field — the ISSUE artifact already carries the required identity — and must not make the resolver guess between two anchors when both are present.
+
+Deliberately NOT in scope: changing how story ids are minted, reconciling the two coexisting conventions (`s1` versus `S001`), or altering the standalone no-plan bypass that small and trivial bugfixes use today.
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/tracker/resolve.ts:121-128 — listEpicHashes enumerates epic hashes from DEF files ONLY. THE FIRST AND ACTUAL BLOCKING GATE.` — "/** Every distinct epic hash present in the artifacts dir (from DEF files). */
+function listEpicHashes(dir: string): readonly string[] {
+	const hashes: string[] = [];
+	for (const f of listFiles(dir)) "
+- **[[c2]]** `code` `src/workflow/tracker/resolve.ts:267-280 — resolveByLabel filters the DEF-derived hash list and returns null on zero matches, BEFORE buildRef is reached` — "const hashes = listEpicHashes(dir);
+if (epicHash !== undefined) {
+	const matches = hashes.filter(h => h.startsWith(epicHash));
+	if (matches.length !== 1) return null;
+	return buildRef(dir, matches[0]!"
+- **[[c3]]** `code` `src/workflow/tracker/resolve.ts:137-142 — buildRef's DEF read, the SECOND gate: it needs epicSlug + createdAt or returns null` — "function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null {
+	const def = readArtifact(join(dir, `DEF-${epicHash}.json`));
+	const dmeta = def?.meta;
+	if (d"
+- **[[c4]]** `code` `src/workflow/tracker/resolve.ts:75-76 — the SUBORDINATE defect: story-id patterns match lowercase s\d+ only, used at :210 and :222 on the issue-number path` — "const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
+const PLAN_RE = /^PLAN-([0-9a-f]{16})-(s\d+)\.json$/;"
+- **[[c5]]** `code` `src/workflow/tracker/resolve.ts:251 — the hierarchical path calls the same DEF-only enumeration, so it is blocked at the identical gate` — "for (const h of listEpicHashes(dir)) {"
+- **[[c6]]** `prior-artifact` `.insrc/artifacts/ISSUE-93081bff91ae5108.json — the ISSUE artifact ALREADY carries the two fields buildRef demands, which is why no schema change is needed` — "meta keys include epicSlug, createdAt, issueHash, magnitude, standalone, workflow. epicSlug = 'build-ledger-record-s-provenance-broken'; createdAt = '2026-10-02T09:15:19.460Z'; workflow = 'issue'."
+- **[[c7]]** `code` `src/mcp/build-step/render.ts:53-61 — resolveTaskRef turns the resolver's null into the observed unresolved-target message` — "export function resolveTaskRef(repoPath: string, target: string, epicHash?: string): TaskResolution {
+	const ref = resolveWorkflowRef(repoPath, target, { epicHash });
+	if (ref === null) {
+		return { o"
+- **[[c8]]** `code` `src/mcp/build-step/phases/implement.ts:56-57 and src/mcp/build-step/phases/validate.ts:77 — BOTH build phases surface the failure through the same resolveTaskRef, which is why the implement and validate calls return byte-identical errors` — "implement.ts:56-57 — const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
+if (!resolved.ok) return err('unresolved-target', resolved.message);
+validate.ts:77 — if (!resolved.ok) re"
+- **[[c9]]** `prior-artifact` `.insrc/artifacts/PLAN-93081bff91ae5108-S001.json — the approved 10-task plan whose tasks are unaddressable, establishing the defect is currently blocking rather than theoretical` — "10 tasks (t1..t10), 64 tests, 38 citations; meta.approvedAt stamped 2026-10-02T14:30:42.891Z. Named PLAN-<hash>-S001.json — uppercase story id, with no sibling DEF-<hash>.json in the same directory."
+- **[[c10]]** `code` `src/workflow/tracker/__tests__/tasks.test.ts and src/mcp/build-step/__tests__/build-step.test.ts — the existing suites that cover this resolver, including a committed regression test for the adjacent multi-epic scoping fix that already exercises the 's1/t1' label path and this same unresolved-target error` — "build-step.test.ts:498 — "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)""
+- **[[c11]]** `analyze-bundle` `Enumeration over .insrc/artifacts pairing every PLAN-<hash>-S001.json against a sibling DEF-<hash>.json — the grounding for the systemic-scope claim, added after the s2 audit found that count uncited` — "For each of the 25 PLAN-*-S001.json files, tested whether .insrc/artifacts/DEF-<hash>.json exists. Result: with DEF: 0 | without DEF: 25. Separately, 63 BUILD records are tracked in the same directory"

@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "de2b586f80943e39",
+    "storyId": "S001",
+    "createdAt": "2026-10-02T14:43:48.557Z",
+    "updatedAt": "2026-10-02T14:57:22.056Z",
+    "approvedAt": "2026-10-02T14:57:22.092Z"
+  },
+  "body": {
+    "focus": "Make a bugfix-chain epic resolvable so an approved PLAN's tasks become addressable by the normal task-level target forms. Today epic identity in src/workflow/tracker/resolve.ts is anchored EXCLUSIVELY on DEF-<hash>.json, and a bugfix chain writes ISSUE-<hash>.json instead, so there are two DEF-only gates in series: (1) listEpicHashes (:121-128) enumerates hashes by matching DEF_RE and pushing only DEF matches, so a DEF-less epic is INVISIBLE — this is the FIRST and actual blocking gate, hit by resolveByLabel (:267) whose prefix filter then returns null at :276, and by the hierarchical path at :251; and (2) buildRef (:137-142) reads DEF-<hash>.json and returns null unless its meta carries epicSlug and createdAt. BOTH must be addressed — fixing only buildRef leaves the epic absent from enumeration and the defect intact. The ISSUE artifact already carries epicSlug and createdAt, so this is a fallback READ of an existing shape, not a schema change: add no new persisted field. Also widen the lowercase-only story-id patterns LLD_RE and PLAN_RE (:75-76) to accept the uppercase S001 form the bugfix chain mints, so a bugfix story is resolvable by issue number too (a subordinate latent defect on the :210/:222 issue-number path, NOT the cause of the block). HARD CONSTRAINTS: the change must be ADDITIVE — an epic that HAS a DEF must keep resolving exactly as today, with the ISSUE consulted only in the DEF's absence, and the resolver must never guess between two anchors when both are present. NOT in scope: changing how story ids are minted, reconciling the s1-vs-S001 conventions, or altering the standalone no-plan bypass. VERIFICATION that matters: after the change, `insrc_build_step {phase:'implement', target:'s1/t1', epicHash:'93081bff91ae5108'}` must resolve instead of returning unresolved-target — that call is the live reproduction and it currently fails in both build phases. Extend the existing suites (src/workflow/tracker/__tests__/tasks.test.ts, src/mcp/build-step/__tests__/build-step.test.ts) rather than inventing new ones, and keep build-step.test.ts:498's committed regression test green: a multi-epic dir with 's1/t1' and NO epicHash must still refuse to guess.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ]
+  }
+}

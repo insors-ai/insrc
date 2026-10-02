@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
+import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,6 +22,11 @@ import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
 import type { WorkflowApproveResult } from '../../../../src/workflow/gates.js';
+// S004/t2 — the SHARED parity fixtures, consumed by BOTH the daemon renderer and
+// the client one, so the structural diff compares two RENDERERS rather than two
+// authors' intentions. They live in the plugin test tree because S004 must touch
+// no file under src/.
+import { UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE } from './fixtures/ux-parity.js';
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -1005,10 +1010,22 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  79530,
-  bytes:  79582,
-  sha256: '47ed51d04f47ba442818d6886f0479d95505ef8fe17cc21bc16ff030d7e1b933',
+  chars:  85260,
+  bytes:  85320,
+  sha256: 'e56d141e1dbfcbc950b0f00f900fd917f4fa3e5a9ac61d18407f770be49b4bab',
 } as const;
+
+/**
+ * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
+ * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
+ * the fifth source string and its CSS fragment, and the test below proves those two
+ * additions account for the delta EXACTLY — 79530 + 3457 + 2273 = 85260 — so
+ * nothing else slipped into the shell alongside them.
+ *
+ * Every value here was COMPUTED at the fixed nonce and copied from the computation,
+ * never typed. A number typed into a pin is a number nobody checked.
+ */
+const SHELL_BASELINE_BEFORE_S004_T2 = { chars: 79530, bytes: 79582 } as const;
 
 function renderShellFor(nonce: string): string {
   const fc = fakeChannel();
@@ -3767,23 +3784,56 @@ test('t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather tha
   assert.ok(decl.includes('readonly experienceAnchorSlug?: string | undefined;'));
 });
 
-test('t1: the emitted shell is BYTE-IDENTICAL to the pinned baseline — this task moves data, not pixels', async () => {
+test('t1/t2: the shell matches the pin, and NOTHING reads either new field yet', async () => {
   const { createHash } = await import('node:crypto');
   const html = renderShellFor(SHELL_BASELINE.nonce);
 
   assert.equal(
     createHash('sha256').update(html, 'utf8').digest('hex'),
     SHELL_BASELINE.sha256,
-    't1 is data-only: no source string joined the script and no call site changed',
+    'the emitted shell matches the current pin',
   );
   assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
   assert.equal(Buffer.byteLength(html, 'utf8'), SHELL_BASELINE.bytes, 'shell length in UTF-8 bytes');
 
-  // DATA-ONLY means exactly this: the webview has no code that reads either new
-  // field yet, so neither name may appear anywhere in the emitted script. t2 adds
-  // the renderer (still inert) and t6 adds the one read.
-  assert.doesNotMatch(html, /m\.uxDefinition/, 'nothing reads the record yet — the renderer arrives at t2');
+  // THE INERTNESS CLAIM, and the part of this test that still bites after t2 moved
+  // the pin: t1 carried the record to the webview and t2 gave the webview code that
+  // could draw it, but NOTHING may read either field until t6 mounts the slot. So
+  // neither name may appear in the emitted script. This is what makes "t2 is inert"
+  // checkable rather than asserted in a commit message.
+  assert.doesNotMatch(html, /m\.uxDefinition/, 'nothing reads the record yet — the mount arrives at t6');
   assert.doesNotMatch(html, /m\.experienceAnchorSlug/, 'nothing reads the anchor yet — the mount arrives at t6');
+  // And the renderer IS there, so the two statements together say "defined, unused".
+  assert.match(html, /function uxRenderCard\(/, 'the renderer is inlined');
+});
+
+test('t2: the pin moved by EXACTLY the declared source string and CSS fragment — nothing else slipped in', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+
+  // The two additions, measured from the artefacts themselves rather than from
+  // numbers typed here: the source string's own length, and the CSS fragment
+  // located in the emitted shell between its first and last rule.
+  const cssStart = html.indexOf('.ux-card{');
+  const cssEnd = html.indexOf('}', html.indexOf('.ux-unknown{')) + 1;
+  assert.ok(cssStart > 0 && cssEnd > cssStart, 'the ux CSS fragment is in the shell');
+  const cssChars = cssEnd - cssStart;
+
+  // ARITHMETIC, not assertion: if anything OTHER than these two had joined the
+  // shell, this sum would not close. That is what turns a moved pin from "I changed
+  // it" into "here is what changed and why it is all of it".
+  assert.equal(
+    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars,
+    SHELL_BASELINE.chars,
+    'the delta is exactly the fifth source string plus its CSS fragment',
+  );
+  // The source string really is inlined verbatim, which is what licenses using its
+  // length as the script half of the delta.
+  assert.ok(html.includes(DOCS_UX_SOURCE), 'DOCS_UX_SOURCE is inlined verbatim');
+  // And the shell still has the four earlier strings, so the delta is an ADDITION
+  // rather than a swap that happens to balance.
+  for (const earlier of [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE]) {
+    assert.ok(html.includes(earlier), 'each earlier source string is still inlined');
+  }
 });
 
 test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', async () => {
@@ -3828,5 +3878,996 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
   assert.ok(
     paths.some((p) => p.startsWith('vscode-plugin/src/chat/')),
     'the Story works in the plugin chat surface',
+  );
+});
+
+// ---------------------------------------------------------------------------
+// S004/t2 — DOCS_UX_SOURCE: the element dispatch and the card renderer, EXECUTED.
+//
+// The source string is evaluated with `new Function` against a RECORDING document
+// stub, so "built with createElement, written with textContent" is a fact these
+// tests observe rather than a claim they grep for. The stub exposes innerHTML and
+// outerHTML setters that exist ONLY to be caught.
+//
+// The authority is the daemon's renderUxMockDocument (ux.ts:482) and its
+// elementHtml (:350). Structure and the ux-* vocabulary are mirrored; the method
+// is refused. The structural parity harness below proves the first half and the
+// no-markup tests prove the second.
+//
+// INERT: nothing calls these functions yet, so the only change to the surface is
+// the added source text — which is why SHELL_BASELINE moves in this commit.
+// ---------------------------------------------------------------------------
+
+/** The all-eight-members fixture, used wherever a test needs a non-trivial card
+ *  rather than a specific element. Named off the shared set so it cannot drift
+ *  from what the parity harness compares. */
+const UX_PARITY_FIXTURES_FOR_TEST =
+  UX_PARITY_FIXTURES.find((f) => f.name === 'every-member')!;
+
+/** A recording node: captures every property write, every attribute and every
+ *  child, so the renderer's MECHANISM is observable. Mirrors S003's dgNode, with
+ *  className and style added because this renderer is an HTML one. */
+interface UxNode {
+  tag: string;
+  className: string;
+  textContent: string;
+  style: Record<string, string>;
+  attrs: Record<string, string>;
+  children: Array<UxNode | UxTextNode>;
+  writes: Array<{ prop: string; value: unknown }>;
+  appendChild(c: UxNode | UxTextNode): UxNode | UxTextNode;
+  setAttribute(k: string, v: string): void;
+}
+interface UxTextNode { nodeType: 3; data: string }
+
+function isText(n: UxNode | UxTextNode): n is UxTextNode {
+  return (n as UxTextNode).nodeType === 3;
+}
+
+function uxNodeStub(tag: string): UxNode {
+  const writes: UxNode['writes'] = [];
+  const children: UxNode['children'] = [];
+  const attrs: Record<string, string> = {};
+  const style: Record<string, string> = {};
+  const n = {
+    tag, children, writes, attrs, style,
+    _text: '', _cls: '',
+    appendChild(c: UxNode | UxTextNode) { children.push(c); return c; },
+    setAttribute(k: string, v: string) { attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
+  } as unknown as UxNode & { _text: string; _cls: string };
+  Object.defineProperty(n, 'textContent', {
+    get() { return n._text; },
+    set(v: string) { n._text = v; writes.push({ prop: 'textContent', value: v }); },
+  });
+  Object.defineProperty(n, 'className', {
+    get() { return n._cls; },
+    set(v: string) { n._cls = v; writes.push({ prop: 'className', value: v }); },
+  });
+  // Present ONLY to be caught: any write is recorded and asserted against.
+  for (const prop of ['innerHTML', 'outerHTML']) {
+    Object.defineProperty(n, prop, { set(v: unknown) { writes.push({ prop, value: v }); }, get() { return ''; } });
+  }
+  return n as UxNode;
+}
+
+interface UxApi {
+  uxRenderCard(record: unknown): { el: UxNode };
+  uxElement(el: unknown, depth: number): UxNode;
+  setDepthMax(n: number | null): void;
+  created: string[];
+  texts: string[];
+  nodes: UxNode[];
+}
+
+/** Evaluate DOCS_UX_SOURCE against a recording document stub. */
+function loadUx(): UxApi {
+  const created: string[] = [];
+  const texts: string[] = [];
+  const nodes: UxNode[] = [];
+  const doc = {
+    createElement: (t: string) => { created.push(t); const n = uxNodeStub(t); nodes.push(n); return n; },
+    createTextNode: (d: string) => { texts.push(d); return { nodeType: 3, data: d } as UxTextNode; },
+    // Present so a renderer reaching for the SVG factory is RECORDED rather than
+    // crashing — this renderer must never use it.
+    createElementNS: (_ns: string, t: string) => { created.push(`NS:${t}`); return uxNodeStub(t); },
+  };
+  // eslint-disable-next-line no-new-func
+  const make = new Function('document', `${DOCS_UX_SOURCE}; return {uxRenderCard:uxRenderCard,uxElement:uxElement,setDepthMax:function(n){UX_DEPTH_MAX=n;}};`);
+  const api = make(doc) as Omit<UxApi, 'created' | 'texts' | 'nodes'>;
+  return { ...api, created, texts, nodes };
+}
+
+/** Every element in a rendered subtree, flattened — for "does each class appear". */
+function uxFlatten(n: UxNode): UxNode[] {
+  const out: UxNode[] = [n];
+  for (const c of n.children) if (!isText(c)) out.push(...uxFlatten(c));
+  return out;
+}
+
+/** All text a subtree puts in the DOM, in order, from BOTH non-parsing channels. */
+function uxAllText(n: UxNode): string[] {
+  const out: string[] = [];
+  if (n.textContent.length > 0) out.push(n.textContent);
+  for (const c of n.children) out.push(...(isText(c) ? [c.data] : uxAllText(c)));
+  return out;
+}
+
+// --- the structural normalisation -----------------------------------------
+// NARROW AND STATED, deliberately: tag, class and child ORDER. Nothing else.
+// Not text, not attributes, not style, not whitespace. A harness that normalises
+// away more than it states becomes a test that passes on anything — which is
+// exactly how three vacuous tests shipped green in this repo in one week. The
+// things excluded here are covered by their own tests above and below: text by the
+// textContent assertions, the absence of attributes by the no-record-attribute
+// test, style by the theme scan.
+//
+// Text NODES are collapsed to a single marker rather than dropped, because WHERE
+// loose text sits among element siblings is arrangement, and arrangement is the
+// whole point of this instrument.
+
+interface Shape { tag: string; cls: string; kids: Array<Shape | '#text'> }
+
+function shapeOfClient(n: UxNode): Shape {
+  // `textContent = 'x'` IS one text child in a real DOM — the recording stub keeps
+  // it as a property because that is how the write was made, so the equivalence is
+  // restored here. This is not normalising a difference away: the two produce the
+  // same tree, and an empty string produces no child at all, which is also what the
+  // daemon emits for a text-less element.
+  //
+  // The equivalence is only unambiguous while an element never does BOTH, which the
+  // guard below asserts rather than assumes.
+  assert.ok(
+    n.textContent.length === 0 || n.children.length === 0,
+    `${n.tag}.${n.className} both sets textContent and appends children — the shape equivalence no longer holds`,
+  );
+  const kids: Array<Shape | '#text'> = n.textContent.length > 0
+    ? ['#text']
+    : n.children.map((c) => (isText(c) ? '#text' as const : shapeOfClient(c)));
+  return { tag: n.tag.toLowerCase(), cls: n.className, kids };
+}
+
+/** Parse the daemon's HTML into the SAME shape. Handles exactly what
+ *  renderUxMockDocument emits: non-void elements with double-quoted attributes,
+ *  and text between them. Anything it cannot parse throws rather than being
+ *  silently skipped — a parser that swallows what it does not understand would
+ *  make the diff pass by accident. */
+function shapeOfHtml(fullHtml: string): Shape {
+  // The BODY region only. The document head carries void `<meta>` tags, and this
+  // parser deliberately refuses to guess at anything it was not built for — so it
+  // is pointed at the region that holds the card, where the daemon emits no void
+  // element. Narrowing the input is the honest fix; teaching the parser to skip
+  // tags it does not understand would be the dishonest one.
+  const bodyAt = fullHtml.indexOf('<body>');
+  const html = bodyAt === -1 ? fullHtml : fullHtml.slice(bodyAt + 6, fullHtml.lastIndexOf('</body>'));
+  const root: Shape = { tag: '#root', cls: '', kids: [] };
+  const stack: Shape[] = [root];
+  let i = 0;
+  while (i < html.length) {
+    const lt = html.indexOf('<', i);
+    if (lt === -1) {
+      if (html.slice(i).trim().length > 0) stack[stack.length - 1]!.kids.push('#text');
+      break;
+    }
+    if (lt > i && html.slice(i, lt).trim().length > 0) stack[stack.length - 1]!.kids.push('#text');
+    const gt = html.indexOf('>', lt);
+    assert.ok(gt > lt, `unterminated tag at ${lt}`);
+    const raw = html.slice(lt + 1, gt);
+    if (raw.startsWith('/')) {
+      const closing = stack.pop();
+      assert.ok(closing !== undefined && closing !== root, `unbalanced close </${raw.slice(1)}>`);
+      assert.equal(closing!.tag, raw.slice(1).trim(), 'close tag matches the open tag');
+    } else {
+      const tag = raw.split(/[\s>]/)[0]!.toLowerCase();
+      const clsMatch = /\sclass="([^"]*)"/.exec(raw);
+      const node: Shape = { tag, cls: clsMatch?.[1] ?? '', kids: [] };
+      stack[stack.length - 1]!.kids.push(node);
+      assert.ok(!raw.endsWith('/'), 'the daemon emits no self-closing tags');
+      stack.push(node);
+    }
+    i = gt + 1;
+  }
+  assert.equal(stack.length, 1, 'every element the daemon opened was closed');
+  return root;
+}
+
+/**
+ * THE ONE STATED DIVERGENCE, and the only transform applied to either side.
+ *
+ * The daemon puts an OpenUrl's url in `title=` (ux.ts:396); the client shows it as
+ * a visible text node, because the LLD requires the url SHOWN and because a
+ * tooltip cannot be read in a screenshot — and the screenshot read is the check
+ * this Story cannot ship without. So for a `ux-btn--link` ONLY, the daemon's
+ * expected shape gains the one text node the client adds.
+ *
+ * Deliberately narrow: it matches one exact class, inserts one node, at one
+ * position, and touches nothing else. Anything broader would be the harness
+ * "normalising away too much" the plan warned about — the transform is asserted
+ * to fire on link chips and only link chips.
+ */
+function withShownUrl(sh: Shape): Shape {
+  const kids = sh.kids.map((k) => (k === '#text' ? k : withShownUrl(k)));
+  if (sh.cls === 'ux-btn ux-btn--link') {
+    const glyphAt = kids.findIndex((k) => k !== '#text' && k.cls === 'ux-btn__glyph');
+    assert.ok(glyphAt > 0, 'a link chip carries its title text then its glyph');
+    kids.splice(glyphAt, 0, '#text');
+  }
+  return { tag: sh.tag, cls: sh.cls, kids };
+}
+
+/** The daemon's card subtree, found by class rather than by position. */
+function daemonCardShape(html: string): Shape {
+  const find = (s: Shape): Shape | undefined => {
+    if (s.cls === 'ux-card') return s;
+    for (const k of s.kids) if (k !== '#text') { const hit = find(k); if (hit !== undefined) return hit; }
+    return undefined;
+  };
+  const card = find(shapeOfHtml(html));
+  assert.ok(card !== undefined, 'the daemon document contains a ux-card');
+  return card!;
+}
+
+// --- one test per union member ---------------------------------------------
+
+test('t2: TextBlock renders as <p class="ux-text"> with its text via textContent', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({ type: 'TextBlock', text: 'Docs review' }, 1);
+  assert.equal(el.tag, 'p', "the daemon's tag for a TextBlock");
+  assert.equal(el.className, 'ux-text');
+  assert.equal(el.textContent, 'Docs review');
+  // The MECHANISM, observed: the text arrived by textContent and nothing else.
+  assert.deepEqual(el.writes.filter((w) => w.prop !== 'className'), [{ prop: 'textContent', value: 'Docs review' }]);
+});
+
+test('t2: every TextBlock modifier maps to the daemon class, including all four colour roles', () => {
+  const ux = loadUx();
+  const cls = (el: Record<string, unknown>): string => ux.uxElement({ type: 'TextBlock', text: 'x', ...el }, 1).className;
+
+  assert.equal(cls({ weight: 'bolder' }), 'ux-text ux-bolder');
+  assert.equal(cls({ weight: 'lighter' }), 'ux-text ux-lighter');
+  assert.equal(cls({ weight: 'default' }), 'ux-text', 'default weight adds no class, as the daemon does');
+  assert.equal(cls({ isSubtle: true }), 'ux-text ux-subtle');
+  assert.equal(cls({ isSubtle: false }), 'ux-text', 'only an explicit true');
+  for (const size of ['small', 'default', 'medium', 'large', 'extraLarge']) {
+    assert.equal(cls({ size }), `ux-text ux-size-${size}`);
+  }
+  for (const color of ['accent', 'good', 'warning', 'attention']) {
+    assert.equal(cls({ color }), `ux-text ux-color-${color}`);
+  }
+  // Order matters only in that it matches the daemon's, so the parity diff holds.
+  assert.equal(
+    cls({ weight: 'bolder', isSubtle: true, size: 'large', color: 'good' }),
+    'ux-text ux-bolder ux-subtle ux-size-large ux-color-good',
+  );
+});
+
+test('t2: Container renders as ux-container and recurses over items', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({
+    type: 'Container',
+    items: [{ type: 'TextBlock', text: 'a' }, { type: 'TextBlock', text: 'b' }],
+  }, 1);
+  assert.equal(el.tag, 'div');
+  assert.equal(el.className, 'ux-container');
+  assert.equal(el.children.length, 2);
+  assert.deepEqual(el.children.map((c) => (isText(c) ? '#text' : c.textContent)), ['a', 'b']);
+});
+
+test('t2: ColumnSet renders as ux-columnset with its Columns as children, in order', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({
+    type: 'ColumnSet',
+    columns: [
+      { type: 'Column', items: [{ type: 'TextBlock', text: 'left' }] },
+      { type: 'Column', items: [{ type: 'TextBlock', text: 'right' }] },
+    ],
+  }, 1);
+  assert.equal(el.className, 'ux-columnset');
+  // SIDE BY SIDE is the CSS's job (display:flex on .ux-columnset); the renderer's
+  // job is that the columns are SIBLINGS in declared order rather than nested.
+  assert.deepEqual(el.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-column', 'ux-column']);
+  assert.deepEqual(uxAllText(el), ['left', 'right'], 'declared order survives');
+});
+
+test('t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style', () => {
+  const ux = loadUx();
+  const col = (width?: unknown): UxNode =>
+    ux.uxElement(width === undefined ? { type: 'Column', items: [] } : { type: 'Column', width, items: [] }, 1);
+
+  assert.equal(col(2).style['flex'], '2 1 0', 'a digits-only width IS the grow factor');
+  assert.equal(col('3').style['flex'], '3 1 0', 'a digit STRING counts too, as the daemon does');
+
+  // THE KEYWORD RULE, stated because it is a decision and not an omission. The
+  // daemon maps every non-numeric width to the constant 1 (ux.ts:366), so both
+  // 'stretch' and 'auto' become equal division here. For 'stretch' that IS its
+  // meaning. For 'auto' — size-to-content — it is an approximation, and mirroring
+  // the daemon is chosen over improving on it for two reasons: the structural parity
+  // diff would fail on any divergence, and the Epic's whole premise is that the
+  // in-pane mock and the generated companion tell the SAME story about the same
+  // record. A client that laid out 'auto' better than the authentic artefact would
+  // be a renderer a reviewer could be misled by.
+  assert.equal(col('stretch').style['flex'], '1 1 0', "'stretch' is equal division — its actual meaning");
+  assert.equal(col('auto').style['flex'], '1 1 0', "'auto' is approximated as equal division, as the daemon does");
+  assert.equal(col(undefined).style['flex'], undefined, 'an absent width sets NO style at all');
+  // The grow factor is the only record-derived attribute value in this renderer,
+  // and it can only ever be an integer — never record text.
+  assert.equal(col('2; background:url(javascript:alert(1))').style['flex'], '1 1 0',
+    'a non-numeric width can never reach the style, however it is shaped');
+});
+
+test('t2: Image shows its url as TEXT — no img element, no src, nothing fetchable', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({ type: 'Image', url: 'https://example.invalid/a.png', altText: 'A shot' }, 1);
+
+  assert.equal(el.className, 'ux-image');
+  // THE invariant, structurally: no img was ever created, anywhere in the run.
+  assert.ok(!ux.created.includes('img'), 'no img element is created');
+  assert.ok(!ux.created.some((t) => t.startsWith('NS:')), 'and no SVG image either');
+  for (const n of uxFlatten(el)) {
+    assert.equal(n.attrs['src'], undefined, 'no src attribute on any node');
+    assert.equal(n.attrs['href'], undefined);
+  }
+  // The url and the alt text are both VISIBLE, which is what makes the placeholder
+  // informative rather than merely safe.
+  assert.deepEqual(uxAllText(el), ['▣', 'A shot', 'https://example.invalid/a.png']);
+  // Mirrors the daemon's structure: icon, then a meta column of alt + url.
+  assert.deepEqual(
+    el.children.map((c) => (isText(c) ? '#text' : c.className)),
+    ['ux-image__icon', 'ux-image__meta'],
+  );
+});
+
+test('t2: Image with no altText falls back to the daemon’s literal "image"', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({ type: 'Image', url: 'https://example.invalid/b.png' }, 1);
+  assert.deepEqual(uxAllText(el), ['▣', 'image', 'https://example.invalid/b.png']);
+});
+
+test('t2: Input.Text is a non-interactive affordance — a label and a styled span, never an input', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({ type: 'Input.Text', id: 'note', label: 'Reviewer note', placeholder: 'why' }, 1);
+
+  assert.equal(el.tag, 'label');
+  assert.equal(el.className, 'ux-field');
+  assert.ok(!ux.created.includes('input'), 'no input element — the mock cannot be typed into');
+  assert.ok(!ux.created.includes('textarea'));
+  assert.deepEqual(
+    el.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-label', 'ux-input'],
+  );
+  assert.deepEqual(uxAllText(el), ['Reviewer note', 'why']);
+});
+
+test('t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id', () => {
+  const ux = loadUx();
+  const multi = ux.uxElement({ type: 'Input.Text', id: 'd', label: 'D', placeholder: 'p', isMultiline: true }, 1);
+  assert.equal((multi.children[1] as UxNode).className, 'ux-input ux-input--multi');
+
+  const noLabel = ux.uxElement({ type: 'Input.Text', id: 'fallback-id', placeholder: '' }, 1);
+  assert.deepEqual(uxAllText(noLabel), ['fallback-id', ''].filter((t) => t.length > 0));
+  assert.equal((noLabel.children[0] as UxNode).textContent, 'fallback-id');
+});
+
+test('t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({
+    type: 'Input.ChoiceSet', id: 'v', label: 'Verdict',
+    choices: [{ title: 'Approve' }, { title: 'Request changes' }],
+  }, 1);
+
+  assert.equal(el.className, 'ux-field');
+  assert.ok(!ux.created.includes('select'), 'no select element');
+  assert.ok(!ux.created.includes('option'), 'no option element');
+  const choices = (el.children[1] as UxNode);
+  assert.equal(choices.className, 'ux-choices');
+  assert.deepEqual(choices.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice', 'ux-choice']);
+  // The title is a BARE text node beside the mark, exactly as the daemon emits it.
+  const first = choices.children[0] as UxNode;
+  assert.deepEqual(first.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-choice__mark', '#text']);
+  assert.deepEqual(uxAllText(el), ['Verdict', '○', 'Approve', '○', 'Request changes']);
+});
+
+test('t2: a multi-select ChoiceSet uses the daemon’s box mark, single-select its circle', () => {
+  const ux = loadUx();
+  const multi = ux.uxElement({ type: 'Input.ChoiceSet', id: 'd', label: 'D', isMultiSelect: true, choices: [{ title: 'one' }] }, 1);
+  assert.ok(uxAllText(multi).includes('☐'), 'multi-select shows the box');
+  const single = ux.uxElement({ type: 'Input.ChoiceSet', id: 'd', label: 'D', choices: [{ title: 'one' }] }, 1);
+  assert.ok(uxAllText(single).includes('○'), 'single-select shows the circle');
+});
+
+test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART, with no anchor and no href', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({
+    type: 'ActionSet',
+    actions: [
+      { type: 'Action.Submit', title: 'Approve' },
+      { type: 'Action.OpenUrl', title: 'Open companion', url: 'https://example.invalid/c.html' },
+    ],
+  }, 1);
+
+  assert.equal(el.className, 'ux-actions');
+  assert.ok(!ux.created.includes('a'), 'no anchor element is created');
+  assert.ok(!ux.created.includes('button'), 'and no button — the chips are not interactive');
+  // The distinction the daemon's own correction records: a reviewer must be able to
+  // tell which control commits from which navigates.
+  const kinds = el.children.map((c) => (isText(c) ? '#text' : c.className));
+  assert.deepEqual(kinds, ['ux-btn ux-btn--submit', 'ux-btn ux-btn--link']);
+  // The link carries the navigate glyph; the submit does not.
+  const submit = el.children[0] as UxNode;
+  const link = el.children[1] as UxNode;
+  assert.deepEqual(submit.children.map((c) => (isText(c) ? '#text' : c.className)), ['#text'],
+    'a submit chip is its title and nothing else');
+  // THE URL IS SHOWN, as visible text between the title and the glyph. The daemon
+  // puts it in `title=`; a tooltip cannot be read in a screenshot, and the visual
+  // read is this Story's binding check — so it becomes content here.
+  assert.deepEqual(link.children.map((c) => (isText(c) ? '#text' : c.className)),
+    ['#text', '#text', 'ux-btn__glyph'], 'title, then url, then the navigate glyph');
+  assert.deepEqual(uxAllText(link), ['Open companion', 'https://example.invalid/c.html', '\u2197']);
+  // And the url reaches NO attribute anywhere — ac5 kept absolute, which is the
+  // reason it is shown as text rather than mirrored into `title=`.
+  for (const n of uxFlatten(el)) {
+    for (const v of Object.values(n.attrs)) {
+      assert.ok(!v.includes('example.invalid'), 'no record text in any attribute value');
+    }
+  }
+});
+
+test('t2: the stated parity divergence fires on LINK chips and only link chips', async () => {
+  const { renderUxMockDocument } = await import('../../../../src/workflow/artifacts/companion/ux.js');
+  const card = {
+    type: 'AdaptiveCard' as const,
+    body: [{ type: 'ActionSet', actions: [{ type: 'Action.Submit', title: 'Go' }] }],
+  };
+  // A card with NO link chip: the transform must be a no-op, so the two sides agree
+  // without it. If it fired anywhere else, this would fail.
+  const daemonRaw = daemonCardShape(renderUxMockDocument(card as never, 'submit-only'));
+  assert.deepEqual(withShownUrl(daemonRaw), daemonRaw, 'no link chip, no transform');
+  assert.deepEqual(shapeOfClient(loadUx().uxRenderCard(card).el), daemonRaw,
+    'and a submit-only card matches the daemon with no allowance at all');
+});
+
+// --- the real ledger records ------------------------------------------------
+
+test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const ledger = join(here, '..', '..', '..', '..', '.insrc', 'artifacts');
+
+  // The four bodies that actually carry a uxDefinition, named rather than
+  // discovered, so this test says WHICH records it is the contract for. Two of the
+  // four belong to this Epic — the surface rendering its own design.
+  const files = [
+    'LLD-85e6a58693579b6d-S001.json',
+    'LLD-7c219c7471d79496-S001.json',
+    'LLD-bfe98ff7f97178cf-s2.json',
+    'HLD-bfe98ff7f97178cf.json',
+  ];
+
+  let checked = 0;
+  for (const f of files) {
+    const p = join(ledger, f);
+    if (!existsSync(p)) continue;
+    const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
+    assert.ok(record !== undefined && Array.isArray(record.body), `${f} carries a card body`);
+
+    const ux = loadUx();
+    const { el } = ux.uxRenderCard(record);
+
+    // EVERY element in the record appears in the output tree. Counted from the
+    // record rather than from the output, so a renderer that silently skipped a
+    // branch would come up short rather than merely look plausible.
+    const countRecord = (list: readonly unknown[]): number => list.reduce<number>((n, e) => {
+      const o = e as { type?: string; items?: unknown; columns?: unknown };
+      const kids = o.type === 'ColumnSet' ? o.columns : o.items;
+      return n + 1 + (Array.isArray(kids) ? countRecord(kids) : 0);
+    }, 0);
+    const expected = countRecord(record.body);
+    // One DOM element per record element at minimum (several members render a
+    // small subtree), and crucially NOT FEWER.
+    const rendered = uxFlatten(el).length - 1; // minus the ux-card wrapper
+    assert.ok(rendered >= expected,
+      `${f}: ${expected} record elements must all appear; the tree has ${rendered} elements`);
+    // And nothing degraded: a real, valid record must produce no ux-unknown.
+    assert.equal(
+      uxFlatten(el).filter((n) => n.className === 'ux-unknown').length, 0,
+      `${f} renders with no unrenderable element`,
+    );
+    checked += 1;
+  }
+  // Positive control: this test is worthless if it silently found no records.
+  assert.equal(checked, 4, 'all four real ledger records were found and rendered');
+});
+
+// --- degradation -----------------------------------------------------------
+
+test('t2: an unknown element type renders a VISIBLE ux-unknown NAMING the type', () => {
+  const ux = loadUx();
+  const el = ux.uxElement({ type: 'RichTextBlock', inlines: [] }, 1);
+  assert.equal(el.className, 'ux-unknown');
+  assert.match(el.textContent, /RichTextBlock/,
+    'the reviewer is told WHICH element could not be drawn, so they can open the companion');
+  assert.ok(el.textContent.length > 0, 'and it is not an empty box');
+});
+
+test('t2: a malformed element, a missing text and a non-array child list each degrade IN PLACE', () => {
+  const ux = loadUx();
+  const card = ux.uxRenderCard({
+    type: 'AdaptiveCard',
+    body: [
+      { type: 'TextBlock', text: 'before' },
+      null,
+      { type: 'TextBlock' },                       // no text
+      'not an object',
+      { type: 'Container', items: 'not an array' },
+      { type: 'ColumnSet', columns: null },
+      { type: 'TextBlock', text: 'after' },
+    ],
+  }).el;
+
+  const kids = card.children.map((c) => (isText(c) ? '#text' : c.className));
+  // SEVEN children for seven body entries: nothing vanished, nothing collapsed.
+  assert.equal(kids.length, 7, 'every entry produced exactly one child');
+  assert.deepEqual(kids, [
+    'ux-text', 'ux-unknown', 'ux-text', 'ux-unknown', 'ux-container', 'ux-columnset', 'ux-text',
+  ]);
+  // The siblings around the holes still rendered — the point of degrading in place.
+  assert.equal((card.children[0] as UxNode).textContent, 'before');
+  assert.equal((card.children[6] as UxNode).textContent, 'after');
+  // A missing text is an EMPTY paragraph, not a crash and not a hole.
+  assert.equal((card.children[2] as UxNode).textContent, '');
+  // A non-array child list degrades to an EMPTY region, as childrenOf does.
+  assert.equal((card.children[4] as UxNode).children.length, 0);
+  assert.equal((card.children[5] as UxNode).children.length, 0);
+});
+
+test('t2: a non-array body yields an empty card rather than throwing', () => {
+  const ux = loadUx();
+  for (const record of [undefined, null, {}, { body: null }, { body: 'x' }, { body: {} }]) {
+    const { el } = ux.uxRenderCard(record);
+    assert.equal(el.className, 'ux-card');
+    assert.equal(el.children.length, 0, `${JSON.stringify(record)} renders an empty card`);
+  }
+});
+
+// --- ac5: no markup, ever --------------------------------------------------
+
+test('t2: every element is created with createElement and every string written without parsing', () => {
+  const ux = loadUx();
+  const { el } = ux.uxRenderCard(UX_PARITY_FIXTURES_FOR_TEST.card);
+
+  // EXECUTED, not grepped: every node in the tree came from createElement, and the
+  // only property writes anywhere are className, textContent and style/attributes.
+  const all = uxFlatten(el);
+  assert.ok(all.length > 5, 'a non-trivial tree to inspect');
+  for (const n of all) {
+    for (const w of n.writes) {
+      assert.ok(
+        w.prop === 'className' || w.prop === 'textContent' || w.prop.startsWith('attr:'),
+        `unexpected property write: ${w.prop}`,
+      );
+    }
+  }
+  // The two markup sinks the stub exposes purely to catch were never touched.
+  const markupWrites = all.flatMap((n) => n.writes).filter((w) => w.prop === 'innerHTML' || w.prop === 'outerHTML');
+  assert.deepEqual(markupWrites, [], 'no markup assignment anywhere in the run');
+  // Strings reach the DOM only through the two NON-PARSING channels.
+  assert.ok(ux.texts.length > 0, 'and some text went through createTextNode');
+});
+
+test('t2: hostile text renders character-for-character and creates no element and no attribute', () => {
+  const ux = loadUx();
+  const hostile = '<script>alert(1)</script> & `backtick` <img src=x onerror=1> \'quote\' "dq"';
+  const { el } = ux.uxRenderCard({
+    type: 'AdaptiveCard',
+    body: [
+      { type: 'TextBlock', text: hostile },
+      { type: 'Image', url: hostile, altText: hostile },
+      { type: 'ActionSet', actions: [{ type: 'Action.OpenUrl', title: hostile, url: 'javascript:alert(1)' }] },
+      { type: 'Input.ChoiceSet', id: hostile, label: hostile, choices: [{ title: hostile }] },
+    ],
+  });
+
+  // CHARACTER-FOR-CHARACTER: no escaping, because nothing is parsed. The daemon
+  // must escape; this must not, and the difference is the whole argument.
+  const texts = uxAllText(el);
+  assert.ok(texts.includes(hostile), 'the hostile string comes back exactly as given');
+  assert.ok(!texts.some((t) => t.includes('&lt;') || t.includes('&amp;')),
+    'and is NOT html-escaped — escaping here would be a sign something was parsed');
+
+  // No element was conjured out of the text, and no attribute carries any of it.
+  assert.ok(!ux.created.includes('img'), 'the <img ...> in the text created no img');
+  assert.ok(!ux.created.includes('script'), 'and no script');
+  for (const n of uxFlatten(el)) {
+    for (const [k, v] of Object.entries(n.attrs)) {
+      assert.ok(!v.includes('alert') && !v.includes('javascript:'),
+        `attribute ${k} must not carry record text, got: ${v}`);
+    }
+  }
+});
+
+test('t2: no attribute value anywhere is built from record text', () => {
+  const ux = loadUx();
+  const marker = 'RECORD-TEXT-MARKER';
+  const { el } = ux.uxRenderCard({
+    type: 'AdaptiveCard',
+    body: [
+      { type: 'TextBlock', text: marker, size: marker, color: marker, weight: marker },
+      { type: 'Image', url: marker, altText: marker },
+      { type: 'Input.Text', id: marker, label: marker, placeholder: marker },
+      { type: 'Input.ChoiceSet', id: marker, label: marker, choices: [{ title: marker }] },
+      { type: 'ActionSet', actions: [{ type: 'Action.OpenUrl', title: marker, url: marker }] },
+      { type: 'Column', width: marker, items: [] },
+    ],
+  });
+
+  for (const n of uxFlatten(el)) {
+    for (const [k, v] of Object.entries(n.attrs)) {
+      assert.ok(!v.includes(marker), `attribute ${k}="${v}" was built from record text`);
+    }
+    for (const [k, v] of Object.entries(n.style)) {
+      assert.ok(!v.includes(marker), `style ${k}:${v} was built from record text`);
+    }
+  }
+  // size/color DO reach the className — which is a class name, not an attribute
+  // value carrying free text, and is exactly what the daemon does. Stated here so
+  // the distinction is deliberate rather than an oversight.
+  assert.ok(uxFlatten(el).some((n) => n.className.includes(`ux-size-${marker}`)),
+    'the size modifier reaches the class, as the daemon does');
+});
+
+test('t2: the renderer emits NO node/edge construct — the uxDefinitionToIr regression guard', () => {
+  const ux = loadUx();
+  const { el } = ux.uxRenderCard(UX_PARITY_FIXTURES_FOR_TEST.card);
+
+  // ISSUE-85e6a58693579b6d: uxDefinitionToIr (ux.ts:282) lowers a card into a
+  // node-and-edge DocumentIR, and publishing that as an "experience mock" produced
+  // ~3.37 MB of graph picture where a 7 KB interface belonged. The nearest existing
+  // function is the wrong one, and this guard is what stops someone reaching for it.
+  const classes = uxFlatten(el).map((n) => n.className).join(' ');
+  for (const bad of ['node', 'edge', 'graph', 'mermaid', 'flowchart']) {
+    assert.ok(!classes.includes(bad), `no ${bad} construct in the rendered classes`);
+  }
+  // Nothing SVG either: a node graph would need it.
+  assert.ok(!ux.created.some((t) => t.startsWith('NS:')), 'createElementNS is never reached');
+  assert.ok(!ux.created.some((t) => ['svg', 'path', 'line', 'polyline', 'g'].includes(t)),
+    'and no SVG primitive is created through the HTML factory either');
+  // Positively: the output IS card furniture.
+  assert.ok(classes.includes('ux-card'));
+});
+
+// --- cross-process parity ---------------------------------------------------
+// The instrument the LLD flagged as its weakest point and the review asked to
+// strengthen. S003 could diff node and edge SETS; the UX authority emits HTML
+// STRINGS, so the comparison is made structural instead: both sides are reduced to
+// (tag, class, child order) and compared exactly.
+//
+// Under the earlier, weaker framing a client that rendered every element with the
+// right class in a visibly WRONG arrangement would have passed parity and failed
+// only a screenshot read. This makes that failure exact. The screenshot read still
+// happens at t3 and t7 and is still binding — two structurally identical trees can
+// both be unreadable at pane width, and only an image can answer that.
+
+test('t2 PARITY: the daemon tree and the client tree are structurally IDENTICAL over every shared fixture', async () => {
+  const { renderUxMockDocument } = await import('../../../../src/workflow/artifacts/companion/ux.js');
+
+  let compared = 0;
+  for (const fx of UX_PARITY_FIXTURES) {
+    const ux = loadUx();
+    const client = shapeOfClient(ux.uxRenderCard(fx.card).el);
+    const daemon = withShownUrl(daemonCardShape(renderUxMockDocument(fx.card as never, fx.name)));
+
+    assert.deepEqual(client, daemon,
+      `${fx.name}: client and daemon must agree on tag, class and child order.\n  WHY THIS FIXTURE: ${fx.why}`);
+    compared += 1;
+  }
+  // Positive control on the LOOP itself: a harness that compared nothing would
+  // pass. This repo has shipped that exact shape of check.
+  assert.equal(compared, UX_PARITY_FIXTURES.length);
+  assert.ok(compared >= 8, 'every union member is the primary subject of at least one fixture');
+});
+
+test('t2 PARITY POSITIVE CONTROL: a re-nested variant makes the structural diff FAIL', async () => {
+  const { renderUxMockDocument } = await import('../../../../src/workflow/artifacts/companion/ux.js');
+
+  // Same elements, same classes, different ARRANGEMENT: the inner ColumnSet is
+  // hoisted out of its Column to become a sibling. A comparison that cannot tell
+  // these apart is not an instrument, so this asserts the diff REJECTS it.
+  const real = UX_PARITY_FIXTURES.find((f) => f.name === 'columnset-nested-arrangement')!;
+  const renested = UX_RENESTED_FIXTURE;
+
+  const ux = loadUx();
+  const clientReal = shapeOfClient(ux.uxRenderCard(real.card).el);
+  const daemonRenested = withShownUrl(daemonCardShape(renderUxMockDocument(renested.card as never, 'renested')));
+
+  // The two must NOT be equal — if they were, the normalisation would be throwing
+  // away the very thing it exists to compare.
+  assert.notDeepEqual(clientReal, daemonRenested,
+    'the normalisation must distinguish nesting from sibling order');
+  assert.throws(
+    () => { assert.deepEqual(clientReal, daemonRenested); },
+    'and a deepEqual over the two genuinely throws',
+  );
+
+  // Both carry the SAME multiset of (tag, class) pairs, which is what proves the
+  // difference detected is arrangement ALONE and not a missing or extra element.
+  const bag = (sh: Shape): string[] => {
+    const out: string[] = [];
+    const walk = (n: Shape): void => {
+      out.push(`${n.tag}.${n.cls}`);
+      for (const k of n.kids) if (k !== '#text') walk(k);
+    };
+    walk(sh);
+    return out.sort();
+  };
+  const clientRenested = shapeOfClient(loadUx().uxRenderCard(renested.card).el);
+  assert.deepEqual(bag(clientReal), bag(clientRenested),
+    'same elements, same classes — only the nesting differs');
+});
+
+test('t2 PARITY of vocabulary: every ux-* class the client emits is one the daemon’s stylesheet defines', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const daemonSrc = readFileSync(
+    join(here, '..', '..', '..', '..', 'src', 'workflow', 'artifacts', 'companion', 'ux.ts'), 'utf8');
+
+  // BOTH sets extracted from source rather than hand-kept: a hand-kept list is a
+  // second place for the vocabulary to live and therefore a second place to drift.
+  const daemonDefined = new Set((daemonSrc.match(/\.ux-[A-Za-z0-9_-]+/g) ?? []).map((c) => c.slice(1)));
+  assert.ok(daemonDefined.size > 20, `extracted ${daemonDefined.size} daemon classes`);
+
+  const emitted = new Set<string>();
+  for (const fx of [...UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE]) {
+    for (const n of uxFlatten(loadUx().uxRenderCard(fx.card).el)) {
+      for (const c of n.className.split(/\s+/)) if (c.length > 0) emitted.add(c);
+    }
+  }
+  // Plus the degradation class, which no valid fixture produces.
+  emitted.add(loadUx().uxElement({ type: 'Nope' }, 1).className);
+
+  assert.ok(emitted.size > 15, `the client emitted ${emitted.size} distinct classes`);
+  for (const c of [...emitted].sort()) {
+    assert.ok(daemonDefined.has(c), `client class .${c} is not defined by the daemon stylesheet`);
+  }
+});
+
+test('t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const daemonSrc = readFileSync(
+    join(here, '..', '..', '..', '..', 'src', 'workflow', 'artifacts', 'companion', 'ux.ts'), 'utf8');
+
+  // Derived from the daemon's switch, not from a list typed here.
+  const fn = daemonSrc.slice(daemonSrc.indexOf('function elementHtml'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+  const daemonMembers = [...new Set((body.match(/case '([^']+)':/g) ?? []).map((m) => /'([^']+)'/.exec(m)![1]!))];
+  assert.equal(daemonMembers.length, 8, `the daemon handles 8 members, found ${daemonMembers.length}`);
+
+  // And from the client's dispatch, also read from source.
+  // Anchored on `if(t===` rather than `t===`: the loose form also matches the tail
+  // of `el.weigh|t==='bolder'`, which quietly added 'bolder' and 'lighter' to the
+  // member list. Found by running this check, not by reading it.
+  const clientMembers = [...new Set((DOCS_UX_SOURCE.match(/if\(t==='([^']+)'\)/g) ?? []).map((m) => /'([^']+)'/.exec(m)![1]!))];
+  assert.deepEqual(clientMembers.sort(), daemonMembers.sort(),
+    'the two dispatches cover the SAME union — no member handled on one side only');
+
+  // EXECUTED as well as read: each member actually renders something that is not
+  // the degradation arm. A dispatch can name a member and still fall through.
+  const sample: Record<string, unknown> = {
+    'TextBlock': { type: 'TextBlock', text: 'x' },
+    'Container': { type: 'Container', items: [] },
+    'ColumnSet': { type: 'ColumnSet', columns: [] },
+    'Column': { type: 'Column', items: [] },
+    'Image': { type: 'Image', url: 'u' },
+    'Input.Text': { type: 'Input.Text', id: 'i' },
+    'Input.ChoiceSet': { type: 'Input.ChoiceSet', id: 'i', choices: [] },
+    'ActionSet': { type: 'ActionSet', actions: [] },
+  };
+  for (const m of daemonMembers) {
+    const el = loadUx().uxElement(sample[m], 1);
+    assert.notEqual(el.className, 'ux-unknown', `${m} must have a real branch, not fall through`);
+  }
+});
+
+test('t2 PARITY of degradation: the client renders ux-unknown for the same inputs the daemon does', async () => {
+  const { renderUxMockDocument } = await import('../../../../src/workflow/artifacts/companion/ux.js');
+
+  // The one behaviour where both MUST agree exactly: it is the user-visible
+  // admission of a gap, and a reviewer who sees it on one surface and not the other
+  // cannot tell whether the design has a hole or the renderer does.
+  // NOT including a null element: the daemon THROWS on one (see the asymmetry test
+  // below), so there is no daemon output to compare against. Every input here is
+  // one both sides actually render.
+  const cases: readonly unknown[] = [
+    { type: 'RichTextBlock' },
+    { type: 'FactSet' },
+    { type: '' },
+    'string',
+    42,
+    {},
+  ];
+  for (const c of cases) {
+    const card = { type: 'AdaptiveCard' as const, body: [c] };
+    const clientCls = shapeOfClient(loadUx().uxRenderCard(card).el).kids[0];
+    const daemonCls = withShownUrl(daemonCardShape(renderUxMockDocument(card as never, 'd'))).kids[0];
+    assert.deepEqual(clientCls, daemonCls, `both sides degrade identically for ${JSON.stringify(c)}`);
+    assert.equal((clientCls as Shape).cls, 'ux-unknown');
+  }
+});
+
+test('t2 PARITY, the ONE stated asymmetry: the daemon THROWS on a null element, the client degrades', async () => {
+  const { renderUxMockDocument } = await import('../../../../src/workflow/artifacts/companion/ux.js');
+  const card = { type: 'AdaptiveCard' as const, body: [{ type: 'TextBlock', text: 'before' }, null] };
+
+  // The daemon's elementHtml switches on `el.type` with no null guard
+  // (ux.ts:350-351), so a stored body carrying a null entry takes the WHOLE
+  // document down — including the narrated prose, which walks the same tree. Its
+  // own childrenOf is defensive about a malformed `items` for exactly this reason;
+  // a null ENTRY is the case that guard does not cover.
+  assert.throws(() => renderUxMockDocument(card as never, 'null-entry'), /Cannot read properties of null/);
+
+  // The client MUST NOT match that behaviour, and this is the one place mirroring
+  // the authority would be wrong: taking the reviewer's document down over an
+  // adjunct inverts k4, and the mock is an adjunct. So it degrades in place and the
+  // sibling still renders.
+  const { el } = loadUx().uxRenderCard(card);
+  assert.deepEqual(
+    el.children.map((c) => (isText(c) ? '#text' : c.className)), ['ux-text', 'ux-unknown'],
+    'the client renders both the good sibling and a visible hole',
+  );
+
+  // Recorded rather than fixed: closing it means editing
+  // src/workflow/artifacts/companion/ux.ts, and S004 touches no file under src/ —
+  // which is the property that makes this the only Story in the Epic needing no
+  // daemon rebuild. Worth filing as its own defect.
+});
+
+// --- theme discipline -------------------------------------------------------
+
+test('t2 THEME: the ux CSS fragment carries NO literal colour and no var() that can resolve to nothing', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(join(here, '..', 'docs-review-panel.ts'), 'utf8');
+
+  // COMMENTS STRIPPED FIRST — this file's comments discuss the daemon's hex values
+  // at length, including the `#6b7684` that motivated the rule, and a scan that
+  // read prose would fail on its own explanation.
+  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // Scoped to THIS Story's fragment, between its first and last rule.
+  const start = noComments.indexOf('`.ux-card{');
+  const end = noComments.indexOf('`.ux-unknown{');
+  assert.ok(start > 0 && end > start, 'the ux CSS fragment was located');
+  const frag = noComments.slice(start, noComments.indexOf('`', end + 12) + 1);
+  assert.ok(frag.includes('.ux-columnset{display:flex'), 'and it is the right fragment');
+
+  // No literal colour of any form.
+  assert.doesNotMatch(frag, /#[0-9a-fA-F]{3,8}\b/, 'no hex colour');
+  assert.doesNotMatch(frag, /\brgba?\(/, 'no rgb()/rgba()');
+  assert.doesNotMatch(frag, /\bhsla?\(/, 'no hsl()/hsla()');
+  for (const named of ['white', 'black', 'red', 'green', 'blue', 'grey', 'gray', 'orange', 'yellow', 'transparent']) {
+    assert.doesNotMatch(frag, new RegExp(`:\\s*${named}\\b`), `no CSS named colour (${named})`);
+  }
+
+  // THE ROW DIRECTION, asserted rather than left to a default. `display:flex` alone
+  // is satisfied by a COLUMN, so a CSS-only change to flex-direction:column would
+  // stack a ColumnSet vertically with every JS test still green — the gap the build
+  // validation gate found. Columns sitting side by side is the most layout-dependent
+  // thing a card expresses, so it gets a check of its own.
+  const colRule = /\.ux-columnset\{([^}]*)\}/.exec(frag)?.[1] ?? '';
+  assert.ok(colRule.includes('display:flex'), 'a ColumnSet is a flex container');
+  assert.match(colRule, /flex-direction:row/, 'and explicitly a ROW');
+  assert.doesNotMatch(colRule, /flex-direction:\s*column/, 'never a column');
+  assert.doesNotMatch(colRule, /flex-wrap:\s*wrap/,
+    'and it does not wrap, which would stack narrow columns without naming a direction');
+
+  // Every colour-bearing declaration goes through a theme variable.
+  const colourDecls = frag.match(/(?:^|[;{])\s*(?:color|background|border|border-color|fill|stroke)\s*:[^;}]*/g) ?? [];
+  assert.ok(colourDecls.length > 8, `found ${colourDecls.length} colour declarations to check`);
+  for (const d of colourDecls) {
+    assert.match(d, /var\(--it-/, `colour declaration must derive from a theme var: ${d.trim()}`);
+  }
+
+  // THE S001 GOTCHA, mechanically: a var() naming a token the shipped set does not
+  // define silently drops its declaration. `--it-ok` is exactly such a token — it
+  // does not exist — so every var() here must either name a DEFINED token or carry
+  // a fallback. This check caught a real `var(--it-ok)` while writing this task.
+  const tokens = readFileSync(join(here, '..', 'design-tokens.ts'), 'utf8');
+  const defined = new Set((tokens.match(/--it-[a-z-]+(?=:)/g) ?? []));
+  assert.ok(defined.has('--it-accent') && defined.has('--it-err'), 'the token set was read');
+  for (const ref of frag.match(/var\(--it-[a-z-]+[^)]*\)/g) ?? []) {
+    const name = /var\((--it-[a-z-]+)/.exec(ref)![1]!;
+    const hasFallback = /var\(--it-[a-z-]+\s*,/.test(ref);
+    assert.ok(defined.has(name) || hasFallback,
+      `${ref} names an UNDEFINED token and carries no fallback — it would resolve to nothing`);
+  }
+});
+
+// --- the source string's own contract + shell bookkeeping ------------------
+
+test('t2: DOCS_UX_SOURCE contains no markup sink, scanned with comments stripped first', () => {
+  // The string itself, not the file: comments live outside the template literals.
+  const code = DOCS_UX_SOURCE;
+  for (const sink of ['innerHTML', 'outerHTML', 'insertAdjacentHTML', 'document.write']) {
+    assert.ok(!code.includes(sink), `DOCS_UX_SOURCE must not contain ${sink}`);
+  }
+  // And positively: it builds its tree the two allowed ways.
+  assert.match(code, /document\.createElement\(/);
+  assert.match(code, /document\.createTextNode\(/);
+  assert.match(code, /\.textContent=/);
+});
+
+test('t2: the emitted shell still contains EXACTLY ONE .innerHTML= after a FIFTH source string joins', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  // The COUNT, not a ban: banning the other three sinks would pass even if a second
+  // innerHTML assignment appeared, which is the gap this closes.
+  assert.equal((html.match(/\.innerHTML\s*=/g) ?? []).length, 1,
+    'one markup-injection site on this surface, still');
+  assert.match(html, /el\.innerHTML=marked\.parse/, 'and it is still the guarded vendored body parse');
+  // The new string really is in there.
+  assert.match(html, /function uxRenderCard\(/, 'DOCS_UX_SOURCE is inlined in the shell');
+});
+
+test('t2: ALL FIVE source strings parse together in one scope — the dgEl-collision guard, extended', () => {
+  // Extended from four to five IN THIS COMMIT, which is when it earns its keep:
+  // S003 hit a real collision when a host const and a source-string function shared
+  // the name `dgEl`. `const dgEl` beside `function dgEl` in one script is a
+  // SyntaxError that breaks the ENTIRE webview, and neither existing guard sees it —
+  // tsc cannot look inside a template literal, and SHELL_BASELINE's hash is
+  // perfectly stable over a syntactically invalid script.
+  const combined = DOCS_BODY_RENDERER_SOURCE + DOCS_SECTIONS_SOURCE + DOCS_FR_SOURCE
+    + DOCS_DIAGRAM_SOURCE + DOCS_UX_SOURCE;
+  assert.doesNotThrow(
+    () => { new Function('document', 'window', 'marked', 'acquireVsCodeApi', combined); },
+    'the five source strings must coexist in one scope without a syntax or redeclaration error',
+  );
+
+  // Only meaningful if it can fail: prove it catches the exact shape of the bug,
+  // now for a name the FIFTH string introduces.
+  assert.throws(
+    () => { new Function('document', `${combined}\nconst uxEl = 1;`); },
+    /already been declared|Identifier/,
+    'a redeclaration of an identifier the ux string introduces must be rejected',
+  );
+  // And that the ux names really are the ones at risk — the collision is only
+  // possible because all five share ONE scope.
+  for (const name of ['uxEl', 'uxElement', 'uxRenderCard', 'uxKids', 'uxText', 'uxTextNode']) {
+    assert.ok(DOCS_UX_SOURCE.includes(`function ${name}(`), `${name} is declared in the shared scope`);
+  }
+});
+
+test('t2: the FULL emitted script parses — including the bootstrap consts the five strings share scope with', () => {
+  // STRONGER than the five-string check above, and the version that would actually
+  // have caught S003's bug: `dgEl` collided between a BOOTSTRAP const and a
+  // source-string function, so combining only the source strings misses exactly that
+  // class of failure. The build validation gate made this point and it is correct.
+  //
+  // This lifts the REAL nonce'd script out of the emitted shell and parses it.
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  const open = `<script nonce="${SHELL_BASELINE.nonce}">`;
+  const at = html.indexOf(open);
+  assert.ok(at > 0, 'the nonce\u2019d script was located in the shell');
+  const script = html.slice(at + open.length, html.indexOf('</script>', at));
+  assert.ok(script.length > 50000, `the whole script was extracted (${script.length} chars)`);
+  // It must contain BOTH a bootstrap host const and the fifth string's functions,
+  // or this is not testing what it claims to.
+  assert.match(script, /const dgHostEl=document\.getElementById/, 'a bootstrap host const is in scope');
+  assert.match(script, /function uxRenderCard\(/, 'and the fifth string\u2019s renderer');
+
+  assert.doesNotThrow(
+    () => { new Function('acquireVsCodeApi', 'marked', 'window', script); },
+    'the complete script — bootstrap consts and all five source strings — must parse',
+  );
+
+  // Only meaningful if it can fail: a host const colliding with a ux function is
+  // precisely the S003 shape, now proved catchable.
+  assert.throws(
+    () => { new Function('acquireVsCodeApi', 'marked', 'window', `const uxEl=1;\n${script}`); },
+    /already been declared|Identifier/,
+    'a host const named like a ux function must be rejected',
   );
 });

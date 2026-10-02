@@ -799,6 +799,209 @@ export const DOCS_DIAGRAM_SOURCE =
   `return 'none';}`;
 
 // ---------------------------------------------------------------------------
+// S004/t2 — DOCS_UX_SOURCE. The FIFTH member of the DOCS_*_SOURCE family, after
+// DOCS_BODY_RENDERER_SOURCE (:76), DOCS_SECTIONS_SOURCE (:111), DOCS_FR_SOURCE
+// (:185) and DOCS_DIAGRAM_SOURCE (:369). Carried as SOURCE so the shell inlines
+// it into its ONE nonce'd script and the tests `new Function`-evaluate it against
+// DOM stubs.
+//
+// WHAT IT MIRRORS AND WHAT IT REFUSES. The authority is the daemon's
+// renderUxMockDocument (src/workflow/artifacts/companion/ux.ts:482) and its
+// elementHtml (:350). Its STRUCTURE and its `ux-*` class vocabulary are mirrored
+// exactly — that is what makes the in-pane mock and the generated companion the
+// same picture. Its METHOD is refused: the daemon builds HTML STRINGS because it
+// writes a standalone file, while this builds the same tree with createElement
+// and textContent. That is not a stylistic preference. It is what keeps the mock
+// a DRAWING of a record rather than a path to the network, and it is the half of
+// ac5 that no amount of escaping would give.
+//
+// It is also NOT uxDefinitionToIr (ux.ts:282). That function lowers a card into a
+// node-and-edge DocumentIR, and publishing its output as an "experience mock"
+// produced a mermaid picture of the card's JSON — ISSUE-85e6a58693579b6d, ~3.37 MB
+// of graph where a 7 KB interface belonged. A committed guard asserts this
+// renderer emits no node/edge construct, so that correction cannot be undone by
+// someone reaching for the nearest existing function.
+//
+// Identifier prefix `ux`, load-bearing rather than tidy: all five strings share
+// ONE scope, and S003 hit a real `dgEl` collision between a host const and a
+// source-string function — a SyntaxError that breaks the entire webview and that
+// tsc cannot see inside a template literal. The parse-coexistence test covers all
+// five from this commit on.
+//
+// INERT at t2: these functions are defined and nothing calls them. t5 adds the
+// slot factory, t6 the single mount call.
+// ---------------------------------------------------------------------------
+
+export const DOCS_UX_SOURCE =
+  // The depth bound is a NAMED PARAMETER with no committed value yet — t4 sets it
+  // from the step-3 visual read, which is the first evidence able to say what
+  // nesting costs in a narrow pane. Until then the walk takes it as an argument
+  // and a null bound means "no limit", so nothing silently truncates while the
+  // number is undecided. The LLD left this open deliberately; alternative a4 was
+  // rejected for making a bound a routine presentation rule rather than a guard.
+  `var UX_DEPTH_MAX=null;` +
+
+  // --- the child list, read DEFENSIVELY --------------------------------------
+  // Mirrors childrenOf (ux.ts:181-195) including its reason: a card body is read
+  // from a STORED artifact, so it can predate a schema change or be hand-edited
+  // past the type. `items` for Container and Column, `columns` for ColumnSet, and
+  // a non-array degrades to EMPTY rather than throwing.
+  `function uxKids(el){` +
+  `var v=null;` +
+  `if(el.type==='Container'||el.type==='Column')v=el.items;` +
+  `else if(el.type==='ColumnSet')v=el.columns;` +
+  `else return [];` +
+  `return Array.isArray(v)?v:[];}` +
+
+  // --- primitives ------------------------------------------------------------
+  // Every element in this renderer is born here, and every string written here.
+  // A recording stub proves it by capturing property writes, so "no markup" is
+  // EXECUTED rather than grepped.
+  `function uxEl(tag,cls){var e=document.createElement(tag);if(cls)e.className=cls;return e;}` +
+  `function uxTextNode(tag,cls,text){var e=uxEl(tag,cls);e.textContent=text==null?'':String(text);return e;}` +
+  // A BARE text child, for the places the daemon emits loose text inside an
+  // element rather than wrapping it (a choice's title, an action's title).
+  // createTextNode and textContent are the two non-parsing ways to put a string in
+  // the DOM; neither can ever be read as markup, which is the invariant ac5 is
+  // actually about. Wrapping these in an extra span would read the same and be
+  // structurally WRONG — and the structural parity diff would catch it, which is
+  // how this was found.
+  `function uxText(host,text){host.appendChild(document.createTextNode(text==null?'':String(text)));}` +
+
+  // --- one element -> one subtree --------------------------------------------
+  // EXHAUSTIVE over the eight-member union, one branch each, in the daemon's
+  // order. `depth` is carried so the bound can be checked before recursing.
+  `function uxElement(el,depth){` +
+  // A non-object or a missing `type` is a HOLE in an otherwise valid tree: it
+  // degrades IN PLACE and its siblings still render. Checked before the branch is
+  // chosen, exactly where the daemon checks it.
+  `if(el===null||typeof el!=='object'||typeof el.type!=='string')` +
+  `return uxTextNode('div','ux-unknown','unrenderable element: '+(el&&el.type!=null?String(el.type):'unknown'));` +
+  // The depth guard. A SAFETY limit against malformed or hostile structure, not a
+  // presentation rule — it names depth as the reason so a reviewer can tell a
+  // guard from a truncation.
+  `if(UX_DEPTH_MAX!==null&&depth>UX_DEPTH_MAX)` +
+  `return uxTextNode('div','ux-unknown','unrenderable element: nesting deeper than '+UX_DEPTH_MAX+' levels');` +
+  `var t=el.type;` +
+
+  // TextBlock -> <p class="ux-text ...">. The modifier classes are the daemon's,
+  // rule for rule (ux.ts:353-358): 23 isSubtle and 41 size/weight occurrences
+  // across the four real records, so dropping them would flatten the emphasis the
+  // author actually wrote.
+  `if(t==='TextBlock'){` +
+  `var tc='ux-text';` +
+  `if(el.weight==='bolder')tc+=' ux-bolder';` +
+  `if(el.weight==='lighter')tc+=' ux-lighter';` +
+  `if(el.isSubtle===true)tc+=' ux-subtle';` +
+  `if(el.size!=null)tc+=' ux-size-'+el.size;` +
+  `if(el.color!=null)tc+=' ux-color-'+el.color;` +
+  `return uxTextNode('p',tc,el.text);}` +
+
+  // Container -> <div class="ux-container">children</div>
+  `if(t==='Container'){var ct=uxEl('div','ux-container');uxAppendKids(ct,el,depth);return ct;}` +
+
+  // ColumnSet -> <div class="ux-columnset">columns</div>. The CSS makes this a
+  // flex row, so the columns sit SIDE BY SIDE — the most layout-dependent thing a
+  // card expresses, and a vertical stack would misrepresent it.
+  `if(t==='ColumnSet'){var cs=uxEl('div','ux-columnset');uxAppendKids(cs,el,depth);return cs;}` +
+
+  // Column -> <div class="ux-column" style="flex:N 1 0">. Mirrors ux.ts:366: a
+  // digits-only width becomes the flex grow factor, anything else falls back to
+  // the constant 1, and an absent width sets no style at all. The grow factor is
+  // the ONLY attribute value derived from the record anywhere in this renderer,
+  // it is an integer or the literal 1, and it can never be record TEXT.
+  `if(t==='Column'){var cw=uxEl('div','ux-column');` +
+  `if(el.width!=null){var n=/^[0-9]+$/.test(String(el.width))?parseInt(String(el.width),10):1;` +
+  `cw.style.flex=n+' 1 0';}` +
+  `uxAppendKids(cw,el,depth);return cw;}` +
+
+  // Image -> a PLACEHOLDER. The url is SHOWN and never fetched: no `img` element
+  // is created and no `src` is set, so there is no code path that could reach the
+  // network even if the CSP allowed it. This is the element where a renderer would
+  // most naturally reach out, which is why ac5 is structural here rather than a
+  // promise. Note what is deliberately NOT mirrored: the daemon sets
+  // aria-label/title attributes from record text because a standalone file has no
+  // other channel, while here the same strings are written as visible TEXT — so no
+  // attribute is ever built from record content.
+  `if(t==='Image'){var im=uxEl('div','ux-image');` +
+  `var ic=uxTextNode('span','ux-image__icon','\u25a3');ic.setAttribute('aria-hidden','true');im.appendChild(ic);` +
+  `var mt=uxEl('span','ux-image__meta');` +
+  `mt.appendChild(uxTextNode('span','ux-image__alt',el.altText!=null?el.altText:'image'));` +
+  `mt.appendChild(uxTextNode('span','ux-image__url',el.url));` +
+  `im.appendChild(mt);return im;}` +
+
+  // Input.Text -> a non-interactive field affordance. No `input` element: the
+  // placeholder is TEXT inside a styled span, so the mock cannot be typed into and
+  // cannot be mistaken for a working control.
+  `if(t==='Input.Text'){var fl=uxEl('label','ux-field');` +
+  `fl.appendChild(uxTextNode('span','ux-label',el.label!=null?el.label:el.id));` +
+  `fl.appendChild(uxTextNode('span',el.isMultiline===true?'ux-input ux-input--multi':'ux-input',` +
+  `el.placeholder!=null?el.placeholder:''));` +
+  `return fl;}` +
+
+  // Input.ChoiceSet -> each choice as text with its mark. No select, no option.
+  // The mark distinguishes multi-select from single, as the daemon's does.
+  `if(t==='Input.ChoiceSet'){var cf=uxEl('div','ux-field');` +
+  `cf.appendChild(uxTextNode('span','ux-label',el.label!=null?el.label:el.id));` +
+  `var ch=uxEl('div','ux-choices');` +
+  `(Array.isArray(el.choices)?el.choices:[]).forEach(function(c){` +
+  `var sp=uxEl('span','ux-choice');` +
+  `var mk=uxTextNode('span','ux-choice__mark',el.isMultiSelect===true?'\u2610':'\u25cb');` +
+  `mk.setAttribute('aria-hidden','true');sp.appendChild(mk);` +
+  `uxText(sp,c&&c.title!=null?c.title:'');` +
+  `ch.appendChild(sp);});` +
+  `cf.appendChild(ch);return cf;}` +
+
+  // ActionSet -> non-interactive chips. Submit and OpenUrl must be TELLABLE
+  // APART — a reviewer needs to know which control commits and which navigates —
+  // which is the correction ux.ts:393-399 records. No anchor and no href is
+  // created: an OpenUrl shows its url as TEXT.
+  `if(t==='ActionSet'){var as=uxEl('div','ux-actions');` +
+  `(Array.isArray(el.actions)?el.actions:[]).forEach(function(a){` +
+  `var isLink=a&&a.type==='Action.OpenUrl';` +
+  `var bt=uxEl('span',isLink?'ux-btn ux-btn--link':'ux-btn ux-btn--submit');` +
+  `uxText(bt,a&&a.title!=null?a.title:'');` +
+  // An OpenUrl's TARGET is SHOWN, as a visible text node. The daemon carries it in
+  // `title=` because a standalone file has no other channel, and mirroring that
+  // would make it the only attribute in this renderer built from record text — so
+  // ac5 stays ABSOLUTE and the url becomes visible CONTENT instead. The deciding
+  // reason is this Story's own binding check: a tooltip cannot be read in a
+  // screenshot, and the t3/t7 visual reads are what this Story cannot ship without.
+  //
+  // This is the ONE place the client's structure diverges from the daemon's, by
+  // exactly one text node inside a ux-btn--link. The parity test STATES that
+  // divergence and asserts it is that node and nothing else.
+  `if(isLink){uxText(bt,a.url!=null?a.url:'');` +
+  `var gl=uxTextNode('span','ux-btn__glyph','\u2197');` +
+  `gl.setAttribute('aria-hidden','true');bt.appendChild(gl);}` +
+  `as.appendChild(bt);});` +
+  `return as;}` +
+
+  // An element whose `type` is outside the union — a card authored against a newer
+  // Adaptive Cards feature, or a producer that gains an element type before this
+  // renderer does. It renders a VISIBLE ux-unknown NAMING the type. NOT a bare
+  // `default` returning nothing: that silent fall-through is what this Epic has
+  // already shipped once, and a reviewer must never approve a design with an
+  // invisible hole in it.
+  `return uxTextNode('div','ux-unknown','unrenderable element: '+t);}` +
+
+  // --- children --------------------------------------------------------------
+  `function uxAppendKids(host,el,depth){` +
+  `uxKids(el).forEach(function(k){host.appendChild(uxElement(k,depth+1));});}` +
+
+  // --- the card --------------------------------------------------------------
+  // sc2's StructuredRenderer shape: { el, degradation? }. `degradation` stays
+  // ABSENT — a card that cannot be drawn at all is the slot's 'unshowable' (t5),
+  // and an element that cannot be drawn degrades in place above. Never throws: a
+  // non-array body yields an empty card rather than taking the document down over
+  // an adjunct.
+  `function uxRenderCard(record){` +
+  `var card=uxEl('div','ux-card');` +
+  `var body=(record&&Array.isArray(record.body))?record.body:[];` +
+  `body.forEach(function(e){card.appendChild(uxElement(e,1));});` +
+  `return {el:card};}`;
+
+// ---------------------------------------------------------------------------
 // sc4 (S003/t3) — THE COMPANION VISUAL SLOT. Owned by s3, consumed by s3 and s4.
 //
 // s4 dependsOn s3, which makes s3 the nearest common ancestor of the two visual
@@ -1194,6 +1397,75 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.insrc-dg-slot-head{color:var(--it-accent);font-family:var(--it-font);font-weight:600;font-size:12px;margin-bottom:6px;}` +
       `.insrc-dg-slot-why{color:var(--it-fg);font-family:var(--it-font);font-size:12px;white-space:normal;word-break:normal;}` +
       `.insrc-dg-slot-link{color:var(--it-dim);font-family:var(--it-font);font-size:11px;margin-top:6px;white-space:normal;word-break:break-word;}` +
+      // S004/t2 — the experience mock. `--it-*` variables ONLY, and NO literal
+      // colour anywhere: not a hex, not an rgb(), not a CSS colour name. This is
+      // the one place the mirroring stops at structure. The daemon's UX_MOCK_STYLE
+      // is a STANDALONE document's stylesheet and legitimately carries its own
+      // palette (`.ux-subtle{color:#6b7684}` at ux.ts:436, among others); copying
+      // that palette into a themed pane is the natural move and the wrong one — a
+      // literal card background is invisible in a light theme and unreadable in a
+      // high-contrast one. A card is almost entirely background, border and
+      // subtle-text colour, so this matters more here than for the SVG diagram.
+      // A mechanical scan enforces it, because the structural parity diff compares
+      // tag, class and child order and is blind to style by design.
+      //
+      // GEOMETRY is mirrored from UX_MOCK_STYLE (ux.ts:425-473) — the flex row, the
+      // gaps, the relative font sizes — because geometry is what makes the mock read
+      // as an interface rather than a list. No shorthand carries an undefined var():
+      // the S001 gotcha that makes a border vanish silently.
+      `.ux-card{border:1px solid var(--it-border);border-radius:6px;padding:12px;font-family:var(--it-font);color:var(--it-fg);}` +
+      `.ux-card>*+*{margin-top:10px;}` +
+      `.ux-text{margin:0;white-space:normal;overflow-wrap:anywhere;}` +
+      `.ux-bolder{font-weight:700;}.ux-lighter{font-weight:300;}` +
+      `.ux-subtle{color:var(--it-dim);}` +
+      `.ux-size-small{font-size:11px;}.ux-size-default{font-size:13px;}` +
+      `.ux-size-medium{font-size:15px;}.ux-size-large{font-size:18px;}.ux-size-extraLarge{font-size:22px;}` +
+      // The four Adaptive Cards colour roles map onto the theme ROLES rather than
+      // onto a palette, so emphasis still means what the author meant in either
+      // theme. Three map directly. `good` has no counterpart: the shipped token set
+      // (design-tokens.ts:187-195) defines bg/fg/dim/accent/warn/err/sel and NO
+      // success role, so `--it-ok` does not exist — writing it bare would be the
+      // S001 gotcha exactly, a var() that resolves to nothing and silently drops
+      // the declaration, which is how a border once vanished here. The fallback
+      // keeps it valid: `good` reads as accent today and starts reading as itself
+      // the day a success token is added. Minting one now would mean editing the
+      // token set every chat surface shares — a different surface than this Task.
+      `.ux-color-accent{color:var(--it-accent);}.ux-color-good{color:var(--it-ok,var(--it-accent));}` +
+      `.ux-color-warning{color:var(--it-warn);}.ux-color-attention{color:var(--it-err);}` +
+      `.ux-container{border:1px solid var(--it-border);border-radius:5px;padding:10px;}` +
+      `.ux-container>*+*{margin-top:10px;}` +
+      // flex-direction stated EXPLICITLY rather than left to the row default. Not
+      // redundancy: `display:flex` alone is satisfied by a column too, so without this
+      // the only thing between a card and a vertically stacked ColumnSet was a
+      // default — and a CSS-only mutation to `column` would leave every JS test green.
+      // The build validation gate caught exactly that gap.
+      `.ux-columnset{display:flex;flex-direction:row;gap:12px;align-items:flex-start;}` +
+      `.ux-column{flex:1 1 0;min-width:0;}.ux-column>*+*{margin-top:10px;}` +
+      `.ux-columnset:empty,.ux-container:empty{min-height:24px;}` +
+      `.ux-image{display:flex;gap:10px;align-items:center;border:1px dashed var(--it-border);border-radius:5px;padding:8px;color:var(--it-dim);}` +
+      `.ux-image__icon{font-size:18px;line-height:1;}` +
+      `.ux-image__meta{display:flex;flex-direction:column;min-width:0;}` +
+      `.ux-image__alt{font-size:12px;}` +
+      `.ux-image__url{font-size:11px;color:var(--it-dim);overflow-wrap:anywhere;}` +
+      `.ux-field{display:block;}` +
+      `.ux-label{display:block;font-size:11px;font-weight:600;color:var(--it-fg);margin-bottom:3px;}` +
+      `.ux-input{display:block;border:1px solid var(--it-border);border-radius:4px;padding:6px 8px;color:var(--it-dim);font-size:12px;min-height:30px;overflow-wrap:anywhere;}` +
+      `.ux-input--multi{min-height:60px;}` +
+      `.ux-choices{display:flex;flex-wrap:wrap;gap:14px;}` +
+      `.ux-choice{display:inline-flex;align-items:center;gap:6px;font-size:12px;}` +
+      `.ux-choice__mark{color:var(--it-dim);}` +
+      `.ux-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:2px;}` +
+      // A chip, deliberately NOT a button: the mock must not look clickable. The
+      // submit/link distinction is carried by fill vs outline, so the two stay
+      // tellable apart without colour alone doing the work.
+      `.ux-btn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--it-accent);border-radius:4px;padding:5px 10px;font-size:12px;font-weight:600;}` +
+      `.ux-btn--submit{background:var(--it-accent);color:var(--it-bg);}` +
+      `.ux-btn--link{color:var(--it-accent);}` +
+      `.ux-btn__glyph{font-weight:400;}` +
+      // The visible admission of a gap. Dashed and in the error role, so it reads
+      // as "this could not be drawn" and never as a design that simply has nothing
+      // there — the whole point of refusing a bare `default`.
+      `.ux-unknown{border:1px dashed var(--it-err);border-radius:5px;padding:8px;color:var(--it-err);font-size:11px;white-space:normal;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
     const cls = surfaceClass('docs-review');
@@ -1227,6 +1499,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // INERT: it defines the derivation, the SVG writer and the slot factory, and
       // nothing calls them yet, so the rendered surface is unchanged by this commit.
       DOCS_DIAGRAM_SOURCE +
+      // S004/t2 — the FIFTH source string joins the SAME single nonce'd script.
+      // INERT: it defines the element dispatch and the card renderer, and nothing
+      // calls them yet, so the rendered surface is unchanged but for the added
+      // source text — which is why SHELL_BASELINE moves in THIS commit.
+      DOCS_UX_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be

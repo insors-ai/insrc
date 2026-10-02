@@ -191,6 +191,13 @@
         "choice": "Compress steps 1 and 4 into outcomes",
         "rationale": "Smallest change that resolves exactly what sbdry2 flagged. The migration schema requires ordered steps, so some sequencing is compliance rather than overreach; only steps 1 and 4 drifted into task wording ('write the failing characterisations FIRST', 'rewrite the two tests'). Restating those two as the state that must hold afterwards keeps the load-bearing order — characterisation before the behaviour flip, and the flip visible separately from the test rewrite — while handing task breakdown to this plan, where it belongs.",
         "resolvedAt": "2026-10-02T19:53:44.267Z"
+      },
+      "q47b99182": {
+        "question": "[out of boundary, recorded so it is not lost] The DEF/ISSUE equivalence holds inside resolve.ts but NOT outside it: orchestrator.ts and chain.ts read DEF.body.stories (e.g. chain.ts:161 `define.artifact.body.stories`), for which an ISSUE has no analogue. Deliberately not designed here. Separately, resolveByIssue's DEF-only third pass at :294 is the lone remaining breach inside this module and belongs to item 5 of ISSUE-b955fa759c3c4309 — not fixed here to avoid overlapping a filed item.",
+        "status": "resolved",
+        "choice": "File a tracked follow-up issue",
+        "rationale": "Keeps this plan inside the approved LLD boundary and avoids overlapping item 5 of ISSUE-b955fa759c3c4309, which already owns the :294 breach. The orchestrator.ts / chain.ts gap has no tracked home at all, and the user's standing rule is that nothing gets fixed off-ledger. NOTE THIS CREATES AN OBLIGATION: the follow-up ISSUE is now owed and not yet filed, so it must be surfaced to the user rather than left dangling in this rationale.",
+        "resolvedAt": "2026-10-02T19:54:04.097Z"
       }
     }
   },

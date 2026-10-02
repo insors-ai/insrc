@@ -24,6 +24,8 @@ import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateProviderForTests } from '../phases/validate.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
 import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
+import { ensureBuildRecordOnCompletion } from '../../../workflow/runners/build/completion-record.js';
+import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
@@ -521,7 +523,10 @@ test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(u
 //            INVERTED by ISSUE-013e816250937aa5, which had to land first:
 //            t9's specified fix alone leaves standalone *undefined*, not true,
 //            because omitting a key used to delete it.)
-//   TEST C  clean tree yields an empty change set        INVERTED BY t6
+//   TEST C  clean tree yields an empty change set        NOT A DEFECT (see t6)
+//           — re-labelled at t6: its scenario is the TRIVIAL route, which has
+//             no upstream artifact, so empty is the specified outcome. t1
+//             mis-filed it; the real t6 inversion needs a resolvable base.
 //
 // NOTE FOR t9 — there is a SECOND place that encodes the forced flag as
 // expected behaviour: the test at "validate[standalone]: no plan → resolves
@@ -646,7 +651,7 @@ test('CHARACTERISATION B (inverts at t9): the shared validate persist forces met
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('CHARACTERISATION C (inverts at t6): a CLEAN working tree yields an empty changeLog and a record with no \'## Changes\' section', async () => {
+test('CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no \'## Changes\' section', async () => {
 	if (!gitAvailable()) return;
 	const repo = mkCleanGitRepo();
 	try {
@@ -661,10 +666,17 @@ test('CHARACTERISATION C (inverts at t6): a CLEAN working tree yields an empty c
 		assert.equal(gitOut(repo, 'diff', '--cached', '--name-only'), '', 'precondition: no staged changes');
 		const { rec, md } = await runImplementThenValidate(repo);
 
+		// RE-LABELLED at t6, and the correction matters. t1 filed this as a DEFECT
+		// that t6 would invert. It is not: this scenario is a TRIVIAL standalone —
+		// seedDef only, so there is no PLAN and no LLD, hence no upstream artifact
+		// to carry a stamped base or to locate in history. An empty change set is
+		// therefore the SPECIFIED outcome for the trivial route, not a bug, and t6
+		// leaves it exactly as it is. The genuine t6 inversion needs a resolvable
+		// base — see the 'clean tree WITH a stamped base' test below.
 		assert.equal(rec.body['changeLog'], undefined,
-			'TODAY: the change set derives from the WORKING TREE only, which is clean exactly when the collector runs, so the key is omitted entirely. t6 derives from the Story\'s committed range and INVERTS this.');
+			'TRIVIAL route: no upstream to anchor a range on, so the derivation sees only the (clean) working tree and the key is omitted');
 		assert.doesNotMatch(md, /## Changes/,
-			'TODAY: no `## Changes` section is rendered, and an empty result is indistinguishable from a failed one. t6 INVERTS this.');
+			'and no `## Changes` section is rendered — correct for a build with no resolvable base');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -752,4 +764,134 @@ test('t4: the validate writer EXCLUDES its own json + md from its own change-log
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// t6 (ISSUE-93081bff91ae5108 / S001) — the range base, end to end through the
+// validate writer. THIS is where the Story's defect actually closes.
+// ---------------------------------------------------------------------------
+
+/** A repo with a base commit, the Story's work COMMITTED (so the tree is clean),
+ *  and an LLD stamped with the base — the standalone route's upstream. */
+function mkStampedRepo(extraCommits: readonly string[] = []): { repo: string; base: string; git: (...a: string[]) => string } {
+	const repo = mkRepo();
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+	git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+	writeFileSync(join(repo, 'before.ts'), 'export const b = 1;\n');
+	git('add', '-A'); git('commit', '-qm', 'before the Story');
+    const base = git('rev-parse', 'HEAD');
+	seedDef(repo); seedLld(repo);
+	// Stamp the base onto the LLD, as t5's approval would have.
+	const lld = join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`);
+	const parsed = JSON.parse(readFileSync(lld, 'utf8')) as { meta: Record<string, unknown> };
+	parsed.meta['rangeBase'] = base;
+	writeFileSync(lld, JSON.stringify(parsed, null, 2) + '\n');
+	// The Story's work, COMMITTED — one commit per entry, so a multi-task Story
+	// can be modelled.
+	for (const f of ['shipped.ts', ...extraCommits]) {
+		writeFileSync(join(repo, f), `export const x = '${f}';\n`);
+		git('add', '-A'); git('commit', '-qm', `work: ${f}`);
+	}
+	return { repo, base, git };
+}
+
+const STANDALONE_S1 = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+
+async function validateOnce(repo: string): Promise<{ meta: Record<string, unknown>; body: Record<string, unknown> }> {
+	_setBuildValidateProviderForTests({
+		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+	});
+	try {
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }));
+		assert.equal(out['next'], 'done');
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		return JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+	} finally { _setBuildValidateProviderForTests(undefined); }
+}
+
+const changeFiles = (rec: { body: Record<string, unknown> }): string[] =>
+	((rec.body['changeLog'] ?? []) as { target: { file: string } }[]).map(e => e.target.file);
+
+test('t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story\'s committed change set', async () => {
+	if (!gitAvailable()) return;
+	const { repo, git } = mkStampedRepo();
+	try {
+		assert.equal(git('diff', '--name-only'), '', 'precondition: clean tree — the state that used to yield nothing');
+		const rec = await validateOnce(repo);
+		const files = changeFiles(rec);
+		assert.ok(files.includes('shipped.ts'),
+			`the Story's COMMITTED work is now recorded on a clean tree, got ${JSON.stringify(files)}`);
+		assert.ok(!files.includes('before.ts'), 'and only base..HEAD, not the whole history');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t6: a multi-task Story\'s change set GROWS across tasks rather than describing only the latest', async () => {
+	if (!gitAvailable()) return;
+	const { repo } = mkStampedRepo(['second.ts', 'third.ts']);
+	try {
+		const files = changeFiles(await validateOnce(repo));
+		for (const f of ['shipped.ts', 'second.ts', 'third.ts']) {
+			assert.ok(files.includes(f), `${f} must be in the range, got ${JSON.stringify(files)}`);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t6: a DIRTY tree yields today\'s working-tree result and does NOT union in the committed range', async () => {
+	if (!gitAvailable()) return;
+	const { repo } = mkStampedRepo();
+	try {
+		writeFileSync(join(repo, 'uncommitted.ts'), 'export const u = 1;\n');
+		execFileSync('git', ['add', 'uncommitted.ts'], { cwd: repo, stdio: 'ignore' });
+		const files = changeFiles(await validateOnce(repo));
+		assert.ok(files.includes('uncommitted.ts'), 'the dirty path is reported');
+		assert.ok(!files.includes('shipped.ts'),
+			'and the committed range is NOT unioned in — a dirty tree is left exactly as it was');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range', async () => {
+	if (!gitAvailable()) return;
+	// The genuinely unresolvable case, found by getting it wrong first: an
+	// UNCOMMITTED upstream makes the tree dirty (so the base is never consulted),
+	// and a COMMITTED one resolves via the introducing-commit fallback. The base is
+	// therefore only truly unresolvable when there is NO upstream artifact at all —
+	// the trivial route. So that is what this exercises, on a CLEAN tree, with a
+	// second commit present so HEAD^ WOULD resolve if anything reached for it.
+	const repo = mkRepo();
+	try {
+		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+		writeFileSync(join(repo, 'one.ts'), '1\n'); git('add', '-A'); git('commit', '-qm', 'one');
+		writeFileSync(join(repo, 'two.ts'), '2\n'); git('add', '-A'); git('commit', '-qm', 'two');
+		seedDef(repo);                      // DEF only — no PLAN, no LLD to anchor on
+		git('add', '-A'); git('commit', '-qm', 'artifacts');   // keep the tree CLEAN
+		assert.equal(git('diff', '--name-only'), '', 'precondition: clean tree');
+		assert.equal(resolveStoryRangeBase(repo, HASH, 's1'), undefined, 'precondition: no base resolves');
+
+		const rec = await validateOnce(repo);
+		assert.equal(rec.body['changeLog'], undefined,
+			'empty — and notably NOT two.ts, which a HEAD^ fallback would have produced');
+		assert.deepEqual(rec.body['tasks'], [{ id: 's1', passed: true }],
+			'the record IS still written and the verdict stands: provenance failing must never block a build');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains', async () => {
+	if (!gitAvailable()) return;
+	const { repo, base } = mkStampedRepo();
+	try {
+		// The validate writer's view.
+		const viaValidate = changeFiles(await validateOnce(repo));
+		// The completion-time writer's view, on the same repo + story.
+		const viaCompletion = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });
+		assert.ok(viaCompletion !== undefined, 'the completion writer produced a record');
+		const rec = JSON.parse(readFileSync(viaCompletion.json, 'utf8')) as { body: Record<string, unknown> };
+		const viaCompletionFiles = changeFiles(rec);
+
+		assert.ok(viaValidate.includes('shipped.ts'));
+		assert.ok(viaCompletionFiles.includes('shipped.ts'),
+			'the completion writer resolved the same base and saw the same committed range');
+		// And the resolver itself agrees with what both of them used.
+		assert.equal(resolveStoryRangeBase(repo, HASH, 's1'), base);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -19,6 +19,7 @@
  */
 
 import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { resolveStoryRangeBase } from './range-base.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -44,7 +45,14 @@ export async function ensureBuildRecordOnCompletion(
 		// does: at completion time those two are typically the only dirty paths, so
 		// without this the record reports that the Story changed its own ledger entry.
 		const own = buildRecordPathsFor(repoPath, base);
-		const ctx = { author: 'insrc-build', timestamp: now, exclude: [own.json, own.md] };
+		// Same resolver the validate writer uses, so the two can never disagree
+		// about this Story's base. See range-base.ts for the precedence and for why
+		// an unresolvable base yields empty rather than a substituted range.
+		const rangeBase = resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
+		const ctx = {
+			author: 'insrc-build', timestamp: now, exclude: [own.json, own.md],
+			...(rangeBase !== undefined ? { base: rangeBase } : {}),
+		};
 		const changeLog = listChanged !== undefined
 			? await collectBuildChangeLog(repoPath, ctx, listChanged)
 			: await collectBuildChangeLog(repoPath, ctx);

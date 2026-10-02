@@ -1010,16 +1010,16 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  85371,
-  bytes:  85431,
-  sha256: 'a1c0072d0beb8b4df445cf8ffdd18af2de5d0d08750e527899b37f359972510d',
+  chars:  85369,
+  bytes:  85429,
+  sha256: 'b72b54814d39dac7e93a59492c048f2b4e9125c506280a4f437f497eded0adf7',
 } as const;
 
 /**
  * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
  * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
  * the fifth source string and its CSS fragment, and the test below proves those two
- * additions account for the delta EXACTLY — 79530 + 3495 + 2346 = 85371 — so
+ * additions account for the delta EXACTLY — 79530 + 3493 + 2346 = 85369 — so
  * nothing else slipped into the shell alongside them.
  *
  * Every value here was COMPUTED at the fixed nonce and copied from the computation,
@@ -4918,4 +4918,124 @@ test('t3: every committed S004 evidence artefact exists at the path its commit c
   assert.match(m, /Measured real maximum: element depth 4/, 'the real maximum is stated');
   assert.match(m, /Cost per Container level: exactly 22px/, 'the per-level cost is stated');
   assert.match(m, /ELEMENT NESTING/, 'and the METRIC is named — the plan review’s HIGH finding');
+});
+
+// ---------------------------------------------------------------------------
+// S004/t4 — the depth bound, chosen from t3's measurement.
+//
+// 24: six times the measured real maximum of 4, and well beyond the ~16 levels at
+// which a 380px pane has no content width left. So the layout degrades on its own
+// long before the guard could engage, which is what makes this a SAFETY limit
+// rather than the presentation rule alternative a4 was rejected for.
+// ---------------------------------------------------------------------------
+
+test('t4: the bound is a SINGLE named constant with no second hard-coded copy', () => {
+  const decls = DOCS_UX_SOURCE.match(/UX_DEPTH_MAX\s*=\s*\d+/g) ?? [];
+  assert.equal(decls.length, 1, 'declared exactly once');
+  assert.match(decls[0]!, /UX_DEPTH_MAX=24/);
+  // Every USE goes through the name. A literal 24 anywhere in the walk would be the
+  // second copy this check exists to forbid.
+  const uses = DOCS_UX_SOURCE.match(/UX_DEPTH_MAX/g) ?? [];
+  assert.ok(uses.length >= 3, 'the name is used, not just declared');
+  const walk = DOCS_UX_SOURCE.slice(DOCS_UX_SOURCE.indexOf('function uxElement'));
+  assert.doesNotMatch(walk, /depth>24|>\s*24\b/, 'no literal bound in the walk');
+});
+
+test('t4: the chosen value is strictly greater than the plan floor AND than the measured real maximum', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const measurement = readFileSync(join(
+    here, '..', '..', '..', '..',
+    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/evidence/t3-depth-measurement.md',
+  ), 'utf8');
+
+  // The justification is TRACEABLE: the measurement file is the source of the
+  // numbers, and this reads them back out of it rather than restating them.
+  const realMax = Number(/Measured real maximum: element depth (\d+)/.exec(measurement)?.[1]);
+  assert.equal(realMax, 4, 'the measurement states the real maximum');
+
+  const bound = Number(/UX_DEPTH_MAX=(\d+)/.exec(DOCS_UX_SOURCE)?.[1]);
+  assert.equal(bound, 24);
+  assert.ok(bound > 9, 'above the floor the plan retained');
+  assert.ok(bound > realMax * 5, `and far above the measured real maximum of ${realMax}`);
+});
+
+test('t4: EVERY one of the four real records renders UNTRUNCATED — the bound never fires on authored content', async () => {
+  const { readFileSync, existsSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const ledger = join(here, '..', '..', '..', '..', '.insrc', 'artifacts');
+  const files = [
+    'LLD-85e6a58693579b6d-S001.json', 'LLD-7c219c7471d79496-S001.json',
+    'LLD-bfe98ff7f97178cf-s2.json', 'HLD-bfe98ff7f97178cf.json',
+  ];
+
+  let checked = 0;
+  for (const f of files) {
+    const p = join(ledger, f);
+    if (!existsSync(p)) continue;
+    const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
+    const { el } = loadUx().uxRenderCard(record);
+    // The guard's own degradation names depth. NONE may appear.
+    const truncated = uxFlatten(el).filter((n) => n.className === 'ux-unknown' && /nesting deeper/.test(n.textContent));
+    assert.deepEqual(truncated.map((n) => n.textContent), [], `${f} renders untruncated`);
+    checked += 1;
+  }
+  assert.equal(checked, 4, 'all four were found and checked');
+});
+
+test('t4: a synthetic over-deep structure TRIPS the guard, names depth as the reason, and TERMINATES', () => {
+  // Built to exceed the bound rather than to look plausible: this is the input the
+  // guard exists for, and no authored card resembles it.
+  let deep: unknown = { type: 'TextBlock', text: 'leaf' };
+  for (let i = 0; i < 40; i += 1) deep = { type: 'Container', items: [deep] };
+
+  const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [deep] });
+  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  assert.equal(cut.length, 1, 'exactly one cut point, at the bound');
+  assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/,
+    'and it NAMES depth as the reason, so a reviewer can tell a guard from a truncation');
+  // TERMINATES: the tree is bounded, not 40 deep.
+  const depthOf = (n: UxNode): number =>
+    1 + Math.max(0, ...n.children.filter((c): c is UxNode => !isText(c)).map(depthOf));
+  assert.ok(depthOf(el) <= 26, `the walk stopped (tree depth ${depthOf(el)})`);
+});
+
+test('t4: a CYCLIC structure terminates — the case that would hang without a bound', () => {
+  // A self-referential body is reachable: a card is read from a STORED artifact and
+  // can be hand-edited past its type. Without the bound this recurses forever, which
+  // is the difference between a guard and a nicety.
+  const cyclic: Record<string, unknown> = { type: 'Container' };
+  cyclic['items'] = [cyclic];
+
+  const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] });
+  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  assert.equal(cut.length, 1, 'the cycle is cut exactly once');
+  assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/);
+});
+
+test('t4 MUTATION: removing the bound makes the pathological case diverge', () => {
+  // The bound is proved to be LOAD-BEARING by removing it: the same cyclic input
+  // that terminates above recurses without it. Run as a real mutation with the
+  // guard disabled through the exposed setter, and bounded by a stack overflow
+  // rather than by hanging the suite.
+  const ux = loadUx();
+  ux.setDepthMax(null);
+
+  const cyclic: Record<string, unknown> = { type: 'Container' };
+  cyclic['items'] = [cyclic];
+
+  assert.throws(
+    () => { ux.uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] }); },
+    (err: unknown) => err instanceof RangeError || /call stack/i.test(String(err)),
+    'without the bound the same input recurses until the stack is exhausted',
+  );
+
+  // And with it restored, the very same input is fine — so the bound is the thing
+  // that made the difference, not something else about the run.
+  ux.setDepthMax(24);
+  assert.doesNotThrow(() => ux.uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] }));
 });

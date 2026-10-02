@@ -833,13 +833,29 @@ export const DOCS_DIAGRAM_SOURCE =
 // ---------------------------------------------------------------------------
 
 export const DOCS_UX_SOURCE =
-  // The depth bound is a NAMED PARAMETER with no committed value yet — t4 sets it
-  // from the step-3 visual read, which is the first evidence able to say what
-  // nesting costs in a narrow pane. Until then the walk takes it as an argument
-  // and a null bound means "no limit", so nothing silently truncates while the
-  // number is undecided. The LLD left this open deliberately; alternative a4 was
-  // rejected for making a bound a routine presentation rule rather than a guard.
-  `var UX_DEPTH_MAX=null;` +
+  // S004/t4 — THE DEPTH BOUND, set from measurement rather than invented. The LLD
+  // deliberately left the value open; t3's narrow-pane read is what decides it, and
+  // the numbers below come from S004/evidence/t3-depth-measurement.md.
+  //
+  //   measured real maximum      ELEMENT NESTING depth 4 (records: 2, 4, 3, 4)
+  //   cost per Container level   exactly 22px (1px border x2 + 10px padding x2)
+  //   380px pane, card inner     362px, so a worst-case all-Container nesting
+  //                              exhausts readable width at ~16 levels
+  //   synthetic depth 9 and 14   both still render legibly; layout degrades
+  //                              gradually and never clips or overlaps
+  //
+  // 24 is chosen because it is SIX TIMES the measured real maximum, so no plausible
+  // growth in authored content reaches it; and because it sits well beyond the ~16
+  // levels at which a narrow pane has no content width left, so by the time the
+  // guard could engage the layout has already degraded on its own. That ordering is
+  // the whole point: the bound is a SAFETY limit against malformed, cyclic or
+  // hostile structure, never a presentation rule. Alternative a4 was rejected
+  // precisely for blurring that line — it would have fired on the majority of real
+  // records, which this cannot fire on at all.
+  //
+  // ONE named constant. A second hard-coded copy is what turns a reasoned bound back
+  // into a number nobody chose.
+  `var UX_DEPTH_MAX=24;` +
 
   // --- the child list, read DEFENSIVELY --------------------------------------
   // Mirrors childrenOf (ux.ts:181-195) including its reason: a card body is read

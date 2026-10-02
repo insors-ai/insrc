@@ -45,6 +45,16 @@ the hard case). Card inner width: **362px**.
 | 19 | 226px |
 | 22 | 204px |
 
+**These are DOM depths, not element depths**, and the two differ — a point worth
+stating because this file's whole job is to name the metric. One Adaptive Cards
+element can produce several nested DOM nodes (a `ColumnSet` emits a flex row whose
+`Column` children each wrap their own items), so a card 14 ELEMENTS deep reaches a
+DOM depth in the twenties. The depth bound counts ELEMENTS; this table measures the
+horizontal cost per DOM container level. The overlay drawn into
+`t3-depth-measured.png` now labels its rows `DOM depth N container` for the same
+reason — an earlier version labelled them `container depth N`, which read as if a
+14-element card had 22 levels of nesting.
+
 **Cost per Container level: exactly 22px** — `1px border x 2 + 10px padding x 2`,
 which matches the CSS arithmetic, so the measurement and the stylesheet agree.
 `.ux-column` adds no horizontal cost of its own; a `.ux-columnset` adds a 12px gap
@@ -72,10 +82,19 @@ chip rendered `Open the source documenthttps://example.invalid/doc`. The title a
 the url were two adjacent text nodes, and adjacent text nodes merge into ONE
 anonymous flex item — so the chip's `gap` never applied between them. The url is
 now its own `span.ux-btn__url`, dimmed and lighter so the chip still reads
-title-first. `t3-url-defect-fixed.png` is the corrected render.
+title-first.
 
 Catching it here cost one task. Had it waited for t7 it would have cost the mount
 as well.
+
+**The committed images show the CORRECTED renderer.** An earlier version of this
+evidence did not: `t3-isolated-dark.png` and `t3-isolated-light.png` had been
+captured BEFORE the fix, so they still showed the run-together chip while this file
+claimed both themes read correctly — committed evidence contradicting its own
+caption. The build validation gate caught that on t3, and both images have been
+re-rendered against the fixed renderer. A separate `t3-url-defect-fixed.png` is no
+longer carried, because both theme images now show the fix; keeping a third image
+of the same thing would only invite the two to drift apart again.
 
 ## Both themes
 

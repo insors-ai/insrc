@@ -4969,7 +4969,6 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
     't3-isolated-dark.png',
     't3-isolated-light.png',
     't3-depth-measured.png',
-    't3-url-defect-fixed.png',
     't3-depth-measurement.md',
     // t7 — the full-surface states, every one named so a file committed to the
     // wrong path is a test failure rather than something a reader discovers.
@@ -5000,6 +4999,10 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
   const m = readFileSync(join(dir, 't3-depth-measurement.md'), 'utf8');
   assert.match(m, /Measured real maximum: element depth 4/, 'the real maximum is stated');
   assert.match(m, /Cost per Container level: exactly 22px/, 'the per-level cost is stated');
+  assert.match(m, /committed images show the CORRECTED renderer/i,
+    'the note states which renderer the committed images show — an earlier version claimed both themes read correctly while the images showed the pre-fix chip');
+  assert.match(m, /DOM depths, not element depths/,
+    'and distinguishes the two depth notions, since naming the metric is this file\u2019s job');
   assert.match(m, /ELEMENT NESTING/, 'and the METRIC is named — the plan review’s HIGH finding');
 
   // The t7 note must record the four states its acceptance checks name, and the

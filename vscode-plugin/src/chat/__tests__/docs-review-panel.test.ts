@@ -5020,9 +5020,18 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
   // that it ran something. A transcript asserting success without the numbers is
   // the shape this repo has shipped before.
   const t8 = readFileSync(join(dir, 't8-build-and-transcripts.md'), 'utf8');
-  assert.match(t8, /S003 baseline \(0\.5\.9\): 247667 bytes/, 'the baseline is the real artefact size');
-  assert.match(t8, /delta:\s+[+-][\d,]+ bytes/, 'and the delta is a computed number');
-  assert.match(t8, /npx tsc --noEmit\nexit 0/, 'the typecheck exit code is recorded');
+  assert.match(t8, /S003 baseline 0\.5\.9\s+: 247667 bytes/, 'the baseline is the real artefact size');
+  // RAW OUTPUT, not prose dressed as output. An earlier version of the note carried
+  // a hand-formatted block under an `ls -l` prompt; the gate caught it. A real
+  // `ls -l` line carries a mode string and an owner, which prose does not.
+  assert.match(t8, /^-rw[-rwx]{7}@?\s+\d+\s+\S+\s+\S+\s+\d+\s.*insrc-vscode-0\.5\.10\.vsix$/m,
+    'the ls block is verbatim command output');
+  assert.match(t8, /^-rw[-rwx]{7}@?\s+\d+\s+\S+\s+\S+\s+247667\s.*insrc-vscode-0\.5\.9\.vsix$/m,
+    'and shows the baseline artefact at its real size');
+  assert.match(t8, /delta\s+:\s+[+-][\d,]+ bytes \([+-][\d.]+%\)/,
+    'and the delta is a computed number with its percentage');
+  assert.match(t8, /npx tsc --noEmit[^\n]*\n(?:[^\n]*\n)?exit 0/,
+    'the typecheck exit code is recorded');
   assert.match(t8, /NO daemon rebuild is required/i, 'and the no-daemon-rebuild fact is stated with its reason');
   // Scoped to the CHANGE-SET BLOCK, not the whole note. The prose legitimately
   // cites `src/workflow/artifact-content.ts:76` when explaining WHY no daemon

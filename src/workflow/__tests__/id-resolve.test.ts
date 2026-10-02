@@ -477,6 +477,127 @@ test('resolver — a DEF-less bugfix epic still counts for multi-epic ambiguity 
 	} finally { s.cleanup(); }
 });
 
+// ---------------------------------------------------------------------------
+// S001/t1 — RED-FIRST ACCEPTANCE TESTS for ISSUE-792f9324fc43d95c
+//
+// READ THE NEXT PARAGRAPH BEFORE EDITING ANY OF THESE.
+//
+// These are NOT characterisations. The immediately-preceding Story
+// (ISSUE-93081bff91ae5108) used "characterisation" for a test that PASSES while
+// asserting today's WRONG behaviour and is INVERTED by a named later task. These
+// five do the opposite: each asserts the DESIRED behaviour and therefore FAILS on
+// unmodified HEAD. Rewriting any of them to pass today would assert the defect as
+// desired — which is exactly the mis-asserted test that blocked this Story's
+// first LLD review.
+//
+// Each names the task that turns it green:
+//   (a) mirror direction of the reported defect        → green at t4
+//   (b) nonexistent story in a single-epic repo        → green at t3
+//   (c) scoped label for a missing story  [NARROWING 1] → green at t3
+//   (d) hierarchical id, nonexistent ordinal [NARROWING 2] → green at t3
+//   (e) two feature epics, only one holds the label    → green at t4
+//
+// DELIBERATELY ABSENT: a test for the arrangement at the "DEF-less bugfix epic
+// still counts for multi-epic ambiguity" test ABOVE (:459). That arrangement is
+// ALREADY covered there, asserting the regressed expectation, and t5 INVERTS it.
+// Adding one here would duplicate it.
+//
+// FOUR TESTS ENCODE TODAY'S BEHAVIOUR AND MUST BE INVERTED AT t5 — the approved
+// plan named only three, so this list is the corrected one. The fourth was found
+// by the t1 build-validation gate's static reading:
+//   1. :459 'a DEF-less bugfix epic still counts for multi-epic ambiguity'
+//   2. :447 'a DEF-bearing epic is untouched by the ISSUE fallback (regression)'
+//          — fixture has NO ISSUE file, so it protects nothing today
+//   3. tracker.test.ts:283 multi-epic arm — restate in containment terms
+//   4. :302 'label is ambiguous in a multi-epic dir' — MISSED BY THE PLAN. It is
+//          the same arrangement as (e) below: setupRepo plus a second DEF epic
+//          holding no s1, asserting `s1/t3` is null. t4 turns it RED, so t5 must
+//          invert its FIRST assertion. Its issue-number and hierarchical-id arms
+//          stay valid and must be KEPT.
+// ---------------------------------------------------------------------------
+
+/** A second, unrelated epic anchored by an ISSUE on a DIFFERENT hash — the
+ *  bugfix whose mere presence must stop shadowing another epic's labels. */
+const OTHER_BUG_HASH = 'aaaa1111bbbb2222';
+/** A second, unrelated epic anchored by a DEF on a DIFFERENT hash, holding NO s1. */
+const OTHER_EPIC_HASH = 'cccc3333dddd4444';
+
+function addUnrelatedIssueEpic(repo: string): void {
+	writeJson(join(repo, '.insrc/artifacts', `ISSUE-${OTHER_BUG_HASH}.json`), {
+		meta: {
+			workflow: 'issue', runId: 'i9', repoPath: repo, issueHash: OTHER_BUG_HASH,
+			epicSlug: 'an-unrelated-bugfix', createdAt: CREATED, standalone: true,
+			magnitude: 'small', schemaVersion: 1,
+		},
+		body: { title: 'unrelated', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+		citations: [],
+	});
+}
+
+function addUnrelatedDefEpicWithoutS1(repo: string): void {
+	writeJson(join(repo, '.insrc/artifacts', `DEF-${OTHER_EPIC_HASH}.json`), {
+		meta: {
+			workflow: 'define', runId: 'd9', repoPath: repo, epicHash: OTHER_EPIC_HASH,
+			epicSlug: 'other-feature', createdAt: CREATED, schemaVersion: 1,
+		},
+		// No stories declared and no LLD/PLAN written — this epic does NOT contain s1.
+		body: { flavor: 'new-capability', problem: 'y.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
+		citations: [],
+	});
+}
+
+test('RED-FIRST (a), green at t4 — asserts DESIRED behaviour, FAILS today: a DEF epic holding s1 plus an UNRELATED ISSUE epic on a different hash still resolves `s1`', () => {
+	const s = setupRepo();
+	try {
+		addUnrelatedIssueEpic(s.repo);
+		const r = resolveWorkflowRef(s.repo, 's1');
+		assert.notEqual(r, null,
+			'filing an unrelated bugfix must not shadow a label it has nothing to do with — exactly one epic contains s1');
+		assert.equal(r!.epicHash, EPIC_HASH, 'and it resolves to the epic that actually holds the story');
+		assert.equal(r!.storyId, 's1');
+	} finally { s.cleanup(); }
+});
+
+test('RED-FIRST (b), green at t3 — asserts DESIRED behaviour, FAILS today: a single-epic repo REFUSES a nonexistent story instead of minting a dummy ref', () => {
+	const s = setupRepo();
+	try {
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'precondition: the real story resolves');
+		assert.equal(resolveWorkflowRef(s.repo, 's9'), null,
+			'no s9 exists in this epic — today buildRef mints a well-formed reference to a story nobody created');
+	} finally { s.cleanup(); }
+});
+
+test('RED-FIRST (c), green at t3, NARROWING 1 — asserts DESIRED behaviour, FAILS today: an explicitly scoped label for a story the scoped epic LACKS refuses', () => {
+	const s = setupRepo();
+	try {
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1', { epicHash: EPIC_HASH }), null,
+			'precondition: the scoped path resolves a story that exists');
+		assert.equal(resolveWorkflowRef(s.repo, 's9', { epicHash: EPIC_HASH }), null,
+			'supplying a scope asserts WHICH epic, not that the story exists — no trusted-caller exemption');
+	} finally { s.cleanup(); }
+});
+
+test('RED-FIRST (d), green at t3, NARROWING 2 — asserts DESIRED behaviour, FAILS today: a hierarchical id naming a nonexistent story ordinal refuses', () => {
+	const s = setupRepo();
+	try {
+		assert.notEqual(resolveWorkflowRef(s.repo, 'E20260717185807ba:S001'), null,
+			'precondition: the hierarchical form resolves a story that exists');
+		assert.equal(resolveWorkflowRef(s.repo, 'E20260717185807ba:S009'), null,
+			'a hierarchical id derives its ordinal from the id and never confirmed it — S009 does not exist');
+	} finally { s.cleanup(); }
+});
+
+test('RED-FIRST (e), green at t4 — asserts DESIRED behaviour, FAILS today: two FEATURE epics where only ONE holds s1 resolves (additive beyond the regression)', () => {
+	const s = setupRepo();
+	try {
+		addUnrelatedDefEpicWithoutS1(s.repo);
+		const r = resolveWorkflowRef(s.repo, 's1');
+		assert.notEqual(r, null,
+			'only one epic contains s1, so the label is unambiguous in fact — the old count rule refused here even before 13ebd04');
+		assert.equal(r!.epicHash, EPIC_HASH);
+	} finally { s.cleanup(); }
+});
+
 test('resolver — unknown / malformed identifier → null', () => {
 	const s = setupRepo();
 	try {

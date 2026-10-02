@@ -196,7 +196,16 @@
         "resolvedAt": "2026-10-02T04:56:41.670Z"
       }
     },
-    "approvedAt": "2026-10-02T05:09:13.622Z"
+    "approvedAt": "2026-10-02T05:09:13.622Z",
+    "questionResolutions": {
+      "qd4102b4e": {
+        "question": "CHECKLIST PROVENANCE, recorded so review judges rather than discovers (s8 graded cd1, cd2 and alt2 `partial` — the same three items S003's audit graded partial, for the same structural reasons). (a) cd1: DOCS_UX_SOURCE, uxRenderCard/uxPickRef and uxBuildMockSlot are NEW names, unavoidable for a Story whose job is to add a renderer; each is ANCHORED to a located pattern rather than invented freely — DOCS_UX_SOURCE as the fifth member of the DOCS_*_SOURCE family confirmed at :76/:111/:185/:369, and uxPickRef/uxBuildMockSlot as the exact mirrors of S003's shipped dgPickRef/dgBuildDiagramSlot. The other four api entries are shipped symbols. (b) cd2: `el: unknown` is sc2's SHIPPED return shape (verified at docs-review-panel.ts:343-348) and the record BUNDLE instantiates sc4's generic exactly as S003's diagram factory does — S003's own code review raised the bundle as a LOW and judged it reconcilable. (c) alt2: all four alternatives were scored against every acceptance criterion and all four shared contracts (36 scores) and both eliminations rest on explicit scores — a2 on VIOLATES against sc2 and ac5, a3/a4 on an ac1 partial — but Epic constraints k1-k7 were not re-scored as their own rows; they appear throughout the notes and no elimination depends on them.",
+        "status": "resolved",
+        "choice": "Accept as recorded provenance",
+        "rationale": "All three partials are structural and none can change what gets built, which is the same conclusion S003's identical trio reached. cd1: a Story whose job is to add a renderer must add names, and each is anchored to a located pattern rather than invented — DOCS_UX_SOURCE as the fifth member of a family confirmed at :76/:111/:185/:369, and uxPickRef/uxBuildMockSlot as exact mirrors of S003's shipped dgPickRef/dgBuildDiagramSlot. cd2: `el: unknown` is not a shortcut but sc2's SHIPPED return shape, verified at docs-review-panel.ts:343-348, and the record bundle instantiates sc4's generic exactly as S003's diagram factory does — S003's own code review raised that bundle as a LOW and judged it reconcilable because TRecord is generic. alt2: all four alternatives were scored against every acceptance criterion and all four shared contracts (36 scores), and BOTH eliminations rest on explicit scores — a2 on VIOLATES against sc2 and ac5, a3/a4 on an ac1 partial — so re-scoring k1-k7 as their own rows could not move a single outcome. Options 2 and 3 would spend a re-approval cycle to change no decision, and option 4 would push structural facts into build tasks that cannot resolve them.",
+        "resolvedAt": "2026-10-02T05:10:34.121Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -1013,7 +1013,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       const diagramRef = (content.companions ?? []).find(
         (c) => c.kind === 'diagram-mermaid' || c.kind === 'diagram-html',
       );
-      const diagramAnchorSlug = createSectionResolver(sections)(diagramRef?.ofSectionId);
+      // S004/t1 — the experience slot's ref is the first ux-mock companion. The
+      // two pickers PARTITION the companions array: diagram kinds above, 'ux-mock'
+      // here, and CompanionKind has no fourth member, so no ref can feed both
+      // slots and none is silently dropped.
+      const uxRef = (content.companions ?? []).find((c) => c.kind === 'ux-mock');
+      // One resolver over the index derived from THIS markdown, applied to both
+      // refs — so the diagram and the mock resolve against the same section
+      // identity rather than two.
+      const resolveAnchor = createSectionResolver(sections);
+      const diagramAnchorSlug = resolveAnchor(diagramRef?.ofSectionId);
+      const experienceAnchorSlug = resolveAnchor(uxRef?.ofSectionId);
       post({
         type: 'docs-content',
         artifactId,
@@ -1062,6 +1072,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         // one that already exists. An unresolvable id yields undefined and the slot
         // falls back to its default position rather than being dropped.
         ...(diagramAnchorSlug !== undefined ? { diagramAnchorSlug } : {}),
+        // S004/t1 — the experience record rides THIS message on exactly the terms
+        // its five siblings do: forwarded by REFERENCE, no clone, no reshaping, no
+        // defaulting, no validation. Not validated here deliberately —
+        // validateUxDefinition has two non-test call sites (artifact assembly and
+        // the ux code-review dimension) and NEITHER is on the read path, so a
+        // malformed record arrives intact and the webview renderer is what must
+        // shape-check before it draws.
+        ...(content.uxDefinition !== undefined
+          ? { uxDefinition: content.uxDefinition }
+          : {}),
+        ...(experienceAnchorSlug !== undefined ? { experienceAnchorSlug } : {}),
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);

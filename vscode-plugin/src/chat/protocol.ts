@@ -118,6 +118,26 @@ export type HostToWebview =
       // weaker section identity — exactly what sc3 exists to prevent. Absent when
       // there is no ref, no ofSectionId, or it names no section here.
       readonly diagramAnchorSlug?: string | undefined;
+      // S004/t1 (additive, SAME message once more — no new message type, no new
+      // IPC method, no second round trip). The EXPERIENCE record, INDEXED off
+      // DocsContent on exactly the terms its five siblings are, so protocol ->
+      // client -> daemon stay one declaration deep. ABSENT KEY when the document
+      // carries none: only four ledger bodies carry a uxDefinition at all, so
+      // absence is overwhelmingly the common case.
+      //
+      // Unlike the diagram pair, ONE record suffices here — a ux-mock ref names
+      // the only kind that could have drawn it (CompanionKind is
+      // 'diagram-mermaid' | 'diagram-html' | 'ux-mock'), so there is no bundle to
+      // disambiguate. The webview still dispatches on the RECORD present rather
+      // than the ref's kind, matching S003 so the two slots behave alike.
+      readonly uxDefinition?: DocsContent['uxDefinition'];
+      // S004/t1 — the slug the ux-mock companion's `ofSectionId` resolved to in
+      // THIS document, resolved HOST-SIDE with sc3's shipped createSectionResolver
+      // and posted alongside, for the same reason `diagramAnchorSlug` is: resolving
+      // in the webview would re-implement slugify and the title-alias rule and mint
+      // a SECOND, weaker section identity. Absent when there is no ux-mock ref, no
+      // ofSectionId on it, or it names no section in this document.
+      readonly experienceAnchorSlug?: string | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

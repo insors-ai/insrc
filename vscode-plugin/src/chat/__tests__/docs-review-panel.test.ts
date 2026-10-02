@@ -3537,3 +3537,296 @@ test('CR/coverage: all four webview source strings PARSE together in one scope',
     'a redeclaration of an existing identifier must be rejected',
   );
 });
+
+// ---------------------------------------------------------------------------
+// S004/t1 — the EXPERIENCE record travels the last hop.
+//
+// The one-hop gap this closes is narrow and already half-built: sc1 has projected
+// `uxDefinition` since S001 (src/workflow/artifact-content.ts:76, projected
+// verbatim by structuredRecords at :216-227), DocsContent has declared it at
+// docs-review-client.ts:37 and forwarded it at :113 — and openDoc then DROPPED it,
+// because the docs-content variant had no field for it. So this task adds two
+// optional fields and two conditional spreads. Nothing more.
+//
+// DATA-ONLY, exactly as S002/t1 and S003/t2 were: no webview code reads either
+// field yet, so SHELL_BASELINE must not move. The renderer arrives at t2 and the
+// mount at t6; this commit only makes the record reachable.
+//
+// It is also the one Story in this Epic that touches NO file under src/ — asserted
+// here rather than asserted in prose, because that fact is what makes S004 the
+// only Story needing no daemon rebuild.
+// ---------------------------------------------------------------------------
+
+/** The real uxDefinition shape the ledger carries — an Adaptive Card whose body
+ *  is a closed union of eight element types. Only four ledger bodies carry one at
+ *  all, and TWO of those four belong to this Epic (its HLD and its S002 LLD). */
+const UX_RECORD = {
+  type: 'AdaptiveCard',
+  version: '1.5',
+  body: [
+    { type: 'TextBlock', text: 'Docs review', size: 'large', weight: 'bolder' },
+    {
+      type: 'ColumnSet',
+      columns: [
+        { type: 'Column', width: 2, items: [{ type: 'TextBlock', text: 'Body', isSubtle: true }] },
+        { type: 'Column', width: 1, items: [{ type: 'ActionSet', actions: [{ type: 'Action.Submit', title: 'Approve' }] }] },
+      ],
+    },
+  ],
+};
+
+/** A ux-mock ref beside a diagram ref — the shape a document carrying both
+ *  companions has. The two pickers must PARTITION this array. */
+const UX_REF = { kind: 'ux-mock', relPath: 'docs/epics/x/S004/ux-mock.html', title: 'Experience mock' };
+
+test('t1: uxDefinition is forwarded by REFERENCE on the existing docs-content message', async () => {
+  const payload = await openWithContent({
+    markdown: '# Doc', openQuestions: [], blocked: false,
+    uxDefinition: UX_RECORD as DocsContent['uxDefinition'], companions: [UX_REF] as DocsContent['companions'],
+  });
+
+  // Reference identity, not deep equality: a clone would deep-equal and still
+  // prove the forward had rebuilt the record on the way through. sc1's
+  // verbatim-projection rule is what makes this the right assertion.
+  assert.equal(payload['uxDefinition'], UX_RECORD, 'uxDefinition forwarded by reference');
+  // The card's nested body survives the hop intact — the element the mock is
+  // drawn from is the element the daemon projected, not a reshaped copy.
+  const body = (payload['uxDefinition'] as typeof UX_RECORD).body;
+  assert.equal(body, UX_RECORD.body, 'the body array is the same reference, not rebuilt');
+  assert.equal(body[1], UX_RECORD.body[1], 'and so is the nested ColumnSet');
+  // Still ONE message of the SAME type — no new message type, no new IPC method.
+  assert.equal(payload['type'], 'docs-content');
+});
+
+test('t1: openDoc posts exactly ONE docs-content message per open — no second round trip', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({
+    content: async () => ({
+      markdown: '# Doc', openQuestions: [], blocked: false,
+      uxDefinition: UX_RECORD as DocsContent['uxDefinition'],
+    }),
+  });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+
+  const forThisDoc = fc.posted.filter(
+    (p) => p.payload.type === 'docs-content' && p.payload.artifactId === 'LLD-abc-s7',
+  );
+  assert.equal(forThisDoc.length, 1, 'the record rides the existing message rather than prompting another');
+});
+
+test("t1: an absent record stays an ABSENT KEY ('uxDefinition' in payload === false)", async () => {
+  // The dominant case by a wide margin: 4 of 645 ledger bodies carry a
+  // uxDefinition, so almost every real open takes this path.
+  const payload = await openWithContent({ markdown: '# Doc', openQuestions: [], blocked: false });
+
+  for (const k of ['uxDefinition', 'experienceAnchorSlug'] as const) {
+    // A `{ k: undefined }` spread would satisfy `=== undefined` while failing
+    // this, which is why the KEY test is the one that matters.
+    assert.equal(k in payload, false, `${k} must be an ABSENT KEY, not an undefined-valued one`);
+    assert.equal(payload[k], undefined);
+  }
+  // Otherwise the message is exactly what it was before this task.
+  assert.equal(payload['markdown'], '# Doc');
+  assert.equal(payload['blocked'], false);
+});
+
+test("t1: a ux-mock ref's ofSectionId resolves HOST-side to experienceAnchorSlug over THIS markdown's index", async () => {
+  // A NUMBERED heading on purpose: insrc numbers its headings, so the slug this
+  // produces begins with a digit — the shape that makes a webview-side
+  // querySelector('#'+slug) throw, and the reason resolution happens here.
+  const markdown = '# Doc\n\n## 2. Contract details\n\ntext\n';
+  const payload = await openWithContent({
+    markdown, openQuestions: [], blocked: false,
+    uxDefinition: UX_RECORD as DocsContent['uxDefinition'],
+    companions: [{ ...UX_REF, ofSectionId: '2-contract-details' }] as DocsContent['companions'],
+  });
+
+  // The slug comes from sc3's resolver over the index derived from THIS markdown,
+  // so it is the SAME identity the body stamps — not a second one minted here.
+  const sections = payload['sections'] as { anchors: { slug: string; title: string }[] };
+  const slug = payload['experienceAnchorSlug'];
+  assert.equal(typeof slug, 'string', 'the ref resolved to a slug');
+  assert.ok(
+    sections.anchors.some((a) => a.slug === slug),
+    'and the slug is one THIS document actually stamps — sc3 owns the identity, not this task',
+  );
+});
+
+test("t1: an ofSectionId naming no section posts NO experienceAnchorSlug key — not an empty string", async () => {
+  const payload = await openWithContent({
+    markdown: '# Doc\n\n## 2. Contract details\n\ntext\n', openQuestions: [], blocked: false,
+    uxDefinition: UX_RECORD as DocsContent['uxDefinition'],
+    companions: [{ ...UX_REF, ofSectionId: 'no-such-section' }] as DocsContent['companions'],
+  });
+
+  // An empty string would be a FALSY-but-present key: the slot would read it as a
+  // target, look for an element with an empty id, and lose the visual rather than
+  // falling back to its default position.
+  assert.equal('experienceAnchorSlug' in payload, false, 'unresolvable means ABSENT, never empty');
+  // The record itself still travels — a stale anchor must not cost the mock.
+  assert.equal(payload['uxDefinition'], UX_RECORD);
+});
+
+test('t1: the two pickers PARTITION the companions array — the ux ref is not the diagram ref', async () => {
+  // A document carrying BOTH refs, each with its own ofSectionId pointing at a
+  // DIFFERENT heading. If either picker matched the other's kind, the two slugs
+  // would collapse to one and a slot would anchor beside the wrong section.
+  //
+  // THE DIAGRAM REF IS DELIBERATELY FIRST. With the ux ref first, a kind-BLIND
+  // picker (`companions[0]`) selects the right ref by luck and this test passes
+  // while proving nothing — verified by running exactly that mutation, which this
+  // ordering turns red. Position must not be able to stand in for kind.
+  const markdown = '# Doc\n\n## 2. Contract details\n\na\n\n## 3. Data model\n\nb\n';
+  const payload = await openWithContent({
+    markdown, openQuestions: [], blocked: false,
+    uxDefinition: UX_RECORD as DocsContent['uxDefinition'],
+    erDefinition: ER_RECORD as DocsContent['erDefinition'],
+    companions: [
+      { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'ER diagram', ofSectionId: '3-data-model' },
+      { ...UX_REF, ofSectionId: '2-contract-details' },
+    ] as DocsContent['companions'],
+  });
+
+  const ux = payload['experienceAnchorSlug'];
+  const dg = payload['diagramAnchorSlug'];
+  assert.equal(typeof ux, 'string');
+  assert.equal(typeof dg, 'string');
+  assert.notEqual(ux, dg, 'each slot resolved its OWN ref, so the slugs differ');
+  // And each resolved to the heading its own ref named.
+  assert.match(String(ux), /contract-details$/);
+  assert.match(String(dg), /data-model$/);
+});
+
+test('t1: a companions array of DIAGRAM refs only yields no experienceAnchorSlug', async () => {
+  // The other half of the partition, and the case that kills a position-based or
+  // kind-blind picker outright: there is no ux-mock ref here at all, so anything
+  // the experience side resolves would be a ref belonging to the diagram slot.
+  // This is also the path that routes ac3's dominant case to 'absent' at t6.
+  const payload = await openWithContent({
+    markdown: '# Doc\n\n## 3. Data model\n\nb\n', openQuestions: [], blocked: false,
+    erDefinition: ER_RECORD as DocsContent['erDefinition'],
+    companions: [
+      { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'ER diagram', ofSectionId: '3-data-model' },
+      { kind: 'diagram-html', relPath: 'docs/epics/x/S003/component.html', title: 'Component diagram', ofSectionId: '3-data-model' },
+    ] as DocsContent['companions'],
+  });
+
+  assert.equal('experienceAnchorSlug' in payload, false, 'no ux-mock ref means no experience anchor');
+  // While the diagram slot DID resolve its own — proving the absence above is
+  // discrimination and not a resolver that simply failed for both.
+  assert.equal(typeof payload['diagramAnchorSlug'], 'string');
+});
+
+test('t1: the fail-closed arm posts blocked:true and carries NO uxDefinition', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({ content: () => { throw new Error('daemon unreachable'); } });
+  const host = createDocsReviewHost({
+    createPanel: () => fc.channel, client, logger: { warn: () => {}, error: () => {} },
+  });
+  host.open();
+  await tick();
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
+  await tick();
+
+  const msg = fc.posted.filter((p) => p.payload.type === 'docs-content')
+    .find((p) => p.payload.artifactId === 'LLD-abc-s7');
+  assert.ok(msg, 'the failure still posts a docs-content message');
+  const payload = msg!.payload as Record<string, unknown>;
+  assert.equal(payload['blocked'], true, 'approve stays suppressed — the reviewer never saw the body');
+  // A reviewer who could not read the body must never be shown a mock DRAWN from
+  // it: the fail-closed arm builds its message from scratch and carries neither
+  // the record nor its anchor.
+  assert.equal('uxDefinition' in payload, false);
+  assert.equal('experienceAnchorSlug' in payload, false);
+});
+
+test('t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather than restating it', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const proto = readFileSync(join(here, '..', 'protocol.ts'), 'utf8');
+
+  // Scoped to the docs-content variant, so a match elsewhere cannot satisfy it.
+  const variant = proto.slice(proto.indexOf("readonly type: 'docs-content'"));
+  const decl = variant.slice(0, variant.indexOf('\n    }'));
+
+  assert.ok(
+    decl.includes("readonly uxDefinition?: DocsContent['uxDefinition'];"),
+    'uxDefinition must use the INDEXED form so protocol -> client -> daemon stay one declaration deep',
+  );
+  // A hand-copied shape is the failure this guards: it compiles, looks right, and
+  // silently decouples from the daemon's record.
+  assert.doesNotMatch(decl, /uxDefinition\?:\s*\{/, "uxDefinition's shape is never restated inline");
+  // The anchor slug is a plain string and is declared as one — it is not a
+  // projected record and must not pretend to be.
+  assert.ok(decl.includes('readonly experienceAnchorSlug?: string | undefined;'));
+});
+
+test('t1: the emitted shell is BYTE-IDENTICAL to the pinned baseline — this task moves data, not pixels', async () => {
+  const { createHash } = await import('node:crypto');
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+
+  assert.equal(
+    createHash('sha256').update(html, 'utf8').digest('hex'),
+    SHELL_BASELINE.sha256,
+    't1 is data-only: no source string joined the script and no call site changed',
+  );
+  assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
+  assert.equal(Buffer.byteLength(html, 'utf8'), SHELL_BASELINE.bytes, 'shell length in UTF-8 bytes');
+
+  // DATA-ONLY means exactly this: the webview has no code that reads either new
+  // field yet, so neither name may appear anywhere in the emitted script. t2 adds
+  // the renderer (still inert) and t6 adds the one read.
+  assert.doesNotMatch(html, /m\.uxDefinition/, 'nothing reads the record yet — the renderer arrives at t2');
+  assert.doesNotMatch(html, /m\.experienceAnchorSlug/, 'nothing reads the anchor yet — the mount arrives at t6');
+});
+
+test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const repoRoot = join(here, '..', '..', '..', '..');
+  const git = (...args: string[]): string =>
+    execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+
+  // Read the Story's COMMITTED change set, not the working tree. An earlier
+  // version of this test read `git status --porcelain`, which passed only while
+  // the change was uncommitted and went red the moment it was committed — caught
+  // by the build validation gate, which is the whole reason that gate exists.
+  //
+  // The build window is "every commit since this Story's PLAN was approved",
+  // which is a boundary the repo itself records rather than a hash pasted here.
+  const planCommit = git('log', '--format=%H', '-1', '--',
+    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
+  assert.match(planCommit, /^[0-9a-f]{40}$/, 'the PLAN commit is the build-window boundary');
+
+  const committed = git('diff', '--name-only', `${planCommit}..HEAD`)
+    .split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  // Union with the working tree so the check also holds mid-task, before a commit.
+  const working = git('status', '--porcelain')
+    .split('\n').map((l) => l.slice(3).trim()).filter((l) => l.length > 0);
+  const paths = [...new Set([...committed, ...working])];
+
+  // Positive control: a check that inspects an EMPTY change set passes vacuously,
+  // and this suite has shipped exactly that kind of check before. There must be
+  // something to look at, and after t1 there always is.
+  assert.ok(committed.length > 0, 'there are commits in the build window to inspect');
+
+  const daemonFiles = paths.filter((p) => p.startsWith('src/'));
+  assert.deepEqual(
+    daemonFiles, [],
+    `S004 must touch nothing under src/ — uxDefinition is already one of sc1's projected fields. Found: ${daemonFiles.join(', ')}`,
+  );
+  // And state positively what it DID touch, so a future task that quietly widens
+  // the surface shows up here rather than only in a reviewer's reading.
+  assert.ok(
+    paths.some((p) => p.startsWith('vscode-plugin/src/chat/')),
+    'the Story works in the plugin chat surface',
+  );
+});

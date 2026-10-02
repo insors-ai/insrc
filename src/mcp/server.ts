@@ -581,6 +581,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				})
 					.describe('Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial implements the scope). Bypasses task/tracker resolution.')
 					.optional(),
+				summary: z.string()
+					.describe('Only for phase=validate. OPTIONAL narrative of what this build actually did, in a sentence or two — lands on the BUILD record\'s `body.summary` and renders as `## Summary`. Never synthesised: omit it and the record carries no summary rather than one invented from the task list. Empty / whitespace-only counts as omitted.')
+					.optional(),
 			},
 		},
 		async (rawArgs, _extra) => handleBuildStep(rawArgs),

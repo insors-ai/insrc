@@ -17,6 +17,7 @@
  */
 
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -370,5 +371,112 @@ test('FORWARD COMPAT: a record written entirely before this Story still parses, 
 		assert.equal(typeof merged.body['summary'], 'string', 'the pre-existing summary survives');
 		assert.ok(Array.isArray(merged.body['changeLog']), 'the pre-existing changeLog survives');
 		assert.equal((merged.body['tasks'] as { id: string }[]).length, 3, 'tasks union: 2 prior + 1 new');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// t7 (ISSUE-93081bff91ae5108 / S001) — body.commit + body.summary get producers.
+//
+// Both fields were DECLARED and already RENDERED (standalone-record.ts:142, :150)
+// but written by none of the three body writers — two dead branches. The evidence
+// that the gap was felt rather than theoretical: three tracked records carry
+// body.commit (972bf31d, c90f3fe6, be8708a9) with no producer in the codebase, so
+// they were back-filled by hand.
+//
+// RENDER assertions here are PLAN-DRIVEN only: the standalone renderer emits
+// neither section until t8, so an unscoped check would fail t7 for a reason t7
+// cannot fix. Standalone-route rendering is t8's.
+// ---------------------------------------------------------------------------
+
+/** A throwaway GIT repo (so HEAD resolves) with the artifacts dir ready. */
+async function withGitRepo(fn: (repo: string, head: string) => void | Promise<void>): Promise<void> {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t7-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+	try {
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		mkdirSync(join(repo, 'docs', 'builds'), { recursive: true });
+		writeFileSync(join(repo, 'f.ts'), 'export const f = 1;\n');
+		git('add', '-A'); git('commit', '-qm', 'seed');
+		await fn(repo, git('rev-parse', '--short', 'HEAD'));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+}
+
+test('t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically', async () => {
+	await withGitRepo((repo, head) => {
+		// plan-driven
+		const { json: planJson } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		assert.equal(readJson(planJson).body['commit'], head, 'plan-driven route records HEAD');
+	});
+	await withGitRepo((repo, head) => {
+		// standalone — same producer, because it lives in the single persist entry point
+		const { json } = persistStandaloneBuildRecord(repo, {
+			meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+			body: { focus: 'F', producesLld: false },
+		});
+		assert.equal(readJson(json).body['commit'], head, 'standalone route records the SAME way');
+	});
+});
+
+test('t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read', async () => {
+	// A bare tmpdir: not a git repo, so `git rev-parse` fails.
+	await withRepo((repo) => {
+		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		const body = readJson(json).body;
+		assert.ok(!('commit' in body),
+			'ABSENT, not present-and-empty: a falsy commit would render an empty `**Commit:**` line, which is worse than no line');
+	});
+});
+
+test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified "at persist time" semantics)', async () => {
+	await withGitRepo((repo, head) => {
+		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
+		// A caller that knows the commit can supply it, and it beats HEAD.
+		persistBuildRecord(repo, {
+			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+			body: { tasks: [{ id: 't1', passed: true }], commit: 'deadbee' },
+		});
+		assert.equal(readJson(json).body['commit'], 'deadbee', 'a supplied commit wins over HEAD for that write');
+
+		// CORRECTED EXPECTATION. This test first asserted that a re-persist
+		// PRESERVES the earlier commit — a behaviour the design never specifies. The
+		// LLD says `body.commit` comes "from git HEAD at persist time", so a later
+		// write that supplies none refreshes it. Pinned as the specified semantics
+		// rather than quietly changing the code to match the wrong expectation.
+		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-02-02T00:00:00.000Z'));
+		assert.equal(readJson(json).body['commit'], head,
+			'a later persist supplying no commit records HEAD at THAT persist time');
+	});
+});
+
+test('t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`', () => {
+	const md = renderPlanBuildRecordMd({
+		meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { tasks: [{ id: 't1', passed: true }], commit: 'abc1234', summary: 'Wired the collector to the committed range.' },
+	});
+	assert.match(md, /\*\*Commit:\*\* abc1234/);
+	assert.match(md, /## Summary\n\nWired the collector to the committed range\./);
+});
+
+test('t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)', () => {
+	const md = renderPlanBuildRecordMd({
+		meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { tasks: [{ id: 't1', passed: true }] },
+	});
+	assert.doesNotMatch(md, /\*\*Commit:\*\*/);
+	assert.doesNotMatch(md, /## Summary/);
+});
+
+test('t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically', async () => {
+	// The dead-branch premise, pinned from the OTHER direction: these shipped
+	// records carry body.commit with no producer in the codebase, so a human typed
+	// them. A build now produces the same shape without hand-editing.
+	for (const h of ['972bf31d13c81a2f', 'c90f3fe60b90dd44', 'be8708a9cd20e286']) {
+		const rec = JSON.parse(readFileSync(join('.insrc', 'artifacts', `BUILD-${h}-S001.json`), 'utf8')) as { body: { commit?: string } };
+		assert.equal(typeof rec.body.commit, 'string', `BUILD-${h} carries a hand-filled commit`);
+	}
+	await withGitRepo((repo, head) => {
+		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		assert.equal(readJson(json).body['commit'], head, 'and a build now records it automatically');
 	});
 });

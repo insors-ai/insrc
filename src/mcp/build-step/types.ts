@@ -68,6 +68,16 @@ export interface BuildStepInputValidate {
 	 *  identity from this context (bypassing the plan-driven task resolver) and
 	 *  persists the standalone story's BUILD ledger record. Absent → plan-driven. */
 	readonly standalone?: BuildStandaloneContext | undefined;
+	/**
+	 * OPTIONAL narrative the implementer supplies — what this build actually did,
+	 * in a sentence or two. Lands on `body.summary` and renders as `## Summary`.
+	 *
+	 * Never synthesised: a controller that omits it produces a record with NO
+	 * summary key, because a summary invented from the task list would read as a
+	 * description of the work while being nothing of the kind. Empty or
+	 * whitespace-only is treated as omitted.
+	 */
+	readonly summary?: string | undefined;
 }
 
 export type BuildStepInput =

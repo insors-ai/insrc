@@ -71,7 +71,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	// the SAME verdict session + persist-on-verdict path and lands a BUILD record for
 	// the completion gate to approve. The plan-driven path below is untouched.
 	if (input.standalone !== undefined) {
-		return handleStandaloneValidate(repoPath, input.standalone);
+		return handleStandaloneValidate(repoPath, input.standalone, input.summary);
 	}
 
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
@@ -82,7 +82,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 		epicHash: resolved.ref.epicHash,
 		storyId:  resolved.ref.storyId,
 		taskId:   resolved.ref.taskId,
-	});
+	}, input.summary);
 }
 
 /** S002: the standalone (no-plan) validate branch. Resolves the Story identity
@@ -92,6 +92,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 async function handleStandaloneValidate(
 	repoPath: string,
 	ctx:      BuildStandaloneContext,
+	summary?: string,
 ): Promise<BuildStepDone | BuildStepError> {
 	const sizeClass = ctx.sizeClass ?? 'small';
 	const producesLld = sizeClass !== 'trivial';
@@ -114,7 +115,7 @@ async function handleStandaloneValidate(
 	}
 
 	const prompt = renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath });
-	return runValidateSession(repoPath, prompt, { epicHash, storyId, taskId: storyId });
+	return runValidateSession(repoPath, prompt, { epicHash, storyId, taskId: storyId }, summary);
 }
 
 /** Shared: run the read-only verdict session under the sc6 routing seam, parse the
@@ -125,6 +126,8 @@ async function runValidateSession(
 	repoPath: string,
 	prompt:   string,
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
+	/** The implementer's narrative, if supplied — see BuildStepInputValidate.summary. */
+	summary?: string,
 ): Promise<BuildStepDone | BuildStepError> {
 	// Establish the sc6 routing seam so the edit-session provider resolves through
 	// the same choke point as the workflow runner (the 'build' tier), unifying the
@@ -159,9 +162,15 @@ async function runValidateSession(
 				// failure is swallowed inside collectBuildChangeLog (→ []), and an empty
 				// change-log is omitted from the body (omit-slot) so a no-change build
 				// stays byte-identical (k4).
+				// Empty / whitespace-only is treated as omitted: storing '' would render
+				// an empty `## Summary` section, which is worse than no section.
+				const narrative = summary?.trim();
 				const rec = {
 					meta: { workflow: 'build' as const, standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
-					body: { tasks: [{ id: taskId, passed }] },
+					body: {
+						tasks: [{ id: taskId, passed }],
+						...(narrative !== undefined && narrative.length > 0 ? { summary: narrative } : {}),
+					},
 				};
 				// EXCLUDE the record's own json + md from its own change set. Without
 				// this the only dirty paths when the collector runs are usually these

@@ -895,3 +895,65 @@ test('t6: BOTH writers resolve the SAME base for the same Story — one resolver
 		assert.equal(resolveStoryRangeBase(repo, HASH, 's1'), base);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// ---------------------------------------------------------------------------
+// t7 (ISSUE-93081bff91ae5108 / S001) — body.summary via the validate input.
+// ---------------------------------------------------------------------------
+
+async function validateWithSummary(repo: string, summary?: string): Promise<Record<string, unknown>> {
+	_setBuildValidateProviderForTests({
+		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+	});
+	try {
+		const out = outputOf(await handleBuildStep({
+			phase: 'validate', target: 's1', repo,
+			standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
+			...(summary !== undefined ? { summary } : {}),
+		}));
+		assert.equal(out['next'], 'done');
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		return (JSON.parse(readFileSync(json, 'utf8')) as { body: Record<string, unknown> }).body;
+	} finally { _setBuildValidateProviderForTests(undefined); }
+}
+
+test('t7: a SUPPLIED summary reaches body.summary', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo);
+		const body = await validateWithSummary(repo, 'Wired the collector to the Story\'s committed range.');
+		assert.equal(body['summary'], 'Wired the collector to the Story\'s committed range.');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo); seedLld(repo);
+		const body = await validateWithSummary(repo);
+		assert.ok(!('summary' in body),
+			'a summary invented from the tasks would read as a description of the work while being nothing of the kind');
+		assert.deepEqual(body['tasks'], [{ id: 's1', passed: true }], 'and the rest of the record is unaffected');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank', async () => {
+	for (const supplied of ['', '   ', '\n\t ']) {
+		const repo = mkRepo();
+		try {
+			seedDef(repo); seedLld(repo);
+			const body = await validateWithSummary(repo, supplied);
+			assert.ok(!('summary' in body), `${JSON.stringify(supplied)} must be treated as absent`);
+		} finally { rmSync(repo, { recursive: true, force: true }); }
+	}
+});
+
+test('t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference', async () => {
+	const a = mkRepo(); const b = mkRepo();
+	try {
+		seedDef(a); seedLld(a); seedDef(b); seedLld(b);
+		const without = await validateWithSummary(a);
+		const alsoWithout = await validateWithSummary(b, undefined);
+		assert.deepEqual(Object.keys(without).sort(), Object.keys(alsoWithout).sort(),
+			'omitting the field and passing undefined produce the same record shape');
+	} finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
+});

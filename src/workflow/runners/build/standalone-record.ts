@@ -22,6 +22,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
+import { execFileSync } from 'node:child_process';
+
 import { writeAtomic, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
@@ -183,7 +185,32 @@ export function renderPlanBuildRecordMd(rec: BuildRecord): string {
  * the unchanged {@link renderStandaloneBuildRecordMd} so the Trivial output stays
  * byte-identical.
  */
-/** Paths a MERGED record occupies. The single derivation both the writer and the
+/**
+ * HEAD as a SHORT sha for `body.commit`, or `undefined` when it cannot be read.
+ *
+ * Short is deliberate and the opposite of the range base's choice (t5), for a
+ * different reason: `body.commit` is a DISPLAYED reference a human reads in the
+ * rendered record, where an abbreviation is the convention; a range BASE is a
+ * machine boundary where an abbreviation could collide.
+ *
+ * `revParse` (git/helpers.ts) is the canonical short-sha reader and returns `''`
+ * on failure, but it is ASYNC and this persist path is synchronous, so the same
+ * contract is reproduced here: empty output is treated as ABSENT and the key is
+ * omitted, never stored as an empty string. A falsy commit would render as an
+ * empty `**Commit:**` line, which is worse than no line at all.
+ */
+function headShortSha(repoPath: string): string | undefined {
+	try {
+		const out = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+			cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+		}).trim();
+		return out.length > 0 ? out : undefined;
+	} catch {
+		return undefined;   // not a git repo, unborn HEAD, or git unavailable
+	}
+}
+
+/** Paths a MERGED record occupies./** Paths a MERGED record occupies. The single derivation both the writer and the
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
 function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
@@ -215,7 +242,19 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// record keeps a re-run in the SAME folder as the first build (and as the CR,
 	// which reads the persisted createdAt) even across a UTC-midnight boundary.
 	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
-	const merged = mergeWithPrior(jsonPath, rec);
+	// `body.commit` is produced HERE rather than in either writer, so the two routes
+	// cannot diverge: this is the one persist entry point both funnel through.
+	//
+	// It is HEAD AT PERSIST TIME, as the design specifies — so a re-persist
+	// REFRESHES it rather than preserving the earlier value. That is deliberate but
+	// easy to misread: the field says "the commit this record was written at", not
+	// "the commit the Story's work first landed in". A caller that knows better can
+	// supply `body.commit` explicitly and it wins for that write.
+	const commit = rec.body.commit ?? headShortSha(repoPath);
+	const withCommit: BuildRecord = commit !== undefined
+		? { ...rec, body: { ...rec.body, commit } }
+		: rec;
+	const merged = mergeWithPrior(jsonPath, withCommit);
 	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
 	const paths = pathsForMerged(repoPath, merged);
 	const md = merged.meta.standalone

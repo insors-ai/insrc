@@ -1,0 +1,958 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1790968373495-kfdah2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T19:23:24.570Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 631069,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "epicSlug": "lld-revision-supersedes-earlier-pass-whose",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1790968373495-kfdah2",
+    "hldEffectiveHash": "0bb28c0a6d51515dc5d9a5e30fbf270f4e935f1496c68c080a2f5405c3ca686f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "n1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "NEW IN THIS AMENDMENT: readEpicIdentity's return type is EpicIdentity = {epicSlug, createdAt, tracker?} — identity fields only, no body and no kind — so clause (ii) genuinely cannot reuse it and must read the definition artifact itself.",
+          "evidence": "CONFIRMED verbatim. resolve.ts:111 is `interface EpicIdentity {` and :112 is `readonly epicSlug:  string;`, with the grep for the interface matching exactly once. The type carries identity fields only — no body, no kind — so the amendment's statement that clause (ii) cannot reuse readEpicIdentity is factually correct rather than a stylistic preference.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "NEW IN THIS AMENDMENT: ArtifactShape's body is typed `{ readonly tasks?: readonly PlanTask[] }` with NO `stories` field, so the body type must gain `stories` for clause (ii) to read a DEF's declared stories.",
+          "evidence": "CONFIRMED verbatim and this is the sharpest of the new claims. resolve.ts:98 is `interface ArtifactShape {` and :106 is exactly `readonly body?: { readonly tasks?: readonly PlanTask[] };` — matched once. So `stories` genuinely is absent from the body type and must be added for clause (ii)'s DEF branch to compile.",
+          "action": "None — the amendment already records this as a mechanical consequence rather than a design choice.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "NEW IN THIS AMENDMENT: the claimed read ORDER already exists — readEpicIdentity iterates [`DEF-<hash>.json`, `ISSUE-<hash>.json`] and returns on the first usable one, so DEF-first is inherited rather than newly decided, and no precedence rule has to be invented for a dual-anchored hash.",
+          "evidence": "CONFIRMED, and it settles the precedence question I had wrongly raised as open. resolve.ts:167 is readEpicIdentity's declaration and :168 is `for (const name of [`DEF-${epicHash}.json`, `ISSUE-${epicHash}.json`]) {`. The DEF-then-ISSUE order is inherited from existing behaviour, so no new rule is invented for a dual-anchored hash.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n4",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "NEW IN THIS AMENDMENT: readArtifact returns null on an unreadable or malformed file rather than throwing, which is what makes the DEF-then-ISSUE order first-READABLE-wins and matches the per-clause degradation the error paths specify.",
+          "evidence": "CONFIRMED by the reads: resolve.ts:121 is `function readArtifact(path: string): ArtifactShape | null {` and :125 is `return null;` inside its catch. So the order really is first-READABLE-wins and a corrupt DEF falls through to the ISSUE, matching §4's per-clause degradation. Noting one probe flaw of my own making: my second grep pattern embedded `\\n` and matched 0, because ripgrep is line-based — the pattern was wrong, not the claim.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "NEW IN THIS AMENDMENT, and the riskiest number in it: 59 of 59 standalone story-scoped artifacts on disk are ordinal 1 — 55 spelled S001 and 4 spelled s1. This corroborates the one-story rule and is also why the comparison must be by ordinal rather than by the literal string S001.",
+          "evidence": "NOT VERIFIED BY THIS PROBE, and I am recording that rather than letting the number pass on my own authority. The greps run over the source tree, not over `.insrc/artifacts/`, so `\"standalone\": true` returned 2 and `\"storyId\": \"s1\"` returned 0 — hits in src fixtures, nothing like a census. The 59-of-59 figure came from a direct python scan of .insrc/artifacts earlier in this session (55 `S001` + 4 `s1` across LLD/PLAN/BUILD artifacts carrying meta.standalone === true). Two honest limits: no probe in this mechanism can confirm an artifact-data census, and the figure describes THIS repo only — another repo could differ.",
+          "action": "No change needed, because nothing depends on it: the amendment states explicitly that the lookup does NOT consult meta.standalone. The number is corroboration for the one-story rule, so weakening it does not touch the design. Keep it labelled as corroboration rather than as a guarantee.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n6",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "CORRECTED IN THIS AMENDMENT (was the blocking MED): the arrangement exposing the reported defect IS already covered by an existing test — id-resolve.test.ts:459 builds an ISSUE-anchored epic plus a DEF-anchored epic on different hashes, asks a bare label, and asserts null — so that test must be INVERTED rather than duplicated. The artifact must no longer claim the arrangement is untested.",
+          "evidence": "THE CORRECTION IS IN PLACE, verified directly rather than by hit-count. The amended artifact BODY contains neither 'missing from every existing test' nor 'None appears in any existing test' (checked by loading the json and searching body). id-resolve.test.ts:459 is confirmed present as `test('resolver — a DEF-less bugfix epic still counts for multi-epic ambiguity ...` — so the arrangement IS covered and the artifact now says so. The 3 residual grep hits for the old phrasing resolve to: (a) this md's appended review-report tail, which QUOTES the before text as an audit record and must stay; (b) meta.review in the json, same reason; and (c) a STALE ORPHANED FIRST-PASS LLD still on disk at docs/standalone/lld-label-resolver-regression-issue-792f9324fc43d95c-E20261002792f9324/S001/LLD.md.",
+          "action": "Nothing to change in this artifact. BUT the orphan in (c) is a real hazard worth acting on separately: re-running design.story derived a NEW folder slug from the changed focus text, so the superseded first-pass LLD remains on disk — still asserting the false 'untested arrangement' claim, still carrying the ISSUE-is-story-level framing the user corrected, and indistinguishable to a reader from the live artifact. Both folders share one artifact id (LLD-792f9324fc43d95c-S001), so the json was overwritten while the first md was left behind. Delete or explicitly mark the superseded folder, and treat the folder-per-slug behaviour as its own ledger item.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "n7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "UNCHANGED PREMISE the whole fix rests on: buildRef does not verify story existence — its story-scoped reads are optional-chained and conditionally spread, so a missing story yields a reference merely lacking storyRef/task rather than a refusal.",
+          "evidence": "CONFIRMED — the premise the whole fix rests on, unchanged by the amendment. resolve.ts:200 is buildRef's declaration and :226 is `storyRef = readTrackerBlock(storyArtifactPath(dir, 'LLD', epicHash, storyId))?.storyRef`, with the conditional spread `...(storyRef !== undefined ? { storyRef } : {})` also matching. A missing story yields a reference lacking those optional fields rather than a refusal, so the dummy ref is real.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n8",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "UNCHANGED PREMISE 1 depends on this: exactly THREE DEF-specific sites exist in resolve.ts — the DEF_RE definition (:75), its use in listEpicHashes (:148), and its use in resolveByIssue's third pass (:294).",
+          "evidence": "CONFIRMED. All three reads landed exactly: :75 `const DEF_RE  = /^DEF-([0-9a-f]{16})\\.json$/;`, :148 `const m = DEF_RE.exec(f);` (listEpicHashes) and :294 `const m = DEF_RE.exec(f);` (resolveByIssue's third pass). The repo-wide count of 12 includes other modules and artifacts; within resolve.ts it is exactly these three, so the closed union premise 1 rests on holds.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The two corrected citations now resolve to the lines they quote: the ambiguity gate at resolve.ts:340 and readEpicIdentity's declaration at resolve.ts:167.",
+          "evidence": "BOTH PRIOR CITATION FIXES VERIFIED. resolve.ts:340 now reads `if (hashes.length !== 1) return null;   // ambiguous — needs an issue# or hierId` — the exact line c5 quotes — and :167 is readEpicIdentity's declaration rather than its doc-comment tail. The two auto-applied edits from the first review landed correctly.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "storyArtifactPath supplies clause (i) unchanged: it stats the exact name first, then scans for a sibling denoting the same ORDINAL via storyIdToOrdinal, so the three story-id spellings unify without new code.",
+          "evidence": "CONFIRMED. storyArtifactPath at resolve.ts:183 with the ordinal-scan fallback `storyIdToOrdinal(m[2]!) === want` matching, so clause (i) reuses existing machinery and the three story-id spellings unify without new code — which is also why the 4 `s1` spellings among standalone artifacts are harmless.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n11",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "resolveWorkflowRef still has exactly two non-test consumers outside resolve.ts — render.ts:54 (already passing an explicit scope) and bugfix/mount.ts:116 (injecting by reference) — so the amendment introduces no new caller obligation.",
+          "evidence": "CONFIRMED. render.ts:54 is `const ref = resolveWorkflowRef(repoPath, target, { epicHash });` and bugfix/mount.ts:116 is `resolveRef:      resolveWorkflowRef,`. The repo-wide 50-hit count was truncated and is dominated by tests plus resolve.ts itself, consistent with two non-test consumers outside the module. The amendment adds no caller obligation.",
+          "action": "None.",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "n12",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A DEF declares its stories in body.stories with an `id` per entry — the fact clause (ii)'s DEF branch reads. Confirmed by two consumers outside this module.",
+          "evidence": "CONFIRMED verbatim at both sites: orchestrator.ts:1750 `const epicStoryIds = epic.body.stories.map(s => s.id);` and chain.ts:161 `const stories = define.artifact.body.stories;`. A DEF does declare its stories with an `id`, which is exactly what clause (ii)'s DEF branch reads — and these same two sites remain where the DEF/ISSUE equivalence does not hold outside resolve.ts, as §9 records.",
+          "action": "None.",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12
+      },
+      "reviewedAt": "2026-10-02T19:45:39.574Z",
+      "model": "client"
+    },
+    "reviewResolutions": {
+      "cl12": {
+        "findingId": "cl12",
+        "status": "resolved",
+        "note": "Applied: the exposing arrangement IS covered by id-resolve.test.ts:459 but asserts the regressed expectation, so the label defect shipped mis-asserted rather than untested. That test must be INVERTED, not duplicated; the untested mirror direction (label in the DEF epic, ISSUE unrelated) is the genuine addition. The nonexistent-story half of the original claim stands.",
+        "resolvedAt": "2026-10-02T19:30:58.385Z"
+      }
+    },
+    "approvedAt": "2026-10-02T19:48:20.174Z",
+    "rangeBase": "d8de2b56f00afe6e178a8c4aee2cf64463980d9a",
+    "questionResolutions": {
+      "qe7813d00": {
+        "question": "[consequence requiring explicit approval, not a defect] Two narrowings ship alongside the fix, both following from the buildRef ruling. (a) An explicitly scoped label for a story the scoped epic lacks now refuses — this is the asymmetry removal and is the point. (b) A hierarchical id naming a nonexistent story ordinal now refuses, on a path unrelated to the reported defect. Both are correct per premise 4 but change outcomes that 'work' today, so they should be approved deliberately rather than discovered later.",
+        "status": "resolved",
+        "choice": "Approve both, add explicit tests",
+        "rationale": "Recording the user's own ruling rather than making a fresh call: they ruled 'buildRef should verify, dummy stories aren't acceptable', both narrowings were listed explicitly in the pre-approval summary, and they approved. Carving out (b) would reinstate the trusted-caller asymmetry the ruling forbids. Each refusal becomes its own acceptance check with a pinning test so neither is discovered later as a regression.",
+        "resolvedAt": "2026-10-02T19:50:14.835Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A reference to a story is only ever minted when that story actually exists — no more well-formed references to stories nobody created. The check lives in the one function that assembles every reference, so every way of naming a story inherits it: hierarchical id, slug, issue number, and an explicitly scoped label alike. Because 'this epic contains that story' and 'a reference can be built for it' become the same statement, the bare-label path stops counting how many epics exist and simply keeps the candidates that produce a reference — which is what fixes the reported defect, since a filed bugfix can no longer shadow a label it has nothing to do with. A bugfix definition artifact stays a full epic peer throughout; it is read exactly like the older kind it was renamed from."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Revision LLD for ISSUE-792f9324fc43d95c, superseding an earlier pass whose premises the user corrected. Four settled premises: (1) an ISSUE artifact IS a DEF — the epic-level definition artifact, formerly named DEF — and is never story-level; (2) therefore 13ebd04's widening of listEpicHashes was CORRECT and must not be undone, and any alternative demoting the ISSUE is ruled out on principle; (3) the defect is that resolveByLabel counts epics instead of asking which epics have the story; (4) user ruling — buildRef MUST verify story existence, with no trusted-caller asymmetry. Preserve: DEF-bearing resolution, DEF-less bugfix resolution, refusal on genuine multi-match, the explicit epicHash path. Revisit: id-resolve.test.ts:459 and tracker.test.ts:283."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildRef",
+          "signature": "function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The epic to build the reference within.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string | undefined",
+              "purpose": "Story label in any spelling (s1 / S1 / S001), compared by ORDINAL. When supplied, the story must exist or the call refuses.",
+              "optional": true
+            },
+            {
+              "name": "taskId",
+              "type": "string | undefined",
+              "purpose": "Optional task segment. Task existence is NOT newly verified.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "The assembled reference, or null when the epic identity is unreadable, the ids cannot be minted, OR — new — a storyId was supplied and that story does not exist in this epic."
+          },
+          "errors": [
+            {
+              "type": "null return (the module's uniform refusal convention — this resolver never throws, because no caller has an exception handler)",
+              "condition": "NEW: a storyId was supplied and the epic has no such story. Previously this returned a well-formed reference — the dummy ref."
+            },
+            {
+              "type": "null return",
+              "condition": "PRE-EXISTING, unchanged: readEpicIdentity yields neither a DEF nor an ISSUE anchor with both epicSlug and createdAt."
+            },
+            {
+              "type": "null return",
+              "condition": "PRE-EXISTING, unchanged: createdAt cannot form a UTC date, so the hierarchical id cannot be minted."
+            }
+          ],
+          "preconditions": [
+            "Verification applies ONLY when storyId is supplied. An epic-level call is untouched — there is no story to verify, and resolveByIssue's epic sub-case depends on that."
+          ],
+          "postconditions": [
+            "THE NEW INVARIANT: a returned story- or task-level ResolvedRef denotes a story that exists, on EVERY path, with no trusted-caller exemption including an explicitly scoped label.",
+            "Task-level existence is deliberately NOT added — `task` stays absent for an unknown id, as today. Extending verification to tasks would change a second behaviour under cover of this one.",
+            "resolveByIssue is unaffected: its three passes each arrive with the story already evidenced by the artifact that carried the matched ref.",
+            "The existence lookup is two reads, DEF then ISSUE (see §3.1). No discriminator field, no new precedence rule, and `meta.standalone` is not consulted."
+          ]
+        },
+        {
+          "name": "resolveByLabel",
+          "signature": "function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "The bare label as typed.",
+              "optional": false
+            },
+            {
+              "name": "taskId",
+              "type": "string | undefined",
+              "purpose": "Optional task segment.",
+              "optional": true
+            },
+            {
+              "name": "epicHash",
+              "type": "string | undefined",
+              "purpose": "Explicit epic scope. Still prefix-matched; now ALSO inherits buildRef's verification, which removes the asymmetry.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "The resolved node, or null when no candidate epic yields a reference or more than one does."
+          },
+          "errors": [
+            {
+              "type": "null return",
+              "condition": "Zero candidates produced a reference — the label names no story that exists anywhere."
+            },
+            {
+              "type": "null return",
+              "condition": "Two or more candidates produced a reference — genuine ambiguity; refuses to guess, as its comment always claimed."
+            }
+          ],
+          "preconditions": [
+            "The enumeration it draws candidates from is UNCHANGED (premise 2): deduped, DEF-anchored first, ISSUE-anchored after."
+          ],
+          "postconditions": [
+            "The unscoped branch replaces `hashes.length !== 1` with: attempt a reference per candidate, resolve iff exactly one succeeded.",
+            "No separate containment notion exists — candidate selection and reference construction are the same operation, so nothing can drift.",
+            "COST: up to N reference attempts where there was a length check. Accepted unmeasured; the path is interactive and runs once per command. Alternative a3 is the additive upgrade if it ever matters."
+          ]
+        },
+        {
+          "name": "resolveByHier",
+          "signature": "function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            },
+            {
+              "name": "wfid",
+              "type": "WorkflowId",
+              "purpose": "A parsed hierarchical id; its epic comes from date + hash prefix and its story/task from ORDINALS.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "UNCHANGED SIGNATURE and unchanged code. Its OUTCOME changes for one input class."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "BEHAVIOUR CHANGE, inherited rather than written: it derives story ordinals from the parsed id and never confirmed them, so a hierarchical id naming a nonexistent story resolves today and will now refuse. A SECOND change on a different path from the reported defect — assert it deliberately.",
+            "Its hierarchical-id tests for REAL stories must pass untouched — the evidence the change is confined to nonexistent ones."
+          ]
+        },
+        {
+          "name": "storyArtifactPath",
+          "signature": "function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string): string",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            },
+            {
+              "name": "prefix",
+              "type": "'LLD' | 'PLAN'",
+              "purpose": "Which story-scoped artifact kind to look for.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Epic to look within; already scoped by an `m[1] !== epicHash` guard.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "Any of the three spellings; unified by ordinal.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "An existing artifact path, or the unchanged exact-name path on a miss. CONSUMED AS-IS."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Its exact-name single-stat fast path is preserved, so buildRef's pre-existing reads do not get slower.",
+            "Supplies the story-scoped-artifact half of the existence evidence and already handles ordinal unification, so no new scanning convention is introduced."
+          ]
+        },
+        {
+          "name": "readEpicIdentity",
+          "signature": "function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The epic whose slug + creation anchor is wanted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EpicIdentity | null",
+            "meaning": "UNCHANGED — slug, createdAt and optional tracker block, DEF first then ISSUE."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged. Cited as the source of the READ ORDER clause (ii) copies — DEF first, then ISSUE, first-readable-wins — not as a function clause (ii) can call.",
+            "CANNOT be reused by the existence check: it returns {epicSlug, createdAt, tracker?}, the identity fields only. Clause (ii) needs the definition artifact's BODY, so it reads the artifact itself."
+          ]
+        },
+        {
+          "name": "listEpicHashes",
+          "signature": "function listEpicHashes(dir: string): readonly string[]",
+          "parameters": [
+            {
+              "name": "dir",
+              "type": "string",
+              "purpose": "Artifacts directory.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "UNCHANGED — deduped, DEF-anchored first, ISSUE-anchored after."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Byte-identical membership and ordering. Pinned explicitly because the obvious-looking fix was to narrow this, and narrowing it would contradict premise 1. The enumeration was never wrong."
+          ]
+        },
+        {
+          "name": "resolveWorkflowRef",
+          "signature": "function resolveWorkflowRef(repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }): ResolvedRef | null",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root.",
+              "optional": false
+            },
+            {
+              "name": "identifier",
+              "type": "string",
+              "purpose": "Any identifier form.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ epicHash?: string | undefined } | undefined",
+              "purpose": "Optional explicit epic scope.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedRef | null",
+            "meaning": "UNCHANGED SIGNATURE."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No caller needs editing: render.ts:54 already passes `{ epicHash }`, bugfix/mount.ts:116 injects the function by reference."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Story existence (a derived predicate internal to buildRef — no persisted shape)",
+        "change": "new",
+        "details": "Epic E contains the story denoted by ordinal N iff EITHER holds:\n\n(i) STORY-SCOPED ARTIFACT — an LLD or PLAN exists for (E, N), read with the existing storyArtifactPath plus an existence check, so s1 / S1 / S001 unify by ordinal without new code.\n\n(ii) DECLARED BY THE EPIC'S DEFINITION ARTIFACT. The lookup is two reads in order, exactly as readEpicIdentity already does it:\n\n    read DEF-<E>.json    → present? does body.stories declare ordinal N?\n    else ISSUE-<E>.json  → present? then N === 1\n\nThat is the whole mechanism. There is NO kind discriminator to introduce — the read sequence IS the discriminator, since reaching the second read means this epic's definition is an ISSUE. There is NO precedence rule to decide for a hash carrying BOTH a DEF and an ISSUE: DEF-first already settles it, and because readArtifact returns null on an unreadable file the order is first-READABLE-wins, which is the same per-clause degradation §4 specifies. And `meta.standalone` is NOT consulted by the lookup — it corroborates the one-story rule (59 of 59 standalone story-scoped artifacts on disk are ordinal 1, 55 spelled S001 and 4 spelled s1) but the algorithm never reads it.\n\nClause (ii) keeps a story addressable in the window after it is framed and before it is designed — no LLD, no PLAN, but legitimately nameable. Without it every story between define and design would become unresolvable, a far worse regression than the one being fixed.\n\nMECHANICAL CONSEQUENCE, not a design choice: readEpicIdentity CANNOT be reused for clause (ii). It returns {epicSlug, createdAt, tracker?} — the identity fields, not the body — so the clause reads the definition artifact itself. ArtifactShape's `body` is typed `{ tasks?: PlanTask[] }` (resolve.ts:98) and gains `stories`. No new helper concept, no new convention.\n\nThe ISSUE branch is a statement about what an ISSUE IS — the epic's definition artifact for a standalone route, and a standalone route defines exactly one story — rather than an assumption about a filename default. The 4 `s1` spellings among standalone artifacts confirm the comparison must be by ORDINAL; anything matching the literal string `S001` would be wrong.",
+        "schemaDiff": "(none — computed from artifacts already on disk; no field added, no file rewritten)",
+        "callSites": [
+          "src/workflow/tracker/resolve.ts:200 (buildRef — the sole evaluation site)",
+          "src/workflow/tracker/resolve.ts:183 (storyArtifactPath — clause i)",
+          "src/workflow/tracker/resolve.ts:167 (readEpicIdentity — the DEF-then-ISSUE read ORDER clause ii copies; its return shape cannot be reused)",
+          "src/workflow/tracker/resolve.ts:98 (ArtifactShape — body type gains `stories`)",
+          "src/workflow/orchestrator.ts:1750 (evidence that DEF body.stories entries carry an id)",
+          "src/workflow/chain.ts:161 (same)"
+        ]
+      },
+      {
+        "entity": "ResolvedRef",
+        "change": "invariant-change",
+        "details": "The shape does not change; one invariant is added and it is the Story's point. TODAY a story-level ResolvedRef may denote a story that does not exist — buildRef mints ids from the epic identity and spreads `storyRef` / `task` conditionally, so a missing story yields a ref merely lacking those optional fields. AFTER, a story-level ResolvedRef denotes a story that exists, on every path, with no exemption for an explicitly scoped caller. Enforced in the single place that constructs the value, so it cannot be bypassed by adding a new resolution form later. NOT extended to tasks — `task` stays optional and a task-level ref can still carry no PLAN task, pre-existing behaviour this Story leaves alone.",
+        "schemaDiff": "(none)",
+        "callSites": [
+          "src/workflow/tracker/resolve.ts:200 (buildRef — where the absence of the check was confirmed)",
+          "src/workflow/tracker/resolve.ts:311 (resolveByHier — inherits the change)",
+          "src/workflow/tracker/resolve.ts:329 (resolveByLabel — the reported defect)",
+          "src/mcp/build-step/render.ts:54",
+          "src/workflow/bugfix/mount.ts:116"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A storyId is supplied for an epic that has no such story — the dummy-ref case the user ruled unacceptable.",
+          "detection": "Neither existence clause finds evidence: no LLD or PLAN resolves for (epic, ordinal), and the epic's definition artifact declares no story at that ordinal. Detected as absence of positive evidence rather than as a failed read, so a missing story and an unreadable file stay distinguishable.",
+          "response": "buildRef returns null instead of assembling a reference. No fallback, no partially-populated ref.",
+          "userImpact": "Callers see `unresolved-target` where they previously got a well-formed reference to a story that was not there. Intended, but it IS a change on paths that work today: a single-epic repo asked for `s9`, and any hierarchical id naming a nonexistent story.",
+          "recoverable": true
+        },
+        {
+          "scenario": "No candidate epic yields a reference for an unscoped bare label.",
+          "detection": "The per-candidate attempt loop finishes with an empty result set, measured by its size rather than inferred from the last attempt.",
+          "response": "Return null. No fallback to the old count rule, and no resolving to the sole epic merely because there is one.",
+          "userImpact": "A label naming nothing refuses — correct, and the same outcome as today in a multi-epic repo.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two or more candidate epics each yield a reference — the label genuinely exists in more than one epic.",
+          "detection": "The result set has size greater than one.",
+          "response": "Return null, preserving refuse-rather-than-guess. The explicit epicHash scope is unchanged and remains the way through.",
+          "userImpact": "Identical to today's refusal here; the difference is that refusal now happens only when warranted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The story label cannot be converted to an ordinal.",
+          "detection": "storyIdToOrdinal throws; storyArtifactPath already catches this and converts it to a miss by returning the unchanged exact path.",
+          "response": "Treat the epic as not containing the label. The existence check must never let the throw escape — a resolution helper that throws turns a refusal into a crash, and neither external consumer has a handler.",
+          "userImpact": "None visible: an unparseable label already fails LABEL_RE before resolveByLabel is reached.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A definition artifact is unreadable or malformed while existence is being evaluated.",
+          "detection": "readArtifact returns undefined on a malformed or unreadable file rather than throwing, so the declaration clause sees no declared stories.",
+          "response": "That clause contributes nothing for that epic; the story-scoped-artifact clause still applies. Degrade per-clause, never per-call — one corrupt DEF must not remove its epic from consideration when an LLD for the story exists.",
+          "userImpact": "A repo with one corrupt artifact still resolves labels it has other evidence for.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo with one epic, asked for a story it really has.",
+          "expected": "Resolves, as today — the overwhelmingly common case."
+        },
+        {
+          "input": "One feature epic containing s1/s2 plus one bugfix ISSUE epic, asked for `s1`. (The reported defect.)",
+          "expected": "Resolves to the feature epic. The bugfix epic cannot yield a reference for s1, so it no longer shadows it — and it is not demoted to achieve that."
+        },
+        {
+          "input": "Two feature epics, only one containing `s1`.",
+          "expected": "Resolves. Strictly more than worked before 13ebd04, where the count rule refused. Additive, and asserted so the gain is deliberate."
+        },
+        {
+          "input": "Two feature epics that both contain `s1`, unscoped.",
+          "expected": "Refuses. Genuine ambiguity — what the gate exists for."
+        },
+        {
+          "input": "The same both-contain fixture WITH an explicit epicHash.",
+          "expected": "Resolves via the unchanged prefix-match branch — and the story is still verified. The case that proves the trusted-caller asymmetry is gone."
+        },
+        {
+          "input": "A story declared in a DEF's story list with no LLD and no PLAN yet (the define-to-design window).",
+          "expected": "Resolves, via the declaration clause. Without it every freshly-framed story would become unresolvable."
+        },
+        {
+          "input": "A bugfix whose ISSUE is approved but whose LLD does not exist yet, asked for `S001`.",
+          "expected": "Resolves — the ISSUE is read as a definition artifact declaring one story at ordinal 1. The state ISSUE-792f9324fc43d95c itself occupies, so the case is real. The ordinal-1 part rests on the standalone route's S001 default, not a recorded field — the one convention this design leans on."
+        },
+        {
+          "input": "An explicitly scoped label for a story that does NOT exist in the scoped epic.",
+          "expected": "Refuses. Previously resolved. The clearest expression of premise 4 — supplying a scope asserts which epic, not that the story exists."
+        },
+        {
+          "input": "A hierarchical id naming a nonexistent story ordinal.",
+          "expected": "Refuses, where today it resolves. A second behaviour change on a different path; assert deliberately."
+        },
+        {
+          "input": "A task-level label (`s1/t3`) whose story exists but whose PLAN has no such task.",
+          "expected": "Unchanged — resolves with `task` absent. Task existence is deliberately NOT verified."
+        },
+        {
+          "input": "`s1`, `S1` and `S001` for the same story.",
+          "expected": "Identical behaviour, inherited from storyIdToOrdinal rather than reimplemented."
+        },
+        {
+          "input": "A repo of only ISSUE-anchored epics, asked for `S001`.",
+          "expected": "Every such epic declares ordinal 1, so all yield references and the label refuses as genuinely ambiguous; an explicit scope resolves. Correct — they really do all have an S001."
+        },
+        {
+          "input": "An epic-level reference (no storyId at all).",
+          "expected": "Entirely unchanged — which is what keeps resolveByIssue's epic sub-case working."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "An ISSUE is read as a definition artifact exactly like a DEF and is never demoted. readEpicIdentity already does this and is the precedent the new check follows — the design must not narrow what counts as an epic.",
+          "source": "c4"
+        },
+        {
+          "text": "listEpicHashes' membership and ordering stay byte-identical: deduped, DEF-anchored first. 13ebd04's widening was correct and is not undone; the enumeration was never the defect.",
+          "source": "c4"
+        },
+        {
+          "text": "resolveByIssue's behaviour is unchanged — its three passes arrive with the story already evidenced, so verification is a no-op. This bounds the blast radius to two paths.",
+          "source": "c2"
+        },
+        {
+          "text": "The explicit epicHash branch keeps its prefix-match semantics: exactly one match resolves, zero or more than one refuses. It gains verification but loses nothing.",
+          "source": "c1"
+        },
+        {
+          "text": "resolveWorkflowRef's public signature does not change, so neither external consumer needs editing.",
+          "source": "c4"
+        },
+        {
+          "text": "The resolver never throws on a resolution question; it returns null. Neither external consumer has an exception handler, so the existence check must swallow unparseable labels and unreadable artifacts.",
+          "source": "c1"
+        },
+        {
+          "text": "storyArtifactPath keeps its exact-name single-stat fast path, so buildRef's pre-existing reads do not get slower.",
+          "source": "c3"
+        },
+        {
+          "text": "resolveByIssue's DEF-only third pass at :294 is NOT touched — the lone remaining breach of the equivalence in this module, owned by item 5 of ISSUE-b955fa759c3c4309.",
+          "source": "c4"
+        },
+        {
+          "text": "Task-level verification is not introduced. `task` stays optional on a task-level ref.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via `npx tsx --test`, matching both files that already cover this subject (src/workflow/__tests__/id-resolve.test.ts, src/workflow/tracker/__tests__/tracker.test.ts) and their mkdtempSync + hand-written-artifact fixture idiom (setupRepo / setupBugfixRepo, extended rather than replaced). CARRY-FORWARD WARNING for the build: `npx tsc --noEmit` does NOT typecheck test files in this repo (tsconfig excludes **/__tests__/**), so a clean typecheck proves nothing about these tests. They must be RUN, and every new assertion must be mutation-proved.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the new buildRef invariant directly, including both existence clauses and the deliberate non-extensions. These catch a half-implemented check that reads only one clause.",
+          "subjects": [
+            "a storyId naming a story with an LLD resolves; with a PLAN resolves; with neither and no declaration refuses",
+            "a story DECLARED in a DEF's body.stories with no LLD/PLAN resolves — the declaration clause alone suffices",
+            "an ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2 — the boundary of the one convention this design leans on",
+            "s1 / S1 / S001 behave identically",
+            "an EPIC-level call (no storyId) is unchanged",
+            "task-level: a story that exists with a taskId absent from the PLAN still resolves with `task` undefined",
+            "never-throws: an unparseable label and a malformed definition artifact each yield a refusal",
+            "per-clause degradation: a corrupt DEF does not disqualify its epic when an LLD for the story exists"
+          ],
+          "fixturesNeeded": [
+            "epic with DEF + LLD for s1",
+            "epic with DEF + PLAN only",
+            "epic with DEF declaring s1/s2 and no story-scoped artifacts",
+            "bugfix epic with an ISSUE artifact only",
+            "epic whose DEF body is unparseable but whose LLD for s1 is intact"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove behaviour through the public entry point. Carries the reported defect, the additive gain, and both narrowings.",
+          "subjects": [
+            "THE REPORTED DEFECT. The arrangement is NOT untested — id-resolve.test.ts:459 already builds an ISSUE-anchored epic plus a DEF-anchored epic on different hashes and asks a bare label, but asserts the REGRESSED expectation (null); that test must be INVERTED, not duplicated. The genuinely untested MIRROR direction is what to add: one DEF-anchored epic containing s1 plus one UNRELATED ISSUE-anchored epic on a different hash — `s1` resolves",
+            "the additive gain: two feature epics, only one containing s1 — resolves",
+            "genuine ambiguity still refuses: two feature epics BOTH containing s1, unscoped",
+            "NARROWING 1, the asymmetry removal: an explicitly scoped label for a story the scoped epic lacks — refuses, where it previously resolved",
+            "NARROWING 2, inherited: a hierarchical id naming a nonexistent story ordinal — refuses",
+            "a single-epic repo asked for nonexistent `s9` — refuses, where it previously minted a ref",
+            "define-to-design window: a DEF-declared story with no LLD/PLAN — resolves",
+            "a just-approved bugfix with no LLD — `S001` resolves against its ISSUE epic",
+            "a bugfix-only repo — `S001` refuses unscoped, resolves with a scope",
+            "resolveByIssue is a NO-OP: issue-number resolution at task, story and epic levels behaves exactly as before"
+          ],
+          "fixturesNeeded": [
+            "DEF epic (s1, s2) + unrelated ISSUE epic on a different hash",
+            "two DEF epics both containing s1",
+            "two DEF epics, only one containing s1",
+            "a single DEF epic, for the nonexistent-label narrowing",
+            "an epic with tracker blocks carrying issue numbers at all three levels",
+            "two or more ISSUE-only epics"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Rewrite — not delete — the tests encoding today's behaviour as desired. Its own level because these edits look destructive in review and must be visible.",
+          "subjects": [
+            "id-resolve.test.ts:459 — its scenario now RESOLVES, so the assertion inverts and the test is renamed to state the verification contract; its explicit-scope arm stays valid and must be KEPT",
+            "id-resolve.test.ts:447 — the test NAMED for regression protection whose fixture contains no ISSUE file; its fixture must gain one or it keeps advertising protection it does not provide",
+            "tracker.test.ts:283 — the multi-epic arm restated: it refuses because both epics contain the label, not because two epics exist"
+          ],
+          "fixturesNeeded": [
+            "the existing setupRepo / setupBugfixRepo helpers, extended"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Confirm containment and that nothing else depended on the old behaviour.",
+          "subjects": [
+            "full sweep with no new failures, real counts recorded from actual output",
+            "neither render.ts nor bugfix/mount.ts required an edit",
+            "hierarchical-id tests for REAL stories pass untouched — evidence narrowing 2 is confined to nonexistent ones"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: one DEF epic containing s1 + one unrelated ISSUE epic → `s1` resolves",
+            "the pre-fix reproduction re-run: the two-arm fixture now resolves in both arms"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: listEpicHashes membership and ordering byte-identical — pins that the ISSUE was NOT demoted",
+            "unit: an ISSUE-anchored epic yields a reference for ordinal 1 exactly as a DEF-anchored one would"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: buildRef refuses when a storyId has neither artifact nor declaration",
+            "integration: a single-epic repo asked for `s9` refuses — no dummy ref"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: an explicitly scoped label for a missing story REFUSES — verification is not bypassable by supplying a scope",
+            "integration: the both-contain fixture WITH a scope still resolves"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: a hierarchical id naming a nonexistent ordinal refuses",
+            "smoke: hierarchical-id tests for real stories pass untouched"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "integration: two feature epics both containing s1, unscoped → null",
+            "integration: a bugfix-only repo → refuses unscoped, resolves with a scope"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "integration: a DEF-declared story with no LLD/PLAN resolves",
+            "unit: the declaration clause alone suffices"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "unit: ISSUE epic contains ordinal 1 and NOT ordinal 2",
+            "unit: epic-level calls are entirely unverified",
+            "unit: task-level non-extension — unknown taskId still resolves with `task` absent"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "unit: unparseable label → refusal, not a throw",
+            "unit: malformed DEF degrades per-clause",
+            "integration: resolveByIssue behaves identically at all three levels — the no-op claim asserted rather than assumed"
+          ]
+        },
+        {
+          "criterionId": "ac10",
+          "provingTests": [
+            "unit (rewrite): id-resolve.test.ts:459 inverted and renamed, explicit-scope arm preserved",
+            "unit (rewrite): id-resolve.test.ts:447's fixture gains an ISSUE artifact",
+            "unit (rewrite): tracker.test.ts:283's multi-epic arm restated",
+            "MUTATION PROOF per rewrite: reverting the verification must turn each inverted assertion RED"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "buildRef assembles a reference from the epic identity and reads story artifacts OPPORTUNISTICALLY. s1 confirmed every such read is optional-chained and spread conditionally, so a missing story yields a reference merely lacking `storyRef` / `task` rather than a refusal — `buildRef(dir, hash, 's9')` on an epic with no s9 returns a well-formed story-level ref. Nothing verifies story existence anywhere, so the invariant 'a story reference denotes a real story' does not hold today on any path. Separately, resolveByLabel gates an unscoped bare label on `hashes.length !== 1`, counting epics rather than asking which epics have the story: one feature epic plus one filed bugfix makes the count 2 and every bare label refuses. Reproduced — a DEF+LLD fixture resolves `s1`, and adding one unrelated ISSUE json makes the identical call return null. Two properties bound the work: resolveByIssue reaches buildRef with the story already evidenced by the artifact that carried the matched ref (so it is a no-op), while resolveByHier derives story ordinals from a parsed id and never confirms them (so it does change).",
+      "stateAfter": "buildRef refuses to mint a story- or task-level reference unless that story exists, where existence means either a story-scoped artifact resolves for it or the epic's definition artifact declares it — DEF and ISSUE read identically. Because the check lives in the single function that constructs every reference, every entry point inherits it with no trusted-caller exemption, including an explicitly scoped label. resolveByLabel's unscoped branch consequently stops counting epics and keeps the candidates that yield a reference, resolving on exactly one and refusing on zero or several; the enumeration is untouched, so a bugfix definition artifact remains a full epic peer and simply cannot evidence a story it does not have. Net: more labels resolve than before the regression, and nonexistent stories stop resolving anywhere.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Write the failing characterisations FIRST and commit them red: the never-tested arrangement (a DEF-bearing epic alongside an ISSUE artifact on a different hash, asking for the bare label), and the never-tested dummy-ref cases (a single-epic repo asked for a nonexistent story; an explicitly scoped label for a story the scoped epic lacks; a hierarchical id naming a nonexistent ordinal). The dummy-ref cases appear in no existing test (no test anywhere asks the resolver for a story that does not exist — verified by probe). The label arrangement, however, DOES appear at id-resolve.test.ts:459 asserting the regressed expectation, so the label defect shipped because it was MIS-ASSERTED rather than untested; step 4 inverts that test, and this step adds only the untested mirror direction.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the story-existence determination inside buildRef, covering both evidence clauses and reading the definition artifact without regard to kind. Apply it ONLY when a storyId is supplied, so epic-level references stay untouched. The step-1 characterisations turn green and the two tests encoding today's label behaviour turn red — leave them red here so review sees the behaviour change and the test rewrite as separate acts.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Switch resolveByLabel's unscoped branch from the epic count to keeping candidates that yield a reference. Kept separate from step 2 because step 2 alone fixes the dummy-ref defect on every path and step 3 alone fixes the reported label defect — either can be reverted without losing the other.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rewrite the two tests encoding the old behaviour as desired: invert the one asserting a bugfix epic makes a label ambiguous (keeping its valid explicit-scope arm), restate the multi-epic assertion in terms of both epics containing the label, and give the test NAMED for regression protection a fixture that actually contains an ISSUE artifact. Mutation-prove each rewrite: reverting step 2 or 3 must turn the new assertion red.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Assert the no-op claim rather than assuming it: issue-number resolution at task, story and epic level must behave exactly as before. s1 reasoned this from code; this turns the reasoning into a test, because 'unaffected' is cheap to assert and expensive to be wrong about.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Run the full sweep and record real counts from actual output. Confirm the hierarchical-id tests for REAL stories pass untouched, and that neither external consumer required an edit.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The public entry point's signature is unchanged, so no caller needs editing: one external call site already passes an explicit epic scope, the other injects the function by reference. Nothing persisted changes shape — no field added, no artifact rewritten — so an older and a newer daemon can read the same artifacts directory, and rollback is a code revert with no data to undo.\n\nThree behaviour changes are deliberately NOT backward compatible, and all three are the point of the Story:\n\n(1) WIDENING — bare labels that refused now resolve, including the reported case and the two-epic case where only one epic holds the label. Cannot break a caller that was receiving nothing; both consumers treat a refusal as an error to surface.\n\n(2) NARROWING, unscoped — a label naming a story no epic has now refuses instead of returning a reference to a story that is not there.\n\n(3) NARROWING, scoped and hierarchical — the one most likely to surprise, and the one explicitly asked for. An explicit epic scope, and a hierarchical id, previously minted references without verifying the story; both now refuse. No trusted-caller exemption by design: supplying a scope asserts WHICH epic, not that the story exists.\n\nOne limit stated plainly: the design leans on a convention at exactly one point — that an ISSUE-anchored epic declares a story at ordinal 1 — because the ISSUE records no story id. If a standalone route ever writes a story id other than the first ordinal, that epic's stories become unresolvable by label until the ISSUE declares them explicitly. Raised as an openQuestion rather than guarded against here.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Verify inside buildRef; the label path keeps the candidates that resolve",
+        "oneLineSummary": "One verification, intrinsic to minting a reference, and ambiguity becomes 'how many candidate epics produced a reference'.",
+        "approach": "buildRef gains the invariant that it only returns a story- or task-level reference when the named story actually exists in that epic, and returns null otherwise — verified only when a storyId was supplied, so epic-level refs are untouched. The unscoped label path then stops counting epics: it attempts a reference against each enumerated candidate and keeps the ones that produced something, resolving on exactly one and refusing on zero or more than one. There is no separate containment notion anywhere; 'epic E contains story N' and 'buildRef(E, N) resolves' are the same statement. The enumeration is untouched (premise 2) and the explicit-scope branch keeps its prefix-match semantics but now inherits verification, which removes the trusted-caller asymmetry premise 4 forbids.",
+        "pros": [
+          "Satisfies premise 4 as worded: verification is in buildRef, so every entry point gets it with no path trusting its caller.",
+          "One notion instead of two — collapses the questions rather than adding a third concept.",
+          "Fixes the reported defect as a consequence rather than a special case: a bugfix epic stops shadowing `s1` because it cannot produce a reference, not because it was demoted.",
+          "Strictly additive beyond the regression: two feature epics where only one holds `s1` now resolves.",
+          "s1 established resolveByIssue is a no-op, so the blast radius is two call paths, not three."
+        ],
+        "cons": [
+          "Up to N reference attempts on the unscoped label path where there was a length check.",
+          "buildRef's contract becomes conditional — verifies with a storyId, not without — which must be stated or a reader will mis-model it.",
+          "A hierarchical id naming a nonexistent story stops resolving — correct, but a second change riding along.",
+          "Changes what refusal MEANS on the label path, so both encoding tests must be rewritten."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Verify at each call site; buildRef stays a pure assembler",
+        "oneLineSummary": "Leave buildRef assembling and have each resolution path check story existence before calling it.",
+        "approach": "buildRef's contract is unchanged — a pure id-minter and opportunistic reader. Each path that derives a story identity from something other than a real artifact performs its own existence check first: the label path before selecting a candidate, the hierarchical-id path before trusting its ordinals. The issue-number path needs nothing.",
+        "pros": [
+          "Keeps buildRef's single responsibility intact, so its behaviour for existing callers is provably unchanged.",
+          "Each path can phrase its check in terms it already has.",
+          "Smallest possible change to the function the whole module depends on."
+        ],
+        "cons": [
+          "Reproduces the defect class being fixed: one rule at two sites, free to drift.",
+          "Contradicts premise 4, which places verification IN buildRef and forbids a trusted-caller asymmetry.",
+          "A third resolution form added later inherits nothing and silently reopens the hole."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Ranked last despite being cheapest at S. Two outright violations and they are the two that matter: k4 is a direct contradiction of the user's ruling — buildRef stays free to mint dummy refs for any caller who forgets to check — and k7 recreates the structural defect this Story exists to remove, one rule maintained in two places. A future resolution form added by someone who has not read this LLD inherits nothing."
+      },
+      {
+        "id": "a3",
+        "name": "A shared story-existence predicate consulted by buildRef and the label path",
+        "oneLineSummary": "Introduce an explicit named predicate for 'does this epic contain this story', and have both buildRef and the candidate filter call it.",
+        "approach": "A single internal predicate answers story existence for an (epic, storyId) pair, reading the two kinds of evidence s1 identified — a story-scoped artifact, or a declaration on the epic's definition artifact (DEF or ISSUE, read identically per premise 1). buildRef calls it before minting a story-level reference; the label path calls it to filter candidates without minting references it will throw away.",
+        "pros": [
+          "Lets the label path filter candidates WITHOUT constructing references for epics it will discard — addresses a1's main cost objection.",
+          "Gives the concept a name, so the DEF/ISSUE equivalence lives in one readable place.",
+          "Still satisfies premise 4: buildRef remains the gate, the predicate is how it decides."
+        ],
+        "cons": [
+          "Two things can answer the same question — the predicate and buildRef's success — and divergence would make the label path and direct callers disagree.",
+          "Adds a concept justified only by performance, before any evidence the cost matters.",
+          "The ISSUE side must encode the ordinal-1 rule explicitly, making a convention more prominent without making it better grounded."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "The closest contender and the only other alternative satisfying k4. It loses on k7 (partial: two answerers of one question) and on justification — its distinctive benefit is a performance argument, and s1 produced no measurement showing a1's cost is a problem. Introducing a second answerer to solve an unmeasured cost is the wrong trade when single-answerer-ness is exactly what k7 protects. Recorded as the additive upgrade path if the cost is ever measured and matters."
+      },
+      {
+        "id": "a4",
+        "name": "Verify inside buildRef, with a cheap pre-filter on the label path",
+        "oneLineSummary": "a1's single verification, plus a stat-only short-circuit so the label path avoids full reference construction for obvious non-candidates.",
+        "approach": "Identical to a1 in contract and in every behavioural outcome. The label path additionally skips candidates that fail a cheap story-artifact existence stat before attempting a reference, so full construction happens only for plausible candidates. The pre-filter is strictly an optimisation: any candidate it admits is still decided by buildRef, and it may never admit fewer candidates than buildRef would accept.",
+        "pros": [
+          "Keeps a1's single source of truth while bounding the N-attempts cost.",
+          "The pre-filter is purely subtractive and independently revertible."
+        ],
+        "cons": [
+          "The 'never admit fewer than buildRef would' invariant is an agreement between two checks that decays silently, and a decayed pre-filter manifests as a label mysteriously refusing — the same symptom as the bug being fixed.",
+          "Optimises before measuring.",
+          "A cheap stat cannot see a story DECLARED but not yet designed, so it would have to replicate the declaration reading too."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Behaviourally it IS a1, so it inherits every satisfied constraint, and it is rejected purely on the pre-filter. Its own third con is fatal to its purpose: a cheap story-artifact stat cannot see a story declared on the definition artifact but not yet designed, so to avoid wrongly excluding that case it must replicate the declaration reading — at which point it is neither cheap nor a filter, just a duplicate of the real check."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "[s8 ts1 + alt2 — partial; the one that matters, and a KNOWN FRAMEWORK GAP the user has already deferred] The Story arrived with an EMPTY acceptanceCriteria array, so the ten acceptance criteria (ac1-ac10) and the eight constraints (k1-k8) the alternatives were scored against were authored by this LLD rather than declared by the Story. Mitigating relative to the superseded pass: k1-k4 map directly onto premises the USER stated, so they are not purely self-authored; k5-k8 and all of ac1-ac10 still are. OPEN: the plan stage must ADOPT or restate them rather than inherit them. A reviewer should check k5-k8 specifically. The ROOT CAUSE of the empty-criteria gap is separately queued for investigation at the user's direction — this is a re-report, not a new finding.",
+      "[design judgement, NOW NARROW — was load-bearing, is not any more] Clause (ii)'s ISSUE branch says an ISSUE-anchored epic declares one story at ordinal 1. That follows from what an ISSUE is (the epic's definition artifact written by a standalone route, and a standalone route defines exactly one story) and is corroborated by every standalone story-scoped artifact on disk being ordinal 1 — 59 of 59. It no longer rests on a filename default held in readers' heads. REMAINING NICE-TO-HAVE, not required for this fix: having the ISSUE declare its story explicitly as a DEF does would put the fact in the artifact rather than in the route's semantics.",
+      "[consequence requiring explicit approval, not a defect] Two narrowings ship alongside the fix, both following from the buildRef ruling. (a) An explicitly scoped label for a story the scoped epic lacks now refuses — this is the asymmetry removal and is the point. (b) A hierarchical id naming a nonexistent story ordinal now refuses, on a path unrelated to the reported defect. Both are correct per premise 4 but change outcomes that 'work' today, so they should be approved deliberately rather than discovered later.",
+      "[s8 cd3 — partial] buildRef's documented error entries use 'null return' rather than a named error type, because the module's standing invariant is that it never throws (no external consumer has a handler). OPEN: confirm that documenting the refusal convention satisfies the concrete-error-type requirement for a null-returning API, or decide a named sentinel is wanted.",
+      "[s8 sbdry2 — partial] The six ordered migrationSteps are a required field of the migration schema, but steps 1 and 4 read close to task enumeration. OPEN: a reviewer may judge they should be compressed into outcome statements with sequencing left to the plan stage. Flagged rather than asserted clean.",
+      "[out of boundary, recorded so it is not lost] The DEF/ISSUE equivalence holds inside resolve.ts but NOT outside it: orchestrator.ts and chain.ts read DEF.body.stories (e.g. chain.ts:161 `define.artifact.body.stories`), for which an ISSUE has no analogue. Deliberately not designed here. Separately, resolveByIssue's DEF-only third pass at :294 is the lone remaining breach inside this module and belongs to item 5 of ISSUE-b955fa759c3c4309 — not fixed here to avoid overlapping a filed item."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:200",
+      "quotedText": "buildRef mints ids from the epic identity and reads story artifacts opportunistically; every such read is optional-chained and spread conditionally, so a missing story yields a ref merely lacking storyRef/task."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:267",
+      "quotedText": "resolveByIssue's three passes each match a real PLAN / LLD / DEF and read the matched ref off it, so the story is already evidenced before buildRef is called."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:183",
+      "quotedText": "storyArtifactPath tries the exact name first, then scans for a sibling whose story segment denotes the same ORDINAL; a miss returns the unchanged path because callers treat a bad path as absent."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:166",
+      "quotedText": "readEpicIdentity: 'Prefers the DEF; falls back to the ISSUE artifact a bugfix chain writes instead. The DEF is consulted FIRST and wins outright.'"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:329",
+      "quotedText": "resolveByLabel — `if (hashes.length !== 1) return null;   // ambiguous — needs an issue# or hierId`"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:311",
+      "quotedText": "resolveByHier locates the epic by date+hash and derives storyId/taskId from ordinals, never confirming they correspond to anything."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/id-resolve.test.ts:459",
+      "quotedText": "two epics present (one ISSUE-anchored, one DEF-anchored) → an unscoped label is ambiguous and must NOT guess"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/tracker/__tests__/tracker.test.ts:283",
+      "quotedText": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:1750",
+      "quotedText": "const epicStoryIds = epic.body.stories.map(s => s.id);"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/build-step/render.ts:54",
+      "quotedText": "const ref = resolveWorkflowRef(repoPath, target, { epicHash });"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-792f9324fc43d95c — the approved issue this LLD designs the fix for",
+      "quotedText": "is a bugfix ISSUE an epic PEER for the purpose of deciding that an unscoped label is ambiguous?"
+    },
+    {
+      "id": "c12",
+      "kind": "stakeholder",
+      "ref": "User ruling, 2026-10-03, in the design conversation for this Story",
+      "quotedText": "buildRef should verify, dummy stories aren't acceptable. ISSUE and STORY are equivalent. [correcting] an ISSUE is equivalent to a DEF and should be treated accordingly, it was earlier called DEF"
+    }
+  ]
+}

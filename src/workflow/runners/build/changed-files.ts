@@ -37,20 +37,57 @@ export class NoBuildChangesError extends Error {
 	}
 }
 
-/** Derive the changed-file set from the working-tree diff (unstaged ∪ staged)
- *  via the `git_diff` builtin. Read-only; throws `NoBuildChangesError` on git
- *  failure. */
-export async function changedFiles(repoPath: string): Promise<readonly string[]> {
+/** Additive options for {@link changedFiles}. Both fields are OPTIONAL and the
+ *  derivation is bit-for-bit unchanged when neither is supplied, so every
+ *  existing single-argument call site keeps its current result. */
+export interface ChangedFilesOptions {
+	/** Start of the Story's COMMITTED range. Consulted ONLY when the working tree
+	 *  is clean — which is exactly when it is needed, because the implement prompt
+	 *  mandates committing before the validate phase runs, so the working-tree
+	 *  derivation sees nothing. A dirty tree keeps using the working tree and never
+	 *  looks at the base. */
+	readonly base?: string | undefined;
+	/** Repo-relative paths to drop from the derived set. ACCEPTED here but NOT YET
+	 *  CONSULTED — applied in t4, which is kept separate so a rollback of the range
+	 *  work cannot reintroduce the self-reporting defect. Passing it today is inert;
+	 *  a test pins that inertness so t4 inverts it rather than discovering it. */
+	readonly exclude?: readonly string[] | undefined;
+}
+
+/** Run one `git_diff` and collect its changed paths into `into`. */
+async function collectDiff(
+	repoPath: string,
+	input: Readonly<Record<string, unknown>>,
+	into: Set<string>,
+): Promise<void> {
 	const toolDeps: ToolDeps = { sessionId: 'code-review', repoPath, send: () => {}, requestId: 0 };
+	const res = await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps);
+	if (!res.success) {
+		throw new NoBuildChangesError(`git_diff failed for ${repoPath}: ${res.error ?? res.output}`);
+	}
+	const data = res.data as GitDiffData | undefined;
+	if (!data) throw new NoBuildChangesError(`git_diff returned no data for ${repoPath}`);
+	for (const f of data.files) into.add(f.path);
+}
+
+/**
+ * Derive the changed-file set from the working-tree diff (unstaged ∪ staged) via
+ * the `git_diff` builtin. Read-only; throws `NoBuildChangesError` on git failure.
+ *
+ * With `opts.base`, a CLEAN working tree additionally derives the committed range
+ * `base..HEAD`. That ordering is the point of the Story: the collector runs after
+ * the implement prompt has committed, so the working tree is empty precisely when
+ * the change set matters. A dirty tree is left exactly as it was — the base is not
+ * consulted at all, so the result cannot depend on which range was supplied.
+ */
+export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly string[]> {
 	const paths = new Set<string>();
 	for (const staged of [false, true]) {
-		const res = await gitDiffTool.execute({ cwd: repoPath, staged }, toolDeps);
-		if (!res.success) {
-			throw new NoBuildChangesError(`git_diff failed for ${repoPath}: ${res.error ?? res.output}`);
-		}
-		const data = res.data as GitDiffData | undefined;
-		if (!data) throw new NoBuildChangesError(`git_diff returned no data for ${repoPath}`);
-		for (const f of data.files) paths.add(f.path);
+		await collectDiff(repoPath, { staged }, paths);
+	}
+	// Committed-range fallback: only when the working tree yielded nothing.
+	if (paths.size === 0 && opts?.base !== undefined && opts.base.length > 0) {
+		await collectDiff(repoPath, { from: opts.base }, paths);
 	}
 	return [...paths];
 }
@@ -66,14 +103,29 @@ export async function changedFiles(repoPath: string): Promise<readonly string[]>
  */
 export async function collectBuildChangeLog(
 	repoPath: string,
-	ctx: { readonly author: string; readonly timestamp: string; readonly version?: string | undefined },
+	ctx: {
+		readonly author: string;
+		readonly timestamp: string;
+		readonly version?: string | undefined;
+		/** Forwarded to {@link changedFiles} — see {@link ChangedFilesOptions}. */
+		readonly base?: string | undefined;
+		readonly exclude?: readonly string[] | undefined;
+	},
 	/** Injectable changed-file seam (defaults to the real git derivation); tests
-	 *  stub it. Additive/optional — the mandated 2-arg call sites are unchanged. */
-	listChanged: (repoPath: string) => Promise<readonly string[]> = changedFiles,
+	 *  stub it. Additive/optional — the mandated 2-arg call sites are unchanged, and
+	 *  a 1-parameter stub stays assignable, so existing stubs compile untouched. */
+	listChanged: (repoPath: string, opts?: ChangedFilesOptions) => Promise<readonly string[]> = changedFiles,
 ): Promise<ChangeLog> {
+	// Built conditionally so a ctx carrying neither field passes `undefined` rather
+	// than `{ base: undefined, exclude: undefined }` — keeping the seam call, and
+	// any recording stub's view of it, identical to today.
+	const opts: ChangedFilesOptions | undefined =
+		ctx.base !== undefined || ctx.exclude !== undefined
+			? { ...(ctx.base !== undefined ? { base: ctx.base } : {}), ...(ctx.exclude !== undefined ? { exclude: ctx.exclude } : {}) }
+			: undefined;
 	let files: readonly string[];
 	try {
-		files = await listChanged(repoPath);
+		files = await listChanged(repoPath, opts);
 	} catch (err) {
 		log.warn(
 			{ repoPath, err: err instanceof Error ? err.message : String(err) },

@@ -11,6 +11,7 @@
  */
 
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -242,4 +243,123 @@ test('requireApprovedEpic returns the Define artifact after approval', () => {
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// t5 (ISSUE-93081bff91ae5108 / S001) — meta.rangeBase stamped at approval.
+//
+// The approval site is GENERIC across every artifact kind, so the gating is the
+// substance of this feature, not an afterthought: an ungated stamp would write a
+// base onto records no build will ever read. Asserted per kind.
+// ---------------------------------------------------------------------------
+
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+/** A real git repo with one commit, plus an artifact json of the given meta. */
+function seedGitArtifact(meta: Record<string, unknown>): { repo: string; json: string; head: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-rangebase-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+	git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+	writeFileSync(join(repo, 'f.ts'), 'export const f = 1;\n');
+	git('add', '.'); git('commit', '-qm', 'base');
+	const head = git('rev-parse', 'HEAD');
+	const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+	mkdirSync(dirname(json), { recursive: true });
+	writeFileSync(json, JSON.stringify({ meta, body: {} }, null, 2) + '\n');
+	return { repo, json, head, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+const metaOf = (json: string): Record<string, unknown> =>
+	(JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta;
+
+test('t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt', () => {
+	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED });
+	try {
+		const out = approveArtifactByJsonPath(s.json);
+		const m = metaOf(s.json);
+		assert.equal(typeof m['approvedAt'], 'string', 'approvedAt still stamped');
+		assert.equal(out.approvedAt, m['approvedAt']);
+		assert.match(String(m['rangeBase']), FULL_SHA,
+			'a FULL sha — the length check is the only thing that mechanically distinguishes it from revParse\'s --short form');
+		assert.equal(m['rangeBase'], s.head, 'and it is HEAD at approval time');
+	} finally { s.cleanup(); }
+});
+
+test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase', () => {
+	for (const workflow of ['define', 'design.epic', 'amendment', 'build']) {
+		const s = seedGitArtifact({ workflow, epicHash: HASH, storyId: 's1', createdAt: CREATED });
+		try {
+			approveArtifactByJsonPath(s.json);
+			const m = metaOf(s.json);
+			assert.equal(typeof m['approvedAt'], 'string', `${workflow}: still approved`);
+			assert.ok(!('rangeBase' in m), `${workflow}: must NOT be stamped — no build reads it`);
+		} finally { s.cleanup(); }
+	}
+});
+
+test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT', () => {
+	const standalone = seedGitArtifact({ workflow: 'design.story', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: CREATED });
+	try {
+		approveArtifactByJsonPath(standalone.json);
+		assert.match(String(metaOf(standalone.json)['rangeBase']), FULL_SHA,
+			'a standalone LLD is a build\'s upstream, so it carries the base');
+	} finally { standalone.cleanup(); }
+
+	// The epic route reaches build through a PLAN, which is where its base lives —
+	// stamping the LLD too would put a second, staler base on the same chain.
+	const epic = seedGitArtifact({ workflow: 'design.story', epicHash: HASH, storyId: 's4', createdAt: CREATED });
+	try {
+		approveArtifactByJsonPath(epic.json);
+		assert.ok(!('rangeBase' in metaOf(epic.json)), 'an epic-route LLD is NOT stamped — its PLAN is');
+	} finally { epic.cleanup(); }
+});
+
+test('t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string', () => {
+	// A non-git directory: `git rev-parse HEAD` fails.
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-nogit-'));
+	try {
+		const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+		mkdirSync(dirname(json), { recursive: true });
+		writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: {} }, null, 2) + '\n');
+
+		let out: ReturnType<typeof approveArtifactByJsonPath> | undefined;
+		assert.doesNotThrow(() => { out = approveArtifactByJsonPath(json); }, 'approval must not depend on git');
+		const m = metaOf(json);
+		assert.equal(typeof out?.approvedAt, 'string', 'the approval completed');
+		assert.ok(!('rangeBase' in m), 'ABSENT, not present-and-empty — an empty string would be a falsy base that reads as "no range" by accident');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-nocommit-'));
+	try {
+		execFileSync('git', ['init', '-q'], { cwd: repo });
+		const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+		mkdirSync(dirname(json), { recursive: true });
+		writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: {} }, null, 2) + '\n');
+		approveArtifactByJsonPath(json);
+		assert.ok(!('rangeBase' in metaOf(json)), 'an unborn HEAD yields no base rather than a bogus one');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them', () => {
+	const s = seedGitArtifact({
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		// Pre-existing rejection, which the approve path DELETES — the neighbouring
+		// behaviour that makes "does the spread keep my key?" worth pinning.
+		rejectedAt: '2026-01-01T00:00:00.000Z', rejectReason: 'an earlier rejection',
+	});
+	try {
+		approveArtifactByJsonPath(s.json);
+		const first = metaOf(s.json);
+		assert.match(String(first['rangeBase']), FULL_SHA);
+		assert.ok(!('rejectedAt' in first), 'rejection cleared, as before');
+		assert.ok(!('rejectReason' in first), 'and its reason');
+
+		// Re-approve: the stamp is re-read, and the key survives the round trip.
+		approveArtifactByJsonPath(s.json);
+		const second = metaOf(s.json);
+		assert.equal(second['rangeBase'], first['rangeBase'], 'same HEAD, same base, not dropped by the re-write');
+		assert.equal(second['epicHash'], HASH, 'and unrelated meta is untouched');
+	} finally { s.cleanup(); }
 });

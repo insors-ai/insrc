@@ -17,7 +17,9 @@
  * artifact's own meta.
  */
 
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
 import { getEffectiveHld } from './amendments/effective.js';
@@ -493,6 +495,67 @@ export interface ApprovalResult {
 	readonly approvedAt: string;
 }
 
+/**
+ * The artifact `meta` the approval gate reads and writes. Exported so a reader of
+ * {@link ApprovableArtifactMeta.rangeBase} shares THIS declaration rather than
+ * casting at its own read site.
+ */
+export interface ApprovableArtifactMeta {
+	readonly workflow?:   string | undefined;
+	readonly approvedAt?: string | undefined;
+	readonly rejectedAt?: string | undefined;
+	readonly rejectReason?: string | undefined;
+	/** `true` on a standalone (bugfix / Small) artifact, absent on an epic-route one. */
+	readonly standalone?: boolean | undefined;
+	/**
+	 * FULL 40-hex sha of HEAD when this artifact was approved — the start of the
+	 * Story's committed range. Stamped only on the artifacts a build treats as its
+	 * upstream (see {@link stampsRangeBase}), so a later phase can derive what the
+	 * Story changed without depending on anyone having committed the artifact.
+	 * ABSENT when HEAD could not be read; never an empty string.
+	 */
+	readonly rangeBase?:  string | undefined;
+	readonly review?: ReviewReport | undefined;
+	readonly reviewResolutions?: Record<string, ReviewResolution> | undefined;
+	readonly reviewOverride?: { reason: string; at: string } | undefined;
+}
+
+/**
+ * Whether approving THIS artifact should stamp a range base.
+ *
+ * The approval site is generic across every artifact kind, so an ungated stamp
+ * would write a base onto DEF / HLD / AMD / BUILD records that no build will ever
+ * read. Only a build's genuine upstream is stamped: the `plan` for a planned
+ * Story, or a STANDALONE `design.story` LLD, which is the only upstream the
+ * no-plan (bugfix / Small) route has.
+ */
+function stampsRangeBase(meta: ApprovableArtifactMeta): boolean {
+	if (meta.workflow === 'plan') return true;
+	return meta.workflow === 'design.story' && meta.standalone === true;
+}
+
+/**
+ * HEAD as a FULL 40-hex sha, or `undefined` when it cannot be read.
+ *
+ * Uses the synchronous `execFileSync` idiom already present in this directory
+ * (migrate-docs-tree.ts, tracker/github.ts) because the approval path is
+ * synchronous. Deliberately NOT `revParse` from the git builtins: that helper
+ * hard-codes `--short`, and an abbreviated sha in a PERSISTED range base can
+ * collide as history grows — a base that silently resolves to the wrong commit is
+ * the exact class of defect this stamp exists to remove. The 40-hex check means a
+ * short sha could never be stored even if the command changed under us.
+ */
+function headFullSha(cwd: string): string | undefined {
+	try {
+		const out = execFileSync('git', ['rev-parse', 'HEAD'], {
+			cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+		}).trim();
+		return /^[0-9a-f]{40}$/.test(out) ? out : undefined;
+	} catch {
+		return undefined;   // not a git repo, no commits yet, or git unavailable
+	}
+}
+
 /** Mark an artifact approved by writing `meta.approvedAt` into its
  *  JSON. Works generically for any workflow — the artifact's JSON
  *  path is passed in verbatim. */
@@ -501,14 +564,7 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}
 	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as {
-		meta?: {
-			workflow?: string; approvedAt?: string; rejectedAt?: string; rejectReason?: string;
-			review?: ReviewReport;
-			reviewResolutions?: Record<string, ReviewResolution>;
-			reviewOverride?: { reason: string; at: string };
-		};
-	};
+	const artifact = JSON.parse(raw) as { meta?: ApprovableArtifactMeta };
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
@@ -534,13 +590,23 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 		reviewOverride = { reason: override, at: new Date().toISOString() };
 	}
 	const approvedAt = new Date().toISOString();
-	const nextMeta = { ...artifact.meta, approvedAt, ...(reviewOverride !== undefined ? { reviewOverride } : {}) };
+	// The range base is read HERE, at approval, so it cannot depend on whether
+	// anyone later remembered to commit the artifact. Absent when HEAD is
+	// unreadable — the approval still completes; a build with no resolvable base
+	// reports an empty change set rather than a wrong one.
+	const rangeBase = stampsRangeBase(artifact.meta) ? headFullSha(dirname(jsonPath)) : undefined;
+	const nextMeta: Record<string, unknown> = {
+		...artifact.meta,
+		approvedAt,
+		...(rangeBase !== undefined ? { rangeBase } : {}),
+		...(reviewOverride !== undefined ? { reviewOverride } : {}),
+	};
 	// Clear any prior rejection if we're re-approving.
 	delete nextMeta.rejectedAt;
 	delete nextMeta.rejectReason;
 	const next = { ...artifact, meta: nextMeta };
 	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
-	return { workflow: nextMeta.workflow ?? 'unknown', path: jsonPath, approvedAt };
+	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
 }
 
 /** Raised when a batch approve targets an epic that has zero still-pending

@@ -25,12 +25,18 @@ import { join } from 'node:path';
 import {
 	persistBuildRecord,
 	persistStandaloneBuildRecord,
+	renderPlanBuildRecordMd,
 	renderStandaloneBuildRecordMd,
 	type BuildRecord,
 	type StandaloneBuildRecord,
 } from '../standalone-record.js';
 import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { approveWorkflowTarget } from '../../../gates.js';
+import {
+	WELL_FORMED_STANDALONE_RECORD, WELL_FORMED_STANDALONE_GOLDEN,
+	PLAN_DRIVEN_RECORD, PLAN_DRIVEN_GOLDEN,
+	PATHOLOGICAL_RECORD, PATHOLOGICAL_GOLDEN,
+} from './fixtures/build-record-goldens.js';
 
 const HASH = 'abc123def4567890';
 
@@ -129,6 +135,18 @@ test('a malformed prior record is treated as absent (fail-open fresh write), not
 // Trivial/standalone regression — byte-identical output via the thin wrapper
 // ---------------------------------------------------------------------------
 
+/** Frozen render of the record the thin-wrapper test constructs below, captured
+ *  on unmodified HEAD before the t8 convergence. Deliberately NOT computed from
+ *  the renderer — see the comment at the assertion. */
+const THIN_WRAPPER_GOLDEN =
+	'# Build (standalone trivial) \u2014 Story s1\n' +
+	'\n' +
+	'**Size class:** trivial  \u00b7  **Standalone:** yes  \u00b7  **Created:** 2026-01-01T00:00:00.000Z\n' +
+	'\n' +
+	'## Scope\n' +
+	'\n' +
+	'Add a --json flag to the status subcommand.\n';
+
 test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)', async () => {
 	await withRepo(async (repo) => {
 		const rec: StandaloneBuildRecord = {
@@ -138,8 +156,16 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 		const { json, md } = persistStandaloneBuildRecord(repo, rec);
 		// json is byte-identical to a plain stringify of the record (no prior, no merge additions).
 		assert.equal(readFileSync(json, 'utf8'), JSON.stringify(rec, null, 2) + '\n');
-		// md is byte-identical to the unchanged standalone renderer.
-		assert.equal(readFileSync(md, 'utf8'), renderStandaloneBuildRecordMd(rec));
+		// md is byte-identical to a FROZEN expectation.
+		//
+		// This assertion used to read `renderStandaloneBuildRecordMd(rec)`. That was
+		// vacuous-in-waiting: t8 turns that function into a delegating shim over the
+		// converged renderer, and persistBuildRecord writes THROUGH the converged
+		// renderer — so both operands would become the same function applied to the
+		// same record, and the check would pass for any output whatsoever, including
+		// one that changed every byte. Frozen string instead, so the comparison has
+		// an independent right-hand side. (t2, ISSUE-93081bff91ae5108.)
+		assert.equal(readFileSync(md, 'utf8'), THIN_WRAPPER_GOLDEN);
 		assert.equal(readJson(json).meta['standalone'], true);
 	});
 });
@@ -283,5 +309,66 @@ test('a meta field can no longer be cleared by OMITTING it — the documented tr
 		// deletes. A future caller needing to genuinely unset a field must do it
 		// explicitly rather than by leaving the key out.
 		assert.ok('sizeClass' in rec.meta, 'omission does not delete — clearing must be explicit');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// BYTE-IDENTITY goldens — ISSUE-93081bff91ae5108 / S001 / t2
+//
+// Three REAL committed BUILD records, with the markdown they render TODAY frozen
+// before the t8 convergence. Real rather than constructed on purpose: a fixture
+// built from the new understanding would agree with the fix by construction.
+//
+//   goldens 1 + 2  MUST NOT change at t8 — convergence must preserve them
+//   golden 3       IS EXPECTED TO CHANGE — it records a defect
+//
+// See fixtures/build-record-goldens.ts for why golden 3 is a defect.
+// ---------------------------------------------------------------------------
+
+test('BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown', () => {
+	const md = renderStandaloneBuildRecordMd(WELL_FORMED_STANDALONE_RECORD as unknown as StandaloneBuildRecord);
+	assert.equal(md, WELL_FORMED_STANDALONE_GOLDEN,
+		'MUST NOT change at t8 — a standalone record with focus + triageRationale must survive the convergence byte-for-byte');
+});
+
+test('BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown', () => {
+	const md = renderPlanBuildRecordMd(PLAN_DRIVEN_RECORD);
+	assert.equal(md, PLAN_DRIVEN_GOLDEN,
+		'MUST NOT change at t8 — exercises title, created/updated, Summary, Tasks validated and Changes in one record');
+});
+
+test('BYTE-IDENTITY golden 3 (PATHOLOGICAL, EXPECTED to change at t8): the standalone renderer emits two "undefined"s and drops the record\'s real content', () => {
+	const md = renderStandaloneBuildRecordMd(PATHOLOGICAL_RECORD as unknown as StandaloneBuildRecord);
+	assert.equal(md, PATHOLOGICAL_GOLDEN, 'the recorded DEFECT, frozen so t8 changing it reads as a reviewed improvement');
+
+	// Spell out WHAT is defective, so the golden is not merely an opaque blob and
+	// so t8 has precise targets rather than "make the bytes different".
+	assert.match(md, /# Build \(standalone undefined\)/, 'DEFECT 1: the title interpolates an absent sizeClass');
+	assert.match(md, /\*\*Size class:\*\* undefined/,    'DEFECT 2: and so does the size-class line — "undefined" appears TWICE');
+	assert.match(md, /## Scope\n\n\n$/,                  'DEFECT 3a: an EMPTY Scope heading, because body.focus is absent');
+	assert.doesNotMatch(md, /feba6f0/,                   'DEFECT 3b: body.commit renders nowhere');
+	assert.doesNotMatch(md, /## Tasks validated/,        'DEFECT 3c: six passing tasks render nowhere');
+	// The content really is there in the record — it is the RENDERER that drops it.
+	assert.equal(PATHOLOGICAL_RECORD.body.commit, 'feba6f0');
+	assert.equal(PATHOLOGICAL_RECORD.body.tasks?.length, 6);
+});
+
+test('FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error', async () => {
+	await withRepo((repo) => {
+		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
+		// Seed the real pre-fix plan-driven record as the PRIOR, under this repo's ids.
+		const prior = {
+			...PLAN_DRIVEN_RECORD,
+			meta: { ...PLAN_DRIVEN_RECORD.meta, epicHash: HASH, storyId: 's1' },
+		} as BuildRecord;
+		writeFileSync(json, JSON.stringify(prior, null, 2) + '\n');
+		// A later validate write must merge onto it without throwing...
+		assert.doesNotThrow(() => persistBuildRecord(repo, planRec([{ id: 't3', passed: true }], '2026-10-10T00:00:00.000Z')));
+		const merged = readJson(json);
+		// ...preserving what the old record carried (summary + changeLog are body
+		// keys; sizeClass-style meta retention is covered by the ISSUE-013e8162 tests).
+		assert.equal(typeof merged.body['summary'], 'string', 'the pre-existing summary survives');
+		assert.ok(Array.isArray(merged.body['changeLog']), 'the pre-existing changeLog survives');
+		assert.equal((merged.body['tasks'] as { id: string }[]).length, 3, 'tasks union: 2 prior + 1 new');
 	});
 });

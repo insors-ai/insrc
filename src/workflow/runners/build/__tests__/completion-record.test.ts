@@ -19,6 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ensureBuildRecordOnCompletion } from '../completion-record.js';
+import { persistStandaloneBuildRecord } from '../standalone-record.js';
 import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { parseBuildArtifactRef } from '../../../gates.js';
 
@@ -46,7 +47,11 @@ test('create: no prior BUILD json + a changed set writes a plan-driven BUILD rec
 		assert.ok(existsSync(json), 'the BUILD json exists');
 		const rec = readJson(json);
 		assert.equal(rec.meta['workflow'], 'build');
-		assert.equal(rec.meta['standalone'], false);
+		// UPDATED by CR-2: this writer no longer asserts the route either. On a
+		// first write with no prior the key is simply ABSENT, which every reader
+		// treats as false (they all test `=== true`).
+		assert.ok(!('standalone' in rec.meta), 'the completion writer writes no standalone key');
+		assert.notEqual(rec.meta['standalone'], true, 'and this plan-driven record is certainly not standalone');
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's2');
 		assert.equal((rec.body['changeLog'] as unknown[]).length, 2);
@@ -128,4 +133,53 @@ test('parse round-trip: buildArtifactId round-trips through parseBuildArtifactRe
 	// a non-BUILD basename and a missing story component yield undefined
 	assert.equal(parseBuildArtifactRef(join(dir, `LLD-${HASH}-s2.json`)), undefined);
 	assert.equal(parseBuildArtifactRef(join(dir, 'BUILD-onlyhash.json')), undefined);
+});
+
+// ---------------------------------------------------------------------------
+// CR-2 — code-review finding on this Story (cold review of 9b14d95..e15ef63).
+//
+// t9 stopped the SHARED VALIDATE persist writing `meta.standalone` because it
+// could not know which route it served. This writer had the identical defect and
+// t9's worded scope missed it: it hard-wrote `standalone: false` too, and since
+// mergeWithPrior is new-wins on meta, completing a standalone Story FLIPPED its
+// record — relocating BUILD.md from docs/standalone/ to docs/epics/ and orphaning
+// the original, while the json ended up self-contradictory (`standalone:false`
+// with `sizeClass:'trivial'`).
+//
+// Not hypothetical: this repo carries the evidence, committed at 4d9ef09 — both
+// docs/standalone/013e816250937aa5-…/S001/BUILD.md and
+// docs/epics/013e816250937aa5-…/S001/BUILD.md exist for one Story.
+//
+// The title survived the flip because t8 keys it on sizeClass rather than on this
+// flag — the belt-and-braces split working as designed, and the reason no
+// existing assertion caught it.
+// ---------------------------------------------------------------------------
+
+test('CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record', async () => {
+	await withRepo(async (repo) => {
+		// The implement-phase write: a real trivial standalone record.
+		const first = persistStandaloneBuildRecord(repo, {
+			meta: {
+				workflow: 'build', standalone: true, sizeClass: 'trivial',
+				triageRationale: 'one-line mechanical edit',
+				epicHash: HASH, storyId: 's2', createdAt: '2026-01-01T00:00:00.000Z',
+			},
+			body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
+		});
+		assert.match(first.md, /\/docs\/standalone\//, 'precondition: the standalone record starts under docs/standalone/');
+
+		// Completion runs on EVERY build approval, including this route.
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's2' }, async () => ['a.ts']);
+		assert.ok(out !== undefined, 'the completion hook wrote a record');
+
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's2')));
+		assert.equal(rec.meta['standalone'], true, 'completion does not re-label the route');
+		assert.equal(rec.meta['sizeClass'], 'trivial', 'and the size class it was keyed on survives');
+		assert.match(out.md, /\/docs\/standalone\//, 'the record stays in docs/standalone/');
+		assert.equal(out.md, first.md, 'the SAME md file — not a second one in another folder');
+		// The orphan is what made this visible in the real repo: two BUILD.md files
+		// for one Story. Assert the epics folder was never created at all.
+		assert.ok(!existsSync(join(repo, 'docs', 'epics')),
+			'no docs/epics/ record is written for a standalone Story');
+	});
 });

@@ -38,7 +38,14 @@ export async function ensureBuildRecordOnCompletion(
 	try {
 		const now = new Date().toISOString();
 		const base: BuildRecord = {
-			meta: { workflow: 'build', standalone: false, epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now },
+			// NO `standalone` key — the same reason the shared validate persist omits it
+			// (t9). This hook runs on EVERY build approval, plan-driven and standalone
+			// alike, so it cannot know which route it is serving. Writing `false` here
+			// flipped a standalone record at completion time, relocating its BUILD.md
+			// from docs/standalone/ to docs/epics/ and orphaning the original. Omitting
+			// it lets mergeWithPrior carry the prior value forward; on a first write the
+			// absent key reads as false everywhere (every reader tests `=== true`).
+			meta: { workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now },
 			body: { tasks: [] },
 		};
 		// EXCLUDE the record's own json + md, for the same reason the validate writer

@@ -84,20 +84,35 @@ async function collectDiff(
  * consulted at all, so the result cannot depend on which range was supplied.
  */
 export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly string[]> {
-	const paths = new Set<string>();
-	for (const staged of [false, true]) {
-		await collectDiff(repoPath, { staged }, paths);
-	}
-	// Committed-range fallback: only when the working tree yielded nothing.
-	if (paths.size === 0 && opts?.base !== undefined && opts.base.length > 0) {
-		await collectDiff(repoPath, { from: opts.base }, paths);
-	}
-	// Exclusion is applied to the UNION, deliberately: filtering per-derivation
-	// would make it possible to half-fix the defect (drop the record's own paths
-	// from the working-tree set but not the range set, or vice versa), which is the
-	// exact shape the Story is closing. One filter, both derivations.
+	// ONE filter, applied to BOTH derivations through this single closure. The
+	// exclusion must not be applied per-derivation by duplicated code: dropping the
+	// record's own paths from the working-tree set but not the range set (or vice
+	// versa) is the exact half-fix shape this Story is closing.
 	const drop = new Set((opts?.exclude ?? []).map(e => toRepoRelative(repoPath, e)));
-	return [...paths].filter(f => !drop.has(f));
+	const keep = (found: ReadonlySet<string>): string[] => [...found].filter(f => !drop.has(f));
+
+	const working = new Set<string>();
+	for (const staged of [false, true]) {
+		await collectDiff(repoPath, { staged }, working);
+	}
+	// Exclusion runs BEFORE the emptiness gate, and that order is the whole point.
+	// The record's own json + md are the paths THIS collector's caller is about to
+	// write, so they are not evidence of a dirty tree — at completion time they are
+	// typically the ONLY dirty paths. Testing size first let them stand in for real
+	// work: the range was skipped as "tree is dirty", the set then filtered to
+	// nothing, and the record silently kept the previous write's file list.
+	const kept = keep(working);
+	if (kept.length > 0) return kept;
+
+	// Committed-range fallback: only when the working tree yielded nothing of the
+	// Story's own. A tree carrying real uncommitted work never reaches here, so the
+	// result still cannot depend on which range was supplied.
+	if (opts?.base !== undefined && opts.base.length > 0) {
+		const ranged = new Set<string>();
+		await collectDiff(repoPath, { from: opts.base }, ranged);
+		return keep(ranged);
+	}
+	return kept;
 }
 
 /** Normalise an exclusion entry to the repo-relative form `git_diff` reports.

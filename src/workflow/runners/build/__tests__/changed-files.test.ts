@@ -320,6 +320,67 @@ test('t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving 
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+// ---------------------------------------------------------------------------
+// CR-1 — code-review finding on this Story (cold review of 9b14d95..e15ef63).
+//
+// The emptiness gate that decides whether to consult the committed range ran
+// BEFORE the exclusion. So a tree whose ONLY dirty paths are the record's own two
+// files counted as "dirty" — the range was never consulted — and the set then
+// filtered down to nothing. Neither derivation produced anything, and because the
+// collector omits an empty changeLog, mergeWithPrior kept the PREVIOUS write's
+// file list: the record reported a stale change set as this Story's work.
+//
+// This is the Story's own central promise failing in its MOST COMMON case, and
+// the Story's own code says so: completion-record.ts notes that at completion
+// time those two paths are "typically the only dirty paths". Every other t4 test
+// seeds ADDITIONAL dirty files, which is why none of them caught it.
+// ---------------------------------------------------------------------------
+
+test('CR-1: a tree dirty with ONLY the record\'s own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		// mkRangeRepo already committed the Story's work (shipped.ts) on top of
+		// `base`, so the range base..HEAD is non-empty and the tree is clean.
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		for (const f of own) {
+			mkdirSync(join(repo, dirname(f)), { recursive: true });
+			writeFileSync(join(repo, f), 'placeholder\n');
+		}
+		execFileSync('git', ['add', '-f', ...own], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'the ledger record', '--', ...own], { cwd: repo, stdio: 'ignore' });
+		// Now the build REWRITES its own record — tracked, modified, and the only
+		// dirty paths in the tree. Exactly the observed state.
+		for (const f of own) writeFileSync(join(repo, f), 'rewritten by this build\n');
+
+		const raw = await changedFiles(repo);
+		assert.deepEqual([...raw].sort(), [...own].sort(),
+			'precondition: the record\'s own two paths are the ONLY dirty paths git reports');
+
+		const derived = await changedFiles(repo, { base, exclude: own });
+		assert.ok(derived.includes('shipped.ts'),
+			`the Story's committed work must still be derived, got ${JSON.stringify(derived)}`);
+		for (const f of own) assert.ok(!derived.includes(f), `${f} is still excluded`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('CR-1: a tree dirty with REAL work plus the record\'s own paths still does NOT consult the base — the fix must not widen the gate', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		// One real dirty file alongside the record's own: the working tree genuinely
+		// has the Story's work in it, so the range must stay unconsulted. This pins
+		// the OTHER side of the gate, so a fix cannot simply always union the range.
+		writeFileSync(join(repo, 'wip.ts'), 'export const w = 1;\n');
+		const ownJson = '.insrc/artifacts/BUILD-abc-s1.json';
+		mkdirSync(join(repo, dirname(ownJson)), { recursive: true });
+		writeFileSync(join(repo, ownJson), 'x\n');
+		execFileSync('git', ['add', '-A'], { cwd: repo });
+
+		const derived = await changedFiles(repo, { base, exclude: [ownJson] });
+		assert.deepEqual(derived, ['wip.ts'],
+			'only the working tree\'s real file — `shipped.ts` from base..HEAD must NOT appear');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones', async () => {
 	const { repo } = mkRangeRepo();
 	try {

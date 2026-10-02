@@ -166,7 +166,18 @@ async function runValidateSession(
 				// an empty `## Summary` section, which is worse than no section.
 				const narrative = summary?.trim();
 				const rec = {
-					meta: { workflow: 'build' as const, standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
+					// NO `standalone` key. This persist is SHARED by the plan-driven and
+					// standalone branches, so it cannot know which route it is serving —
+					// writing `false` unconditionally re-labelled every standalone record
+					// that reached validation. Omitting it lets mergeWithPrior carry the
+					// prior value forward; on a first write the absent key reads as false
+					// everywhere (every reader tests `=== true`).
+					//
+					// Belt-and-braces BY DESIGN: t8 already stopped the renderer reading
+					// this flag, so the two halves fail independently. Leaving a shared
+					// path writing a value it cannot determine is how this defect would
+					// return wearing different clothes.
+					meta: { workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now },
 					body: {
 						tasks: [{ id: taskId, passed }],
 						...(narrative !== undefined && narrative.length > 0 ? { summary: narrative } : {}),

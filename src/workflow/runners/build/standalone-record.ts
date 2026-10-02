@@ -47,7 +47,17 @@ export interface BuildRecordTask {
 export interface BuildRecord {
 	readonly meta: {
 		readonly workflow:   'build';
-		readonly standalone: boolean;
+		/**
+		 * `true` for a standalone (bugfix / Small / Trivial) record, absent or false
+		 * for a plan-driven one.
+		 *
+		 * OPTIONAL since t9: the shared validate persist serves BOTH routes and
+		 * cannot know which one it is serving, so it now omits the key rather than
+		 * asserting `false`. Omitting lets mergeWithPrior carry the prior value
+		 * forward; on a first write with no prior the key is simply absent, which
+		 * every reader already treats as false (they all test `=== true`).
+		 */
+		readonly standalone?: boolean | undefined;
 		readonly sizeClass?: string | undefined;
 		readonly triageRationale?: string | undefined;
 		readonly epicHash:   string;
@@ -228,7 +238,7 @@ function headShortSha(repoPath: string): string | undefined {
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
 function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
-	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone, merged.meta.createdAt);
+	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone === true, merged.meta.createdAt);
 	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
 }
 

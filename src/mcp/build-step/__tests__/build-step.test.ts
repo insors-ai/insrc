@@ -295,7 +295,7 @@ test('validate: failed verdict → passed:false; unparseable output → error', 
 // validate — persists the plan-driven BUILD ledger record (S001)
 // ---------------------------------------------------------------------------
 
-test('validate: persists a plan-driven BUILD ledger record (standalone:false) recording the task + passed', async () => {
+test('validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed', async () => {
 	const repo = mkRepo();
 	try {
 		seedDef(repo); seedLld(repo); seedPlan(repo, true);
@@ -309,7 +309,11 @@ test('validate: persists a plan-driven BUILD ledger record (standalone:false) re
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		assert.ok(existsSync(json), 'a BUILD-<epicHash>-<storyId>.json record was persisted');
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
-		assert.equal(rec.meta['standalone'], false);
+		// UPDATED at t9: the shared persist no longer asserts this flag. On a
+		// plan-driven first write the key is simply ABSENT, which every reader treats
+		// as false (they all test `=== true`).
+		assert.ok(!('standalone' in rec.meta), 'the shared persist writes no standalone key');
+		assert.notEqual(rec.meta['standalone'], true, 'and it is certainly not standalone');
 		assert.equal(rec.meta['workflow'], 'build');
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's1');
@@ -345,7 +349,7 @@ test('validate: a BUILD-record persist failure is swallowed — the verdict is s
 // a BUILD record for the completion gate — WITHOUT a plan.
 // ---------------------------------------------------------------------------
 
-test('validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone:false, story task)', async () => {
+test('validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)', async () => {
 	const repo = mkRepo();
 	try {
 		// DEF (folder anchor) + LLD (the standalone Small spec) — but NO plan.
@@ -365,9 +369,13 @@ test('validate[standalone]: no plan → resolves identity from context, persists
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		assert.ok(existsSync(json), 'a standalone build persisted a BUILD-<epicHash>-<storyId>.json record');
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
-		// Byte-identical shape to the plan-driven record (k4/k5): the verdict keys
-		// the story identity as its single task, standalone:false either way.
-		assert.equal(rec.meta['standalone'], false);
+		// UPDATED at t9 — the assertion t1's note predicted would break, and the
+		// whole point of this task. The shared persist used to stamp
+		// `standalone: false` here, re-labelling a standalone record. It now writes no
+		// such key. (This fixture seeds no PRIOR standalone record, so the merge has
+		// nothing to carry forward; the implement-then-validate case where a prior DOES
+		// exist is the inverted characterisation B below.)
+		assert.ok(!('standalone' in rec.meta), 'the shared persist no longer re-labels the route');
 		assert.equal(rec.meta['workflow'], 'build');
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's1');
@@ -518,7 +526,7 @@ test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(u
 // here means the defect moved, which is itself worth knowing.
 //
 //   TEST A  '## Scope' lost on the flipped record        INVERTED at t8 ✓
-//   TEST B  meta.standalone forced to false by validate  INVERTED BY t9
+//   TEST B  meta.standalone forced to false by validate  INVERTED at t9 ✓
 //           (its B2 half — sizeClass erased by the merge — was already
 //            INVERTED by ISSUE-013e816250937aa5, which had to land first:
 //            t9's specified fix alone leaves standalone *undefined*, not true,
@@ -624,16 +632,19 @@ test('CHARACTERISATION A (INVERTED at t8): a standalone build\'s persisted md no
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('CHARACTERISATION B (inverts at t9): the shared validate persist forces meta.standalone to false despite implement writing true', async () => {
+test('CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate', async () => {
 	if (!gitAvailable()) return;
 	const repo = mkCleanGitRepo();
 	try {
 		seedDef(repo);
 		const { rec } = await runImplementThenValidate(repo);
 
-		// implement wrote true (asserted inside the helper); validate overwrote it.
-		assert.equal(rec.meta['standalone'], false,
-			'TODAY: runValidateSession writes standalone:false unconditionally on a path shared with the plan-driven branch, so a standalone record is re-labelled. t9 stops writing the flag at all and INVERTS this.');
+		// INVERTED AT t9 — rewritten to assert the correct behaviour, not deleted.
+		// implement wrote `true` (asserted inside the helper) and validate no longer
+		// overwrites it: the shared persist omits the key, so mergeWithPrior carries
+		// the prior value forward and the record keeps its own identity.
+		assert.equal(rec.meta['standalone'], true,
+			'a standalone record is no longer re-labelled by the shared validate persist');
 		// B2 — INVERTED by ISSUE-013e816250937aa5, which this assertion originally
 		// characterised as a defect. It used to read `=== undefined`: mergeWithPrior
 		// spread only the NEW meta, so sizeClass (which the validate write never

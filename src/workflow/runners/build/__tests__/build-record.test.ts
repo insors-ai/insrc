@@ -252,6 +252,36 @@ test('the new write still WINS on a meta field it DOES supply (preservation must
 	});
 });
 
+// S001/t9 — `meta.standalone` became OPTIONAL so the SHARED validate persist can
+// stop asserting a route it cannot determine. That makes the general merge rule
+// above load-bearing in a new way: the carry-forward is now the ONLY thing that
+// keeps a standalone record standalone through validation, and the md FOLDER is
+// keyed on the merged value. Both halves are pinned here.
+
+test('t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)', async () => {
+	await withRepo((repo) => {
+		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		// The post-t9 validate write, verbatim in shape: no `standalone` key at all.
+		const { meta: _drop, ...rest } = planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z');
+		const omitting: BuildRecord = {
+			...rest,
+			meta: {
+				workflow: 'build', epicHash: HASH, storyId: 's1',
+				createdAt: '2026-02-02T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z',
+			},
+		};
+		const paths = persistBuildRecord(repo, omitting);
+
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
+		assert.equal(rec.meta['standalone'], true,
+			'an OMITTED standalone leaves the prior value standing (counterpart to the supplied-wins test above)');
+		// The folder follows the MERGED value, not the write's. Pre-t9 the write
+		// supplied `false` and this record MOVED to docs/epics/ mid-Story.
+		assert.match(paths.md, /\/docs\/standalone\//,
+			'the md stays under docs/standalone/ — the record does not change folders at validation');
+	});
+});
+
 test('the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write', async () => {
 	await withRepo((repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));

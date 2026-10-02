@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": false,
+    "epicHash": "013e816250937aa5",
+    "storyId": "S001",
+    "createdAt": "2026-10-02T15:35:07.537Z",
+    "updatedAt": "2026-10-02T15:44:25.911Z",
+    "approvedAt": "2026-10-02T15:42:55.635Z",
+    "sizeClass": "trivial",
+    "triageRationale": "bugfix / small; standalone no-plan route"
+  },
+  "body": {
+    "focus": "Make the BUILD-record upsert stop deleting meta the record already carried. In src/workflow/runners/build/standalone-record.ts, mergeWithPrior builds merged meta as `{ ...rec.meta, createdAt: prior.meta.createdAt, + conditional approvedAt/rejectedAt/rejectReason/reviewOverride }` — prior.meta is NEVER spread, so the retention rule is 'everything the new write omits is deleted' and only those five allowlisted fields survive. The body merge in the SAME function already does it correctly (`{ ...prior.body, ...rec.body, ...tasks }`). Bring meta to the same rule: a field the new write supplies takes the new value; a field it omits keeps the value it had. PRESERVE EXACTLY the existing completion/rejection-stamp precedence where the PRIOR value deliberately wins (approvedAt, rejectedAt, rejectReason, reviewOverride) so a finished Story can never be un-finished — that is prior-wins, which is the opposite of new-wins and must not be flattened into the general rule. createdAt also stays prior-wins (the md folder anchor depends on it). Add NO new field and change no field's type. Observed defect to close: after a standalone implement write persists meta {standalone:true, sizeClass:'trivial', triageRationale:'...'}, the validate write (validate.ts:163, which sends only workflow/standalone/epicHash/storyId/createdAt/updatedAt) leaves sizeClass DROPPED and triageRationale DROPPED. Extend the existing suite src/workflow/runners/build/__tests__/build-record.test.ts, whose upsert tests at :74 and :97 already assert preservation in the other direction. Tests must cover: a prior-only meta field survives a new write that omits it; the new write still WINS on a field it does supply; the four completion/rejection stamps still prior-win; createdAt still prior-wins; and a record whose new write supplies every field it already carried renders BYTE-IDENTICALLY. VERIFY by running the FULL suite — that is the evidence for the claim that nothing depends on clearing-a-meta-field-by-omission, since any such test would go red. NOT in scope: changing which fields validate sends, the body merge, the stamp precedence itself, repairing already-written records, or the two downstream corrections in PLAN-93081bff91ae5108-S001 that this unblocks.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ]
+  }
+}

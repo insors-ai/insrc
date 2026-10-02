@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1790955771471-8153h1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T15:42:51.473Z",
+    "model": "client",
+    "elapsedMs": 3,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "013e816250937aa5",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "013e816250937aa5",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:617",
+            "message": "The change touches a file OUTSIDE the surface the ISSUE named. fixIntent pointed at build-record.test.ts as the suite to extend and listed 'the two downstream corrections in the other plan' as out of scope, but build-step.test.ts was also edited to invert CHARACTERISATION B2. The justification is that the fix NECESSARILY broke it: B2 asserted sizeClass === undefined after validate, which was precisely the defect, so it went red on the full sweep. Leaving a red test was not an option and inverting it is not one of the deferred downstream corrections — those are t8's renderer convergence and t9's flag removal, both untouched. Recorded because a reader comparing the ISSUE's stated surface against the diff will find a third file and should see why.",
+            "expectationRef": "ISSUE-013e816250937aa5 fixIntent — extend build-record.test.ts; downstream corrections out of scope",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:251",
+            "message": "Every stated invariant holds and is tested, which is worth recording positively rather than assumed: no new field and no type change (the merged object is still typed BuildRecord['meta'] and both spreads are of that same type); the completion/rejection precedence is untouched and still prior-wins; byte-identity is asserted for a re-write that supplies everything; and the documented trade-off (omission no longer clears) is pinned as an explicit assertion rather than left as prose. The three NOT-in-scope items are all respected — validate still sends the same six fields, the body merge is unchanged, and no already-written record was repaired.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:247",
+            "message": "The new comment block is six lines for a one-line change, which is denser than most of this file. It is justified here — the function now contains two OPPOSITE merge rules within fifteen lines, and the second comment explicitly warns against flattening the prior-wins exceptions into the general rule, which is the mistake that would silently un-complete a Story. But it is worth noting that the explanation of the historical defect ('which silently erased sizeClass + triageRationale') will age: once the ISSUE is closed, that sentence documents a bug nobody can observe. The invariant half of the comment is the durable part.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/__tests__/build-record.test.ts:170",
+            "message": "One behaviour of the new spread is untested: a new write that supplies a meta key with an EXPLICIT undefined value. Under `{ ...prior.meta, ...rec.meta }` an explicit undefined in rec.meta overrides the prior value rather than preserving it, so such a write would clear the field — the one way clearing still works, and it is neither tested nor documented. No current writer does this (all three construct literal objects and use conditional spreads for optional fields, so an omitted field is genuinely absent rather than present-and-undefined), which is why this is an observation and not a defect. A future caller building meta by object mutation could hit it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:251",
+            "message": "COVERAGE NOTE recorded to prevent a false reading of this review's own grounding: the graph reports testsReaching:0 for all three changed files. That is the known hollow-graph artifact for files changed in the commit under review, NOT absent tests. Coverage was judged by RUNNING the suites — build-record.test.ts is 13/13 with 5 tests added, and the fix was mutation-proved from BOTH sides: reverting the prior.meta spread turns the two retention tests red; over-correcting to prior-ALWAYS-wins turns the 'new write WINS' test red; and deleting the prior-wins exception lines turns the new exception test red PLUS two pre-existing tests (the task-union/createdAt test and the S002 folder-anchor regression), which independently confirms the exceptions were already load-bearing. Full sweep: 4122 tests, 3993 pass, 125 skipped, 1 fail — sqlite-driver.test.ts, the known pre-existing local native-ABI failure.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:253",
+            "message": "The merge now expresses two contradictory rules in one object literal, and their relationship is positional: the general rule works because prior.meta is spread FIRST, and the exceptions work because they come LAST. Both are correct and both are commented, but the correctness is carried entirely by line order inside a single literal — reordering the lines while 'tidying' would silently invert one of the two rules. The mutation run demonstrates the hazard concretely: moving the prior spread after rec.meta flips the general rule, and deleting the trailing exception lines flips the other. Extracting the exceptions into a named helper would make the precedence structural rather than positional, at the cost of indirection in a function that is otherwise pleasantly flat.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:259",
+            "message": "`createdAt: prior.meta.createdAt` is now redundant with the new prior.meta spread in the common case — when prior carries a createdAt, the spread already provides it and this line re-states the same value. It is NOT dead, because it still overrides a createdAt supplied by the new write, which is the point; but a reader may now mistake it for leftover duplication. The four stamp spreads below are genuinely load-bearing in every case since they override new values conditionally. Worth a word in the comment distinguishing 'overrides the new write' from 'supplies the value'.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 7
+    }
+  }
+}

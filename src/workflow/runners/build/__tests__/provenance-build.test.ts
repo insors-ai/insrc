@@ -7,7 +7,7 @@
  * S002 (provenance/feedback) — BUILD ledger change-log + feedback.
  *
  * Covers: the additive `body.changeLog`/`body.feedback` fields type-check +
- * JSON round-trip (t1); `renderPlanBuildRecordMd` grows a `## Changes` and a
+ * JSON round-trip (t1); `renderBuildRecordMd` grows a `## Changes` and a
  * `## Feedback` section when present and stays byte-identical when both are
  * absent/empty/legacy (t4); an upsert PRESERVES a prior change-log + an
  * out-of-band appended feedback record across a re-validate that omits them
@@ -25,7 +25,7 @@ import { join } from 'node:path';
 
 import {
 	persistBuildRecord,
-	renderPlanBuildRecordMd,
+	renderBuildRecordMd,
 	type BuildRecord,
 } from '../standalone-record.js';
 import { appendFeedback } from '../../../artifacts/provenance/writer.js';
@@ -73,7 +73,7 @@ const baseRec: BuildRecord = {
 	body: { tasks: [{ id: 't1', passed: true }] },
 };
 
-test('t4: renderPlanBuildRecordMd emits a ## Changes and a ## Feedback section when present', () => {
+test('t4: renderBuildRecordMd emits a ## Changes and a ## Feedback section when present', () => {
 	const rec: BuildRecord = {
 		...baseRec,
 		body: {
@@ -82,7 +82,7 @@ test('t4: renderPlanBuildRecordMd emits a ## Changes and a ## Feedback section w
 			feedback: [{ id: 'f1', author: 'rev', timestamp: '2026-09-28T02:00:00.000Z', target: { file: 'src/a.ts' }, comment: 'tighten error path' }],
 		},
 	};
-	const md = renderPlanBuildRecordMd(rec);
+	const md = renderBuildRecordMd(rec);
 	assert.match(md, /## Changes/);
 	assert.match(md, /`src\/a\.ts`/);
 	assert.match(md, /## Feedback/);
@@ -90,9 +90,9 @@ test('t4: renderPlanBuildRecordMd emits a ## Changes and a ## Feedback section w
 });
 
 test('t4: absent, undefined-valued, and empty-array changeLog/feedback all render byte-identically (omit-slot)', () => {
-	const absent   = renderPlanBuildRecordMd(baseRec);
-	const undef    = renderPlanBuildRecordMd({ ...baseRec, body: { ...baseRec.body, changeLog: undefined, feedback: undefined } });
-	const empty    = renderPlanBuildRecordMd({ ...baseRec, body: { ...baseRec.body, changeLog: [], feedback: [] } });
+	const absent   = renderBuildRecordMd(baseRec);
+	const undef    = renderBuildRecordMd({ ...baseRec, body: { ...baseRec.body, changeLog: undefined, feedback: undefined } });
+	const empty    = renderBuildRecordMd({ ...baseRec, body: { ...baseRec.body, changeLog: [], feedback: [] } });
 	assert.equal(undef, absent);
 	assert.equal(empty, absent);
 	assert.doesNotMatch(absent, /## Changes/);
@@ -102,7 +102,7 @@ test('t4: absent, undefined-valued, and empty-array changeLog/feedback all rende
 test('t4/t6c: a legacy record (body without the S002 keys) re-renders byte-identically to the base render', () => {
 	// A record parsed from legacy JSON has no changeLog/feedback keys at all.
 	const legacy = JSON.parse(JSON.stringify(baseRec)) as BuildRecord;
-	assert.equal(renderPlanBuildRecordMd(legacy), renderPlanBuildRecordMd(baseRec));
+	assert.equal(renderBuildRecordMd(legacy), renderBuildRecordMd(baseRec));
 });
 
 // ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ test('t6b: appendFeedback on a written BUILD json with a source-file target → 
 		const rec = readJson(json);
 		assert.equal(rec.body.feedback?.length, 1);
 		assert.equal(rec.body.feedback?.[0]?.target.file, 'src/a.ts');
-		const md = renderPlanBuildRecordMd(rec);
+		const md = renderBuildRecordMd(rec);
 		assert.match(md, /## Feedback/);
 		assert.match(md, /add a null guard/);
 		assert.match(md, /`src\/a\.ts:12-14`/);

@@ -517,7 +517,7 @@ test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(u
 // an assertion that the author got it right. They PASS as written — a failure
 // here means the defect moved, which is itself worth knowing.
 //
-//   TEST A  '## Scope' lost on the flipped record        INVERTED BY t8
+//   TEST A  '## Scope' lost on the flipped record        INVERTED at t8 ✓
 //   TEST B  meta.standalone forced to false by validate  INVERTED BY t9
 //           (its B2 half — sizeClass erased by the merge — was already
 //            INVERTED by ISSUE-013e816250937aa5, which had to land first:
@@ -605,22 +605,22 @@ async function runImplementThenValidate(repo: string): Promise<{ rec: { meta: Re
 	}
 }
 
-test('CHARACTERISATION A (inverts at t8): a standalone build\'s persisted md contains NO \'## Scope\' while its json still carries body.focus', async () => {
+test('CHARACTERISATION A (INVERTED at t8): a standalone build\'s persisted md now RENDERS \'## Scope\' for its body.focus', async () => {
 	if (!gitAvailable()) return;   // gated: git-dependent, skips cleanly
 	const repo = mkCleanGitRepo();
 	try {
 		seedDef(repo);
 		const { rec, md } = await runImplementThenValidate(repo);
 
-		// The orphaned-content defect: body.focus survives in the json...
+		// INVERTED AT t8 — rewritten to assert the correct behaviour, not deleted.
+		// body.focus still survives in the json, as it always did...
 		assert.equal(rec.body['focus'], 'Add a --json flag to the status subcommand.',
-			'body.focus is still persisted after validate');
-		// ...but the markdown renders no Scope section for it, because the record
-		// flipped to the plan-driven renderer, which never reads focus.
-		assert.doesNotMatch(md, /## Scope/,
-			'TODAY: the rendered record drops `## Scope`, so body.focus is visible nowhere. t8 converges the renderers and INVERTS this.');
-		assert.doesNotMatch(md, /## Triage rationale/,
-			'TODAY: the triage rationale is dropped on the same flip. t8 INVERTS this.');
+			'body.focus is persisted after validate');
+		// ...and it is now VISIBLE. The converged renderer emits `## Scope` whenever
+		// body.focus is present, so the orphaned-content defect is closed even though
+		// the validate write still flips meta.standalone (t9 closes that half).
+		assert.match(md, /## Scope\n\nAdd a --json flag to the status subcommand\./,
+			'the record renders its own scope — the orphan is gone');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

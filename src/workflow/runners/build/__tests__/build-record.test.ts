@@ -26,7 +26,7 @@ import { join } from 'node:path';
 import {
 	persistBuildRecord,
 	persistStandaloneBuildRecord,
-	renderPlanBuildRecordMd,
+	renderBuildRecordMd,
 	renderStandaloneBuildRecordMd,
 	type BuildRecord,
 	type StandaloneBuildRecord,
@@ -333,23 +333,25 @@ test('BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record rende
 });
 
 test('BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown', () => {
-	const md = renderPlanBuildRecordMd(PLAN_DRIVEN_RECORD);
+	const md = renderBuildRecordMd(PLAN_DRIVEN_RECORD);
 	assert.equal(md, PLAN_DRIVEN_GOLDEN,
 		'MUST NOT change at t8 — exercises title, created/updated, Summary, Tasks validated and Changes in one record');
 });
 
-test('BYTE-IDENTITY golden 3 (PATHOLOGICAL, EXPECTED to change at t8): the standalone renderer emits two "undefined"s and drops the record\'s real content', () => {
-	const md = renderStandaloneBuildRecordMd(PATHOLOGICAL_RECORD as unknown as StandaloneBuildRecord);
-	assert.equal(md, PATHOLOGICAL_GOLDEN, 'the recorded DEFECT, frozen so t8 changing it reads as a reviewed improvement');
+test('BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved', () => {
+	const md = renderBuildRecordMd(PATHOLOGICAL_RECORD);
+	assert.equal(md, PATHOLOGICAL_GOLDEN, 'the reviewed post-repair golden');
 
-	// Spell out WHAT is defective, so the golden is not merely an opaque blob and
-	// so t8 has precise targets rather than "make the bytes different".
-	assert.match(md, /# Build \(standalone undefined\)/, 'DEFECT 1: the title interpolates an absent sizeClass');
-	assert.match(md, /\*\*Size class:\*\* undefined/,    'DEFECT 2: and so does the size-class line — "undefined" appears TWICE');
-	assert.match(md, /## Scope\n\n\n$/,                  'DEFECT 3a: an EMPTY Scope heading, because body.focus is absent');
-	assert.doesNotMatch(md, /feba6f0/,                   'DEFECT 3b: body.commit renders nowhere');
-	assert.doesNotMatch(md, /## Tasks validated/,        'DEFECT 3c: six passing tasks render nowhere');
-	// The content really is there in the record — it is the RENDERER that drops it.
+	// INVERTED from t2, defect by defect, so the repair is itemised rather than
+	// resting on one opaque blob comparison.
+	assert.doesNotMatch(md, /undefined/,                 'DEFECTS 1+2: the word appears NOWHERE — neither title nor size-class line');
+	assert.match(md, /^# Build \(standalone\) — Story S001$/m, 'the absent-sizeClass case is DEFINED: a well-formed heading');
+	assert.doesNotMatch(md, /\*\*Size class:\*\*/,        'the size-class line is OMITTED rather than printed empty');
+	assert.match(md, /\*\*Commit:\*\* feba6f0/,            'DEFECT 3b REPAIRED: body.commit now renders');
+	assert.match(md, /## Tasks validated/,               'DEFECT 3c REPAIRED: the six passing tasks now render');
+	assert.equal((md.match(/- ✓ `t\d`/g) ?? []).length, 6, 'all six, not a subset');
+	assert.doesNotMatch(md, /## Scope/,                  'DEFECT 3a REPAIRED: no vacuous Scope heading — body.focus is genuinely absent');
+	// Still true of the record itself: the content was always there.
 	assert.equal(PATHOLOGICAL_RECORD.body.commit, 'feba6f0');
 	assert.equal(PATHOLOGICAL_RECORD.body.tasks?.length, 6);
 });
@@ -450,7 +452,7 @@ test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later 
 });
 
 test('t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`', () => {
-	const md = renderPlanBuildRecordMd({
+	const md = renderBuildRecordMd({
 		meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 		body: { tasks: [{ id: 't1', passed: true }], commit: 'abc1234', summary: 'Wired the collector to the committed range.' },
 	});
@@ -459,7 +461,7 @@ test('t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and bod
 });
 
 test('t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)', () => {
-	const md = renderPlanBuildRecordMd({
+	const md = renderBuildRecordMd({
 		meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 		body: { tasks: [{ id: 't1', passed: true }] },
 	});
@@ -479,4 +481,123 @@ test('t7: the three hand-filled records prove the gap was real — and are now w
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], head, 'and a build now records it automatically');
 	});
+});
+
+// ---------------------------------------------------------------------------
+// t8 (ISSUE-93081bff91ae5108 / S001) — the CONVERGED renderer.
+//
+// Two parts always render (title, meta line) and SEVEN are omit-slots. The count
+// is asserted here rather than inherited: the LLD's test strategy says "eight".
+// ---------------------------------------------------------------------------
+
+const FULL: BuildRecord = {
+	meta: {
+		workflow: 'build', standalone: true, sizeClass: 'small', triageRationale: 'why it was small',
+		epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z',
+	},
+	body: {
+		focus: 'The scope statement.', producesLld: false, commit: 'abc1234',
+		summary: 'What the build did.', tasks: [{ id: 't1', passed: true }],
+		changeLog: [{ target: { file: 'src/a.ts' }, author: 'insrc-build', timestamp: '2026-02-02T00:00:00.000Z' }],
+		feedback: [{ id: 'f1', author: 'reviewer', timestamp: '2026-02-02T00:00:00.000Z', target: { file: 'src/a.ts' }, comment: 'nit' }],
+	},
+};
+
+const MINIMAL: BuildRecord = {
+	meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+	body: {},
+};
+
+test('t8: the TWO unconditional parts always render, even on a record carrying nothing else', () => {
+	const md = renderBuildRecordMd(MINIMAL);
+	assert.match(md, /^# Build \(plan-driven\) — Story s1$/m, 'the title always renders');
+	assert.match(md, /\*\*Standalone:\*\* no  ·  \*\*Created:\*\* 2026-01-01T00:00:00\.000Z/, 'and the meta line');
+});
+
+test('t8: each of the SEVEN omit-slots renders when populated — one assertion per section', () => {
+	const md = renderBuildRecordMd(FULL);
+	const checks: [string, RegExp][] = [
+		['Commit',           /\*\*Commit:\*\* abc1234/],
+		['Scope',            /## Scope\n\nThe scope statement\./],
+		['Triage rationale', /## Triage rationale\n\nwhy it was small/],
+		['Summary',          /## Summary\n\nWhat the build did\./],
+		['Tasks validated',  /## Tasks validated\n\n- ✓ `t1`/],
+		['Changes',          /## Changes\n\n- `src\/a\.ts`/],
+		['Feedback',         /## Feedback/],
+	];
+	assert.equal(checks.length, 7, 'SEVEN omit-slots — counted, not the LLD\'s unverified "eight"');
+	for (const [name, re] of checks) assert.match(md, re, `${name} must render when populated`);
+});
+
+test('t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section', () => {
+	const md = renderBuildRecordMd(MINIMAL);
+	for (const heading of ['**Commit:**', '## Scope', '## Triage rationale', '## Summary', '## Tasks validated', '## Changes', '## Feedback']) {
+		assert.ok(!md.includes(heading), `${heading} must be absent on a record with no such content`);
+	}
+});
+
+test('t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title', () => {
+	// standalone:false (as the validate write left it) but sizeClass set: the exact
+	// state the flip produced. sizeClass is immune to that write, so it decides.
+	const flipped: BuildRecord = {
+		meta: { workflow: 'build', standalone: false, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { focus: 'Still a standalone story.', producesLld: false },
+	};
+	const md = renderBuildRecordMd(flipped);
+	assert.match(md, /^# Build \(standalone trivial\) — Story s1$/m,
+		'the sizeClass decides the title even when the flag says otherwise');
+	assert.match(md, /## Scope\n\nStill a standalone story\./,
+		'and its focus renders — the content the flip used to orphan');
+});
+
+test('t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route\'s content is lost', () => {
+	const md = renderBuildRecordMd({
+		meta: { workflow: 'build', standalone: true, sizeClass: 'small', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { focus: 'The scope.', tasks: [{ id: 't1', passed: true }] },
+	});
+	assert.match(md, /## Scope/);
+	assert.match(md, /## Tasks validated/);
+});
+
+test('t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7', () => {
+	const md = renderBuildRecordMd({
+		meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { focus: 'F', producesLld: false, commit: 'abc1234', summary: 'A standalone narrative.' },
+	});
+	assert.match(md, /\*\*Commit:\*\* abc1234/, 'commit renders on the standalone route (it did not before t8)');
+	assert.match(md, /## Summary\n\nA standalone narrative\./, 'and so does summary');
+});
+
+test('t8: an empty or absent changeLog still renders NO `## Changes` section', () => {
+	for (const changeLog of [undefined, []] as const) {
+		const md = renderBuildRecordMd({ ...MINIMAL, body: { ...MINIMAL.body, ...(changeLog !== undefined ? { changeLog } : {}) } });
+		assert.ok(!md.includes('## Changes'), `changeLog=${JSON.stringify(changeLog)} must render no section`);
+	}
+});
+
+test('t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation', () => {
+	const rec: StandaloneBuildRecord = {
+		meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
+	};
+	assert.equal(renderStandaloneBuildRecordMd(rec), renderBuildRecordMd(rec as unknown as BuildRecord),
+		'the shim returns exactly what the converged renderer returns');
+	// And it still produces the frozen expectation, so the shim is not a new path.
+	assert.equal(renderStandaloneBuildRecordMd(rec), THIN_WRAPPER_GOLDEN);
+});
+
+test('t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest "Standalone:" bit', () => {
+	const base = {
+		meta: { workflow: 'build' as const, sizeClass: 'small', epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
+		body: { focus: 'The scope.', tasks: [{ id: 't1', passed: true }] },
+	};
+	const asTrue  = renderBuildRecordMd({ ...base, meta: { ...base.meta, standalone: true } });
+	const asFalse = renderBuildRecordMd({ ...base, meta: { ...base.meta, standalone: false } });
+	// Both render the SAME sections — the flag no longer routes anything.
+	for (const heading of ['## Scope', '## Tasks validated']) {
+		assert.ok(asTrue.includes(heading) && asFalse.includes(heading), `${heading} renders either way`);
+	}
+	// The ONLY difference is the field that honestly reports the flag.
+	assert.equal(asTrue.replace('**Standalone:** yes', '**Standalone:** no'), asFalse,
+		'flipping the flag changes exactly one substring and nothing else');
 });

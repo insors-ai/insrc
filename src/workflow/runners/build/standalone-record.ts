@@ -111,65 +111,79 @@ export function standaloneEpicHashFromFocus(focus: string): string {
 	return createHash('sha256').update(focus).digest('hex').slice(0, 16);
 }
 
-/** Render the ORIGINAL standalone/Trivial markdown — kept byte-identical so the
- *  Trivial ledger entry does not churn after the S001 generalization. */
-export function renderStandaloneBuildRecordMd(rec: StandaloneBuildRecord): string {
-	return [
-		`# Build (standalone ${rec.meta.sizeClass}) — Story ${rec.meta.storyId}`,
-		'',
-		`**Size class:** ${rec.meta.sizeClass}  ·  **Standalone:** yes  ·  **Created:** ${rec.meta.createdAt}`,
-		'',
-		'## Scope',
-		'',
-		rec.body.focus,
-		...(rec.meta.triageRationale !== undefined
-			? ['', '## Triage rationale', '', rec.meta.triageRationale]
-			: []),
-		'',
-	].join('\n');
-}
-
-/** Render the plan-driven BUILD record markdown (standalone:false) — a
- *  human-readable ledger entry listing the validated tasks + commit. */
-export function renderPlanBuildRecordMd(rec: BuildRecord): string {
+/**
+ * Render a BUILD ledger record — the ONE renderer, for every route.
+ *
+ * Replaces the former pair (a standalone renderer and a plan-driven one) selected
+ * by `meta.standalone`. That dispatch was the defect: a standalone record whose
+ * flag got flipped by the shared validate write silently lost its `## Scope`
+ * while `body.focus` sat in the json, rendered by nothing.
+ *
+ * Every section is an OMIT-SLOT keyed on its OWN content, so no route can lose
+ * content it carries. TWO parts always render — the title and the meta line — and
+ * SEVEN are conditional: Commit, Scope, Triage rationale, Summary, Tasks
+ * validated, Changes, Feedback. (The LLD's test strategy says "eight omit-slots";
+ * it is seven, counted here rather than inherited.)
+ *
+ * The ordering is the union of both predecessors, and because no real record
+ * carries sections from both groups interleaved, each predecessor's relative order
+ * is preserved — which is what makes the byte-identity goldens hold.
+ *
+ * The TITLE keys on `meta.sizeClass`, not `meta.standalone`, because sizeClass is
+ * immune to the validate flip. A record with a sizeClass is a standalone one
+ * whatever the flag now says. When sizeClass is ABSENT the case is DEFINED rather
+ * than interpolated: previously `${rec.meta.sizeClass}` rendered the literal
+ * 'undefined' into the heading of any such record (BUILD-be8708a9cd20e286-S001 is
+ * a committed example).
+ */
+export function renderBuildRecordMd(rec: BuildRecord): string {
 	const lines: string[] = [];
-	lines.push(`# Build (plan-driven) — Story ${rec.meta.storyId}`);
+
+	// --- always rendered: title + meta line ---
+	const sizeClass = rec.meta.sizeClass;
+	const kind = sizeClass !== undefined && sizeClass.length > 0
+		? `standalone ${sizeClass}`
+		: rec.meta.standalone ? 'standalone' : 'plan-driven';
+	lines.push(`# Build (${kind}) — Story ${rec.meta.storyId}`);
 	lines.push('');
-	const bits = ['**Standalone:** no', `**Created:** ${rec.meta.createdAt}`];
+	const bits: string[] = [];
+	if (sizeClass !== undefined && sizeClass.length > 0) bits.push(`**Size class:** ${sizeClass}`);
+	bits.push(`**Standalone:** ${rec.meta.standalone ? 'yes' : 'no'}`);
+	bits.push(`**Created:** ${rec.meta.createdAt}`);
 	if (rec.meta.updatedAt !== undefined) bits.push(`**Updated:** ${rec.meta.updatedAt}`);
 	lines.push(bits.join('  ·  '));
-	if (rec.body.commit !== undefined) {
-		lines.push('', `**Commit:** ${rec.body.commit}`);
-	}
-	// S003: an optional narrative change summary, reader-first (before the task
-	// list). Omit-slot: the heading is pushed only for a non-empty (trimmed)
-	// summary, mirroring the `## Changes`/`## Feedback` sections below, so a record
-	// without a summary renders byte-identically to the pre-S003 output (k4).
+
+	/** Push one omit-slot section: nothing at all unless it has content. */
+	const section = (heading: string, content: readonly string[]): void => {
+		if (content.length === 0) return;
+		lines.push('', heading, '', ...content);
+	};
+
+	// --- the seven omit-slots, in the union order ---
+	if (rec.body.commit !== undefined) lines.push('', `**Commit:** ${rec.body.commit}`);
+	section('## Scope', rec.body.focus !== undefined && rec.body.focus.length > 0 ? [rec.body.focus] : []);
+	section('## Triage rationale', rec.meta.triageRationale !== undefined ? [rec.meta.triageRationale] : []);
 	const summary = rec.body.summary?.trim() ?? '';
-	if (summary.length > 0) {
-		lines.push('', '## Summary', '', summary);
-	}
+	section('## Summary', summary.length > 0 ? [summary] : []);
 	const tasks = rec.body.tasks ?? [];
-	if (tasks.length > 0) {
-		lines.push('', '## Tasks validated', '');
-		for (const t of tasks) {
-			const status = t.passed === true ? '✓' : t.passed === false ? '✗' : '·';
-			lines.push(`- ${status} \`${t.id}\``);
-		}
-	}
-	// S002: the file-level change-log and any out-of-band feedback — each an
-	// omit-slot section (heading pushed only when the binding yields content), so
-	// a build with neither renders byte-identically to the pre-S002 output.
-	const changeLines = changeLogBodyLines(rec.body.changeLog);
-	if (changeLines.length > 0) {
-		lines.push('', '## Changes', '', ...changeLines);
-	}
-	const feedbackLines = feedbackBodyLines(rec.body.feedback);
-	if (feedbackLines.length > 0) {
-		lines.push('', '## Feedback', '', ...feedbackLines);
-	}
+	section('## Tasks validated', tasks.map(t => {
+		const status = t.passed === true ? '✓' : t.passed === false ? '✗' : '·';
+		return `- ${status} \`${t.id}\``;
+	}));
+	section('## Changes', changeLogBodyLines(rec.body.changeLog));
+	section('## Feedback', feedbackBodyLines(rec.body.feedback));
+
 	lines.push('');
 	return lines.join('\n');
+}
+
+/**
+ * Compatibility shim — DELEGATES to {@link renderBuildRecordMd} rather than
+ * duplicating it. Retained because build-record.test.ts imports and calls it; it
+ * is no longer a distinct rendering path.
+ */
+export function renderStandaloneBuildRecordMd(rec: StandaloneBuildRecord): string {
+	return renderBuildRecordMd(rec as unknown as BuildRecord);
 }
 
 /**
@@ -257,9 +271,8 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	const merged = mergeWithPrior(jsonPath, withCommit);
 	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
 	const paths = pathsForMerged(repoPath, merged);
-	const md = merged.meta.standalone
-		? renderStandaloneBuildRecordMd(merged as unknown as StandaloneBuildRecord)
-		: renderPlanBuildRecordMd(merged);
+	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
+	const md = renderBuildRecordMd(merged);
 	writeAtomic(paths.md, md);
 	return paths;
 }

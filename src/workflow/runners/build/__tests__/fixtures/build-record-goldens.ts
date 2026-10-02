@@ -197,4 +197,25 @@ export const PATHOLOGICAL_RECORD = {
  }
 } as unknown as BuildRecord;
 
-export const PATHOLOGICAL_GOLDEN = "# Build (standalone undefined) — Story S001\n\n**Size class:** undefined  ·  **Standalone:** yes  ·  **Created:** 2026-09-26T00:00:00.000Z\n\n## Scope\n\n\n";
+/**
+ * REPAIRED at t8, and this is the ONE golden that was expected to change.
+ *
+ * Before (the recorded defect, frozen at t2):
+ *   "# Build (standalone undefined) — Story S001\n\n**Size class:** undefined  · …
+ *    \n\n## Scope\n\n\n"
+ *
+ * The reviewed diff repairs exactly the three defects t2 catalogued and nothing
+ * else:
+ *   1. the title no longer interpolates an absent sizeClass — 'undefined' gone
+ *   2. the size-class LINE is omitted rather than printing 'undefined' — the
+ *      second occurrence gone, so the word appears nowhere
+ *   3. the record's real content now renders: `**Commit:** feba6f0` and its SIX
+ *      passing tasks, both previously dropped; and the vacuous empty '## Scope'
+ *      heading is gone, because body.focus is genuinely absent and the omit-slot
+ *      now honours that
+ *
+ * `**Updated:**` also appears, which the old standalone renderer never emitted
+ * even when the record carried it. That is a gain, not drift: the value was
+ * always in the json.
+ */
+export const PATHOLOGICAL_GOLDEN = "# Build (standalone) \u2014 Story S001\n\n**Standalone:** yes  \u00b7  **Created:** 2026-09-26T00:00:00.000Z  \u00b7  **Updated:** 2026-09-26T00:00:00.000Z\n\n**Commit:** feba6f0\n\n## Tasks validated\n\n- \u2713 `t1`\n- \u2713 `t2`\n- \u2713 `t3`\n- \u2713 `t4`\n- \u2713 `t5`\n- \u2713 `t6`\n";

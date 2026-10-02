@@ -22,7 +22,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { persistBuildRecord, renderPlanBuildRecordMd, type BuildRecord } from '../standalone-record.js';
+import { persistBuildRecord, renderBuildRecordMd, type BuildRecord } from '../standalone-record.js';
 import { appendFeedback } from '../../../artifacts/provenance/writer.js';
 import { ARTIFACTS_DIR } from '../../../storage.js';
 
@@ -30,7 +30,7 @@ const HASH = 'd4e5f6a7b8c9d0e1';
 const CREATED = '2026-09-30T00:00:00.000Z';
 
 // ---------------------------------------------------------------------------
-// unit — renderPlanBuildRecordMd omit-slot for `## Summary` (ac1, ac3)
+// unit — renderBuildRecordMd omit-slot for `## Summary` (ac1, ac3)
 // ---------------------------------------------------------------------------
 
 function planRecord(bodyExtra: Partial<BuildRecord['body']>): BuildRecord {
@@ -41,28 +41,28 @@ function planRecord(bodyExtra: Partial<BuildRecord['body']>): BuildRecord {
 }
 
 test('render: a non-empty body.summary -> a `## Summary` section carrying the narrative (ac1)', () => {
-	const md = renderPlanBuildRecordMd(planRecord({ summary: 'Added the tag filter and wired it into the query path.' }));
+	const md = renderBuildRecordMd(planRecord({ summary: 'Added the tag filter and wired it into the query path.' }));
 	assert.match(md, /## Summary/);
 	assert.match(md, /Added the tag filter and wired it into the query path\./);
 });
 
 test('render: an empty / whitespace body.summary -> NO `## Summary` section (omit-slot, ac3)', () => {
-	assert.doesNotMatch(renderPlanBuildRecordMd(planRecord({ summary: '' })), /## Summary/);
-	assert.doesNotMatch(renderPlanBuildRecordMd(planRecord({ summary: '   ' })), /## Summary/);
+	assert.doesNotMatch(renderBuildRecordMd(planRecord({ summary: '' })), /## Summary/);
+	assert.doesNotMatch(renderBuildRecordMd(planRecord({ summary: '   ' })), /## Summary/);
 });
 
 test('render: a summary XOR feedback -> only the present section renders', () => {
-	const withSummary = renderPlanBuildRecordMd(planRecord({ summary: 'A narrative.' }));
+	const withSummary = renderBuildRecordMd(planRecord({ summary: 'A narrative.' }));
 	assert.match(withSummary, /## Summary/);
 	assert.doesNotMatch(withSummary, /## Feedback/);
 
-	const withFeedback = renderPlanBuildRecordMd(planRecord({ feedback: [{ id: 'f1', author: 'reviewer', timestamp: CREATED, target: { file: 'src/x.ts' }, comment: 'nit' }] }));
+	const withFeedback = renderBuildRecordMd(planRecord({ feedback: [{ id: 'f1', author: 'reviewer', timestamp: CREATED, target: { file: 'src/x.ts' }, comment: 'nit' }] }));
 	assert.match(withFeedback, /## Feedback/);
 	assert.doesNotMatch(withFeedback, /## Summary/);
 });
 
 test('render: neither summary nor feedback -> no new sections, byte-identical to the pre-S003 render (ac3/k4)', () => {
-	const md = renderPlanBuildRecordMd(planRecord({}));
+	const md = renderBuildRecordMd(planRecord({}));
 	assert.doesNotMatch(md, /## Summary/);
 	assert.doesNotMatch(md, /## Feedback/);
 	// The pre-S003 output for this record is exactly the header + bits + Tasks; the
@@ -121,7 +121,7 @@ test('appendFeedback: build-cycle feedback accretes on the persisted BUILD json 
 		assert.equal(rec.body.feedback?.length, 1);
 		assert.equal(rec.body.feedback![0]!.comment, 'The summary reads well.');
 		// The renderer shows the captured feedback (and the summary alongside it).
-		const md = renderPlanBuildRecordMd(rec);
+		const md = renderBuildRecordMd(rec);
 		assert.match(md, /## Feedback/);
 		assert.match(md, /The summary reads well\./);
 		assert.match(md, /## Summary/);

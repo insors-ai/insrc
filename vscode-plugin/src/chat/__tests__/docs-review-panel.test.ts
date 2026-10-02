@@ -1010,16 +1010,16 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  85260,
-  bytes:  85320,
-  sha256: 'e56d141e1dbfcbc950b0f00f900fd917f4fa3e5a9ac61d18407f770be49b4bab',
+  chars:  85371,
+  bytes:  85431,
+  sha256: 'a1c0072d0beb8b4df445cf8ffdd18af2de5d0d08750e527899b37f359972510d',
 } as const;
 
 /**
  * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
  * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
  * the fifth source string and its CSS fragment, and the test below proves those two
- * additions account for the delta EXACTLY — 79530 + 3457 + 2273 = 85260 — so
+ * additions account for the delta EXACTLY — 79530 + 3495 + 2346 = 85371 — so
  * nothing else slipped into the shell alongside them.
  *
  * Every value here was COMPUTED at the fixed nonce and copied from the computation,
@@ -4089,7 +4089,7 @@ function withShownUrl(sh: Shape): Shape {
   if (sh.cls === 'ux-btn ux-btn--link') {
     const glyphAt = kids.findIndex((k) => k !== '#text' && k.cls === 'ux-btn__glyph');
     assert.ok(glyphAt > 0, 'a link chip carries its title text then its glyph');
-    kids.splice(glyphAt, 0, '#text');
+    kids.splice(glyphAt, 0, { tag: 'span', cls: 'ux-btn__url', kids: ['#text'] });
   }
   return { tag: sh.tag, cls: sh.cls, kids };
 }
@@ -4299,7 +4299,11 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   // puts it in `title=`; a tooltip cannot be read in a screenshot, and the visual
   // read is this Story's binding check — so it becomes content here.
   assert.deepEqual(link.children.map((c) => (isText(c) ? '#text' : c.className)),
-    ['#text', '#text', 'ux-btn__glyph'], 'title, then url, then the navigate glyph');
+    ['#text', 'ux-btn__url', 'ux-btn__glyph'], 'title, then url, then the navigate glyph');
+  // The url is an ELEMENT and not a second text node, deliberately: two adjacent
+  // text nodes merge into one anonymous flex item, so the chip's gap never applies
+  // between them and the title runs into the url. The t3 visual read found that.
+  assert.equal((link.children[1] as UxNode).tag, 'span', 'the url is its own flex item');
   assert.deepEqual(uxAllText(link), ['Open companion', 'https://example.invalid/c.html', '\u2197']);
   // And the url reaches NO attribute anywhere — ac5 kept absolute, which is the
   // reason it is shown as text rather than mirrored into `title=`.
@@ -4627,9 +4631,22 @@ test('t2 PARITY of vocabulary: every ux-* class the client emits is one the daem
   emitted.add(loadUx().uxElement({ type: 'Nope' }, 1).className);
 
   assert.ok(emitted.size > 15, `the client emitted ${emitted.size} distinct classes`);
+
+  // ONE client-only class, listed explicitly and justified: the daemon has no url
+  // element at all because it puts an OpenUrl's url in `title=`. Showing it as
+  // visible content is this Story's one stated divergence, so it needs a name the
+  // daemon never had to mint. The list is exactly one entry long, and the assertion
+  // below pins that — an exemption that could quietly grow would be the loophole.
+  const CLIENT_ONLY = new Set(['ux-btn__url']);
+  assert.equal(CLIENT_ONLY.size, 1, 'exactly one client-only class, and it is the stated divergence');
+
   for (const c of [...emitted].sort()) {
-    assert.ok(daemonDefined.has(c), `client class .${c} is not defined by the daemon stylesheet`);
+    assert.ok(daemonDefined.has(c) || CLIENT_ONLY.has(c),
+      `client class .${c} is neither a daemon class nor the one stated divergence`);
   }
+  // And the exemption is LIVE — if the divergence were removed, the entry would be
+  // dead and this list would be silently wrong.
+  assert.ok(emitted.has('ux-btn__url'), 'the client-only class is actually emitted');
 });
 
 test('t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles', async () => {
@@ -4870,4 +4887,35 @@ test('t2: the FULL emitted script parses — including the bootstrap consts the 
     /already been declared|Identifier/,
     'a host const named like a ux function must be rejected',
   );
+});
+
+test('t3: every committed S004 evidence artefact exists at the path its commit claims', async () => {
+  // The same guard S003 carries, extended to this Story. S002 committed an evidence
+  // PNG to the WRONG path while its message claimed the right one and had to be
+  // amended; this makes that a test failure rather than something a reader finds
+  // later. t7 adds its own state images to this list.
+  const dir = fileURLToPath(new URL(
+    '../../../../docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/evidence/',
+    import.meta.url,
+  ));
+  const expected = [
+    't3-isolated-dark.png',
+    't3-isolated-light.png',
+    't3-depth-measured.png',
+    't3-url-defect-fixed.png',
+    't3-depth-measurement.md',
+  ];
+  const { statSync, readFileSync } = await import('node:fs');
+  for (const name of expected) {
+    const st = statSync(join(dir, name));
+    assert.ok(st.isFile(), `${name} is a file`);
+    assert.ok(st.size > 1000, `${name} has real content (${st.size} bytes)`);
+  }
+
+  // The measurement t4 is REQUIRED to cite must actually carry the numbers, not
+  // just exist. A file that exists and says nothing is the failure mode here.
+  const m = readFileSync(join(dir, 't3-depth-measurement.md'), 'utf8');
+  assert.match(m, /Measured real maximum: element depth 4/, 'the real maximum is stated');
+  assert.match(m, /Cost per Container level: exactly 22px/, 'the per-level cost is stated');
+  assert.match(m, /ELEMENT NESTING/, 'and the METRIC is named — the plan review’s HIGH finding');
 });

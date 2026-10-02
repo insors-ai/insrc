@@ -971,7 +971,12 @@ export const DOCS_UX_SOURCE =
   // This is the ONE place the client's structure diverges from the daemon's, by
   // exactly one text node inside a ux-btn--link. The parity test STATES that
   // divergence and asserts it is that node and nothing else.
-  `if(isLink){uxText(bt,a.url!=null?a.url:'');` +
+  // The url is its own ELEMENT, not a second text node. Two adjacent text nodes
+  // merge into ONE anonymous flex item, so the chip's `gap` never applied between
+  // them and the title ran straight into the url — 'Open the source
+  // documenthttps://example.invalid/doc'. Caught by the t3 visual read, which is
+  // exactly the class of defect no DOM assertion can see.
+  `if(isLink){bt.appendChild(uxTextNode('span','ux-btn__url',a.url!=null?a.url:''));` +
   `var gl=uxTextNode('span','ux-btn__glyph','\u2197');` +
   `gl.setAttribute('aria-hidden','true');bt.appendChild(gl);}` +
   `as.appendChild(bt);});` +
@@ -1461,6 +1466,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.ux-btn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--it-accent);border-radius:4px;padding:5px 10px;font-size:12px;font-weight:600;}` +
       `.ux-btn--submit{background:var(--it-accent);color:var(--it-bg);}` +
       `.ux-btn--link{color:var(--it-accent);}` +
+      // The ONE client-only class in this fragment, and the only `ux-*` name not in
+      // the daemon's stylesheet: the daemon has no url element because it puts the
+      // url in `title=`. Dimmed and smaller so the chip still reads title-first.
+      `.ux-btn__url{color:var(--it-dim);font-weight:400;overflow-wrap:anywhere;}` +
       `.ux-btn__glyph{font-weight:400;}` +
       // The visible admission of a gap. Dashed and in the error role, so it reads
       // as "this could not be drawn" and never as a design that simply has nothing

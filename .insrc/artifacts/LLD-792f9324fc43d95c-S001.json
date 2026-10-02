@@ -170,6 +170,13 @@
         "choice": "Restate: split user-grounded from self-authored",
         "rationale": "Meets the adopt-or-restate requirement without reopening the Story, which the user deferred. The tiering is the point: k1-k4 trace to premises the user stated (ISSUE is a DEF, the widening was correct, the count-vs-containment defect, buildRef must verify), so they are binding; k5-k8 and ac1-ac10 are LLD-authored and get marked provisional with the decision each one supports, so a later reader can tell which criteria carry user authority and which carry only mine. Reviewer attention goes to k5-k8 specifically.",
         "resolvedAt": "2026-10-02T19:51:23.702Z"
+      },
+      "qc2ea542c": {
+        "question": "[s8 cd3 — partial] buildRef's documented error entries use 'null return' rather than a named error type, because the module's standing invariant is that it never throws (no external consumer has a handler). OPEN: confirm that documenting the refusal convention satisfies the concrete-error-type requirement for a null-returning API, or decide a named sentinel is wanted.",
+        "status": "resolved",
+        "choice": "Documented null-return convention is enough",
+        "rationale": "DECLINING the runner's recommendation of a discriminated result, deliberately. Three reasons. (1) Scope: every resolution function in the module returns `ResolvedRef | null` — resolveByLabel, resolveByHier, resolveByIssue and the public resolveWorkflowRef — so giving buildRef alone a discriminated result makes it inconsistent with its own module, and making them all consistent is an API redesign, not a bugfix. (2) No consumer benefits: the recommendation's premise is that a bare null hides why the call was refused, but the only new caller shape is the candidate filter, and for filtering 'story absent' and 'epic identity unreadable' both mean exactly 'not a candidate'. The two external consumers take `ResolvedRef | null` and treat any refusal as an error to surface. (3) The refusal reasons are already pinned where it matters — by acceptance checks and tests at the behaviour level, which is where a reader looks. Revisit only if a caller appears that must distinguish the reasons.",
+        "resolvedAt": "2026-10-02T19:52:31.037Z"
       }
     }
   },

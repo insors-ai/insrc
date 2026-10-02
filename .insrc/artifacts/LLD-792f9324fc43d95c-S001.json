@@ -177,6 +177,13 @@
         "choice": "Documented null-return convention is enough",
         "rationale": "DECLINING the runner's recommendation of a discriminated result, deliberately. Three reasons. (1) Scope: every resolution function in the module returns `ResolvedRef | null` — resolveByLabel, resolveByHier, resolveByIssue and the public resolveWorkflowRef — so giving buildRef alone a discriminated result makes it inconsistent with its own module, and making them all consistent is an API redesign, not a bugfix. (2) No consumer benefits: the recommendation's premise is that a bare null hides why the call was refused, but the only new caller shape is the candidate filter, and for filtering 'story absent' and 'epic identity unreadable' both mean exactly 'not a candidate'. The two external consumers take `ResolvedRef | null` and treat any refusal as an error to surface. (3) The refusal reasons are already pinned where it matters — by acceptance checks and tests at the behaviour level, which is where a reader looks. Revisit only if a caller appears that must distinguish the reasons.",
         "resolvedAt": "2026-10-02T19:52:31.037Z"
+      },
+      "qb45f5e89": {
+        "question": "[design judgement, NOW NARROW — was load-bearing, is not any more] Clause (ii)'s ISSUE branch says an ISSUE-anchored epic declares one story at ordinal 1. That follows from what an ISSUE is (the epic's definition artifact written by a standalone route, and a standalone route defines exactly one story) and is corroborated by every standalone story-scoped artifact on disk being ordinal 1 — 59 of 59. It no longer rests on a filename default held in readers' heads. REMAINING NICE-TO-HAVE, not required for this fix: having the ISSUE declare its story explicitly as a DEF does would put the fact in the artifact rather than in the route's semantics.",
+        "status": "resolved",
+        "choice": "Keep derivation, file the explicit declaration as a follow-up",
+        "rationale": "The question narrowed from load-bearing to nice-to-have once the ISSUE-is-a-DEF equivalence was settled, so ordinal 1 now follows from what an ISSUE is rather than from a filename default. Changing the ISSUE schema here would widen a resolver bugfix into artifact-shape work with back-fill implications. Filing the explicit declaration as a tracked follow-up keeps it on the ledger per the user's standing rule that nothing gets fixed off-ledger.",
+        "resolvedAt": "2026-10-02T19:53:14.608Z"
       }
     }
   },

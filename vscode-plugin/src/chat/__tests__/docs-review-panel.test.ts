@@ -1010,22 +1010,41 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  86746,
-  bytes:  86806,
-  sha256: '4c30468c8529ee76cd3864d8b72265e29d1ca782c0fda663f496d96bed2ce0c7',
+  chars:  87244,
+  bytes:  87304,
+  sha256: '8fa812b18dadf8c59a90cecb4fca8f8d7a3ea66e14d1aab024fdcac04472e23d',
 } as const;
 
 /**
  * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
  * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
- * the fifth source string and its CSS fragment, and the test below proves those two
- * additions account for the delta EXACTLY — 79530 + 4870 + 2346 = 86746 — so
- * nothing else slipped into the shell alongside them.
+ * the fifth source string and its CSS fragment; t6 additionally touches the
+ * BOOTSTRAP, which is the one task in this Story licensed to. The test below proves
+ * the sum closes EXACTLY:
+ *
+ *   79530  the pin before S004 touched the shell
+ * +  4870  DOCS_UX_SOURCE, measured from the string itself
+ * +  2346  the ux CSS fragment, measured from the emitted shell
+ * +   498  the t6 BOOTSTRAP delta, declared below
+ * = 87244
+ *
+ * so nothing slipped in alongside them.
  *
  * Every value here was COMPUTED at the fixed nonce and copied from the computation,
  * never typed. A number typed into a pin is a number nobody checked.
  */
 const SHELL_BASELINE_BEFORE_S004_T2 = { chars: 79530, bytes: 79582 } as const;
+
+/**
+ * The t6 BOOTSTRAP delta, declared rather than absorbed. t1-t5 added only source
+ * text; t6 is the task that changes the surface, and it does so in four places:
+ * the `insrc-docs-experience` host div, the `uxHostEl` lookup, the slot build plus
+ * mount call, and the frame's noun becoming kind-aware. Those are not measurable
+ * from a single artefact the way a source string is, so the number is pinned here
+ * and the accounting test makes it close — which is the point: a bootstrap change
+ * that cannot be named would otherwise hide inside a moved hash.
+ */
+const BOOTSTRAP_DELTA_S004_T6 = 498;
 
 function renderShellFor(nonce: string): string {
   const fc = fakeChannel();
@@ -1765,11 +1784,12 @@ interface WebviewRun {
   oq: BodyStub;
   posted: unknown[];
   diagram: BodyStub;
+  experience: BodyStub;
   created: string[];
   deliver(payload: Record<string, unknown>): void;
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; breakDiagram?: boolean; countCreates?: boolean } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; breakDiagram?: boolean; breakExperience?: boolean; countCreates?: boolean } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -1787,9 +1807,15 @@ function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; b
   if (opts.breakDiagram) {
     script = script.replace('function dgBuildDiagramSlot(', 'function dgBuildDiagramSlot(){throw new Error("slot build blew up");}\nfunction _unusedDg(');
   }
+  // S004/t6 — the same lever for the experience slot, so its backstop is exercised
+  // against the REAL bootstrap rather than a reconstruction of it.
+  if (opts.breakExperience) {
+    script = script.replace('function uxBuildMockSlot(', 'function uxBuildMockSlot(){throw new Error("ux slot build blew up");}\nfunction _unusedUx(');
+  }
 
   const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq', 'insrc-docs-note',
-    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram'];
+    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
+    'insrc-docs-experience'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
   (byId['insrc-docs-note'] as unknown as { value: string }).value = '';
@@ -1839,7 +1865,7 @@ function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; b
     body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
     sections: byId['insrc-docs-sections']!, actions: byId['insrc-docs-actions']!,
     oq: byId['insrc-docs-oq']!, posted,
-    diagram: byId['insrc-docs-diagram']!, created,
+    diagram: byId['insrc-docs-diagram']!, experience: byId['insrc-docs-experience']!, created,
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
   };
 }
@@ -3169,6 +3195,16 @@ const DG_REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', 
 /** Every node under a stub, root first. */
 function allOf(n: BodyStub): BodyStub[] { return [n, ...n.children.flatMap(allOf)]; }
 const slotsIn = (r: WebviewRun): BodyStub[] =>
+  [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)]
+    .filter((n) => n.className === 'insrc-dg-slot');
+/** The EXPERIENCE slot, found by its kind modifier wherever it ended up — the host
+ *  when unanchored, the BODY when it anchored beside a heading. Looking only in the
+ *  host would miss exactly the anchored case these tests exist to cover. */
+const uxSlotsIn = (r: WebviewRun): BodyStub[] =>
+  [...allOf(r.experience), ...allOf(r.body)]
+    .filter((n) => n.className === 'insrc-dg-slot insrc-dg-slot--experience');
+/** The DIAGRAM slot keeps the bare class it has always had. */
+const dgSlotsIn = (r: WebviewRun): BodyStub[] =>
   [...allOf(r.diagram), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
 
 test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap', () => {
@@ -3430,48 +3466,57 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
 // evidence actually exists where the commit message says it does.
 // ---------------------------------------------------------------------------
 
-test('t7: a document carrying BOTH a diagram ref and a ux-mock ref shows the diagram slot ONLY', () => {
-  // The real shape of this Epic's own S002 LLD. s4 decides how a diagram and an
-  // experience mock sit together when both are present — it is the only Story that
-  // can observe both — so s3 must not pre-empt that arrangement.
-  const withUx = runWebview();
-  withUx.deliver({
+test('t7 (updated by S004/t6): a document carrying BOTH refs now shows TWO slots, diagram FIRST', () => {
+  // S003 asserted the diagram slot ONLY here, and said so deliberately: it could not
+  // observe both, so it left the arrangement to s4 rather than pre-empting it. s4 has
+  // now decided, and this is that decision — the test is rewritten rather than
+  // deleted, so the Epic's record shows the arrangement was chosen, not drifted into.
+  const r = runWebview();
+  r.deliver({
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     erDefinition: DG_ER,
+    uxDefinition: { type: 'AdaptiveCard', body: [{ type: 'TextBlock', text: 'the approval flow' }] },
     companions: [
       { kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' },
       DG_REF,
     ],
   });
-  const slots = slotsIn(withUx);
-  assert.equal(slots.length, 1, 'exactly one slot — the diagram, never a second for the mock');
-  const texts = allOf(slots[0]!).map((n) => n.textContent).join('\n');
-  assert.ok(texts.includes('Entity model'), 'labelled from the DIAGRAM ref');
-  assert.equal(texts.includes('UX mock'), false, 'the ux-mock ref is not read, not labelled, not linked');
-  assert.equal(texts.includes('ux-mock.html'), false, 'and its path never reaches the surface');
 
-  // Byte-for-byte: the ux-mock ref changes NOTHING about what is rendered. The
-  // screenshot pair committed as evidence is sha256-identical for the same reason.
-  const withoutUx = runWebview();
-  withoutUx.deliver({
-    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
-    erDefinition: DG_ER, companions: [DG_REF],
-  });
-  const shape = (r: WebviewRun): string =>
-    [...allOf(r.diagram), ...allOf(r.body)].map((n) => `${n.tagName}|${n.className}|${n.textContent}`).join('\n');
-  assert.equal(shape(withUx), shape(withoutUx), 'a ux-mock ref is invisible to this Story');
+  assert.equal(dgSlotsIn(r).length, 1, 'one diagram slot');
+  assert.equal(uxSlotsIn(r).length, 1, 'and one experience slot');
+
+  // EACH IS LABELLED FROM ITS OWN REF — ac2's whole substance. If either picker
+  // matched the other's kind, both labels would read the same.
+  const dgText = allOf(dgSlotsIn(r)[0]!).map((n) => n.textContent).join('\n');
+  const uxText = allOf(uxSlotsIn(r)[0]!).map((n) => n.textContent).join('\n');
+  assert.ok(dgText.includes('Entity model'), 'the diagram labelled from the diagram ref');
+  assert.ok(uxText.includes('UX mock'), 'the mock labelled from the UX ref');
+  assert.equal(uxText.includes('Entity model'), false, 'and neither borrows the other\u2019s label');
+  assert.equal(dgText.includes('UX mock'), false);
+  // Each links out to its OWN companion.
+  assert.ok(uxText.includes('ux-mock.html'), 'the mock links to the ux companion');
+  assert.equal(dgText.includes('ux-mock.html'), false, 'the diagram never links to it');
 });
 
-test('t7: a ux-mock ref ALONE renders nothing — the experience slot stays s4\'s to build', () => {
+test('t7 (updated by S004/t6): a ux-mock ref ALONE now routes to the stated failure, not to nothing', () => {
+  // S003 asserted this rendered NOTHING, and proved it with a sha256-identical
+  // screenshot pair. That was true until the experience slot existed. It now routes
+  // to 'unshowable', because a ref naming a mock this surface cannot draw must say
+  // so — a silent omission is indistinguishable from a document with no mock.
   const r = runWebview();
   r.deliver({
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     companions: [{ kind: 'ux-mock', relPath: 'docs/epics/x/S002/ux-mock.html', title: 'UX mock' }],
   });
-  // Not an 'unshowable' diagram invented from someone else's companion: this
-  // factory has no ref at all here, and no record, so the answer is ABSENT.
-  assert.equal(slotsIn(r).length, 0);
-  assert.equal(r.created.filter((t) => t.startsWith('ns:')).length, 0, 'and zero DOM work');
+
+  assert.equal(dgSlotsIn(r).length, 0, 'still NO diagram slot — s3 reads only diagram kinds');
+  const ux = uxSlotsIn(r);
+  assert.equal(ux.length, 1, 'and one experience slot, stating the failure');
+  const text = allOf(ux[0]!).map((n) => n.textContent).join('\n');
+  assert.match(text, /experience mock could not be shown here/,
+    'the noun is the MOCK\u2019s, not the diagram\u2019s — one frame, two kinds');
+  assert.match(text, /experience record is not available/, 'and the reason names what was referenced');
+  assert.ok(text.includes('ux-mock.html'), 'with the link-out to the authentic companion');
 });
 
 test('t7: every committed evidence image exists at the path its commit claims', async () => {
@@ -3801,9 +3846,14 @@ test('t1/t2: the shell matches the pin, and NOTHING reads either new field yet',
   // could draw it, but NOTHING may read either field until t6 mounts the slot. So
   // neither name may appear in the emitted script. This is what makes "t2 is inert"
   // checkable rather than asserted in a commit message.
-  assert.doesNotMatch(html, /m\.uxDefinition/, 'nothing reads the record yet — the mount arrives at t6');
-  assert.doesNotMatch(html, /m\.experienceAnchorSlug/, 'nothing reads the anchor yet — the mount arrives at t6');
-  // And the renderer IS there, so the two statements together say "defined, unused".
+  // t1 carried the record and t2-t5 were inert; t6 DECLARES the change. The webview
+  // now reads the posted record, at exactly ONE site — the slot build — and the
+  // anchor at exactly one site too. A second read would mean a second code path
+  // that could disagree with the first.
+  assert.equal((html.match(/m\.uxDefinition/g) ?? []).length, 1, 'the record is read at exactly one site');
+  assert.equal((html.match(/m\.experienceAnchorSlug/g) ?? []).length, 1, 'and the anchor at exactly one');
+  assert.match(html, /uxBuildMockSlot\(m\.uxDefinition,uxPickRef\(m\.companions\),m\.experienceAnchorSlug\)/,
+    'and that site is the slot build');
   assert.match(html, /function uxRenderCard\(/, 'the renderer is inlined');
 });
 
@@ -3822,10 +3872,15 @@ test('t2: the pin moved by EXACTLY the declared source string and CSS fragment �
   // shell, this sum would not close. That is what turns a moved pin from "I changed
   // it" into "here is what changed and why it is all of it".
   assert.equal(
-    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars,
+    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars + BOOTSTRAP_DELTA_S004_T6,
     SHELL_BASELINE.chars,
-    'the delta is exactly the fifth source string plus its CSS fragment',
+    'the delta is exactly the source string, its CSS fragment and the declared t6 bootstrap change',
   );
+  // The bootstrap delta is SMALL on purpose — t6 is one call and one host. If this
+  // ever needed to grow materially, the Story would be doing something other than
+  // mounting a slot.
+  assert.ok(BOOTSTRAP_DELTA_S004_T6 < 1000,
+    'the surface change stays a mount, not a rewrite');
   // The source string really is inlined verbatim, which is what licenses using its
   // length as the script half of the delta.
   assert.ok(html.includes(DOCS_UX_SOURCE), 'DOCS_UX_SOURCE is inlined verbatim');
@@ -5184,10 +5239,204 @@ test('t5: the bound is PASSED IN, not re-declared — still one named constant a
     'and the factory does not reassign it');
 });
 
-test('t5: the surface is STILL unchanged — nothing calls the factory yet', () => {
+test('t5/t6: the factory is inlined and called at EXACTLY ONE site', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
   assert.match(html, /function uxBuildMockSlot\(/, 'the factory is inlined');
-  assert.doesNotMatch(html, /uxPlaced=uxBuildMockSlot\(|uxBuildMockSlot\(m\./,
-    'and nothing calls it — the mount arrives at t6');
-  assert.doesNotMatch(html, /m\.uxDefinition/, 'the record is still not read');
+  // At t5 this asserted NO call. t6 is the single call that changes the surface, so
+  // the check becomes "exactly one" — reverting that one call restores S003 exactly.
+  assert.equal((html.match(/uxBuildMockSlot\(/g) ?? []).length, 2,
+    'one declaration and one call site, and no more');
+  assert.equal((html.match(/uxPlaced=dgMountSlot\(/g) ?? []).length, 1, 'mounted once');
+  // REUSES s3's mounter rather than minting a second one.
+  assert.doesNotMatch(html, /function uxMountSlot\(/, 'no second mounter exists');
+});
+
+// ---------------------------------------------------------------------------
+// S004/t6 — THE MOUNT. The one call that changes what a reviewer sees.
+//
+// Everything before this was additive and inert. Removing the two lines this task
+// adds restores the S003 surface exactly, which is the property the byte-identical
+// diagram assertion below proves from the other direction.
+// ---------------------------------------------------------------------------
+
+const UX_CARD_T6 = { type: 'AdaptiveCard', body: [{ type: 'TextBlock', text: 'the approval flow' }] };
+const UX_REF_T6 = { kind: 'ux-mock', relPath: 'docs/epics/x/S004/ux-mock.html', title: 'Experience mock' };
+
+test('t6 GATE: the four-combination table, driven through the SHIPPED bootstrap', () => {
+  const base = { artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS };
+
+  // ref absent + record absent -> ABSENT. 641 of 645 ledger bodies.
+  let r = runWebview();
+  r.deliver({ ...base });
+  assert.equal(uxSlotsIn(r).length, 0, 'no ref + no record -> no slot');
+
+  // ref present + record present -> RENDERED
+  r = runWebview();
+  r.deliver({ ...base, uxDefinition: UX_CARD_T6, companions: [UX_REF_T6] });
+  assert.equal(uxSlotsIn(r).length, 1);
+  assert.ok(allOf(uxSlotsIn(r)[0]!).some((n) => n.className === 'ux-card'), 'the card is drawn');
+
+  // ref present + record absent -> UNSHOWABLE
+  r = runWebview();
+  r.deliver({ ...base, companions: [UX_REF_T6] });
+  let text = allOf(uxSlotsIn(r)[0]!).map((n) => n.textContent).join('\n');
+  assert.match(text, /could not be shown here/);
+
+  // ref absent + record present -> RENDERED, with the DEFAULT label and NO link-out.
+  // The RECORD gates content and the REF gates only label and link. That row looks
+  // like a bug and is a convention, consistent with S003 — stating the consequence
+  // is what stops a later Story "fixing" it back into one.
+  r = runWebview();
+  r.deliver({ ...base, uxDefinition: UX_CARD_T6 });
+  assert.equal(uxSlotsIn(r).length, 1, 'the record alone is enough to render');
+  text = allOf(uxSlotsIn(r)[0]!).map((n) => n.textContent).join('\n');
+  assert.ok(text.includes('Experience mock'), 'the DEFAULT label');
+  assert.equal(text.includes('Full version:'), false, 'and NO link-out — there is no companion to link to');
+});
+
+test('t6: ac3’s dominant path is ZERO DOM ACTIVITY from the experience path', () => {
+  const r = runWebview({ countCreates: true });
+  const before = r.created.length;
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const after = r.created.length;
+
+  assert.equal(uxSlotsIn(r).length, 0);
+  assert.equal(r.experience.children.length, 0, 'the host has NO children — no frame, no reserved space');
+  // Nothing the experience path would have built exists anywhere in this run.
+  assert.equal([...allOf(r.body), ...allOf(r.experience)].filter((n) => n.className === 'ux-card').length, 0,
+    'no card was created');
+  void before; void after;
+
+  // And the comparison that gives the claim teeth: the SAME document WITH a record
+  // creates strictly more elements, so the absence above is the gate working rather
+  // than the harness counting nothing.
+  const withRecord = runWebview({ countCreates: true });
+  withRecord.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    uxDefinition: UX_CARD_T6, companions: [UX_REF_T6],
+  });
+  assert.ok(withRecord.created.length > r.created.length,
+    `the experience path creates elements only when there is something to draw (${r.created.length} -> ${withRecord.created.length})`);
+});
+
+test('t6: `body: []` and a malformed record are ABSENT through the real bootstrap', () => {
+  for (const uxDefinition of [{ type: 'AdaptiveCard', body: [] }, { body: 'nope' }, {}]) {
+    const r = runWebview();
+    r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, uxDefinition });
+    assert.equal(uxSlotsIn(r).length, 0, `${JSON.stringify(uxDefinition)} with no ref is absent`);
+  }
+});
+
+test('t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to what S003 renders', () => {
+  // The symmetric proof of S003's sha256-identical dual-ref result: s3 proved a
+  // ux-mock ref changed its surface by zero pixels; this proves the mock's ARRIVAL
+  // changes the diagram's rendering by nothing at all.
+  const base = {
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF],
+  };
+  const shapeOf = (n: BodyStub): string =>
+    JSON.stringify(allOf(n).map((x) => [x.tagName, x.className, x.textContent]));
+
+  const diagramOnly = runWebview();
+  diagramOnly.deliver(base);
+
+  const withExperience = runWebview();
+  withExperience.deliver({ ...base, uxDefinition: UX_CARD_T6, companions: [DG_REF, UX_REF_T6] });
+
+  assert.equal(shapeOf(withExperience.diagram), shapeOf(diagramOnly.diagram),
+    'the diagram host renders identically whether or not a mock is present');
+  assert.equal(uxSlotsIn(withExperience).length, 1, 'while the experience slot did appear');
+});
+
+test('t6: the two slots are PEERS — diagram first, experience second, in the emitted markup', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  const dgHost = html.indexOf('id="insrc-docs-diagram"');
+  const uxHost = html.indexOf('id="insrc-docs-experience"');
+  const body = html.indexOf('id="insrc-docs-body"');
+  assert.ok(dgHost > 0 && uxHost > 0);
+  assert.ok(dgHost < uxHost, 'diagram first — it answers "what is this made of"');
+  assert.ok(uxHost < body, 'and both sit above the document body, as one companions region');
+});
+
+test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none', () => {
+  const r = runWebview();
+  const msg = {
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    uxDefinition: UX_CARD_T6, companions: [UX_REF_T6],
+  };
+  r.deliver(msg);
+  assert.equal(uxSlotsIn(r).length, 1);
+  r.deliver(msg);
+  assert.equal(uxSlotsIn(r).length, 1, 'the host is cleared before the slot is placed');
+  r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  assert.equal(uxSlotsIn(r).length, 0, 'and a document with neither leaves none behind');
+});
+
+test('t6: a forced throw in the experience slot build leaves SIX other surfaces intact — including the diagram', () => {
+  const r = runWebview({ breakExperience: true });
+  r.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: ['q1'], blocked: false, sections: DG_SECTIONS,
+    erDefinition: DG_ER, companions: [DG_REF, UX_REF_T6], uxDefinition: UX_CARD_T6,
+  });
+
+  // k4: losing a reviewer's document over an adjunct is the inversion this guards.
+  assert.ok(allOf(r.body).length > 0, '1. the body still rendered');
+  assert.ok(allOf(r.sections).length > 0, '2. the section chooser');
+  assert.ok(allOf(r.oq).length > 0, '3. the open questions');
+  assert.ok(allOf(r.actions).length > 0, '4. the approval controls');
+  assert.equal(uxSlotsIn(r).length, 0, '5. and the experience slot simply did not appear');
+  assert.equal(dgSlotsIn(r).length, 1, '6. THE DIAGRAM SLOT IS UNTOUCHED — one peer cannot take the other down');
+});
+
+test('t6: a resolvable anchor places the slot beside its heading; a stale one falls back rather than dropping it', () => {
+  // The slug must be one the BODY actually stamped, read from a plain run — a
+  // section-index slug is not necessarily the id that ended up on a heading, and
+  // asserting against the wrong one would test the harness rather than the mount.
+  const plain = runWebview();
+  plain.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
+  const stampedIds = plain.body.children.filter((c) => c.tagName.startsWith('h')).map((c) => c.id);
+  assert.ok(stampedIds.length > 1, 'the body stamped some heading ids to anchor against');
+
+  const anchored = runWebview();
+  anchored.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    uxDefinition: UX_CARD_T6, companions: [UX_REF_T6],
+    experienceAnchorSlug: stampedIds[1],
+  });
+  assert.equal(uxSlotsIn(anchored).length, 1, 'the slot exists');
+  assert.ok(anchored.body.children.some((n) => n.className === 'insrc-dg-slot insrc-dg-slot--experience'),
+    'and it was placed INTO the body, beside the heading it names');
+
+  const stale = runWebview();
+  stale.deliver({
+    artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
+    uxDefinition: UX_CARD_T6, companions: [UX_REF_T6], experienceAnchorSlug: 'no-such-section',
+  });
+  assert.equal(uxSlotsIn(stale).length, 1,
+    'a stale anchor falls back to the default position rather than dropping the visual');
+});
+
+test('t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  // One mounter, called twice. A second implementation would be a second place for
+  // the querySelector('#'+slug) bug to come back — it THROWS on a digit-leading
+  // slug, and insrc numbers its headings.
+  assert.equal((html.match(/function dgMountSlot\(/g) ?? []).length, 1, 'exactly one mounter exists');
+  assert.equal((html.match(/dgMountSlot\(/g) ?? []).length, 3, 'declared once, called twice');
+  assert.doesNotMatch(html, /querySelector\('#'\+/, 'and the selector form is nowhere in the shell');
+});
+
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { dirname, join } = await import('node:path');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const repoRoot = join(here, '..', '..', '..', '..');
+  const planCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
+    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md'],
+    { cwd: repoRoot, encoding: 'utf8' }).trim();
+  const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..HEAD`], { cwd: repoRoot, encoding: 'utf8' });
+  assert.ok(!changed.includes('docs-sections.ts'),
+    'S004 consumes sc3 and mints none of its own section identity');
 });

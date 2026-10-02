@@ -760,14 +760,26 @@ export const DOCS_DIAGRAM_SOURCE =
   // placed inside it vanishes on its own, but this host persists and would
   // otherwise accumulate a slot per render.
   `function dgFrame(slot){` +
-  `var box=document.createElement('div');box.className='insrc-dg-slot';` +
+  // S004/t6 — the EXPERIENCE kind gets a modifier class; the diagram keeps exactly
+  // the class it had. Asymmetric on purpose: an acceptance check requires the
+  // diagram slot to render BYTE-IDENTICALLY to what S003 ships, so the modifier is
+  // additive for the new kind only. It gives the experience slot a stable handle for
+  // tests and for any future styling, without touching the shipped peer.
+  `var box=document.createElement('div');` +
+  `box.className=slot.kind==='experience'?'insrc-dg-slot insrc-dg-slot--experience':'insrc-dg-slot';` +
   `var head=document.createElement('div');head.className='insrc-dg-slot-head';` +
   `head.textContent=slot.label;box.appendChild(head);` +
   `if(slot.state==='rendered'){box.appendChild(slot.body);}` +
   `else{var why=document.createElement('div');why.className='insrc-dg-slot-why';` +
   // NAMED, not generic: a silent omission is indistinguishable from a document
   // that legitimately has no diagram, which is the whole point of ac3.
-  `why.textContent='This diagram could not be shown here \u2014 '+slot.reason+'.';` +
+  // S004/t6 — the NOUN comes from the slot's own kind. Reusing one mounter for both
+  // peers is deliberate, but a frame that told a reviewer "this diagram could not be
+  // shown" about an experience mock would be reusing it too far. sc4 already carries
+  // the kind, so the frame reads it rather than assuming. The diagram's own text is
+  // unchanged, which is what keeps its rendering byte-identical to what S003 ships.
+  `why.textContent='This '+(slot.kind==='experience'?'experience mock':'diagram')` +
+  `+' could not be shown here \u2014 '+slot.reason+'.';` +
   `box.appendChild(why);}` +
   `if(slot.linkOut){var a=document.createElement('div');a.className='insrc-dg-slot-link';` +
   `a.textContent='Full version: '+slot.linkOut.relPath;box.appendChild(a);}` +
@@ -1558,6 +1570,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `const secEl=document.getElementById('insrc-docs-sections');` +
       `const noticeEl=document.getElementById('insrc-docs-notice');` +
       `const dgHostEl=document.getElementById('insrc-docs-diagram');` +
+      `const uxHostEl=document.getElementById('insrc-docs-experience');` +
       `var current='';` +
       // docs-list: one clickable row per pending artifact (textContent only, no innerHTML).
       `function renderList(items){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
@@ -1628,6 +1641,27 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `{erDefinition:m.erDefinition,sequenceDefinition:m.sequenceDefinition},` +
       `dgPickRef(m.companions),m.diagramAnchorSlug);}catch(e){dgSlot={state:'absent'};}` +
       `var dgPlaced='none';try{dgPlaced=dgMountSlot(dgHostEl,bodyEl,dgSlot);}catch(e){dgPlaced='none';}` +
+      // S004/t6 — THE SINGLE CALL THAT CHANGES WHAT A REVIEWER SEES. Everything
+      // before this task was additive and inert; removing these two lines restores
+      // the S003 surface exactly.
+      //
+      // AFTER the diagram's mount, for the same two reasons that one sits after
+      // stampSlugs: the slot inserts a node INTO the body when it anchors, and the
+      // chooser is gated on a stamped count neither slot can change. Mounting the
+      // experience second is also what puts it second in the region.
+      //
+      // REUSES s3's dgMountSlot UNCHANGED rather than minting a second mounter —
+      // including its corrected id-walk anchor lookup, because querySelector('#'+slug)
+      // throws on a digit-leading slug and insrc numbers its headings. A second
+      // implementation would be a second place for that bug to come back.
+      //
+      // The try/catch is the same BACKSTOP: the factory never throws by design, and
+      // what the guard buys is that no failure here costs the reviewer the body, the
+      // chooser, the notice, the open questions, the controls or the DIAGRAM.
+      `var uxSlot={state:'absent'};` +
+      `try{uxSlot=uxBuildMockSlot(m.uxDefinition,uxPickRef(m.companions),m.experienceAnchorSlug);}` +
+      `catch(e){uxSlot={state:'absent'};}` +
+      `var uxPlaced='none';try{uxPlaced=dgMountSlot(uxHostEl,bodyEl,uxSlot);}catch(e){uxPlaced='none';}` +
       `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` +
       // ac3: the notice comes from the POSTED state when the host declared one,
       // and otherwise from this render's own degradation — same shape either way.
@@ -1671,6 +1705,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // preformatted container would render a literal blank line between every
       // block and set headings in the monospace face at body size.
       `<div id="insrc-docs-diagram" aria-label="design diagram"></div>` +
+      // S004/t6 — the experience slot's host, immediately AFTER the diagram's so
+      // the two sit as labelled peers in one companions region. Diagram first
+      // because it answers "what is this made of" and the mock answers "what will
+      // it feel like", and a reviewer reads structure before experience.
+      `<div id="insrc-docs-experience" aria-label="experience mock"></div>` +
       `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
       `<textarea id="insrc-docs-note" rows="2" aria-label="request-changes note"></textarea>` +

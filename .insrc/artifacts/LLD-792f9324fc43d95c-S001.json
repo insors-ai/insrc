@@ -184,6 +184,13 @@
         "choice": "Keep derivation, file the explicit declaration as a follow-up",
         "rationale": "The question narrowed from load-bearing to nice-to-have once the ISSUE-is-a-DEF equivalence was settled, so ordinal 1 now follows from what an ISSUE is rather than from a filename default. Changing the ISSUE schema here would widen a resolver bugfix into artifact-shape work with back-fill implications. Filing the explicit declaration as a tracked follow-up keeps it on the ledger per the user's standing rule that nothing gets fixed off-ledger.",
         "resolvedAt": "2026-10-02T19:53:14.608Z"
+      },
+      "qbcacebd5": {
+        "question": "[s8 sbdry2 — partial] The six ordered migrationSteps are a required field of the migration schema, but steps 1 and 4 read close to task enumeration. OPEN: a reviewer may judge they should be compressed into outcome statements with sequencing left to the plan stage. Flagged rather than asserted clean.",
+        "status": "resolved",
+        "choice": "Compress steps 1 and 4 into outcomes",
+        "rationale": "Smallest change that resolves exactly what sbdry2 flagged. The migration schema requires ordered steps, so some sequencing is compliance rather than overreach; only steps 1 and 4 drifted into task wording ('write the failing characterisations FIRST', 'rewrite the two tests'). Restating those two as the state that must hold afterwards keeps the load-bearing order — characterisation before the behaviour flip, and the flip visible separately from the test rewrite — while handing task breakdown to this plan, where it belongs.",
+        "resolvedAt": "2026-10-02T19:53:44.267Z"
       }
     }
   },

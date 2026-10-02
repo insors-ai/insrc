@@ -856,6 +856,9 @@ export const DOCS_UX_SOURCE =
   // ONE named constant. A second hard-coded copy is what turns a reasoned bound back
   // into a number nobody chose.
   `var UX_DEPTH_MAX=24;` +
+  // The slot's default label when the ref carries no title, mirroring S003's
+  // DG_LABEL_DEFAULT. 'Experience mock' is the daemon's own name for this companion.
+  `var UX_LABEL_DEFAULT='Experience mock';` +
 
   // --- the child list, read DEFENSIVELY --------------------------------------
   // Mirrors childrenOf (ux.ts:181-195) including its reason: a card body is read
@@ -1020,7 +1023,57 @@ export const DOCS_UX_SOURCE =
   `var card=uxEl('div','ux-card');` +
   `var body=(record&&Array.isArray(record.body))?record.body:[];` +
   `body.forEach(function(e){card.appendChild(uxElement(e,1));});` +
-  `return {el:card};}`;
+  `return {el:card};}` +
+
+  // --- sc4: the EXPERIENCE SLOT (S004/t5) ------------------------------------
+  // Mirrors S003's dgPickRef / dgBuildDiagramSlot almost line for line, which is
+  // the point: the two slots are peers in one region and must fail the same way.
+  // Still INERT — t6 adds the single mount call.
+
+  // The experience ref is the first `ux-mock` companion. This and dgPickRef
+  // PARTITION the companions array: diagram kinds there, ux-mock here, and
+  // CompanionKind has no fourth member — so no ref can feed both slots and none is
+  // silently dropped. Matching loosely would hand the mock a diagram's label and
+  // link-out, producing a slot that renders, looks right, and points the reviewer
+  // at the wrong companion.
+  `function uxPickRef(companions){` +
+  `if(!companions||!(companions instanceof Array))return undefined;` +
+  `for(var i=0;i<companions.length;i++){var c=companions[i];` +
+  `if(c&&typeof c==='object'&&c.kind==='ux-mock')return c;}` +
+  `return undefined;}` +
+
+  `function uxLinkOut(ref){` +
+  `if(!ref||typeof ref.relPath!=='string'||ref.relPath.length===0)return undefined;` +
+  `return {relPath:ref.relPath,title:(typeof ref.title==='string'&&ref.title.length>0)?ref.title:ref.relPath};}` +
+
+  // A record is DRAWABLE only if it is a card with a non-empty body. `body: []` and
+  // a malformed record are both ABSENT, matching the undefined-or-empty convention
+  // the other slots use.
+  `function uxDrawable(record){` +
+  `return !!(record&&typeof record==='object'&&Array.isArray(record.body)&&record.body.length>0);}` +
+
+  `function uxBuildMockSlot(record,ref,anchorSlug){` +
+  // THE ABSENT GATE COMES FIRST and returns before a single element is created, so
+  // "no slot" is provable as the ABSENCE OF DOM ACTIVITY rather than as the absence
+  // of something visible. This is the dominant path by a wide margin: 4 of 645
+  // ledger bodies carry a uxDefinition at all.
+  `var drawable=uxDrawable(record);` +
+  `if(!drawable&&!ref)return {state:'absent'};` +
+  `var label=(ref&&typeof ref.title==='string'&&ref.title.length>0)?ref.title:UX_LABEL_DEFAULT;` +
+  `var link=uxLinkOut(ref);` +
+  `if(!drawable){` +
+  // A ref with no record this surface can draw from. The reason NAMES what was
+  // referenced rather than failing generically, because a silent omission is
+  // indistinguishable from a document that legitimately has no mock.
+  `return {state:'unshowable',kind:'experience',label:label,reason:'its experience record is not available to this surface',linkOut:link,anchorSlug:anchorSlug};}` +
+  // A renderer throw must never take the document down over an adjunct — k4 — so
+  // the construction is wrapped and degrades to the same stated failure.
+  `var built=null;try{built=uxRenderCard(record);}catch(err){built=null;}` +
+  `if(!built||!built.el){` +
+  `return {state:'unshowable',kind:'experience',label:label,reason:'the experience record could not be drawn',linkOut:link,anchorSlug:anchorSlug};}` +
+  `var out={state:'rendered',kind:'experience',label:label,body:built.el,anchorSlug:anchorSlug};` +
+  `if(link)out.linkOut=link;` +
+  `return out;}`;
 
 // ---------------------------------------------------------------------------
 // sc4 (S003/t3) — THE COMPANION VISUAL SLOT. Owned by s3, consumed by s3 and s4.

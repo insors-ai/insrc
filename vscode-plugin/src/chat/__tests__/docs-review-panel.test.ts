@@ -1010,16 +1010,16 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  85369,
-  bytes:  85429,
-  sha256: 'b72b54814d39dac7e93a59492c048f2b4e9125c506280a4f437f497eded0adf7',
+  chars:  86746,
+  bytes:  86806,
+  sha256: '4c30468c8529ee76cd3864d8b72265e29d1ca782c0fda663f496d96bed2ce0c7',
 } as const;
 
 /**
  * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
  * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
  * the fifth source string and its CSS fragment, and the test below proves those two
- * additions account for the delta EXACTLY — 79530 + 3493 + 2346 = 85369 — so
+ * additions account for the delta EXACTLY — 79530 + 4870 + 2346 = 86746 — so
  * nothing else slipped into the shell alongside them.
  *
  * Every value here was COMPUTED at the fixed nonce and copied from the computation,
@@ -3950,9 +3950,21 @@ function uxNodeStub(tag: string): UxNode {
   return n as UxNode;
 }
 
+interface UxSlot {
+  state: 'absent' | 'rendered' | 'unshowable';
+  kind?: string;
+  label?: string;
+  reason?: string;
+  body?: UxNode;
+  linkOut?: { relPath: string; title: string };
+  anchorSlug?: string;
+}
+
 interface UxApi {
   uxRenderCard(record: unknown): { el: UxNode };
   uxElement(el: unknown, depth: number): UxNode;
+  uxPickRef(companions: unknown): { kind: string; title?: string; relPath?: string } | undefined;
+  uxBuildMockSlot(record: unknown, ref: unknown, anchorSlug: string | undefined): UxSlot;
   setDepthMax(n: number | null): void;
   created: string[];
   texts: string[];
@@ -3972,7 +3984,7 @@ function loadUx(): UxApi {
     createElementNS: (_ns: string, t: string) => { created.push(`NS:${t}`); return uxNodeStub(t); },
   };
   // eslint-disable-next-line no-new-func
-  const make = new Function('document', `${DOCS_UX_SOURCE}; return {uxRenderCard:uxRenderCard,uxElement:uxElement,setDepthMax:function(n){UX_DEPTH_MAX=n;}};`);
+  const make = new Function('document', `${DOCS_UX_SOURCE}; return {uxRenderCard:uxRenderCard,uxElement:uxElement,uxPickRef:uxPickRef,uxBuildMockSlot:uxBuildMockSlot,setDepthMax:function(n){UX_DEPTH_MAX=n;}};`);
   const api = make(doc) as Omit<UxApi, 'created' | 'texts' | 'nodes'>;
   return { ...api, created, texts, nodes };
 }
@@ -5038,4 +5050,144 @@ test('t4 MUTATION: removing the bound makes the pathological case diverge', () =
   // that made the difference, not something else about the run.
   ux.setDepthMax(24);
   assert.doesNotThrow(() => ux.uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] }));
+});
+
+// ---------------------------------------------------------------------------
+// S004/t5 — the sc4 experience slot factory. Still INERT: t6 mounts it.
+//
+// Split here by the plan's critique so the Story's one novel piece (the renderer)
+// did not review alongside its most boilerplate piece (this, an almost line-for-line
+// mirror of S003's dgPickRef/dgBuildDiagramSlot).
+// ---------------------------------------------------------------------------
+
+const UX_REF_T5 = { kind: 'ux-mock', relPath: 'docs/epics/x/S004/ux-mock.html', title: 'Experience mock' };
+const DIAGRAM_REFS = [
+  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/er.html', title: 'ER diagram' },
+  { kind: 'diagram-html', relPath: 'docs/epics/x/component.html', title: 'Component diagram' },
+];
+
+test('t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, and dgPickRef is unchanged', () => {
+  const ux = loadUx();
+  const dg = loadDg() as unknown as { dgPickRef?: (c: unknown) => unknown };
+  // A fixture carrying BOTH slots' refs, with the DIAGRAM refs first so position
+  // cannot stand in for kind.
+  const all = [...DIAGRAM_REFS, UX_REF_T5];
+
+  assert.equal(ux.uxPickRef(all), UX_REF_T5, 'the ux ref, by identity');
+  // And the OTHER picker still selects what it selected before — the two partition
+  // the array rather than overlap. S003 established these cannot be told apart
+  // naively: three daemon renderers all stamp kind:'diagram-mermaid'.
+  const dgApi = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
+    createElement: () => ({}), createElementNS: () => ({}),
+  }) as (c: unknown) => unknown;
+  assert.equal(dgApi(all), DIAGRAM_REFS[0], 'dgPickRef still takes the first diagram ref');
+  void dg;
+});
+
+test('t5: a companions array of DIAGRAM refs only yields NO ux ref', () => {
+  const ux = loadUx();
+  assert.equal(ux.uxPickRef(DIAGRAM_REFS), undefined,
+    'no ux-mock ref means none — this is what routes ac3’s dominant path to absent');
+  // And the degenerate inputs a stored body can actually carry.
+  for (const bad of [undefined, null, 'not an array', {}, [], [null], [{ kind: 'nope' }]]) {
+    assert.equal(ux.uxPickRef(bad), undefined, `${JSON.stringify(bad)} yields no ref`);
+  }
+});
+
+test('t5: the three sc4 states come back correctly from the factory in isolation', () => {
+  const ux = loadUx();
+  const card = { type: 'AdaptiveCard', body: [{ type: 'TextBlock', text: 'x' }] };
+
+  // ABSENT — no ref AND no record. The dominant path.
+  const absent = ux.uxBuildMockSlot(undefined, undefined, undefined);
+  assert.deepEqual(absent, { state: 'absent' }, 'absent carries no label, body or link');
+
+  // RENDERED — a record, with or without a ref.
+  const rendered = ux.uxBuildMockSlot(card, UX_REF_T5, 'sec-1');
+  assert.equal(rendered.state, 'rendered');
+  assert.equal(rendered.kind, 'experience');
+  assert.equal(rendered.label, 'Experience mock');
+  assert.equal(rendered.anchorSlug, 'sec-1');
+  assert.equal((rendered.body as UxNode).className, 'ux-card');
+  assert.deepEqual(rendered.linkOut, { relPath: UX_REF_T5.relPath, title: UX_REF_T5.title });
+
+  // UNSHOWABLE — a ref naming a record this surface does not have.
+  const unshowable = ux.uxBuildMockSlot(undefined, UX_REF_T5, undefined);
+  assert.equal(unshowable.state, 'unshowable');
+  assert.match(unshowable.reason!, /experience record is not available/,
+    'the reason NAMES what was referenced — a generic failure is indistinguishable from a document that has no mock');
+  assert.deepEqual(unshowable.linkOut, { relPath: UX_REF_T5.relPath, title: UX_REF_T5.title },
+    'and the link-out is offered, so the reviewer can still reach the authentic companion');
+});
+
+test('t5: `body: []` and a malformed record are treated as ABSENT, not as a broken card', () => {
+  const ux = loadUx();
+  for (const record of [undefined, null, {}, { body: [] }, { body: null }, { body: 'x' }, 'card', 42]) {
+    assert.deepEqual(ux.uxBuildMockSlot(record, undefined, undefined), { state: 'absent' },
+      `${JSON.stringify(record)} with no ref is absent`);
+    // With a ref present the SAME inputs route to the stated failure instead.
+    assert.equal(ux.uxBuildMockSlot(record, UX_REF_T5, undefined).state, 'unshowable',
+      `${JSON.stringify(record)} with a ref is unshowable`);
+  }
+});
+
+test('t5: a record with NO ref still renders — the record gates content, the ref gates label and link', () => {
+  const ux = loadUx();
+  const slot = ux.uxBuildMockSlot({ type: 'AdaptiveCard', body: [{ type: 'TextBlock', text: 'x' }] }, undefined, undefined);
+  assert.equal(slot.state, 'rendered');
+  assert.equal(slot.label, 'Experience mock', 'the DEFAULT label, since no ref supplied one');
+  assert.equal(slot.linkOut, undefined, 'and NO link-out, because there is no companion to link to');
+});
+
+test('t5: the label comes from the REF, never hard-coded per call', () => {
+  const ux = loadUx();
+  const card = { type: 'AdaptiveCard', body: [{ type: 'TextBlock', text: 'x' }] };
+  const custom = { ...UX_REF_T5, title: 'What the approval flow should feel like' };
+  assert.equal(ux.uxBuildMockSlot(card, custom, undefined).label, custom.title);
+  // An empty or missing title falls back rather than producing a blank heading.
+  assert.equal(ux.uxBuildMockSlot(card, { ...UX_REF_T5, title: '' }, undefined).label, 'Experience mock');
+  // This is what lets t6 prove the two slots are distinguishable: each takes its
+  // label from its OWN ref.
+  assert.equal(companionVisualKind('ux-mock'), 'experience');
+  assert.equal(companionVisualKind('diagram-mermaid'), 'diagram');
+});
+
+test('t5: ac3’s dominant path is ZERO DOM ACTIVITY — the absent gate returns before anything is created', () => {
+  const ux = loadUx();
+  const before = ux.created.length;
+  assert.deepEqual(ux.uxBuildMockSlot(undefined, undefined, undefined), { state: 'absent' });
+  assert.equal(ux.created.length, before,
+    'not one createElement call: "no slot" is the ABSENCE OF DOM ACTIVITY, not a hidden element');
+  // Same for the malformed-record-with-no-ref case, which takes the same gate.
+  ux.uxBuildMockSlot({ body: 'nope' }, undefined, undefined);
+  assert.equal(ux.created.length, before);
+});
+
+test('t5: a renderer throw degrades to the stated failure rather than escaping the factory', () => {
+  const ux = loadUx();
+  // A record whose body getter throws mid-walk — a stored artifact can be shaped
+  // in ways the type forbids, and taking the document down over an adjunct inverts k4.
+  const hostile = { type: 'AdaptiveCard', body: [] as unknown[] };
+  Object.defineProperty(hostile, 'body', {
+    get() { return new Proxy([{ type: 'TextBlock', text: 'x' }], { get(t, k) { if (k === 'forEach') throw new Error('boom'); return Reflect.get(t, k); } }); },
+  });
+  const slot = ux.uxBuildMockSlot(hostile, UX_REF_T5, undefined);
+  assert.equal(slot.state, 'unshowable');
+  assert.match(slot.reason!, /could not be drawn/);
+  assert.deepEqual(slot.linkOut, { relPath: UX_REF_T5.relPath, title: UX_REF_T5.title });
+});
+
+test('t5: the bound is PASSED IN, not re-declared — still one named constant after the factory lands', () => {
+  const decls = DOCS_UX_SOURCE.match(/UX_DEPTH_MAX\s*=\s*\d+/g) ?? [];
+  assert.equal(decls.length, 1, 'the factory did not mint a second copy');
+  assert.ok(!/uxBuildMockSlot[\s\S]*UX_DEPTH_MAX\s*=/.test(DOCS_UX_SOURCE),
+    'and the factory does not reassign it');
+});
+
+test('t5: the surface is STILL unchanged — nothing calls the factory yet', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  assert.match(html, /function uxBuildMockSlot\(/, 'the factory is inlined');
+  assert.doesNotMatch(html, /uxPlaced=uxBuildMockSlot\(|uxBuildMockSlot\(m\./,
+    'and nothing calls it — the mount arrives at t6');
+  assert.doesNotMatch(html, /m\.uxDefinition/, 'the record is still not read');
 });

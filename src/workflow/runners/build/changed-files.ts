@@ -19,6 +19,8 @@
  * collected.
  */
 
+import { isAbsolute, relative } from 'node:path';
+
 import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData } from '../../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../../daemon/tools/types.js';
@@ -47,10 +49,11 @@ export interface ChangedFilesOptions {
 	 *  derivation sees nothing. A dirty tree keeps using the working tree and never
 	 *  looks at the base. */
 	readonly base?: string | undefined;
-	/** Repo-relative paths to drop from the derived set. ACCEPTED here but NOT YET
-	 *  CONSULTED — applied in t4, which is kept separate so a rollback of the range
-	 *  work cannot reintroduce the self-reporting defect. Passing it today is inert;
-	 *  a test pins that inertness so t4 inverts it rather than discovering it. */
+	/** Paths to drop from the derived set, whatever derivation produced them.
+	 *  Accepts repo-ABSOLUTE or repo-RELATIVE entries — callers hold absolute paths
+	 *  (buildArtifactPaths returns them) while git reports relative ones, so
+	 *  normalising here keeps every caller from having to remember. Applied to the
+	 *  UNION, so an exclusion can never be half-applied to one derivation. */
 	readonly exclude?: readonly string[] | undefined;
 }
 
@@ -89,7 +92,23 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	if (paths.size === 0 && opts?.base !== undefined && opts.base.length > 0) {
 		await collectDiff(repoPath, { from: opts.base }, paths);
 	}
-	return [...paths];
+	// Exclusion is applied to the UNION, deliberately: filtering per-derivation
+	// would make it possible to half-fix the defect (drop the record's own paths
+	// from the working-tree set but not the range set, or vice versa), which is the
+	// exact shape the Story is closing. One filter, both derivations.
+	const drop = new Set((opts?.exclude ?? []).map(e => toRepoRelative(repoPath, e)));
+	return [...paths].filter(f => !drop.has(f));
+}
+
+/** Normalise an exclusion entry to the repo-relative form `git_diff` reports.
+ *  An absolute path under `repoPath` is relativised; anything else is returned
+ *  as given (already relative, or outside the repo and therefore unmatchable). */
+function toRepoRelative(repoPath: string, p: string): string {
+	if (!isAbsolute(p)) return p;
+	const rel = relative(repoPath, p);
+	// `..` means the path escapes the repo — it can never match a git path, so leave
+	// it alone rather than silently turning it into something that might.
+	return rel.length > 0 && !rel.startsWith('..') ? rel : p;
 }
 
 /**

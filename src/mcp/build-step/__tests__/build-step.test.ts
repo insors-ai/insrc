@@ -700,3 +700,56 @@ test('CHARACTERISATION harness: read-only — rev-list --count and status --porc
 			'HEAD still points at the same commit — no amend, no rewrite');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// ---------------------------------------------------------------------------
+// t4 (ISSUE-93081bff91ae5108 / S001) — the WRITER passes its own paths.
+//
+// The derivation-level exclusion is covered in changed-files.test.ts. This is
+// the other half: that the validate writer actually DERIVES its own json + md
+// pre-persist and forwards them, reproducing the exact observed state — the
+// record's own two files dirty in the working tree while the Story's real change
+// sits alongside them.
+// ---------------------------------------------------------------------------
+
+test('t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story\'s real change', async () => {
+	if (!gitAvailable()) return;
+	const repo = mkCleanGitRepo();
+	try {
+		seedDef(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		const standalone = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'F' };
+
+		// FIRST validate — writes the record, so from here on its own json + md
+		// exist on disk as untracked/dirty paths.
+		await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone });
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		assert.ok(existsSync(json), 'precondition: the record now exists');
+
+		// Stage everything so the record's own files ARE in the working-tree diff,
+		// alongside a genuine source change — the exact state that produced the
+		// observed wrong change set.
+		writeFileSync(join(repo, 'real-work.ts'), 'export const w = 1;\n');
+		execFileSync('git', ['add', '-A'], { cwd: repo, stdio: 'ignore' });
+		const raw = execFileSync('git', ['diff', '--cached', '--name-only'], { cwd: repo, encoding: 'utf8' })
+			.split('\n').filter(Boolean);
+		assert.ok(raw.some(f => f.endsWith('.json') && f.includes('BUILD-')),
+			`precondition: the record's own json IS in the raw diff, got ${JSON.stringify(raw)}`);
+		assert.ok(raw.some(f => f.endsWith('BUILD.md')), 'precondition: and its own md too');
+
+		// SECOND validate — the one whose change-log we inspect.
+		await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone });
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { body: { changeLog?: { target: { file: string } }[] } };
+		const files = (rec.body.changeLog ?? []).map(e => e.target.file);
+
+		assert.ok(files.includes('real-work.ts'), `the Story's real change is recorded, got ${JSON.stringify(files)}`);
+		assert.ok(!files.some(f => f.includes('BUILD-') && f.endsWith('.json')),
+			`the record must not report its own json, got ${JSON.stringify(files)}`);
+		assert.ok(!files.some(f => f.endsWith('BUILD.md')),
+			`the record must not report its own md, got ${JSON.stringify(files)}`);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

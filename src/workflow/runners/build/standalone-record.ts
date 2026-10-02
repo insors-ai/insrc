@@ -183,6 +183,30 @@ export function renderPlanBuildRecordMd(rec: BuildRecord): string {
  * the unchanged {@link renderStandaloneBuildRecordMd} so the Trivial output stays
  * byte-identical.
  */
+/** Paths a MERGED record occupies. The single derivation both the writer and the
+ *  pre-persist lookup below use, so the two can never disagree about where a
+ *  record lives. */
+function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
+	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone, merged.meta.createdAt);
+	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+}
+
+/**
+ * The paths `persistBuildRecord(repoPath, rec)` WOULD write, computed without
+ * writing anything.
+ *
+ * Needed because the change-set collector runs BEFORE the persist — so a writer
+ * that wants to exclude the record's own files from its own change set cannot
+ * simply use the persist's return value. It resolves the json path, runs the same
+ * `mergeWithPrior` the writer will run (the md folder is anchored on the MERGED
+ * `createdAt` and `standalone`, not the new write's), and derives both paths
+ * through the same {@link pathsForMerged} the writer uses. Read-only.
+ */
+export function buildRecordPathsFor(repoPath: string, rec: BuildRecord): { md: string; json: string } {
+	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
+	return pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec));
+}
+
 export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
@@ -193,8 +217,7 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
 	const merged = mergeWithPrior(jsonPath, rec);
 	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
-	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone, merged.meta.createdAt);
-	const paths = buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+	const paths = pathsForMerged(repoPath, merged);
 	const md = merged.meta.standalone
 		? renderStandaloneBuildRecordMd(merged as unknown as StandaloneBuildRecord)
 		: renderPlanBuildRecordMd(merged);

@@ -18,9 +18,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { changedFiles, collectBuildChangeLog, NoBuildChangesError } from '../changed-files.js';
 
@@ -171,14 +171,17 @@ test('t3: collectBuildChangeLog STILL never throws and STILL logs — a seam tha
 		'and it is the existing message, surviving the widening verbatim');
 });
 
-test('t3: `exclude` is ACCEPTED but INERT today — pinned so t4 inverts it rather than discovering it', async () => {
-	// changedFiles reaches real git; a non-git dir throws, so drive the inertness
-	// through the seam instead: the collector forwards exclude untouched and does
-	// no filtering of its own.
+test('t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)', async () => {
+	// INVERTED FROM t3, where this pinned `exclude` as inert. t4 applies the filter
+	// inside changedFiles, NOT in collectBuildChangeLog — so a stubbed seam that
+	// ignores the option still returns everything, which is correct: the collector's
+	// job is to FORWARD the option, and the derivation's job is to honour it.
 	const seam = recordingSeam(['keep.ts', '.insrc/artifacts/BUILD-x.json']);
 	const log = await collectBuildChangeLog('/repo', { ...CTX, exclude: ['.insrc/artifacts/BUILD-x.json'] }, seam.fn);
+	assert.deepEqual(seam.calls[0]!.opts, { exclude: ['.insrc/artifacts/BUILD-x.json'] },
+		'the option reaches the seam');
 	assert.deepEqual(log.map(e => e.target.file), ['keep.ts', '.insrc/artifacts/BUILD-x.json'],
-		'TODAY: the excluded path is still in the change-log — t4 applies the filter and INVERTS this');
+		'and a seam that ignores it is passed through unfiltered — the filter is the derivation\'s responsibility, asserted against real git below');
 });
 
 // ---------------------------------------------------------------------------
@@ -261,5 +264,93 @@ test('t3: an empty-string base behaves as ABSENT (contract pinned; the guard its
 		// builtin becoming strict, not a behaviour this test can falsify. Proving
 		// the guard would need git_diff injected into changedFiles, which is out of
 		// this Task's scope and not worth the seam.
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// t4 — the exclusion, against real git. Asserted SEPARATELY for the
+// working-tree and range derivations: an exclusion honoured by only one is the
+// bug half-fixed, and a single test over the union would not catch that.
+// ---------------------------------------------------------------------------
+
+test('t4 (WORKING-TREE derivation): the record\'s own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives', async () => {
+	const { repo } = mkRangeRepo();
+	try {
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		const other = '.insrc/artifacts/LLD-abc-s1.json';     // a DIFFERENT artifact
+		for (const f of [...own, other, 'src/real.ts']) {
+			mkdirSync(join(repo, dirname(f)), { recursive: true });
+			writeFileSync(join(repo, f), 'x\n');
+		}
+		execFileSync('git', ['add', '-A'], { cwd: repo });
+
+		// Reproduces the observed state: the record's own files dirty in the tree.
+		const unfiltered = await changedFiles(repo);
+		assert.ok(own.every(f => unfiltered.includes(f)), 'precondition: the record\'s own paths ARE in the raw working-tree set');
+
+		const filtered = await changedFiles(repo, { exclude: own });
+		for (const f of own) assert.ok(!filtered.includes(f), `${f} must be excluded`);
+		assert.ok(filtered.includes(other), 'a DIFFERENT artifact under .insrc/artifacts still counts — not a blanket artifact filter');
+		assert.ok(filtered.includes('src/real.ts'), 'and real source is untouched');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t4-range-'));
+	try {
+		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
+		writeFileSync(join(repo, 'base.ts'), '0\n'); git('add', '.'); git('commit', '-qm', 'base');
+		const base = git('rev-parse', 'HEAD');
+		// COMMIT the record's own files plus real work — tree ends up clean.
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		for (const f of [...own, 'src/shipped.ts']) {
+			mkdirSync(join(repo, dirname(f)), { recursive: true });
+			writeFileSync(join(repo, f), 'x\n');
+		}
+		git('add', '-A'); git('commit', '-qm', 'the Story work + its ledger record');
+		assert.equal(git('status', '--porcelain'), '', 'precondition: clean tree, so the RANGE derivation runs');
+
+		const ranged = await changedFiles(repo, { base });
+		assert.ok(own.every(f => ranged.includes(f)), 'precondition: the range set DOES contain the record\'s own paths');
+
+		const filtered = await changedFiles(repo, { base, exclude: own });
+		for (const f of own) assert.ok(!filtered.includes(f), `${f} must be excluded from the RANGE derivation too`);
+		assert.ok(filtered.includes('src/shipped.ts'), 'the Story\'s real committed change survives');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones', async () => {
+	const { repo } = mkRangeRepo();
+	try {
+		writeFileSync(join(repo, 'dirty.ts'), '1\n');
+		execFileSync('git', ['add', 'dirty.ts'], { cwd: repo });
+		const filtered = await changedFiles(repo, { exclude: [join(repo, 'dirty.ts')] });
+		assert.deepEqual(filtered, [], 'an absolute path under the repo matches the relative path git reports');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)', async () => {
+	const { repo } = mkRangeRepo();
+	try {
+		// Only artifacts dirty — but NOT this record's own two paths.
+		for (const f of ['.insrc/artifacts/LLD-other-s1.json', 'docs/epics/y/S002/LLD.md']) {
+			mkdirSync(join(repo, dirname(f)), { recursive: true });
+			writeFileSync(join(repo, f), 'x\n');
+		}
+		execFileSync('git', ['add', '-A'], { cwd: repo });
+		const filtered = await changedFiles(repo, { exclude: ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'] });
+		assert.equal(filtered.length, 2, `an artifact-only Story is still reported, got ${JSON.stringify(filtered)}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match', async () => {
+	const { repo } = mkRangeRepo();
+	try {
+		writeFileSync(join(repo, 'dirty.ts'), '1\n');
+		execFileSync('git', ['add', 'dirty.ts'], { cwd: repo });
+		const filtered = await changedFiles(repo, { exclude: ['/somewhere/else/dirty.ts'] });
+		assert.deepEqual(filtered, ['dirty.ts'],
+			'a path outside the repo cannot match a git path — relativising it would produce ../.. noise that might');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

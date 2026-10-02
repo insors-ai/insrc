@@ -19,7 +19,7 @@ import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/c
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
-import { persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
+import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
@@ -158,10 +158,21 @@ async function runValidateSession(
 				// failure is swallowed inside collectBuildChangeLog (→ []), and an empty
 				// change-log is omitted from the body (omit-slot) so a no-change build
 				// stays byte-identical (k4).
-				const changeLog = await collectBuildChangeLog(repoPath, { author: 'insrc-build', timestamp: now });
+				const rec = {
+					meta: { workflow: 'build' as const, standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
+					body: { tasks: [{ id: taskId, passed }] },
+				};
+				// EXCLUDE the record's own json + md from its own change set. Without
+				// this the only dirty paths when the collector runs are usually these
+				// two, so the record would report that the Story changed its own ledger
+				// entry. Derived pre-persist through the same merge the write will use.
+				const own = buildRecordPathsFor(repoPath, rec);
+				const changeLog = await collectBuildChangeLog(repoPath, {
+					author: 'insrc-build', timestamp: now, exclude: [own.json, own.md],
+				});
 				persistBuildRecord(repoPath, {
-					meta: { workflow: 'build', standalone: false, epicHash, storyId, createdAt: now, updatedAt: now },
-					body: { tasks: [{ id: taskId, passed }], ...(changeLog.length > 0 ? { changeLog } : {}) },
+					...rec,
+					body: { ...rec.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
 				});
 			} catch (err) {
 				log.warn(

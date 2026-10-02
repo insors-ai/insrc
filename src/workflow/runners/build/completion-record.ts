@@ -18,7 +18,7 @@
  * the ledger record could not be written.
  */
 
-import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -36,12 +36,21 @@ export async function ensureBuildRecordOnCompletion(
 	if (ref.epicHash.length === 0 || ref.storyId.length === 0) return undefined;
 	try {
 		const now = new Date().toISOString();
-		const changeLog = listChanged !== undefined
-			? await collectBuildChangeLog(repoPath, { author: 'insrc-build', timestamp: now }, listChanged)
-			: await collectBuildChangeLog(repoPath, { author: 'insrc-build', timestamp: now });
-		const rec: BuildRecord = {
+		const base: BuildRecord = {
 			meta: { workflow: 'build', standalone: false, epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now },
-			body: { tasks: [], ...(changeLog.length > 0 ? { changeLog } : {}) },
+			body: { tasks: [] },
+		};
+		// EXCLUDE the record's own json + md, for the same reason the validate writer
+		// does: at completion time those two are typically the only dirty paths, so
+		// without this the record reports that the Story changed its own ledger entry.
+		const own = buildRecordPathsFor(repoPath, base);
+		const ctx = { author: 'insrc-build', timestamp: now, exclude: [own.json, own.md] };
+		const changeLog = listChanged !== undefined
+			? await collectBuildChangeLog(repoPath, ctx, listChanged)
+			: await collectBuildChangeLog(repoPath, ctx);
+		const rec: BuildRecord = {
+			...base,
+			body: { ...base.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
 		};
 		return persistBuildRecord(repoPath, rec);
 	} catch (err) {

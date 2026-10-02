@@ -1,0 +1,1207 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790949598866-26gtoy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T14:11:39.555Z",
+    "epicCreatedAt": "2026-10-02T14:11:39.556Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 700679,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "epicSlug": "design-fix-issue-93081bff91ae5108-make-completed",
+    "storyId": "S001",
+    "lldRunId": "wf-1790932646998-yl883h",
+    "lldEffectiveHash": "16cd7ff49788aeab6cf463a90a9add0593362954daf7c36250b85877648e91ca",
+    "review": {
+      "artifact": "plan",
+      "stage": "plan",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "q1",
+          "ref": "t5 / c16",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The range-base stamp has exactly ONE site, approveArtifactByJsonPath in src/workflow/gates.ts, and that site is GENERIC across every artifact kind and SYNCHRONOUS — which is why t5 must gate the stamp on meta.workflow rather than writing it unconditionally, and must not use an await-based HEAD read. It builds nextMeta by spreading the prior meta.",
+          "evidence": "Confirmed on all three anchors. gates.ts:499 `export function approveArtifactByJsonPath(jsonPath: string, opts?: ...)` — note `export function`, not async, so the SYNCHRONOUS half is verified from the signature itself. gates.ts:497 carries the comment 'Works generically for any workflow — the artifact's JSON path is passed in verbatim', verifying the GENERIC half verbatim. gates.ts:537 is `const nextMeta = { ...artifact.meta, approvedAt, ...(reviewOverride !== undefined ? { reviewOverride } : {}) };`, verifying the spread. Only one src/ hit for the declaration pattern, so the one-site claim holds.",
+          "action": "none — verified sound. Both constraints t5 depends on (gate on meta.workflow; no await) rest on verified properties of the real function rather than on assumption.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q2",
+          "ref": "t5 / c17",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "revParse hard-codes `--short`, so it CANNOT supply the full 40-hex sha t5 requires for a persisted range base. This is the premise behind t5's instruction to run `git rev-parse HEAD` directly via execFileSync instead, and not to widen revParse.",
+          "evidence": "Confirmed decisively, and this is the claim that justifies t5's most specific instruction. helpers.ts:40 declares `export async function revParse(cwd: string, ref: string): Promise<string>` and :41 is `const res = await runShell(['git', 'rev-parse', '--short', ref], { cwd, timeoutMs: 5_000 });` — `--short` is hard-coded in the argv array with no parameter controlling it. Exactly ONE src/ hit for that argv pattern. So revParse genuinely cannot return a full sha, and t5's direction to call `git rev-parse HEAD` separately rather than widening revParse is grounded.",
+          "action": "none — verified sound. The s3 critique that produced this instruction was correct: without it the build would have reached for revParse and silently persisted an abbreviation.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q3",
+          "ref": "t5 / c16",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "A non-test synchronous execFileSync precedent already exists inside src/workflow/, which is what makes t5's choice of a sync git call an existing idiom rather than a new one. The two sites are migrate-docs-tree.ts and tracker/github.ts.",
+          "evidence": "Both read anchors resolve (migrate-docs-tree.ts:317, tracker/github.ts:17). The bare `execFileSync` grep hit its 50-match cap and is dominated by docs/, so it cannot re-derive a count — but the two cited sites are confirmed present, which is all the claim needs: a non-test synchronous execFileSync precedent exists inside src/workflow/.",
+          "action": "none — verified sound, though note the probe was weak. The claim is existential ('a precedent exists'), not a count, so two confirmed anchors settle it; a future probe for this should grep `from 'node:child_process'` scoped to src/workflow/ rather than the bare symbol.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q4",
+          "ref": "t8 / c21",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "THE PLAN'S MOST CONSEQUENTIAL NEW CLAIM. A committed BUILD record exists with meta.standalone true and NO sizeClass key at all, carrying a plan-driven {commit, tasks} body. It disproves the CONVERSE of review claim p1 (which established only that sizeClass appears exclusively on standalone records), so the converged renderer's sizeClass-keyed title has an undefined case in REAL stored data and t8 must define it rather than inherit today's 'undefined' heading.",
+          "evidence": "Confirmed — the counterexample record exists and reads as described. Worth recording one incidental fact the probe surfaced: the hash be8708a9cd20e286 is ALSO the epic hash of an unrelated Epic, 'add-insrc-icon-vs-code-activity-E20260926be8708a9', so the record is that Epic's S001 BUILD record rather than an orphan. That makes it a normal product of the shipped pipeline, which strengthens the claim: the sizeClass-absent state is something the system actually produces, not a hand-corrupted file.",
+          "action": "none — verified sound, and it remains the plan's most consequential new finding. t8's absent-sizeClass fallback and t2's third golden both rest on it.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q5",
+          "ref": "t8 / c21",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing standalone renderer interpolates meta.sizeClass directly into the title, which is the mechanism by which a sizeClass-absent record renders a heading containing the literal string 'undefined' today.",
+          "evidence": "Confirmed verbatim and uniquely: standalone-record.ts:116 is `` `# Build (standalone ${rec.meta.sizeClass}) — Story ${rec.meta.storyId}` `` — exactly one src/ match. A bare template interpolation of a possibly-absent field, so an absent sizeClass stringifies to the literal 'undefined' inside the heading. The mechanism behind the defect is established, not inferred.",
+          "action": "none — verified sound. Combined with q4 this makes the 'undefined' title an observed consequence of real stored data rather than a hypothetical.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q6",
+          "ref": "t8 / c23",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sizeClass is REQUIRED on StandaloneBuildRecord.meta but OPTIONAL on BuildRecord.meta — so the counterexample record violates its own declared type, and the converged renderer (which takes a BuildRecord) can legitimately read an absent sizeClass. The code-review subject separately types buildRecord as StandaloneBuildRecord | null, which is why the type is retained rather than deleted.",
+          "evidence": "The two cited declarations are confirmed by their read anchors, and the asymmetry the plan relies on holds. But the grep surfaced a THIRD declaration the plan does not name: src/mcp/build-step/render.ts:137 `readonly sizeClass: string;` (required). So sizeClass is declared in THREE places across src/, not the two the plan accounts for.",
+          "action": "Record it in the plan rather than leave it latent. The third declaration does not change t8's design — the converged renderer takes a BuildRecord, whose sizeClass is optional, which is what makes the absent case legal to handle — but a task that touches the sizeClass contract should know there are three declarations in play, because a future reader reconciling them will otherwise find a site the plan never mentions. Add it to t8's summary as a one-line note alongside the :49/:94 pair.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The plan enumerates two sizeClass declarations as though they were exhaustive; a third exists in the build-step render types. The design is unaffected but the inventory is incomplete, and this Story is specifically about records that fail to state what they contain."
+          }
+        },
+        {
+          "claimId": "q7",
+          "ref": "t3 / c18",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The collector's never-throw catch AND its log.warn ALREADY exist, which reframes the fourth resolution's log-visibility requirement from new work into a preserve-and-assert regression guard. collectBuildChangeLog catches, logs 'could not derive the changed set; returning an empty change-log', and returns [].",
+          "evidence": "Confirmed verbatim. changed-files.ts:67 declares collectBuildChangeLog and :80 is the log line 'collectBuildChangeLog: could not derive the changed set; returning an empty change-log', with the catch at :77 and the `return []` at :82 both resolving. So ac6's never-throw AND the log-visibility requirement of resolution q378acc65 are ALREADY satisfied in the shipped code.",
+          "action": "none — verified sound, and the reframing matters: t3's job here is a regression guard over existing behaviour, not new work. That is why t3's acceptance check demands a seam that THROWS and asserts both the [] return and the log call, rather than merely asserting the return.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q8",
+          "ref": "t3 / c1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "changedFiles today takes ONLY repoPath and derives strictly from the working tree via a staged/unstaged loop, with no commit-range path — which is what makes t3's options argument purely additive rather than a signature change.",
+          "evidence": "Confirmed on both anchors, each a single src/ hit: changed-files.ts:43 `export async function changedFiles(repoPath: string): Promise<readonly string[]> {` and :46 `for (const staged of [false, true])`. The function takes only repoPath and loops staged/unstaged, with no commit-range path — so t3's options argument is genuinely additive rather than a signature change.",
+          "action": "none — verified sound.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q9",
+          "ref": "t8 / c19",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The rename surface is LARGER than the LLD's 'two call sites': renderPlanBuildRecordMd has its declaration plus exactly ONE production call site, and roughly seventeen further references confined to two committed test suites — which is why t8 must RUN those suites rather than assume compilation suffices.",
+          "evidence": "Both read anchors resolve (standalone-record.ts:132 declaration, :200 the single production call). The symbol grep hit its 50-match cap and is dominated by docs/, so it could not re-derive the ~17 count from this probe alone — but a direct scoped enumeration run earlier in this session returned exactly the claimed shape: 5 src/ hits total (declaration, the :183 doc reference, the :199/:200 dispatch) plus the import and uses in build-record-enrichment.test.ts and provenance-build.test.ts.",
+          "action": "none — verified sound. The operative part of the claim is not the exact number but that the references span two committed test SUITES, which is what makes t8's 'RUN GREEN, not merely compiled' check necessary; that part is confirmed by the file names in the matches.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q10",
+          "ref": "t2 / c20",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "build-record.test.ts has exactly one external call to renderStandaloneBuildRecordMd, and it asserts the WRITTEN md equals that function's return value — the assertion that becomes a tautology once t8 makes the function a delegating shim, because persistBuildRecord then writes through the same converged renderer the shim resolves to. This is why t2 must convert it to a frozen golden.",
+          "evidence": "Confirmed verbatim, and it is the single most important thing this review had to check. build-record.test.ts:142 is exactly `assert.equal(readFileSync(md, 'utf8'), renderStandaloneBuildRecordMd(rec));` — one src/ match. Written md on the left, the function's return on the right. Once t8 makes that function delegate to the converged renderer, persistBuildRecord writes through the same renderer, so both operands are the same function applied to the same record and the assertion holds for ANY output.",
+          "action": "none — verified sound. t2's conversion to a frozen golden, with the mutation proof that the pre-conversion form stays GREEN under a heading change, is the right remedy and is correctly ordered before t8.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q11",
+          "ref": "t2 / c20",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "provenance-build.test.ts:105 is a DIFFERENT and legitimate pattern that t2 must leave untouched — it compares the renderer against itself on two distinct inputs (a legacy record vs a base record), which is an equivalence check rather than the vacuous self-comparison being fixed.",
+          "evidence": "The read anchor at provenance-build.test.ts:105 resolves. Verified directly earlier in session: it is `assert.equal(renderPlanBuildRecordMd(legacy), renderPlanBuildRecordMd(baseRec));` — the same renderer applied to two DIFFERENT inputs, pinning that a legacy-shaped record renders identically to a base one. That is a genuine equivalence property, not a self-comparison, so it must be left alone.",
+          "action": "none — verified sound. Keeping this distinction explicit in the plan is worth the words: a sweep that 'fixed all renderer-against-renderer assertions' would destroy a legitimate legacy-compatibility guard while chasing the vacuous one.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q12",
+          "ref": "t8 / c4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The converged renderer's section list is nine members, of which exactly TWO always render (the title and the created/updated line) and SEVEN are conditional omit-slots: Commit, Scope, Triage rationale, Summary, Tasks validated, Changes, Feedback. The LLD's test strategy says 'eight omit-slots', which matches neither count — so t8 asserts against the seven actually counted.",
+          "evidence": "All seven conditional section literals resolve to real emit sites in standalone-record.ts, confirmed by a direct scoped read: '## Scope' :120, '## Triage rationale' :124, `**Commit:**` :140, '## Summary' :148, '## Tasks validated' :152, '## Changes' :163, '## Feedback' :167 (the last two each inside an `if` guard, visible at :163 and :167 as `lines.push('', '## Changes', ...)` / `lines.push('', '## Feedback', ...)`). Seven conditional plus the two unconditional (title, created/updated) gives nine, so the plan's recount is right and the LLD's 'eight omit-slots' is wrong.",
+          "action": "none — verified sound. The plan correctly refuses to inherit the LLD's unverified number and states the count it actually found, which is the behaviour the s6 audit asked for.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q13",
+          "ref": "t6 / c11",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The git_diff builtin already accepts a `from` range input, so t6's range derivation needs no new tool capability — only a different call. If this were false, the chosen approach would require new plumbing and t6's sizing would be wrong.",
+          "evidence": "The read anchors at diff.ts:55 and :62 resolve, confirming the `from` range input on the git_diff builtin. (The phrase grep returned four hits whose visible top three were docs/ citations of this same fact, so the probe was weak, but the typed read settles it — and the same anchor was confirmed verbatim during the LLD review as claim p4.)",
+          "action": "none — verified sound. t6 needs no new tool capability, only a different call, so its L sizing is driven by the fallback machinery rather than by tool work.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q14",
+          "ref": "t6 / c12",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The code-review grounding chain really does fall back to HEAD^ and then to git's empty-tree object — the shipped precedent t6 deliberately DECLINES to adopt, on the ground that a populated wrong answer is worse than an honest absence. The rejection is of a real mechanism, not a hypothetical one.",
+          "evidence": "Confirmed verbatim on both anchors, each a single src/ hit: grounding.ts:167 `const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';` and :298 `return await runDiff(repoPath, { from: EMPTY_TREE_HASH });`. The fallback chain t6 declines to adopt is live shipped code, so the rejection is a real decision about a real mechanism.",
+          "action": "none — verified sound. This is what makes t6's 'a CLEAN tree with NO base yields an EMPTY set, NOT the last commit's files' check meaningful: it pins a deliberate divergence from a pattern that exists elsewhere in this very codebase and would otherwise look like the obvious thing to do.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q15",
+          "ref": "t1 / c13",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The gated throwaway-repo idiom t1 and every git-dependent integration test follow is committed and real: a git-availability gate that returns early, and read-only verification afterwards via rev-list --count and status --porcelain.",
+          "evidence": "Both read anchors resolve (diff-grounding.test.ts:150 and :175). Verified directly earlier in session: :150 is `try { execFileSync('git', ['--version'], { stdio: 'ignore' }); } catch { git = false; }` followed by `if (!git) { return; }`, and the read-only verification compares `rev-list --count` before/after (:165, :173) and asserts `status --porcelain` is empty (:175). The probe's `status', '--porcelain` grep found other sites (maintenance.ts:97, migrate-docs-tree.test.ts:193) rather than this one in its visible slice, so the read is what settles it.",
+          "action": "none — verified sound. The idiom t1 extends is committed and includes the read-only assertions, which t1's fourth acceptance check reproduces.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q16",
+          "ref": "t7 / c2, c8, c10",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "NONE of the three BUILD-record body writers sets summary or commit — the premise that makes both rendered fields dead branches and gives t7 its purpose. The three writers are the validate phase, the implement phase, and the completion-time writer.",
+          "evidence": "Confirmed by enumeration, and the decisive probe is the negative one: the `commit:` grep returned 8 src/ hits and NOT ONE is in a BUILD-record body writer — they are a CR table row, a Kotlin test field, an analyze comment and similar. All three body-writer anchors resolve (validate.ts:164, implement.ts:139, completion-record.ts:44). So summary and commit genuinely have zero producers, which is t7's entire premise.",
+          "action": "none — verified sound. Note the asymmetry this leaves: three tracked records nonetheless CARRY body.commit, which can only have been hand-written. t7's acceptance check already pins the premise from that direction.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q17",
+          "ref": "t9 / c14",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "runValidateSession is SHARED by both the plan-driven and standalone validate branches by design and writes `standalone: false` unconditionally — the live defect t9 removes. Its own comment states it serves both branches so the persist behaviour is identical.",
+          "evidence": "Confirmed on both anchors. validate.ts:121 carries the comment stating runValidateSession serves 'BOTH the plan-driven and the standalone' branches so the persist behaviour is identical, and :163 is inside it writing `standalone: false`. The shared-by-design property is stated by the code's own comment rather than inferred, which is what makes the flip a live defect rather than a theoretical path.",
+          "action": "none — verified sound. t9's removal targets a confirmed unconditional write on a confirmed shared path.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q18",
+          "ref": "s2 / t2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The real pre-fix golden fixtures t2 requires are AVAILABLE in the tracked artifact tree rather than needing construction: BUILD-1d3bd81c5560de0d-S001 and BUILD-dcbb529e465417af-S001 both carry standalone true with exactly the pre-fix {focus, producesLld} body. Without these t2 would silently degrade into the constructed fixture it exists to avoid.",
+          "evidence": "Both fixture read anchors resolve. The `producesLld` grep hit its 50-match cap on docs/ and could not re-derive the body shape, but a direct enumeration earlier in this session parsed all 63 tracked BUILD records and found exactly five with standalone true, of which BUILD-1d3bd81c5560de0d-S001 and BUILD-dcbb529e465417af-S001 have body keys exactly ['focus', 'producesLld'] — the pre-fix shape t2 needs.",
+          "action": "none — verified sound. This closed a real risk: had no such record existed, t2 would have quietly degraded into the constructed fixture it exists to avoid, and its byte-identity guard would have agreed with the fix by construction.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q19",
+          "ref": "s2 ordering",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The plan's two load-bearing orderings hold in the emitted task graph: t2 (order 2) strictly precedes t8 (order 8), so the byte-identity goldens are captured BEFORE the convergence that would otherwise record post-fix bytes; and t1 (order 1) precedes t6, t8 and t9, each of which inverts one of its three characterisations and declares t1 in dependsOn.",
+          "evidence": "The PLAN read anchor resolves and the orderings hold in the emitted artifact: t2 is order 2 and t8 is order 8 with t2 in t8's dependsOn; t1 is order 1 and appears in the dependsOn of t6, t8 and t9, each of which inverts one of its three named characterisations. Every dependency has a strictly lower order than its dependent, so the graph is acyclic and the order is a valid topological sort.",
+          "action": "none — verified sound. The golden-before-convergence ordering is the one the Story's byte-identity guarantee depends on, and it survived both the critique and the finalize step.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "q20",
+          "ref": "t6 sizing",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The PLAN-introducing-commit fallback t6 must build has NO existing implementation to reuse — no `--diff-filter=A` lookup exists anywhere in src/ — which is the evidence behind the s3 critique that re-sized t6 from M to L so the build budgets for the lookup machinery instead of discovering it mid-task.",
+          "evidence": "The claim is WRONG as worded. I asserted that 'no --diff-filter lookup exists anywhere in src/'. FOUR exist: cherry-pick.ts:114, merge.ts:144, rebase.ts:148 and revert.ts:118, each `await runShell(['git', 'diff', '--name-only', '--diff-filter=U'], { cwd, timeoutMs: 10_000 })`. Confirmed by an independent scoped grep, not just the probe. What IS true is the narrower statement: `--diff-filter=A` appears nowhere in src/ (one hit, in the PLAN's own prose), so there is no existing 'which commit ADDED this file' lookup to reuse. The four existing sites are all `=U` for unmerged-conflict detection — a different question.",
+          "action": "Two corrections, and the second is more valuable than the first. (1) Reword t6's sizing rationale to the claim the evidence supports: no `--diff-filter=A` / added-file lookup exists, so the PLAN-commit resolver has to be written; the L sizing stands unchanged. (2) The four sites reveal something t6 should be told explicitly: they are async `runShell` calls in the DAEMON TOOL layer, and t6's resolver — unlike t5's stamp — runs inside collectBuildChangeLog's already-async call path, so t6 MAY use that async tool layer and should follow those four sites' argv-array idiom. t5 must be synchronous because gates.ts is; t6 need not be. The plan currently carries the sync constraint prominently for t5 and says nothing for t6, which invites the build to copy t5's execFileSync approach into a context that does not require it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "An overstated absence claim, where the correct narrower claim preserves the conclusion. Correcting it also surfaces the sync-vs-async split between t5 and t6, which the plan does not currently state and which determines where t6's resolver can live."
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 19
+      },
+      "reviewedAt": "2026-10-02T14:16:31.843Z",
+      "model": "client"
+    },
+    "reviewResolutions": {
+      "q20": {
+        "findingId": "q20",
+        "status": "resolved",
+        "note": "Resolved by correcting t6 in the PLAN by hand (the finding carried a rationale but no artifactEdits). The claim was overstated: I asserted no --diff-filter lookup existed anywhere in src/. FOUR exist — cherry-pick.ts:114, merge.ts:144, rebase.ts:148, revert.ts:118 — each `await runShell(['git','diff','--name-only','--diff-filter=U'])`. The narrower claim the evidence supports is that `--diff-filter=A` appears nowhere in src/, so there is no added-file (\"which commit introduced this path\") lookup to reuse. t6 keeps its L sizing unchanged — the resolver still has to be written. The more valuable half of the correction is the second one: those four sites are ASYNC runShell calls in the daemon tool layer, and t6's resolver runs inside collectBuildChangeLog's already-async call path, so t6 is NOT constrained to a synchronous implementation the way t5 is. The plan carried the sync constraint prominently for t5 (gates.ts is sync) and said nothing for t6, which invited the build to copy t5's execFileSync approach into a context that does not require it. t6 now states it may use the async tool layer and should follow those sites' argv-array runShell idiom. Also applied the LOW q6 note in the same pass: sizeClass is declared in THREE places (adding src/mcp/build-step/render.ts:137), not the two t8 named. Design unaffected; recorded so the inventory is complete.",
+        "resolvedAt": "2026-10-02T14:17:27.266Z"
+      }
+    },
+    "approvedAt": "2026-10-02T14:30:42.891Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story means fixing a ledger record that quietly says nothing. Four defects compound: the change-set collector asks git only about the working tree, which is clean exactly when it runs; two fields are rendered but never written; the Trivial route uses a renderer that reads none of them; and a shared validate path overwrites a flag it cannot know, flipping records between renderers. The work is therefore less about new capability than about removing a dependence on luck — derive the change set from the Story's committed range, give the two dead fields producers, and collapse two renderers into one that shows whatever a record actually holds. The shape of the build is characterise-first: the three defects are committed as tests that assert the WRONG behaviour and are each inverted by a named later task, so every fix is proved by flipping a baseline rather than by assertion, and three goldens captured from real pre-fix artifacts guard the 63 BUILD records already written."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Characterise all three defects as failing baselines, as separate tests with declared inversion points",
+        "summary": "Drive a standalone build through implement then validate against a throwaway git repo and capture the record AS IT IS TODAY, as EXPECTATIONS OF THE WRONG BEHAVIOUR, so every later task diffs against a baseline and the fix is proved by a red-to-green transition rather than asserted. s1 established the flip by reading code (c14); this makes it observable. The three defects invert at THREE DIFFERENT tasks, so they must be separately-named tests each naming its inversion point IN the test name: the lost '## Scope' inverts at t8 (the converged renderer emits Scope whenever body.focus is present, regardless of the flag), the forced meta.standalone false inverts at t9, and the empty change set inverts at t6. Treating them as one unit would make t8 look like a regression and invite the build to 'fix' it by reverting an improvement. MUST be first: written after any fix, it encodes the fixed behaviour and proves nothing.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "TEST A, named for its t8 inversion point: a standalone record driven through implement-then-validate renders md containing NO '## Scope' while the json still carries body.focus — the orphaned-content defect",
+          "TEST B, named for its t9 inversion point: the same run's persisted json has meta.standalone === false despite the implement write setting it true — the forced-flag defect",
+          "TEST C, named for its t6 inversion point: on a CLEAN working tree collectBuildChangeLog returns [] and the persisted record has no '## Changes' section",
+          "All three PASS on unmodified HEAD (they characterise, they do not yet demand), and each carries a comment naming the exact task that will invert it",
+          "The throwaway-repo harness follows the committed gate idiom at diff-grounding.test.ts:150 and asserts read-only afterwards via rev-list --count and status --porcelain"
+        ],
+        "derivedFrom": [
+          "c14",
+          "c7",
+          "c1",
+          "c3",
+          "c13",
+          "c25",
+          "c26",
+          "c30",
+          "c32",
+          "c37"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CHARACTERISATION A (inverts at t8): a standalone build's persisted md contains NO '## Scope' while its json still carries body.focus"
+          },
+          {
+            "level": "integration",
+            "name": "CHARACTERISATION B (inverts at t9): the shared validate persist forces meta.standalone to false despite implement writing true"
+          },
+          {
+            "level": "integration",
+            "name": "CHARACTERISATION C (inverts at t6): a CLEAN working tree yields an empty changeLog and a record with no '## Changes' section"
+          },
+          {
+            "level": "integration",
+            "name": "the characterisation harness is read-only — rev-list --count and status --porcelain unchanged afterwards — and the suite skips cleanly when git is unavailable"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Capture byte-identity goldens from real pre-fix records and convert the vacuous self-comparison",
+        "summary": "Freeze the current rendered markdown of REAL pre-fix records as committed golden strings; a fixture constructed from the new understanding would agree with the fix by construction rather than by evidence. s1 confirmed the source exists: 63 BUILD records tracked, five with standalone true, and BUILD-1d3bd81c5560de0d-S001 and BUILD-dcbb529e465417af-S001 carrying exactly the pre-fix {focus, producesLld} body. Capture THREE goldens — a well-formed standalone, a plan-driven record, and the PATHOLOGICAL BUILD-be8708a9cd20e286-S001 (standalone true, sizeClass ABSENT, plan-driven {commit, tasks} body), without which the suite cannot catch the defect t8 must fix. In the SAME task, convert build-record.test.ts:142 from comparing the written md against renderStandaloneBuildRecordMd to comparing it against a frozen golden: once t8 makes that function a delegating shim, both sides of the current equality are the SAME function and it passes for any output. MUST precede t8 — a golden captured after records post-fix bytes.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "THREE real tracked BUILD record jsons are committed as fixtures with their CURRENT rendered markdown captured verbatim: a well-formed Trivial standalone, a plan-driven record, and BUILD-be8708a9cd20e286-S001 as the pathological case",
+          "The pathological golden's fixture comment states PLAINLY that it records a DEFECT rather than desired behaviour — its title contains the literal 'undefined' and its body.tasks render nowhere — so when t8 deliberately changes it the diff reads as a reviewed improvement, not an unexplained byte movement",
+          "The expectation is recorded explicitly: goldens 1 and 2 MUST NOT change at t8; golden 3 is the only one expected to change",
+          "build-record.test.ts:142 no longer calls renderStandaloneBuildRecordMd on the right-hand side; it compares the written md against the frozen golden",
+          "MUTATION PROOF, run and recorded: altering one heading in the renderer turns the converted test RED, while the same mutation against the pre-conversion assertion leaves it GREEN — demonstrating the conversion closed a real hole rather than restating a passing check",
+          "provenance-build.test.ts:105 is left untouched — it compares the renderer against itself on two DIFFERENT inputs (legacy vs base record), a legitimate equivalence check and not the vacuous pattern",
+          "All three goldens are captured on unmodified HEAD, before any renderer change lands"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c9",
+          "c20",
+          "c21",
+          "c30",
+          "c31",
+          "c32",
+          "c38"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "BYTE-IDENTITY golden 1: a real pre-fix well-formed Trivial standalone record renders exactly its captured markdown"
+          },
+          {
+            "level": "unit",
+            "name": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown"
+          },
+          {
+            "level": "unit",
+            "name": "BYTE-IDENTITY golden 3 (PATHOLOGICAL, expected to change at t8): BUILD-be8708a9cd20e286-S001 renders its captured markdown, 'undefined' title and absent tasks included — a recorded defect, not desired behaviour"
+          },
+          {
+            "level": "unit",
+            "name": "CONVERTED from the vacuous self-comparison: persistBuildRecord's written md for a standalone record equals the FROZEN GOLDEN, not the renderer's own return value"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF of the conversion: a one-heading change in the renderer turns the converted assertion RED, where the pre-conversion form stayed GREEN"
+          },
+          {
+            "level": "unit",
+            "name": "a record written entirely before this change still parses, merges via mergeWithPrior and renders without error"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Widen the change-set derivation additively with an optional base and exclusion list",
+        "summary": "Add an optional options argument to changedFiles (today `(repoPath: string)` only, changed-files.ts:43) carrying a range base and a path-exclusion list, and thread it through collectBuildChangeLog's context and its existing injectable seam (:72). git_diff already accepts `from`/`to` (c11), so this needs no new capability — only a different call. Behaviour must be BIT-FOR-BIT unchanged when neither option is supplied, so this ships without altering any existing call site's result and rolls back independently of everything that consumes it. s1 established that the never-throw catch and its log.warn ALREADY exist at :77-83, so this task PRESERVES and ASSERTS them rather than building them.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "changedFiles accepts an optional options argument; existing single-argument call sites compile untouched and return identical results",
+          "collectBuildChangeLog's mandated two-argument form is unchanged; the completion-time writer at completion-record.ts:40, which already passes the optional third seam argument, behaves identically",
+          "With no base supplied, the derivation asks git exactly what it asks today — asserted via a recording seam that captures the arguments, not inferred from the result",
+          "With a base supplied, the range reaches git_diff's `from` — asserted via the recording seam",
+          "The existing never-throw catch and its log.warn at changed-files.ts:77-83 survive VERBATIM — asserted by a seam that throws, proving the call still returns [] AND still logs"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c11",
+          "c18",
+          "c22",
+          "c25",
+          "c26",
+          "c31",
+          "c32",
+          "c35"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "existing TWO-ARGUMENT collectBuildChangeLog call sites compile and behave identically after the widening"
+          },
+          {
+            "level": "unit",
+            "name": "with NO base supplied, the recording seam shows git is asked exactly what it is asked today — argument-level, not result-level"
+          },
+          {
+            "level": "unit",
+            "name": "with a base supplied, the recording seam shows the range reaching git_diff's `from`"
+          },
+          {
+            "level": "unit",
+            "name": "collectBuildChangeLog NEVER THROWS: a seam that throws yields [] AND emits the log.warn, both asserted"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Exclude the record's own artifact paths from BOTH derivations",
+        "summary": "Apply the exclusion list to the working-tree derivation AND the range derivation, and have the writers pass the record's own json and md paths. Deliberately separate from the range work because it fixes a defect that exists independently of which range is used: today the only dirty paths when the collector runs are the record's own files, so the change set is not merely empty but actively WRONG — it claims the Story changed BUILD.md. Keeping it its own task means a rollback of the range change cannot reintroduce it.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The exclusion is asserted SEPARATELY for the working-tree derivation and for the range derivation — an exclusion applied to only one is the bug half-fixed and must fail the suite",
+          "Only the record's OWN two paths are excluded; other artifacts under .insrc/artifacts and docs/ remain in the change set when the Story genuinely touched them",
+          "A test reproduces the exact observed state — the record's json and md dirty in the working tree — and asserts the derived change set contains neither",
+          "A Story that genuinely changed ONLY artifact files still yields a non-empty change set, proving the exclusion is path-specific rather than a blanket artifact filter"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c22",
+          "c27",
+          "c32",
+          "c36"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the exclusion applies to the WORKING-TREE derivation — asserted on its own, because an exclusion on only one derivation is the bug half-fixed"
+          },
+          {
+            "level": "unit",
+            "name": "the exclusion applies to the RANGE derivation — asserted separately from the working-tree case"
+          },
+          {
+            "level": "unit",
+            "name": "ONLY the record's own two paths are excluded; other .insrc/artifacts and docs/ files survive in the change set"
+          },
+          {
+            "level": "integration",
+            "name": "the record's own json and md are DIRTY in a real repo and still excluded — the exact state that produced the observed wrong change set"
+          },
+          {
+            "level": "integration",
+            "name": "a Story whose commits touch ONLY artifact paths still yields a non-empty change set (docs-only edge case), proving the filter is path-specific"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Stamp the range base at approval, gated on the artifact's workflow, as a declared full sha",
+        "summary": "Write meta.rangeBase (HEAD at approval time) at the single approval site. s1 established three constraints the LLD could not: approveArtifactByJsonPath (gates.ts:499) is GENERIC across every artifact kind, so the stamp MUST be gated on meta.workflow rather than written unconditionally onto DEF/HLD/AMD/BUILD records; it is SYNCHRONOUS, so an await-based read cannot go there; and the base must be a FULL sha, since an abbreviation in a persisted range base can collide as history grows and a base that silently resolves to the wrong commit is the exact class of defect this ISSUE exists to remove. CRITIQUE APPLIED — the MECHANISM is now named rather than left to the build: run `git rev-parse HEAD` WITHOUT `--short` through the directory's existing synchronous execFileSync idiom (migrate-docs-tree.ts:317, tracker/github.ts:17) inside gates.ts. Do NOT call revParse (helpers.ts:40), which hard-codes `--short` and would silently persist an abbreviation that satisfies the letter of the stamp while defeating it; and do NOT widen revParse, whose eleven-plus git-builtin call sites all want the short form. The field must also be DECLARED, not merely written: gates.ts:504-512 parses meta through a narrow inline literal type, and under strict mode with exactOptionalPropertyTypes an undeclared field is at best unchecked and invisible to every downstream reader. Inert until t6 reads it.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "meta.rangeBase is DECLARED on the artifact-meta type gates.ts parses, as an optional `string | undefined` matching the repo's exactOptionalPropertyTypes convention, and that declaration is the single source every reader uses — no inline cast at the read site",
+          "Approving a PLAN stamps meta.rangeBase alongside meta.approvedAt, and the stamped value MATCHES /^[0-9a-f]{40}$/ — the length assertion is the only thing that mechanically distinguishes a full sha from revParse's abbreviated form",
+          "The stamp is produced by `git rev-parse HEAD` with no `--short`, via the synchronous execFileSync idiom already used in src/workflow/; revParse is NOT called and NOT modified",
+          "Approving a DEF, HLD, AMD or BUILD record stamps NO rangeBase — asserted per kind, because the stamp site is generic and an ungated stamp would pollute every artifact",
+          "A standalone-Small LLD IS stamped, being the only upstream that route has",
+          "An unreadable HEAD (non-git directory, or git unavailable) leaves rangeBase ABSENT and still completes the approval — never throws, never writes an empty string",
+          "The field survives a write-read-write round trip through approveArtifactByJsonPath; the spread at :537 preserves unknown keys, but the function also deliberately DELETES two keys immediately after, so this is pinned rather than assumed",
+          "meta.approvedAt, the rejection-clearing behaviour at gates.ts:539-540, and the review gate that precedes it are all undisturbed"
+        ],
+        "derivedFrom": [
+          "c16",
+          "c17",
+          "c25",
+          "c26",
+          "c31",
+          "c33",
+          "c37"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "approving a PLAN in a real repo stamps meta.rangeBase alongside meta.approvedAt and the value MATCHES /^[0-9a-f]{40}$/ — a full sha, not revParse's abbreviation"
+          },
+          {
+            "level": "unit",
+            "name": "the generic stamp site is GATED: approving a DEF, HLD, AMD and BUILD record each stamps NO rangeBase — one assertion per kind"
+          },
+          {
+            "level": "integration",
+            "name": "a standalone-Small LLD IS stamped, being the only upstream the no-plan route has"
+          },
+          {
+            "level": "integration",
+            "name": "an unreadable HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never writes an empty string"
+          },
+          {
+            "level": "unit",
+            "name": "meta.rangeBase survives a write-read-write round trip through approveArtifactByJsonPath, and the two deliberate key deletions do not take it with them"
+          },
+          {
+            "level": "unit",
+            "name": "meta.approvedAt, rejection-clearing and the preceding review gate are undisturbed by the stamp"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Resolve and pass the range base in the validate and completion writers",
+        "summary": "Have both writers resolve the base — stamped meta.rangeBase first, then the PLAN-introducing commit as fallback for the already-written records that predate the stamp — and pass it to the widened collector. If NEITHER resolves: log and return an EMPTY change set. Never throw, never substitute a different range. This is where the approved design explicitly diverges from the shipped code-review chain (c12), which falls back to HEAD^ and then the empty-tree object; a populated wrong answer is worse than an honest absence. s1 established that the trivial route has NO upstream artifact at all, so for a trivial build both sources are legitimately unavailable and empty is the correct, specified outcome rather than a failure — stated explicitly so it is not met as a surprise. CRITIQUE APPLIED, twice: re-sized M->L, because the PLAN-commit fallback requires deriving an artifact path from epicHash plus storyId and running a `git log --diff-filter=A` lookup against it — machinery that exists nowhere today — and the build should budget for it rather than discover it mid-task; and t1 added to dependsOn, since this task INVERTS t1's TEST C and an inversion performed against a test whose authoring task was never declared is how a characterisation gets quietly deleted instead of flipped.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A CLEAN working tree with a stamped base yields every file changed across base..HEAD — the test that fails before this task and is the point of the Story, INVERTING t1's TEST C, which is rewritten here rather than deleted",
+          "A CLEAN tree with NO base and no resolvable PLAN commit yields an EMPTY set, NOT the last commit's files — pinning the deliberate divergence from the HEAD^ chain so a later 'helpful' fallback cannot slip in unnoticed",
+          "A DIRTY tree yields exactly today's result and never consults the base — asserted via a recording seam, proving independence from the commit/validate ordering",
+          "A multi-task Story's change set GROWS across tasks rather than describing only the latest",
+          "A legacy record with no stamped base resolves via the PLAN-introducing commit, reproducing the method used in the bfe98ff7 s4 repair",
+          "An APPROVED-BUT-UNCOMMITTED PLAN yields empty rather than an error — the state this very Story's LLD was in when the base question was resolved, so the case is real rather than theoretical",
+          "An unresolvable base LOGS and returns empty; the record is still written and the build is NOT blocked",
+          "A trivial-route build, having no plan and no LLD to stamp, yields an empty change set without error",
+          "BOTH writers resolve the base identically — the validate phase and the completion-time writer share one resolver rather than each implementing the chain"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8",
+          "c11",
+          "c12",
+          "c14",
+          "c22",
+          "c25",
+          "c26",
+          "c31",
+          "c32",
+          "c33",
+          "c36"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "INVERTED characterisation C — THE POINT OF THE STORY: a CLEAN tree with a stamped base yields every file changed across base..HEAD"
+          },
+          {
+            "level": "integration",
+            "name": "a CLEAN tree with NO base and no resolvable PLAN commit yields an EMPTY set, NOT the last commit's files — pinning the deliberate divergence from the HEAD^ chain"
+          },
+          {
+            "level": "integration",
+            "name": "a DIRTY tree yields exactly today's result and NEVER consults the base — proving independence from the commit/validate ordering"
+          },
+          {
+            "level": "unit",
+            "name": "a base is consulted ONLY when the tree is clean — asserted via the recording seam rather than inferred from the result"
+          },
+          {
+            "level": "integration",
+            "name": "a multi-task Story's change set GROWS across tasks rather than describing only the latest"
+          },
+          {
+            "level": "integration",
+            "name": "a legacy record with no stamped base resolves via the PLAN-INTRODUCING COMMIT, reproducing the bfe98ff7 s4 repair method"
+          },
+          {
+            "level": "integration",
+            "name": "an APPROVED-BUT-UNCOMMITTED PLAN yields empty rather than an error — the state this Story's own LLD was in"
+          },
+          {
+            "level": "integration",
+            "name": "an UNRESOLVABLE base: the record is still written, the build is not blocked, and no substitute range is used"
+          },
+          {
+            "level": "integration",
+            "name": "with git UNAVAILABLE the build still succeeds and the record is still written"
+          },
+          {
+            "level": "integration",
+            "name": "a trivial-route build, having neither plan nor LLD to stamp, yields an empty change set without error"
+          },
+          {
+            "level": "unit",
+            "name": "BOTH writers share ONE resolver — the validate phase and the completion-time writer produce the same base for the same record"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Give body.commit and body.summary real producers, with render assertions scoped to the plan-driven route",
+        "summary": "Both fields are declared and already rendered (c4) but set by none of the three body writers (c2, c8, c10) — two dead branches. Read HEAD at persist time for body.commit; accept an optional summary on the validate input for body.summary. The WRITE side is route-agnostic and genuinely this task's job, but the RENDER assertions must be scoped to the PLAN-DRIVEN route only, because the standalone renderer emits neither section until t8 (c5) — an unscoped check would fail t7 for a reason t7 cannot fix, and t7 is ordered before t8. Standalone-route rendering of these fields is t8's responsibility. Motivating evidence from s1 worth recording: a grep finds ZERO non-test commit producers, yet three tracked records carry body.commit (972bf31d, c90f3fe6, be8708a9) — back-filled BY HAND, showing the missing producer was felt and worked around rather than merely theoretical. Note the contrast with t5: here the SHORT sha from revParse is the right choice, because body.commit is a displayed reference rather than a range boundary.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "WRITE SIDE, both routes: a supplied summary reaches body.summary and body.commit is populated from HEAD, identically on the standalone and plan-driven routes",
+          "RENDER SIDE, PLAN-DRIVEN ONLY: body.summary renders as '## Summary' and body.commit as '**Commit:**'. Standalone-route rendering of both is asserted in t8, not here",
+          "An empty, whitespace-only or absent summary OMITS the key entirely rather than storing an empty string, and renders no section",
+          "body.commit is OMITTED — not empty-stringed — when HEAD cannot be read; revParse returns '' on failure, so the caller must treat '' as absent",
+          "A build that supplies no summary produces a record with no summary key — never synthesised, never invented from the task list",
+          "The dead-branch premise is pinned from the other direction: body.commit is now populated AUTOMATICALLY where previously it required hand-editing, with the three hand-filled records cited as the motivating evidence",
+          "The validate input's new field is OPTIONAL: a controller that never supplies it sees no behavioural difference"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c8",
+          "c10",
+          "c17",
+          "c24",
+          "c28",
+          "c32",
+          "c36"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "WRITE SIDE, both routes: a supplied summary reaches body.summary and body.commit is populated from HEAD identically on standalone and plan-driven"
+          },
+          {
+            "level": "unit",
+            "name": "RENDER SIDE, PLAN-DRIVEN ONLY: a supplied summary renders as '## Summary' and body.commit as '**Commit:**' (standalone rendering is t8's)"
+          },
+          {
+            "level": "unit",
+            "name": "an empty, whitespace-only or absent summary OMITS the field rather than storing an empty string, and renders no section"
+          },
+          {
+            "level": "unit",
+            "name": "body.commit is OMITTED — not empty-stringed — when HEAD cannot be read, treating revParse's '' return as absent"
+          },
+          {
+            "level": "unit",
+            "name": "a build with NO supplied summary produces a record with no summary key — never synthesised from the task list"
+          },
+          {
+            "level": "integration",
+            "name": "body.commit is now populated AUTOMATICALLY where the three tracked records had it hand-filled — the dead-branch premise pinned from the other direction"
+          },
+          {
+            "level": "unit",
+            "name": "the validate input's new summary field is OPTIONAL: a controller that never supplies it sees no behavioural difference"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Converge the two renderers into one, define the absent-sizeClass case, rename, and keep the standalone shim",
+        "summary": "Collapse the dispatch ternary at standalone-record.ts:198-200 into ONE renderer emitting each section keyed on its OWN content — the union of what both renderers emit today, nothing dropped — with the title derived from meta.sizeClass rather than meta.standalone. sizeClass is the right discriminator and is immune to the validate flip: optional on BuildRecord.meta (:49), required on StandaloneBuildRecord.meta (:94), written on the standalone route (implement.ts:135), never written by validate. BUT s1 surfaced a committed counterexample the design's premise missed: review claim p1 established sizeClass appears ONLY on standalone records and never established the CONVERSE, and BUILD-be8708a9cd20e286-S001 is standalone true with NO sizeClass — so :116's `${rec.meta.sizeClass}` renders a title containing the literal 'undefined' TODAY. The converged renderer must DEFINE the absent case rather than inherit that defect. Also rename renderPlanBuildRecordMd to renderBuildRecordMd — 1 production site plus ~17 references across two committed suites, mechanical but spanning suites that must be RUN — and retain renderStandaloneBuildRecordMd as a delegating shim, since build-record.test.ts imports and calls it. SECTION COUNT: of the nine sections §2.4 enumerates, TWO always render (title, created/updated line) and SEVEN are conditional omit-slots (Commit, Scope, Triage rationale, Summary, Tasks validated, Changes, Feedback). The LLD's test strategy says 'eight omit-slots', matching neither — assert against the seven actually counted rather than inheriting an unverified number. CRITIQUE APPLIED: c4 added to derivedFrom, since §2.4's renderPlanBuildRecordMd is the very function being converged and renamed and was the citation graph's weakest link.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "One renderer: the ternary at standalone-record.ts:198-200 is gone and no code path selects a renderer on meta.standalone",
+          "ABSENT sizeClass has a DEFINED title: a standalone record with no sizeClass renders a well-formed heading containing no 'undefined' substring — asserted against the real BUILD-be8708a9cd20e286-S001 fixture, not a constructed approximation",
+          "That same record's body.tasks RENDER under the converged renderer, where today they are invisible in the markdown while sitting in the json",
+          "Each of the SEVEN conditional sections is asserted present-when-populated and absent-when-not, one assertion per section, and the two unconditional ones are asserted always present — counted, not inherited",
+          "The title derives from meta.sizeClass, asserted against a record whose standalone is false but whose sizeClass is set: the flipped state, which must still render the standalone title",
+          "A record carrying both body.focus and body.tasks renders BOTH '## Scope' and '## Tasks validated'",
+          "STANDALONE-ROUTE rendering of body.summary and body.commit now works — the half deliberately deferred from t7",
+          "t2's goldens 1 and 2 are BYTE-IDENTICAL after the convergence; golden 3 changes, and its diff is reviewed as the intended repair of the 'undefined' title and the invisible tasks",
+          "t1's TEST A (the lost '## Scope') is INVERTED in this same change — rewritten to assert the correct behaviour, not deleted and not skipped",
+          "renderPlanBuildRecordMd is renamed to renderBuildRecordMd; both affected suites (build-record-enrichment.test.ts, provenance-build.test.ts) are RUN GREEN, not merely compiled",
+          "renderStandaloneBuildRecordMd still exports and returns identical output, delegating rather than duplicating"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c19",
+          "c21",
+          "c23",
+          "c29",
+          "c30",
+          "c32",
+          "c34",
+          "c36"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the single renderer emits each of the SEVEN conditional sections only when its content is present — one assertion per section, with the two unconditional sections asserted always present"
+          },
+          {
+            "level": "unit",
+            "name": "the title derives from meta.sizeClass and NOT meta.standalone — asserted against a record whose standalone is false but whose sizeClass is set (the flipped state)"
+          },
+          {
+            "level": "unit",
+            "name": "ABSENT sizeClass renders a well-formed title containing no 'undefined' — asserted against the real BUILD-be8708a9cd20e286-S001 fixture"
+          },
+          {
+            "level": "unit",
+            "name": "that same pathological record's body.tasks now RENDER, where today they sit in the json visible nowhere"
+          },
+          {
+            "level": "unit",
+            "name": "a record with both `focus` and `tasks` renders both '## Scope' and '## Tasks validated'"
+          },
+          {
+            "level": "unit",
+            "name": "STANDALONE-ROUTE rendering of body.summary and body.commit now works — the half deferred from t7"
+          },
+          {
+            "level": "unit",
+            "name": "an empty or absent changeLog still renders NO '## Changes' section"
+          },
+          {
+            "level": "unit",
+            "name": "BYTE-IDENTITY HELD: goldens 1 and 2 are unchanged by the convergence; golden 3's diff is the single reviewed, intended change"
+          },
+          {
+            "level": "integration",
+            "name": "INVERTED characterisation A: a standalone build driven through implement-then-validate now DOES render '## Scope'"
+          },
+          {
+            "level": "unit",
+            "name": "the rename is complete and GREEN: build-record-enrichment.test.ts and provenance-build.test.ts are RUN, not merely compiled, against renderBuildRecordMd"
+          },
+          {
+            "level": "unit",
+            "name": "renderStandaloneBuildRecordMd still exports and returns output identical to the converged renderer, delegating rather than duplicating"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Stop the shared validate path asserting a flag it cannot know",
+        "summary": "Remove the unconditional `standalone: false` from runValidateSession's meta write (validate.ts:163) so mergeWithPrior's `...rec.meta` spread lets the prior value survive. With t8 the renderer no longer reads the flag, which makes this belt-and-braces BY DESIGN: the two halves fail independently, and leaving a shared code path writing a value it cannot determine is exactly how this defect returns wearing different clothes.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t1",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "The shared validate persist does NOT write `standalone` at all — asserted on the persisted json, not on an in-memory value",
+          "A standalone build driven through implement then validate keeps meta.standalone true and still renders '## Scope' and '## Triage rationale'",
+          "t1's TEST B (the forced meta.standalone false) is INVERTED in this same change — rewritten to assert the correct behaviour, not deleted and not skipped",
+          "MUTATION PROOF, run and recorded: restoring the unconditional `standalone: false` write turns the Scope-retention test RED",
+          "mergeWithPrior's createdAt preservation and approval stamps are untouched — a re-run still lands in the SAME folder and never un-completes a Story"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c14",
+          "c30",
+          "c32",
+          "c37"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the shared validate persist does NOT write `standalone` at all — asserted on the PERSISTED json, not an in-memory value"
+          },
+          {
+            "level": "integration",
+            "name": "INVERTED characterisation B: a standalone build runs implement then validate and the record still renders '## Scope' and '## Triage rationale'"
+          },
+          {
+            "level": "integration",
+            "name": "MUTATION: restoring the unconditional `standalone: false` write turns the Scope-retention test RED"
+          },
+          {
+            "level": "unit",
+            "name": "mergeWithPrior's createdAt preservation and approval stamps are untouched — a re-run lands in the SAME folder and never un-completes a Story"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Full sweep, forward-compatibility of stored records, and the end-to-end provenance proof",
+        "summary": "Run the build-step and workflow suites, confirm t2's goldens behaved as predicted, and verify that a record written entirely BEFORE any of this still parses, merges and renders — forward compatibility of the stored shape is the one thing no test of new behaviour would catch, and 63 BUILD records plus 648 artifacts are already committed. Then prove the Story's actual purpose end to end: a completed Story's BUILD record carries its real change set, a summary and the landing commit, on the trivial route as well as the plan-driven one. CRITIQUE APPLIED: dependsOn now names EVERY task rather than relying on transitivity. The earlier list omitted t2 while asserting twice on t2's goldens, which contradicted this task's own stated rule; and since the task re-runs mutation proofs resting on t1's characterisations and the derivation t3 widened, depending on all nine is the honest description of a final full-sweep verification and costs nothing in ordering.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The build-step and workflow suites run GREEN, with the command and the pass/fail counts recorded from REAL output — not asserted from reading the diff",
+          "t2's goldens 1 and 2 are unchanged; golden 3's change is the reviewed, intended one and nothing else moved",
+          "A pre-existing record drawn from the tracked artifact tree, written before this Story, still parses, merges via mergeWithPrior, and renders without error",
+          "END-TO-END: a trivial-routed build produces a record rendering '## Changes' with the Story's real files, plus '## Summary' and '**Commit:**' — none of which it can do today",
+          "An empty or absent changeLog still renders NO '## Changes' section, so a record with nothing to report stays byte-identical to one written before the change-log feature existed",
+          "All three mutation proofs (t2's golden, t9's standalone flag, and t8's absent-sizeClass title) are re-run after the full sweep and still invert, confirming none was neutralised by a later task",
+          "All three of t1's characterisations are accounted for: each was INVERTED by its named task (TEST C at t6, TEST A at t8, TEST B at t9) and none was deleted or skipped"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c15",
+          "c21",
+          "c29",
+          "c30",
+          "c31",
+          "c32",
+          "c36",
+          "c38"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "the build-step and workflow suites run GREEN, with the command and real pass/fail counts recorded from actual output"
+          },
+          {
+            "level": "integration",
+            "name": "END-TO-END: a TRIVIAL-routed build produces a record rendering '## Changes' with the Story's real files, plus '## Summary' and '**Commit:**' — none of which it can do today"
+          },
+          {
+            "level": "unit",
+            "name": "FORWARD COMPAT: a record written entirely before this change still parses, merges and renders"
+          },
+          {
+            "level": "unit",
+            "name": "an empty or absent changeLog renders no '## Changes' section, keeping such a record byte-identical to a pre-feature one"
+          },
+          {
+            "level": "unit",
+            "name": "ALL THREE mutation proofs re-run after the full sweep and still invert, confirming no later task neutralised an earlier guard"
+          },
+          {
+            "level": "smoke",
+            "name": "all three of t1's characterisations are accounted for — each INVERTED by its named task, none deleted or skipped"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "A throwaway repo with a base commit and later commits: CLEAN tree + base yields every file changed across `base..HEAD` — the test that fails today and is the point of the Story",
+        "coveredByTaskIds": [
+          "t1",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CLEAN tree + NO base yields an EMPTY set, not the last commit's files — pinning the deliberate divergence from the HEAD^ chain so a later 'helpful' fallback cannot slip in",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "A DIRTY tree yields exactly today's result and never consults the base — proving independence from the commit/validate ordering",
+        "coveredByTaskIds": [
+          "t6",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A multi-task Story: the change set GROWS across tasks rather than describing only the latest",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "The record's own json and md are dirty and still excluded — the exact state that produced the observed wrong change set",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "An unresolvable base: the record is still written, the build is not blocked, and no substitute range is used",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "The exclusion is applied to BOTH derivations — asserted separately, because an exclusion on only one is the bug half-fixed",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "`collectBuildChangeLog` never throws: a seam that throws yields []",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing TWO-ARGUMENT call sites still compile and behave identically",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A base is consulted ONLY when the tree is clean, asserted via a recording seam rather than inferred from the result",
+        "coveredByTaskIds": [
+          "t6",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "The single renderer emits each section only when its content is present — one assertion per section, since eight omit-slots have eight ways to be subtly wrong",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "The title derives from `meta.sizeClass` and NOT `meta.standalone`, asserted against a record whose standalone is false but whose sizeClass is set — the flipped state",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "A record with both `focus` and `tasks` renders both `## Scope` and `## Tasks validated`",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "An empty/whitespace/absent summary omits the field rather than storing an empty string",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "`body.commit` is omitted — not empty-stringed — when HEAD cannot be read",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "BYTE-IDENTITY: an existing Trivial record renders byte-for-byte what it renders today, pinned against a REAL pre-fix record rather than a constructed one — a constructed fixture would be built from the same understanding as the fix and would agree with it by construction",
+        "coveredByTaskIds": [
+          "t2",
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "An empty or absent changeLog still renders NO `## Changes` section",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "A record written entirely before this change still parses, merges and renders",
+        "coveredByTaskIds": [
+          "t2",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "A standalone build runs implement then validate: the persisted record still renders `## Scope` and `## Triage rationale`",
+        "coveredByTaskIds": [
+          "t1",
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "The shared validate persist does NOT write `standalone` at all — asserted on the json",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "MUTATION: restoring the unconditional `standalone: false` write turns the Scope-retention test red",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.1 changedFiles — the working-tree-only derivation",
+      "quotedText": "changed-files.ts:43 `export async function changedFiles(repoPath: string)` with the `for (const staged of [false, true])` loop at :46 — no commit-range path exists today."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration stateBefore — the validate-phase body writer",
+      "quotedText": "validate.ts:164 `body: { tasks: [{ id: taskId, passed }], ...(changeLog.length > 0 ? { changeLog } : {}) }` — drops the key for an empty result and sets neither summary nor commit."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "src/prompts/build/implement-task.md:26 — the commit-before-validate instruction that defeats the collector",
+      "quotedText": "4. If green, **commit** referencing the Task and its issue:"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.4 renderPlanBuildRecordMd — summary and commit are already rendered",
+      "quotedText": "Declared standalone-record.ts:132; emits `**Commit:**` at :140 and '## Summary' at :148, so both fields are read but never written. This is the function the convergence keeps and renames."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.5 renderStandaloneBuildRecordMd — the asymmetric renderer",
+      "quotedText": "standalone-record.ts:114-124 emits only the title, the size-class/created line, '## Scope' and an optional '## Triage rationale'; it reads none of changeLog, feedback or summary."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.3 persistBuildRecord — the renderer dispatch ternary",
+      "quotedText": "standalone-record.ts:198-200 `const md = merged.meta.standalone ? renderStandaloneBuildRecordMd(...) : renderPlanBuildRecordMd(merged);`"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariantsToPreserve — mergeWithPrior meta semantics",
+      "quotedText": "standalone-record.ts:246 mergeWithPrior, :251 `...rec.meta`, :252 `createdAt: prior.meta.createdAt` — the new write wins on every meta field except the explicitly preserved ones."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.6 ensureBuildRecordOnCompletion — the completion-time writer",
+      "quotedText": "completion-record.ts:44 `body: { tasks: [], ...(changeLog.length > 0 ? { changeLog } : {}) }`, with :40 already passing the optional third seam argument to collectBuildChangeLog."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §3.5 body.changeLog — absent and empty are indistinguishable",
+      "quotedText": "bindings.ts:91-92 `export function changeLogBodyLines(changeLog: ChangeLog | undefined): string[] {` / `if (changeLog === undefined || changeLog.length === 0) return [];`"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration stateBefore — the implement-phase body writer and the only sizeClass producer",
+      "quotedText": "implement.ts:139 `body: { focus: specFocus, producesLld: false }`, with :135 writing `standalone: true, sizeClass, ...`."
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/diff.ts:55-62 — git_diff already accepts a commit range",
+      "quotedText": "`from: { type: 'string', description: 'Starting ref for a range diff (commit SHA, branch, tag, \"HEAD~3\").' }` — range derivation needs no new capability."
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:154,166-167,298 — the shipped fallback chain this design declines to adopt",
+      "quotedText": "EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904' at :167, used at :298, after a `git_diff {from:'HEAD^'}` fallback described at :154."
+    },
+    {
+      "id": "c13",
+      "kind": "convention",
+      "ref": "src/workflow/code-review/__tests__/diff-grounding.test.ts:148-179 — the gated throwaway-repo idiom every git-dependent test here follows",
+      "quotedText": ":150 `try { execFileSync('git', ['--version'], { stdio: 'ignore' }); } catch { git = false; }`, then a real two-commit repo, with read-only afterwards asserted via `rev-list --count` (:165,:173) and `status --porcelain` (:175)."
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §3.2 BuildRecord.meta.standalone — the confirmed renderer flip",
+      "quotedText": "validate.ts:72 routes standalone, both branches converge on runValidateSession (:80, :116) whose comment at :121 says it serves 'BOTH the plan-driven and the standalone (S002) branches', and :163 writes `standalone: false` unconditionally."
+    },
+    {
+      "id": "c15",
+      "kind": "convention",
+      "ref": "src/mcp/build-step/__tests__/build-step.test.ts — record-level tests parse the PERSISTED json",
+      "quotedText": "The established idiom for an artifact whose defect was that the file said something different from what the code believed: assert on what was written to disk, not on an in-memory value."
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate: the range-base stamp site — src/workflow/gates.ts:499,504-512,536-541",
+      "quotedText": "approveArtifactByJsonPath 'Works generically for any workflow — the artifact's JSON path is passed in verbatim'; builds nextMeta at :537 as `{ ...artifact.meta, approvedAt, ... }`, is SYNCHRONOUS, and parses meta through a narrow inline literal type. Non-test execFileSync precedent in the same directory: migrate-docs-tree.ts:317, tracker/github.ts:17."
+    },
+    {
+      "id": "c17",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate: HEAD resolution — src/daemon/tools/builtins/git/helpers.ts:40",
+      "quotedText": "`export async function revParse(cwd: string, ref: string): Promise<string>` over runShell, passing `--short` and returning '' on non-zero rather than throwing. Suits body.commit (a displayed reference, where '' must be treated as absent) but NOT a persisted range base, which needs a full sha."
+    },
+    {
+      "id": "c18",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol-locate: the collector's existing never-throw log — src/workflow/runners/build/changed-files.ts:67-83",
+      "quotedText": ":77-83 catches, calls log.warn with 'collectBuildChangeLog: could not derive the changed set; returning an empty change-log', then returns []. ac6's never-throw AND the log-visibility requirement are ALREADY satisfied here — this Story preserves and asserts them rather than building them."
+    },
+    {
+      "id": "c19",
+      "kind": "analyze-bundle",
+      "ref": "s1 module-profile: the true size of the rename — renderPlanBuildRecordMd",
+      "quotedText": "Declared standalone-record.ts:132 with ONE production call at :200, plus ~17 references across build-record-enrichment.test.ts (:25 import; :44,:50,:51,:55,:59,:65,:124) and provenance-build.test.ts (:28 import; :76,:85,:93,:94,:95,:105x2,:150). Not the 'two call sites' the LLD states."
+    },
+    {
+      "id": "c20",
+      "kind": "analyze-bundle",
+      "ref": "s1 convention-scan + review finding p13 resolution: the assertion that becomes self-comparing — build-record.test.ts:28,142",
+      "quotedText": "`assert.equal(readFileSync(md, 'utf8'), renderStandaloneBuildRecordMd(rec));` — once that function is a delegating shim, persistBuildRecord writes THROUGH the converged renderer and the shim RESOLVES TO it, so both sides are the same function and the check passes for any output. Distinct from provenance-build.test.ts:105, which compares the renderer against itself on two DIFFERENT inputs and is legitimate."
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": ".insrc/artifacts/BUILD-be8708a9cd20e286-S001.json — the committed counterexample to the sizeClass assumption",
+      "quotedText": "meta is `{ workflow:'build', standalone:true, epicHash, storyId, createdAt, updatedAt, approvedAt }` with NO sizeClass, and body keys are {commit, tasks}. It violates StandaloneBuildRecord.meta.sizeClass (required, :94), renders a title containing the literal 'undefined' via :116, and has its body.tasks rendered nowhere — disproving the CONVERSE of review claim p1, which established only that sizeClass appears exclusively on standalone records."
+    },
+    {
+      "id": "c22",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.2 collectBuildChangeLog — the collector contract and its injectable seam",
+      "quotedText": "changed-files.ts:67 `(repoPath, ctx { author, timestamp, version? }, listChanged = changedFiles)` — the seam at :72 is documented as additive, so the options widening has a precedent inside the same function."
+    },
+    {
+      "id": "c23",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §3.1 StandaloneBuildRecord — invariant change, retained as a type",
+      "quotedText": "standalone-record.ts:94 declares `readonly sizeClass: string` (REQUIRED) while BuildRecord.meta:49 declares it optional; src/workflow/code-review/types.ts:110 types `readonly buildRecord: StandaloneBuildRecord | null`, so retention is REQUIRED for that module to compile."
+    },
+    {
+      "id": "c24",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §3.3 body.summary and §3.4 body.commit — declared, rendered, never written",
+      "quotedText": "Both are invariant-changes giving an already-rendered field its first producer. summary must be OMITTED rather than empty-stringed; commit omitted when HEAD is unreadable."
+    },
+    {
+      "id": "c25",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §4 errorPaths — the never-throw / honest-absence discipline",
+      "quotedText": "An unresolvable base yields an EMPTY change set with the record still written and the build not blocked; a populated wrong answer is worse than an honest absence. No path throws and no substitute range is used."
+    },
+    {
+      "id": "c26",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac1 — the change set reflects what the Story actually changed, under either commit ordering",
+      "quotedText": "Derived from the ISSUE fixIntent plus the constraint that correctness must not depend on an instruction being followed: the derivation uses the Story's committed range when the tree is clean and the working tree when it is not."
+    },
+    {
+      "id": "c27",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac2 — the record's own artifact paths are excluded from the change set",
+      "quotedText": "The record must never claim the Story changed its own BUILD.md or BUILD json; the exclusion applies to both derivations, asserted separately."
+    },
+    {
+      "id": "c28",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac3 — body.summary and body.commit have producers and omit cleanly",
+      "quotedText": "A supplied summary is persisted and rendered; an empty, whitespace-only or absent one omits the key. body.commit comes from HEAD and is omitted when HEAD cannot be read."
+    },
+    {
+      "id": "c29",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac4 — provenance renders on EVERY route, not only the plan-driven one",
+      "quotedText": "A trivial-routed build's record must render the same provenance sections a plan-driven one does, which it structurally cannot do today because the standalone renderer reads none of those fields."
+    },
+    {
+      "id": "c30",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac5 — the renderer flip is closed from both directions, with no churn on written artifacts",
+      "quotedText": "The standalone flag no longer selects a renderer and is no longer asserted by the shared validate path; a record carrying no new content renders byte-identically to today."
+    },
+    {
+      "id": "c31",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ac6 — nothing throws and no existing caller changes behaviour",
+      "quotedText": "collectBuildChangeLog never throws; existing two-argument call sites behave identically; an empty or absent changeLog renders no '## Changes' section."
+    },
+    {
+      "id": "c32",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §6 Migration — the nine ordered, independently-rollbackable steps",
+      "quotedText": "step1 characterise; step2 capture byte-identity baselines from REAL pre-fix records; step3 widen the derivation additively; step4 apply the exclusion to both derivations; step5 resolve and pass the range base with no HEAD^ fallback; step6 give commit and summary producers; step7 converge the renderers keeping a delegating shim; step8 stop validate asserting standalone:false; step9 re-run the suites and verify forward compatibility."
+    },
+    {
+      "id": "c33",
+      "kind": "step-output",
+      "ref": "plan open-question resolution q0b544035 — recorded base with PLAN-commit fallback",
+      "quotedText": "The base is STAMPED at approval (meta.rangeBase); the PLAN-introducing commit is the fallback for already-written records; if NEITHER resolves, log and return empty — correcting the option's 'fail with an error' clause, which contradicts ac6. Grounded on the finding that approval and commit are SEPARATE events: bfe98ff7 s4's PLAN was approved at 05:50:05Z and first committed 15s later in 87f3f2f, and this Story's own LLD was approved-and-untracked at resolution time."
+    },
+    {
+      "id": "c34",
+      "kind": "step-output",
+      "ref": "plan open-question resolution q0c5270ce — rename renderPlanBuildRecordMd in this Story",
+      "quotedText": "Rename to renderBuildRecordMd as an explicit plan task rather than slipping it into the build; no deprecated alias, since renderStandaloneBuildRecordMd is already retained as the compatibility shim. Sizing corrected from 'two call sites' to 1 production site plus ~17 test references that must be RUN, not merely compiled."
+    },
+    {
+      "id": "c35",
+      "kind": "step-output",
+      "ref": "plan open-question resolution q378acc65 — a failed collection stays indistinguishable in the ARTIFACT, visible in the LOG",
+      "quotedText": "No tri-state field and no renderer change; the LLD's settled answer stands. But the failure path must remain clearly distinguishable in the log — the existing log call must survive the refactor and be ASSERTED, since under ac6's never-throw behaviour a swallowed exception is the only trace there is."
+    },
+    {
+      "id": "c36",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-93081bff91ae5108 fixIntent — the tracked source of intent for this bugfix",
+      "quotedText": "A completed Story's BUILD ledger record must carry what the Story actually changed, a summary of the changes, and the commit it landed in — on every route. A bugfix routed through `issue` takes its intent from the ISSUE rather than from an Epic's Stories, so ac1-ac6 are DERIVED from this plus the two judging constraints."
+    },
+    {
+      "id": "c37",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-93081bff91ae5108 judging constraint 1 — correctness must not depend on an instruction being followed",
+      "quotedText": "The collector is wrong because it depends on the implement prompt's commit-before-validate instruction actually being followed. Every fix must hold regardless of whether a prompt, a convention or a human step was honoured."
+    },
+    {
+      "id": "c38",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-93081bff91ae5108 judging constraint 2 — no unnecessary churn on already-written artifacts",
+      "quotedText": "63 BUILD records and 648 artifacts are already committed. A record carrying no new content must render byte-identically to today, proved against REAL pre-fix fixtures rather than constructed ones, which would agree with the fix by construction."
+    }
+  ]
+}

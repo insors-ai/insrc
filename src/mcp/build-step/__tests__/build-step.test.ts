@@ -17,7 +17,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
@@ -589,7 +589,7 @@ function findBuildMd(repo: string): string | undefined {
 
 /** Drive a standalone build through implement THEN validate, the real two-phase
  *  sequence that produces the flip, and return the persisted record + markdown. */
-async function runImplementThenValidate(repo: string): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
+async function runImplementThenValidate(repo: string, opts?: { readonly summary?: string | undefined }): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
 	_setBuildValidateProviderForTests({
 		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
 	});
@@ -602,7 +602,12 @@ async function runImplementThenValidate(repo: string): Promise<{ rec: { meta: Re
 		assert.equal(afterImpl.meta['standalone'], true, 'implement wrote standalone:true — the precondition the flip destroys');
 		assert.equal(afterImpl.body['focus'], 'Add a --json flag to the status subcommand.');
 
-		const val = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone }));
+		const val = outputOf(await handleBuildStep({
+			phase: 'validate', target: 's1', repo, standalone,
+			// Added at t10. Absent by default, so the three characterisations above
+			// call this helper with byte-identical arguments to before.
+			...(opts?.summary !== undefined ? { summary: opts.summary } : {}),
+		}));
 		assert.equal(val['next'], 'done', 'the standalone validate phase returned a verdict');
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
 		const mdPath = findBuildMd(repo);
@@ -689,6 +694,129 @@ test('CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a 
 		assert.doesNotMatch(md, /## Changes/,
 			'and no `## Changes` section is rendered — correct for a build with no resolvable base');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// t10 — END-TO-END PROVENANCE PROOF
+//
+// The capstone. Every earlier task proved ONE piece in isolation; this drives
+// the real two-phase sequence once and asserts that all of them land on the SAME
+// record. None of these three sections could appear on a record before this
+// Story: `## Changes` had no populated derivation (t3/t4/t6), `## Summary` and
+// `**Commit:**` were declared and rendered but written by nobody (t7), and on a
+// standalone record the renderer emitted no `## Scope` at all (t8) while the
+// shared validate persist re-labelled the route (t9).
+//
+// Route: TRIVIAL standalone, as the acceptance check names. That route has NO
+// upstream artifact, so the stamped-base and PLAN-commit chains both legitimately
+// yield nothing (t6) and the WORKING-TREE derivation is what populates the change
+// set — which is also the real state a trivial build validates in, since there is
+// no plan telling it to commit first.
+// ---------------------------------------------------------------------------
+
+/** A git repo with a committed baseline and the Story's work left UNCOMMITTED —
+ *  the state a trivial-route build actually validates in. */
+function mkDirtyGitRepo(): string {
+	const repo = mkRepo();
+	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+	git('init', '-q');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 1;\n');
+	git('add', '.');
+	git('commit', '-qm', 'baseline');
+	// The Story's real work: one modified file (unstaged) and one new file
+	// (staged), so BOTH halves of the two-pass derivation contribute.
+	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 2;\n');
+	writeFileSync(join(repo, 'added.ts'), 'export const json = true;\n');
+	git('add', 'added.ts');
+	return repo;
+}
+
+test('t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story', async () => {
+	if (!gitAvailable()) return;   // gated: git-dependent, skips cleanly
+	const repo = mkDirtyGitRepo();
+	try {
+		seedDef(repo);
+		// COMMIT a placeholder at the record's own json path first, so that when the
+		// build overwrites it the path is TRACKED-and-modified and therefore actually
+		// VISIBLE to the derivation. Without this the exclusion assertion below is
+		// vacuous: the artifacts the build writes are new UNTRACKED files, and
+		// `git diff` never reports untracked paths, so they could not appear in the
+		// change set whether t4's exclusion existed or not. (The md half is pinned by
+		// t4's own test, which reproduces both paths dirty; its folder is anchored on
+		// a createdAt minted during implement, so it cannot be committed up front.)
+		const ownJson = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering').json;
+		mkdirSync(dirname(ownJson), { recursive: true });
+		writeFileSync(ownJson, '{}\n');
+		execFileSync('git', ['add', '-f', ownJson], { cwd: repo, stdio: 'ignore' });
+		execFileSync('git', ['commit', '-qm', 'placeholder so the record\'s own path is tracked', '--', ownJson], { cwd: repo, stdio: 'ignore' });
+
+		const head = gitOut(repo, 'rev-parse', '--short', 'HEAD');
+		const { rec, md } = await runImplementThenValidate(repo, {
+			summary: 'Added the --json flag and routed status through the shared serialiser.',
+		});
+
+		// --- t3 / t4 / t6: a POPULATED change set, and only the Story's own files
+		const files = ((rec.body['changeLog'] ?? []) as { target: { file: string } }[]).map(e => e.target.file);
+		assert.deepEqual([...files].sort(), ['added.ts', 'shipped.ts'],
+			'both halves of the derivation contribute (staged + unstaged) and nothing else does');
+		assert.match(md, /## Changes\n\n- `shipped\.ts` — \*\*insrc-build\*\*/,
+			'`## Changes` opens with the modified file, attributed');
+		assert.match(md, /^- `added\.ts` — \*\*insrc-build\*\* \(2\d{3}-/m,
+			'and carries the new file too, each line attributed + timestamped');
+		// t4's exclusion, LIVE end-to-end: the record's own json is tracked and was
+		// rewritten by this very build, so git reports it as modified — and it is
+		// still absent from the change set. The record cannot report itself as the
+		// Story's work.
+		assert.ok(gitOut(repo, 'diff', '--name-only').includes('.insrc/artifacts'),
+			'precondition: git DOES see the record\'s own json as modified, so the exclusion is exercised');
+		assert.ok(!files.some(f => f.includes('.insrc/artifacts') || /BUILD\.(?:json|md)$/.test(f)),
+			`the record’s own artifact path is excluded anyway (got ${JSON.stringify(files)})`);
+
+		// --- t7: a summary and a commit, from the two producers that did not exist
+		assert.equal(rec.body['summary'], 'Added the --json flag and routed status through the shared serialiser.');
+		assert.match(md, /## Summary\n\nAdded the --json flag and routed status through the shared serialiser\./);
+		assert.equal(rec.body['commit'], head, 'body.commit is HEAD at persist time');
+		assert.match(md, new RegExp(`\\*\\*Commit:\\*\\* ${head}$`, 'm'));
+
+		// --- t8 / t9: the record still describes ITSELF after validation
+		assert.match(md, /^# Build \(standalone trivial\) — Story s1$/m,
+			'the converged renderer titles it by its sizeClass');
+		assert.match(md, /## Scope\n\nAdd a --json flag to the status subcommand\./);
+		assert.equal(rec.meta['standalone'], true, 'and validate did not re-label the route');
+
+		// The whole point, stated once: a single record, not two and not a stub.
+		for (const heading of ['## Scope', '## Summary', '## Tasks validated', '## Changes', '**Commit:**']) {
+			assert.ok(md.includes(heading), `${heading} is present on the one record`);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t10 AUDIT: all three of t1\'s characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped', () => {
+	// Mechanical rather than by-eye. The cheapest way to make a red
+	// characterisation green is to delete it, and the second cheapest is to leave
+	// it passing while quietly dropping the label that says which task owes it a
+	// flip. This reads this very file and refuses both.
+	const src = readFileSync(new URL(import.meta.url), 'utf8');
+	const names = [...src.matchAll(/^test\('(CHARACTERISATION [A-Z][^']*)'/gm)].map(m => m[1]!);
+	assert.equal(names.length, 3, `expected exactly three lettered characterisations, got ${JSON.stringify(names)}`);
+	// Each must still name its resolving task. C is the one t1 MIS-FILED: its
+	// scenario is the trivial route, where an empty change set is the specified
+	// outcome, so t6 re-labelled it instead of inverting it. That is recorded as a
+	// correction, not quietly dropped — which is why the expected marker differs.
+	const expected: readonly [string, RegExp][] = [
+		['CHARACTERISATION A', /\(INVERTED at t8\)/],
+		['CHARACTERISATION B', /\(INVERTED at t9\)/],
+		['CHARACTERISATION C', /re-labelled at t6/],
+	];
+	for (const [prefix, marker] of expected) {
+		const hit = names.find(n => n.startsWith(prefix));
+		assert.ok(hit !== undefined, `${prefix} is missing — a characterisation was deleted rather than flipped`);
+		assert.match(hit, marker, `${prefix} no longer names the task that resolved it`);
+	}
+	// And none of them is inert: `skip`/`todo` would let a deleted assertion pass.
+	assert.doesNotMatch(src, /test\.(?:skip|todo)\('CHARACTERISATION/, 'no characterisation is skipped or todo');
 });
 
 test('CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable', async () => {

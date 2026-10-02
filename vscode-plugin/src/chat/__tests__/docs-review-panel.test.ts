@@ -4986,6 +4986,7 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
     't7-state-deep-narrow.png',
     't7-control-absent-at-400px.png',
     't7-visual-verification.md',
+    't8-build-and-transcripts.md',
   ];
   const { statSync, readFileSync } = await import('node:fs');
   for (const name of expected) {
@@ -5010,6 +5011,23 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
   }
   assert.match(v, /t7-control-absent-at-400px\.png/,
     'and names the control image that shows the clipping is pre-existing');
+
+  // t8's transcript must carry a COMPUTED delta and the exit codes, not a claim
+  // that it ran something. A transcript asserting success without the numbers is
+  // the shape this repo has shipped before.
+  const t8 = readFileSync(join(dir, 't8-build-and-transcripts.md'), 'utf8');
+  assert.match(t8, /S003 baseline \(0\.5\.9\): 247667 bytes/, 'the baseline is the real artefact size');
+  assert.match(t8, /delta:\s+[+-][\d,]+ bytes/, 'and the delta is a computed number');
+  assert.match(t8, /npx tsc --noEmit\nexit 0/, 'the typecheck exit code is recorded');
+  assert.match(t8, /NO daemon rebuild is required/i, 'and the no-daemon-rebuild fact is stated with its reason');
+  // Scoped to the CHANGE-SET BLOCK, not the whole note. The prose legitimately
+  // cites `src/workflow/artifact-content.ts:76` when explaining WHY no daemon
+  // rebuild is needed, and a scan that read prose would fail on the explanation —
+  // the same mistake a source scan in this repo has made before.
+  const diffBlock = /git diff --name-only [0-9a-f]+\.\.HEAD\n([\s\S]*?)```/.exec(t8)?.[1] ?? '';
+  assert.ok(diffBlock.includes('vscode-plugin/src/chat/'), 'the change-set block was located');
+  const underSrc = diffBlock.split('\n').map((l) => l.trim()).filter((l) => l.startsWith('src/'));
+  assert.deepEqual(underSrc, [], 'the committed change set contains nothing under src/');
 });
 
 // ---------------------------------------------------------------------------

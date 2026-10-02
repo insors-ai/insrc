@@ -4956,7 +4956,7 @@ test('t2: the FULL emitted script parses — including the bootstrap consts the 
   );
 });
 
-test('t3: every committed S004 evidence artefact exists at the path its commit claims', async () => {
+test('t3/t7: every committed S004 evidence artefact exists at the path its commit claims', async () => {
   // The same guard S003 carries, extended to this Story. S002 committed an evidence
   // PNG to the WRONG path while its message claimed the right one and had to be
   // amended; this makes that a test failure rather than something a reader finds
@@ -4971,6 +4971,21 @@ test('t3: every committed S004 evidence artefact exists at the path its commit c
     't3-depth-measured.png',
     't3-url-defect-fixed.png',
     't3-depth-measurement.md',
+    // t7 — the full-surface states, every one named so a file committed to the
+    // wrong path is a test failure rather than something a reader discovers.
+    't7-state-real-hld.png',
+    't7-state-real-s002-lld.png',
+    't7-state-real-uxfix-lld.png',
+    't7-state-real-fidelity-lld.png',
+    't7-state-dual-slot-dark.png',
+    't7-state-dual-slot-light.png',
+    't7-state-unshowable-dark.png',
+    't7-state-unshowable-light.png',
+    't7-state-real-record-light.png',
+    't7-state-absent.png',
+    't7-state-deep-narrow.png',
+    't7-control-absent-at-400px.png',
+    't7-visual-verification.md',
   ];
   const { statSync, readFileSync } = await import('node:fs');
   for (const name of expected) {
@@ -4985,6 +5000,16 @@ test('t3: every committed S004 evidence artefact exists at the path its commit c
   assert.match(m, /Measured real maximum: element depth 4/, 'the real maximum is stated');
   assert.match(m, /Cost per Container level: exactly 22px/, 'the per-level cost is stated');
   assert.match(m, /ELEMENT NESTING/, 'and the METRIC is named — the plan review’s HIGH finding');
+
+  // The t7 note must record the four states its acceptance checks name, and the
+  // clipping CONTROL — a note that claimed a control without one would be the
+  // failure mode here.
+  const v = readFileSync(join(dir, 't7-visual-verification.md'), 'utf8');
+  for (const claim of [/dual-slot/i, /absent/i, /unshowable/i, /SYNTHETIC depth-9/]) {
+    assert.match(v, claim, `the verification note records ${claim}`);
+  }
+  assert.match(v, /t7-control-absent-at-400px\.png/,
+    'and names the control image that shows the clipping is pre-existing');
 });
 
 // ---------------------------------------------------------------------------

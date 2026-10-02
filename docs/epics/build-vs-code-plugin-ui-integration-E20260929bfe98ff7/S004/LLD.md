@@ -1,0 +1,446 @@
+<!-- insrc:artifact LLD-bfe98ff7f97178cf-s4 -->
+
+# LLD: E20261002bfe98ff7:S004
+
+## Summary
+
+**Epic:** `build-vs-code-plugin-ui-integration`
+**HLD base run:** `wf-1790840477406-bic923`
+**HLD effective hash:** `44085ff6e95f...`
+
+A document that designs a user-facing surface carries an Adaptive Cards record describing the interface it intends. This Story draws that card as an interface inside the review pane — a fifth inlined source string that walks the eight-member element union and builds DOM, so not one character of markup is injected and no image url is ever fetched. It mirrors the structure and class vocabulary of the daemon's own mock renderer, which exists precisely because lowering a card into a node graph shipped once and had to be corrected. Everything else is consumed rather than designed: the slot, its three states, the label and the link-out all come from the contract S003 published and exercised. The one frame decision left to this Story is how a diagram and a mock sit together when a document carries both, and it is settled by giving each its own labelled slot in one companions region.
+
+## Contents
+
+1. [HLD context](#1-hld-context)
+2. [Contract details](#2-contract-details)
+3. [Data model changes](#3-data-model-changes)
+4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
+5. [Error paths](#5-error-paths)
+6. [Test strategy](#6-test-strategy)
+7. [Migration](#7-migration)
+8. [Alternatives considered](#8-alternatives-considered)
+9. [References](#9-references)
+10. [Open questions](#10-open-questions)
+
+## 1. HLD context
+
+> See **HLD-bfe98ff7f97178cf** § 2. Framework summary
+
+**Rollout phase:** Phase C — experience mock (the Epic's final Story)
+**Consumes:** `sc1` (ArtifactReviewView structured projection), `sc2` (Review-surface render discipline), `sc3` (Section anchor model), `sc4` (Companion visual slot)
+
+**Adjacent scope (owned by other stories — do NOT implement here):**
+- `s1`: The pane shell and its existing behaviour: pending list, refreshSeq guard, approval wiring, COMMENTABLE_KINDS gate, fail-closed rule, panel lifecycle. — owns `sc1`, `sc2`, `sc3`
+- `s2`: How a functional requirement looks — item layout, identifier placement, and rendering nothing when the record is absent.
+- `s3`: The diagram renderer: the ER and sequence derivations, the SVG primitives, the deterministic grid layout, and how a render throw becomes sc4's 'unshowable'. s3 publishes only the slot contract, not its diagram internals. — owns `sc4`
+
+## 2. Contract details
+
+**Surface level:** internal
+
+### 2.1 `DOCS_UX_SOURCE`
+
+```typescript
+export const DOCS_UX_SOURCE: string
+```
+
+**Returns:** `string` — The webview-side experience-mock renderer and its slot factory, carried as SOURCE so the shell inlines it into its single nonce'd script AND the tests `new Function`-evaluate it against DOM stubs. The FIFTH member of the family DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE and DOCS_DIAGRAM_SOURCE.
+
+**Errors:**
+- `none` when A string constant.
+
+**Preconditions:**
+- Concatenated into the one nonce'd script after its four siblings.
+
+**Postconditions:**
+- Contains no innerHTML, outerHTML, insertAdjacentHTML or document.write, so the surface's pinned injection-site count stays at exactly one.
+- Uses its own `ux` identifier prefix. This is load-bearing rather than tidy: S003 hit a real collision when a host const and a source-string function shared the name `dgEl` — a SyntaxError that would have broken the entire webview and that tsc cannot see inside a template literal. The committed parse-coexistence test must be extended to this fifth string.
+- ES5-compatible style, matching its four siblings.
+
+### 2.2 `uxRenderCard`
+
+```typescript
+StructuredRenderer<UxDefinition> = (record) => { readonly el: unknown; readonly degradation?: { degraded: boolean; notice?: string } | undefined }
+```
+
+**Parameters:**
+- `record: UxDefinition` — `{ type: 'AdaptiveCard'; version?; body: readonly UxElement[] }`, projected verbatim and UNVALIDATED — validateUxDefinition runs at assembly inside the orchestrator, never on the read path.
+
+**Returns:** `{ el: unknown; degradation? }` — A DOM subtree rendering the card as an INTERFACE. Returns sc2's shipped StructuredRenderer shape rather than inventing a return type. `degradation` stays ABSENT: a card that cannot be drawn at all is the factory's 'unshowable', and an element that cannot be drawn degrades in place.
+
+**Errors:**
+- `none-thrown` when Never throws. A malformed element, an unknown `type`, a non-array child list and excessive depth all resolve to a visible in-place degradation — taking the document down over an adjunct would invert k4.
+
+**Preconditions:**
+- `record.body` is a non-empty array; the factory applies the absent-safe gate before calling.
+- A `document` with createElement is available (the webview, or the test's stub).
+
+**Postconditions:**
+- ONE BRANCH PER UNION MEMBER — TextBlock, Container, ColumnSet, Column, Image, Input.Text, Input.ChoiceSet, ActionSet — because the four real ledger records between them use ALL of them plus Action.Submit and Action.OpenUrl. A convenient subset would fail on three of the four.
+- The element->structure mapping and the `ux-*` class vocabulary MIRROR the daemon's renderUxMockDocument (ux.ts:482), so the in-pane mock and the generated companion read as the same artefact at two fidelities. What is deliberately NOT mirrored is its METHOD: the daemon emits HTML strings, which sc2 forbids here, so the same tree is produced by construction.
+- An element whose `type` is not in the union renders the daemon's `ux-unknown` degradation — VISIBLE, naming the unrenderable type. Explicitly NOT a bare `default` that returns nothing: the daemon's own dispatch pairs a `never` witness with this visible fallback, and a bare default is the silent fall-through this Epic has been bitten by before.
+- An Image renders as a placeholder SHOWING its url and never fetching it — the decision the daemon already made, and the single most important reason a mock cannot reach the network (ac5/k6).
+- Inputs render as non-interactive placeholders and actions as non-interactive chips, because this is a MOCK a reviewer reads rather than a live form they fill in.
+- The walk is bounded by an explicit depth limit. Real records already reach depth 9, so the bound is a SAFETY limit against a malformed or hostile structure and must sit far enough out that it never fires on authored content — alternative a4 was rejected precisely for making truncation a routine outcome.
+
+### 2.3 `uxPickRef`
+
+```typescript
+(companions: readonly CompanionRef[] | undefined) => CompanionRef | undefined
+```
+
+**Parameters:**
+- `companions: readonly CompanionRef[] | undefined` — The document's companion refs, forwarded verbatim by s3's existing message field.
+
+**Returns:** `CompanionRef | undefined` — The first ref whose CompanionKind maps to the 'experience' visual kind — i.e. `ux-mock`. The exact mirror of S003's dgPickRef, which selects only diagram kinds.
+
+**Errors:**
+- `none-thrown` when A non-array or malformed entry yields undefined rather than throwing.
+
+**Postconditions:**
+- Selection goes through sc4's companionVisualKind rather than comparing the kind string inline, so the two factories partition the ref set by ONE shared mapping and a new companion kind cannot be claimed by both or by neither.
+- A diagram ref is never selected here, which is the symmetric half of S003 proving (by sha256-identical screenshots) that it renders nothing for a ux-mock ref.
+
+### 2.4 `uxBuildMockSlot`
+
+```typescript
+CompanionSlotFactory<{ uxDefinition?: UxDefinition | undefined }>['build']
+```
+
+**Parameters:**
+- `records: { uxDefinition?: UxDefinition | undefined }` — The record bundle the pane received. A bundle rather than a bare record, instantiating sc4's TRecord the way S003's diagram factory already does — a use the contract has absorbed.
+- `ref: CompanionRef | undefined` — The ux-mock ref, if the document carries one. Supplies the label and the link-out, and is the only evidence a mock was MEANT to exist.
+- `anchorSlug: string | undefined` — The slug the ref's ofSectionId resolved to, resolved HOST-side with sc3's shipped resolver exactly as s3 does.
+
+**Returns:** `CompanionSlotState` — One of sc4's three states, decided by the same four-combination table S003 established.
+
+**Errors:**
+- `none-thrown` when Never throws; a render failure resolves to 'unshowable' with a reason.
+
+**Postconditions:**
+- THE FOUR-COMBINATION GATE, identical in shape to the diagram factory's so the two visuals behave consistently:
+  ref absent + record absent  -> 'absent'      (ac3: no slot, no frame, no fetch, zero DOM work)
+  ref present + record present -> 'rendered'   (ac1)
+  ref present + record absent  -> 'unshowable' (ac4)
+  ref absent  + record present -> 'rendered'   (record gates content, the row resolved for S003 and applied here for consistency)
+- 'absent' is returned BEFORE any element is created, so ac3 is provable as the ABSENCE of DOM activity. This is the dominant path: 4 of 634 ledger bodies carry a uxDefinition.
+- `kind` is 'experience' and the label comes from the ref's title when present, else a default derived from the kind — never invented per call. This is what makes ac2's 'tell which is which' a property of the data rather than of copy.
+- linkOut is offered on BOTH 'rendered' and 'unshowable' whenever a ref exists, per sc4's shipped widening.
+
+### 2.5 `openDoc`
+
+```typescript
+async function openDoc(artifactId: string): Promise<void>
+```
+
+**Parameters:**
+- `artifactId: string` — Unchanged from s1-s3.
+
+**Returns:** `Promise<void>` — Unchanged.
+
+**Errors:**
+- `none-added` when Reading an optional field off a resolved value cannot throw.
+
+**Postconditions:**
+- Forwards `uxDefinition` onto the EXISTING docs-content message by conditional spread, exactly as t2 forwarded the diagram records. It is NOT yet forwarded: sc1 projects it and DocsContent mirrors it, but the host currently drops it — the same one-hop gap the diagram records had before S003.
+- Resolves the ux-mock ref's ofSectionId HOST-side with sc3's createSectionResolver and posts the slug, mirroring s3's diagramAnchorSlug. Resolving in the webview would re-implement slugify and the title-alias rule, minting a second section identity.
+- No new message type, no new IPC method, no second round trip (k2).
+- The fail-closed arm stays unchanged and carries NO records.
+
+### 2.6 `renderContent`
+
+```typescript
+function renderContent(m: { markdown?: string; sections?: SectionIndex; degradation?: RenderDegradation; functionalDefinition?: FunctionalDefinition; erDefinition?: ErDefinition; sequenceDefinition?: SequenceDefinition; companions?: readonly CompanionRef[]; diagramAnchorSlug?: string; uxDefinition?: UxDefinition; experienceAnchorSlug?: string; openQuestions?: readonly string[]; blocked?: boolean; commentable?: boolean; artifactId?: string }): void
+```
+
+**Parameters:**
+- `m: the docs-content payload` — Extended with the one record and the one slug this Story reads.
+
+**Returns:** `void` — Renders the whole surface for one opened document.
+
+**Errors:**
+- `none-added` when The slot build is wrapped in the same backstop catch s3 established.
+
+**Postconditions:**
+- Builds and mounts the experience slot immediately AFTER the diagram slot, so the two sit as labelled peers in one companions region — THE ONE FRAME DECISION ONLY s4 CAN MAKE, since it is the only Story that observes both at once. Diagram first because it answers 'what is this made of' and the mock answers 'what will it feel like'.
+- Runs AFTER stampSlugs for the same pointer-advance reason s3's does, and before the chooser and the notice.
+- Reuses s3's dgMountSlot unchanged, including its corrected id-walk anchor lookup — s4 re-derives no placement logic.
+- 'absent' mounts nothing at all: no heading, no border, no reserved space.
+- The body, the chooser, the notice, the open questions and the approval controls are untouched.
+
+### 2.7 `companionVisualKind`
+
+```typescript
+(kind: CompanionRefKind) => CompanionVisualKind
+```
+
+**Parameters:**
+- `kind: CompanionRefKind` — The companion ref's kind, read off the daemon's closed union.
+
+**Returns:** `CompanionVisualKind` — 'experience' for ux-mock; 'diagram' for both diagram kinds. CONSUMED from sc4 exactly as S003 published it.
+
+**Errors:**
+- `compile-error` when A new CompanionKind member fails to compile against the `never` witness rather than producing an unlabelled slot.
+
+**Postconditions:**
+- s4 reads the label from this mapping rather than deciding its own, which is how ac2 is met without a second contract.
+- s4 does NOT modify it. The function is already total over the closed union and already maps ux-mock to 'experience' — S003 published the experience half of the mapping in advance.
+
+## 3. Data model changes
+
+### 3.1 `HostToWebview (the `docs-content` variant)` — field-add
+
+Two optional fields appended to the same variant s1, s2 and s3 extended: `uxDefinition` (typed by INDEXING off `DocsContent['uxDefinition']`, so protocol -> client -> daemon stay one declaration deep) and `experienceAnchorSlug` (the slug the ux-mock ref's ofSectionId resolved to, resolved host-side). Populated by conditional spread so absence is an ABSENT KEY. uxDefinition needs NO daemon change at all — it is one of sc1's ORIGINAL four projected fields and DocsContent already mirrors it; the gap is purely the host dropping it before the post, the same one-hop gap t2 closed for the diagram records.
+
+```
+// vscode-plugin/src/chat/protocol.ts — docs-content variant, existing fields unchanged
+      readonly companions?: DocsContent['companions'];
+      readonly diagramAnchorSlug?: string | undefined;
++     readonly uxDefinition?: DocsContent['uxDefinition'];
++     readonly experienceAnchorSlug?: string | undefined;
+```
+
+**Call sites:**
+- `vscode-plugin/src/chat/protocol.ts — the docs-content variant s3 last extended`
+- `vscode-plugin/src/chat/docs-review-panel.ts — openDoc's post, the only producer`
+- `vscode-plugin/src/chat/docs-review-panel.ts — renderContent, the only consumer`
+- `vscode-plugin/src/chat/docs-review-client.ts:37 — DocsContent.uxDefinition, already indexed off ArtifactReviewView (and forwarded at :113)`
+
+### 3.2 `UxDefinition / UxElement` — invariant-change
+
+No type change and no producer change — the Epic's generation-side non-goal rules that out. What changes is what the READ side may assume. validateUxDefinition (ux.ts:150) has TWO non-test call sites and NEITHER is on the read path: orchestrator.ts:1542 inside artifact ASSEMBLY, and code-review/dimensions/ux/index.ts:119 inside judgeUx, the post-build 'ux' code-review dimension (which validates 'the authored uxDefinition JSON element (never the rendered mock)'). sc1 projects the body verbatim. So a `body` that is not an array, an element that is not an object, an element whose `type` is unknown, a missing required `text`, a non-array `items`/`columns`, and arbitrarily deep nesting all ARRIVE at the renderer. The client's posture differs from the daemon's deliberately: the daemon REJECTS at assembly because it is generating an artifact; the client degrades in place because its job is to show the reviewer what it legibly can. Depth is not hypothetical — the four real records reach depth 9.
+
+**Call sites:**
+- `src/workflow/artifacts/companion/ux.ts:108-116 (UxElement, the closed eight-member union)`
+- `src/workflow/artifacts/companion/ux.ts:119-123 (UxDefinition)`
+- `src/workflow/artifacts/companion/ux.ts:150 (validateUxDefinition — assembly-time only)`
+- `src/workflow/orchestrator.ts:1542 (its single non-test call site)`
+- `src/workflow/artifact-content.ts:203-215 (structuredRecords — the verbatim unvalidated projection)`
+
+### 3.3 `renderUxMockDocument (the daemon authority this Story mirrors)` — invariant-change
+
+Consumed as an AUTHORITY, not called — a webview cannot import a daemon module. Two facts make it the right authority and one makes the mirroring imperfect. It exists because `uxDefinitionToIr` (ux.ts:282) lowered the card into a node-and-edge DocumentIR and published an 'experience mock' as a picture of the card's JSON; render.ts:135-150 records that correction verbatim (ISSUE-85e6a58693579b6d, ~3.37 MB -> ~7 KB). Its private elementHtml pairs a `const unhandled: never` witness with a VISIBLE `ux-unknown` fallback, which is exactly the pattern s4 must copy. The imperfection: it emits HTML STRINGS, so parity can be asserted on structure and class vocabulary but NOT by byte comparison the way S003 compared ER node and edge sets — a weaker instrument, and this LLD says so rather than implying otherwise.
+
+**Call sites:**
+- `src/workflow/artifacts/companion/ux.ts:482 (renderUxMockDocument)`
+- `src/workflow/artifacts/companion/ux.ts:282 (uxDefinitionToIr — the path NOT to reuse)`
+- `src/workflow/artifacts/companion/render.ts:135-150 (renderUxCompanion, carrying the correction note)`
+
+## 4. Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc4` | consumes | Consumed exactly as S003 published and exercised it — the material difference from S003's own position, which had to design the frame while building into it. CompanionSlotState's three states, CompanionSlotFactory<TRecord>, CompanionLinkOut and companionVisualKind are all taken as shipped, including the two widenings S003 recorded: `body` typed `unknown` and `linkOut` optional on BOTH non-absent states. TRecord is instantiated as a bundle `{ uxDefinition? }`, which the contract has already absorbed — S003's diagram factory instantiates it as a bundle too. NO CHANGE TO sc4 IS PROPOSED. The one thing s4 adds is the thing sc4 deliberately left open: the dual-slot arrangement. Each visual gets its own labelled frame in one companions region, diagram first, experience second — decided here because s4 is the only Story that observes both, and expressible entirely in the labels sc4 already derives, so no new contract is needed. S003 proved by sha256-identical screenshots that it renders nothing for a ux-mock ref, so the experience slot is genuinely unclaimed rather than contended. |
+| `sc2` | consumes | The THIRD implementation of sc2's published StructuredRenderer<T>, after s2's functional record and s3's diagram. Its hard rule is honoured in the hardest medium yet: the authority being mirrored emits HTML strings, so the temptation to copy its approach rather than its output is real and is explicitly refused. Every element is built with document.createElement and every string written via textContent, so the surface's single markup-injection site stays single and the pinned injection count stays at exactly one. No relaxation of sc2 is requested, which matters because s1 owns it and because alternative a2 was eliminated precisely for colliding with it. The webview code rides as a FIFTH exported source string inlined into the same single nonce'd script, so the strict CSP is not widened by one character. Two consequences this Story owns: the pinned shell baseline moves again and must be updated in the same commit with a computed delta, and the committed parse-coexistence test must be extended to five strings — the guard that exists because S003 hit a real identifier collision in that shared scope. |
+| `sc1` | consumes | Consumed as shipped, and uniquely among this Epic's Stories it needs NOTHING from the daemon. uxDefinition is one of sc1's ORIGINAL four projected fields (artifact-content.ts:63-66), already read verbatim and unvalidated by structuredRecords and already mirrored on DocsContent indexed off ArtifactReviewView. So unlike S003 — which required amendment AMD-bfe98ff7f97178cf-1 to project sequenceDefinition, and therefore a daemon rebuild — S004 proposes no amendment and expects to be plugin-only. The record rides the response the existing workflow.artifactContent call already returns, forwarded by reference with no reshaping, defaulting or validation; no new IPC method, no second read surface, no extra round trip, and no read of the generated companion file itself (k2, k7). The only gap is one hop on the client. |
+| `sc3` | consumes | createSectionResolver is consumed exactly as shipped to turn the ux-mock ref's ofSectionId into a slug in THIS document, resolved HOST-side and posted — the same route s3 settled on, and for the same reason: resolving in the webview would have to re-implement slugify and the title-alias rule, minting a second and weaker section identity. s4 mints no section identity and docs-sections.ts comes out byte-identical, which the suite already asserts against the pre-Story commit. s4 also INHERITS rather than re-derives s3's post-build correction: the anchor lookup walks the body's children comparing id, because querySelector('#'+slug) throws on a digit-leading slug and insrc numbers its headings. The same honest limitation applies: 0 of the 8 companion refs in the ledger populate ofSectionId, so every real document takes default placement and the anchored path ships tested but unexercised by real data. |
+
+## 5. Error paths
+
+**Error cases**
+
+- **The record arrives structurally malformed — `body` is not an array, is null, or is an object. Reachable because validateUxDefinition runs only at assembly and sc1 projects the body verbatim.** (recoverable)
+  - Detection: An Array.isArray check in the factory's absent-safe gate, BEFORE any element is created — the ordering S003 established, so a malformed record costs zero DOM activity rather than a half-built card.
+  - Response: If a ux-mock ref exists, return 'unshowable' with a reason saying the experience record could not be read. If no ref exists either, return 'absent'.
+  - User impact: The reviewer is told a mock was referenced and could not be shown, with the authentic file still linked — or sees nothing at all. Never a broken or half-drawn card.
+- **An element inside the card is not an object, or carries no `type` string — a hole in an otherwise valid tree.** (recoverable)
+  - Detection: A per-element typeof/`type` check at the top of the element dispatch, before the branch is chosen.
+  - Response: Render the daemon's `ux-unknown` degradation IN PLACE for that one element and continue with its siblings.
+  - User impact: The reviewer sees the rest of the intended interface with one visibly marked gap, rather than losing the whole mock to a single malformed element. The gap is visible precisely so it cannot be mistaken for a design that simply has nothing there.
+- **An element's `type` is a string the eight-member union does not contain — a card authored against a newer Adaptive Cards feature, or a producer that gains an element type before this renderer does.** (recoverable)
+  - Detection: The dispatch falls through every known branch to its explicit unknown-element arm. NOT a bare `default` that returns nothing — that is the silent fall-through this Epic has already been bitten by.
+  - Response: Render `ux-unknown` naming the unrenderable type, in place.
+  - User impact: A reviewer can SEE that this subset does not know an element the author used, and can open the authentic companion. Silently omitting it would let them approve an experience with a piece missing and no indication it existed.
+- **A container-like element's child list is missing or not an array (`items` on a Container, `columns` on a ColumnSet).** (recoverable)
+  - Detection: An Array.isArray check before recursing into children.
+  - Response: Render the container itself with no children rather than throwing or skipping it entirely.
+  - User impact: An empty group rather than a vanished one — the honest rendering of a record that declares a container and gives it nothing.
+- **The card nests deeper than the renderer's safety bound — a malformed or hostile structure rather than authored content.** (recoverable)
+  - Detection: An explicit depth counter threaded through the recursive walk, compared against a fixed limit.
+  - Response: Stop descending and render the `ux-unknown` degradation at the cut point, naming depth as the reason. The bound sits FAR enough out that it never fires on authored content — the real records reach depth 9, and alternative a4 was rejected for making truncation routine.
+  - User impact: On real documents, none. On a pathological record, the pane stays responsive and says where it stopped instead of recursing without end.
+- **A ux-mock ref exists but the document carries no uxDefinition.** (recoverable)
+  - Detection: The factory dispatches on the RECORD present, never on the ref's kind. No drawable record plus a ref is the unshowable branch.
+  - Response: 'unshowable', with a reason naming what was referenced, and the link-out offered.
+  - User impact: The reviewer learns a mock exists, that this pane cannot draw it, and where to open it — the whole of ac4. A silent omission would be indistinguishable from a document that designs no user-facing surface.
+- **The renderer throws mid-construction — an unexpected shape, or a DOM method the host does not provide.** (recoverable)
+  - Detection: Two layers: the card subtree is built COMPLETELY before anything is mounted, so a construction throw happens while the surface is untouched; and renderContent wraps the slot build in a backstop catch.
+  - Response: The catch converts the throw into 'unshowable' with a reason. Nothing was mounted, so nothing needs unwinding.
+  - User impact: The body, the chooser, the notice, the open questions, BOTH approval controls AND the diagram slot all still render — six surfaces, one more than S003 had to protect.
+- **The content fetch failed, so the host took the fail-closed arm and posted blocked:true with a placeholder body.** (recoverable)
+  - Detection: No detection is needed, and that is the design: the failure arm posts no records, so the factory's absent gate stops at its first test.
+  - Response: 'absent'. No slot, no link-out, no mock.
+  - User impact: A reviewer who never saw the body is never shown an authoritative-looking picture of an interface drawn from it. Showing a polished mock beside an 'unavailable' body would make an unreadable document look reviewable — the most dangerous thing this Story could do.
+- **An Image element carries a url that is remote, malformed, or hostile (a `javascript:` scheme, a tracking pixel, an enormous asset).** (recoverable)
+  - Detection: Not detected, and deliberately so — there is nothing to detect because the url is never dereferenced. It is written as TEXT via textContent into a placeholder.
+  - Response: Render the daemon's image placeholder showing the url as text. Never create an `img`, never set a `src`, never fetch.
+  - User impact: The reviewer sees that an image is intended and what it points at. This is what makes ac5/k6 structurally true rather than a promise: a mock cannot reach the network because no code path exists that would let it.
+
+**Edge cases**
+
+| Input | Expected |
+| :--- | :--- |
+| A document with NO ux-mock ref and NO uxDefinition — the overwhelming majority: 4 of 634 ledger bodies carry one. | 'absent'. Zero createElement calls from the experience path, no slot host content, no heading, no border, no reserved space. The rendered surface is identical to what S003 ships. This is ac3 and it is the dominant path, so it is tested as the main case rather than as an edge. |
+| `body: []` — a present but empty card. | Treated as ABSENT, matching the undefined-or-empty convention S002 and S003 both adopted. An empty card frame is a frame around nothing, which is what k3 forbids. |
+| A document carrying a uxDefinition but NO ux-mock ref. | RENDERED, with no link-out. Consistent with the row resolved for S003: the record gates content, because the design genuinely exists and the framework renders from the record. |
+| A document carrying BOTH a diagram ref and a ux-mock ref — the real shape of this Epic's own S002 LLD. | TWO slots, each labelled from its own ref, diagram first and experience second, in one companions region. This is ac2, and it is the one arrangement only s4 can decide. |
+| A card whose only content is a single TextBlock. | Rendered as a one-line card rather than suppressed. TextBlock is the most common element by far (55 of 101 typed nodes across the real records). |
+| A TextBlock whose `text` is missing or not a string, while the element is otherwise well-formed. | Rendered as an empty text node rather than letting `undefined` leak to the surface as a literal string. |
+| Every modifier combination on one TextBlock — weight, size, color, isSubtle, wrap together. | All applied as classes from the daemon's vocabulary. These are not decorative: `isSubtle` appears 23 times and `size`/`weight` 41 times across the real records, so ignoring them would flatten most of the authored emphasis. |
+| A ColumnSet whose columns carry `width` values — present 12 times in the real records. | Columns laid out side by side honouring relative width where numeric or a known keyword, falling back to equal division otherwise. A ColumnSet rendered as a vertical stack would misrepresent the single most layout-dependent thing a card expresses. |
+| An element type the record uses that is NOT in the union — e.g. `FactSet` or `RichTextBlock`. | The `ux-unknown` degradation naming the type. Realistic rather than hypothetical: the records declare `version: '1.5'`, which admits more element types than this eight-member subset covers. |
+| Card text containing markdown-active or HTML-active characters — `<script>`, `&`, backticks, angle brackets. | Rendered character-for-character as TEXT via textContent, creating no element and no attribute. The daemon escapes because it builds strings; this renderer is immune by construction because it never builds one. |
+| The same document delivered twice — the pane posts docs-content from five sites per session. | Exactly ONE experience slot after the second delivery, with the same content, because renderContent rebuilds per message and the slot host is cleared unconditionally. |
+
+**Invariants to preserve**
+
+- Markup is injected at exactly ONE site on this surface — the markdown body's guarded `el.innerHTML=marked.parse`. The experience mock is built with document.createElement and textContent and leaves the pinned injection-site count at one. This is sharper here than for the diagram: the authority being mirrored emits HTML STRINGS, so the discipline is to copy its OUTPUT and refuse its METHOD. [[s1 capability.reuse-check — renderUxMockDocument emits `<div class="ux-...">` strings; s1 test.locate — the shell's injection-site count is pinned at exactly one]]
+- No content leaves the editor. An Image's url is SHOWN and never fetched — no `img` element, no `src`, no request — the decision the daemon already made and the reason a mock cannot reach the network by construction rather than by policy. [[s1 capability.reuse-check — 'the url is SHOWN, never fetched' at ux.ts elementHtml]]
+- An element this subset cannot draw DEGRADES VISIBLY rather than vanishing. The dispatch ends in an explicit unknown-element arm rendering `ux-unknown`, never a bare `default` — the daemon pairs a `never` witness with the same visible fallback, and a silent fall-through is a failure mode this Epic has already shipped once. [[s1 capability.reuse-check — elementHtml ends in `const unhandled: never = el` plus a ux-unknown branch, commented 'DEGRADES VISIBLY rather than vanishing']]
+- The experience mock is an ADJUNCT. The body is never edited, truncated or replaced to make room for it; a slot failure in any state leaves the body, the chooser, the notice, the open questions, both approval controls AND the diagram slot intact. [[s1 test.locate — the runWebview harness already asserts all five surfaces survive a forced throw in S003's slot build]]
+- Nothing is fabricated or reserved for an absent mock. 'absent' is the ABSENCE of a slot, enforced by sc4's type carrying no other member, and returned before any element is created. [[s1 contract.consume-check — sc4's CompanionSlotState absent arm carries no other member; S003's ac2 test asserts zero createElement calls]]
+- The read path stays additive and local. uxDefinition rides the response workflow.artifactContent already returns — it is one of sc1's ORIGINAL four fields — on the docs-content message the host already posts. No new IPC method, no second read surface, no extra round trip, and no read of the generated companion file. [[s1 data-model.trace — validateUxDefinition's single non-test call site is orchestrator.ts:1542 at assembly; structuredRecords projects verbatim at artifact-content.ts:203-215]]
+- Section identity has exactly one source. The ux-mock ref's ofSectionId is resolved HOST-side by sc3's shipped createSectionResolver; s4 mints no identity, docs-sections.ts comes out byte-identical, and the anchor lookup reuses S003's corrected id-walk rather than a CSS selector that throws on a digit-leading slug. [[s1 test.locate — S003's post-build review found querySelector('#'+slug) throws on numbered headings; docs-sections.ts byte-identity is already asserted]]
+- The approval path behaves identically. Approve, request-changes, the COMMENTABLE_KINDS gate, the blocked banner and the fail-closed suppression are untouched, and the fail-closed arm carries no records. [[s1 test.locate — the suite's approval regression and fail-closed assertions, extended at each Story]]
+- No generation-side contract is altered. UxDefinition, UxElement, validateUxDefinition, renderUxMockDocument and the companion renderers all stay exactly as they are; S004 proposes no amendment and changes no file under src/, which makes it the only Story in this Epic that needs no daemon rebuild. [[s1 contract.consume-check — uxDefinition is one of sc1's original four projected fields, so unlike S003 no fieldAdd amendment is required]]
+
+## 6. Test strategy
+
+**Test framework:** `node:test via `npx tsx --test`, run from vscode-plugin/ — the framework every suite in src/chat/__tests__/ uses (docs-review-panel.test.ts now 122 tests; plugin sweep 747 / 743 pass / 4 skipped). Webview code is proved by `new Function` evaluation against recording DOM stubs and by lifting the REAL bootstrap out of the emitted shell, never by asserting on the HTML string. Visual checks render the real shell, screenshot it headless and READ the image back.`
+
+**Test levels**
+
+- **unit** — Execute the element dispatch over the WHOLE union. The four real records between them use every member plus both action types, so a renderer that quietly handles only the common ones would still pass a careless suite while failing three of the four documents it exists for.
+  - Subjects: `One test per union member — TextBlock, Container, ColumnSet, Column, Image, Input.Text, Input.ChoiceSet, ActionSet — asserting the element is built, its class comes from the daemon's vocabulary, and its text reaches the DOM via textContent`, `Action.Submit and Action.OpenUrl both render as non-interactive chips, with OpenUrl's url shown and no anchor href created`, `An IMAGE creates NO `img` element and sets NO `src`: the url is written as TEXT, asserted by a recording stub, so 'never fetched' is a structural fact rather than a claim`, `Every TextBlock modifier maps to the daemon's class: weight -> ux-bolder/ux-lighter, size -> ux-size-*, color -> ux-color-*, isSubtle -> ux-subtle`, `A ColumnSet with explicit `width` values lays its columns side by side honouring relative width, falling back to equal division otherwise`, `An element whose `type` is outside the union renders ux-unknown NAMING the type — and a mutation replacing that arm with a bare `default` must turn this RED`, `A non-object element, a missing `text`, and a non-array `items`/`columns` each degrade in place and leave siblings rendered`, `Depth: a structure beyond the safety bound stops and marks the cut point, while a record at the real depth of 9 renders COMPLETELY — the bound must be proved not to fire on authored content`
+  - Fixtures: `The FOUR real ledger uxDefinitions, read from .insrc/artifacts/ rather than hand-invented`, `A hostile record whose text carries `<script>`, `&`, backticks and angle brackets`, `A malformed table: body not an array, element not an object, unknown type, non-array items, missing text`, `A synthetic deep record exceeding the bound, and one at depth 9 to prove the bound does not fire on real content`
+- **unit** — Pin the client against the daemon's corrected renderer. This mitigation is WEAKER than S003's — the daemon emits HTML STRINGS, so structure and vocabulary can be compared but output cannot be diffed byte-for-byte. Stated rather than implied.
+  - Subjects: `PARITY OF VOCABULARY: every `ux-*` class the client emits is one the daemon's UX_MOCK_STYLE defines, asserted by extracting both sets`, `PARITY OF COVERAGE: the client's dispatch handles exactly the union members the daemon's elementHtml handles, derived from both sources rather than a hand-kept list`, `The client renders ux-unknown for the same inputs the daemon does — the one behaviour where both must agree exactly, because it is the user-visible admission of a gap`, `A guard test asserting the client does NOT reuse uxDefinitionToIr's node/edge shape — the regression guard for the bug this Epic already shipped and fixed`
+  - Fixtures: `A shared fixture module under the daemon test tree, imported by both a daemon-side renderUxMockDocument call and the `new Function`-evaluated client renderer`
+- **unit** — Prove ac5 structurally, in the medium where the temptation is strongest: the authority being mirrored builds HTML strings.
+  - Subjects: `Every element via document.createElement and every string via textContent, proved by a recording stub capturing property writes`, `A hostile value comes back character-for-character and creates no element and no attribute`, `DOCS_UX_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write — scanned with COMMENTS STRIPPED FIRST`, `The emitted shell still contains EXACTLY ONE `.innerHTML=` after a FIFTH source string joins the script`, `No attribute value is built from record text`, `ALL FIVE source strings parse together in one scope — extending the committed guard that exists because S003 hit a real `dgEl` collision`
+  - Fixtures: `The recording-stub pattern S002 and S003 built, reused unchanged`
+- **integration** — Prove the record reaches the webview and the slot reaches the surface by driving the SHIPPED bootstrap, and prove the two visuals coexist.
+  - Subjects: `openDoc forwards uxDefinition by REFERENCE, with absence staying an ABSENT KEY`, `openDoc resolves the ux-mock ref's ofSectionId host-side and posts experienceAnchorSlug; an unresolvable id posts no key`, `openDoc's fail-closed arm posts blocked:true and carries NO uxDefinition`, `THE DUAL-SLOT ARRANGEMENT: a document carrying both refs renders TWO slots, diagram first and experience second, each labelled from its OWN ref — ac2's whole substance`, `Adding the experience slot leaves the DIAGRAM slot byte-identical to what S003 renders — the symmetric proof of S003's sha256-identical dual-ref result`, `The four-combination gate driven through the real bootstrap, including the ref-absent/record-present row`, `ac3's dominant path as ZERO DOM ACTIVITY`, `IDEMPOTENCE: two identical messages leave exactly ONE experience slot; a third carrying neither leaves none`, `A forced throw leaves the body, chooser, notice, open questions, BOTH controls AND the diagram slot intact — six surfaces`, `docs-sections.ts comes out BYTE-IDENTICAL`
+  - Fixtures: `The runWebview harness extended with an experience slot host`, `A real dual-ref payload modelled on this Epic's own S002 LLD`
+- **smoke** — THE CHECK THIS STORY CANNOT SHIP WITHOUT. Every DOM stub is CSS-blind: a card can have every element present, every class correct and every assertion green while looking nothing like an interface. That is not hypothetical — it is precisely the failure this Epic already shipped and corrected once, and no assertion caught it then either.
+  - Subjects: `Render the real shell with EACH of the four real ledger uxDefinitions, screenshot headless, and READ the images: does each look like a user interface a reviewer would recognise — text hierarchy legible, columns side by side, inputs and buttons reading as affordances, nothing overlapping or clipped`, `The two records belonging to THIS Epic read correctly — the surface renders its own design`, `The DUAL-SLOT layout read as an image: diagram and mock as labelled peers, each distinguishable at a glance`, `The 'unshowable' state: reason legible, link-out visibly reachable`, `The 'absent' state: nothing drawn, body identical to the S003 rendering`, `A card at real depth 9 inside a NARROW pane — the condition under which a column-in-column layout becomes an unreadable squeeze`
+  - Fixtures: `The headless-Chrome screenshot route, with state images committed under S004/evidence/ and the evidence-path guard extended to cover them`
+- **unit** — Verify by MUTATION that each claim can fail. Three vacuous tests shipped green in this repo inside one week, and S003's code review found a defect two layers of masking had hidden.
+  - Subjects: `Replace the unknown-element arm with a bare `default` -> the degrades-visibly test must fail`, `Render an Image as a real `img` with a `src` -> the never-fetched test must fail`, `Drop the absent gate -> the ac3 zero-DOM-activity test must fail`, `Dispatch on the ref's kind instead of the record present -> the unshowable test must fail`, `Emit the card by assigning innerHTML -> the no-markup and injection-count tests must fail`, `Render a ColumnSet as a vertical stack -> the side-by-side test must fail`, `Lower the card through a node/edge shape -> the no-node-graph guard must fail`, `Remove the depth bound -> the pathological-structure test must hang or fail`, `Place the experience slot before the diagram slot -> the dual-slot ordering test must fail`
+
+**Acceptance mapping**
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `unit: one test per union member asserting the element renders with the daemon's class vocabulary and its text via textContent`, `unit: each of the FOUR real ledger uxDefinitions renders completely — every element in the record appears in the output tree`, `unit (parity): the client's class vocabulary and element coverage match the daemon's corrected renderer over shared fixtures`, `unit (regression guard): the output contains no node/edge construct — the bug this Epic already shipped and fixed cannot return silently`, `integration: uxDefinition reaches the webview by reference on the existing message, and the slot reaches the surface through the shipped bootstrap`, `smoke (VISUAL): each real record is screenshotted and READ — does it look like an interface? No assertion can answer that, and it is the whole of ac1's value` |
+| `ac2` | `integration: a dual-ref document renders TWO slots, diagram first and experience second, each labelled from its own ref via sc4's companionVisualKind`, `integration: the diagram slot is byte-identical to what S003 renders for the same document once the experience slot is added`, `unit: the label is derived from the ref's title, never invented per call`, `smoke (VISUAL): the dual-slot layout read as an image — the two are distinguishable at a glance, the only way to confirm a reviewer could tell them apart`, `mutation: swapping the slot order must turn the ordering test red` |
+| `ac3` | `integration: no ref and no record -> ZERO createElement calls from the experience path`, `unit: `body: []` and a malformed record are treated as ABSENT`, `unit: the sc4 absent state carries no label, body or link`, `integration: the rendered surface for a document with neither is identical to what S003 ships — the dominant path, proved as the main case`, `smoke (VISUAL): the absent state shows no frame and no reserved space`, `mutation: deleting the absent gate must turn the zero-DOM-activity test red` |
+| `ac4` | `unit (gate): ref present + record absent -> 'unshowable' with a reason NAMING what was referenced`, `unit: a malformed record with a ref present routes to 'unshowable' rather than to a broken card`, `unit: an unknown element type degrades VISIBLY in place — the finer-grained half of ac4, since a card can be partially unshowable`, `unit: linkOut is offered IN the unshowable state`, `integration: a forced throw leaves all six other surfaces intact, including the diagram slot`, `smoke (VISUAL): the unshowable state is read back and confirmed legible`, `mutation: replacing the unknown-element arm with a bare default must turn the degrades-visibly test red` |
+| `ac5` | `unit: every element via document.createElement and every string via textContent, proved by a recording stub`, `unit: an Image creates NO img and sets NO src — the url is text, so no code path exists that could reach the network`, `unit: hostile text renders character-for-character, creating no element and no attribute`, `unit (contract): DOCS_UX_SOURCE contains no markup assignment, scanned with comments stripped first`, `unit (contract): the shell still has EXACTLY ONE `.innerHTML=` after a fifth source string joins, and all five parse together in one scope`, `integration: the only input is a record that arrived on the existing docs-content message — no fetch, no companion-file read, no external call anywhere in the diff`, `mutation: emitting the card by assigning innerHTML must turn the no-markup and injection-count tests red` |
+
+## 7. Migration
+
+**State before:** sc1 already projects `uxDefinition` — one of its ORIGINAL four fields (artifact-content.ts:63-66), read verbatim and unvalidated by structuredRecords (:203-215) — and DocsContent already mirrors it (docs-review-client.ts:36). So the record reaches the extension host on every open and is DROPPED there: openDoc forwards markdown, openQuestions, blocked, commentable, sections, degradation, functionalDefinition, erDefinition, sequenceDefinition, companions and diagramAnchorSlug, and the docs-content variant has no field for uxDefinition. That is the same one-hop gap the diagram records had before S003, and it is the ONLY gap: nothing is needed from the daemon. The webview carries FOUR inlined source strings in one nonce'd strict-CSP script, with the shell pinned by a sha256 + char + byte baseline at a fixed nonce and a committed test proving all four parse together. sc4 is published AND exercised. S003's dgPickRef selects only diagram kinds, and a sha256-identical screenshot pair proves a ux-mock ref currently changes the rendered surface by ZERO pixels. The daemon renders the authentic mock correctly — renderUxMockDocument (ux.ts:482) exists because uxDefinitionToIr published an 'experience mock' as a mermaid picture of the card's JSON and had to be fixed (ISSUE-85e6a58693579b6d, ~3.37 MB -> ~7 KB) — but the pane shows none of it. Four of 634 ledger bodies carry a uxDefinition, and TWO belong to this Epic.
+
+**State after:** The record travels one hop further onto the existing docs-content message, and the pane draws the interface. A document carrying a uxDefinition shows the card as an INTERFACE — text hierarchy, side-by-side columns, inputs as placeholders, actions as non-interactive chips, images as placeholders showing their url — built element by element with createElement and textContent, mirroring the structure and `ux-*` vocabulary of the daemon's corrected renderer. An element this subset cannot draw degrades VISIBLY in place. A document carrying both a diagram and a mock shows TWO labelled slots in one companions region, diagram first. A document referencing a mock it cannot draw states so by name and still offers the link. A document with neither shows NOTHING — the state of 630 of 634 ledger documents. No generation-side contract changes, no amendment is proposed, and no file under src/ is touched, which makes this the only Story in the Epic that needs no daemon rebuild.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+**Steps**
+
+1. Add the two optional fields to the docs-content variant of HostToWebview — `uxDefinition` indexed off DocsContent, and `experienceAnchorSlug` — then forward them in openDoc by conditional spread, resolving the ux-mock ref's ofSectionId host-side with sc3's shipped createSectionResolver. A type addition plus data movement: the webview has no code reading either field, so the rendered surface must be UNCHANGED and the shell must stay byte-identical to the current pinned baseline. Assert that here, because it is the step's only real claim. — ↩ rollbackable
+2. Add DOCS_UX_SOURCE as the FIFTH member of the DOCS_*_SOURCE family and inline it into the single nonce'd script after its four siblings, holding the element dispatch, the card renderer and the experience slot factory. INERT: it defines functions and nothing calls them. Extend the committed parse-coexistence test to five strings in the same commit — that guard exists because S003 hit a real identifier collision in this shared scope, and a fifth string is exactly when it earns its keep. The shell baseline moves here and is updated in the same commit with a COMPUTED delta. — ↩ rollbackable
+3. Verify the renderer VISUALLY in isolation, before it is wired: render each of the FOUR real ledger uxDefinitions, screenshot headless and READ the images. Deliberately its own step and deliberately early, because the Story's central risk is a card that has every element present and every assertion green while not looking like an interface — precisely the defect this Epic already shipped and corrected once. Catching a layout failure here costs one step rather than two. — ↩ rollbackable
+4. Call the factory from renderContent and mount the experience slot immediately after the diagram slot — THE SINGLE CALL THAT CHANGES WHAT A REVIEWER SEES. After stampSlugs for the same pointer-advance reason s3's mount obeys, inside the same backstop catch, reusing s3's dgMountSlot unchanged including its corrected id-walk anchor lookup. Deliberately last and deliberately one call: reverting it restores the S003 surface exactly. — ↩ rollbackable
+5. Verify the FULL surface visually across every state — each of the four real records, the dual-slot arrangement, unshowable, absent, and a deep card in a narrow pane — and commit the images under S004/evidence/, extending the evidence-path guard to name them. This pass CONFIRMS rather than discovers. — ↩ rollbackable
+6. Rebuild and reinstall the extension (esbuild bundle + VSIX) and report the size delta COMPUTED from the two artefacts against S003's 247,667-byte baseline. State explicitly that NO daemon rebuild is required — unlike S003, this Story changes no file under src/ — because conflating the two is how a correct change comes to look broken. — ↩ rollbackable
+
+**Backward compat:** No public API changes anywhere. The two docs-content additions are optional fields on an internal host->webview message that exists only inside this extension. ACROSS THE IPC BOUNDARY NOTHING CHANGES AT ALL — this is the one Story in the Epic that needs no daemon change of any kind, because uxDefinition is one of sc1's original four projected fields and is already mirrored on DocsContent. So there is no amendment, no coordinated release, and no compatibility matrix to reason about: this extension works against any daemon that already satisfies sc1, which is every daemon since S001. The JetBrains review panel reads the same IPC and is untouched (k7). No generation-side contract is altered. A document generated before this change renders correctly with no migration — including the 630 of 634 that carry no uxDefinition.
+
+## 8. Alternatives considered
+
+### 8.1 a1: Mirror the daemon's element mapping by DOM construction, with its ux-* vocabulary — **CHOSEN**
+
+A fifth source string renders the card as an INTERFACE by walking UxElement and building DOM, reproducing renderUxMockDocument's structure and class vocabulary without ever assigning markup.
+
+s4 instantiates sc4's CompanionSlotFactory<TRecord> for the experience slot. A new DOCS_UX_SOURCE joins the single nonce'd script as its fifth member and holds the renderer: a recursive walk over the eight-member UxElement union, one branch per member, building elements with document.createElement and writing every string via textContent. The STRUCTURE and the CLASS VOCABULARY are taken from the daemon's renderUxMockDocument (ux.ts:482) so the in-pane mock and the generated companion look like the same artefact at two fidelities. What is NOT copied is its method: the daemon emits HTML strings, which sc2 forbids here. The dispatch ends in an explicit unknown-element branch rendering the daemon's ux-unknown degradation rather than a bare default. Images render as a placeholder showing the url, never fetching it. The slot frame, the three states, the label and the link-out all come from sc4 unchanged; the only new frame decision is the dual-slot arrangement.
+
+### 8.2 a2: Vendor the Adaptive Cards renderer SDK into the VSIX
+
+Bundle the real adaptivecards library and hand it the card, so fidelity comes from the reference implementation rather than from a hand-written subset.
+
+Add the adaptivecards npm package to the plugin bundle alongside MARKED_SRC, construct an AdaptiveCard in the webview, parse() the projected uxDefinition and render() to obtain a DOM tree, then mount that tree into sc4's slot. The subset question disappears because the SDK implements the full 1.5 schema the records declare.
+
+**Rejected because:** Eliminated on TWO hard violations, with cost as a distant third reason. It VIOLATES sc2, because the SDK renders by inserting markup and reconciling that means either sanitising foreign output — reintroducing exactly the surface this Epic's CSP exists to exclude — or relaxing a contract s1 owns, which no Story may do unilaterally. It VIOLATES ac5, because the SDK fetches image urls and wires action handlers, so 'nothing leaves the editor' would have to be achieved by defeating the library rather than configuring it. ac4 drops to partial because an SDK parse or render failure is a foreign error surface this Story would have to translate into sc4's unshowable state without controlling its vocabulary. And the fit is wrong in kind: the SDK renders a LIVE CARD while the daemon deliberately renders a MOCK a reviewer reads. The ~3 MB bundle on a 241,713-byte extension, for a mock that appears on four documents in the entire ledger, is the same arithmetic that eliminated the diagram library one Story ago.
+
+### 8.3 a3: Structured outline of the card rather than a rendered interface
+
+Render the uxDefinition as an indented, labelled outline of its elements — every element and property present as text, no visual interface.
+
+Walk the same union, but emit a nested list: one row per element showing its type and salient properties, indented by depth, with containers and column sets as grouping rows. No card chrome, no column layout, no affordances. Uses sc4's slot, states, label and link-out unchanged.
+
+**Rejected because:** The cheapest and lowest-risk option, and it breaks nothing — every contract holds and the accessibility story is the best of the four. It ranks third because it misses the one thing the Story exists for. ac1 is PARTIAL: an indented outline of element types and properties is a textual description of the RECORD, not a visual representation of the intended experience, and it is close to what the document's own prose already provides. ac2 weakens to partial for a related reason. And it is the same class of error this Epic already corrected: the node-graph renderer also satisfied 'the mock was displayed' while showing the card's structure instead of the interface it denotes. Choosing it would be satisfying an acceptance criterion's letter against its stated intent, knowingly. It remains the right DEGRADATION if a rendered mock proves unreadable at pane width — not the right primary.
+
+### 8.4 a4: Mirror the mapping, but render only the top two levels and link out for the rest
+
+As a1, but bound the walk to a shallow depth and show a 'see the full mock' affordance when the card is deeper, trading completeness for guaranteed legibility in a narrow pane.
+
+Identical to a1 in renderer, vocabulary, slot usage and security posture, with one added rule: the recursive walk stops at a fixed shallow depth and emits a single summary row standing in for everything below it, alongside the sc4 link-out.
+
+**Rejected because:** Ranked second because it is a1 with one rule added, so it inherits every structural strength and loses on exactly one criterion. ac1 is PARTIAL because the depth bound hides authored content by design, and the grounding makes that concrete: the four real records reach depth 9, with their actual text sitting inside the columns a shallow bound would elide. The common case becomes the degraded case, which inverts the intent of a guard. It also reintroduces on the RENDERED path the uncertainty ac4 exists to remove on the unshowable one. Worth keeping for one narrow purpose: a1 needs a depth bound anyway as a SAFETY limit against malformed structures, and a4's rule is the right shape for that — set far enough out that it never fires on real content.
+
+## 9. References
+
+- **[[c1]]** `code` `src/workflow/artifacts/companion/ux.ts:108-116,119-123` — "UxElement — the closed eight-member union — and UxDefinition, the record this Story draws"
+- **[[c2]]** `code` `src/workflow/artifacts/companion/ux.ts:482` — "renderUxMockDocument — renders the card as an INTERFACE; the authority this Story mirrors"
+- **[[c3]]** `code` `src/workflow/artifacts/companion/ux.ts:282` — "uxDefinitionToIr — lowers the card into nodes and edges; the path NOT to reuse"
+- **[[c4]]** `code` `src/workflow/artifacts/companion/render.ts:135-150` — "'the UX companion no longer borrows the DIAGRAM pipeline... so an "experience mock" was published as a picture of the card's JSON' (ISSUE-85e6a58693579b6d)"
+- **[[c5]]** `code` `src/workflow/artifacts/companion/ux.ts:150 + src/workflow/orchestrator.ts:1542` — "validateUxDefinition and its SINGLE non-test call site — assembly-time only, so the read path validates nothing"
+- **[[c6]]** `code` `src/workflow/artifact-content.ts:63-66,203-215` — "sc1's structuredRecords — uxDefinition is one of the ORIGINAL four projected fields, passed through verbatim"
+- **[[c7]]** `code` `vscode-plugin/src/chat/docs-review-client.ts:36` — "DocsContent.uxDefinition, already mirrored INDEXED off ArtifactReviewView"
+- **[[c8]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:823,832,838,866,892,909` — "sc4 as S003 published it — CompanionRefKind, CompanionVisualKind, CompanionLinkOut, CompanionSlotState, CompanionSlotFactory, companionVisualKind"
+- **[[c9]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:343-348` — "sc2's shipped StructuredRenderer<T>, returning `{ readonly el: unknown; degradation? }`"
+- **[[c10]]** `code` `vscode-plugin/src/chat/docs-review-panel.ts:76,111,185,369` — "The DOCS_*_SOURCE family a fifth member joins: body renderer, sections, FR, diagram"
+- **[[c11]]** `prior-artifact` `.insrc/artifacts/HLD-bfe98ff7f97178cf.json + .insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json` — "Two of the four real uxDefinition records belong to this Epic — the surface renders its own design"
+- **[[c12]]** `analyze-bundle` `s1 data-model.trace over .insrc/artifacts/*.json` — "4 uxDefinition bodies, all AdaptiveCard 1.5, max depth 9; element census TextBlock 55, Container 15, Column 12, ColumnSet 6, ActionSet 2, Action.Submit 3, Action.OpenUrl 1, Image 1, Input.Text 1, Inpu"
+- **[[c13]]** `prior-artifact` `docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S003/evidence/t7-visual-verification.md` — "The dual-ref render is sha256-identical to the diagram-only render — S003 renders nothing for a ux-mock ref"
+- **[[c14]]** `prior-artifact` `docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S003/CR.md` — "S003's post-build review: querySelector('#'+slug) throws on a digit-leading slug, and the record-bundle TRecord raised as a reconcilable LOW"
+
+## 10. Open questions
+
+- CHECKLIST PROVENANCE, recorded so review judges rather than discovers (s8 graded cd1, cd2 and alt2 `partial` — the same three items S003's audit graded partial, for the same structural reasons). (a) cd1: DOCS_UX_SOURCE, uxRenderCard/uxPickRef and uxBuildMockSlot are NEW names, unavoidable for a Story whose job is to add a renderer; each is ANCHORED to a located pattern rather than invented freely — DOCS_UX_SOURCE as the fifth member of the DOCS_*_SOURCE family confirmed at :76/:111/:185/:369, and uxPickRef/uxBuildMockSlot as the exact mirrors of S003's shipped dgPickRef/dgBuildDiagramSlot. The other four api entries are shipped symbols. (b) cd2: `el: unknown` is sc2's SHIPPED return shape (verified at docs-review-panel.ts:343-348) and the record BUNDLE instantiates sc4's generic exactly as S003's diagram factory does — S003's own code review raised the bundle as a LOW and judged it reconcilable. (c) alt2: all four alternatives were scored against every acceptance criterion and all four shared contracts (36 scores) and both eliminations rest on explicit scores — a2 on VIOLATES against sc2 and ac5, a3/a4 on an ac1 partial — but Epic constraints k1-k7 were not re-scored as their own rows; they appear throughout the notes and no elimination depends on them.
+- THE PARITY INSTRUMENT IS WEAKER HERE THAN IN S003, and that is stated rather than papered over. S003 could compare the client's ER derivation against erDefinitionToIr's node and edge SETS, so a drift failed exactly. The UX authority, renderUxMockDocument, emits HTML STRINGS — so parity can be asserted on the class vocabulary and on which union members are handled, but NOT by diffing output. The practical consequence: a client that renders every element with the right class but in a visibly wrong ARRANGEMENT would pass parity and fail only the screenshot read. This is why the visual check is scheduled TWICE (once on the renderer in isolation at migration step 3, once on the full surface at step 5) rather than once at the end, and why it is named as the check this Story cannot ship without. If review prefers a stronger instrument, the alternative is to extract the daemon's elementHtml into a shared pure mapping both sides consume — but that changes a daemon file, which this Story otherwise does not touch, and would turn a plugin-only Story into one needing a daemon rebuild.
+- THE DEPTH BOUND'S VALUE IS NOT YET CHOSEN, deliberately. The LLD fixes its PURPOSE — a safety limit against a malformed or hostile structure, set far enough out that it never fires on authored content — and records the fact that constrains it: the four real records reach depth 9. It does not fix the number, because the right value depends on what the renderer's nesting actually costs in a narrow pane, which migration step 3's visual read is the first thing able to answer. Flagged so the plan stage treats it as a decision with evidence behind it rather than a constant to invent; alternative a4 was rejected precisely for making the bound a routine presentation rule rather than a guard.
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**0 HIGH · 2 MED · 10 LOW** · model `client` · reviewed 2026-10-02T04:56:23.974Z
+
+| Ref | Kind | Severity | Fixability | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- | --- | --- |
+| dataModelChanges UxDefinition invariant-change | semantic | MED | auto | validateUxDefinition (ux.ts:150) is called from exactly ONE non-test site — orchestrator.ts:1542, inside artifact ASSEMBLY — so the read path validates nothing and a malformed card tree reaches the client intact. | REFUTED ON THE COUNT. validateUxDefinition has TWO non-test call sites, not one: orchestrator.ts:1542 (artifact assembly, as the LLD states) AND src/workflow/code-review/dimensions/ux/index.ts:119, inside `judgeUx` — the first-class 'ux' code-review dimension, which validates the authored JSON element during POST-BUILD code review. THE SUBSTANCE IS UNAFFECTED, and the second site actually reinforces it: judgeUx runs at code-review time against a CodeReviewSubject, not on the artifact read path, and its own comment says it validates 'the authored uxDefinition JSON element (never the rendered mock)'. So the LLD's real claim — that sc1's projection performs no validation and a malformed card tree reaches the client intact — holds exactly, and every error path built on it stands. What is wrong is only the word 'ONE'. | Correct the count from 'exactly ONE non-test site' to 'two non-test sites, NEITHER on the read path' and name the second (code-review/dimensions/ux/index.ts:119, judgeUx) — which makes the point more strongly, since it shows the record is validated at assembly AND at code review but never on the path the pane reads. Appears in dataModelChanges[1].details and in the s1 bundle summary quoted into the LLD. |
+| dataModelChanges HostToWebview callSites | citation | MED | auto | DocsContent already mirrors uxDefinition INDEXED off the daemon view at vscode-plugin/src/chat/docs-review-client.ts:36, so the record already reaches the extension host. | SUBSTANCE CONFIRMED, ANCHOR OFF BY ONE. `readonly uxDefinition?: ArtifactReviewView['uxDefinition'];` is at docs-review-client.ts:37, not :36 as the LLD cites in two places. The claim itself is exactly right — the field is mirrored, it is INDEXED off the daemon view rather than restated, and the client forwards it at :113 with the same conditional spread its siblings use — so the record demonstrably reaches the extension host. Recorded as MED on the same basis S003's citation drift was: a stale anchor that still points at the right concept, which a build task would open and find one line off. | Correct both citations from docs-review-client.ts:36 to :37 (dataModelChanges[0].callSites and the sc1 interaction note). No design decision changes. |
+| contractDetails uxRenderCard | closed-union | LOW | auto | UxElement is a CLOSED EIGHT-MEMBER discriminated union declared at src/workflow/artifacts/companion/ux.ts:108-116 — UxTextBlock, UxContainer, UxColumnSet, UxColumn, UxImage, UxInputText, UxInputChoiceSet, UxActionSet — so a renderer with one branch per member is exhaustive over the type. | CONFIRMED exactly. src/workflow/artifacts/companion/ux.ts:108-116 declares `export type UxElement =` followed by exactly EIGHT union arms, counted mechanically: UxTextBlock, UxContainer, UxColumnSet, UxColumn, UxImage, UxInputText, UxInputChoiceSet, UxActionSet. A grep for the corresponding interface declarations finds all eight. So 'one branch per member' is exhaustive over the type, and the LLD's requirement that the dispatch cover all eight is well-founded rather than aspirational. | none — verified sound |
+| dataModelChanges renderUxMockDocument / alternatives a3 | semantic | LOW | auto | There are TWO lowering paths for a uxDefinition: `uxDefinitionToIr` at ux.ts:282 produces a node/edge DocumentIR, and `renderUxMockDocument` at ux.ts:482 renders the card as an interface — and render.ts records that the second exists because the first published an 'experience mock' as a mermaid picture of the card's JSON. | CONFIRMED on both anchors and on the reason. `export function uxDefinitionToIr(uxDef: UxDefinition): DocumentIR {` is at ux.ts:282 and `export function renderUxMockDocument(` at ux.ts:482 — both cited lines land on the declaration itself. render.ts carries the correction verbatim: 'the UX companion no longer borrows the DIAGRAM pipeline. It used to lower the card into a DocumentIR of nodes and edges and hand that to assembleShell, which draws a mermaid graph — so an "experience mock" was published as a picture of the card's JSON.' This is the LLD's single most load-bearing premise — it is why a1 was chosen and why a3 was rejected — and it holds exactly. | none — verified sound |
+| errorPaths unknown element type / invariantsToPreserve | semantic | LOW | auto | The daemon's element dispatch pairs an exhaustiveness `never` witness with a VISIBLE `ux-unknown` fallback rather than a bare default that returns nothing — the pattern S004 copies so an unrenderable element degrades visibly instead of vanishing. | CONFIRMED. The elementHtml function body contains both `const unhandled: never` and `ux-unknown`, and the surrounding comment states the intent in the LLD's own terms: 'DEGRADES VISIBLY rather than vanishing'. So the pattern S004 commits to copying — exhaustiveness checked at compile time, visible degradation at runtime, and explicitly NOT a bare default — is a real shipped precedent rather than an invented standard. | none — verified sound |
+| errorPaths hostile image url / ac5 | semantic | LOW | auto | The daemon renders an Image by SHOWING its url and never fetching it — the decision S004 inherits, and the reason a mock cannot reach the network by construction rather than by policy. | CONFIRMED. The Image branch carries the comment 'A placeholder: the url is SHOWN, never fetched' and renders through the ux-image / ux-image__url / ux-image__alt / ux-image__meta classes, with no img element and no src anywhere in the branch. This is the decision that makes ac5/k6 structurally true for S004 rather than a promise, and it is inherited from a shipped implementation rather than being newly asserted. | none — verified sound |
+| interactionWithShared sc1 / migration backwardCompat | inventory | LOW | auto | `uxDefinition` is one of sc1's ORIGINAL FOUR projected fields on ArtifactReviewView (artifact-content.ts:63-66), already read and spread verbatim by structuredRecords — so S004 requires NO amendment and NO daemon change, unlike S003 which needed AMD-bfe98ff7f97178cf-1 to project sequenceDefinition. | CONFIRMED. structuredRecords at artifact-content.ts:203 is typed `Partial<Pick<ArtifactReviewView, 'functionalDefinition' \| 'erDefinition' \| 'sequenceDefinition' \| 'uxDefinition' \| 'companions'>>` — uxDefinition is present, and the surrounding doc comment states the posture the LLD relies on verbatim: 'no additional read, no reshaping, no defaulting and NO VALIDATION. A record whose shape is invalid travels through rather than failing the read.' The Pick now lists FIVE members because S003's amendment added sequenceDefinition, which corroborates rather than contradicts the LLD: uxDefinition is one of the ORIGINAL four, so S004 genuinely needs no amendment and no daemon change — the claim that most distinguishes this Story from S003. | none — verified sound |
+| migration stateBefore — the one-hop gap | inventory | LOW | auto | `uxDefinition` is NOT currently forwarded onto the docs-content message: it appears nowhere in protocol.ts's docs-content variant and nowhere in openDoc's post, so the host receives it and drops it — the single gap this Story closes on the data side. | CONFIRMED, and this is the gap the whole Story turns on. A grep for `uxDefinition` across vscode-plugin/src/chat/protocol.ts and vscode-plugin/src/chat/docs-review-panel.ts returns ZERO matches in both files — so the docs-content variant has no field for it and openDoc never posts it. Combined with u7 (the host receives it) this establishes the one-hop gap precisely: the record arrives at the extension host on every open and is dropped before the webview sees it, exactly as the diagram records were before S003's t2. The data-side work is therefore genuinely one hop, not a new pipeline. | none — verified sound |
+| interactionWithShared sc4 | citation | LOW | auto | sc4's members are published at the cited lines of docs-review-panel.ts — CompanionRefKind :823, CompanionVisualKind :832, CompanionLinkOut :838, CompanionSlotState :866, CompanionSlotFactory :892, companionVisualKind :909 — and companionVisualKind ALREADY maps 'ux-mock' to 'experience', so S004 modifies nothing. | CONFIRMED at the cited lines of docs-review-panel.ts: CompanionRefKind :823, CompanionVisualKind :832 ('diagram' \| 'experience'), CompanionLinkOut :838, CompanionSlotState :866, CompanionSlotFactory :892, companionVisualKind :909. The mapping already routes 'ux-mock' to 'experience' and is exhaustive over the closed union with a `never` witness, so S004's claim that it consumes the contract WITHOUT modification is accurate — S003 published the experience half of the mapping in advance, which is why no sc4 change is proposed. | none — verified sound |
+| s1 data-model.trace / testStrategy fixtures | inventory | LOW | auto | The ledger holds exactly FOUR uxDefinition bodies, all type 'AdaptiveCard' version '1.5', reaching a maximum nesting depth of 9, and between them they use the WHOLE union plus Action.Submit and Action.OpenUrl — so a renderer handling only the common elements would fail on three of the four. | CONFIRMED by independent recount over every .insrc/artifacts/*.json body: exactly FOUR uxDefinition records (LLD-85e6a58693579b6d-S001, LLD-7c219c7471d79496-S001, LLD-bfe98ff7f97178cf-s2, HLD-bfe98ff7f97178cf), all type 'AdaptiveCard' version '1.5', with 5/6/18/8 top-level body items and a maximum nesting depth of 9. Element census: TextBlock 55, Container 15, Column 12, ColumnSet 6, ActionSet 2, Action.Submit 3, Action.OpenUrl 1, Image 1, Input.Text 1, Input.ChoiceSet 1 — every union member plus both action types. The LLD's load-bearing inference holds: a renderer covering only the common elements would fail on three of the four, and the depth-9 figure that justifies a safety bound rather than a presentation rule is real. | none — verified sound |
+| contractDetails DOCS_UX_SOURCE | inventory | LOW | auto | Exactly FOUR exported DOCS_*_SOURCE webview source strings exist today — DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE and DOCS_DIAGRAM_SOURCE — so DOCS_UX_SOURCE would be the FIFTH member of that family sharing one nonce'd script scope. | CONFIRMED. Exactly FOUR exported DOCS_*_SOURCE constants exist in docs-review-panel.ts, so DOCS_UX_SOURCE is genuinely the fifth member of a located family rather than an invented name. This also substantiates the LLD's sharpest operational warning: five strings will share one nonce'd script scope, which is where S003 hit a real `dgEl` collision — a SyntaxError invisible to tsc because the code lives in a template literal — and why extending the committed parse-coexistence guard is called out as part of the same commit. | none — verified sound |
+| interactionWithShared sc4 / edgeCases dual-ref | cross-artifact | LOW | auto | S003 proved by sha256-identical screenshots that a ux-mock ref currently changes the rendered surface by ZERO pixels, so the experience slot is genuinely unclaimed and the dual-slot arrangement is left open for s4 by design rather than by omission. | CONFIRMED against S003's committed evidence note, which states that t7-state-dual-ref.png and t7-state-er-3class.png are sha256-identical (168a2bd172f5…) 'while their posted payloads genuinely differ' and concludes that 'adding a ux-mock companion therefore changes the rendered surface by zero pixels'. S003's dgPickRef selects only diagram kinds, which is the mechanism. So the LLD's claim that the experience slot is unclaimed — and that the dual-slot arrangement was left open for s4 by design rather than by omission — rests on a measured result rather than on an assumption about intent. | none — verified sound |
+
+#### Proposed fixes
+
+- **dataModelChanges UxDefinition invariant-change** (auto) — A mechanical, evidence-derived correction to a stated count. The prescribed design does not change at all — both call sites are off the read path — but an LLD that the build reads should not under-count the call sites of a function it reasons about, and naming the second one strengthens the argument rather than weakening it.
+  - edit: `validateUxDefinition (ux.ts:150) is called from exactly ONE non-test site, orchestrator.ts:1542, inside artifact ASSEMBLY; sc1 projects the body verbatim.` → `validateUxDefinition (ux.ts:150) has TWO non-test call sites and NEITHER is on the read path: orchestrator.ts:1542 inside artifact ASSEMBLY, and code-review/dimensions/ux/index.ts:119 inside judgeUx, the post-build 'ux' code-review dimension (which validates 'the authored uxDefinition JSON element (never the rendered mock)'). sc1 projects the body verbatim.`
+
+- **dataModelChanges HostToWebview callSites** (auto) — A mechanical line-number correction. The field, its indexed form and its role are all confirmed at the corrected line; only the anchor is stale.
+  - edit: `vscode-plugin/src/chat/docs-review-client.ts:36 — DocsContent.uxDefinition, already indexed off ArtifactReviewView` → `vscode-plugin/src/chat/docs-review-client.ts:37 — DocsContent.uxDefinition, already indexed off ArtifactReviewView (and forwarded at :113)`
+  - edit: `already mirrored on DocsContent indexed off ArtifactReviewView (docs-review-client.ts:36)` → `already mirrored on DocsContent indexed off ArtifactReviewView (docs-review-client.ts:37)`

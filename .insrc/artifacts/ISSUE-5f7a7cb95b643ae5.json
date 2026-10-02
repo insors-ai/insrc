@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1790966200063-05hy9h",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T18:38:27.860Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 107796,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "5f7a7cb95b643ae5",
+    "epicSlug": "batch-approval-stamps-one-shared-meta",
+    "standalone": true,
+    "magnitude": "sized"
+  },
+  "body": {
+    "title": "Sibling Stories approved together share one range base, so a later build reports its siblings' commits as its own changes",
+    "reproduction": "An epic with two Stories whose plans are approved in a single batch, then built one after the other.\n\nSteps:\n1. Approve both plans at once: `insrc_workflow_approve({ epicHash })`. This sweeps every pending artifact under the epic, so `PLAN-<epic>-s1` and `PLAN-<epic>-s2` are both stamped with the SAME `meta.rangeBase` — HEAD at that moment, call it C0.\n2. Build s1. Its work lands as commit C1.\n3. Build s2 and read the BUILD record it produces.\n\nOBSERVED: s2's `## Changes` lists s1's files alongside its own. Its base resolves to C0, so the derived range C0..HEAD spans both Stories' commits.\n\nEXPECTED: s2's change set contains only the files s2 changed.\n\nThe same shape occurs without using batch approval at all — any two plans approved in one sitting and built sequentially share a base, because the base is read at approval time and both approvals saw the same HEAD.\n\nNot reproduced end-to-end: this is read off the approval and resolution paths rather than observed in a built record, because reproducing it requires two full Story builds. The mechanism is short enough to confirm by reading — the stamp is unconditional per artifact, the batch path approves N artifacts in one loop, and the resolver prefers the stamped value — but it has NOT been run. The s2 audit graded this `partial` for exactly that reason; the design stage should run it before committing to a branch.",
+    "rootCause": "`meta.rangeBase` is defined as \"HEAD at approval time\". That definition carries an unstated assumption: that each artifact is approved at a moment that distinguishes it from its siblings. Batch approval breaks the assumption by design — it approves every pending artifact under an epic in one sweep, so N plans receive one identical base.\n\nThe base then outlives the moment it described. When s2 is finally built, its stamped base still points at the commit that was HEAD before ANY of the epic's Stories were built, so the range it describes is \"everything since the epic's plans were approved\" rather than \"what this Story changed\".\n\nThis produces exactly the failure the design set out to avoid. The resolver deliberately refuses to fall back to `HEAD^` or to git's empty-tree object, on the stated grounds that a populated wrong answer is worse than an honest absence. A shared base is that same populated wrong answer arriving through the front door instead: the range is valid, resolvable, and describes the wrong Story.\n\nThe recently-landed write-once narrowing does NOT address this. Write-once prevents a RE-approval from moving an existing base forward onto the Story's own work; it has nothing to say about a first stamp that was already shared with siblings. The two defects are independent, and fixing the first is what makes this one worth filing separately rather than folding in.\n\nWhy no test covers it: the existing tests approve a single artifact in a one-commit repository, where sharing cannot be observed. Exposing this needs two artifacts under one epic, approved together, with a commit landing between the two builds.",
+    "fixIntent": "Make each Story's change set describe only that Story, even when its plan was approved in the same sweep as its siblings'.\n\nThe decision this turns on — and the reason it is filed rather than patched — is WHEN a Story's range base should be determined:\n\n- Keep it at approval time, and find another way to distinguish siblings so that one sweep does not collapse them onto a single base.\n- Move it to build time, where the Story being built is unambiguous.\n\nThe second option reverses a rationale that is currently recorded in the code: the base is read at approval precisely so that it cannot depend on whether anyone later remembered to commit the artifact. That rationale is sound on its own terms, so this is a decision to be revisited explicitly, not quietly inverted — whichever branch is chosen, the comment stating the old reasoning must be updated, or the next reader will find the code explaining the opposite choice.\n\nTwo constraints the correction must preserve, both already established and deliberate:\n- An unresolvable base must still yield an EMPTY change set, never a substituted range.\n- A re-approval must still not move an existing base forward.\n\nOut of scope: how the change set is derived once a base is known. That path is settled and working; only the base's provenance is in question here."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:605",
+      "quotedText": "const rangeBase = priorBase !== undefined && priorBase.length > 0"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:532",
+      "quotedText": "function stampsRangeBase(meta: ApprovableArtifactMeta): boolean {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:781",
+      "quotedText": "const pending = pendingArtifactJsonPaths(req.repoPath, req.epicHash);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/range-base.ts:30",
+      "quotedText": "A populated wrong answer is worse than an honest absence: `HEAD^` would silently describe \"the last commit\" as \"what this Story changed\". This resolver never substitutes a different range, and it never throws."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "commit 6c7d221 — fix(workflow): S001 code-review finding CR-3 — make the rangeBase stamp write-once",
+      "quotedText": "NOT fixed, and out of scope for a bugfix: batch approval (`insrc_workflow_approve({ epicHash })`) stamps every sibling plan with one shared base, so a later-built Story's change set absorbs its siblings' commits."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-93081bff91ae5108 / S001 — approved LLD, the Story that introduced meta.rangeBase at commit 35aec0e",
+      "quotedText": "the base is read HERE, at approval, so it cannot depend on whether anyone later remembered to commit the artifact"
+    }
+  ]
+}

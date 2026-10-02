@@ -1,0 +1,63 @@
+<!-- insrc:artifact ISSUE-b955fa759c3c4309 -->
+
+# Clear six low-severity defects in the BUILD-record provenance code
+
+## Reproduction
+
+Six independent items, batched because they share one discovery and one code region. Each is stated separately so none is lost in the aggregate, and each is labelled LIVE (reachable today) or LATENT (no current caller can trigger it).
+
+1. LATENT — empty commit renders an empty line. The persist path treats any supplied `body.commit` as authoritative, so an empty string wins over the real HEAD. OBSERVED: a record with `body.commit: ''` renders `**Commit:** ` followed by nothing. EXPECTED: an empty value is treated as absent and the line is omitted — which is exactly what the code's own comment demands, calling an empty Commit line 'worse than no line at all'. No current caller passes `body.commit`, so this cannot fire yet.
+
+2. LIVE — whitespace-only sections render blank headings. The renderer trims `summary` before deciding whether to emit it, but applies no trim to `focus` or `triageRationale`. OBSERVED: `focus: '  '` renders a `## Scope` heading with a blank body; `triageRationale: '   '` does the same. EXPECTED: all three omit-slots treat whitespace-only as absent, as `summary` already does.
+
+3. LIVE on some configurations — the record's own paths can reappear in its own change set. The exclusion list is normalised with Node's `relative()`, whose output is assumed to match the form git reports. OBSERVED (by inspection, not executed): on Windows it produces backslash-separated paths against git's forward slashes, so no exclusion matches; and when the repo path passed in is a SUBDIRECTORY of the git repository, git reports root-relative paths while the helper produces subdirectory-relative ones, again missing. EXPECTED: the exclusion matches whatever form git reports, or the unsupported configuration is refused rather than silently mismatching. Not reproduced — this project is developed on macOS with the repo root as the path, which is why it has not bitten.
+
+4. LIVE — duplicated diff helper, both fetching a body they do not read. The change-set collector's diff helper and the code-review grounding module's helper are near-identical: same dependency literal (including a session id of 'code-review' in the non-code-review caller), same two failure branches. Both request a full unified diff — up to 256KB — only to read the `--numstat` summary. OBSERVED: a wide commit range can exceed the underlying tool's diff timeout, and the failure is swallowed into an empty change-log, so the record silently loses its provenance. EXPECTED: one helper, and no diff body fetched when only the file list is needed.
+
+5. LIVE — a bugfix epic's own issue number does not resolve at epic level. When the epic enumeration was widened to read the bugfix ISSUE anchor, the issue-number resolution path's epic-level pass was not, and still reads only the DEF artifact. OBSERVED: a bugfix epic's tracker issue number returns nothing at epic level, even though the identity reader already consults the ISSUE anchor. EXPECTED: consistent anchoring across the three paths. It refuses rather than mis-resolving, which is why this is low rather than high.
+
+6. LIVE — the new summary input is undocumented. The build section of the steering block does not mention the `summary` input at all, so a controller only discovers it by querying the tool schema. OBSERVED: in practice BUILD records carry no '## Summary' even though a producer now exists. EXPECTED: the build guidance names it.
+
+Evidential note from the s2 audit: item 2's inputs are concrete enough to run as written, and item 3 states plainly that it was reached by inspection. Items 1, 4, 5 and 6 were likewise read off the cited code rather than executed — none was observed in a running system.
+
+## Root cause
+
+Three distinct causes, not one.
+
+Items 1 and 2 are the same oversight applied inconsistently: the omit-slot renderer grew a trim for `summary` because that field's value arrives from a free-text controller input where whitespace was anticipated, and the treatment was never generalised to the two sibling slots or to the commit producer. The emptiness test and the 'is it supplied' test were allowed to diverge — `??` asks whether a value exists, which is not the same question as whether it is usable.
+
+Item 3 is an unstated assumption about an interface boundary. Two independent path vocabularies meet in the exclusion filter: Node's platform-dependent path arithmetic and git's always-POSIX, always-root-relative reporting. The helper converts between them with a function that is correct only when the platform is POSIX and the given path is the repository root. Both conditions hold in this project's own development, so the assumption is invisible here.
+
+Item 4 is convergent evolution. Two modules independently needed 'ask git which files changed' and each wrote it against the same tool, so the duplication is in behaviour rather than copy-paste — including one tell-tale: the borrowed session id names the other module. The shared inefficiency, requesting a large body to read a small summary, is the kind of cost that only surfaces under a wide range, which the recently-added committed-range derivation now makes reachable.
+
+Item 5 is an incomplete widening: three code paths gated on the DEF artifact, two were updated, one was missed. Item 6 is a documentation gap from the same change that added the input — the producer and the guidance were not updated together.
+
+## Fix intent
+
+Clear all six, each independently revertible, without changing any contract.
+
+- Treat an empty commit value as absent so the omitted-line contract the code already states actually holds.
+- Apply the same whitespace treatment to the scope and triage-rationale slots that the summary slot already gets, so the three behave alike.
+- Make the exclusion normalisation agree with the form git reports regardless of platform, and decide explicitly whether a repository path below the git root is a supported configuration — if it is not, it should be refused rather than silently producing non-matching exclusions. That decision is genuinely open and should not be made implicitly by whoever writes the code.
+- Reduce the two diff helpers to one, and stop fetching a diff body when only the changed-file list is wanted. Which of the two survives, and whether the shared one belongs in a module neither currently owns, is a real choice this record deliberately leaves open.
+- Complete the ISSUE-anchor widening on the issue-number path's epic-level pass, so all three paths anchor consistently.
+- Document the summary input in the build guidance so it is discoverable without reading the tool schema.
+
+Two constraints: the never-throw behaviour of the change-set collection must survive unchanged — a failed derivation still yields an empty set and still logs — and item 5 must not alter how DEF-bearing epics resolve.
+
+Out of scope: anything touching how the change set is derived once a base is known, and the behaviour of the issue-number path for DEF-bearing epics.
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/runners/build/standalone-record.ts:277` — "const commit = rec.body.commit ?? headShortSha(repoPath);"
+- **[[c2]]** `code` `src/workflow/runners/build/standalone-record.ts:173` — "if (rec.body.commit !== undefined) lines.push('', `**Commit:** ${rec.body.commit}`);"
+- **[[c3]]** `code` `src/workflow/runners/build/standalone-record.ts:224` — "empty `**Commit:**` line, which is worse than no line at all."
+- **[[c4]]** `code` `src/workflow/runners/build/standalone-record.ts:174` — "section('## Scope', rec.body.focus !== undefined && rec.body.focus.length > 0 ? [rec.body.focus] : []);"
+- **[[c5]]** `code` `src/workflow/runners/build/standalone-record.ts:175` — "section('## Triage rationale', rec.meta.triageRationale !== undefined ? [rec.meta.triageRationale] : []);"
+- **[[c6]]** `code` `src/workflow/runners/build/changed-files.ts:121` — "function toRepoRelative(repoPath: string, p: string): string {"
+- **[[c7]]** `code` `src/workflow/runners/build/changed-files.ts:123` — "const rel = relative(repoPath, p);"
+- **[[c8]]** `code` `src/workflow/runners/build/changed-files.ts:61` — "async function collectDiff("
+- **[[c9]]** `code` `src/workflow/code-review/grounding.ts:268` — "async function runDiff(repoPath: string, input: Record<string, unknown>): Promise<DiffResult> {"
+- **[[c10]]** `code` `src/workflow/tracker/resolve.ts:267` — "function resolveByIssue(dir: string, number: string): ResolvedRef | null {"
+- **[[c11]]** `code` `src/prompts/steering-block.md:200` — "## build — implement an approved plan (`insrc_build_step`)"
+- **[[c12]]** `prior-artifact` `ISSUE-93081bff91ae5108 / S001 — independent cold review of commits 9b14d95..e15ef63 (in-session agent report; the referenced commits are verifiable but the review itself is not persisted in the repo)` — "Six LOW findings reported alongside three HIGH and three MED; the three HIGH were fixed at 404232d and 6c7d221, and these six were explicitly deferred."

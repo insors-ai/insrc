@@ -1,0 +1,587 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1790970865681-shpsi8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T20:03:03.908Z",
+    "epicCreatedAt": "2026-10-02T20:03:03.910Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 518182,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "epicSlug": "lld-revision-supersedes-earlier-pass-whose",
+    "storyId": "S001",
+    "lldRunId": "wf-1790968373495-kfdah2",
+    "lldEffectiveHash": "0bb28c0a6d51515dc5d9a5e30fbf270f4e935f1496c68c080a2f5405c3ca686f",
+    "approvedAt": "2026-10-02T20:03:50.884Z",
+    "rangeBase": "5ab9dfd1d2d814ea351fb92ab297b116a6bf140c"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "One production file changes — the workflow id resolver — but it carries four separately-visible behaviour outcomes, so the work is cut by outcome rather than by file. The shape is: write five failing tests first, land two mechanical prerequisites unwired, then make the two independent fixes as two separate tasks so either can be reverted without losing the other, then rewrite three existing tests that currently assert the old behaviour as desired. The riskiest part is not the code, it is those rewrites: one of them is the test whose mis-asserted expectation let the defect ship in the first place, so every rewrite must be mutation-proved rather than merely made green."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Write five RED-FIRST acceptance tests for the genuinely-absent cases, committed red",
+        "summary": "CRITIQUE APPLIED — these are RED-FIRST ACCEPTANCE TESTS, not characterisations. The distinction is load-bearing in this repo: the immediately-preceding Story used 'characterisation' for a test that PASSES while asserting today's WRONG behaviour and is inverted later. These do the opposite — they assert the DESIRED behaviour and FAIL now. Writing them the other way would assert the defect as desired, which is exactly the mis-asserted test that produced this Story's blocking review finding. Five cases: (a) the MIRROR direction of the reported defect — the label lives in the DEF-anchored epic with an unrelated ISSUE-anchored epic on a different hash; (b) a single-epic repo asked for a story that does not exist; (c) an explicitly scoped label for a story the scoped epic lacks; (d) a hierarchical id naming a nonexistent story ordinal; (e) CRITIQUE APPLIED, moved from t4 — two feature epics where only ONE contains the label. CRITICAL: do NOT write a test for the id-resolve.test.ts:459 arrangement; it is already covered there asserting the regressed expectation and is INVERTED at t5, not duplicated. Extend setupRepo / setupBugfixRepo (the latter already takes a withIssue flag) rather than adding a parallel helper.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Five new tests exist and FAIL on unmodified HEAD, each naming the task that turns it green",
+          "Each test name or comment states it asserts DESIRED behaviour and currently fails — so no reader mistakes it for a characterisation of today's behaviour",
+          "(a) the mirror direction resolves — label in the DEF epic, unrelated ISSUE epic on a different hash — goes green at t4",
+          "(b) a single-epic repo refuses a nonexistent story, where today it returns a well-formed ref — goes green at t3",
+          "(c) an explicitly scoped label for a missing story refuses — APPROVED narrowing one — goes green at t3",
+          "(d) a hierarchical id naming a nonexistent ordinal refuses — APPROVED narrowing two — goes green at t3",
+          "(e) two feature epics, only one containing the label, resolves — the additive gain — goes green at t4",
+          "NO test is added for the id-resolve.test.ts:459 arrangement; confirmable by diff that :459 is untouched here",
+          "Fixtures reuse setupRepo / setupBugfixRepo rather than introducing a parallel helper"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "RED-FIRST (a), green at t4: the mirror direction — a DEF-anchored epic containing s1 plus an UNRELATED ISSUE-anchored epic on a different hash resolves `s1`"
+          },
+          {
+            "level": "integration",
+            "name": "RED-FIRST (b), green at t3: a single-epic repo asked for nonexistent `s9` refuses instead of minting a well-formed ref"
+          },
+          {
+            "level": "integration",
+            "name": "RED-FIRST (c), green at t3: an explicitly scoped label for a story the scoped epic lacks refuses — a scope asserts WHICH epic, not that the story exists"
+          },
+          {
+            "level": "integration",
+            "name": "RED-FIRST (d), green at t3: a hierarchical id naming a nonexistent story ordinal refuses"
+          },
+          {
+            "level": "integration",
+            "name": "RED-FIRST (e), green at t4: two feature epics where only ONE contains `s1` resolves — the additive gain, proved red-to-green rather than claimed"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Widen the artifact body type and add the definition-artifact reader, wired to nothing",
+        "summary": "Two mechanical prerequisites, landed as unwired code so each is reviewable alone and revertible without touching behaviour. ArtifactShape's body type (currently exactly `readonly body?: { readonly tasks?: readonly PlanTask[] };`) gains `stories`, because clause (ii)'s DEF branch reads a DEF's declared stories. And a reader for the epic's definition artifact BODY: two reads in order, DEF-<hash>.json then ISSUE-<hash>.json, first-readable-wins. readEpicIdentity cannot be reused — it returns {epicSlug, createdAt, tracker?}, identity only — but its read ORDER is the precedent to copy, so no precedence rule is invented. Verified during planning that tsconfig sets no noUnusedLocals, so the unwired reader will not fail the typecheck.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ArtifactShape's body type carries `stories`, and tsc is clean",
+          "A reader returns the epic's definition artifact, reading DEF-<hash>.json first then ISSUE-<hash>.json, mirroring readEpicIdentity's existing order",
+          "First-READABLE-wins: a malformed DEF falls through to the ISSUE rather than aborting, since readArtifact returns null on a parse failure",
+          "It never throws — an unreadable or malformed file yields an absence",
+          "readEpicIdentity is NOT modified and its identity-field logic is not duplicated",
+          "Behaviour unchanged: the suite's pass/fail set is identical to before this task and t1's five tests are still red"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the reader returns a DEF when present and an ISSUE when the DEF is absent — the two-read order, mirroring readEpicIdentity"
+          },
+          {
+            "level": "unit",
+            "name": "first-READABLE-wins: a malformed DEF falls through to the ISSUE rather than aborting the read"
+          },
+          {
+            "level": "unit",
+            "name": "the reader never throws — a missing and a malformed file each yield an absence, not an exception"
+          },
+          {
+            "level": "unit",
+            "name": "behaviour-unchanged guard: the suite's pass/fail set after this task is identical to before it, with t1's five still red"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Verify story existence inside buildRef, only when a storyId is supplied",
+        "summary": "The dummy-ref fix, applying to EVERY entry point. buildRef returns a story- or task-level reference only when that story exists — either a story-scoped artifact resolves for (epic, ordinal) via the existing storyArtifactPath, or the epic's definition artifact declares it (a DEF via body.stories, an ISSUE as exactly one story at ordinal 1). Applied ONLY when storyId is supplied, so epic-level calls stay untouched and resolveByIssue's epic sub-case keeps working. NOT extended to tasks: `task` stays absent for an unknown id. Kept separate from t4 because this task alone closes the dummy-ref defect on all paths and t4 alone closes the reported label defect — either can be reverted without losing the other.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "buildRef returns null when a supplied storyId names a story with neither a story-scoped artifact nor a declaration on the definition artifact",
+          "t1's (b), (c) and (d) turn GREEN — the nonexistent story, the scoped-label narrowing, the hierarchical-id narrowing",
+          "An EPIC-level call (no storyId) behaves exactly as before — asserted, not assumed",
+          "A story declared in a DEF's body.stories with no LLD and no PLAN still resolves — the define-to-design window",
+          "An ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2",
+          "s1 / S1 / S001 behave identically, via the existing storyIdToOrdinal rather than a reimplementation",
+          "Task-level behaviour unchanged: a story that exists with an unknown taskId still resolves with `task` absent",
+          "CRITIQUE APPLIED — error path: an unparseable story label REFUSES and does not throw, exercised through buildRef, since the module never throws and no external consumer has a handler",
+          "CRITIQUE APPLIED — error path: an epic whose DEF body is unreadable but whose LLD for the story is intact STILL RESOLVES — degrade per-clause, never per-call",
+          "MUTATION PROOF, run and recorded: removing the verification turns t1's (b), (c) and (d) red again",
+          "t1's (a) and (e) are still RED — this task does not touch the label count rule"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a storyId with an LLD resolves; with a PLAN resolves; with neither artifact nor declaration refuses"
+          },
+          {
+            "level": "unit",
+            "name": "the declaration clause alone suffices — a story declared in a DEF's body.stories with no LLD and no PLAN resolves"
+          },
+          {
+            "level": "unit",
+            "name": "an ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2 — the boundary of the one convention"
+          },
+          {
+            "level": "unit",
+            "name": "s1 / S1 / S001 behave identically, inherited from storyIdToOrdinal"
+          },
+          {
+            "level": "unit",
+            "name": "an EPIC-level call (no storyId) is entirely unverified and unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "task-level non-extension: a story that exists with a taskId absent from the PLAN still resolves with `task` undefined"
+          },
+          {
+            "level": "unit",
+            "name": "never-throws through buildRef: an unparseable label and a malformed definition artifact each yield a refusal"
+          },
+          {
+            "level": "unit",
+            "name": "per-clause degradation: a corrupt DEF does not disqualify its epic when an LLD for the story is intact"
+          },
+          {
+            "level": "integration",
+            "name": "the define-to-design window resolves — a DEF-declared story with no LLD and no PLAN"
+          },
+          {
+            "level": "integration",
+            "name": "a just-approved bugfix with no LLD yet — `S001` resolves against its ISSUE epic"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF: removing the verification turns t1's (b), (c) and (d) red again"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Assert the resolveByIssue no-op instead of assuming it",
+        "summary": "CRITIQUE APPLIED — moved to order 4, directly after t3 and BEFORE the label switch and the test rewrites. The resolveByIssue no-op is the claim that bounds the entire blast radius to two paths; if t3 broke it, that must surface immediately rather than after the riskiest edits have landed. The LLD reasons from code that resolveByIssue is unaffected — its three passes each reach buildRef with the story already evidenced by the real PLAN, LLD or DEF that carried the matched ref, and its epic-level sub-case passes no storyId — and 'unaffected' is cheap to assert and expensive to be wrong about.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Issue-number resolution at TASK level behaves exactly as before",
+          "Issue-number resolution at STORY level behaves exactly as before",
+          "Issue-number resolution at EPIC level behaves exactly as before — the sub-case that passes no storyId",
+          "resolveByIssue's DEF-only third pass at resolve.ts:294 is NOT modified — confirmed by diff, since it is owned by item 5 of ISSUE-b955fa759c3c4309"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "resolveByIssue is a NO-OP: issue-number resolution at task, story and epic levels behaves exactly as before"
+          },
+          {
+            "level": "smoke",
+            "name": "resolve.ts:294's DEF-only third pass is unmodified — diff-asserted, since item 5 of ISSUE-b955fa759c3c4309 owns it"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Switch the unscoped label branch from counting epics to keeping candidates that resolve",
+        "summary": "The reported defect's fix. resolveByLabel's unscoped branch stops reading `hashes.length !== 1` and instead attempts a reference per enumerated candidate, resolving when exactly one succeeds and refusing on zero or more than one. The enumeration is UNCHANGED — deduped, DEF-anchored first, ISSUE-anchored after — so a bugfix definition artifact stays a full epic peer and is not demoted; it simply cannot evidence a story it does not have. No separate containment notion: candidate selection and reference construction are the same operation. The explicit-epicHash branch keeps prefix-match semantics and inherits t3's verification. This task makes the two tests encoding today's behaviour go RED; they are rewritten at t5, not here, so review sees the behaviour change and the test rewrite as separate acts.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "t1's (a) turns GREEN — the mirror direction of the reported defect resolves",
+          "t1's (e) turns GREEN — two feature epics, only one containing the label, resolves. CRITIQUE APPLIED: this is now a check t4 must SATISFY, written red at t1, rather than a claim t4 introduces",
+          "Two feature epics that BOTH contain the label still refuse when unscoped — genuine ambiguity still refuses",
+          "The explicit-epicHash branch still resolves via prefix-match, and still verifies the story",
+          "listEpicHashes is NOT narrowed: membership and ordering byte-identical, pinned so a later reader cannot mistake this for the rejected alternative a2",
+          "id-resolve.test.ts:459 and tracker.test.ts:283's multi-epic arm are RED at the end of this task, and left red",
+          "MUTATION PROOF, run and recorded: restoring the count rule turns t1's (a) and (e) red again"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "genuine ambiguity still refuses: two feature epics BOTH containing s1, unscoped → null"
+          },
+          {
+            "level": "integration",
+            "name": "a bugfix-only repo — `S001` refuses unscoped because every ISSUE epic has one, and resolves with an explicit scope"
+          },
+          {
+            "level": "unit",
+            "name": "listEpicHashes membership and ordering stay byte-identical — pins that the ISSUE was NOT demoted and this is not alternative a2"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF: restoring the `hashes.length !== 1` count rule turns t1's (a) and (e) red again"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Rewrite the three tests that encode the old behaviour — invert, do not delete",
+        "summary": "Three edits that look destructive in review and must be visible as their own task. (1) id-resolve.test.ts:459 asserts the regressed expectation as desired; its assertion INVERTS and the test is renamed to state the verification contract — its second arm, that an explicit scope disambiguates, stays valid and must be KEPT. (2) id-resolve.test.ts:447 is named for regression protection but uses setupRepo(), whose fixture has NO ISSUE file, so it cannot exercise the widened enumeration; its fixture gains one. (3) tracker.test.ts:283's multi-epic arm is restated: it refuses because both epics contain the label, not because two epics exist.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "id-resolve.test.ts:459's assertion is inverted and the test renamed; its explicit-scope arm is preserved, not dropped",
+          "id-resolve.test.ts:447's fixture contains an ISSUE artifact, so the test named for regression protection actually exercises the widened enumeration",
+          "tracker.test.ts:283's multi-epic arm is restated in containment terms, and its single-epic arm still passes",
+          "No test is DELETED — confirmable by diff that all three survive as rewrites",
+          "MUTATION PROOF per rewrite, run and recorded: reverting t3 or t4 turns each rewritten assertion RED. A rewrite that passes under both the old and new rules proves nothing and must be redone"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "REWRITE of id-resolve.test.ts:459 — its scenario now RESOLVES, so the assertion inverts and the test is renamed to state the verification contract; the explicit-scope arm is KEPT"
+          },
+          {
+            "level": "unit",
+            "name": "REWRITE of id-resolve.test.ts:447 — the fixture gains an ISSUE artifact so the test named for regression protection actually exercises the widened enumeration"
+          },
+          {
+            "level": "unit",
+            "name": "REWRITE of tracker.test.ts:283 — the multi-epic arm restated in containment terms, single-epic arm still passing"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF per rewrite: reverting t3 or t4 turns each inverted assertion RED — a rewrite green under both rules proves nothing"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Full sweep, containment evidence, and the tiered criteria record",
+        "summary": "Close the Story with evidence rather than assertion. Run the full sweep and record real counts from actual output. Confirm containment where the LLD claims it: hierarchical-id tests for REAL stories pass untouched (the second narrowing is confined to nonexistent stories), and neither render.ts nor bugfix/mount.ts needed an edit (the public signature held). Record the criteria provenance split decided at the open-question gate: k1-k4 binding because the user stated them — an ISSUE is a DEF, 13ebd04's widening was correct, the defect is counting rather than containment, buildRef must verify — while k5-k8 and ac1-ac10 are LLD-authored and provisional.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Full sweep run with real pass/fail/skip counts from actual output, and no new failures beyond the known pre-existing sqlite-driver native-ABI one",
+          "Hierarchical-id tests for REAL stories pass untouched — the second narrowing is confined to nonexistent stories",
+          "Neither render.ts nor bugfix/mount.ts required an edit — the public signature held",
+          "CRITIQUE APPLIED — CHANGED FILE SET asserted, covering the three otherwise-unguarded fences: production changes confined to src/workflow/tracker/resolve.ts; test changes confined to the two known test files; and NO edit to orchestrator.ts, chain.ts, the ISSUE writer, or buildRef's task-level handling",
+          "Every mutation proof from t3, t4 and t5 re-run at the end and still inverting, confirming no later task neutralised an earlier guard",
+          "The criteria provenance split is recorded: k1-k4 binding and user-grounded, k5-k8 and ac1-ac10 LLD-authored and provisional",
+          "The report states plainly that a clean `tsc --noEmit` is NOT evidence about the tests, because tsconfig excludes them",
+          "The report states plainly that a follow-up ISSUE for the out-of-module body.stories readers (orchestrator.ts, chain.ts) is OWED and NOT YET FILED"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c6",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "full sweep with no new failures, real counts recorded from actual output"
+          },
+          {
+            "level": "smoke",
+            "name": "neither render.ts nor bugfix/mount.ts required an edit"
+          },
+          {
+            "level": "smoke",
+            "name": "hierarchical-id tests for REAL stories pass untouched — evidence narrowing 2 is confined to nonexistent ones"
+          },
+          {
+            "level": "smoke",
+            "name": "CHANGED FILE SET asserted — production confined to resolve.ts, tests to the two known files, and no edit to orchestrator.ts, chain.ts, the ISSUE writer or task-level handling"
+          },
+          {
+            "level": "smoke",
+            "name": "all mutation proofs from t3, t4 and t5 re-run and still inverting"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a storyId naming a story with an LLD resolves; with a PLAN resolves; with neither and no declaration refuses",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a story DECLARED in a DEF's body.stories with no LLD/PLAN resolves — the declaration clause alone suffices",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "an ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2 — the boundary of the one convention this design leans on",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "s1 / S1 / S001 behave identically",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "an EPIC-level call (no storyId) is unchanged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "task-level: a story that exists with a taskId absent from the PLAN still resolves with `task` undefined",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "never-throws: an unparseable label and a malformed definition artifact each yield a refusal",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "per-clause degradation: a corrupt DEF does not disqualify its epic when an LLD for the story exists",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "THE REPORTED DEFECT. The arrangement is NOT untested — id-resolve.test.ts:459 already builds an ISSUE-anchored epic plus a DEF-anchored epic on different hashes and asks a bare label, but asserts the REGRESSED expectation (null); that test must be INVERTED, not duplicated. The genuinely untested MIRROR direction is what to add: one DEF-anchored epic containing s1 plus one UNRELATED ISSUE-anchored epic on a different hash — `s1` resolves",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the additive gain: two feature epics, only one containing s1 — resolves",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "genuine ambiguity still refuses: two feature epics BOTH containing s1, unscoped",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "NARROWING 1, the asymmetry removal: an explicitly scoped label for a story the scoped epic lacks — refuses, where it previously resolved",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "NARROWING 2, inherited: a hierarchical id naming a nonexistent story ordinal — refuses",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a single-epic repo asked for nonexistent `s9` — refuses, where it previously minted a ref",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "define-to-design window: a DEF-declared story with no LLD/PLAN — resolves",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a just-approved bugfix with no LLD — `S001` resolves against its ISSUE epic",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a bugfix-only repo — `S001` refuses unscoped, resolves with a scope",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveByIssue is a NO-OP: issue-number resolution at task, story and epic levels behaves exactly as before",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "id-resolve.test.ts:459 — its scenario now RESOLVES, so the assertion inverts and the test is renamed to state the verification contract; its explicit-scope arm stays valid and must be KEPT",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "id-resolve.test.ts:447 — the test NAMED for regression protection whose fixture contains no ISSUE file; its fixture must gain one or it keeps advertising protection it does not provide",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "tracker.test.ts:283 — the multi-epic arm restated: it refuses because both epics contain the label, not because two epics exist",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "full sweep with no new failures, real counts recorded from actual output",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "neither render.ts nor bugfix/mount.ts required an edit",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "hierarchical-id tests for REAL stories pass untouched — evidence narrowing 2 is confined to nonexistent ones",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.1 buildRef + §3.2 the ResolvedRef invariant-change",
+      "quotedText": "buildRef's story-scoped reads are optional-chained and conditionally spread, so a missing story yields a reference merely lacking storyRef/task rather than a refusal — the dummy ref. The new invariant: a returned story-level ResolvedRef denotes a story that exists, on every path."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.1 postconditions — the resolveByIssue no-op",
+      "quotedText": "resolveByIssue is unaffected: its three passes each arrive with the story already evidenced by the artifact that carried the matched ref, and its epic sub-case passes no storyId. This bounds the blast radius to two paths."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.4 storyArtifactPath + §3.1 existence clause (i)",
+      "quotedText": "An LLD or PLAN exists for (E, N), read with the existing storyArtifactPath plus an existence check, so s1 / S1 / S001 unify by ordinal without new code."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.5 readEpicIdentity + §3.1 existence clause (ii)",
+      "quotedText": "read DEF-<E>.json → does body.stories declare ordinal N? else ISSUE-<E>.json → then N === 1. The read sequence IS the discriminator; DEF-first already settles a dual-anchored hash; meta.standalone is not consulted."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.2 resolveByLabel — the count-versus-containment gate",
+      "quotedText": "The unscoped branch replaces `hashes.length !== 1` with: attempt a reference per candidate, resolve iff exactly one succeeded. Candidate selection and reference construction are the same operation."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.3 resolveByHier — the second, inherited narrowing",
+      "quotedText": "It derives story ordinals from the parsed id and never confirmed them, so a hierarchical id naming a nonexistent story resolves today and will now refuse. A SECOND change on a different path from the reported defect — assert it deliberately."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §5 test strategy — the corrected account of id-resolve.test.ts:459",
+      "quotedText": "The arrangement is NOT untested — id-resolve.test.ts:459 already builds an ISSUE-anchored epic plus a DEF-anchored epic on different hashes and asks a bare label, but asserts the REGRESSED expectation (null); that test must be INVERTED, not duplicated."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §5 test strategy — tracker.test.ts:283 restated in containment terms",
+      "quotedText": "the multi-epic arm restated: it refuses because both epics contain the label, not because two epics exist"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §3.1 — the ArtifactShape body-type consequence",
+      "quotedText": "ArtifactShape's `body` is typed `{ tasks?: PlanTask[] }` (resolve.ts:98) and gains `stories`. No new helper concept, no new convention."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §2.5 — readEpicIdentity cannot be reused",
+      "quotedText": "CANNOT be reused by the existence check: it returns {epicSlug, createdAt, tracker?}, the identity fields only. Clause (ii) needs the definition artifact's BODY, so it reads the artifact itself."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 §5 test strategy — id-resolve.test.ts:447's fixture has no ISSUE file",
+      "quotedText": "the test NAMED for regression protection whose fixture contains no ISSUE file; its fixture must gain one or it keeps advertising protection it does not provide"
+    },
+    {
+      "id": "c12",
+      "kind": "stakeholder",
+      "ref": "User ruling carried into LLD S001 as premise 4, and the two approved narrowings",
+      "quotedText": "buildRef should verify, dummy stories aren't acceptable. Verification belongs IN buildRef so it covers every entry point with NO trusted-caller asymmetry — approving both narrowings, each with a pinning test."
+    }
+  ]
+}

@@ -16,7 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -503,5 +503,196 @@ test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(u
 		const out = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'error');
 		assert.equal((out['error'] as { code: string }).code, 'unresolved-target');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// CHARACTERISATION — ISSUE-93081bff91ae5108 / S001 / t1
+//
+// These three tests assert the WRONG behaviour that exists on HEAD today. They
+// are the baseline the rest of the Story is proved against: each is INVERTED by
+// a named later task, so the fix shows up as a red-to-green flip rather than as
+// an assertion that the author got it right. They PASS as written — a failure
+// here means the defect moved, which is itself worth knowing.
+//
+//   TEST A  '## Scope' lost on the flipped record        INVERTED BY t8
+//   TEST B  meta.standalone forced to false by validate  INVERTED BY t9
+//   TEST C  clean tree yields an empty change set        INVERTED BY t6
+//
+// NOTE FOR t9 — there is a SECOND place that encodes the forced flag as
+// expected behaviour: the test at "validate[standalone]: no plan → resolves
+// identity from context, persists a BUILD record (standalone:false, story
+// task)" asserts `rec.meta['standalone'] === false` directly. t9 must update
+// that assertion too, or it goes red alongside TEST B. Finding it only at that
+// point would make the fix look like a regression.
+// ---------------------------------------------------------------------------
+
+/** A git repo whose working tree is CLEAN (everything committed), so the
+ *  working-tree-only change-set derivation resolves an EMPTY set. */
+function mkCleanGitRepo(): string {
+	const repo = mkRepo();
+	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+	git('init', '-q');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 1;\n');
+	git('add', '.');
+	git('commit', '-qm', 'baseline');
+	writeFileSync(join(repo, 'shipped.ts'), 'export const v = 2;\n');
+	git('add', '.');
+	git('commit', '-qm', 'the Story work, committed — exactly what the implement prompt mandates');
+	return repo;
+}
+
+/** Is git usable here? Mirrors the gate idiom at diff-grounding.test.ts:150. */
+function gitAvailable(): boolean {
+	try { execFileSync('git', ['--version'], { stdio: 'ignore' }); return true; } catch { return false; }
+}
+
+const gitOut = (repo: string, ...args: string[]): string =>
+	execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+
+/** The single BUILD.md the record rendered to, wherever the folder scheme put
+ *  it. Located by search rather than by path arithmetic, because the folder
+ *  anchor itself depends on `meta.standalone` — part of what flips here. */
+function findBuildMd(repo: string): string | undefined {
+	const hits: string[] = [];
+	const walk = (d: string): void => {
+		for (const e of readdirSync(d, { withFileTypes: true })) {
+			const p = join(d, e.name);
+			if (e.isDirectory()) walk(p);
+			else if (e.name === 'BUILD.md') hits.push(p);
+		}
+	};
+	const docs = join(repo, 'docs');
+	if (!existsSync(docs)) return undefined;
+	walk(docs);
+	return hits[0];
+}
+
+/** Drive a standalone build through implement THEN validate, the real two-phase
+ *  sequence that produces the flip, and return the persisted record + markdown. */
+async function runImplementThenValidate(repo: string): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
+	_setBuildValidateProviderForTests({
+		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+	});
+	try {
+		const standalone = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'Add a --json flag to the status subcommand.' };
+		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1', repo, standalone }));
+		assert.equal(impl['next'], 'implement', 'the standalone implement phase admitted the build');
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		const afterImpl = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+		assert.equal(afterImpl.meta['standalone'], true, 'implement wrote standalone:true — the precondition the flip destroys');
+		assert.equal(afterImpl.body['focus'], 'Add a --json flag to the status subcommand.');
+
+		const val = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone }));
+		assert.equal(val['next'], 'done', 'the standalone validate phase returned a verdict');
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+		const mdPath = findBuildMd(repo);
+		assert.ok(mdPath !== undefined, 'a BUILD.md was rendered somewhere under docs/');
+		return { rec, md: readFileSync(mdPath, 'utf8') };
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+	}
+}
+
+test('CHARACTERISATION A (inverts at t8): a standalone build\'s persisted md contains NO \'## Scope\' while its json still carries body.focus', async () => {
+	if (!gitAvailable()) return;   // gated: git-dependent, skips cleanly
+	const repo = mkCleanGitRepo();
+	try {
+		seedDef(repo);
+		const { rec, md } = await runImplementThenValidate(repo);
+
+		// The orphaned-content defect: body.focus survives in the json...
+		assert.equal(rec.body['focus'], 'Add a --json flag to the status subcommand.',
+			'body.focus is still persisted after validate');
+		// ...but the markdown renders no Scope section for it, because the record
+		// flipped to the plan-driven renderer, which never reads focus.
+		assert.doesNotMatch(md, /## Scope/,
+			'TODAY: the rendered record drops `## Scope`, so body.focus is visible nowhere. t8 converges the renderers and INVERTS this.');
+		assert.doesNotMatch(md, /## Triage rationale/,
+			'TODAY: the triage rationale is dropped on the same flip. t8 INVERTS this.');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('CHARACTERISATION B (inverts at t9): the shared validate persist forces meta.standalone to false despite implement writing true', async () => {
+	if (!gitAvailable()) return;
+	const repo = mkCleanGitRepo();
+	try {
+		seedDef(repo);
+		const { rec } = await runImplementThenValidate(repo);
+
+		// implement wrote true (asserted inside the helper); validate overwrote it.
+		assert.equal(rec.meta['standalone'], false,
+			'TODAY: runValidateSession writes standalone:false unconditionally on a path shared with the plan-driven branch, so a standalone record is re-labelled. t9 stops writing the flag at all and INVERTS this.');
+		// CHARACTERISATION B2 — the finding that REFUTES t8's design premise.
+		// Review claim p1 concluded sizeClass is safe to key the converged title on
+		// because the validate path never WRITES it. Both halves of that are true
+		// and the conclusion is still wrong: mergeWithPrior builds meta as
+		// `{ ...rec.meta, createdAt: prior.meta.createdAt, ... }`, spreading the NEW
+		// meta, so any prior-only meta field is DROPPED rather than preserved. Not
+		// writing sizeClass is not enough — the merge erases it.
+		assert.equal(rec.meta['sizeClass'], undefined,
+			'TODAY: sizeClass is DROPPED by the validate merge, not merely unwritten. So after validate a standalone record has neither standalone:true nor a sizeClass, and t8 cannot identify it from meta at all.');
+		// body, by contrast, merges ADDITIVELY — focus survives alongside tasks.
+		// That asymmetry between meta and body merging is the actual mechanism.
+		assert.equal(rec.body['focus'], 'Add a --json flag to the status subcommand.',
+			'body keys from the prior record survive the merge, unlike meta keys');
+		assert.ok(Array.isArray(rec.body['tasks']), 'and the new body keys are added');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('CHARACTERISATION C (inverts at t6): a CLEAN working tree yields an empty changeLog and a record with no \'## Changes\' section', async () => {
+	if (!gitAvailable()) return;
+	const repo = mkCleanGitRepo();
+	try {
+		seedDef(repo);
+		// The Story's work was COMMITTED — exactly what the implement prompt
+		// mandates before validation runs. The precondition is stated the way the
+		// COLLECTOR asks git (staged + unstaged diff, which is all changedFiles
+		// consults) rather than via --porcelain: seedDef leaves an UNTRACKED
+		// .insrc/, which --porcelain reports but `git diff` does not, so it cannot
+		// mask the defect.
+		assert.equal(gitOut(repo, 'diff', '--name-only'), '', 'precondition: no unstaged changes');
+		assert.equal(gitOut(repo, 'diff', '--cached', '--name-only'), '', 'precondition: no staged changes');
+		const { rec, md } = await runImplementThenValidate(repo);
+
+		assert.equal(rec.body['changeLog'], undefined,
+			'TODAY: the change set derives from the WORKING TREE only, which is clean exactly when the collector runs, so the key is omitted entirely. t6 derives from the Story\'s committed range and INVERTS this.');
+		assert.doesNotMatch(md, /## Changes/,
+			'TODAY: no `## Changes` section is rendered, and an empty result is indistinguishable from a failed one. t6 INVERTS this.');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable', async () => {
+	if (!gitAvailable()) return;
+	const repo = mkCleanGitRepo();
+	try {
+		seedDef(repo);
+		const countBefore = gitOut(repo, 'rev-list', '--count', 'HEAD');
+		// Tracked state before: nothing staged or unstaged (seedDef's .insrc/ is
+		// untracked, so it is invisible to `git diff` — the same reason C states
+		// its precondition this way).
+		assert.equal(gitOut(repo, 'diff', '--name-only'), '');
+		assert.equal(gitOut(repo, 'diff', '--cached', '--name-only'), '');
+		await runImplementThenValidate(repo);
+
+		// The build phases write artifacts under .insrc/ and docs/, so the tree is
+		// no longer pristine — but they must never COMMIT, rewrite history, or
+		// touch tracked source.
+		assert.equal(gitOut(repo, 'rev-list', '--count', 'HEAD'), countBefore,
+			'the build phases created no commits');
+		// No TRACKED file was modified by the build phases — artifacts land as new
+		// untracked paths under .insrc/ and docs/, which is expected and harmless.
+		assert.equal(gitOut(repo, 'diff', '--name-only'), '',
+			'the build phases modified no tracked file');
+		assert.equal(gitOut(repo, 'diff', '--cached', '--name-only'), '',
+			'the build phases staged nothing');
+		const dirty = gitOut(repo, 'status', '--porcelain').split('\n').filter(Boolean);
+		const stray = dirty.filter(l => !/(\.insrc\/|docs\/)/.test(l));
+		assert.deepEqual(stray, [], `only artifact paths may appear as dirty (got ${JSON.stringify(dirty)})`);
+		assert.equal(gitOut(repo, 'show', '-s', '--format=%s', 'HEAD'),
+			'the Story work, committed — exactly what the implement prompt mandates',
+			'HEAD still points at the same commit — no amend, no rewrite');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

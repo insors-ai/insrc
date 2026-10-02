@@ -594,7 +594,17 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	// anyone later remembered to commit the artifact. Absent when HEAD is
 	// unreadable — the approval still completes; a build with no resolvable base
 	// reports an empty change set rather than a wrong one.
-	const rangeBase = stampsRangeBase(artifact.meta) ? headFullSha(dirname(jsonPath)) : undefined;
+	//
+	// WRITE-ONCE (CR-3): an existing base is never recomputed. Re-approval is an
+	// anticipated path — this function clears a prior rejection a few lines below —
+	// and "HEAD at approval time" on a SECOND approval means HEAD after the Story's
+	// work has already landed. Re-stamping then moved the base forward onto the
+	// Story's own commits and `base..HEAD` collapsed to empty, silently discarding
+	// the change set. The first stamp is the one that means anything, so it wins.
+	const priorBase = artifact.meta.rangeBase;
+	const rangeBase = priorBase !== undefined && priorBase.length > 0
+		? priorBase
+		: stampsRangeBase(artifact.meta) ? headFullSha(dirname(jsonPath)) : undefined;
 	const nextMeta: Record<string, unknown> = {
 		...artifact.meta,
 		approvedAt,

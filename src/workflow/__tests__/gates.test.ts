@@ -342,6 +342,73 @@ test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not reso
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+// ---------------------------------------------------------------------------
+// CR-3 — code-review finding on this Story (cold review of 9b14d95..e15ef63).
+//
+// The stamp was recomputed on EVERY approval, including a re-approval. Since the
+// base is "HEAD at approval time", re-approving a PLAN after its build has landed
+// moved the base FORWARD onto the Story's own work, and `base..HEAD` then
+// collapsed to empty — the record silently lost the change set this Story exists
+// to give it. Re-approval is an anticipated path, not an edge case: the same
+// function deliberately clears a prior rejection two lines later.
+//
+// The existing round-trip test above could not catch this: it re-approves with
+// the SAME HEAD, so a preserved value and a recomputed-identical value are
+// indistinguishable. This test advances HEAD between the two approvals, which is
+// the only arrangement that can tell them apart.
+// ---------------------------------------------------------------------------
+
+test('CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins', () => {
+	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED });
+	try {
+		approveArtifactByJsonPath(s.json);
+		const firstBase = metaOf(s.json)['rangeBase'];
+		assert.equal(firstBase, s.head, 'precondition: the first stamp is HEAD at first approval');
+
+		// The Story gets built: its work lands as a new commit.
+		const git = (...a: string[]): string => execFileSync('git', a, { cwd: s.repo, encoding: 'utf8' }).trim();
+		writeFileSync(join(s.repo, 'shipped.ts'), 'export const v = 1;\n');
+		git('add', '.'); git('commit', '-qm', 'the Story work');
+		const newHead = git('rev-parse', 'HEAD');
+		assert.notEqual(newHead, s.head, 'precondition: HEAD actually moved');
+
+		// Re-approval (after a review resolution, a correction, a batch re-run …).
+		const out = approveArtifactByJsonPath(s.json);
+		const m = metaOf(s.json);
+		assert.equal(m['rangeBase'], firstBase,
+			'the base still points BEFORE the Story\'s work — moving it to the new HEAD would make base..HEAD empty');
+		assert.notEqual(m['rangeBase'], newHead, 'and specifically it is NOT the post-work HEAD');
+		// approvedAt must still refresh: this is a narrowing of the stamp only.
+		assert.equal(out.approvedAt, m['approvedAt'], 'approvedAt is still re-stamped on every approval');
+	} finally { s.cleanup(); }
+});
+
+test('CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once', () => {
+	const PRIOR = 'a'.repeat(40);
+	const s = seedGitArtifact({
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		rangeBase: PRIOR,
+	});
+	try {
+		approveArtifactByJsonPath(s.json);
+		assert.equal(metaOf(s.json)['rangeBase'], PRIOR,
+			'an already-stamped base is authoritative — the approval does not second-guess it');
+		assert.notEqual(metaOf(s.json)['rangeBase'], s.head, 'and it was not overwritten with HEAD');
+	} finally { s.cleanup(); }
+});
+
+test('CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever', () => {
+	const s = seedGitArtifact({
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		rangeBase: '',
+	});
+	try {
+		approveArtifactByJsonPath(s.json);
+		assert.equal(metaOf(s.json)['rangeBase'], s.head,
+			'an empty base is no base at all — preserving it would make the artifact permanently unstampable');
+	} finally { s.cleanup(); }
+});
+
 test('t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them', () => {
 	const s = seedGitArtifact({
 		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1790965082848-kcz10a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-02T18:19:50.067Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 107215,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "792f9324fc43d95c",
+    "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src",
+    "standalone": true,
+    "magnitude": "sized",
+    "approvedAt": "2026-10-02T18:26:58.777Z",
+    "parentRef": {
+      "slug": "regression-hierarchical-label-resolver-listepichashes-src"
+    }
+  },
+  "body": {
+    "title": "Filing one bugfix issue breaks bare story/task targets (`s1`, `s1/t3`) in a single-epic repo",
+    "reproduction": "A repo whose artifacts directory holds exactly one DEF-anchored epic resolves a bare label target. Filing a single, unrelated bugfix ISSUE makes the same call stop resolving.\n\nSteps:\n1. In a repo with one epic, confirm a bare label resolves: `resolveWorkflowRef(repo, 's1')` returns the story ref.\n2. File any bugfix via the `issue` stage, which writes an `ISSUE-<hash>.json` artifact for a DIFFERENT epic hash.\n3. Repeat step 1.\n\nOBSERVED: step 3 returns `null`. Callers surface this as `unresolved-target`, so `insrc_build_step({ target: 's1' })` and `{ target: 's1/t3' }` are refused until the caller supplies an explicit `epicHash`.\n\nEXPECTED: an unrelated bugfix issue does not change whether a story label in the repo's only feature epic is resolvable.\n\nReproduced directly against the resolver, with the ONLY difference between the two runs being the presence of one extra artifact file:\n```\nBASELINE  (DEF-1111... + LLD-1111...-s1) : {\"workflowId\":\"E2026100111111111:S001\", ...}\nWITH one unrelated ISSUE-2222....json    : null\n```\nThe affected population is any repo with exactly one DEF-anchored epic that has ever filed a bugfix. Multi-epic repos are unaffected (they already required a scope), and so are repos with no bugfix issues — which is why the existing tests stay green.",
+    "rootCause": "`listEpicHashes` enumerates the artifacts directory and returns one list of epic hashes. It has exactly two callers, both inside the same file, and they ask DIFFERENT questions of that single list: `resolveByHier` uses it to enumerate candidate epics for resolution, while `resolveByLabel` uses only its LENGTH, as an ambiguity test — `if (hashes.length !== 1) return null`, meaning \"more than one epic is present, so an unscoped label is ambiguous and must not be guessed\".\n\nCommit 13ebd04 widened the enumeration to include bugfix `ISSUE-*` artifacts alongside `DEF-*` ones, so that a DEF-less bugfix epic becomes visible to resolution. That is correct for the enumerate-for-resolution consumer. For the count-for-ambiguity consumer it silently changes the meaning of the number: a repo with one feature epic plus one filed bugfix now counts 2 and refuses.\n\nThe mistake is a conflation, not a typo: one return value serves two semantics, and the change was reasoned about only from the consumer it was written for. 13ebd04's own commit message records the error — it claims \"membership and ordering are unchanged for every DEF-bearing epic\", which is true of each epic's identity and false of the list's LENGTH, which is the only property the ambiguity gate reads.\n\nThis is also why no test failed. The scenario IS exercised, by a test that asserts the regressed behaviour as the requirement: it builds one ISSUE-anchored epic plus one DEF-anchored epic, asserts `null`, and comments \"two epics present ... must NOT guess\". The test named for regression protection uses a fixture with no ISSUE file at all, so the widened pass never fires in it; and the test that does combine a DEF and an ISSUE puts them on the SAME hash, where the enumeration dedupes and the count stays 1.",
+    "fixIntent": "Make an unrelated bugfix issue stop affecting the resolvability of a story label in a repo's only feature epic, and record WHICH semantics is intended rather than leaving it implicit in a shared helper.\n\nThe correction is blocked on one specification question that must be answered before any code changes: is a bugfix ISSUE an epic PEER for the purpose of deciding that an unscoped label is ambiguous?\n\n- If YES, the current refusal is correct behaviour and the remedy belongs with the callers — the resolution path should supply the epic scope itself rather than refusing a target a user can legitimately name.\n- If NO, each consumer of the enumeration should ask for what it actually needs, so that widening what counts as a resolvable epic does not also widen what counts as ambiguous.\n\nWhichever branch is chosen, the existing test that encodes today's behaviour as desired must be revisited and rewritten to state the decided contract, not left standing — otherwise the next reader re-derives the same conclusion from a green suite. The fix must also close the coverage hole that let this ship: no test places a DEF-bearing epic alongside an ISSUE artifact on a DIFFERENT hash, which is the only arrangement that can expose the defect.\n\nNOTE from the s2 audit (q3, graded `partial`): the second clause of the NO branch and the coverage requirement above sit close to the intent/design boundary. They are recorded as constraints on the outcome, NOT as settled design — the design stage should decide whether to keep or restate them rather than inherit them as given.\n\nOut of scope: changing how DEF-less bugfix epics resolve. That capability is the point of 13ebd04 and must survive."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:143",
+      "quotedText": "listEpicHashes(dir: string): readonly string[]"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:329",
+      "quotedText": "resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?: string): ResolvedRef | null"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:311",
+      "quotedText": "resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:367",
+      "quotedText": "resolveWorkflowRef(repoPath: string, identifier: string, opts?: { readonly epicHash?: string | undefined }): ResolvedRef | null"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/id-resolve.test.ts:459",
+      "quotedText": "two epics present (one ISSUE-anchored, one DEF-anchored) → an unscoped label is ambiguous and must NOT guess"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/tracker/__tests__/tracker.test.ts:283",
+      "quotedText": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/mcp/build-step/render.ts:54",
+      "quotedText": "const ref = resolveWorkflowRef(repoPath, target, { epicHash });"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "commit 13ebd04 — fix(workflow): resolve bugfix-chain task refs from the ISSUE anchor when no DEF exists",
+      "quotedText": "listEpicHashes: a second pass over ISSUE files, deduped, DEF hashes first — so membership and ordering are unchanged for every DEF-bearing epic."
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: callers of listEpicHashes / resolveByLabel / resolveWorkflowRef in src/workflow/tracker/resolve.ts",
+      "quotedText": "listEpicHashes has exactly TWO callers, both internal to the same file — resolveByHier (:311-325) and resolveByLabel (:329-342). Its enumeration therefore serves two distinct questions from one return value."
+    }
+  ]
+}

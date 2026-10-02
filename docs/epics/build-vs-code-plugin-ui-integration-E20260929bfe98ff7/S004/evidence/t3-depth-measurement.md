@@ -99,6 +99,9 @@ of the same thing would only invite the two to drift apart again.
 ## Both themes
 
 `t3-isolated-dark.png` and `t3-isolated-light.png` are the same four records in a
-dark and a light theme. Both read correctly — nothing invisible, nothing
+dark and a light theme, and `t3-depth-measured.png` / `t3-depth-measured-light.png`
+are the narrow/deep state in both. The deep state needs the light read most of
+all: a deep card is mostly nested BORDERS, and a border that disappears on white
+disappears silently. It does not — every level from L2 to L14 stays visible. Both read correctly — nothing invisible, nothing
 low-contrast. This is what the no-literal-colour rule bought: the light theme
 needed no separate work because every colour resolves through `--it-*`.

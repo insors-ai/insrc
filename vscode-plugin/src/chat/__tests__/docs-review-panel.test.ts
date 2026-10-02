@@ -4969,6 +4969,7 @@ test('t3/t7: every committed S004 evidence artefact exists at the path its commi
     't3-isolated-dark.png',
     't3-isolated-light.png',
     't3-depth-measured.png',
+    't3-depth-measured-light.png',
     't3-depth-measurement.md',
     // t7 — the full-surface states, every one named so a file committed to the
     // wrong path is a test failure rather than something a reader discovers.

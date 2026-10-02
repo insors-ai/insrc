@@ -5476,6 +5476,37 @@ test('t6: a resolvable anchor places the slot beside its heading; a stale one fa
     'a stale anchor falls back to the default position rather than dropping the visual');
 });
 
+test('t6: a DIGIT-LEADING anchor slug places the EXPERIENCE slot without throwing', () => {
+  // insrc NUMBERS its headings, so `## 2. Contract details` slugifies to
+  // `2-contract-details` — and `querySelector('#2-contract-details')` throws a
+  // SyntaxError, because a bare CSS identifier may not start with a digit. S003 hit
+  // this and replaced the selector with an id walk; this proves the EXPERIENCE slot
+  // inherits that fix BEHAVIOURALLY, not just by sharing a function name. The
+  // earlier version checked the reuse statically and ran the behaviour on the
+  // DIAGRAM slot only — the build validation gate was right that those are not the
+  // same claim.
+  // The shared DG_MD fixture has UNNUMBERED headings, so it cannot produce the slug
+  // shape this test is about. Real insrc documents number theirs.
+  const numberedMd = '# Low-level design\n\nIntro.\n\n## 2. Contract details\n\nBody.\n';
+  const numberedSections = deriveSectionIndex(numberedMd);
+
+  const plain = runWebview();
+  plain.deliver({ artifactId: 'a', markdown: numberedMd, openQuestions: [], blocked: false, sections: numberedSections });
+  const digitLed = plain.body.children
+    .filter((c) => c.tagName.startsWith('h')).map((c) => c.id).filter((id) => /^[0-9]/.test(id));
+  assert.ok(digitLed.length > 0,
+    `the body stamps a digit-leading heading id (got ${JSON.stringify(plain.body.children.filter(c => c.tagName.startsWith('h')).map(c => c.id))})`);
+
+  const r = runWebview();
+  r.deliver({
+    artifactId: 'a', markdown: numberedMd, openQuestions: [], blocked: false, sections: numberedSections,
+    uxDefinition: UX_CARD_T6, companions: [UX_REF_T6], experienceAnchorSlug: digitLed[0],
+  });
+  assert.equal(uxSlotsIn(r).length, 1, 'the slot survived a digit-leading slug');
+  assert.ok(r.body.children.some((n) => n.className === 'insrc-dg-slot insrc-dg-slot--experience'),
+    'and anchored INTO the body beside that heading rather than falling back');
+});
+
 test('t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
   // One mounter, called twice. A second implementation would be a second place for

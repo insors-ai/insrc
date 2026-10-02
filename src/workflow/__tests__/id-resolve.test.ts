@@ -27,6 +27,7 @@ import {
 } from '../id.js';
 import {
 	resolveWorkflowRef, workflowIdForIssue, issueForWorkflowId,
+	readEpicDefinition,
 } from '../tracker/resolve.js';
 import { renderTaskBody, parseIdMarker } from '../tracker/conventions.js';
 import type { PlanTask } from '../artifacts/plan.js';
@@ -595,6 +596,120 @@ test('RED-FIRST (e), green at t4 — asserts DESIRED behaviour, FAILS today: two
 		assert.notEqual(r, null,
 			'only one epic contains s1, so the label is unambiguous in fact — the old count rule refused here even before 13ebd04');
 		assert.equal(r!.epicHash, EPIC_HASH);
+	} finally { s.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// S001/t2 — readEpicDefinition: the definition-artifact reader, UNWIRED.
+//
+// An ISSUE **is** a DEF, so both kinds answer the same question and the READ
+// ORDER is the only discriminator. These tests pin that order, the
+// first-READABLE-wins consequence, and the never-throws contract. Nothing in
+// production calls this reader yet — t3 wires it into buildRef.
+// ---------------------------------------------------------------------------
+
+test('t2: readEpicDefinition reads the DEF first and the ISSUE second — the order is the discriminator', () => {
+	const s = setupRepo();
+	try {
+		const dir = join(s.repo, '.insrc/artifacts');
+
+		// DEF present → kind 'def', and the body it returns is the DEF's.
+		const def = readEpicDefinition(dir, EPIC_HASH);
+		assert.notEqual(def, null);
+		assert.equal(def!.kind, 'def');
+		assert.equal(def!.artifact.meta?.epicSlug, 'demo-feature');
+
+		// Only an ISSUE present → kind 'issue'. Reaching the second read IS what
+		// makes this epic ISSUE-anchored; no field is consulted to decide it.
+		addUnrelatedIssueEpic(s.repo);
+		const iss = readEpicDefinition(dir, OTHER_BUG_HASH);
+		assert.notEqual(iss, null);
+		assert.equal(iss!.kind, 'issue');
+		assert.equal(iss!.artifact.meta?.epicSlug, 'an-unrelated-bugfix');
+
+		// BOTH present on ONE hash — the only arrangement in which the ORDER is
+		// observable. Without this the order assertion is vacuous: reversing the
+		// reads changes nothing when each hash carries a single artifact.
+		const dual = '9999aaaa8888bbbb';
+		writeJson(join(dir, `DEF-${dual}.json`), {
+			meta: {
+				workflow: 'define', runId: 'dd', repoPath: s.repo, epicHash: dual,
+				epicSlug: 'def-wins', createdAt: CREATED, schemaVersion: 1,
+			},
+			body: { flavor: 'new-capability', problem: 'z.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
+			citations: [],
+		});
+		writeJson(join(dir, `ISSUE-${dual}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'ii', repoPath: s.repo, issueHash: dual,
+				epicSlug: 'issue-loses', createdAt: CREATED, standalone: true, schemaVersion: 1,
+			},
+			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+			citations: [],
+		});
+		const both = readEpicDefinition(dir, dual);
+		assert.equal(both!.kind, 'def', 'DEF is read FIRST and wins outright when both anchors exist');
+		assert.equal(both!.artifact.meta?.epicSlug, 'def-wins',
+			'and the returned artifact is the DEF\'s, not the ISSUE\'s — mirroring readEpicIdentity');
+
+		// Neither present → absence, not a throw.
+		assert.equal(readEpicDefinition(dir, 'ffffffffffffffff'), null);
+	} finally { s.cleanup(); }
+});
+
+test('t2: first-READABLE-wins — a MALFORMED DEF falls through to the ISSUE rather than aborting the read', () => {
+	const s = setupRepo();
+	try {
+		const dir = join(s.repo, '.insrc/artifacts');
+		const hash = 'eeee5555ffff6666';
+		// A DEF that exists but cannot be parsed, plus a readable ISSUE on the SAME hash.
+		writeFileSync(join(dir, `DEF-${hash}.json`), '{ this is not json');
+		writeJson(join(dir, `ISSUE-${hash}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'i2', repoPath: s.repo, issueHash: hash,
+				epicSlug: 'fallback-target', createdAt: CREATED, standalone: true, schemaVersion: 1,
+			},
+			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+			citations: [],
+		});
+
+		const got = readEpicDefinition(dir, hash);
+		assert.notEqual(got, null, 'a corrupt DEF must not abort the read');
+		assert.equal(got!.kind, 'issue', 'it falls through to the ISSUE — first-READABLE-wins, not first-PRESENT-wins');
+		assert.equal(got!.artifact.meta?.epicSlug, 'fallback-target');
+	} finally { s.cleanup(); }
+});
+
+test('t2: readEpicDefinition NEVER throws — missing, malformed, and a malformed-with-no-fallback all yield an absence', () => {
+	const s = setupRepo();
+	try {
+		const dir = join(s.repo, '.insrc/artifacts');
+		// Missing entirely.
+		assert.doesNotThrow(() => readEpicDefinition(dir, 'dddddddddddddddd'));
+		// Malformed DEF with NO ISSUE behind it — both reads fail, still no throw.
+		const lone = 'bbbb7777cccc8888';
+		writeFileSync(join(dir, `DEF-${lone}.json`), 'not json at all');
+		assert.doesNotThrow(() => readEpicDefinition(dir, lone));
+		assert.equal(readEpicDefinition(dir, lone), null, 'both reads unusable → absence');
+		// A nonexistent directory must not throw either.
+		assert.doesNotThrow(() => readEpicDefinition(join(s.repo, 'no-such-dir'), EPIC_HASH));
+		assert.equal(readEpicDefinition(join(s.repo, 'no-such-dir'), EPIC_HASH), null);
+	} finally { s.cleanup(); }
+});
+
+test('t2: the reader is UNWIRED — the DEF body type carries `stories`, and reading it changes no resolution outcome', () => {
+	const s = setupRepo();
+	try {
+		const dir = join(s.repo, '.insrc/artifacts');
+		// `stories` is now part of the narrow body shape (setupRepo declares none).
+		const def = readEpicDefinition(dir, EPIC_HASH);
+		assert.deepEqual(def!.artifact.body?.stories, [], 'the DEF fixture declares an empty story list, and the type can now see it');
+
+		// Behaviour-unchanged guard: calling the reader does not alter resolution,
+		// and t1's red cases are STILL red after t2 — t3 is what turns them green.
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'the real story still resolves');
+		assert.notEqual(resolveWorkflowRef(s.repo, 's9'), null,
+			'STILL the dummy ref — t2 wires nothing, so t1 case (b) remains red until t3');
 	} finally { s.cleanup(); }
 });
 

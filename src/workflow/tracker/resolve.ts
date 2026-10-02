@@ -43,6 +43,7 @@ import {
 } from '../id.js';
 import { issueNumber } from './refs.js';
 import type { PlanTask } from '../artifacts/plan.js';
+import type { DefineStory } from '../artifacts/define.js';
 
 // ---------------------------------------------------------------------------
 // Public record
@@ -103,7 +104,13 @@ interface ArtifactShape {
 		readonly storyId?:   string;
 		readonly tracker?:   TrackerBlock;
 	};
-	readonly body?: { readonly tasks?: readonly PlanTask[] };
+	readonly body?: {
+		readonly tasks?:   readonly PlanTask[];
+		/** A DEF declares its stories here. Added for the story-existence check
+		 *  (S001/t2); an ISSUE has no analogue, which is why the check reads the
+		 *  definition artifact's KIND rather than this field alone. */
+		readonly stories?: readonly DefineStory[];
+	};
 }
 
 /** The epic-level identity a hierarchical id is minted from, narrowed to the
@@ -170,6 +177,42 @@ function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null {
 		if (meta !== undefined && typeof meta.epicSlug === 'string' && typeof meta.createdAt === 'string') {
 			return { epicSlug: meta.epicSlug, createdAt: meta.createdAt, tracker: meta.tracker };
 		}
+	}
+	return null;
+}
+
+/** The epic's DEFINITION artifact plus which kind it turned out to be.
+ *
+ *  An ISSUE **is** a DEF — the epic-level definition artifact, formerly named
+ *  DEF — so both kinds answer the same question and the read ORDER is the only
+ *  thing that distinguishes them. That is why `kind` is derived from which read
+ *  succeeded rather than from any field: reaching the ISSUE means this epic has
+ *  no usable DEF. `meta.standalone` is deliberately NOT consulted; it describes
+ *  the ROUTE, not the artifact kind (an LLD carries it both ways). */
+interface EpicDefinition {
+	readonly kind:     'def' | 'issue';
+	readonly artifact: ArtifactShape;
+}
+
+/** Read the epic's definition artifact: `DEF-<hash>.json` first, then
+ *  `ISSUE-<hash>.json`. Returns null when neither is readable.
+ *
+ *  The order is COPIED FROM {@link readEpicIdentity}, not newly decided, so the
+ *  two readers can never disagree about which artifact defines an epic — and
+ *  because {@link readArtifact} yields null on a malformed file, the rule is
+ *  first-READABLE-wins: a corrupt DEF falls through to the ISSUE rather than
+ *  aborting. readEpicIdentity itself cannot be reused here: it returns only
+ *  {epicSlug, createdAt, tracker}, and the story-existence check needs the BODY.
+ *
+ *  UNWIRED as of S001/t2 — nothing calls it yet. S001/t3 consumes it from
+ *  buildRef to decide whether a named story exists. Never throws. */
+export function readEpicDefinition(dir: string, epicHash: string): EpicDefinition | null {
+	for (const [kind, name] of [
+		['def',   `DEF-${epicHash}.json`],
+		['issue', `ISSUE-${epicHash}.json`],
+	] as const) {
+		const artifact = readArtifact(join(dir, name));
+		if (artifact !== null) return { kind, artifact };
 	}
 	return null;
 }

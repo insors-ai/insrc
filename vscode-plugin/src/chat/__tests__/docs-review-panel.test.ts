@@ -5163,27 +5163,39 @@ test('t4 MUTATION: removing the bound makes the pathological case diverge', () =
 // ---------------------------------------------------------------------------
 
 const UX_REF_T5 = { kind: 'ux-mock', relPath: 'docs/epics/x/S004/ux-mock.html', title: 'Experience mock' };
+/** The REAL hazard S003 recorded, reproduced: THREE distinct daemon renderers all
+ *  stamp `kind:'diagram-mermaid'` (companion/render.ts:104 ER, :205 sequence, :243
+ *  component), so one kind covers three different companions — which is why S003's
+ *  factory takes a record BUNDLE and why a ref cannot identify its own source
+ *  record. Plus the declared-but-unproduced `diagram-html`. An earlier version of
+ *  this fixture carried only two refs and never reproduced the three-renderer case
+ *  the acceptance check names; the build validation gate caught that. */
 const DIAGRAM_REFS = [
-  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/er.html', title: 'ER diagram' },
+  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/er-diagram.html', title: 'Entity model' },
+  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/sequence-diagram.html', title: 'Call sequence' },
+  { kind: 'diagram-mermaid', relPath: 'docs/epics/x/component-diagram.html', title: 'Component topology' },
   { kind: 'diagram-html', relPath: 'docs/epics/x/component.html', title: 'Component diagram' },
 ];
 
-test('t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, and dgPickRef is unchanged', () => {
+test('t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, across all FOUR diagram refs', () => {
   const ux = loadUx();
-  const dg = loadDg() as unknown as { dgPickRef?: (c: unknown) => unknown };
-  // A fixture carrying BOTH slots' refs, with the DIAGRAM refs first so position
-  // cannot stand in for kind.
+  // The DIAGRAM refs come first so position cannot stand in for kind, and three of
+  // them share ONE kind so the S003 hazard is actually in the fixture.
   const all = [...DIAGRAM_REFS, UX_REF_T5];
+  assert.equal(DIAGRAM_REFS.filter((r) => r.kind === 'diagram-mermaid').length, 3,
+    'three refs share one kind — the case that makes a ref unable to identify its source record');
 
   assert.equal(ux.uxPickRef(all), UX_REF_T5, 'the ux ref, by identity');
-  // And the OTHER picker still selects what it selected before — the two partition
-  // the array rather than overlap. S003 established these cannot be told apart
-  // naively: three daemon renderers all stamp kind:'diagram-mermaid'.
-  const dgApi = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
+
+  // And the OTHER picker still selects exactly what it selected before, so the two
+  // PARTITION the array rather than overlap.
+  const dgPickRef = new Function('document', `${DOCS_DIAGRAM_SOURCE}; return dgPickRef;`)({
     createElement: () => ({}), createElementNS: () => ({}),
   }) as (c: unknown) => unknown;
-  assert.equal(dgApi(all), DIAGRAM_REFS[0], 'dgPickRef still takes the first diagram ref');
-  void dg;
+  assert.equal(dgPickRef(all), DIAGRAM_REFS[0], 'dgPickRef still takes the first diagram ref');
+  // Neither picker can ever return the other's ref, over the whole fixture.
+  assert.ok(!DIAGRAM_REFS.includes(ux.uxPickRef(all) as never), 'ux never yields a diagram ref');
+  assert.notEqual(dgPickRef(all), UX_REF_T5, 'and the diagram picker never yields the ux ref');
 });
 
 test('t5: a companions array of DIAGRAM refs only yields NO ux ref', () => {

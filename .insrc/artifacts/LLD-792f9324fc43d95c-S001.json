@@ -163,6 +163,13 @@
         "choice": "Approve both, add explicit tests",
         "rationale": "Recording the user's own ruling rather than making a fresh call: they ruled 'buildRef should verify, dummy stories aren't acceptable', both narrowings were listed explicitly in the pre-approval summary, and they approved. Carving out (b) would reinstate the trusted-caller asymmetry the ruling forbids. Each refusal becomes its own acceptance check with a pinning test so neither is discovered later as a regression.",
         "resolvedAt": "2026-10-02T19:50:14.835Z"
+      },
+      "qcae52b63": {
+        "question": "[s8 ts1 + alt2 — partial; the one that matters, and a KNOWN FRAMEWORK GAP the user has already deferred] The Story arrived with an EMPTY acceptanceCriteria array, so the ten acceptance criteria (ac1-ac10) and the eight constraints (k1-k8) the alternatives were scored against were authored by this LLD rather than declared by the Story. Mitigating relative to the superseded pass: k1-k4 map directly onto premises the USER stated, so they are not purely self-authored; k5-k8 and all of ac1-ac10 still are. OPEN: the plan stage must ADOPT or restate them rather than inherit them. A reviewer should check k5-k8 specifically. The ROOT CAUSE of the empty-criteria gap is separately queued for investigation at the user's direction — this is a re-report, not a new finding.",
+        "status": "resolved",
+        "choice": "Restate: split user-grounded from self-authored",
+        "rationale": "Meets the adopt-or-restate requirement without reopening the Story, which the user deferred. The tiering is the point: k1-k4 trace to premises the user stated (ISSUE is a DEF, the widening was correct, the count-vs-containment defect, buildRef must verify), so they are binding; k5-k8 and ac1-ac10 are LLD-authored and get marked provisional with the decision each one supports, so a later reader can tell which criteria carry user authority and which carry only mine. Reviewer attention goes to k5-k8 specifically.",
+        "resolvedAt": "2026-10-02T19:51:23.702Z"
       }
     }
   },

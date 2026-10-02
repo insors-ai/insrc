@@ -181,3 +181,107 @@ test('S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps 
 		assert.equal(readJson(p1.json).meta['createdAt'], '2026-01-01T23:59:59.000Z', 'persisted createdAt is preserved across the upsert');
 	});
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-013e816250937aa5 — the upsert must not DELETE meta the record already
+// carried. Two opposite rules live in this merge and both are pinned here:
+//   general  : the new write wins on fields it SUPPLIES, prior survives on
+//              fields it OMITS (same rule body already followed)
+//   exception: createdAt + the four completion/rejection stamps are PRIOR-wins,
+//              so a finished Story can never be un-finished
+// ---------------------------------------------------------------------------
+
+/** The implement-phase write: the only producer of sizeClass + triageRationale. */
+const standaloneRec = (at: string): BuildRecord => ({
+	meta: {
+		workflow: 'build', standalone: true, sizeClass: 'trivial',
+		triageRationale: 'one-line mechanical edit',
+		epicHash: HASH, storyId: 's1', createdAt: at,
+	},
+	body: { focus: 'Add a --json flag to the status subcommand.', producesLld: false },
+});
+
+test('a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)', async () => {
+	await withRepo((repo) => {
+		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		// The validate write, verbatim in shape: it mentions neither field.
+		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
+		assert.equal(rec.meta['sizeClass'], 'trivial', 'sizeClass survives a write that omits it');
+		assert.equal(rec.meta['triageRationale'], 'one-line mechanical edit', 'triageRationale survives too');
+	});
+});
+
+test('the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)', async () => {
+	await withRepo((repo) => {
+		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
+		// standalone: prior true, new write supplies false → the NEW value wins.
+		assert.equal(rec.meta['standalone'], false, 'a supplied field takes the new value');
+		assert.equal(rec.meta['updatedAt'], '2026-02-02T00:00:00.000Z', 'updatedAt refreshes');
+	});
+});
+
+test('the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write', async () => {
+	await withRepo((repo) => {
+		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
+		persistBuildRecord(repo, {
+			meta: {
+				...standaloneRec('2026-01-01T00:00:00.000Z').meta,
+				approvedAt: '2026-01-05T00:00:00.000Z',
+				rejectedAt: '2026-01-06T00:00:00.000Z',
+				rejectReason: 'the original reason',
+				reviewOverride: { reason: 'the original override', at: '2026-01-07T00:00:00.000Z' },
+			},
+			body: standaloneRec('2026-01-01T00:00:00.000Z').body,
+		});
+		// A later write that tries to overwrite every prior-wins field.
+		persistBuildRecord(repo, {
+			meta: {
+				workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1',
+				createdAt: '2026-09-09T00:00:00.000Z', updatedAt: '2026-09-09T00:00:00.000Z',
+				approvedAt: '2026-09-09T00:00:00.000Z',
+				rejectedAt: '2026-09-09T00:00:00.000Z',
+				rejectReason: 'a clobbering reason',
+				reviewOverride: { reason: 'a clobbering override', at: '2026-09-09T00:00:00.000Z' },
+			},
+			body: { tasks: [{ id: 's1', passed: true }] },
+		});
+
+		const m = readJson(json).meta;
+		assert.equal(m['createdAt'], '2026-01-01T00:00:00.000Z', 'createdAt stays prior (the md folder anchor depends on it)');
+		assert.equal(m['approvedAt'], '2026-01-05T00:00:00.000Z', 'approvedAt stays prior — never un-complete a story');
+		assert.equal(m['rejectedAt'], '2026-01-06T00:00:00.000Z');
+		assert.equal(m['rejectReason'], 'the original reason');
+		assert.deepEqual(m['reviewOverride'], { reason: 'the original override', at: '2026-01-07T00:00:00.000Z' });
+	});
+});
+
+test('BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write', async () => {
+	await withRepo((repo) => {
+		const rec = planRec([{ id: 't1', passed: true }], '2026-03-03T00:00:00.000Z');
+		// Fresh write, captured.
+		const first = persistBuildRecord(repo, rec);
+		const freshJson = readFileSync(first.json, 'utf8');
+		const freshMd   = readFileSync(first.md, 'utf8');
+		// Re-write the IDENTICAL record — now going through the merge path.
+		const second = persistBuildRecord(repo, rec);
+		assert.equal(readFileSync(second.json, 'utf8'), freshJson, 'json is byte-identical through the merge');
+		assert.equal(readFileSync(second.md, 'utf8'), freshMd, 'md is byte-identical through the merge');
+	});
+});
+
+test('a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise', async () => {
+	await withRepo((repo) => {
+		persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		persistBuildRecord(repo, planRec([{ id: 's1', passed: true }], '2026-02-02T00:00:00.000Z'));
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's1')));
+		// This is the cost of the fix, stated as an assertion: omission no longer
+		// deletes. A future caller needing to genuinely unset a field must do it
+		// explicitly rather than by leaving the key out.
+		assert.ok('sizeClass' in rec.meta, 'omission does not delete — clearing must be explicit');
+	});
+});

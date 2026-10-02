@@ -248,7 +248,16 @@ function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
 	if (prior === null) return rec;
 	const tasks = mergeTasks(prior.body.tasks, rec.body.tasks);
 	const meta: BuildRecord['meta'] = {
+		// Prior FIRST, mirroring the body merge below: a later write must not
+		// REMOVE meta the record already carried. Without this spread the rule is
+		// "everything the new write omits is deleted", which silently erased
+		// sizeClass + triageRationale on every standalone record the validate
+		// phase touched (it sends neither). The new write still wins on every
+		// field it DOES supply, because it is spread second.
+		...prior.meta,
 		...rec.meta,
+		// From here down, PRIOR deliberately wins — the opposite of the rule
+		// above, and not to be flattened into it.
 		createdAt: prior.meta.createdAt,
 		// Completion/rejection stamps: prior wins — a later validate must never
 		// clobber a completed (or rejected) story.

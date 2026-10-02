@@ -517,6 +517,10 @@ test('implement: multi-epic dir + \'s1/t1\' WITHOUT epicHash still returns err(u
 //
 //   TEST A  '## Scope' lost on the flipped record        INVERTED BY t8
 //   TEST B  meta.standalone forced to false by validate  INVERTED BY t9
+//           (its B2 half — sizeClass erased by the merge — was already
+//            INVERTED by ISSUE-013e816250937aa5, which had to land first:
+//            t9's specified fix alone leaves standalone *undefined*, not true,
+//            because omitting a key used to delete it.)
 //   TEST C  clean tree yields an empty change set        INVERTED BY t6
 //
 // NOTE FOR t9 — there is a SECOND place that encodes the forced flag as
@@ -625,15 +629,15 @@ test('CHARACTERISATION B (inverts at t9): the shared validate persist forces met
 		// implement wrote true (asserted inside the helper); validate overwrote it.
 		assert.equal(rec.meta['standalone'], false,
 			'TODAY: runValidateSession writes standalone:false unconditionally on a path shared with the plan-driven branch, so a standalone record is re-labelled. t9 stops writing the flag at all and INVERTS this.');
-		// CHARACTERISATION B2 — the finding that REFUTES t8's design premise.
-		// Review claim p1 concluded sizeClass is safe to key the converged title on
-		// because the validate path never WRITES it. Both halves of that are true
-		// and the conclusion is still wrong: mergeWithPrior builds meta as
-		// `{ ...rec.meta, createdAt: prior.meta.createdAt, ... }`, spreading the NEW
-		// meta, so any prior-only meta field is DROPPED rather than preserved. Not
-		// writing sizeClass is not enough — the merge erases it.
-		assert.equal(rec.meta['sizeClass'], undefined,
-			'TODAY: sizeClass is DROPPED by the validate merge, not merely unwritten. So after validate a standalone record has neither standalone:true nor a sizeClass, and t8 cannot identify it from meta at all.');
+		// B2 — INVERTED by ISSUE-013e816250937aa5, which this assertion originally
+		// characterised as a defect. It used to read `=== undefined`: mergeWithPrior
+		// spread only the NEW meta, so sizeClass (which the validate write never
+		// mentions) was DELETED rather than preserved, and t8's premise that
+		// sizeClass is safe to key the converged title on was therefore false.
+		// The merge now spreads prior.meta first, so a prior-only meta field
+		// survives a write that omits it — and t8's premise holds again.
+		assert.equal(rec.meta['sizeClass'], 'trivial',
+			'sizeClass SURVIVES the validate write (ISSUE-013e8162). This is what makes t8 able to key the converged title on it.');
 		// body, by contrast, merges ADDITIVELY — focus survives alongside tasks.
 		// That asymmetry between meta and body merging is the actual mechanism.
 		assert.equal(rec.body['focus'], 'Add a --json flag to the status subcommand.',

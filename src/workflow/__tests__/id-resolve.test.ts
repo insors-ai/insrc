@@ -316,6 +316,167 @@ test('resolver — label is ambiguous in a multi-epic dir', () => {
 	} finally { s.cleanup(); }
 });
 
+// ---------------------------------------------------------------------------
+// resolver — a bugfix chain writes no DEF: the ISSUE artifact is the anchor
+// ---------------------------------------------------------------------------
+
+const BUG_HASH = 'de2b586f80943e39';
+const TASK_T1: PlanTask = {
+	id: 't1', title: 'Characterise the defect', summary: 'Baseline first.', size: 'M', order: 1,
+	dependsOn: [], acceptanceChecks: ['reproduces'], derivedFrom: ['c1'],
+	tests: [{ level: 'integration', name: 'integration: reproduces' }],
+};
+
+/** A bugfix-chain artifacts dir: ISSUE (no DEF) + LLD/PLAN named with the
+ *  UPPERCASE `S001` story id the standalone route mints. */
+function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; dir: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-bug-'));
+	const dir = join(repo, '.insrc/artifacts');
+	if (opts.withIssue !== false) {
+		writeJson(join(dir, `ISSUE-${BUG_HASH}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'i1', repoPath: repo, issueHash: BUG_HASH,
+				epicSlug: 'resolver-blocked', createdAt: CREATED, standalone: true,
+				magnitude: 'sized', schemaVersion: 1,
+			},
+			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+			citations: [],
+		});
+	}
+	writeJson(join(dir, `LLD-${BUG_HASH}-S001.json`), {
+		meta: {
+			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: BUG_HASH,
+			epicSlug: 'resolver-blocked', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+			tracker: { adapter: 'github', storyRef: 'acme/demo#77' },
+		},
+		body: {},
+	});
+	writeJson(join(dir, `PLAN-${BUG_HASH}-S001.json`), {
+		meta: {
+			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: BUG_HASH,
+			epicSlug: 'resolver-blocked', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+			tracker: { adapter: 'github', taskRefs: { t1: 'acme/demo#78' } },
+		},
+		body: { tasks: [TASK_T1], testStrategyCoverage: [] },
+		citations: [],
+	});
+	return { repo, dir, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test("resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (was null: unresolved-target)", () => {
+	const s = setupBugfixRepo();
+	try {
+		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		assert.notEqual(r, null, "'S001/t1' must resolve from the ISSUE anchor when no DEF exists");
+		assert.equal(r!.level, 'task');
+		assert.equal(r!.storyId, 'S001');
+		assert.equal(r!.taskId, 't1');
+		assert.equal(r!.epicSlug, 'resolver-blocked', 'epicSlug comes off the ISSUE meta');
+		assert.equal(r!.createdAt, CREATED, 'createdAt comes off the ISSUE meta');
+		// The PlanTask itself must be attached — a ref without it is rejected
+		// downstream by resolveTaskRef as "resolved to a task, not a task".
+		assert.equal(r!.task?.id, 't1');
+		assert.equal(r!.task?.title, 'Characterise the defect');
+	} finally { s.cleanup(); }
+});
+
+test('resolver — MUTATION: delete the ISSUE and the same target goes back to null', () => {
+	const s = setupBugfixRepo({ withIssue: false });
+	try {
+		assert.equal(
+			resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH }), null,
+			'with neither DEF nor ISSUE the epic is unaddressable — proving the ISSUE anchor is what makes the positive case pass',
+		);
+	} finally { s.cleanup(); }
+});
+
+test('resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)', () => {
+	const s = setupBugfixRepo();
+	try {
+		assert.equal(resolveWorkflowRef(s.repo, '#78')?.taskId, 't1', 'taskRefs under a PLAN-<hash>-S001.json must be scanned');
+		assert.equal(resolveWorkflowRef(s.repo, '#78')?.storyId, 'S001');
+		assert.equal(resolveWorkflowRef(s.repo, '#77')?.level, 'story', 'storyRef under an LLD-<hash>-S001.json must be scanned');
+	} finally { s.cleanup(); }
+});
+
+test('resolver — the hierarchical id form also resolves for a DEF-less epic', () => {
+	const s = setupBugfixRepo();
+	try {
+		const byLabel = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		assert.notEqual(byLabel, null);
+		const byHier = resolveWorkflowRef(s.repo, byLabel!.workflowId);
+		assert.notEqual(byHier, null, 'the canonical id must resolve too — it shares the DEF-only enumeration gate, and its date match read the DEF directly');
+		assert.equal(byHier!.taskId, 't1');
+		// The PlanTask must be attached even though the hier form yields the
+		// LOWERCASE label while the artifacts on disk are named `-S001.json`.
+		assert.equal(byHier!.task?.id, 't1', 'the story artifact must be found across the two story-id spellings');
+		// NOTE the spelling: a hierarchical id denotes a story by ORDINAL, and
+		// ordinalToStoryId renders ordinal 1 as `s1`. So the resolved ref reports
+		// `s1` here and `S001` via the label form — same node, two spellings.
+		assert.equal(byHier!.storyId, 's1');
+		assert.equal(storyIdToOrdinal(byHier!.storyId!), storyIdToOrdinal('S001'), 'both spellings denote the same story ordinal');
+		// And the slug form resolves identically.
+		assert.equal(resolveWorkflowRef(s.repo, byLabel!.slug)?.taskId, 't1');
+	} finally { s.cleanup(); }
+});
+
+test('resolver — ADDITIVE: when BOTH a DEF and an ISSUE exist for one hash, the DEF wins and nothing is guessed', () => {
+	const s = setupBugfixRepo();
+	try {
+		// Same hash, both anchors present, different slugs so the winner is visible.
+		writeJson(join(s.dir, `DEF-${BUG_HASH}.json`), {
+			meta: {
+				workflow: 'define', runId: 'd1', repoPath: s.repo, epicHash: BUG_HASH,
+				epicSlug: 'def-wins', createdAt: CREATED, schemaVersion: 1,
+			},
+			body: { flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
+			citations: [],
+		});
+		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		assert.notEqual(r, null);
+		assert.equal(r!.epicSlug, 'def-wins', 'the DEF is consulted first and wins outright — the ISSUE is a fallback, not a competitor');
+		// The hash must be enumerated ONCE despite matching both the DEF and the
+		// ISSUE pattern. If it were double-counted, this single-epic dir would
+		// look like two epics and an UNSCOPED label would turn ambiguous.
+		const unscoped = resolveWorkflowRef(s.repo, 'S001/t1');
+		assert.notEqual(unscoped, null, 'one epic with two anchors must enumerate once, not become a false multi-epic');
+		assert.equal(unscoped!.epicSlug, 'def-wins');
+	} finally { s.cleanup(); }
+});
+
+test('resolver — a DEF-bearing epic is untouched by the ISSUE fallback (regression)', () => {
+	const s = setupRepo();
+	try {
+		const r = resolveWorkflowRef(s.repo, 's1/t3');
+		assert.notEqual(r, null);
+		assert.equal(r!.epicSlug, 'demo-feature');
+		assert.equal(r!.taskId, 't3');
+		assert.equal(r!.task?.title, 'Wire the resolver');
+		assert.equal(r!.issueRef, 'acme/demo#9', 'tracker refs still resolve off the DEF path');
+	} finally { s.cleanup(); }
+});
+
+test('resolver — a DEF-less bugfix epic still counts for multi-epic ambiguity (refuses to guess)', () => {
+	const s = setupBugfixRepo();
+	try {
+		// A SECOND epic, DEF-anchored. An unscoped label must now refuse.
+		writeJson(join(s.dir, `DEF-${EPIC_HASH}.json`), {
+			meta: {
+				workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: EPIC_HASH,
+				epicSlug: 'other', createdAt: CREATED, schemaVersion: 1,
+			},
+			body: { flavor: 'new-capability', problem: 'y.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
+			citations: [],
+		});
+		assert.equal(
+			resolveWorkflowRef(s.repo, 'S001/t1'), null,
+			'two epics present (one ISSUE-anchored, one DEF-anchored) → an unscoped label is ambiguous and must NOT guess',
+		);
+		// Scoping by hash disambiguates, as it does for DEF epics.
+		assert.equal(resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH })?.taskId, 't1');
+	} finally { s.cleanup(); }
+});
+
 test('resolver — unknown / malformed identifier → null', () => {
 	const s = setupRepo();
 	try {

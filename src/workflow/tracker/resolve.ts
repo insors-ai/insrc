@@ -38,7 +38,8 @@ import { join } from 'node:path';
 import { ARTIFACTS_DIR } from '../storage.js';
 import {
 	epicWorkflowId, ordinalToStoryId, ordinalToTaskId, parseWorkflowId,
-	storyWorkflowId, taskWorkflowId, toCanonical, toSlug, type WorkflowId,
+	storyIdToOrdinal, storyWorkflowId, taskWorkflowId, toCanonical, toSlug,
+	type WorkflowId,
 } from '../id.js';
 import { issueNumber } from './refs.js';
 import type { PlanTask } from '../artifacts/plan.js';
@@ -72,8 +73,16 @@ export interface ResolvedRef {
 // ---------------------------------------------------------------------------
 
 const DEF_RE  = /^DEF-([0-9a-f]{16})\.json$/;
-const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
-const PLAN_RE = /^PLAN-([0-9a-f]{16})-(s\d+)\.json$/;
+/** A bugfix chain writes no DEF — its epic-level anchor is the ISSUE artifact,
+ *  whose meta carries the same `epicSlug` + `createdAt` the hierarchical id
+ *  needs. Consulted only where a DEF is absent, so DEF-bearing epics are
+ *  unaffected. */
+const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
+// Story ids come in two shapes: the epic route mints `s1`..`s9`, the
+// standalone/bugfix route mints `S001`. Both must match, or a bugfix story is
+// unresolvable by issue number.
+const LLD_RE  = /^LLD-([0-9a-f]{16})-([sS]\d+)\.json$/;
+const PLAN_RE = /^PLAN-([0-9a-f]{16})-([sS]\d+)\.json$/;
 
 // ---------------------------------------------------------------------------
 // Minimal artifact reads
@@ -97,6 +106,14 @@ interface ArtifactShape {
 	readonly body?: { readonly tasks?: readonly PlanTask[] };
 }
 
+/** The epic-level identity a hierarchical id is minted from, narrowed to the
+ *  fields that must be present — so the builder reads them without assertions. */
+interface EpicIdentity {
+	readonly epicSlug:  string;
+	readonly createdAt: string;
+	readonly tracker?:  TrackerBlock | undefined;
+}
+
 function artifactsDir(repoPath: string): string {
 	return join(repoPath, ARTIFACTS_DIR);
 }
@@ -117,12 +134,23 @@ function listFiles(dir: string): readonly string[] {
 	}
 }
 
-/** Every distinct epic hash present in the artifacts dir (from DEF files). */
+/** Every distinct epic hash present in the artifacts dir — from DEF files, plus
+ *  ISSUE files for a bugfix chain, which writes no DEF. Without the ISSUE pass a
+ *  bugfix epic is INVISIBLE here, so `resolveByLabel`/`resolveByHier` find zero
+ *  hashes and refuse before `buildRef` is ever reached. DEF hashes come first and
+ *  a hash present as both is listed once, so ordering + membership are unchanged
+ *  for every DEF-bearing epic. */
 function listEpicHashes(dir: string): readonly string[] {
 	const hashes: string[] = [];
-	for (const f of listFiles(dir)) {
+	const seen = new Set<string>();
+	const files = listFiles(dir);
+	for (const f of files) {
 		const m = DEF_RE.exec(f);
-		if (m !== null) hashes.push(m[1]!);
+		if (m !== null && !seen.has(m[1]!)) { seen.add(m[1]!); hashes.push(m[1]!); }
+	}
+	for (const f of files) {
+		const m = ISSUE_RE.exec(f);
+		if (m !== null && !seen.has(m[1]!)) { seen.add(m[1]!); hashes.push(m[1]!); }
 	}
 	return hashes;
 }
@@ -131,13 +159,47 @@ function listEpicHashes(dir: string): readonly string[] {
 // Builder — (epicHash, storyId?, taskId?) → ResolvedRef
 // ---------------------------------------------------------------------------
 
-/** Assemble a `ResolvedRef` for a located node. Returns null when the
- *  epic's DEF artifact is missing (its slug + createdAt are required to
- *  mint the hierarchical id). */
+/** The epic's identity (slug + creation anchor) for hierarchical-id minting.
+ *  Prefers the DEF; falls back to the ISSUE artifact a bugfix chain writes
+ *  instead. Deterministic by construction — the DEF is consulted FIRST and wins
+ *  outright whenever it is usable, so the resolver never has to choose between
+ *  two anchors that both exist. */
+function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null {
+	for (const name of [`DEF-${epicHash}.json`, `ISSUE-${epicHash}.json`]) {
+		const meta = readArtifact(join(dir, name))?.meta;
+		if (meta !== undefined && typeof meta.epicSlug === 'string' && typeof meta.createdAt === 'string') {
+			return { epicSlug: meta.epicSlug, createdAt: meta.createdAt, tracker: meta.tracker };
+		}
+	}
+	return null;
+}
+
+/** Path to a story-scoped artifact (`LLD` / `PLAN`), tolerant of the two story-id
+ *  spellings in play: the epic route names files `-s1.json`, the standalone/bugfix
+ *  route names them `-S001.json`, and the hierarchical id form always yields the
+ *  lowercase label. The exact name is tried FIRST — so every existing lookup keeps
+ *  its current single-stat fast path — and only on a miss does it scan for a
+ *  sibling whose story segment denotes the same ORDINAL. */
+function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string): string {
+	const exact = join(dir, `${prefix}-${epicHash}-${storyId}.json`);
+	if (existsSync(exact)) return exact;
+	let want: number;
+	try { want = storyIdToOrdinal(storyId); } catch { return exact; }
+	const re = prefix === 'LLD' ? LLD_RE : PLAN_RE;
+	for (const f of listFiles(dir)) {
+		const m = re.exec(f);
+		if (m === null || m[1] !== epicHash) continue;
+		try { if (storyIdToOrdinal(m[2]!) === want) return join(dir, f); } catch { continue; }
+	}
+	return exact;   // unchanged miss — callers treat a bad path as "absent"
+}
+
+/** Assemble a `ResolvedRef` for a located node. Returns null when NEITHER the
+ *  epic's DEF nor its ISSUE artifact yields a slug + createdAt (both are
+ *  required to mint the hierarchical id). */
 function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null {
-	const def = readArtifact(join(dir, `DEF-${epicHash}.json`));
-	const dmeta = def?.meta;
-	if (dmeta === undefined || typeof dmeta.epicSlug !== 'string' || typeof dmeta.createdAt !== 'string') {
+	const dmeta = readEpicIdentity(dir, epicHash);
+	if (dmeta === null) {
 		return null;
 	}
 	const epicSlug  = dmeta.epicSlug;
@@ -161,14 +223,14 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 
 	let storyRef: string | undefined;
 	if (storyId !== undefined) {
-		storyRef = readTrackerBlock(join(dir, `LLD-${epicHash}-${storyId}.json`))?.storyRef
+		storyRef = readTrackerBlock(storyArtifactPath(dir, 'LLD', epicHash, storyId))?.storyRef
 			?? defTracker?.storyRefs?.[storyId];
 	}
 
 	let taskRef: string | undefined;
 	let task: PlanTask | undefined;
 	if (taskId !== undefined && storyId !== undefined) {
-		const plan = readArtifact(join(dir, `PLAN-${epicHash}-${storyId}.json`));
+		const plan = readArtifact(storyArtifactPath(dir, 'PLAN', epicHash, storyId));
 		taskRef = plan?.meta?.tracker?.taskRefs?.[taskId];
 		task = plan?.body?.tasks?.find(t => t.id === taskId);
 	}
@@ -250,7 +312,7 @@ function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {
 	let epicHash: string | undefined;
 	for (const h of listEpicHashes(dir)) {
 		if (!h.startsWith(wfid.hash8)) continue;
-		const createdAt = readArtifact(join(dir, `DEF-${h}.json`))?.meta?.createdAt;
+		const createdAt = readEpicIdentity(dir, h)?.createdAt;
 		if (typeof createdAt !== 'string') continue;
 		let d: WorkflowId;
 		try { d = epicWorkflowId(h, createdAt); } catch { continue; }
@@ -285,7 +347,10 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 
 const OWNER_REPO_ISSUE_RE = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/;
 const BARE_ISSUE_RE       = /^#?(\d+)$/;
-const LABEL_RE            = /^(s\d+)(?:\/(t\d+))?$/;
+// Accepts BOTH story-id shapes, matching LLD_RE/PLAN_RE: `s1/t3` from the epic
+// route and `S001/t3` from the standalone/bugfix route. Lowercase-only here made
+// the bugfix route's own story id an unparseable target.
+const LABEL_RE            = /^([sS]\d+)(?:\/(t\d+))?$/;
 
 /** `owner/repo#N` → `N`. */
 function refNumber(ref: string): string {

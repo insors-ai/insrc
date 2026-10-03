@@ -277,7 +277,16 @@
       }
     },
     "approvedAt": "2026-10-03T18:56:35.192Z",
-    "rangeBase": "fe542e8e700ff1b1b3f6b92bf995710e63c7979f"
+    "rangeBase": "fe542e8e700ff1b1b3f6b92bf995710e63c7979f",
+    "questionResolutions": {
+      "q5ed33a66": {
+        "question": "ANSWERED BY PROBE (2026-10-03), no longer open: both root `allOf` and a root `type: 'object'` present alongside a root union were probed directly against both binaries. Both vendors refuse all three of `oneOf`/`anyOf`/`allOf` at the top level, and a root `type` does NOT exempt them. The residual, NARROWER gap is codex-only: codex's message enumerates `oneOf`/`anyOf`/`allOf`/`enum`/`not` at the top level, so a root `enum` or root `not` is also refused by codex, while claude's message names only the three union keywords. The guard covers the three BOTH vendors name; root `enum`/`not` on codex is a recorded, deliberately-uncovered gap rather than an oversight, since claude's behaviour on those two was not probed.",
+        "status": "resolved",
+        "choice": "Guard the three probed keywords only",
+        "rationale": "The only option fully backed by the probe on BOTH binaries. claude names exactly oneOf/allOf/anyOf; codex additionally names enum/not, but claude's behaviour on those two was never probed, so covering them would reintroduce the unprobed-vendor-claim mistake this Story exists to remove. Recorded as deliberate codex-only non-coverage; widen only after probing claude.",
+        "resolvedAt": "2026-10-03T19:04:15.043Z"
+      }
+    }
   },
   "body": {
     "summary": {

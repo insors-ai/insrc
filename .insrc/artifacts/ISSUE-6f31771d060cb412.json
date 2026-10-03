@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791008580089-bs9s05",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T06:24:28.093Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 88002,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "6f31771d060cb412",
+    "epicSlug": "every-standalone-bugfix-story-reaches-design",
+    "standalone": true,
+    "magnitude": "sized"
+  },
+  "body": {
+    "title": "Standalone and bugfix Stories get no acceptance criteria, so the design document ends up writing the contract it is judged against",
+    "reproduction": "Run any standalone or bugfix work item through the design stage and look at the Story handed to it. The acceptance criteria list is empty every time, and so is the constraints list, so the design document authors its own criteria and the later stages then check it against those. Observed across the whole artifact store rather than on one example: of 55 standalone design documents, 55 supplied their own criteria. For comparison the epic-parented route never does this: 163 stories across 31 definition artifacts all carry criteria, and none of the 141 epic-parented design documents had to invent any. None of the 21 issue records carries a story list at all. The effect is easy to miss because nothing errors. The design document's own audit asks whether every acceptance criterion has a proving test, and with an empty criteria list that check passes every time while proving nothing, so a reader sees a green audit rather than a missing contract.",
+    "rootCause": "The function that builds the Story for a standalone or bugfix run returns a stub rather than reading anything. In src/workflow/runners/design-story/standalone.ts, standaloneStoryContext takes only the triage parameters and the run's focus text, and at line 57 it sets acceptanceCriteria to an empty array, then at line 71 it returns an empty constraints array alongside. The module's import list is types only, so it has no capability to read an artifact even in principle: it cannot consult the approved issue record or a brainstorm spec, because it never opens the artifact store. Both of the values a later stage would want are therefore absent by construction rather than by a lookup that failed. The raw material exists and is discarded. An issue record's body carries a title, a reproduction, a root cause and a fix intent, and on a live record those measure 117, 1320, 3034 and 1008 characters respectively, with the fix intent being exactly the statement acceptance criteria should be derived from. The two call sites that consume this context, orchestrator.ts:1916-1917 for the design context slice and runners/design-story/index.ts:93-94 for the whole context, both receive the stub unchanged. A secondary symptom from the same stub: the Story's title and its user-value field both default to the same focus string, so they come out identical verbatim. This is the same shape of defect as the folder-fork issue already on the ledger, where a later stage recomputed a property instead of inheriting it from the work item's definition artifact; here the later stage invents a contract instead of inheriting one.",
+    "fixIntent": "A standalone or bugfix Story should arrive at design with an acceptance contract it did not write. The criteria and constraints a design document is judged against must originate outside that document, so that the later stages are checking work against an independent statement of what done means rather than against the design's own claims. Whatever the source, the empty-by-construction stub should go, and an empty criteria list should stop being something the pipeline can produce silently and pass an audit with. The design stage must settle several questions this record deliberately leaves open: whether the criteria are authored into the issue record at the issue stage, derived from the fix intent that record already carries, elicited from the user, or ratified at an approval gate; whether that requires the issue record's stored shape to carry them, which would affect the 21 records already on disk; what should happen to the 55 existing standalone design documents whose criteria are self-authored; and whether an empty criteria list should become a hard failure at the design gate rather than a silent pass. It should also be designed alongside the folder-fork issue already on the ledger, so the two express one rule about inheriting from the definition artifact rather than two separate patches."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts:57",
+      "quotedText": "acceptanceCriteria: [],"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts:71",
+      "quotedText": "return { flavor, constraints: [], story, hldSlice };"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts:43",
+      "quotedText": "export function standaloneStoryContext(params: Readonly<Record<string, unknown>>, focus: string): StandaloneStoryContext"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts:20",
+      "quotedText": "import type { DefineConstraint, DefineFlavor, DefineStory } from '../../artifacts/define.js';"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts:48",
+      "quotedText": "const title = strParam(params, 'storyTitle') ?? focus;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/index.ts:93",
+      "quotedText": "if (isStandaloneParams(ctx.intent.params)) {"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:1916",
+      "quotedText": "const hldSlice = isStandaloneParams(intent.params)"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/define.ts:68",
+      "quotedText": "readonly acceptanceCriteria:        readonly DefineAcceptanceCriterion[];"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-e20235c17f083a16.json",
+      "quotedText": "A live issue record's body: title 117 chars, reproduction 1320, rootCause 3034, fixIntent 1008 - all discarded by the standalone Story builder."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts",
+      "quotedText": "Census over the artifact store: 55 of 55 standalone LLDs supplied their own acceptance criteria; 163 stories across 31 DEFs have none empty; 141 epic-parented LLDs needed none; 0 of 21 ISSUEs carry a story list."
+    }
+  ]
+}

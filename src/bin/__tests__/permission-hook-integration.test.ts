@@ -28,7 +28,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const HOOK_TS   = resolve(__dirname, '..', 'permission-hook.ts');
-const TSX_BIN   = resolve(__dirname, '..', '..', 'node_modules', '.bin', 'tsx');
+// THREE levels up, not two: __dirname is src/bin/__tests__, so '..','..' lands on
+// src/ and resolved src/node_modules/.bin/tsx — a path that does not exist. Every
+// spawn then failed ENOENT, and because the helper below had no 'error' handler the
+// failure hung the whole run rather than reporting itself (ISSUE-57446545).
+const TSX_BIN   = resolve(__dirname, '..', '..', '..', 'node_modules', '.bin', 'tsx');
 
 // Gate: this end-to-end suite spawns tsx subprocesses + a daemon socket (which
 // opens LMDB/Lance) — those native handles keep the runner alive, so it hangs the
@@ -122,6 +126,15 @@ function spawnHook(args: {
 		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });
 		child.on('close', (exitCode: number | null) => {
 			resolveSp({ stdout, stderr, exitCode: exitCode ?? -1 });
+		});
+		// A child that cannot be SPAWNED emits 'error' and may never emit 'close',
+		// so without this the Promise never settles: the awaiting test never resumes,
+		// its `finally` never closes the fake daemon's listening socket, and the
+		// event loop never drains. That hang is what forced --test-force-exit onto
+		// the sweep, which in turn cancels in-flight live tests. Settle instead, and
+		// surface the reason on stderr where the assertions can see it.
+		child.on('error', (err: Error) => {
+			resolveSp({ stdout, stderr: `${stderr}spawn failed: ${err.message}`, exitCode: -1 });
 		});
 		child.stdin.end(args.stdin);
 	});

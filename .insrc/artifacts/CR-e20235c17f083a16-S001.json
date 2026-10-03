@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791015151990-ryhjzl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T08:12:31.991Z",
+    "model": "client",
+    "elapsedMs": 12,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e20235c17f083a16",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/PLAN-e20235c17f083a16-S001.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": ".insrc/artifacts/PLAN-e20235c17f083a16-S001.json:330",
+            "message": "The plan's stated 'fifty-two path-construction sites' does not reproduce. Measured non-test on the baseline: 17 resolveArtifactMdPath + 44 across TWELVE named *ArtifactPaths builders = 61, not 52; the LLD counted only seven of the twelve builders. The companion figure of 35 derivation sites DOES reproduce exactly (16 workItemKindOf + 19 workItemAnchorCreatedAt). The load-bearing claim is unaffected: 0 changed lines touch any derivation or path-construction call site, which holds at 35, 52 and 61 alike. Recorded rather than restated so the artifact's number is not treated as verified.",
+            "expectationRef": "t7 acceptanceChecks[1]",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

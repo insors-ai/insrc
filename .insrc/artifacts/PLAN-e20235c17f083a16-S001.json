@@ -22,7 +22,9 @@
     "epicSlug": "make-work-item-keep-exactly-one",
     "storyId": "S001",
     "lldRunId": "wf-1791005831675-z8l0bd",
-    "lldEffectiveHash": "ac8308537a4b03c3a228e1b2838429257d4fe557268eecd5910d4b6253bcf976"
+    "lldEffectiveHash": "ac8308537a4b03c3a228e1b2838429257d4fe557268eecd5910d4b6253bcf976",
+    "approvedAt": "2026-10-03T07:14:57.123Z",
+    "rangeBase": "64e7637ac3c2848461c0a3802316b586575f5e41"
   },
   "body": {
     "summary": {

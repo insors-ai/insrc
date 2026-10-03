@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "e20235c17f083a16",
+    "storyId": "S001",
+    "createdAt": "2026-10-03T11:47:00.658Z",
+    "updatedAt": "2026-10-03T11:54:21.877Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-e20235c17f083a16-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T11:54:21.877Z"
+      }
+    ],
+    "commit": "b590168"
+  }
+}

@@ -1,0 +1,588 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791010803778-3v0p8v",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T07:08:16.551Z",
+    "epicCreatedAt": "2026-10-03T07:08:16.552Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 492752,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "epicSlug": "make-work-item-keep-exactly-one",
+    "storyId": "S001",
+    "lldRunId": "wf-1791005831675-z8l0bd",
+    "lldEffectiveHash": "ac8308537a4b03c3a228e1b2838429257d4fe557268eecd5910d4b6253bcf976"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this is seven small, carefully-ordered changes rather than one big one. Almost every production edit is a body change inside a function whose signature does not move, and the two functions whose callers matter have four and one caller respectively — both confirmed against the call graph. The risk is not volume, it is over-reach and under-testing: thirty-five derivation call sites and fifty-two path-construction sites must be left strictly alone, and the subject being fixed is an ABSENCE, which is the easiest kind of thing to write a vacuous test for. So every task carries a named mutation proof, and the one test that cannot be skipped is the cross-midnight fixture, because a same-day fixture passes whether or not the fix works."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Land the definition-artifact accessor, DEF-then-ISSUE, wired to nothing",
+        "summary": "Add the single reader that resolves a work item's definition artifact and returns its epic-level properties, and widen readArtifactCore's private return shape with an optional standalone field. Resolution is DEF first then ISSUE, copied from the tracker resolver's existing order rather than newly decided, and it is first-READABLE-wins: because readArtifactCore swallows a parse failure into an empty result, a corrupt DEF falls through to the ISSUE instead of poisoning the read. Deliberately consumed by nothing in this task, so its order and degradation contract can be falsified before anything depends on them. Its own task rather than folded into a consumer, because the sibling Story widens it from three metadata fields to the whole definition and needs something clean to widen.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A DEF present and readable wins outright, and the ISSUE is never consulted",
+          "A DEF absent with an ISSUE present yields the ISSUE's values",
+          "A DEF present but CORRUPT falls through to a valid ISSUE — first-READABLE-wins, not first-PRESENT-wins",
+          "Neither readable yields an empty result and does NOT throw",
+          "readArtifactCore's added standalone field is reported when boolean and omitted when absent or non-boolean, with its two pre-existing fields unaffected",
+          "CRITIQUE APPLIED — restated as an OUTCOME comparison rather than a count: no previously-passing test changes outcome, and the only new passes are the ones this task adds by name. Any count quoted must come from actual output and from a stable repeat run, because a sweep in this session read 4204 where 4232 was expected and needed two further runs to settle",
+          "MUTATION PROOF, run and recorded: reversing the read order turns the order test red, and switching to first-PRESENT-wins turns the corrupt-DEF test red"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DEF present and readable wins outright; the ISSUE is never consulted"
+          },
+          {
+            "level": "unit",
+            "name": "DEF absent with an ISSUE present yields the ISSUE's values"
+          },
+          {
+            "level": "unit",
+            "name": "a CORRUPT DEF alongside a valid ISSUE falls through — first-READABLE-wins, not first-PRESENT-wins"
+          },
+          {
+            "level": "unit",
+            "name": "neither artifact readable yields an empty result and does not throw"
+          },
+          {
+            "level": "unit",
+            "name": "a hash carrying BOTH artifacts resolves to the DEF and never consults the ISSUE"
+          },
+          {
+            "level": "unit",
+            "name": "readArtifactCore reports the added standalone field only when boolean, with its two pre-existing fields unaffected"
+          },
+          {
+            "level": "integration",
+            "name": "DEGRADATION: a work item with neither DEF nor ISSUE behaves exactly as today and nothing throws"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF: reversing the read order reds the order test; first-PRESENT-wins reds the corrupt-DEF test"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Make the folder anchor read recognise an ISSUE, so the identity segment stops drifting",
+        "summary": "Route readEpicCreatedAt through the new accessor instead of reading the define artifact alone, keeping its signature and its stated meaning. Sequenced immediately after the accessor and BEFORE any label work, because it fixes the deeper fork: while the anchor can differ per stage, two stages land in different folders even when their labels agree perfectly. Its four callers each apply a nowISO fallback and none needs editing. The test that proves it must straddle a UTC date boundary — the identity segment is built from the anchor DATE only, so a same-day fixture passes whether or not the fix works, which is exactly why the live four-folder work item masked this.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An ISSUE-anchored work item yields the ISSUE's createdAt where it previously yielded undefined",
+          "Signature and return meaning are unchanged, and a DEF-bearing epic behaves exactly as before",
+          "Its four callers are UNEDITED — asserted by diff, not assumed",
+          "CROSS-MIDNIGHT, mandatory: two stages finalized with their own clocks on opposite sides of midnight UTC resolve to ONE identity segment. A same-day fixture is explicitly insufficient and must not be the only coverage",
+          "The rule that this is a finalize-time stamp helper, never called during path resolution, still holds",
+          "MUTATION PROOF, run and recorded: restoring the DEF-only read turns the cross-midnight test red while a same-day fixture stays green — which is itself the proof that a same-day fixture was worthless"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined"
+          },
+          {
+            "level": "unit",
+            "name": "signature and return meaning unchanged for a DEF-bearing epic"
+          },
+          {
+            "level": "smoke",
+            "name": "CLOCK INDEPENDENCE: two stages finalized on opposite sides of midnight UTC resolve to one identity segment"
+          },
+          {
+            "level": "smoke",
+            "name": "the definition artifact is consulted at finalize time only and never during path resolution"
+          },
+          {
+            "level": "smoke",
+            "name": "MUTATION PROOF: restoring the DEF-only read reds the cross-midnight fixture while a same-day fixture stays green"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Inherit the label in finalizeStandaloneLld instead of re-deriving it",
+        "summary": "Change the one unconditional slug derivation that re-derives for a work item which already has a label, replacing it with the inherit-then-fallback form its three sibling finalizers already use. A one-line change at a single site. The three OTHER unconditional derivations are deliberate non-targets and must not be touched: they belong to the SPEC, ISSUE and DEF definition heads, which must mint a label because nothing precedes them.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "CRITIQUE APPLIED — dependsOn now includes t2, so the LLD's reasoned ordering (anchor before label, because a label-first fix leaves a defect same-day fixtures cannot see) is ENCODED rather than merely documented. order is advisory where dependsOn is binding, and a build in this session already followed id digits over the order field",
+          "A standalone LLD's persisted epicSlug EQUALS its definition artifact's, the direct inversion of the live defect where the ISSUE said one thing and the LLD coined another",
+          "The three definition-head derivations are UNEDITED — asserted by diff against the pre-change baseline",
+          "The fallback still applies when no definition artifact supplies a label, so a work item without one behaves as it does today",
+          "An empty-string label on the definition artifact is treated as ABSENT and never composes a folder name beginning with a separator",
+          "MUTATION PROOF, run and recorded: restoring the unconditional derivation turns the slug-equality test red"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a standalone LLD's persisted meta.epicSlug EQUALS its ISSUE's — the direct inversion of the live defect"
+          },
+          {
+            "level": "integration",
+            "name": "the work item's one folder sits under docs/standalone and its label equals the ISSUE's epicSlug, not a later stage's focus prose"
+          },
+          {
+            "level": "unit",
+            "name": "an empty-string epicSlug on the definition artifact is treated as ABSENT and never composes a folder name beginning with a separator"
+          },
+          {
+            "level": "unit",
+            "name": "MUTATION PROOF: restoring the unconditional derivation reds the slug-equality test"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Stamp the placement flag on the PLAN and BUILD records",
+        "summary": "Have the writers that currently omit the standalone flag carry the inherited value, so neither stage is the point at which placement flips. Critically this must NOT reinstate an asserted false: a prior fix deliberately removed that assertion so a prior true value could be carried forward by the merge, and reinstating it would re-break what that fix repaired. The flag is supplied truthfully from the definition artifact rather than inferred from the record's own absence.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A standalone work item's PLAN meta carries the placement flag true",
+          "The same for its BUILD meta",
+          "NO writer asserts the flag false — asserted explicitly, because the prior fix that removed that assertion must not be undone",
+          "CRITIQUE APPLIED — the carry-forward is now tested, not just the prohibition: a record written with the flag true, then re-written by a path that OMITS it, still resolves as standalone and its markdown does NOT move. That relocation-and-orphaning is the exact regression the prior fix prevented, and forbidding the assertion without testing the carry-forward left the plan one refactor away from reintroducing it",
+          "An epic-parented work item is unaffected: absent and false both still mean epic",
+          "MUTATION PROOF, run and recorded: dropping the stamp puts both records back under the wrong top-level"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "PLAN and BUILD metas both carry standalone true, so neither stage is the point at which placement flips"
+          },
+          {
+            "level": "integration",
+            "name": "a record written with the flag true, then re-written by a path omitting it, still resolves standalone and its markdown does not move"
+          },
+          {
+            "level": "unit",
+            "name": "workItemKindOf: only an explicit true is standalone; absent and false both remain 'epic'"
+          },
+          {
+            "level": "unit",
+            "name": "no writer asserts the flag false — asserted over the written meta, not by reading the source"
+          },
+          {
+            "level": "integration",
+            "name": "MUTATION PROOF: dropping the stamp returns both records to the wrong top-level"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Fix the BUILD folder-arg derivation so an ISSUE-anchored item gets a real label",
+        "summary": "Route the non-standalone branch's single upstream read through the new accessor rather than the define artifact alone, so it stops returning an undefined label for a work item defined by an ISSUE. Removing that undefined is what stops the raw-hash fallback being reached. The function keeps its five parameters and its returned shape, and it has exactly one caller. With this task every NEW artifact of a work item lands in one folder; nothing on disk has moved yet.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "An ISSUE-anchored work item yields a real label where it previously yielded undefined",
+          "The raw sixteen-hex hash appears nowhere in the resulting folder name",
+          "A standalone story's BUILD record is written under the standalone top-level and renders with its standalone heading, not the plan-driven title with 'Standalone: no'",
+          "A Trivial standalone build with no LLD still falls back to the record's own anchor and still resolves as standalone",
+          "CRITIQUE APPLIED — the fallback is proven REACHABLE rather than merely present: a work item with NO definition artifact at all still composes a folder name, degrading to the hash without throwing or producing a malformed name. A guard that survives in source while becoming unreachable is indistinguishable from a deleted one, and t1 is what narrows the path to it",
+          "MUTATION PROOF, run and recorded: restoring the DEF-only upstream read brings the raw-hash folder name back"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "buildRecordFolderArgs: the non-standalone branch yields a real slug for an ISSUE-anchored work item instead of undefined"
+          },
+          {
+            "level": "unit",
+            "name": "buildRecordFolderArgs: an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt for a Trivial build with no LLD"
+          },
+          {
+            "level": "integration",
+            "name": "a full standalone/bugfix chain — ISSUE, LLD, PLAN, BUILD — writes every markdown artifact into exactly one folder, by enumerating the docs tree and counting folders carrying the identity segment"
+          },
+          {
+            "level": "integration",
+            "name": "an ISSUE-anchored BUILD record's folder label is the real slug and the raw 16-hex hash appears nowhere in the name"
+          },
+          {
+            "level": "integration",
+            "name": "a standalone story's BUILD.md renders the standalone heading and 'Standalone: yes', not 'Build (plan-driven)' with 'Standalone: no'"
+          },
+          {
+            "level": "integration",
+            "name": "the hash fallback is still REACHABLE: a work item with no definition artifact composes a folder name degrading to the hash, without throwing"
+          },
+          {
+            "level": "integration",
+            "name": "MUTATION PROOF: restoring the DEF-only upstream read brings the raw-hash folder name back"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Converge the folders already scattered on disk",
+        "summary": "Extend the existing docs-tree migration so it recognises multiple folders sharing one identity segment and plans their convergence onto the one the definition artifact designates, rewriting links into moved paths and reporting anything it cannot place as unmappable rather than guessing or overwriting. Planning stays read-only and separate from applying. The live inputs are concrete and already committed: four folders share one segment, including one labelled with a raw hash and one under the wrong top-level, and two further segments have two folders each — both of those pairs forked by this session's own design documents while designing this very fix.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "CRITIQUE APPLIED — dependsOn widened from t5 alone to the full t2-t5 set. The convergence destination depends on the anchor (t2), the label (t3), the placement (t4) AND the slug resolution (t5); with any one still broken the target folder is itself wrong. The t2 omission was the real hazard: the anchor determines the identity SEGMENT the convergence keys on, so running this first could have moved files into a folder invalidated the moment t2 landed",
+          "PRECONDITION ASSERTED FIRST, so the end state cannot pass vacuously: the fixture is verified to START with four distinct folders before the migration runs",
+          "A pre-seeded work item with FOUR folders, one artifact each, converges onto one",
+          "A folder labelled with a raw hash and a folder under the wrong top-level are both handled",
+          "Anything unplaceable is reported as unmappable rather than guessed at or overwritten",
+          "Planning leaves the docs tree BYTE-IDENTICAL — only applying moves anything",
+          "Links pointing into moved paths are rewritten",
+          "Run against this repo, the live segments E20261002792f9324, E20261003e20235c1 and E202610036f31771d each end with exactly one folder",
+          "CRITIQUE APPLIED — MUTATION PROOF, run and recorded (t6 previously had none while t1-t5 all did, so t7's promise to re-run every proof could not have been kept): disabling the group-by-segment step so the planner treats each folder independently turns the four-folder convergence test red"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the migration converges a pre-seeded FOUR-folder work item onto one, with the four-folder start state asserted BEFORE the migration runs"
+          },
+          {
+            "level": "integration",
+            "name": "a raw-hash-labelled folder and a wrong-top-level folder are both handled"
+          },
+          {
+            "level": "integration",
+            "name": "an unplaceable folder is reported as Unmappable rather than guessed at or overwritten"
+          },
+          {
+            "level": "integration",
+            "name": "planMigration remains read-only: calling it leaves the docs tree byte-identical, and only applyMigration moves anything"
+          },
+          {
+            "level": "integration",
+            "name": "links pointing into moved paths are rewritten"
+          },
+          {
+            "level": "integration",
+            "name": "MUTATION PROOF: disabling the group-by-segment step reds the four-folder convergence test"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Prove the epic route untouched, then close with measured evidence",
+        "summary": "The guard that the preceding six tasks changed only bugfix-shaped work items, plus the Story's closing evidence. Assert by diff that nothing touched the thirty-five derivation call sites, the fifty-two path-construction sites, or the three definition-head derivations, and that an epic-parented chain produces byte-identical paths to the pre-change baseline. Then run the full sweep with real counts from actual output, re-run every mutation proof from t1 through t6 to confirm no later task neutralised an earlier guard, and record the criteria provenance split.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "An epic-parented chain produces byte-identical paths to the pre-change baseline",
+          "CHANGED FILE SET asserted: no edit appears to the thirty-five derivation call sites, the fifty-two path-construction sites, or the three definition-head slug derivations",
+          "Path construction is still pure: a path composes correctly for a repo directory that does not exist, which is only possible if nothing is read",
+          "Full sweep run with real pass, fail and skip counts from actual output, taken from a stable repeat run, and no new failures beyond the known pre-existing native-ABI one",
+          "CRITIQUE APPLIED — wording now matches reality: all SEVEN mutation proofs, t1 through t6 inclusive of t6's newly-added one, re-run at the end and still inverting. The previous wording promised to re-run a t6 proof that did not exist",
+          "The record states plainly that a clean typecheck is NOT evidence about the tests, because the config excludes them",
+          "The criteria provenance split is recorded: lc1-lc4 user-grounded, lc5-lc8 and ac1-ac10 LLD-authored and provisional per the ruling on this Story",
+          "The ordering dependency on the sibling Story is restated: this Story landed the accessor, and ISSUE-6f31771d060cb412 widens it from three metadata fields to the whole definition"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "REGRESSION GUARD: an epic-parented chain produces byte-identical paths to the pre-change baseline"
+          },
+          {
+            "level": "unit",
+            "name": "workItemKindOf still maps absent and false alike to 'epic'"
+          },
+          {
+            "level": "unit",
+            "name": "readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged"
+          },
+          {
+            "level": "smoke",
+            "name": "PURITY: the markdown path builders perform no filesystem read — a path composes for a nonexistent repo directory"
+          },
+          {
+            "level": "smoke",
+            "name": "the definition artifact is consulted at finalize time only, never during path resolution"
+          },
+          {
+            "level": "smoke",
+            "name": "all seven mutation proofs from t1 to t6 re-run at story end and still invert"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "readEpicDefinitionCore: DEF present and readable wins outright",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicDefinitionCore: DEF absent, ISSUE present yields the ISSUE's values",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicDefinitionCore: DEF present but CORRUPT falls through to a valid ISSUE (first-READABLE-wins, not first-PRESENT-wins)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicDefinitionCore: neither readable yields {} and does not throw",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicDefinitionCore: a hash carrying BOTH artifacts resolves to the DEF and never consults the ISSUE",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readArtifactCore: the added standalone field is reported when boolean and omitted when absent or non-boolean, with the two pre-existing fields unaffected",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicCreatedAt: an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "readEpicCreatedAt: signature and return meaning unchanged for a DEF-bearing epic",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildRecordFolderArgs: the non-standalone branch yields a real slug for an ISSUE-anchored work item instead of undefined",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildRecordFolderArgs: an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt for a Trivial build with no LLD",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "workItemKindOf: only an explicit true is standalone; absent and false both remain 'epic'",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "An empty-string epicSlug on the definition artifact is treated as ABSENT and never composes a folder name beginning with a separator",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A full standalone/bugfix chain — ISSUE, then standalone LLD, then PLAN, then BUILD — writes every markdown artifact into exactly one folder, asserted by enumerating the docs tree and counting folders carrying the work item's identity segment",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "That one folder sits under docs/standalone and its label equals the ISSUE's epicSlug, not a label derived from any later stage's focus prose",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "A standalone LLD's persisted meta.epicSlug EQUALS its ISSUE's, which is the direct inversion of the live defect where the ISSUE said 'regression-hierarchical-label-resolver-listepichashes-src' and the LLD said 'lld-revision-supersedes-earlier-pass-whose'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PLAN and BUILD metas both carry standalone true, so neither stage is the point at which placement flips",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "A standalone story's BUILD.md renders with the standalone heading and 'Standalone: yes', not 'Build (plan-driven)' with 'Standalone: no'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "An ISSUE-anchored BUILD record's folder label is the real slug, and the raw 16-hex hash appears nowhere in the folder name",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "REGRESSION GUARD, asserted not assumed: an epic-parented chain (DEF, HLD, LLD, PLAN, BUILD) produces byte-identical paths to those produced before the change, so the thirty-five unedited workItemKindOf call sites are provably unaffected",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "DEGRADATION: a work item with neither DEF nor ISSUE behaves exactly as today — label from the stage's own prose or the hash — and nothing throws",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "The migration converges a pre-seeded work item that already has FOUR folders, one artifact each, onto one, and reports anything it cannot place as Unmappable rather than guessing or overwriting",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "planMigration remains read-only: calling it leaves the docs tree byte-identical, and only applyMigration moves anything",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "PURITY: the markdown path builders perform NO filesystem read. Asserted structurally rather than by inspection — construct a path for a repo directory that does not exist and assert a correct string is still returned, which is only possible if nothing is read",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "The definition artifact is consulted at finalize time only and never during path resolution, the rule readEpicCreatedAt's own doc comment states about itself",
+        "coveredByTaskIds": [
+          "t2",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "CLOCK INDEPENDENCE: two stages finalized with their own clocks on OPPOSITE sides of midnight UTC still resolve to one identity segment, because both inherit the definition artifact's anchor. This is the latent fork, and it is invisible under same-day fixtures — the live work item's 18:19 and 20:03 timestamps masked it — so the fixture must deliberately straddle a date boundary or the test proves nothing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails — folder composition: workItemRoot names a work-item folder label-plus-identity-segment, so the mutable label participates in the path (grounds lc1 and lc2)",
+      "quotedText": "A work item's folder name is composed as label-plus-identity-segment, where the identity segment is the stable part and the label is only a readable label that never determines identity."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails — readEpicDefinitionCore: the single place the DEF-equals-ISSUE equivalence is expressed, DEF-first then ISSUE, first-READABLE-wins, never throws (grounds lc3 and ac9)",
+      "quotedText": "Order is DEF first, ISSUE second, copied from the identical order already used by the tracker resolver's readEpicIdentity so the two cannot disagree about which artifact defines a work item."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails + dataModelChanges — readEpicCreatedAt resolves through the accessor, and WorkItemIdentity.epicSegment is derived from the anchor DATE only (grounds ac6, lc6 and lc8)",
+      "quotedText": "The epicSegment is derived from the anchor DATE only, so two anchors differing by time of day collide to one segment while two differing by date do not."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails — buildRecordFolderArgs: the non-standalone branch consults the accessor rather than defineArtifactId alone, so the epicSlug-or-hash default stops being reached (grounds ac4, ac5 and lc4)",
+      "quotedText": "Removing that undefined is what stops the `epicSlug ?? epicHash` default from being reached, which is the raw-hash folder name."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges — BuildRecord.meta and PlanArtifact.meta carry the inherited placement flag, and the writer must NOT reinstate an asserted false (grounds ac3 and lc5)",
+      "quotedText": "A prior fix deliberately stopped writing `standalone: false` here so that mergeWithPrior could carry a prior value forward; that remains correct, and this Story supplies the TRUE value rather than reinstating a false one."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration — the docs tree contains exactly one folder per work item, converged over the existing planMigration / applyMigration surface with unmappables reported (grounds ac8 and lc7)",
+      "quotedText": "Migration planning stays read-only and separate from applying: planMigration reports moves, link rewrites and Unmappable entries without touching the tree, and applyMigration is a distinct call."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 alternativesConsidered a1 — the chosen alternative: stamp the work item's identity at finalize time, extending the epicCreatedAt precedent, with one accessor serving both consumers (grounds the a1 alternative)",
+      "quotedText": "Generalize the existing readEpicCreatedAt into a single definition-artifact reader that resolves DEF-then-ISSUE for one epic hash and returns the work item's three epic-level properties together."
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy — the one-folder-per-work-item chain assertion, the epic-route regression guard and the path-purity smoke test (grounds ac1, ac2, ac7 and ac10)",
+      "quotedText": "A full standalone/bugfix chain — ISSUE, then standalone LLD, then PLAN, then BUILD — writes every markdown artifact into exactly one folder, asserted by enumerating the docs tree and counting folders carrying the work item's identity segment."
+    }
+  ]
+}

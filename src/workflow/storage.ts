@@ -298,9 +298,15 @@ export function buildRecordFolderArgs(
 	standalone:   boolean,
 	ownCreatedAt: string,
 ): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
+	// S001/t5 — the non-standalone branch resolves through the DEFINITION artifact
+	// (DEF or ISSUE alike) rather than the define artifact alone. It previously
+	// returned an undefined label for a work item defined by an ISSUE, and that
+	// undefined is what reached the `epicSlug ?? epicHash` default and produced a
+	// folder named with the raw hash. The standalone branch still reads the LLD,
+	// which is the nearest upstream for a build on that route.
 	const upstream = standalone
 		? readArtifactCore(repoPath, lldArtifactId(epicHash, storyId))
-		: readArtifactCore(repoPath, defineArtifactId(epicHash));
+		: readEpicDefinitionCore(repoPath, epicHash);
 	return {
 		createdAtISO: upstream.createdAt ?? ownCreatedAt,
 		workItemKind: standalone ? 'standalone' : 'epic',

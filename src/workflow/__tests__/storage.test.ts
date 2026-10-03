@@ -24,6 +24,8 @@ import {
 	hldArtifactPaths,
 	lldArtifactPaths,
 	lldFilenamePrefix,
+	buildArtifactPaths,
+	buildRecordFolderArgs,
 	readEpicCreatedAt,
 	readEpicDefinitionCore,
 	stubArtifactPaths,
@@ -382,4 +384,73 @@ test('t2 — the anchor read is finalize-time only: path construction performs n
 	const paths = lldArtifactPaths(nowhere, MIDNIGHT_HASH, 's1', LATE_DAY_N, 'standalone', 'some-label');
 	assert.ok(paths.md.includes(`E20261002${MIDNIGHT_HASH.slice(0, 8)}`));
 	assert.ok(paths.md.includes('some-label'));
+});
+
+// ---------------------------------------------------------------------------
+// S001/t5 — the BUILD folder-arg derivation yields a real label for an
+// ISSUE-anchored work item, so the raw-hash fallback stops being reached.
+// ---------------------------------------------------------------------------
+
+const T5_HASH = 'd4c3b2a1f0e9d8c7';
+const T5_CREATED = '2026-10-02T08:30:00.000Z';
+
+function t5Repo(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t5-folderargs-'));
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item', () => {
+	const r = t5Repo();
+	try {
+		writeAtomic(join(r.repo, '.insrc/artifacts', `ISSUE-${T5_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: T5_CREATED, epicSlug: 'a-real-label', standalone: true } }));
+
+		// Called with standalone=false, i.e. the branch that previously read the
+		// define artifact alone and found nothing.
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', false, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.epicSlug, 'a-real-label', 'the label now comes from the ISSUE instead of being undefined');
+		assert.equal(fa.createdAtISO, T5_CREATED, 'and the anchor comes from it too, not from ownCreatedAt');
+	} finally { r.cleanup(); }
+});
+
+test('t5 — the raw hash appears nowhere in the composed folder name', () => {
+	const r = t5Repo();
+	try {
+		writeAtomic(join(r.repo, '.insrc/artifacts', `ISSUE-${T5_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: T5_CREATED, epicSlug: 'a-real-label', standalone: true } }));
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', false, '2026-10-03T00:00:00.000Z');
+		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.ok(md.includes('a-real-label'), md);
+		// The 16-hex hash must not appear as the folder LABEL. The 8-char identity
+		// segment legitimately contains the first half of the hash, so the check is
+		// on the full hash, which only the degraded label would introduce.
+		assert.ok(!md.includes(`${T5_HASH}-E`), `the raw-hash label is gone: ${md}`);
+	} finally { r.cleanup(); }
+});
+
+test('t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt', () => {
+	const r = t5Repo();
+	try {
+		// No LLD on disk: the standalone branch must degrade to the record's own
+		// anchor, which is the Trivial-standalone case.
+		const own = '2026-10-03T06:00:00.000Z';
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, own);
+		assert.equal(fa.workItemKind, 'standalone');
+		assert.equal(fa.createdAtISO, own, 'with no LLD the record\'s own createdAt is the anchor');
+		assert.equal(fa.epicSlug, undefined);
+	} finally { r.cleanup(); }
+});
+
+test('t5 — the hash fallback is still REACHABLE for a work item with no definition artifact', () => {
+	const r = t5Repo();
+	try {
+		// A guard that survives in source but becomes unreachable is
+		// indistinguishable from a deleted one, and t1 is what narrows the path to
+		// this one. So prove it still fires rather than only that it still exists.
+		const own = '2026-10-03T06:00:00.000Z';
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', false, own);
+		assert.equal(fa.epicSlug, undefined, 'nothing to inherit, so no label');
+		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.ok(md.includes(T5_HASH), `degrades to the hash rather than throwing: ${md}`);
+	} finally { r.cleanup(); }
 });

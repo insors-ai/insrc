@@ -694,3 +694,32 @@ test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is
 		assert.ok(md.includes('/docs/epics/'), 'absent means epic — only an explicit true is standalone');
 	} finally { r.cleanup(); }
 });
+
+test('t5 — a standalone record renders the standalone heading and "Standalone: yes", not the plan-driven title', () => {
+	const md = renderBuildRecordMd({
+		meta: {
+			workflow: 'build', epicHash: T4_HASH, storyId: 'S001',
+			createdAt: T4_CREATED, updatedAt: T4_CREATED,
+			standalone: true, sizeClass: 'bugfix',
+		},
+		body: { tasks: [] },
+	} as unknown as BuildRecord);
+	assert.ok(md.includes('standalone bugfix'), `expected a standalone heading, got: ${md.split('\n')[0]}`);
+	assert.ok(!md.includes('plan-driven'), 'the plan-driven title must not appear for a standalone record');
+	assert.ok(md.includes('**Standalone:** yes'), 'and the meta line must say yes');
+});
+
+test('t5 — the render keys on sizeClass, so it survives a record whose flag is absent', () => {
+	// The title deliberately keys on sizeClass rather than the flag, because
+	// sizeClass is immune to the placement flag going missing. Pinned so a later
+	// change does not quietly reintroduce the flag-dependent dispatch.
+	const md = renderBuildRecordMd({
+		meta: {
+			workflow: 'build', epicHash: T4_HASH, storyId: 'S001',
+			createdAt: T4_CREATED, updatedAt: T4_CREATED, sizeClass: 'bugfix',
+		},
+		body: { tasks: [] },
+	} as unknown as BuildRecord);
+	assert.ok(md.includes('standalone bugfix'), 'the heading still reads standalone from sizeClass alone');
+	assert.ok(md.includes('**Standalone:** no'), 'while the meta line honestly reports the absent flag');
+});

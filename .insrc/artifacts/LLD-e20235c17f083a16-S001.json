@@ -39,6 +39,13 @@
         "choice": "Add readEpicDefinitionCore (as the LLD proposes)",
         "rationale": "The cd1 partial is an artefact of the symbol being new, not of the design being ungrounded: the reader is composed only from readArtifactCore, defineArtifactId and issueArtifactId, all verified to exist. Widening readEpicCreatedAt in place was rejected because it would force every one of its four callers onto a new return type and leave the function's name describing something narrower than it returns. Promoting the tracker resolver's reader to a shared home was rejected as a cross-module move that makes storage depend on tracker-owned code for a two-line read, which is a bigger architectural commitment than this bugfix should make. The one real cost is accepted and recorded: the DEF-then-ISSUE order now exists in two places, so if they ever drift, consolidating them is the follow-up.",
         "resolvedAt": "2026-10-03T06:08:00.938Z"
+      },
+      "qf9266e0b": {
+        "question": "CHECKLIST SHORTFALL cd3: every api errors entry uses the type 'none' with a condition explaining why the function cannot throw, which is not a concrete error type. This is deliberate rather than an omission — the never-throwing, best-effort behaviour is load-bearing, since the DEF-to-ISSUE fallthrough works precisely because a parse failure degrades to an empty result — but it means the document has no named error type anywhere.",
+        "status": "resolved",
+        "choice": "Accept 'none' as a deliberate deviation",
+        "rationale": "The never-throwing, degrade-to-empty behaviour is the mechanism, not an omission: the DEF-to-ISSUE fallthrough works precisely because a parse failure becomes an empty result rather than propagating, and that is already recorded as an invariant to preserve. Reshaping the API to satisfy a checklist item would change load-bearing behaviour to improve a document, which is the wrong trade. Naming the swallowed types was tempting but would have meant asserting which errors JSON.parse and the read can raise without verifying it, and an unverified list is worse than an honest 'none' with a stated condition. The obligation this creates and which the plan must carry: lock the behaviour in with a test that a corrupt DEF alongside a valid ISSUE yields the ISSUE's values, so the deviation is proven rather than merely asserted.",
+        "resolvedAt": "2026-10-03T06:09:00.624Z"
       }
     }
   },

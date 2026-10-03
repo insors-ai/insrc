@@ -313,6 +313,13 @@
         "choice": "Backlog item gated on a provider-bound marker",
         "rationale": "Matches the LLD's own conclusion. Keeps S001 at its approved scope and avoids the allow-list that would reintroduce the false-signal pattern this Story removes. One item rather than two, because the marker is a precondition that has not been designed yet — splitting it now would commit to shaping work nobody has scoped. The gate is recorded as the explicit trigger.",
         "resolvedAt": "2026-10-03T19:07:09.925Z"
+      },
+      "q0713c982": {
+        "question": "`processSchemaForOpenAIStrict` also has NO production caller — s1 found it referenced only from the gated live suite and one doc comment. That is a pre-existing gap wider than this Story and is deliberately NOT addressed here; it is recorded so this LLD is not read as a claim that the OpenAI-strict path is wired.",
+        "status": "resolved",
+        "choice": "Keep out of scope, record as backlog item",
+        "rationale": "Honours the LLD's deliberate exclusion so S001 stays at its approved scope, while putting the gap on the ledger rather than leaving it as prose in one LLD. Consistent with the standing rule that every defect gets tracked. Evidence for the item: processSchemaForOpenAIStrict is referenced only from the gated live suite (local-agents-structured.live.test.ts:53,244,327) and one doc comment (shared/types.ts:199) — zero production callers. The follow-up decides independently whether to wire or remove it.",
+        "resolvedAt": "2026-10-03T19:07:27.993Z"
       }
     }
   },

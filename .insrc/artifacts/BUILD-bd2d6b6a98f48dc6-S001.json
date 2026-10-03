@@ -1,12 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
+    "sizeClass": "trivial",
     "epicHash": "bd2d6b6a98f48dc6",
     "storyId": "S001",
     "createdAt": "2026-09-30T15:10:17.106Z",
     "updatedAt": "2026-10-01T06:19:04.294Z",
-    "approvedAt": "2026-10-01T06:19:04.325Z"
+    "approvedAt": "2026-10-01T06:19:04.325Z",
+    "triageRationale": "bugfix / small. One CSS rule in one production file plus its test. Graded above trivial because it deliberately departs from the shared borderless .segsel seg language used by the footer provider/edits selects — the header switcher becomes the only enclosed one, which is intended and should be recorded."
   },
   "body": {
     "focus": "Fix ISSUE-bd2d6b6a98f48dc6: the dev-chat header session switcher reads as two controls because its glyph is detached (12px icon at left 2px vs label at padding-left:20px, --muted #6b7688 stroke vs --fg #c6cdd8 label, on a .segsel-transparent borderless select). Give the .chrome #insrc-history rule a chip container — subtle border + faint fill + small radius — and reposition the icon inside the new padding so icon, label and arrow read as ONE control. Presentation-only: no markup, behaviour or session-list change; no new asset, symbol or style rule. Keep the two gradient arrow layers and the data: glyph layer intact. Update the existing glyph test to assert the chip (enclosure + icon inside padding) and keep the CSP-vs-declared-image invariant test green.",

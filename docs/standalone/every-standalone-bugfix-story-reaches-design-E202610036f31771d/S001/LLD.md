@@ -183,7 +183,7 @@ The field stays a required array with no minimum length, so the type still permi
 
 ## 4. Diagrams
 
-- [ER model](docs/standalone/give-standalone-bugfix-story-acceptance-contract-E202610036f31771d/S001/er-model.html)
+- [ER model](docs/standalone/every-standalone-bugfix-story-reaches-design-E202610036f31771d/S001/er-model.html)
 
 ## 5. Error paths
 

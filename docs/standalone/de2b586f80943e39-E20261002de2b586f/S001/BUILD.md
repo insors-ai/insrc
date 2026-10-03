@@ -1,6 +1,6 @@
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-02T14:43:48.557Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-02T14:43:48.557Z  ·  **Updated:** 2026-10-02T14:57:22.056Z
 
 ## Scope
 
@@ -9,3 +9,7 @@ Make a bugfix-chain epic resolvable so an approved PLAN's tasks become addressab
 ## Triage rationale
 
 bugfix / small per triage; built through the standalone no-plan route since the chain produces no LLD (needsPlan:false, producesLld:false). The spec is the approved ISSUE's fixIntent.
+
+## Tasks validated
+
+- ✗ `S001`

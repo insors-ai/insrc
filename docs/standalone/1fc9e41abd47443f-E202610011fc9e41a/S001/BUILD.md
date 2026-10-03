@@ -1,6 +1,6 @@
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-01T08:19:31.101Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-01T08:19:31.101Z  ·  **Updated:** 2026-10-01T09:06:07.797Z
 
 ## Scope
 
@@ -9,3 +9,14 @@ Fix ISSUE-1fc9e41abd47443f — an HLD never links its UX-mock companion. Give HL
 ## Triage rationale
 
 bugfix / small. A defect against already-approved behaviour: the companion flow is supposed to render, attach AND link every companion, and does so correctly for an LLD; only the HLD path drops ux-mock refs. The correction mirrors an existing, working, already-tested sibling path — no new function, type, contract, storage or schema change. Additive and absent-safe by construction, so every HLD without a UX mock renders byte-identically.
+
+## Tasks validated
+
+- ✗ `S001`
+
+## Changes
+
+- `src/assets/artifacts/formats/hld.md` — **insrc-build** (2026-10-01T09:06:07.797Z)
+- `src/workflow/artifacts/companion/__tests__/ux-integration.test.ts` — **insrc-build** (2026-10-01T09:06:07.797Z)
+- `src/workflow/artifacts/format/formats.ts` — **insrc-build** (2026-10-01T09:06:07.797Z)
+- `src/workflow/artifacts/hld.ts` — **insrc-build** (2026-10-01T09:06:07.797Z)

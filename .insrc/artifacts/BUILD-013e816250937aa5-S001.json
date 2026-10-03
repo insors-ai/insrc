@@ -1,7 +1,7 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
     "epicHash": "013e816250937aa5",
     "storyId": "S001",
     "createdAt": "2026-10-02T15:35:07.537Z",

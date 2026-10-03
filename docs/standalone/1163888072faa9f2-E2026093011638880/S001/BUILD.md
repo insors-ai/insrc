@@ -1,6 +1,6 @@
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-09-30T13:41:04.969Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-09-30T13:41:04.969Z  ·  **Updated:** 2026-09-30T13:57:05.989Z
 
 ## Scope
 
@@ -9,3 +9,16 @@ ISSUE-1163888072faa9f2 (bugfix/small, issue -> build): Merge dev-chat tool resul
 ## Triage rationale
 
 bugfix/small: rendering defect confined to vscode-plugin/src/chat; reuses sc1 collapsible primitive; no event/storage/IPC change.
+
+## Tasks validated
+
+- ✗ `S001`
+
+## Changes
+
+- `vscode-plugin/package.json` — **insrc-build** (2026-09-30T13:57:05.989Z)
+- `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-09-30T13:57:05.989Z)
+- `vscode-plugin/src/chat/__tests__/render-registry.test.ts` — **insrc-build** (2026-09-30T13:57:05.989Z)
+- `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-09-30T13:57:05.989Z)
+- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-09-30T13:57:05.989Z)
+- `vscode-plugin/src/chat/stream-events.ts` — **insrc-build** (2026-09-30T13:57:05.989Z)

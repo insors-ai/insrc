@@ -1,12 +1,14 @@
 {
   "meta": {
     "workflow": "build",
-    "standalone": false,
+    "standalone": true,
+    "sizeClass": "trivial",
     "epicHash": "d5a433047dc3439f",
     "storyId": "S001",
     "createdAt": "2026-09-30T10:41:27.663Z",
     "updatedAt": "2026-09-30T10:47:58.368Z",
-    "approvedAt": "2026-09-30T10:47:58.400Z"
+    "approvedAt": "2026-09-30T10:47:58.400Z",
+    "triageRationale": "Presentation-only, single file, one obvious approach (CSS background-image icon + padding on the select)."
   },
   "body": {
     "focus": "In the VS Code dev-chat panel, the session dropdown (#insrc-history select) shows only a bare down-arrow. Add a history/clock glyph to the #insrc-history select so users recognize it selects a chat session/history. Plugin-only presentation change in vscode-plugin/src/chat/chat-panel.ts renderShell (webview CSS).",

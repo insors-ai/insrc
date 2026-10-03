@@ -1,6 +1,6 @@
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-02T15:35:07.537Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-02T15:35:07.537Z  ·  **Updated:** 2026-10-02T15:44:25.911Z
 
 ## Scope
 
@@ -9,3 +9,7 @@ Make the BUILD-record upsert stop deleting meta the record already carried. In s
 ## Triage rationale
 
 bugfix / small; standalone no-plan route
+
+## Tasks validated
+
+- ✓ `S001`

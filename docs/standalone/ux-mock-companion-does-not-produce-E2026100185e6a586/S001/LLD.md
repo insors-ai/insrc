@@ -217,7 +217,7 @@ Keep every companion on one rendering spine and widen that spine rather than for
 
 ## 8. UX
 
-- [UX mock](docs/standalone/design-correction-issue-85e6a58693579b6d-ux-mock-E2026100185e6a586/S001/ux-mock.html)
+- [UX mock](docs/standalone/ux-mock-companion-does-not-produce-E2026100185e6a586/S001/ux-mock.html)
 
 ## 9. References
 

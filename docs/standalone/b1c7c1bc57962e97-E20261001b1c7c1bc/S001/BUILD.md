@@ -1,6 +1,6 @@
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-01T05:52:21.539Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-01T05:52:21.539Z  ·  **Updated:** 2026-10-01T06:19:06.662Z
 
 ## Scope
 
@@ -9,3 +9,11 @@ Fix ISSUE-b1c7c1bc57962e97: msgRow (render-registry.ts renderRegistryWebviewSour
 ## Triage rationale
 
 bugfix / small. One role guard in one function plus the test that should have caught it. The test change is the substantive part — the original passed on a 16-char message for which the collapse branch was unreachable.
+
+## Tasks validated
+
+- ✗ `S001`
+
+## Changes
+
+- `.insrc/artifacts/BUILD-bd2d6b6a98f48dc6-S001.json` — **insrc-build** (2026-10-01T06:19:06.662Z)

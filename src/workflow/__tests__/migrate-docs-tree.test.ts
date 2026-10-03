@@ -382,3 +382,134 @@ test('t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, no
 		assert.ok(!plan.moves.some(m => m.kind === 'CR'), 'and no move is invented for it');
 	} finally { r.cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// S001/t6a — the three live-repo gaps the four-folder fixture did NOT reproduce.
+//
+// Run against the real repo, t6 converged nothing for the three in-flight
+// bugfix items: all three kept an extra folder. seedFourFolders missed the
+// mechanisms because it is too TIDY — it gives every member the SAME epicSlug
+// and a marker on EVERY md. The live store does neither:
+//
+//   1. ISSUE was absent from parseArtifactId's kind alternation, so the
+//      definition head of every bugfix item was discarded as "not a
+//      relocatable artifact" and never joined its own group. (The tidy fixture
+//      hid this: the ISSUE sat in the folder that won the vote anyway, so the
+//      folder count still ended at 1 with the ISSUE invisible — a vacuity in
+//      the original t6 test, now closed by HEAD_SLUG differing from the rest.)
+//   2. Each stage re-derived its own epicSlug from its own focus, so members
+//      disagree; the winner was whichever sorted first, and `BUILD-` sorts
+//      before `ISSUE-`.
+//   3. Rendered BUILD/CR md carries NO insrc:artifact marker, and a nested
+//      filename is the bare `<KIND>.md`, so a marker-only index cannot see it.
+// ---------------------------------------------------------------------------
+
+const HEAD_SLUG  = 'the-definition-head-label';   // the ISSUE's own slug — must win
+const DRIFT_SLUG = 'a-later-stage-label';         // what LLD/PLAN re-derived
+const STALE_SLUG = 'a-stale-ledger-label';        // what the BUILD carries; sorts FIRST
+
+/** Reproduces the live shape: a disagreeing slug per stage, and a markerless
+ *  BUILD md in a raw-hash folder under the WRONG top-level. */
+function seedDisagreeingSlugs(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t6a-'));
+	const wr = (rel: string, body: string): void => {
+		const abs = join(repo, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body);
+	};
+	const meta = (slug: string | undefined, storyId?: string): string => JSON.stringify({
+		meta: {
+			epicHash: T6_HASH, standalone: true, createdAt: T6_ANCHOR, epicCreatedAt: T6_ANCHOR,
+			...(slug !== undefined ? { epicSlug: slug } : {}),
+			...(storyId !== undefined ? { storyId } : {}),
+		},
+		body: {},
+	});
+	const md = (id: string): string => `${artifactIdMarker(id)}\n\n# ${id}\n`;
+
+	wr(`.insrc/artifacts/ISSUE-${T6_HASH}.json`,      meta(HEAD_SLUG));
+	wr(`.insrc/artifacts/LLD-${T6_HASH}-S001.json`,   meta(DRIFT_SLUG, 'S001'));
+	wr(`.insrc/artifacts/PLAN-${T6_HASH}-S001.json`,  meta(DRIFT_SLUG, 'S001'));
+	wr(`.insrc/artifacts/BUILD-${T6_HASH}-S001.json`, meta(STALE_SLUG, 'S001'));
+
+	wr(`docs/standalone/${HEAD_SLUG}-${T6_SEG}/ISSUE.md`,       md(`ISSUE-${T6_HASH}`));
+	wr(`docs/standalone/${DRIFT_SLUG}-${T6_SEG}/S001/LLD.md`,   md(`LLD-${T6_HASH}-S001`));
+	wr(`docs/epics/${DRIFT_SLUG}-${T6_SEG}/S001/PLAN.md`,       md(`PLAN-${T6_HASH}-S001`));
+	// MARKERLESS, raw-hash label, wrong top-level — all three at once, as live.
+	wr(`docs/epics/${T6_HASH}-${T6_SEG}/S001/BUILD.md`,         '# Build (plan-driven) — Story S001\n');
+
+	gitInit(repo);
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)', () => {
+	const { repo, cleanup } = seedDisagreeingSlugs();
+	try {
+		const plan = planMigration(repo);
+		// The ISSUE must appear in the group's resolution — neither unmappable nor
+		// silently absent. It is already at its destination, so the proof that it
+		// was SEEN is that its slug is the one every sibling moves TO.
+		assert.equal(
+			plan.unmappable.filter(u => u.artifactId.startsWith('ISSUE-')).length, 0,
+			'the ISSUE must not be unmappable',
+		);
+		const lld = plan.moves.find(m => m.from.endsWith('LLD.md'));
+		assert.ok(lld, 'the drifted LLD must be scheduled to move');
+		assert.ok(
+			lld.to.includes(`${HEAD_SLUG}-${T6_SEG}`),
+			`LLD must converge onto the ISSUE's folder, got ${lld.to}`,
+		);
+	} finally { cleanup(); }
+});
+
+test('t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug', () => {
+	const { repo, cleanup } = seedDisagreeingSlugs();
+	try {
+		const plan = planMigration(repo);
+		// `BUILD-` < `ISSUE-` < `LLD-` < `PLAN-`, so a first-wins scan over
+		// sorted members would pick the BUILD's STALE_SLUG, and a majority vote
+		// would pick DRIFT_SLUG (held by two members). Both must lose to the head.
+		for (const m of plan.moves) {
+			assert.ok(
+				m.to.includes(`${HEAD_SLUG}-${T6_SEG}`),
+				`every destination must use the head slug, got ${m.to}`,
+			);
+			assert.ok(!m.to.includes(STALE_SLUG), 'the ledger slug must not name the folder');
+			assert.ok(!m.to.includes(DRIFT_SLUG), 'the later-stage slug must not name the folder');
+		}
+		assert.ok(plan.moves.length >= 3, `expected the three misplaced md to move, got ${plan.moves.length}`);
+	} finally { cleanup(); }
+});
+
+test('t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing', () => {
+	const { repo, cleanup } = seedDisagreeingSlugs();
+	try {
+		const plan = planMigration(repo);
+		assert.equal(
+			plan.unmappable.filter(u => u.artifactId.startsWith('BUILD-')).length, 0,
+			'the markerless BUILD must not be unmappable — its path carries its identity',
+		);
+		const build = plan.moves.find(m => m.from.endsWith('BUILD.md'));
+		assert.ok(build, 'the markerless BUILD must be scheduled to move');
+		assert.ok(
+			build.from.includes(`docs/epics/${T6_HASH}-${T6_SEG}`),
+			`must be found at its raw-hash wrong-top-level path, got ${build.from}`,
+		);
+		assert.ok(build.to.includes(`docs/standalone/${HEAD_SLUG}-${T6_SEG}/S001/BUILD.md`), build.to);
+	} finally { cleanup(); }
+});
+
+test('t6a — end to end: the disagreeing work item converges onto exactly ONE folder', () => {
+	const { repo, cleanup } = seedDisagreeingSlugs();
+	try {
+		// PRECONDITION asserted first, so the end state cannot pass vacuously on a
+		// fixture that only ever had one folder.
+		assert.equal(foldersForSegment(repo).length, 4, `fixture must start forked, got ${foldersForSegment(repo).join(', ')}`);
+		applyMigration(repo, planMigration(repo));
+		assert.deepEqual(
+			foldersForSegment(repo),
+			[`docs/standalone/${HEAD_SLUG}-${T6_SEG}`],
+			'exactly one folder, named for the definition head',
+		);
+	} finally { cleanup(); }
+});

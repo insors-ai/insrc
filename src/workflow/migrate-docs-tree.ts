@@ -32,7 +32,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
 import { deriveWorkItemIdentity, type WorkItemIdentity } from './id.js';
@@ -92,9 +92,14 @@ export interface MigrationPlan {
 const FLAT_DIRS = ['docs/defines', 'docs/designs', 'docs/plans', 'docs/builds', 'docs/specs', 'docs/reviews'] as const;
 
 /** Parse a canonical artifact id (`<KIND>-<hash>[-<storyId>]`) into its parts.
- *  Returns null for non-docs ids (e.g. `AMD-*` amendments) or a malformed id. */
+ *  Returns null for non-docs ids (e.g. `AMD-*` amendments) or a malformed id.
+ *
+ *  ISSUE is an item-root kind and MUST be listed: an ISSUE *is* the work item's
+ *  definition head (the bugfix-route counterpart of DEF), so dropping it here
+ *  excluded it from its own group — leaving its folder permanently unconvergeable
+ *  and contributing the second folder this module exists to eliminate. */
 function parseArtifactId(id: string): { kind: ArtifactKind; hash: string; storyId: string | undefined } | null {
-	const m = /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT)-([0-9a-f]{16})(?:-(.+))?$/.exec(id);
+	const m = /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE)-([0-9a-f]{16})(?:-(.+))?$/.exec(id);
 	if (m === null) return null;
 	const kind    = m[1] as ArtifactKind;
 	const hash    = m[2]!;
@@ -127,15 +132,73 @@ function readMarker(mdPath: string): string | undefined {
  *  wrong label or the wrong top-level. Indexing these lets the existing
  *  group-resolution logic — which already settles on ONE anchor and ONE slug per
  *  work item — emit the convergence moves it could not previously express. */
-function indexNestedMd(repoPath: string): Map<string, string> {
-	const index = new Map<string, string>();
+function indexNestedMd(repoPath: string): NestedIndex {
+	const byId = new Map<string, string>();
+	const byShape = new Map<string, string>();
 	for (const location of listWorkItems(repoPath)) {
 		for (const abs of listArtifactMdPaths(repoPath, location)) {
 			const marker = readMarker(abs);
-			if (marker !== undefined && !index.has(marker)) index.set(marker, abs);
+			if (marker !== undefined) {
+				if (!byId.has(marker)) byId.set(marker, abs);
+				continue;
+			}
+			// Markerless nested md. Rendered BUILD/CR ledgers carry no insrc:artifact
+			// marker, and a nested filename is the bare `<KIND>.md`, so neither the
+			// file nor its name yields an artifact id. The enclosing PATH does carry
+			// identity — but only hash8, not the full 16-hex hash — so index by the
+			// (kind, hash8, story-ordinal) SHAPE and let the artifact loop, which
+			// knows the full hash, look itself up. Slug and top-level are excluded
+			// from the key on purpose: those are exactly the parts that drift.
+			const shape = nestedShapeKey(repoPath, abs);
+			if (shape !== undefined && !byShape.has(shape)) byShape.set(shape, abs);
 		}
 	}
-	return index;
+	return { byId, byShape };
+}
+
+interface NestedIndex {
+	/** marker artifact id → absolute md path. */
+	readonly byId:    Map<string, string>;
+	/** `<KIND>|<hash8>|<storyOrdinal>` → absolute md path (markerless BUILD/CR). */
+	readonly byShape: Map<string, string>;
+}
+
+/** The story ordinal for a storyId, via the canonical parse (`s1` and `S001`
+ *  both → 1). The date argument only feeds `epicSegment`, which is unused here,
+ *  so a fixed epoch keeps this a pure ordinal lookup rather than a second,
+ *  drifting copy of the normalisation. */
+function storyOrdinalOf(storyId: string | undefined): number | undefined {
+	if (storyId === undefined) return undefined;
+	try {
+		return deriveWorkItemIdentity('0'.repeat(16), '1970-01-01T00:00:00.000Z', storyId).story;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Build the shape key for a markerless nested md, or undefined when the path is
+ *  not a recognisable `<slug>-E<date><hash8>/S<nnn>/<BUILD|CR>.md`. */
+function nestedShapeKey(repoPath: string, abs: string): string | undefined {
+	const rel   = relative(repoPath, abs).split(sep);
+	const file  = rel[rel.length - 1] ?? '';
+	const kind  = file.endsWith('.md') ? file.slice(0, -3) : '';
+	if (kind !== 'BUILD' && kind !== 'CR') return undefined;   // only these render markerless
+	const storySeg = rel[rel.length - 2];
+	const itemSeg  = rel[rel.length - 3];
+	if (storySeg === undefined || itemSeg === undefined) return undefined;
+	const story = storyOrdinalOf(storySeg);
+	if (story === undefined) return undefined;
+	const hash8 = /-E\d{8}([0-9a-f]{8})$/.exec(itemSeg)?.[1];
+	if (hash8 === undefined) return undefined;
+	return `${kind}|${hash8}|${story}`;
+}
+
+/** The shape key for an artifact whose full identity is known. */
+function artifactShapeKey(kind: ArtifactKind, hash: string, storyId: string | undefined): string | undefined {
+	if (kind !== 'BUILD' && kind !== 'CR') return undefined;
+	const story = storyOrdinalOf(storyId);
+	if (story === undefined) return undefined;
+	return `${kind}|${hash.slice(0, 8)}|${story}`;
 }
 
 function indexFlatMd(repoPath: string): Map<string, string> {
@@ -226,6 +289,10 @@ export function planMigration(repoPath: string): MigrationPlan {
 
 	const flatIndex   = indexFlatMd(repoPath);
 	const nestedIndex = indexNestedMd(repoPath);
+	const nestedShape = (kind: ArtifactKind, hash: string, storyId: string | undefined): string | undefined => {
+		const key = artifactShapeKey(kind, hash, storyId);
+		return key === undefined ? undefined : nestedIndex.byShape.get(key);
+	};
 
 	// 1. Enumerate the authoritative artifact set from the JSON store.
 	const artifacts: Artifact[] = [];
@@ -245,7 +312,9 @@ export function planMigration(repoPath: string): MigrationPlan {
 			epicSlug: meta.epicSlug,
 			standalone: meta.standalone === true || parsed.kind === 'SPEC',
 			flatPath: flatIndex.get(id),
-			mdPath:   flatIndex.get(id) ?? nestedIndex.get(id),
+			mdPath:   flatIndex.get(id)
+				?? nestedIndex.byId.get(id)
+				?? nestedShape(parsed.kind, parsed.hash, parsed.storyId),
 		});
 	}
 
@@ -275,9 +344,19 @@ export function planMigration(repoPath: string): MigrationPlan {
 			?? lld?.createdAt
 			?? members.map(m => m.createdAt).filter((c): c is string => typeof c === 'string').sort()[0];
 
-		// Slug label: from a slug-carrying member's meta, else parsed from a
-		// slug-named flat filename.
-		let slug = members.map(m => m.epicSlug).find((s): s is string => typeof s === 'string' && s.length > 0);
+		// Slug label: prefer the DEFINITION HEAD's slug (DEF, else ISSUE), then any
+		// slug-carrying member, then a slug-named flat filename. The head ordering is
+		// explicit rather than incidental: members arrive in sorted-id order, where
+		// `BUILD-` precedes `DEF-`/`ISSUE-`, so a downstream record that carries its
+		// own re-derived slug would otherwise outvote the head and name the folder
+		// after a later stage. This mirrors readEpicDefinitionCore's DEF-then-ISSUE
+		// precedence (t1), so the migration and the live writer agree on the label.
+		const slugOf = (m: Artifact | undefined): string | undefined =>
+			typeof m?.epicSlug === 'string' && m.epicSlug.length > 0 ? m.epicSlug : undefined;
+		const issue = members.find(m => m.kind === 'ISSUE');
+		let slug = slugOf(def)
+			?? slugOf(issue)
+			?? members.map(m => m.epicSlug).find((s): s is string => typeof s === 'string' && s.length > 0);
 		if (slug === undefined) {
 			for (const m of members) {
 				if (m.flatPath === undefined) continue;

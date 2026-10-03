@@ -306,6 +306,13 @@
         "choice": "Keep the gap, record the trigger",
         "rationale": "Consistent with guarding only probed keywords. The probe also weakened the gap's stakes: a bare root $ref already fails on BOTH vendors via the missing-root-type rule (claude: 'input_schema.type: Field required'; codex: \"schema must be a JSON Schema of 'type: object', got 'type: None'\"), so the blind spot cannot hide a schema that would otherwise have worked. Re-open trigger: a real caller emitting a root $ref, or a probe showing a vendor resolves the pointer before refusing.",
         "resolvedAt": "2026-10-03T19:06:39.365Z"
+      },
+      "qaaadfd6a": {
+        "question": "a3's authoring-time schema scan — catching a root union when it is WRITTEN rather than when it is first sent — is the one rejected idea worth keeping. It was excluded from this Story on scope and because the allow-list it needs reproduces the false-signal pattern being removed. It belongs on the backlog as its own item, contingent on the repo first gaining a reliable marker for which schemas are provider-bound.",
+        "status": "resolved",
+        "choice": "Backlog item gated on a provider-bound marker",
+        "rationale": "Matches the LLD's own conclusion. Keeps S001 at its approved scope and avoids the allow-list that would reintroduce the false-signal pattern this Story removes. One item rather than two, because the marker is a precondition that has not been designed yet — splitting it now would commit to shaping work nobody has scoped. The gate is recorded as the explicit trigger.",
+        "resolvedAt": "2026-10-03T19:07:09.925Z"
       }
     }
   },

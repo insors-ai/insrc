@@ -4,7 +4,9 @@
     "epicHash": "792f9324fc43d95c",
     "storyId": "S001",
     "createdAt": "2026-10-02T20:12:15.045Z",
-    "updatedAt": "2026-10-03T05:28:54.835Z"
+    "updatedAt": "2026-10-03T14:16:21.737Z",
+    "standalone": true,
+    "approvedAt": "2026-10-03T14:16:21.946Z"
   },
   "body": {
     "tasks": [
@@ -15,88 +17,878 @@
       {
         "id": "t7",
         "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
       }
     ],
     "summary": "Fixes the label resolver on two independent defects, in src/workflow/tracker/resolve.ts only. (1) No dummy refs: buildRef now refuses a story-or-task-level reference unless the story actually exists, verified by a new storyEvidence helper admitting a story on either of two independent clauses — a story-scoped LLD/PLAN resolves for the ordinal, or the epic's definition artifact declares it (a DEF via body.stories, an ISSUE as one story at ordinal 1). Clauses degrade independently, so a corrupt DEF never disqualifies an epic whose LLD is intact. Gated on a supplied storyId, so epic-level calls are untouched, and deliberately not extended to tasks. (2) The reported regression: resolveByLabel's unscoped branch no longer refuses whenever more than one epic exists. It now asks which epics actually evidence the requested story and resolves when exactly one does. Because every ISSUE-anchored epic implies a story at ordinal 1, candidates are tiered — explicit evidence (an artifact or a DEF declaration) outranks the bare convention, and a tie within a tier refuses outright rather than falling through. That tiering was needed to reconcile two plan requirements that were mutually incompatible under a flat exactly-one-resolves rule; it is unrequested design and provisional. listEpicHashes and resolveByIssue are byte-identical to baseline, so the bugfix ISSUE stays a full epic peer and was not demoted. An independent cold review then found the first implementation 130x slower on unscoped lookups: it evaluated the evidence twice per epic and built a reference for every candidate to return one, while re-reading the 664-entry artifacts directory twice per epic. Candidacy is now decided by evidence alone, only the winner is built, and the listing is read once per sweep — 39.3ms to 2.3ms for a bare s1. The same change removed a silent-narrowing hazard where an epic with real evidence but unmintable identity dropped out of the tally, converting genuine ambiguity into a confident answer. Full sweep 4262 tests, 4133 pass, 1 fail (the pre-existing better_sqlite3 ABI failure, confirmed failing identically on the pre-story baseline). Six mutation proofs re-run at story end all invert.",
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/BUILD-013e816250937aa5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-095906bac5bbacaf-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-1163888072faa9f2-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-1fc9e41abd47443f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-6d3f8bc1f6c78a2a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b1c7c1bc57962e97-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-bd2d6b6a98f48dc6-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-d5a433047dc3439f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-de2b586f80943e39-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-e20235c17f083a16-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-792f9324fc43d95c-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-e20235c17f083a16-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-3a98d27994547262.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/ISSUE-4510613183357b66.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-5f7a7cb95b643ae5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-6f31771d060cb412.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-83e1350e567d86d4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-b090500bbace86b1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-b955fa759c3c4309.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-dddb4113077c8de8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e20235c17f083a16.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-6f31771d060cb412-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-e20235c17f083a16-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-792f9324fc43d95c-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
-          "file": "docs/epics/lld-revision-supersedes-earlier-pass-whose-E20261002792f9324/S001/PLAN.md"
+          "file": ".insrc/artifacts/PLAN-e20235c17f083a16-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/013e816250937aa5-E20261002013e8162/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/095906bac5bbacaf-E20260930095906ba/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/1163888072faa9f2-E2026093011638880/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/1fc9e41abd47443f-E202610011fc9e41a/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/6d3f8bc1f6c78a2a-E202610016d3f8bc1/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/b1c7c1bc57962e97-E20261001b1c7c1bc/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/bd2d6b6a98f48dc6-E20260930bd2d6b6a/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/d5a433047dc3439f-E20260930d5a43304/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/de2b586f80943e39-E20261002de2b586f/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "work-framed-approved-spec-proceed-from-E20260925edb76e2e}/S002/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/6d3f8bc1f6c78a2a-E202610016d3f8bc1/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/6d3f8bc1f6c78a2a-E202610016d3f8bc1/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/add-insrc-icon-vs-code-activity-E20260926be8708a9/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/add-kotlin-supported-source-language-indexer-E202609176efc97c8/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/add-new-repo-stats-daemon-ipc-E20260920be438ed3/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/applymigration-stages-link-rewrite-git-add-E20261003b090500b/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/er-model.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "assistant-llm-responses-still-render-default-E20261001b1c7c1bc}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/assistant-llm-responses-still-render-default-E20261001b1c7c1bc}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-insrc-build-step-returns-unresolved-E2026092999bc81bb}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-insrc-build-step-returns-unresolved-E2026092999bc81bb}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/bug-insrc-build-step-returns-unresolved-E2026092999bc81bb}/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-insrc-vs-code-dev-chat-E202609292d9e9e69}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-insrc-vs-code-dev-chat-E202609292d9e9e69}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/bug-insrc-vs-code-dev-chat-E202609292d9e9e69}/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-ux-mock-companion-attached-hld-E202610011fc9e41a}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/bug-ux-mock-companion-attached-hld-E202610011fc9e41a}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-vs-code-insrc-chat-webview-E20260926b846171f}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-vs-code-insrc-chat-webview-E20260926b846171f}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/bug-vs-code-insrc-chat-webview-E20260926b846171f}/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "bug-vscode-plugin-dev-chat-each-E2026093011638880}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/bug-vscode-plugin-dev-chat-each-E2026093011638880}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "build-ledger-record-s-provenance-broken-E2026100293081bff}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/build-ledger-record-s-provenance-broken-E2026100293081bff}/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/build-record-renderer-only-artifact-renderer-E20261003dddb4113/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/correct-dev-chat-panel-header-footer-E202609306ae99f6e}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/d5a433047dc3439f-E20260930d5a43304/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/d5a433047dc3439f-E20260930d5a43304/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/design-correction-issue-85e6a58693579b6d-ux-mock-E2026100185e6a586/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "dev-chat-header-session-dropdown-reads-E20260930bd2d6b6a}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/dev-chat-header-session-dropdown-reads-E20260930bd2d6b6a}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "dev-chat-session-dropdown-history-clock-E20260930095906ba}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/dev-chat-session-dropdown-history-clock-E20260930095906ba}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/enrich-docgen-generated-companion-html-artifacts-E2026093097e289e2}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/enrich-docgen-generated-companion-html-artifacts-E2026093097e289e2/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/every-standalone-bugfix-story-reaches-design-E202610036f31771d/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/every-standalone-bugfix-story-reaches-design-E202610036f31771d/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/every-standalone-bugfix-story-reaches-design-E202610036f31771d/S001/er-model.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/extend-route-hardcodes-operationalizes-every-acceptance-E2026100383e1350e/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/finalizeplan-buildrecordfolderargs-take-work-item-s-E202610033a98d279/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "docs/standalone/five-acceptance-checks-approved-plan-issue-E2026100245106131/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/fix-daemon-update-path-so-insrc-E202609255f34b37c/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "insrc-build-step-cannot-address-any-E20261002de2b586f}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/insrc-build-step-cannot-address-any-E20261002de2b586f}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/jetbrains-plugin-add-insrc-entry-project-E202609204c7992cc/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/lld-dev-chat-terminal-prompt-fidelity-E202609307c219c74/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/lld-state-token-eviction-bugfix-issue-E20260929c71f7106/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "mergewithprior-silently-erases-prior-only-meta-E20261002013e8162}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/mergewithprior-silently-erases-prior-only-meta-E20261002013e8162}/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/re-author-s001-lld-collapsible-sections-E202609209225688d/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/resolve-jetbrains-marketplace-plugin-verifier-s-E202609180d565a95/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/rework-site-getting-started-html-1-E2026093071133869}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/rework-site-getting-started-html-1-E2026093071133869/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "docs/standalone/six-low-severity-defects-found-independent-E20261002b955fa75/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/surface-bugfix-workflow-properly-so-first-E20260926dfc0371b}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/surface-bugfix-workflow-properly-so-first-E20260926dfc0371b/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/two-dev-chat-chrome-changes-1-E2026100174bc0120}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/update-vs-code-jetbrains-plugin-marketplace-E2026093098a6ba6d}/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone}/update-vs-code-jetbrains-plugin-marketplace-E2026093098a6ba6d/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/ux-mock-companion-does-not-produce-E2026100185e6a586/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "ux-mock-companion-does-not-produce-E2026100185e6a586}/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "standalone/ux-mock-companion-does-not-produce-E2026100185e6a586}/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "ux-mock-companion-does-not-produce-E2026100185e6a586}/S001/ux-mock.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/folder-identity-finalize.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/folder-identity-regression.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/id-resolve.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/migrate-docs-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/tracker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/resolve.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T05:28:54.835Z"
+        "timestamp": "2026-10-03T14:16:21.737Z"
       }
     ],
-    "commit": "7eb67e2"
+    "commit": "f306405"
   }
 }

@@ -631,3 +631,66 @@ test('t8: NO code path selects a renderer on meta.standalone — the same record
 	assert.equal(asTrue.replace('**Standalone:** yes', '**Standalone:** no'), asFalse,
 		'flipping the flag changes exactly one substring and nothing else');
 });
+
+// ---------------------------------------------------------------------------
+// S001/t4 — the placement flag is INHERITED, never asserted false, and a prior
+// true survives a later write that omits it.
+// ---------------------------------------------------------------------------
+
+const T4_HASH = 'e1f2a3b4c5d6e7f8';
+const T4_CREATED = '2026-10-02T12:00:00.000Z';
+
+function t4Repo(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t4-placement-'));
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t4 — a record carrying standalone true is placed under docs/standalone', () => {
+	const r = t4Repo();
+	try {
+		const { md } = persistBuildRecord(r.repo, {
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
+			body: { tasks: [] },
+		});
+		assert.ok(md.includes('/docs/standalone/'), `expected a standalone placement, got ${md}`);
+		assert.ok(!md.includes('/docs/epics/'));
+	} finally { r.cleanup(); }
+});
+
+test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move', () => {
+	const r = t4Repo();
+	try {
+		// First write: the flag is true, so the record is placed as standalone.
+		const first = persistBuildRecord(r.repo, {
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
+			body: { tasks: [] },
+		});
+		assert.ok(first.md.includes('/docs/standalone/'));
+
+		// Second write OMITS the flag entirely — the shape every completion-hook
+		// write takes when the definition artifact is unreadable. mergeWithPrior
+		// must carry the prior true forward.
+		const second = persistBuildRecord(r.repo, {
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED },
+			body: { tasks: [], summary: 'second write' },
+		});
+		assert.equal(second.md, first.md,
+			'the markdown must NOT move: relocating it is the exact regression the no-false rule prevents');
+		assert.ok(second.md.includes('/docs/standalone/'));
+
+		// And the persisted flag itself is still true.
+		const persisted = JSON.parse(readFileSync(second.json, 'utf8')) as { meta: { standalone?: boolean } };
+		assert.equal(persisted.meta.standalone, true);
+	} finally { r.cleanup(); }
+});
+
+test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured', () => {
+	const r = t4Repo();
+	try {
+		const { md } = persistBuildRecord(r.repo, {
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED },
+			body: { tasks: [] },
+		});
+		assert.ok(md.includes('/docs/epics/'), 'absent means epic — only an explicit true is standalone');
+	} finally { r.cleanup(); }
+});

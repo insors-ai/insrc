@@ -14,7 +14,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -50,7 +50,12 @@ test('create: no prior BUILD json + a changed set writes a plan-driven BUILD rec
 		// UPDATED by CR-2: this writer no longer asserts the route either. On a
 		// first write with no prior the key is simply ABSENT, which every reader
 		// treats as false (they all test `=== true`).
-		assert.ok(!('standalone' in rec.meta), 'the completion writer writes no standalone key');
+		// NARROWED by S001/t4: the key is absent HERE because this fixture has no
+		// definition artifact to inherit from, not because the writer never writes
+		// it. When a readable DEF/ISSUE says standalone, the writer now stamps true
+		// — see the t4 test below. Without this narrowing the assertion reads as an
+		// unconditional 'never writes it', which would be false.
+		assert.ok(!('standalone' in rec.meta), 'absent with no definition artifact to inherit from');
 		assert.notEqual(rec.meta['standalone'], true, 'and this plan-driven record is certainly not standalone');
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's2');
@@ -181,5 +186,63 @@ test('CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves 
 		// for one Story. Assert the epics folder was never created at all.
 		assert.ok(!existsSync(join(repo, 'docs', 'epics')),
 			'no docs/epics/ record is written for a standalone Story');
+	});
+});
+
+
+// ---------------------------------------------------------------------------
+// S001/t4 — the completion hook INHERITS the placement from the definition
+// artifact. Added because a mutation showed the stamp was otherwise untested:
+// every existing fixture lacks a definition artifact, so dropping the stamp
+// changed no outcome.
+// ---------------------------------------------------------------------------
+
+const T4_ISSUE_HASH = 'f3e2d1c0b9a87654';
+
+test('t4 — an ISSUE-anchored work item gets standalone true and lands under docs/standalone', async () => {
+	await withRepo(async (repo) => {
+		// A bugfix work item: ISSUE only, declaring itself standalone.
+		writeFileSync(
+			join(repo, '.insrc', 'artifacts', `ISSUE-${T4_ISSUE_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: '2026-10-02T12:00:00.000Z', epicSlug: 'a-real-label', standalone: true } }),
+		);
+
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: T4_ISSUE_HASH, storyId: 'S001' }, async () => ['x.ts']);
+		assert.ok(out !== undefined);
+
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 'S001')));
+		assert.equal(rec.meta['standalone'], true, 'the placement is inherited from the ISSUE, not omitted');
+		assert.ok(out.md.includes('/docs/standalone/'), `expected a standalone placement, got ${out.md}`);
+		assert.ok(!out.md.includes('/docs/epics/'));
+	});
+});
+
+test('t4 — an epic-parented work item is unaffected: a DEF without the flag stays epic', async () => {
+	await withRepo(async (repo) => {
+		writeFileSync(
+			join(repo, '.insrc', 'artifacts', `DEF-${T4_ISSUE_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: '2026-10-02T12:00:00.000Z', epicSlug: 'an-epic' } }),
+		);
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: T4_ISSUE_HASH, storyId: 's1' }, async () => ['x.ts']);
+		assert.ok(out !== undefined);
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 's1')));
+		assert.ok(!('standalone' in rec.meta), 'no flag is manufactured for an epic work item');
+		assert.ok(out.md.includes('/docs/epics/'));
+	});
+});
+
+test('t4 — an explicit standalone FALSE on the definition artifact is not written through as false', async () => {
+	await withRepo(async (repo) => {
+		// The guard is `=== true`, so a false must be omitted rather than asserted.
+		// Writing false is what relocated a standalone record's markdown and
+		// orphaned the original, which is the regression this keeps shut.
+		writeFileSync(
+			join(repo, '.insrc', 'artifacts', `DEF-${T4_ISSUE_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: '2026-10-02T12:00:00.000Z', epicSlug: 'an-epic', standalone: false } }),
+		);
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: T4_ISSUE_HASH, storyId: 's1' }, async () => ['x.ts']);
+		assert.ok(out !== undefined);
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 's1')));
+		assert.ok(!('standalone' in rec.meta), 'false is OMITTED, never asserted');
 	});
 });

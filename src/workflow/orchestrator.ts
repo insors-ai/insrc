@@ -112,7 +112,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, readEpicDefinitionCore, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -2257,7 +2257,18 @@ async function finalizeStandaloneLld(
 ): Promise<FinalizeResult> {
 	const epicHash = requireEpicHash(intent);   // self-minted by augmentStandaloneParams
 	const storyId  = requireStoryId(intent);
-	const epicSlug = safeDeriveSlug(intent.focus);
+	// S001/t3 — INHERIT the work item's label from its definition artifact (DEF or
+	// ISSUE alike) rather than coining a new one from this stage's own focus prose.
+	// Same inherit-then-fallback shape the three sibling finalizers already use;
+	// this was the one site that re-derived for a work item that ALREADY had a
+	// label, which is how an ISSUE and its own LLD ended up with different labels
+	// and therefore different folders. safeDeriveSlug stays the fallback for a work
+	// item with no definition artifact to inherit from, and an empty-string label
+	// counts as absent so it can never compose a folder name starting with '-'.
+	const inheritedSlug = readEpicDefinitionCore(intent.repoPath, epicHash).epicSlug;
+	const epicSlug = inheritedSlug !== undefined && inheritedSlug.length > 0
+		? inheritedSlug
+		: safeDeriveSlug(intent.focus);
 
 	// A standalone LLD has no parent Epic, so there is no EXTERNAL acceptance
 	// contract to validate the test-strategy mapping against — the LLD is
@@ -2537,6 +2548,15 @@ function finalizePlan(
 		return { ok: false, failure: { ok: false, kind: 'schema', message: 'Plan cross-artifact checks failed', details: combined } };
 	}
 
+	// S001/t4 — the work item's PLACEMENT, inherited rather than dropped. The plan
+	// previously carried no `standalone` at all, so a standalone story's PLAN.md
+	// landed under docs/epics while its own LLD.md sat under docs/standalone. The
+	// definition artifact is the source; the LLD's own flag is the fallback.
+	// Only an explicit TRUE is written: asserting false is what a prior fix removed
+	// so that mergeWithPrior could carry a true value forward, and reinstating it
+	// would relocate a standalone record's markdown and orphan the original.
+	const inheritedStandalone = readEpicDefinitionCore(intent.repoPath, epicHash).standalone ?? lld.meta.standalone;
+
 	const artifact: PlanArtifact = {
 		meta: {
 			workflow:      'plan',
@@ -2546,6 +2566,7 @@ function finalizePlan(
 			// Work-item folder anchor (sc2): a plan belongs to an Epic Story, keyed
 			// on the Epic's define createdAt so it lands in the Story's folder.
 			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
+			...(inheritedStandalone === true ? { standalone: true } : {}),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,

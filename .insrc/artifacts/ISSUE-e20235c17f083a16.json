@@ -1,0 +1,310 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791002638796-rxu7sr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T04:46:33.875Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 155078,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e20235c17f083a16",
+    "epicSlug": "artifact-docs-folders-fork-per-stage",
+    "standalone": true,
+    "magnitude": "sized",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "workItemRoot in src/workflow/path-scheme.ts names a work item's docs folder by joining the sanitized label and the identity segment, so the folder name embeds the mutable label alongside stable identity.",
+          "evidence": "Confirmed verbatim. The read of src/workflow/path-scheme.ts:104 returns exactly the quoted line, and `function workItemRoot` resolves uniquely at :103, so the cited symbol and line agree.",
+          "action": "none - citation and premise both hold",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/workflow/orchestrator.ts:2260 sits inside finalizeStandaloneLld and computes the slug as safeDeriveSlug(intent.focus) with no inheritance from prior artifact metadata.",
+          "evidence": "The citation holds: the read of orchestrator.ts:2260 returns the quoted line and `async function finalizeStandaloneLld` resolves uniquely at :2249, so :2260 is inside it. But the probe also returned a SECOND source match for the same unconditional pattern at orchestrator.ts:1152, and a direct sweep of src for `= safeDeriveSlug(` finds FOUR unconditional derivations: :686, :858, :1152 and :2260. The artifact's phrase 'the correct pattern exists in the same file and this one site omits it' therefore reads as though :2260 were the only unconditional site, which is false.",
+          "action": "Narrow the wording so the three other unconditional derivations are named and explicitly excluded. They are the SPEC, ISSUE and DEF heads, which must mint a label because no earlier artifact exists to inherit from; only :2260 re-derives a label for a work item that already has one. Left as-is, the design stage could 'fix' all four and break definition-head labelling.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "The defect claim about :2260 is correct, but stating it as the lone unconditional site invites overreach onto three sites where unconditional derivation is the correct behaviour. Naming them as deliberate non-targets bounds the fix.",
+            "artifactEdits": [
+              {
+                "find": "three sibling finalizers at orchestrator.ts:1751, :2082 and :2529 already use the inherit-then-fallback form (meta.epicSlug first, derive only as a fallback), so the correct pattern exists in the same file and this one site omits it.",
+                "replace": "three sibling finalizers at orchestrator.ts:1751, :2082 and :2529 already use the inherit-then-fallback form (meta.epicSlug first, derive only as a fallback), so the correct pattern exists in the same file and this one site omits it. Three further unconditional derivations in the same file, at :686, :858 and :1152, are NOT defects and must stay as they are: they belong to the SPEC, ISSUE and DEF heads, which legitimately mint a work item's label because no earlier artifact exists to inherit from. Only :2260 derives a label for a work item that already carries one."
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Exactly three slug derivations in src/workflow/orchestrator.ts use the inherit-then-fallback form (read meta.epicSlug first, derive only as a fallback), at lines 1751, 2082 and 2529.",
+          "evidence": "Re-derived and confirmed. The scoped grep for the inherit-then-fallback form returns exactly three source matches - orchestrator.ts:1751, :2082 and :2529 - with the fourth hit being this artifact's own citation line. All three reads return the quoted form verbatim (epic.meta.epicSlug at :1751 and :2082, lld.meta.epicSlug at :2529).",
+          "action": "none - the inventory of three is exact",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Only two non-test sites in src/workflow/orchestrator.ts write standalone:true into artifact metadata, at lines 872 and 2303, so no later stage re-asserts the flag.",
+          "evidence": "The claim is FALSE as written. Both probe greps saturated at 50 hits and could not scope to src, so I swept src directly: `standalone:\\s*true` outside __tests__ matches roughly twenty sites, including src/mcp/triage-step/phases/classify.ts:58/:76/:88, src/workflow/triage/classify.ts:43/:46/:49/:60, src/mcp/build-step/phases/implement.ts:135, src/workflow/bugfix/next-after-issue.ts:65/:81 and src/mcp/build-step/types.ts:34. 'Only two non-test sites write standalone:true' is therefore wrong. What is true, and what the two confirmed reads show, is narrower: only orchestrator.ts:872 (the ISSUE) and :2303 (the standalone LLD) write it into PERSISTED ARTIFACT METADATA. The other matches are triage route objects, build-step prompt payloads, a type declaration and log lines - orchestrator.ts:2338 is itself a log call, not a metadata write.",
+          "action": "Replace the overclaimed count with the narrower, verified statement about artifact-metadata writes, and say what the other occurrences are so the count is not re-read as a whole-tree census.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "The conclusion the defect rests on - that no stage after the LLD re-asserts the flag, so PLAN and BUILD store it absent - survives intact; only the scope of the count was overstated. Correcting the scope keeps the diagnosis and removes a false inventory.",
+            "artifactEdits": [
+              {
+                "find": "Second, only two non-test sites write standalone:true (orchestrator.ts:872 for the ISSUE, :2303 for the standalone LLD), so the plan and build records store it absent,",
+                "replace": "Second, only two sites write standalone:true into persisted artifact metadata (orchestrator.ts:872 for the ISSUE, :2303 for the standalone LLD); the other standalone:true occurrences across src are triage route objects, build-step prompt payloads, a type declaration and log lines rather than metadata writes, so no stage after the LLD re-asserts the flag and the plan and build records store it absent,"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/runners/build/standalone-record.ts:241 passes merged.meta.standalone === true as the standalone argument to buildRecordFolderArgs, so an absent flag is narrowed to false before the folder is chosen.",
+          "evidence": "Confirmed verbatim. The read of standalone-record.ts:241 returns the quoted call, and the scoped grep for `merged.meta.standalone === true` returns exactly one source match, at that same line. The narrowing of an absent flag to false before the folder is chosen is therefore established at a single point.",
+          "action": "none - citation and premise both hold",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "buildRecordFolderArgs in src/workflow/storage.ts returns workItemKind as standalone ? 'standalone' : 'epic', so a false standalone argument routes the record under docs/epics.",
+          "evidence": "The premise holds but the citation is mis-anchored. The read of storage.ts:232 returns `export function buildRecordFolderArgs(`, not the quoted ternary; the grep locates `workItemKind: standalone ? 'standalone' : 'epic',` at storage.ts:244. Citation c5's quotedText therefore does not match the line its ref names - precisely the accuracy class this stage's review targets.",
+          "action": "Re-anchor citation c5 from storage.ts:232 to storage.ts:244, where the quoted line actually sits. The rootCause prose that cites storage.ts:232 as the location of buildRecordFolderArgs stays correct, since :232 is the function's declaration.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "A quote must sit at the line it cites or the citation cannot be re-verified. :244 is the real line; the function-level anchor at :232 remains valid where the prose names the function rather than the statement.",
+            "artifactEdits": [
+              {
+                "find": "- **[[c5]]** `code` `src/workflow/storage.ts:232` — \"workItemKind: standalone ? 'standalone' : 'epic',\"",
+                "replace": "- **[[c5]]** `code` `src/workflow/storage.ts:244` — \"workItemKind: standalone ? 'standalone' : 'epic',\""
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The non-standalone branch of buildRecordFolderArgs reads only defineArtifactId(epicHash) for its upstream metadata and never attempts the ISSUE artifact, so an ISSUE-anchored work item yields no upstream epicSlug.",
+          "evidence": "Confirmed and strengthened. `readArtifactCore(repoPath, defineArtifactId(epicHash))` returns exactly one match, at storage.ts:241, so the non-standalone branch has a single upstream read and it is DEF-only. The probe for `ISSUE-${epicHash}` matches only in src/workflow/tracker/resolve.ts (:175, :212) and nowhere in storage.ts, confirming storage.ts performs no ISSUE read at all. A direct check also shows the helper already exists in the same file: `export function issueArtifactId(issueHash: string)` at storage.ts:169.",
+          "action": "Record the two strengthening facts - that storage.ts contains no ISSUE read at all, and that issueArtifactId already exists at storage.ts:169 - so the design stage knows this is an omission at a known call site rather than a missing capability.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Both facts were produced by the probes and narrow the fix: the ISSUE id helper is already present in the very file whose folder-arg function fails to consult it.",
+            "artifactEdits": [
+              {
+                "find": "this work item's definition artifact is an ISSUE, not a DEF, so the read finds nothing and upstream.epicSlug is undefined.",
+                "replace": "this work item's definition artifact is an ISSUE, not a DEF, so the read finds nothing and upstream.epicSlug is undefined. That branch has exactly one upstream read (storage.ts:241) and storage.ts performs no ISSUE read anywhere, even though the helper it would need already exists in the same file (issueArtifactId, storage.ts:169) - so this is an omission at a known call site, not a missing capability."
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "cl8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The raw-hash label fallback epicSlug ?? epicHash occurs at seven sites in src/workflow/storage.ts, including lines 301, 361 and 382, so a missing slug degrades the folder name to the bare hash for every artifact kind rather than only for BUILD.",
+          "evidence": "The three cited anchors are confirmed verbatim: storage.ts:301 ('DEF'), :361 ('HLD') and :382 ('LLD') each end in `epicSlug ?? epicHash`. The probe's 23 hits span docs and other modules and so cannot confirm the seven-in-storage.ts figure, but a direct scoped count of `epicSlug ?? epicHash` in src/workflow/storage.ts returns exactly 7, matching the claim.",
+          "action": "none - the count holds under a scoped re-derivation; the claim already hedges with 'for example' rather than enumerating all seven",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "renderBuildRecordMd is declared in src/workflow/runners/build/standalone-record.ts and selects the rendered title and the Standalone line from the record's own metadata, so an absent flag renders a standalone story as plan-driven.",
+          "evidence": "Confirmed. The read of standalone-record.ts:149 returns the quoted declaration, and the grep locates the rendering of the Standalone line at :161 as `bits.push(`**Standalone:** ${rec.meta.standalone ? 'yes' : 'no'}`)`, which shows directly that an absent flag renders as 'no'.",
+          "action": "none - citation and premise both hold, and the probe supplied the exact line that produces the wrong rendering",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/tracker/resolve.ts contains a DEF-only epic-level scan using DEF_RE inside resolveByIssue, which is a second instance of the same honour-DEF-but-not-ISSUE read pattern.",
+          "evidence": "Confirmed. The read of tracker/resolve.ts:337 returns the quoted `const m = DEF_RE.exec(f);` and `function resolveByIssue` resolves at :310, so :337 falls inside it. A sibling DEF_RE scan exists at :155. Incidentally the probe shows the earlier ISSUE b955fa75 cited this same pass at :267, consistent with the known line drift from recent edits to this file.",
+          "action": "none - the cross-reference to the second instance of the DEF-only read pattern is accurate",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl11",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The docs tree has exactly two top-level placements, docs/epics and docs/standalone, selected by the WorkItemKind union, so a wrong standalone flag can only mis-place a record between those two.",
+          "evidence": "Confirmed as a closed union. `export type WorkItemKind = 'epic' | 'standalone';` at path-scheme.ts:50 is the sole declaration, and topSegment at :98-:99 maps it with `workItemKind === 'epic' ? 'epics' : 'standalone'`, so the two placements are exhaustive and a wrong flag can only mis-place a record between them.",
+          "action": "none - the union is closed and the premise holds",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 3,
+        "low": 8
+      },
+      "reviewedAt": "2026-10-03T04:49:43.036Z",
+      "model": "client"
+    },
+    "reviewResolutions": {
+      "cl1": {
+        "findingId": "cl1",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:30.305Z"
+      },
+      "cl2": {
+        "findingId": "cl2",
+        "status": "resolved",
+        "note": "Corrective edit already applied by the review step: the three definition-head derivations (:686, :858, :1152) are now named as deliberate non-targets so the fix cannot overreach onto them.",
+        "resolvedAt": "2026-10-03T04:50:45.451Z"
+      },
+      "cl3": {
+        "findingId": "cl3",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.453Z"
+      },
+      "cl4": {
+        "findingId": "cl4",
+        "status": "resolved",
+        "note": "Corrective edit already applied by the review step: the false whole-tree count is replaced by the verified narrower claim about persisted artifact-metadata writes.",
+        "resolvedAt": "2026-10-03T04:50:45.453Z"
+      },
+      "cl5": {
+        "findingId": "cl5",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.454Z"
+      },
+      "cl6": {
+        "findingId": "cl6",
+        "status": "resolved",
+        "note": "Corrective edit already applied by the review step; the companion json citation c5 was additionally re-anchored from storage.ts:232 to :244 by hand, since the md find/replace did not reach the structured citations array.",
+        "resolvedAt": "2026-10-03T04:50:45.454Z"
+      },
+      "cl7": {
+        "findingId": "cl7",
+        "status": "resolved",
+        "note": "Strengthening edit already applied by the review step: storage.ts performs no ISSUE read at all and issueArtifactId already exists at storage.ts:169, so the gap is an omission at a known call site.",
+        "resolvedAt": "2026-10-03T04:50:45.454Z"
+      },
+      "cl8": {
+        "findingId": "cl8",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.455Z"
+      },
+      "cl9": {
+        "findingId": "cl9",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.455Z"
+      },
+      "cl10": {
+        "findingId": "cl10",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.455Z"
+      },
+      "cl11": {
+        "findingId": "cl11",
+        "status": "resolved",
+        "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
+        "resolvedAt": "2026-10-03T04:50:45.456Z"
+      }
+    }
+  },
+  "body": {
+    "title": "One work item scatters its artifacts across several docs folders because the folder label is re-derived at each stage",
+    "reproduction": "Run a bugfix chain end to end (issue, design.story, plan, build) for a single standalone work item, then list its docs folders. Observed for work item 792f9324fc43d95c (identity segment E20261002792f9324): four sibling folders, each holding exactly one artifact. docs/standalone/regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324/ISSUE.md; docs/standalone/lld-revision-supersedes-earlier-pass-whose-E20261002792f9324/S001/LLD.md; docs/epics/lld-revision-supersedes-earlier-pass-whose-E20261002792f9324/S001/PLAN.md; docs/epics/792f9324fc43d95c-E20261002792f9324/S001/BUILD.md. Expected one folder holding all four, since all four share the same identity segment. The two fields that select the folder diverge stage by stage in the stored metadata: ISSUE has epicSlug 'regression-hierarchical-label-resolver-listepichashes-src' and standalone true; LLD has epicSlug 'lld-revision-supersedes-earlier-pass-whose' and standalone true; PLAN keeps that same slug but standalone is absent; BUILD has both absent. Two further symptoms follow from the same divergence: the build record for this standalone story is written under docs/epics/ instead of docs/standalone/, and its rendered heading reads '# Build (plan-driven) - Story S001' with '**Standalone:** no' even though the work item is standalone.",
+    "rootCause": "A work item's docs folder is named label-plus-identity-segment (workItemRoot, path-scheme.ts:104). The identity segment was identical across all four artifacts, so identity is not at fault; the mutable label is, along with the docs/epics vs docs/standalone split. Neither of the two fields that produce those is inherited from the work item's definition artifact, so each stage recomputes them and any difference forks a new folder. Three distinct contributors, each read directly from the code. First, finalizeStandaloneLld (orchestrator.ts:2260) computes the slug as safeDeriveSlug(intent.focus) unconditionally, so a standalone LLD coins a label from its own focus prose instead of taking the slug its ISSUE already carries; three sibling finalizers at orchestrator.ts:1751, :2082 and :2529 already use the inherit-then-fallback form (meta.epicSlug first, derive only as a fallback), so the correct pattern exists in the same file and this one site omits it. Three further unconditional derivations in the same file, at :686, :858 and :1152, are NOT defects and must stay as they are: they belong to the SPEC, ISSUE and DEF heads, which legitimately mint a work item's label because no earlier artifact exists to inherit from. Only :2260 derives a label for a work item that already carries one. Second, only two sites write standalone:true into persisted artifact metadata (orchestrator.ts:872 for the ISSUE, :2303 for the standalone LLD); the other standalone:true occurrences across src are triage route objects, build-step prompt payloads, a type declaration and log lines rather than metadata writes, so no stage after the LLD re-asserts the flag and the plan and build records store it absent, and standalone-record.ts:241 passes merged.meta.standalone === true into buildRecordFolderArgs, which collapses absent to false; buildRecordFolderArgs (storage.ts:232) then returns workItemKind 'epic', placing a standalone story under docs/epics/. The same absence makes renderBuildRecordMd (standalone-record.ts:149) pick the plan-driven title and render 'Standalone: no'. Third, that false value also selects the epic branch of buildRecordFolderArgs, which reads defineArtifactId(epicHash) only; this work item's definition artifact is an ISSUE, not a DEF, so the read finds nothing and upstream.epicSlug is undefined. That branch has exactly one upstream read (storage.ts:241) and storage.ts performs no ISSUE read anywhere, even though the helper it would need already exists in the same file (issueArtifactId, storage.ts:169) - so this is an omission at a known call site, not a missing capability. The label then falls back to the raw hash via the epicSlug ?? epicHash default, which recurs at seven sites in storage.ts (for example :301, :361, :382), producing the folder named 792f9324fc43d95c-E20261002792f9324. That third contributor is a second instance of the same DEF-only read pattern already recorded against resolveByIssue in tracker/resolve.ts:337: an epic-level read that honours DEF but not the equivalent ISSUE.",
+    "fixIntent": "Make a work item keep exactly one docs folder for its whole lifetime. The label and the epics-versus-standalone placement should be properties of the work item, established once by its definition artifact (DEF or ISSUE alike) and inherited unchanged by every later stage, rather than recomputed per stage from whatever prose that stage happened to receive. Every epic-level lookup involved must treat an ISSUE as the definition artifact exactly as it treats a DEF, so a bugfix work item is never left without a label and never falls back to the raw hash. A standalone story's build record must be placed and rendered as standalone. The design stage also has to settle two questions this record deliberately leaves open: whether to prevent drift only at the source or additionally make it harmless by locating an existing folder through its stable identity segment regardless of label, and what to do about folders already written to the wrong location on disk, including the four belonging to this work item."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts:104",
+      "quotedText": "return join(repoPath, 'docs', topSegment(workItemKind), `${fileSeg(slug)}-${identity.epicSegment}`);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2260",
+      "quotedText": "const epicSlug = safeDeriveSlug(intent.focus);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2529",
+      "quotedText": "const epicSlug = lld.meta.epicSlug ?? safeDeriveSlug(intent.focus);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts:241",
+      "quotedText": "const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone === true, merged.meta.createdAt);"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:244",
+      "quotedText": "workItemKind: standalone ? 'standalone' : 'epic',"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:382",
+      "quotedText": "resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'LLD', workItemKind, epicSlug ?? epicHash)"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts:149",
+      "quotedText": "export function renderBuildRecordMd(rec: BuildRecord): string"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/tracker/resolve.ts:337",
+      "quotedText": "const m = DEF_RE.exec(f);"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-792f9324fc43d95c.json",
+      "quotedText": "epicSlug='regression-hierarchical-label-resolver-listepichashes-src', standalone=true"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-792f9324fc43d95c-S001.json",
+      "quotedText": "epicSlug absent, standalone absent, sizeClass absent"
+    }
+  ]
+}

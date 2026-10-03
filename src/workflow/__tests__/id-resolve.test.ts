@@ -896,6 +896,75 @@ test('t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story w
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+// ---------------------------------------------------------------------------
+// S001/t6 — resolveByIssue: assert the no-op rather than assuming it
+// ---------------------------------------------------------------------------
+
+test('t6 — resolveByIssue NO-OP: issue numbers resolve at task, story and epic level exactly as before', () => {
+	const s = setupRepo();
+	try {
+		// Task level — the PLAN taskRefs pass. storyId comes off the PLAN
+		// FILENAME, so t3's clause 1 is satisfied by construction.
+		const task = resolveWorkflowRef(s.repo, '#9');
+		assert.notEqual(task, null);
+		assert.equal(task!.level, 'task');
+		assert.equal(task!.storyId, 's1');
+		assert.equal(task!.taskId, 't3');
+		assert.deepEqual(task!.task, TASK_T3, 'the PlanTask is still attached');
+
+		// Story level — the LLD storyRef pass. storyId again comes off the
+		// FILENAME of an artifact that exists.
+		const story = resolveWorkflowRef(s.repo, '#5');
+		assert.notEqual(story, null);
+		assert.equal(story!.level, 'story');
+		assert.equal(story!.storyId, 's1');
+
+		// Epic level — the sub-case that passes NO storyId, so the gate is
+		// never consulted.
+		const epic = resolveWorkflowRef(s.repo, '#1');
+		assert.notEqual(epic, null);
+		assert.equal(epic!.level, 'epic');
+		assert.equal(epic!.storyId, undefined);
+
+		// An unmatched number is still a refusal.
+		assert.equal(resolveWorkflowRef(s.repo, '#4040'), null);
+	} finally { s.cleanup(); }
+});
+
+test('t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef for a story that does not exist now refuses', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-phantom-'));
+	const dir = join(repo, '.insrc/artifacts');
+	try {
+		// The third pass derives storyId from DEF `storyRefs` KEYS, which no
+		// artifact evidences — unlike the task and story passes, which read it
+		// off a filename. So a storyRef naming an undeclared, unbuilt story used
+		// to mint a dummy ref and now refuses. That is the SAME defect class this
+		// story fixes, not a regression; pinned here so the change is deliberate
+		// and visible rather than an unnoticed side effect.
+		writeJson(join(dir, `DEF-${DECL_HASH}.json`), {
+			meta: {
+				workflow: 'define', runId: 'd1', repoPath: repo, epicHash: DECL_HASH,
+				epicSlug: 'phantom-storyref', createdAt: CREATED, schemaVersion: 1,
+				tracker: { adapter: 'github', epicRef: 'acme/demo#100', storyRefs: { s7: 'acme/demo#107' } },
+			},
+			body: {
+				flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [],
+				stories: [],   // s7 is NOT declared
+				openQuestions: [],
+			},
+			citations: [],
+		});
+		assert.equal(resolveWorkflowRef(repo, '#107'), null,
+			'a storyRef for a story with no artifact and no declaration is a phantom — refused');
+
+		// The epic-level ref on the very same DEF still resolves, proving the
+		// refusal is scoped to the story sub-case and did not break the pass.
+		const epic = resolveWorkflowRef(repo, '#100');
+		assert.notEqual(epic, null, 'the epicRef on the same DEF is unaffected');
+		assert.equal(epic!.level, 'epic');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('resolver — unknown / malformed identifier → null', () => {
 	const s = setupRepo();
 	try {

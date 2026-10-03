@@ -18,8 +18,8 @@
 
 - `.insrc/artifacts/CR-e20235c17f083a16-S001.json` — **insrc-build** (2026-10-03T12:34:55.212Z)
 - `.insrc/artifacts/PLAN-e20235c17f083a16-S001.json` — **insrc-build** (2026-10-03T12:34:55.212Z)
-- `docs/epics/e20235c17f083a16-E20261003e20235c1/S001/BUILD.md` — **insrc-build** (2026-10-03T12:34:55.212Z)
-- `docs/standalone/make-work-item-keep-exactly-one-E20261003e20235c1/S001/CR.md` — **insrc-build** (2026-10-03T12:34:55.212Z)
+- `docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/BUILD.md` — **insrc-build** (2026-10-03T12:34:55.212Z)
+- `docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/CR.md` — **insrc-build** (2026-10-03T12:34:55.212Z)
 - `src/workflow/__tests__/folder-identity-finalize.test.ts` — **insrc-build** (2026-10-03T12:34:55.212Z)
 - `src/workflow/__tests__/folder-identity-regression.test.ts` — **insrc-build** (2026-10-03T12:34:55.212Z)
 - `src/workflow/__tests__/migrate-docs-tree.test.ts` — **insrc-build** (2026-10-03T12:34:55.212Z)

@@ -652,3 +652,80 @@ test('t8 — a file never rewrites a reference to its OWN old path', () => {
 		}
 	} finally { cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// S001/t9 — COMPANION files travel with their artifact.
+//
+// Found by applying the migration to this repo: convergence reduced 33 forked
+// segments to 13, and most of the survivors were folders kept alive by a single
+// orphaned companion — an er-model.html or ux-mock.html whose LLD had moved out
+// from under it. The migration indexed only `.md`, so companions never moved.
+// ---------------------------------------------------------------------------
+
+function seedWithCompanion(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t9-comp-'));
+	const wr = (rel: string, body: string): void => {
+		const abs = join(repo, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body);
+	};
+	const meta = (storyId?: string): string => JSON.stringify({
+		meta: {
+			epicHash: T6_HASH, epicSlug: GOOD, standalone: true,
+			createdAt: T6_ANCHOR, epicCreatedAt: T6_ANCHOR,
+			...(storyId !== undefined ? { storyId } : {}),
+		},
+		body: {},
+	});
+	wr(`.insrc/artifacts/ISSUE-${T6_HASH}.json`,    meta());
+	wr(`.insrc/artifacts/LLD-${T6_HASH}-S001.json`, meta('S001'));
+
+	wr(`docs/standalone/${GOOD}-${T6_SEG}/ISSUE.md`, `${artifactIdMarker(`ISSUE-${T6_HASH}`)}\n\n# issue\n`);
+	// The LLD is in the DRIFTED folder, with its companion beside it.
+	wr(`docs/standalone/${DRIFTED}-${T6_SEG}/S001/LLD.md`, `${artifactIdMarker(`LLD-${T6_HASH}-S001`)}\n\n# lld\n`);
+	wr(`docs/standalone/${DRIFTED}-${T6_SEG}/S001/er-model.html`, '<!doctype html><title>er</title>');
+	wr(`docs/standalone/${DRIFTED}-${T6_SEG}/S001/ux-mock.html`,  '<!doctype html><title>ux</title>');
+	gitInit(repo);
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html', () => {
+	const { repo, cleanup } = seedWithCompanion();
+	try {
+		assert.equal(foldersForSegment(repo).length, 2, 'fixture must start forked');
+		const plan = planMigration(repo);
+		const companions = plan.moves.filter(m => m.kind === 'COMPANION');
+		assert.equal(companions.length, 2, `both companions must move, got ${JSON.stringify(companions.map(c => c.from))}`);
+		// A companion is chunked with its own work item, not orphaned into its own.
+		for (const c of companions) assert.equal(c.groupHash, T6_HASH, 'a companion inherits its artifact\'s group');
+
+		applyMigration(repo, plan);
+
+		assert.deepEqual(
+			foldersForSegment(repo), [`docs/standalone/${GOOD}-${T6_SEG}`],
+			'exactly one folder — the companions must not strand the old one',
+		);
+		assert.ok(existsSync(join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001/er-model.html`)));
+		assert.ok(existsSync(join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001/ux-mock.html`)));
+	} finally { cleanup(); }
+});
+
+test('t9 — a companion is never overwritten at its destination', () => {
+	const { repo, cleanup } = seedWithCompanion();
+	try {
+		// Pre-place a DIFFERENT er-model.html at the destination.
+		const dest = join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001`);
+		mkdirSync(dest, { recursive: true });
+		writeFileSync(join(dest, 'er-model.html'), 'PRE-EXISTING — must survive');
+		// applyMigration requires a clean tree, so the pre-placed file must be committed.
+		execFileSync('git', ['add', '-A'], { cwd: repo, encoding: 'utf8' });
+		execFileSync('git', ['commit', '-q', '-m', 'pre-existing companion'], { cwd: repo, encoding: 'utf8' });
+		const plan = planMigration(repo);
+		assert.ok(
+			!plan.moves.some(m => m.kind === 'COMPANION' && m.to === join(dest, 'er-model.html')),
+			'must not schedule a move onto an existing companion',
+		);
+		applyMigration(repo, plan);
+		assert.equal(readFileSync(join(dest, 'er-model.html'), 'utf8'), 'PRE-EXISTING — must survive');
+	} finally { cleanup(); }
+});

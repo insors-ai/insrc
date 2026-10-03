@@ -56,7 +56,14 @@ export interface MigrationMove {
 	readonly from:     string;
 	/** Absolute destination (nested) md path. */
 	readonly to:       string;
-	readonly kind:     ArtifactKind;
+	/** The artifact kind, or `'COMPANION'` for a non-md sibling (er-model.html,
+	 *  ux-mock.html, a diagram, a screenshot) that travels with its artifact. A
+	 *  companion is not an artifact in its own right — it has no id and no entry in
+	 *  the store — but it DOES occupy a folder, so it has to move or the folder it
+	 *  sits in survives the convergence. */
+	readonly kind:     ArtifactKind | 'COMPANION';
+	/** Inherited verbatim from the artifact move whose folder this companion shares,
+	 *  so a companion is chunked and committed with its own work item. */
 	readonly identity: WorkItemIdentity;
 	/** Group key (epicHash / specHash) — the per-epic chunk key. */
 	readonly groupHash: string;
@@ -426,6 +433,47 @@ export function planMigration(repoPath: string): MigrationPlan {
 			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
 		}
 	}
+
+	// 2b. COMPANION files travel with their artifact.
+	//
+	//     A companion (er-model.html, ux-mock.html, a sequence diagram, a mock
+	//     screenshot) is placed by resolveCompanionPath as a SIBLING of its
+	//     artifact's md, inside the same `S<nnn>/` folder. The migration indexed
+	//     only `.md`, so companions were left behind — and a single orphaned
+	//     er-model.html is enough to keep a whole work-item folder alive, which
+	//     defeats convergence just as effectively as a stranded document.
+	//
+	//     Ownership is taken from the FOLDER rather than guessed per file: a story
+	//     folder belongs to one work item, so when every md leaving it goes to the
+	//     same destination folder, its non-md siblings go there too. If a folder's
+	//     md files disagree on their destination the companions are left alone —
+	//     ambiguous ownership is not something to resolve by guessing.
+	const dirMoves = new Map<string, { readonly toDirs: Set<string>; readonly owner: MigrationMove }>();
+	for (const mv of moves) {
+		const from = dirname(mv.from);
+		const seen = dirMoves.get(from);
+		if (seen === undefined) dirMoves.set(from, { toDirs: new Set([dirname(mv.to)]), owner: mv });
+		else seen.toDirs.add(dirname(mv.to));
+	}
+	const companionMoves: MigrationMove[] = [];
+	for (const [fromDir, { toDirs, owner }] of dirMoves) {
+		if (toDirs.size !== 1) continue;                       // ambiguous owner — leave it
+		const toDir = [...toDirs][0]!;
+		if (toDir === fromDir) continue;
+		let names: string[];
+		try { names = readdirSync(fromDir); } catch { continue; }
+		for (const name of names) {
+			if (name.endsWith('.md')) continue;                 // md is already handled
+			const abs = join(fromDir, name);
+			try { if (statSync(abs).isDirectory()) continue; } catch { continue; }
+			if (existsSync(join(toDir, name))) continue;        // already there — never overwrite
+			companionMoves.push({
+				from: abs, to: join(toDir, name), kind: 'COMPANION',
+				identity: owner.identity, groupHash: owner.groupHash,
+			});
+		}
+	}
+	moves.push(...companionMoves);
 
 	// 3. Cross-document link rewrites: find every md that REFERENCES a moved
 	//    artifact's old path, and record the rewrite.

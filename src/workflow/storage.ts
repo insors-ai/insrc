@@ -208,19 +208,75 @@ export function readEpicCreatedAt(repoPath: string, epicHash: string): string | 
 	}
 }
 
-/** Read `meta.createdAt` + `meta.epicSlug` from a canonical artifact JSON.
- *  Best-effort — returns `{}` when absent/unreadable. */
-function readArtifactCore(repoPath: string, artifactId: string): { createdAt?: string; epicSlug?: string } {
+/** A work item's epic-level properties, as carried on its definition artifact.
+ *
+ *  These three travel together because they answer one question — where does
+ *  this work item's folder live and what is it called — and because a single
+ *  read is what lets {@link readEpicDefinitionCore} express the
+ *  DEF-equals-ISSUE equivalence in exactly one place. */
+export interface EpicDefinitionCore {
+	readonly createdAt?:  string;
+	readonly epicSlug?:   string;
+	readonly standalone?: boolean;
+}
+
+/** Read `meta.createdAt` + `meta.epicSlug` + `meta.standalone` from a canonical
+ *  artifact JSON. Best-effort — returns `{}` when absent/unreadable.
+ *
+ *  `standalone` is reported only when it is genuinely a boolean, so a malformed
+ *  value is indistinguishable from an absent one. That matters downstream:
+ *  `workItemKindOf` treats only an explicit `true` as standalone, and this read
+ *  must not manufacture one. */
+function readArtifactCore(repoPath: string, artifactId: string): EpicDefinitionCore {
 	const json = join(repoPath, ARTIFACTS_DIR, `${artifactId}.json`);
 	if (!existsSync(json)) return {};
 	try {
-		const parsed = JSON.parse(readFileSync(json, 'utf8')) as { meta?: { createdAt?: unknown; epicSlug?: unknown } };
-		const createdAt = typeof parsed.meta?.createdAt === 'string' ? parsed.meta.createdAt : undefined;
-		const epicSlug  = typeof parsed.meta?.epicSlug  === 'string' ? parsed.meta.epicSlug  : undefined;
-		return { ...(createdAt !== undefined ? { createdAt } : {}), ...(epicSlug !== undefined ? { epicSlug } : {}) };
+		const parsed = JSON.parse(readFileSync(json, 'utf8')) as {
+			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown };
+		};
+		const createdAt  = typeof parsed.meta?.createdAt  === 'string'  ? parsed.meta.createdAt  : undefined;
+		const epicSlug   = typeof parsed.meta?.epicSlug   === 'string'  ? parsed.meta.epicSlug   : undefined;
+		const standalone = typeof parsed.meta?.standalone === 'boolean' ? parsed.meta.standalone : undefined;
+		return {
+			...(createdAt  !== undefined ? { createdAt }  : {}),
+			...(epicSlug   !== undefined ? { epicSlug }   : {}),
+			...(standalone !== undefined ? { standalone } : {}),
+		};
 	} catch {
 		return {};
 	}
+}
+
+/** The work item's DEFINITION artifact core: `DEF-<hash>` first, then
+ *  `ISSUE-<hash>`.
+ *
+ *  An ISSUE **is** a DEF — the epic-level definition artifact, formerly named
+ *  DEF — so both answer the same question and the read ORDER is the only thing
+ *  that distinguishes them. The order is COPIED FROM the tracker resolver's
+ *  `readEpicIdentity`, not newly decided, so the two readers can never disagree
+ *  about which artifact defines a work item.
+ *
+ *  FIRST-READABLE-WINS, not first-present-wins. `readArtifactCore` degrades a
+ *  missing file AND a parse failure to `{}` alike, so a corrupt DEF falls
+ *  through to the ISSUE rather than poisoning the result. "Readable" here means
+ *  it yielded at least one usable field: a DEF that parses but carries none of
+ *  the three is as useless as one that does not parse.
+ *
+ *  Never throws — an unreadable pair is an empty result, which every caller
+ *  already handles via its own fallback.
+ *
+ *  UNWIRED as of S001/t1: nothing consumes it yet. S001/t2 routes
+ *  {@link readEpicCreatedAt} through it and S001/t5 does the same for
+ *  {@link buildRecordFolderArgs}; the sibling Story ISSUE-6f31771d060cb412 then
+ *  widens it from these three meta fields to the definition's body as well. */
+export function readEpicDefinitionCore(repoPath: string, epicHash: string): EpicDefinitionCore {
+	for (const artifactId of [defineArtifactId(epicHash), issueArtifactId(epicHash)]) {
+		const core = readArtifactCore(repoPath, artifactId);
+		if (core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined) {
+			return core;
+		}
+	}
+	return {};
 }
 
 /** Resolve the sc2 folder args (anchor createdAt + top-level split + slug label)

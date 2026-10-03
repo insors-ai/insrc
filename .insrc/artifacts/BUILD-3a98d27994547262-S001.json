@@ -7,12 +7,13 @@
     "storyId": "S001",
     "createdAt": "2026-10-03T14:36:49.033Z",
     "triageRationale": "bugfix / small. Two one-line label reads with one non-test call site; the correct helper already exists so the fix is reuse, not design. Not trivial-by-risk: the value decides where artifact markdown lands, which is the placement boundary that forked 33 identity segments.",
-    "updatedAt": "2026-10-03T14:42:35.397Z"
+    "updatedAt": "2026-10-03T15:02:02.093Z",
+    "approvedAt": "2026-10-03T15:02:02.260Z"
   },
   "body": {
     "focus": "Route both folder-label reads through the definition head instead of the LLD. In finalizePlan (src/workflow/orchestrator.ts:2537) replace `lld.meta.epicSlug ?? safeDeriveSlug(intent.focus)` with the existing inheritedEpicSlug helper (src/workflow/storage.ts:213), and in buildRecordFolderArgs (src/workflow/storage.ts:346-348) make the standalone branch resolve the LABEL through readEpicDefinitionCore like its non-standalone sibling already does, instead of reading the LLD's own record. Remove the now-false comment at storage.ts:344 ('The standalone branch still reads the LLD') along with the behaviour it documents. Change of SOURCE only: no new field, no new function, no change to identity, anchor or placement; the empty-label and no-definition-artifact fallbacks already live in the helper. Add tests asserting a PLAN and a BUILD finalized for a work item whose LLD carries a DIFFERENT label still land under the definition head's label, and mutation-prove each site.",
     "producesLld": false,
-    "commit": "dac91ae",
+    "commit": "1dd634f",
     "tasks": [
       {
         "id": "S001",

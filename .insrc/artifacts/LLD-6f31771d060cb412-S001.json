@@ -24,7 +24,16 @@
     "hldEffectiveHash": "df5108d0c3470f568f6b84054b3291eaa120c2601e0ea85f29705b91d7402788",
     "hldAmendmentsApplied": [],
     "standalone": true,
-    "sizeClass": "bugfix"
+    "sizeClass": "bugfix",
+    "questionResolutions": {
+      "qc0411020": {
+        "question": "CROSS-STORY COUPLING, the main thing a reviewer should rule on: this Story proposes WIDENING the definition-artifact accessor that the sibling work item ISSUE-e20235c17f083a16 introduces, from three metadata fields to the whole definition. On the framework's usual reading that reaches into another work item's scope, and the framework has no shared-contract mechanism to express a dependency between two STANDALONE items. What makes it legitimate is the user's explicit instruction to design the two together as one rule. It creates a hard ORDERING dependency: the sibling Story must land its accessor first, and its LLD's description of that accessor must stop being scoped to folder placement. Confirm the coupling and the order, or split the two and accept two mechanisms.",
+        "status": "resolved",
+        "choice": "Confirmed: keep the cross-Story coupling. This Story widens the definition-artifact accessor the folder-fork Story introduces, and the two land in that order.",
+        "rationale": "Ruled by the user in chat, in answer to the explicit instruction to design the two defects as one rule. Consequences that now become binding rather than optional. First, ORDERING: ISSUE-e20235c17f083a16's Story must land its accessor before this Story can widen it, so the folder-fork plan and build precede this one. Second, a CONSISTENCY EDIT is owed on the folder-fork LLD: it currently describes the accessor as the single place the DEF-equals-ISSUE equivalence is expressed 'for folder placement', and that narrowing must go, because the accessor now has two consumers reading different parts of the same record — metadata for placement, body for the contract. Third, the framework cannot express this dependency structurally: there is no shared-contract mechanism between two standalone work items, so the coupling lives only in these two documents' prose and in the build order. That is a real fragility and is recorded as such rather than glossed: if the two Stories are ever re-sequenced or one is dropped, nothing in the artifacts will refuse.",
+        "resolvedAt": "2026-10-03T06:47:02.680Z"
+      }
+    }
   },
   "body": {
     "summary": {

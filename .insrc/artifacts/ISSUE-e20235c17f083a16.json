@@ -237,6 +237,10 @@
         "note": "Premise confirmed verbatim against the probe evidence; no corrective action required.",
         "resolvedAt": "2026-10-03T04:50:45.456Z"
       }
+    },
+    "approvedAt": "2026-10-03T05:36:04.848Z",
+    "parentRef": {
+      "slug": "artifact-docs-folders-fork-per-stage"
     }
   },
   "body": {

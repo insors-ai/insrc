@@ -19,7 +19,7 @@ Fixes the label resolver on two independent defects, in src/workflow/tracker/res
 - `.insrc/artifacts/ISSUE-5f7a7cb95b643ae5.json` — **insrc-build** (2026-10-03T05:28:54.835Z)
 - `.insrc/artifacts/ISSUE-b955fa759c3c4309.json` — **insrc-build** (2026-10-03T05:28:54.835Z)
 - `.insrc/artifacts/PLAN-792f9324fc43d95c-S001.json` — **insrc-build** (2026-10-03T05:28:54.835Z)
-- `docs/epics/lld-revision-supersedes-earlier-pass-whose-E20261002792f9324/S001/PLAN.md` — **insrc-build** (2026-10-03T05:28:54.835Z)
+- `docs/standalone/regression-hierarchical-label-resolver-listepichashes-src-E20261002792f9324/S001/PLAN.md` — **insrc-build** (2026-10-03T05:28:54.835Z)
 - `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/ISSUE.md` — **insrc-build** (2026-10-03T05:28:54.835Z)
 - `docs/standalone/five-acceptance-checks-approved-plan-issue-E2026100245106131/ISSUE.md` — **insrc-build** (2026-10-03T05:28:54.835Z)
 - `docs/standalone/six-low-severity-defects-found-independent-E20261002b955fa75/ISSUE.md` — **insrc-build** (2026-10-03T05:28:54.835Z)

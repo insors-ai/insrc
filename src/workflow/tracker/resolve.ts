@@ -237,6 +237,22 @@ function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string
 	return exact;   // unchanged miss — callers treat a bad path as "absent"
 }
 
+/** HOW an epic evidences a story, strongest first.
+ *
+ *    `artifact` — a story-scoped LLD or PLAN exists for the ordinal.
+ *    `declared` — the epic's DEF names the story in `body.stories`.
+ *    `implied`  — an ISSUE-anchored epic, which declares no story list at all,
+ *                 is taken to have exactly one story at ordinal 1 by the
+ *                 standalone/bugfix convention.
+ *
+ *  The first two are EXPLICIT: something on disk names this story. The third is
+ *  a CONVENTION that every bugfix epic satisfies identically, which is why it
+ *  ranks last — see {@link resolveByLabel}. */
+type StoryEvidence = 'artifact' | 'declared' | 'implied';
+
+/** Evidence ranks that count as explicit, i.e. outrank the bare convention. */
+const EXPLICIT_EVIDENCE: ReadonlySet<StoryEvidence> = new Set<StoryEvidence>(['artifact', 'declared']);
+
 /** Whether `storyId` names a story that actually EXISTS under `epicHash`.
  *
  *  Two independent clauses, either of which suffices:
@@ -256,22 +272,27 @@ function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string
  *
  *  Never throws: an unparseable story label is a refusal, not an exception,
  *  because no consumer of this module has a handler. */
-function storyExists(dir: string, epicHash: string, storyId: string): boolean {
+function storyEvidence(dir: string, epicHash: string, storyId: string): StoryEvidence | null {
 	let want: number;
-	try { want = storyIdToOrdinal(storyId); } catch { return false; }
+	try { want = storyIdToOrdinal(storyId); } catch { return null; }
 
 	for (const prefix of ['LLD', 'PLAN'] as const) {
-		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId))) return true;
+		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId))) return 'artifact';
 	}
 
 	const def = readEpicDefinition(dir, epicHash);
-	if (def === null) return false;
+	if (def === null) return null;
 	// An ISSUE declares no story list — the bugfix route is one story at ordinal 1.
-	if (def.kind === 'issue') return want === 1;
+	if (def.kind === 'issue') return want === 1 ? 'implied' : null;
 	for (const story of def.artifact.body?.stories ?? []) {
-		try { if (storyIdToOrdinal(story.id) === want) return true; } catch { continue; }
+		try { if (storyIdToOrdinal(story.id) === want) return 'declared'; } catch { continue; }
 	}
-	return false;
+	return null;
+}
+
+/** Whether the story exists at all — any evidence will do. */
+function storyExists(dir: string, epicHash: string, storyId: string): boolean {
+	return storyEvidence(dir, epicHash, storyId) !== null;
 }
 
 /** Assemble a `ResolvedRef` for a located node. Returns null when NEITHER the
@@ -425,8 +446,42 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 		if (matches.length !== 1) return null;
 		return buildRef(dir, matches[0]!, storyId, taskId);
 	}
-	if (hashes.length !== 1) return null;   // ambiguous — needs an issue# or hierId
-	return buildRef(dir, hashes[0]!, storyId, taskId);
+	// Unscoped: attempt a reference per candidate epic and keep the ones that
+	// actually RESOLVE. COUNTING epics was the defect — a second epic that does
+	// not contain the label made an otherwise unambiguous label unresolvable,
+	// which is what surfaced once a bugfix ISSUE became a visible epic peer.
+	//
+	// Candidate selection and reference construction are deliberately the SAME
+	// operation: a candidate qualifies precisely because buildRef succeeded for
+	// it, so t3's story verification IS the containment test and there is no
+	// second notion of "contains the story" that could drift out of sync.
+	//
+	// Genuine ambiguity still refuses: two epics that BOTH evidence the label
+	// yield two references and the caller must disambiguate with an issue#,
+	// a hierarchical id, or an explicit epicHash scope.
+	//
+	// Candidates are TIERED by how strongly the epic evidences the story,
+	// because the three evidence ranks are not equally informative. Every
+	// ISSUE-anchored epic `implies` a story at ordinal 1, so a flat count would
+	// make a bare `s1` ambiguous in any repo holding two bugfixes — and would
+	// let an unrelated bugfix shadow a DEF epic that actually ships s1. Explicit
+	// evidence therefore wins outright when it is unique; the convention is
+	// consulted only when nothing explicit answers.
+	const candidates: { readonly ref: ResolvedRef; readonly evidence: StoryEvidence }[] = [];
+	for (const h of hashes) {
+		const evidence = storyEvidence(dir, h, storyId);
+		if (evidence === null) continue;
+		const ref = buildRef(dir, h, storyId, taskId);
+		if (ref !== null) candidates.push({ ref, evidence });
+	}
+	for (const explicit of [true, false]) {
+		const tier = candidates.filter(c => EXPLICIT_EVIDENCE.has(c.evidence) === explicit);
+		// A tie WITHIN a tier is genuine ambiguity and refuses outright — it must
+		// not fall through to a weaker tier and be resolved by accident.
+		if (tier.length > 1) return null;
+		if (tier.length === 1) return tier[0]!.ref;
+	}
+	return null;
 }
 
 // ---------------------------------------------------------------------------

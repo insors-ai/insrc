@@ -897,6 +897,109 @@ test('t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story w
 });
 
 // ---------------------------------------------------------------------------
+// S001/t4 — the unscoped label branch keeps candidates that RESOLVE, tiered by
+// evidence strength, instead of counting epics
+// ---------------------------------------------------------------------------
+
+const RIVAL_HASH = 'dddd9999eeee0000';
+
+/** A second DEF epic that genuinely DOES contain s1 — the real-ambiguity case. */
+function addRivalDefEpicWithS1(repo: string): void {
+	const dir = join(repo, '.insrc/artifacts');
+	writeJson(join(dir, `DEF-${RIVAL_HASH}.json`), {
+		meta: {
+			workflow: 'define', runId: 'd8', repoPath: repo, epicHash: RIVAL_HASH,
+			epicSlug: 'rival-feature', createdAt: CREATED, schemaVersion: 1,
+		},
+		body: { flavor: 'new-capability', problem: 'z.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
+		citations: [],
+	});
+	writeJson(join(dir, `LLD-${RIVAL_HASH}-s1.json`), {
+		meta: {
+			workflow: 'design.story', runId: 'l8', repoPath: repo, epicHash: RIVAL_HASH,
+			epicSlug: 'rival-feature', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+		},
+		body: {},
+	});
+}
+
+test('t4 — GENUINE ambiguity still refuses: two feature epics that BOTH contain s1, unscoped → null', () => {
+	const s = setupRepo();
+	try {
+		addRivalDefEpicWithS1(s.repo);
+		assert.equal(resolveWorkflowRef(s.repo, 's1'), null,
+			'two epics evidence s1 with equal (explicit) strength — the caller must disambiguate');
+
+		// ...and an explicit scope still picks either one out.
+		const mine  = resolveWorkflowRef(s.repo, 's1', { epicHash: EPIC_HASH });
+		const rival = resolveWorkflowRef(s.repo, 's1', { epicHash: RIVAL_HASH });
+		assert.equal(mine?.epicHash, EPIC_HASH);
+		assert.equal(rival?.epicHash, RIVAL_HASH);
+	} finally { s.cleanup(); }
+});
+
+test('t4 — a tie within the EXPLICIT tier does not fall through to the implied tier', () => {
+	const s = setupRepo();
+	try {
+		// Two explicit candidates AND a bugfix epic that implies ordinal 1. The
+		// implied candidate must not win by default once the explicit tier ties.
+		addRivalDefEpicWithS1(s.repo);
+		addUnrelatedIssueEpic(s.repo);
+		assert.equal(resolveWorkflowRef(s.repo, 's1'), null,
+			'an ambiguous explicit tier refuses outright rather than deferring to the convention');
+	} finally { s.cleanup(); }
+});
+
+test('t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic implies one) and resolves with an explicit scope', () => {
+	const s = setupBugfixRepo();
+	try {
+		// One bugfix epic — S001 is evidenced by its LLD, so it resolves.
+		assert.notEqual(resolveWorkflowRef(s.repo, 'S001'), null, 'a lone bugfix epic resolves S001 unscoped');
+
+		// Add a SECOND bugfix epic with its own S001 artifacts: now two epics
+		// evidence ordinal 1 explicitly, so the bare label is truly ambiguous.
+		writeJson(join(s.dir, `ISSUE-${RIVAL_HASH}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'i2', repoPath: s.repo, issueHash: RIVAL_HASH,
+				epicSlug: 'second-bugfix', createdAt: CREATED, standalone: true,
+				magnitude: 'small', schemaVersion: 1,
+			},
+			body: { title: 'y', reproduction: 'y', rootCause: 'y', fixIntent: 'y' },
+			citations: [],
+		});
+		writeJson(join(s.dir, `LLD-${RIVAL_HASH}-S001.json`), {
+			meta: {
+				workflow: 'design.story', runId: 'l2', repoPath: s.repo, epicHash: RIVAL_HASH,
+				epicSlug: 'second-bugfix', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+			},
+			body: {},
+		});
+		assert.equal(resolveWorkflowRef(s.repo, 'S001'), null, 'two bugfix epics both ship an S001 — ambiguous');
+		assert.equal(resolveWorkflowRef(s.repo, 'S001', { epicHash: BUG_HASH })?.epicHash, BUG_HASH,
+			'an explicit scope resolves it');
+		assert.equal(resolveWorkflowRef(s.repo, 'S001', { epicHash: RIVAL_HASH })?.epicHash, RIVAL_HASH);
+	} finally { s.cleanup(); }
+});
+
+test('t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated peer, reachable unscoped and scoped', () => {
+	const s = setupBugfixRepo();
+	try {
+		// Pins that this is NOT the rejected alternative a2 (which would have
+		// narrowed listEpicHashes back to DEF-only). A DEF-less bugfix epic is
+		// still enumerated, so its story is reachable without a scope at all.
+		const unscoped = resolveWorkflowRef(s.repo, 'S001');
+		assert.notEqual(unscoped, null, 'an ISSUE-anchored epic is enumerated, not skipped');
+		assert.equal(unscoped!.epicHash, BUG_HASH);
+		assert.equal(unscoped!.epicSlug, 'resolver-blocked', 'identity still comes off the ISSUE meta');
+
+		// And the task level through the same enumeration.
+		const task = resolveWorkflowRef(s.repo, 'S001/t1');
+		assert.notEqual(task, null);
+		assert.equal(task!.level, 'task');
+	} finally { s.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
 // S001/t6 — resolveByIssue: assert the no-op rather than assuming it
 // ---------------------------------------------------------------------------
 

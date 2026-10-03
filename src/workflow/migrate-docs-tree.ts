@@ -348,6 +348,9 @@ export function planMigration(repoPath: string): MigrationPlan {
 	}
 
 	const toSeen = new Map<string, string>();   // dest → first artifactId (collision detection)
+	/** identity segment → the work-item folder that segment converges to. Lets an
+	 *  ORPHANED companion be placed when its own artifact's md is not moving. */
+	const segmentRoots = new Map<string, { readonly root: string; readonly identity: WorkItemIdentity; readonly groupHash: string }>();
 
 	for (const [hash, members] of [...groups.entries()].sort()) {
 		const workItemKind: WorkItemKind = members.some(m => m.standalone) ? 'standalone' : 'epic';
@@ -403,6 +406,17 @@ export function planMigration(repoPath: string): MigrationPlan {
 			}
 			continue;
 		}
+
+		// The group's resolved work-item FOLDER, recorded so an orphaned companion
+		// can be placed even when no md of its own is moving (see step 2c).
+		try {
+			const groupIdentity = deriveWorkItemIdentity(hash, anchor);
+			segmentRoots.set(groupIdentity.epicSegment, {
+				root: dirname(resolveArtifactMdPath(repoPath, groupIdentity, 'DEF', workItemKind, label)),
+				identity: groupIdentity,
+				groupHash: hash,
+			});
+		} catch { /* an unresolvable group simply contributes no companion target */ }
 
 		for (const m of members) {
 			let identity: WorkItemIdentity;
@@ -493,6 +507,46 @@ export function planMigration(repoPath: string): MigrationPlan {
 			});
 		}
 	}
+
+	// 2c. ORPHANED companions — a story folder left holding only non-md files.
+	//
+	//     After a first convergence pass the artifact md has already moved, so there
+	//     is no sibling move left to inherit a destination from, and the companion
+	//     sits alone keeping its old folder alive. Two such folders existed on this
+	//     repo. The destination comes from the work item's own resolved folder for
+	//     that identity segment, so it is the same answer the md itself got.
+	for (const [top] of [['docs/epics'], ['docs/standalone']] as const) {
+		const topAbs = join(repoPath, top);
+		if (!existsSync(topAbs)) continue;
+		for (const itemName of readdirSync(topAbs)) {
+			const segment = /-((?:E\d{8}[0-9a-f]{8}))$/.exec(itemName)?.[1];
+			if (segment === undefined) continue;
+			const target = segmentRoots.get(segment);
+			if (target === undefined) continue;
+			const itemAbs = join(topAbs, itemName);
+			let storyNames: string[];
+			try { storyNames = readdirSync(itemAbs); } catch { continue; }
+			for (const storySeg of storyNames) {
+				const storyAbs = join(itemAbs, storySeg);
+				try { if (!statSync(storyAbs).isDirectory()) continue; } catch { continue; }
+				let files: string[];
+				try { files = readdirSync(storyAbs); } catch { continue; }
+				if (files.some(f => f.endsWith('.md'))) continue;       // not orphaned
+				const destStory = join(target.root, storySeg);
+				if (destStory === storyAbs) continue;                   // already home
+				for (const name of files) {
+					const abs = join(storyAbs, name);
+					try { if (statSync(abs).isDirectory()) continue; } catch { continue; }
+					if (existsSync(join(destStory, name))) continue;    // never overwrite
+					companionMoves.push({
+						from: abs, to: join(destStory, name), kind: 'COMPANION',
+						identity: target.identity, groupHash: target.groupHash,
+					});
+				}
+			}
+		}
+	}
+
 	moves.push(...companionMoves);
 
 	// 3. Cross-document link rewrites: find every md that REFERENCES a moved

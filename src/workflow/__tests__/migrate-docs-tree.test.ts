@@ -759,3 +759,34 @@ test('t9 — a DUPLICATE render is skipped, not moved and not refused, and neith
 		);
 	} finally { cleanup(); }
 });
+
+test('t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow', () => {
+	// After a first convergence pass the artifact md has already moved, so there is
+	// no sibling move left to inherit a destination from and the companion sits
+	// alone keeping its old folder alive. Two such folders survived on this repo.
+	const { repo, cleanup } = seedFourFolders();
+	try {
+		applyMigration(repo, planMigration(repo));               // pass 1: md converges
+		assert.deepEqual(foldersForSegment(repo), [`docs/standalone/${GOOD}-${T6_SEG}`]);
+
+		// Now strand a companion in a fresh, md-less folder for the SAME segment.
+		const orphanDir = join(repo, `docs/standalone/${DRIFTED}-${T6_SEG}/S001`);
+		mkdirSync(orphanDir, { recursive: true });
+		writeFileSync(join(orphanDir, 'er-model.html'), '<!doctype html><title>stranded</title>');
+		execFileSync('git', ['add', '-A'], { cwd: repo, encoding: 'utf8' });
+		execFileSync('git', ['commit', '-q', '-m', 'stranded companion'], { cwd: repo, encoding: 'utf8' });
+		assert.equal(foldersForSegment(repo).length, 2, 'precondition: the stranded companion forks the segment again');
+
+		const plan = planMigration(repo);
+		const comp = plan.moves.filter(m => m.kind === 'COMPANION');
+		assert.equal(comp.length, 1, `the orphan must be scheduled, got ${JSON.stringify(plan.moves)}`);
+		assert.ok(comp[0]!.to.includes(`${GOOD}-${T6_SEG}`), comp[0]!.to);
+
+		applyMigration(repo, plan);
+		assert.deepEqual(
+			foldersForSegment(repo), [`docs/standalone/${GOOD}-${T6_SEG}`],
+			'one folder again — a stranded companion must not keep a folder alive',
+		);
+		assert.ok(existsSync(join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001/er-model.html`)));
+	} finally { cleanup(); }
+});

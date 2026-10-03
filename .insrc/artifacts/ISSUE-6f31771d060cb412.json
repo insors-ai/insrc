@@ -20,7 +20,101 @@
     "issueHash": "6f31771d060cb412",
     "epicSlug": "every-standalone-bugfix-story-reaches-design",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "cl1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "standaloneStoryContext in src/workflow/runners/design-story/standalone.ts hardcodes acceptanceCriteria to an empty array at line 57 and returns an empty constraints array at line 71, so both values are absent by construction rather than by a failed lookup.",
+          "evidence": "Confirmed verbatim. Both read anchors resolve: standalone.ts:57 returns `acceptanceCriteria: [],` and :71 returns `return { flavor, constraints: [], story, hldSlice };`. The `acceptanceCriteria: []` pattern has exactly ONE non-test source hit, that line. `constraints: []` has two non-test hits, the second being a prompt template in src/prompts rather than code, so the code-side origin is also single.",
+          "action": "none - both hardcoded stubs confirmed at the cited lines",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The standalone.ts module imports ONLY types, so standaloneStoryContext is structurally incapable of reading an artifact: it never opens the artifact store and therefore cannot consult the approved ISSUE or a brainstorm SpecArtifact even in principle.",
+          "evidence": "Confirmed decisively, and it is the load-bearing premise of the whole record. The probe's read of standalone.ts:20 resolves, and a direct inspection settles the negative claim the probe's own filter could not: the file is 72 lines long, contains exactly TWO import statements, and both are `import type` (DefineConstraint/DefineFlavor/DefineStory, and HldContextSlice). A scan for readFileSync, existsSync, readArtifact, artifactJsonPath and readdirSync returns ZERO hits in the file. So standaloneStoryContext genuinely cannot read an artifact even in principle.",
+          "action": "none - the structural-incapability claim holds on direct inspection, which is stronger evidence than the grep could give",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "No edit needed. Recording that the probe's whole-tree grep for filesystem calls was not scoped to this file and so neither confirmed nor refuted the claim; the file-scoped check is what settles it."
+          }
+        },
+        {
+          "claimId": "cl3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The hardcoded empty acceptanceCriteria at standalone.ts:57 is the ONLY place in the non-test source tree that assigns an empty acceptanceCriteria list, so there is a single origin for the defect rather than several.",
+          "evidence": "Confirmed under two independent patterns. Both `acceptanceCriteria: \\[\\]` and the whitespace-tolerant `acceptanceCriteria:\\s*\\[\\s*\\]` return exactly one non-test source hit, standalone.ts:57. So the defect has a single origin and the fix has a single place to land rather than several.",
+          "action": "none - single origin confirmed, which is what makes this a bugfix rather than a sweep",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The standalone story context is consumed at exactly two non-test call sites — orchestrator.ts:1916-1917 for the HLD context slice and runners/design-story/index.ts:93-94 for the whole context — and both receive the stub unchanged.",
+          "evidence": "Confirmed. `standaloneStoryContext(` returns three non-test hits: the declaration at standalone.ts:43 plus exactly two call sites, orchestrator.ts:1917 and runners/design-story/index.ts:94. `isStandaloneParams(` mirrors this with its declaration at :31 plus orchestrator.ts:1916 and index.ts:93. Both read anchors resolve. The consuming surface is therefore two sites, as claimed.",
+          "action": "none - exactly two consumers, so the blast radius of a signature change is small",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "DefineStory declares acceptanceCriteria as a REQUIRED array field at src/workflow/artifacts/define.ts:68, so an empty list is schema-valid and passes validation silently rather than being rejected.",
+          "evidence": "Confirmed. `export interface DefineStory` resolves uniquely at define.ts:64 and `readonly acceptanceCriteria:` at :68, which the read confirms as `readonly acceptanceCriteria:        readonly DefineAcceptanceCriterion[];` — a required field with an array type and no minimum length. An empty array therefore satisfies the type, which is precisely why the pipeline produces one silently.",
+          "action": "none - the schema permits the empty list, which is why nothing errors and why a gate change is one of the open design questions",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story's title and userValue both default to the same focus string when triage supplies no storyTitle or storySpec, so they come out identical verbatim — a second symptom of the same stub.",
+          "evidence": "Confirmed. Both reads resolve: standalone.ts:48 is `const title = strParam(params, 'storyTitle') ?? focus;` and :49 is `const spec = strParam(params, 'storySpec') ?? focus;`, each falling back to the same focus string. This is visible in the live artifact for the folder-fork Story, whose title and userValue are identical verbatim.",
+          "action": "none - the secondary symptom is real and traced to the same stub",
+          "fixability": "auto"
+        },
+        {
+          "claimId": "cl7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The census the whole record rests on: 55 of 55 standalone LLDs supplied their own acceptance criteria, 163 stories across 31 DEF artifacts have none empty, 141 epic-parented LLDs needed none, and 0 of 21 ISSUE artifacts carry a story list — a 100% failure rate on the standalone route and 0% on the epic route.",
+          "evidence": "NOT probe-verifiable, and said plainly rather than scored as a confirmation. The two patterns returned 50-hit saturated results with effectively nothing resolving under non-test source, because the census counts values inside artifact JSON under .insrc/artifacts rather than anything in the source tree. The figures were computed by enumerating that store directly: 55 of 55 standalone LLDs supplied their own criteria, 163 stories across 31 DEFs with none empty, 141 epic-parented LLDs needing none, 0 of 21 ISSUEs carrying a story list.",
+          "action": "Treat as primary-source evidence the review engine structurally cannot reach, exactly as on the previous ISSUE's equivalent claim. A reviewer wanting to check it must re-enumerate .insrc/artifacts; the probes cannot, since they grep src only.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "cl8",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "This defect shares its root PATTERN with the folder-fork ISSUE already on the ledger (ISSUE-e20235c17f083a16): in both, a downstream stage synthesises a property it should inherit from the work item's definition artifact, which is why the fix intent asks for the two to be designed as one rule.",
+          "evidence": "Confirmed, and worth stating because it is the premise the user's 'design both together' instruction rests on. The DEF-only upstream read the folder-fork ISSUE diagnoses resolves at storage.ts:241, `readArtifactCore(repoPath, defineArtifactId(epicHash))`, with exactly one non-test hit. The `epicSlug ?? epicHash` degradation pattern returns 18 non-test source hits across gates.ts, the two build-step phases and storage.ts, consistent with the 7 inside storage.ts counted earlier plus further sites elsewhere. Both defects are therefore instances of one pattern: a downstream stage supplying for itself what the definition artifact should have supplied.",
+          "action": "none - the shared root pattern is real, which is what makes a single design legitimate rather than a convenient framing",
+          "fixability": "auto"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8
+      },
+      "reviewedAt": "2026-10-03T06:30:06.499Z",
+      "model": "client"
+    },
+    "approvedAt": "2026-10-03T06:30:20.835Z",
+    "parentRef": {
+      "slug": "frame-epic-new-pre-workflow-brainstorm",
+      "storyId": "s9"
+    }
   },
   "body": {
     "title": "Standalone and bugfix Stories get no acceptance criteria, so the design document ends up writing the contract it is judged against",

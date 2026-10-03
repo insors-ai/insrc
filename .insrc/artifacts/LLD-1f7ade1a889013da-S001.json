@@ -1,0 +1,941 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791050481658-ob70yg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T18:26:46.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1524380,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "epicSlug": "both-cli-providers-reject-top-level",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791050481658-ob70yg",
+    "hldEffectiveHash": "11048c72b5609f32dc85b790c6d04c03de94c6516bedebb2eabe7155eb913c37",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p2",
+          "kind": "closed-union",
+          "severity": "HIGH",
+          "premise": "DOCGEN_OUTCOME_SCHEMA in src/docgen/schema.ts is the ONLY schema constant in non-test src/ whose ROOT is a oneOf/anyOf/allOf union. This is the premise the entire backwardCompat argument rests on — if a second root-union schema exists and is provider-bound, the guard is a breaking change rather than a latent-case guard.",
+          "evidence": "The probe REFUTES the premise. `^\\s*(oneOf|anyOf|allOf):\\s*\\[` returned THREE src matches, not one: src/docgen/schema.ts:73 (`oneOf: [`), src/daemon/tools/builtins/db/index.ts:1846 (`anyOf: [`), and src/workflow/triage/classify.ts:84 (`allOf: [`). Reading each: db/index.ts:1846 is NESTED under `properties.key` inside a tool inputSchema, so it is correctly outside the claim. But src/workflow/triage/classify.ts:84 is a ROOT-LEVEL `allOf` on CLASSIFY_SCHEMA (declared :77), sitting as a sibling of `type: 'object'`, `additionalProperties: false` and `required`, and used as a CONJUNCTION carrying an if/then conditional-required ('A `bugfix` classification MUST carry a magnitude'), not as a union. It is not a test file, and its own doc comment says it is 'Exported so the controller-driven `insrc_triage` tool can hand it to the outer LLM turn' — start.ts:58 does exactly that. So a second non-test root-level union KEYWORD exists in src/, and the LLD's inventory premise is false as written.",
+          "action": "This is not merely a miscount — it exposes a design defect in the guard's specification, with a statable failure. `rootUnionKey` as specified returns the keyword for ANY of the three at the root, and the LLD's s5 edge case #4 explicitly requires that a root `type: 'object'` must NOT suppress the guard. Built as written, `rootUnionKey(CLASSIFY_SCHEMA)` returns 'allOf', so the moment anything routes the triage classification turn through `CliProvider.completeStructured` the guard rejects locally a schema that is a legitimate JSON Schema conjunction both vendors almost certainly accept — and the rejection message would tell the caller to 'wrap the union in an object envelope', which is nonsensical advice for an if/then conditional-required. CLASSIFY_SCHEMA does not reach completeStructured TODAY (its only consumers are validateAgainstSchema at mcp/triage-step/phases/classify.ts:23 and the MCP tool response at start.ts:58), so this is latent rather than currently breaking — but it inverts the Story's own stated test: 'if any currently-passing call starts failing, the guard is mis-scoped, not the caller.' Fix the keyword set before build, and correct the inventory premise to say 'the only root-level UNION (oneOf/anyOf)' rather than conflating `allOf` with a union.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "`allOf` is a conjunction, not a union. The empirical grounding behind this whole Story covers the `anyOf`-rooted discriminated-union shape only — the live suite comment at local-agents-structured.live.test.ts:26 says precisely that the '`anyOf`-rooted case is specifically the shape that broke direct' use. Nothing in the gathered evidence establishes that a root `allOf` ALONGSIDE a root `type: 'object'` is rejected by either vendor, and the repo actively relies on that shape. Lumping `allOf` in was an unexamined generalisation from the ISSUE's wording, and it is the one place this LLD repeats the mistake it was written to remove: asserting a vendor behaviour that was never probed.",
+            "options": [
+              "RECOMMENDED — Narrow the guard to `oneOf` and `anyOf` only; drop `allOf` from the keyword set. Rename the predicate accordingly so the name does not over-promise. This matches the only shape the evidence actually supports, exempts CLASSIFY_SCHEMA by construction rather than by exception, and keeps the s5 edge case #4 rule (root `type` does not suppress) intact for the two genuine union keywords. Record the `allOf` question as an open question rather than answering it unprobed.",
+              "Keep all three keywords but reject only when there is NO root `type` — i.e. only when the union IS the schema's whole shape. This exempts CLASSIFY_SCHEMA and still covers a root `allOf`, but it DIRECTLY CONTRADICTS s5 edge case #4 and reintroduces exactly the `'type' in root` early-return that normaliseSchemaForAnthropic (structured-output.ts:343) was deleted for, so it must not be chosen without first settling empirically whether a root `type` changes the vendors' answer.",
+              "Keep the guard as written and document that CLASSIFY_SCHEMA can never be routed through CliProvider.completeStructured. Weakest option: it permanently forbids a legitimate, in-use schema shape on the strength of an assumption no probe supports."
+            ]
+          }
+        },
+        {
+          "claimId": "p17",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "BOTH `claude --json-schema` and `codex --output-schema` REJECT a schema whose root is a oneOf/anyOf/allOf union, and injecting a root `type: 'object'` does NOT make either accept it. This is the single premise the whole Story rests on and it is NOT verifiable from the source tree — it was established by live probing in a prior session, and the live fixture that documented it was deleted in commit 617734f. Flagging it explicitly: a deterministic probe CANNOT confirm it, and the LLD's own design deliberately avoids re-probing it with a billed call. If this premise is wrong, the guard rejects schemas that would actually work.",
+          "evidence": "UNVERIFIABLE from source, as expected for an external contract — and the evidence narrows it further than the premise claims. The only in-repo corroboration is local-agents-structured.live.test.ts:25-26: 'anyOf-rooted discriminated union, nested array-of-objects). The `anyOf`-rooted case is specifically the shape that broke direct' use. That supports the rejection for an `anyOf`-ROOTED union with no root `type`. It says NOTHING about `allOf`, and nothing about whether a root `type: 'object'` alongside a union changes either vendor's answer. The fixture that exercised the shape was deleted in 617734f, so the repo now holds only this comment as its record.",
+          "action": "Keep the premise but scope it to what was actually observed. This MED is the root of the p2 HIGH: the LLD generalised one probed shape (`anyOf`-rooted, no root type) into a three-keyword, type-insensitive rule, and that generalisation is what collides with CLASSIFY_SCHEMA. Narrow the stated contract to the `oneOf`/`anyOf`-rooted case, and record the two unprobed extensions — root `allOf`, and root-`type`-present — as explicit open questions. Note the ISSUE itself asked for the guard to be assertable WITHOUT a billed call, which means these two questions cannot be settled inside this Story; that is a reason to narrow the claim, not to assume it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The Story's accuracy-first posture requires the guard to claim exactly as much as was verified and no more. A narrower guard that under-rejects merely restores today's behaviour for unprobed shapes; an over-broad one rejects working schemas, which is strictly worse and is what p2 demonstrates concretely.",
+            "options": [
+              "Scope the external contract to '`oneOf`/`anyOf` at the root with no root `type`' — the shape the deleted fixture actually exercised — and list root-`allOf` and root-`type`-present as open questions.",
+              "Spend one deliberate, one-off billed probe (outside the hermetic suite) to settle `allOf` and root-`type`-present, then widen or narrow the keyword set on real evidence. Costs a billed call but removes the assumption permanently; the ISSUE forbids a billed call in the GUARD'S TEST, not in a one-time design probe."
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "validateAgainstSchema is declared at src/agent/providers/structured-output.ts:80, runs ajv locally with no vendor involved, and is the module's most-used export with on the order of 40 call sites across analyze/, workflow/, mcp/ and the providers.",
+          "evidence": "The declaration is confirmed verbatim: src/agent/providers/structured-output.ts:80 reads 'export function validateAgainstSchema<T>('. The '~40 call sites' figure is NOT verified — the bare `validateAgainstSchema` grep returned a result set capped at 50 matches, so the probe can only establish 'at least 50 matches across src/ and docs/', not a count of call sites.",
+          "action": "Soften the count to a verified form ('the module's most-used export, 50+ matches across src/') or drop the number. Nothing in the design depends on the figure — it only supports the uncontroversial point that validateAgainstSchema is widely used and must keep accepting root unions — so the prescribed change is unaffected.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "An unverified precise-looking number is the kind of detail a later reader will trust without re-deriving. Either verify it or state the bound the evidence supports.",
+            "options": [
+              "Replace '~40 call sites' with 'widely used across analyze/, workflow/, mcp/ and both providers' — no number.",
+              "Re-derive the exact count with an uncapped search at build time and state the real figure."
+            ]
+          }
+        },
+        {
+          "claimId": "p21",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The migration ordering is load-bearing: the predicate must be added and unit-proven (steps 2-3) BEFORE it is wired into completeStructured (step 5), and the falsifying mutation must be run and confirmed red (step 6) BEFORE the integration test is accepted. Only step 5 changes runtime behaviour.",
+          "evidence": "Not addressed by the gathered evidence. The only read returned was the artifact's own first line, 'docs/standalone/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/LLD.md:1' => '<!-- insrc:artifact LLD-1f7ade1a889013da-S001 -->', which confirms the artifact exists but says nothing about its internal step ordering.",
+          "action": "None required. The claim is an internal-consistency statement about the LLD's own migration ordering, which is self-evident on reading the document; a source-tree probe structurally cannot verify it. Recorded as unverifiable rather than asserted as confirmed.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p1",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "normaliseSchemaForAnthropic has ZERO references anywhere in src/ outside its own declaration in structured-output.ts — no production caller and no test caller.",
+          "evidence": "Confirmed. The read resolves exactly: src/agent/providers/structured-output.ts:341 => 'export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {'. The bare-name grep returned 23 matches and EVERY one outside that declaration is in docs/ (the ISSUE.md and this LLD itself) — not a single src/ reference other than the declaration, and none in any test. The zero-caller premise holds, so the deletion is clean.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p3",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "DOCGEN_OUTCOME_SCHEMA is never handed to an LLM provider; its only consumer is a direct ajv compile in its own test file, so the vendor root-union constraint has no bearing on it today.",
+          "evidence": "Confirmed. src/docgen/__tests__/schema.test.ts:22 reads 'const validate = ajv.compile(DOCGEN_OUTCOME_SCHEMA);' — a direct ajv compile. Of the 26 DOCGEN_OUTCOME_SCHEMA matches, the src/ ones are its declaration and that test; the remainder are docs/ artifacts from the docgen epic. No provider call path consumes it, so the schema is ajv-only and the vendor constraint does not bear on it.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "CliProvider.completeStructuredOnce is the ONLY code path in the repo by which a StructuredSchema reaches a vendor CLI flag (--json-schema for claude, --output-schema for codex). This premise is what makes a single guard call site provably sufficient for both vendors.",
+          "evidence": "Confirmed. Both reads resolve verbatim: cli-provider.ts:193 => \"'--json-schema', JSON.stringify(schema),\" and :210 => \"const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];\". Across all three greps the ONLY src/ occurrences of either vendor flag are in cli-provider.ts, and `completeStructuredOnce` appears in src/ only at :180 (the withTransientRetry delegation) and :183 (its declaration). So the single-chokepoint premise holds and one guard site provably covers both vendors.",
+          "action": "none — verified sound. Worth noting for the reader, not as a defect: the p5 evidence shows `completeStructured` also exists on mcp-sampling-provider.ts:210 and ollama.ts:536. Those are correctly out of scope — neither passes a schema to a vendor CLI flag — so the guard is deliberately CliProvider-only, matching a constraint that is specific to the two CLI binaries.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CliProvider.completeStructured is declared at src/agent/providers/cli-provider.ts:175 and delegates to withTransientRetry wrapping completeStructuredOnce — so a guard placed at the top of completeStructured sits OUTSIDE the retry wrapper.",
+          "evidence": "Confirmed. cli-provider.ts:175 => 'async completeStructured<T>(' and :183 => 'private async completeStructuredOnce<T>(' both resolve verbatim, and the p4 evidence shows :180 delegating via withTransientRetry. `private async completeStructuredOnce<T>` is unique in src (1 match), so there is exactly one inner method. A guard at the top of completeStructured therefore does sit outside the retry wrapper, as the design requires.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "withTransientRetry is declared at src/agent/providers/cli-provider.ts:151 and retries up to 3 attempts with a 2000ms-times-attempt backoff, re-throwing immediately when the error is not classified transient.",
+          "evidence": "Confirmed precisely. cli-provider.ts:151 => 'private async withTransientRetry<T>(label: string, op: () => Promise<T>): Promise<T> {'; :152 => 'const maxAttempts = 3'; :161 => 'const backoffMs = 2000 * attempt'. The 3-attempt / 2s-then-4s backoff figures the LLD cites are exact, so the '< 1500ms' wall-clock bound in the test strategy is a sound discriminator between one throw and three retries.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p7",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "isTransientCliError decides retryability by REGEX STRING MATCH on the error message, and its pattern includes the tokens the LLD requires the guard message to avoid (api error, overloaded, rate limit, too many requests, internal server error, service unavailable, timeout, and the bare status numbers). This is the mechanical justification for placing the guard outside the retry wrapper.",
+          "evidence": "Confirmed. cli-provider.ts:409 => 'function isTransientCliError(message: string): boolean {' and :410 is the regex itself: '/connection closed mid-response|api error|overloaded|rate.?limit|too many requests|internal server error|service unavailab...' — matching the vocabulary the LLD requires the guard message to avoid. :160 => 'if (attempt >= maxAttempts || !isTransientCliError(msg)) throw err;' confirms retryability is decided by that string match on the message. The mechanical justification for placing the guard outside the wrapper is sound.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The LLD states isTransientCliError is currently module-private (not exported), which is why the Story must widen it to an export for the non-retryability assertion.",
+          "evidence": "Confirmed. '^function isTransientCliError' matches src/agent/providers/cli-provider.ts:409 — no `export` keyword — while 'export function isTransientCliError' matches ONLY this LLD's own prose at LLD.md:96. So the symbol is module-private today, and the Story's planned visibility widening is a real, necessary change rather than a restatement of the status quo.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CliProviderOpts exposes an optional binPath override at src/agent/providers/cli-provider.ts:80, which is the mechanism the test strategy relies on to drive the real provider path with an impossible binary and no stubbing.",
+          "evidence": "Confirmed, and the test mechanism it underwrites is sound. cli-provider.ts:80 => 'readonly binPath?: string | undefined;' resolves verbatim, and :104 => 'this.binPath = opts.binPath ?? opts.kind;' shows the override is honoured with a fall back to the bare kind name. That is exactly why the test strategy's warning matters: passing the bare 'claude'/'codex' would resolve the user's real installed binary, so an impossible absolute path is required.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "processSchemaForOpenAIStrict's inner walker rewrites oneOf to anyOf and then recurses THROUGH anyOf/allOf branches rather than rejecting them — in-repo evidence that unions below the root are a supported shape and that the new guard must therefore be root-only.",
+          "evidence": "Confirmed. structured-output.ts:261 => \"obj['anyOf'] = obj['oneOf'];\" (the oneOf->anyOf rewrite) and :302 => \"for (const arrKey of ['anyOf', 'allOf'] as const) {\" (recursing THROUGH union branches), with :259 => '// Rewrite oneOf -> anyOf BEFORE recursing into branches.' This is solid in-repo evidence that unions BELOW the root are a supported shape the existing machinery walks into rather than refuses — so the new guard being root-only is correct, and over-rejection via a tree walk would be a real regression.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p12",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "processSchemaForOpenAIStrict has NO production caller — it is referenced only from the gated live test suite and one doc comment in shared/types.ts. The LLD records this as a pre-existing gap it deliberately does not fix.",
+          "evidence": "Confirmed. All 9 processSchemaForOpenAIStrict matches are accounted for: the declaration at structured-output.ts:246 and a doc-comment mention at :20; three in the GATED live suite (local-agents-structured.live.test.ts:53, :244, :327); and one doc comment at shared/types.ts:199 ('after `processSchemaForOpenAIStrict` pre-flight.'). Zero production call sites, exactly as the LLD states.",
+          "action": "none — verified sound. The LLD correctly flags this as a pre-existing gap it deliberately does NOT fix, which keeps it from being read as a claim that the OpenAI-strict path is wired.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p13",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "notImplementedStructuredOutput is declared at src/agent/providers/structured-output.ts:359 and also has ZERO callers, yet the LLD deliberately LEAVES IT IN PLACE as a stub contract rather than deleting it.",
+          "evidence": "Confirmed. structured-output.ts:359 => 'export function notImplementedStructuredOutput(provider: string): never {' resolves verbatim, and of 9 total matches only that one is in src/ — the rest are docs/. Zero callers, as claimed, and the LLD's decision to leave it in place is an explicit judgement rather than an oversight.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p14",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The doc comment block beginning 'Phases B.1-B.5 land per-provider implementations' physically precedes normaliseSchemaForAnthropic's own doc comment rather than the notImplementedStructuredOutput it describes, so the file currently reads as if the normalise helper were the not-implemented stub.",
+          "evidence": "Confirmed by the three reads taken together. structured-output.ts:320 => ' * Phases B.1-B.5 land per-provider implementations one at a time. Each' sits BEFORE :328 => \" * `type: 'object'` declaration. TypeBox `Type.Union([Type.Object(...),\" — which is the body of the normalise helper's own comment — and both precede :341, the normalise declaration. So the stub's doc block does indeed sit above the normalise helper rather than above notImplementedStructuredOutput at :359, and the file reads as the LLD describes.",
+          "action": "none — verified sound. The LLD's instruction to READ the region after deleting, rather than assume the mis-attachment self-corrects, is the right level of caution given the comment blocks are adjacent.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p15",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "There is NO hermetic (non-live) test file covering src/agent/providers/structured-output.ts — the only suite exercising its schema-shaping half is local-agents-structured.live.test.ts, so the new test file is genuinely the first.",
+          "evidence": "Confirmed. \"from '../structured-output.js'\" returns exactly ONE match in src/ — local-agents-structured.live.test.ts:53, the gated live suite — and the deeper-relative form returns zero. So no hermetic test in src/agent/providers/__tests__/ imports structured-output.ts, and the new file genuinely is the module's first non-live test.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p16",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The existing structured-output live suite is gated on INSRC_LIVE_TESTS=1 and additionally on which claude / which codex, and it spawns the real billed binaries — which is why the LLD adds nothing to it.",
+          "evidence": "Confirmed. local-agents-structured.live.test.ts:55 => \"const GATE = process.env['INSRC_LIVE_TESTS'] === '1';\" resolves verbatim, and the suite's tests carry 'skip: !GATE || claudeAvailable...' / 'skip: !GATE || codexAvailable...' at :280, :308, :349, :353 — the double gate on the env var AND binary availability the LLD describes. The same GATE idiom appears in 21 src/ files, so it is the repo's established convention for billed suites and the new file's exclusion from it is meaningful.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p18",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "normaliseSchemaForAnthropic's implementation returns the schema UNCHANGED whenever a root `type` key is already present, and otherwise only injects `type: 'object'` — so its algorithm is exactly the one the LLD claims is falsified, and the new guard's requirement that a root `type` must NOT suppress rejection is a direct contradiction of it.",
+          "evidence": "Confirmed exactly. structured-output.ts:343 => \"if ('type' in root) {\" is the early return, and :356 => \"return { ...root, type: 'object' };\" is the sole mutation. So the helper's entire algorithm is: leave the schema alone if a root `type` exists, else inject `type: 'object'`. That is precisely the algorithm the LLD describes and precisely the premise its s5 edge case #4 forbids the new guard from inheriting.",
+          "action": "none — verified sound. Note this verdict is what makes the p2/p17 findings sharp rather than pedantic: the LLD is right that root-`type`-insensitivity is the correct posture for a genuine union, and wrong only in extending that posture to `allOf`, where a root `type` is the normal, correct shape.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p19",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The repo's hermetic schema-assertion idiom is node:test + node:assert/strict asserting over literal schema objects with no runner config and no mocking framework, as used in the companion metamodel test and the docgen schema test — which is the idiom the new test file extends.",
+          "evidence": "Confirmed. metamodel.test.ts:98 => 'assert.equal(validateAgainstSchema(schema, good).ok, true);' and docgen/__tests__/schema.test.ts:22 => 'const validate = ajv.compile(DOCGEN_OUTCOME_SCHEMA);' both resolve verbatim — literal-schema assertions with no runner config. \"from 'node:test'\" and \"from 'node:assert/strict'\" each return result sets capped at 50 with 48-49 in src/, so the convention is repo-wide and the new file extends it rather than introducing anything.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p20",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The upstream ISSUE-1f7ade1a889013da deliberately left the wrap-versus-reject decision unsettled and imposed two invariants on whichever is chosen: the dead helper must not survive as a false signal of safety, and the constraint must be asserted by a test that does not require a billed live call. The LLD chooses reject (a1), deletes the helper, and adds only hermetic tests — so both invariants are addressed.",
+          "evidence": "Confirmed as far as a source probe can reach. The read resolves .insrc/artifacts/ISSUE-1f7ade1a889013da.json, so the upstream artifact exists. Both distinctive phrases — 'false signal of safety' (2 matches) and 'does NOT require a billed live call' (1 match) — are found, with zero src/ hits, which is exactly right for artifact prose: they appear in the ISSUE and in this LLD's trace of it. The cross-artifact trace holds: the ISSUE's two invariants are carried into the LLD, which chooses reject (a1), deletes the helper (ac5), and adds only hermetic tests (ac7).",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 3,
+        "low": 17
+      },
+      "reviewedAt": "2026-10-03T18:31:45.014Z",
+      "model": "client"
+    },
+    "reviewResolutions": {
+      "p2": {
+        "findingId": "p2",
+        "status": "resolved",
+        "note": "RESOLVED by applying the recommended option: the guard is narrowed to `oneOf`/`anyOf` only; `allOf` is dropped from the keyword set because it is a CONJUNCTION, not a union. Edits landed in both the artifact body and the rendered md: the rootUnionKey signature and Returns, the summary, the schemaDiff, the error-case scenario and detection, the unit truth-table subjects, the ac1 mapping, and edge case #4 (now qualified to a genuine union). A new edge-case row pins the counter-example the review found: CLASSIFY_SCHEMA (src/workflow/triage/classify.ts:77-90) carries a root `allOf` beside a root `type: object` to express an if/then conditional-required, and the earlier draft would have rejected it. backwardCompat now carries a REVIEW CORRECTION naming both sites the original miscount missed (classify.ts:84 root allOf; db/index.ts:1846 anyOf nested under properties.key) and re-establishes the no-caller-breaks claim on corrected evidence.",
+        "resolvedAt": "2026-10-03T18:34:38.161Z"
+      },
+      "p17": {
+        "findingId": "p17",
+        "status": "resolved",
+        "note": "RESOLVED by scoping the external contract to what was actually observed. The vendor-rejection premise is now limited to the `oneOf`/`anyOf`-rooted shape — the only one the deleted fixture exercised (local-agents-structured.live.test.ts:26) — and a new open question records that root-`allOf` and root-`type`-present remain UNPROBED, with the one-off out-of-band probe named as the way to settle them. The guard now deliberately under-rejects rather than over-rejects: under-rejection merely restores current behaviour, over-rejection breaks working schemas.",
+        "resolvedAt": "2026-10-03T18:34:38.164Z"
+      },
+      "p10": {
+        "findingId": "p10",
+        "status": "resolved",
+        "note": "RESOLVED by removing the unverified number. \"~40 call sites\" is replaced with \"widely used across analyze/, workflow/, mcp/ and both providers\" in both the invariant text and the data-model details, since the probe could only establish a capped 50-match floor. Nothing in the design depended on the figure.",
+        "resolvedAt": "2026-10-03T18:34:38.165Z"
+      },
+      "p21": {
+        "findingId": "p21",
+        "status": "resolved",
+        "note": "ACCEPTED as unverifiable-by-construction. The claim is about the LLD’s own internal migration ordering, which a source-tree probe cannot re-derive; it is self-evident on reading section 7. No artifact change needed.",
+        "resolvedAt": "2026-10-03T18:34:38.166Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Both vendor CLIs refuse a JSON schema whose ROOT is a `oneOf`/`anyOf` union — `claude --json-schema` and `codex --output-schema` alike — but nothing in this repo says so. `CliProvider.completeStructuredOnce` hands the caller's schema to each binary verbatim, and the one helper that claims to handle the case, `normaliseSchemaForAnthropic`, has never been called and rests on a disproved algorithm, so it reads as reassurance that the case is covered when it is not. This Story adds a pure root-union predicate, rejects such a schema locally with a named error before any subprocess is spawned, and deletes the dead helper. The guard is asserted entirely in the hermetic sweep — the binaries are never reached, so no billed call is involved."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Guard structured-output schemas against the cross-vendor top-level union rejection: decide between wrapping a root union into an object envelope and rejecting it locally, remove or make real the dead normaliseSchemaForAnthropic helper, and assert the guard without a billed live call."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "rootUnionKey",
+          "signature": "export function rootUnionKey(schema: StructuredSchema): 'oneOf' | 'anyOf' | undefined",
+          "parameters": [
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "The caller-declared JSON Schema about to be sent to a provider. Inspected at the ROOT only — nested unions are legal on both vendors and must not be reported. `allOf` is NOT in the keyword set: it is a conjunction rather than a union, and the repo relies on a root `allOf` alongside a root `type: 'object'` (CLASSIFY_SCHEMA, src/workflow/triage/classify.ts:77-90) to carry an if/then conditional-required.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "'oneOf' | 'anyOf' | undefined",
+            "meaning": "The offending root-level union keyword (`oneOf` or `anyOf` only) when the schema root carries one as a non-empty array, else `undefined`. Returning the KEY rather than a boolean lets the caller name the exact keyword in its error, which is the difference between a diagnosable message and a generic one."
+          },
+          "errors": [],
+          "preconditions": [
+            "None. Total over any input: a non-object, null, or empty schema yields `undefined` rather than throwing, because a predicate that can itself fail is useless as a guard."
+          ],
+          "postconditions": [
+            "Pure — does not mutate or clone `schema`. Contrast `processSchemaForOpenAIStrict`, which mutates in place via `processInPlace`; this predicate must not, because it runs on the caller's object on every structured call.",
+            "Inspects only own root keys. A union reached through `$ref`, `$defs`, or any nested position returns `undefined` — see error.paths for why that is deliberate rather than an omission.",
+            "A root union present but empty (`{ anyOf: [] }`) returns `undefined`: it is a degenerate schema whose vendor behaviour was not established, and the guard must not claim a constraint it has not verified."
+          ]
+        },
+        {
+          "name": "CliProvider.completeStructured",
+          "signature": "async completeStructured<T>(messages: readonly LLMMessage[], schema: StructuredSchema, opts?: CompleteOptions): Promise<T>",
+          "parameters": [
+            {
+              "name": "messages",
+              "type": "readonly LLMMessage[]",
+              "purpose": "Unchanged by this Story.",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "Now pre-flighted by `rootUnionKey` BEFORE the retry wrapper is entered.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "CompleteOptions",
+              "purpose": "Unchanged by this Story.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "Unchanged on the success path. The schema that reaches the vendor is byte-identical to the one passed in — this Story adds no rewriting."
+          },
+          "errors": [
+            {
+              "type": "Error (deterministic, non-retryable)",
+              "condition": "`rootUnionKey(schema) !== undefined`. Thrown before any subprocess is spawned, so no vendor call is billed and no tmpfile is written."
+            }
+          ],
+          "preconditions": [
+            "The guard is placed in `completeStructured` (cli-provider.ts:175), OUTSIDE `withTransientRetry`, NOT inside `completeStructuredOnce` (:183) as the alternative first sketched. This is the load-bearing placement decision of the Story and the reason is mechanical: `withTransientRetry` (:151) decides retryability by STRING MATCH on the message via `isTransientCliError` (:409), whose pattern includes `/api error|timeout|overloaded|rate.?limit/i`. A guard throw raised inside the wrapper would be re-spawned three times with 2s+4s backoff the moment its message happened to contain any of that vocabulary. Throwing outside the wrapper makes non-retryability structural rather than contingent on error wording."
+          ],
+          "postconditions": [
+            "On the reject path, `withTransientRetry`, `runSubprocess`, and `resolveBin` are all unreached — observable in a test by pointing `binPath` at an impossible path and checking which error comes back.",
+            "The thrown message must still avoid the `isTransientCliError` vocabulary (`api error`, `timeout`, `overloaded`, `rate limit`, `too many requests`, `internal server error`, `service unavailable`, and the bare tokens 429/500/502/503/504/529) as a defence-in-depth invariant, so that a future refactor moving the guard inside the wrapper does not silently convert a deterministic rejection into three billed retries. Naming the vendor FLAGS (`--json-schema`, `--output-schema`) rather than prose about API errors satisfies this naturally.",
+            "The message names three things: the offending keyword returned by `rootUnionKey`, that BOTH vendor flags refuse it (so the reader does not try the other provider), and the remedy — wrap the union under one object property at the call site."
+          ]
+        },
+        {
+          "name": "normaliseSchemaForAnthropic",
+          "signature": "// REMOVED — was: export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema",
+          "parameters": [],
+          "returns": {
+            "type": "n/a",
+            "meaning": "Deleted along with its doc comment. Its stated algorithm — inject `type: 'object'` at the root of an all-object-branch union — does not satisfy either vendor, so there is no behaviour to preserve and nothing to 'make real'. s1 confirmed zero references in `src/` including tests, so removal needs no caller migration and no deprecation window."
+          },
+          "errors": [],
+          "preconditions": [
+            "s1's zero-reference finding must be re-confirmed at build time rather than trusted from this document, since any new caller added between design and build would turn a clean deletion into a compile break."
+          ],
+          "postconditions": [
+            "The orphaned doc comment is re-attached in the same edit. Today the 'Phases B.1-B.5 land per-provider implementations...' block that documents `notImplementedStructuredOutput` sits ABOVE the normalise helper's own comment, so the file currently reads as though the normalise helper were the not-implemented stub. Deleting the normalise function and its comment without moving the orphan would leave that block correctly adjacent to `notImplementedStructuredOutput` (:359) — the deletion fixes the mis-attachment as a side effect, and the build must verify that rather than assume it.",
+            "`notImplementedStructuredOutput` is LEFT IN PLACE. It is also zero-caller, but it is a deliberate stub contract for providers that have not migrated, not a false claim that a broken case is handled — removing it is a different judgement than the one this ISSUE authorises."
+          ]
+        },
+        {
+          "name": "isTransientCliError",
+          "signature": "export function isTransientCliError(message: string): boolean   // widened from module-private to exported",
+          "parameters": [
+            {
+              "name": "message",
+              "type": "string",
+              "purpose": "A CLI failure message. Unchanged behaviour; the export exists so the guard's own message can be asserted non-transient in a hermetic test.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "Unchanged — true when the message looks like a transient upstream error worth re-issuing on a fresh subprocess."
+          },
+          "errors": [],
+          "preconditions": [
+            "No behavioural change whatsoever. This entry exists only to record the visibility widening as an intentional, reviewed part of the Story rather than an incidental edit."
+          ],
+          "postconditions": [
+            "Without this export the non-retryability claim could only be asserted by wall-clock timing, which is a weak proof on a loaded machine. With it, a future refactor that relocates the guard inside the retry wrapper gets a red test instead of a silent 6-second-slower failure."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "StructuredSchema",
+        "change": "invariant-change",
+        "details": "The type is unchanged; its ACCEPTED VALUE SPACE narrows for one consumer. Any `StructuredSchema` remains valid to construct and remains valid for `validateAgainstSchema` (which runs ajv locally and handles root unions fine — `DOCGEN_OUTCOME_SCHEMA` is compiled exactly that way at docgen/__tests__/schema.test.ts:22). What narrows is specifically what `CliProvider.completeStructured` accepts: a root-level union is now rejected there. The asymmetry is deliberate and must be stated in the guard's message, because a schema that validates locally but cannot be REQUESTED from a CLI provider is otherwise a confusing distinction. No type-level change means no compile-time enforcement — the constraint is a runtime one by necessity, since a root union is perfectly well-typed.",
+        "schemaDiff": "No change to the TypeScript type. Runtime precondition added at one consumer: CliProvider.completeStructured rejects { oneOf | anyOf: [non-empty] } at the root.",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:175 (completeStructured — guard added here)",
+          "src/agent/providers/cli-provider.ts:193 (claude --json-schema serialisation — now unreachable with a root union)",
+          "src/agent/providers/cli-provider.ts:206-210 (codex --output-schema tmpfile — now unreachable with a root union)",
+          "src/agent/providers/structured-output.ts:80 (validateAgainstSchema — UNAFFECTED, still accepts root unions)",
+          "src/docgen/schema.ts:72 (DOCGEN_OUTCOME_SCHEMA — the repo's only root union; ajv-only, never provider-bound, so unaffected)"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A caller passes a schema whose root is a non-empty `oneOf` or `anyOf` to `CliProvider.completeStructured`.",
+          "detection": "`rootUnionKey(schema)` is called as the first statement of `completeStructured` (cli-provider.ts:175) and reads the two union keywords off the schema's OWN root keys, returning the first one present as a non-empty array. The check is a direct own-key read, not a tree walk, so detection cannot be confused by a nested union.",
+          "response": "Throw a plain `Error` synchronously-in-promise before `withTransientRetry` is entered. The message names the offending keyword, states that BOTH `claude --json-schema` and `codex --output-schema` refuse a root-level union, and gives the remedy: wrap it under one object property at the call site. Because the throw precedes the retry wrapper, `isTransientCliError` never sees the message and no subprocess is spawned.",
+          "userImpact": "The caller gets a message naming the exact schema defect and its fix, instead of today's outcome: an opaque vendor rejection surfacing as a claude envelope error or a codex non-zero exit, potentially after three billed retries if the vendor text happened to match the transient pattern.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A future refactor moves the guard INSIDE `withTransientRetry` (for instance by relocating it into `completeStructuredOnce`, which is where the alternative originally sketched it), and the guard message contains transient vocabulary.",
+          "detection": "Not detectable at runtime — this is the failure mode the design forecloses structurally rather than catches. `isTransientCliError` matches `/connection closed mid-response|api error|overloaded|rate.?limit|too many requests|internal server error|service unavailable|timeout|\\b(429|500|502|503|504|529)\\b/i` against the message text, so a deterministic rejection whose wording brushes that pattern would be silently re-spawned three times with 2s and 4s backoff.",
+          "response": "Two independent defences, neither relying on the other. Structural: the guard lives in `completeStructured`, outside the wrapper, so retryability is not a function of wording. Belt-and-braces: a hermetic test asserts `isTransientCliError` returns false for the guard's actual message, so a reviewer of a future relocation gets a red test rather than a silent 6-second-slower failure. The second defence is what makes the first one's rationale enforceable instead of merely documented in this LLD.",
+          "userImpact": "If both defences were absent: a deterministic schema defect costs three vendor invocations and ~6s of backoff before failing with the same error anyway.",
+          "recoverable": false
+        },
+        {
+          "scenario": "`normaliseSchemaForAnthropic` has acquired a caller between this design and the build, so the planned deletion breaks compilation.",
+          "detection": "A repo-wide reference search re-run at build time, not a reading of this document. s1's zero-reference finding is a point-in-time fact about the tree at design time and must not be trusted as a build-time precondition.",
+          "response": "Stop and re-decide rather than delete. A real caller would mean someone wired the disproved algorithm into a live path, which changes the disposition from 'delete dead code' to 'fix a live bug', and that is a different judgement than this ISSUE authorises.",
+          "userImpact": "None if caught; a compile break on the build's own tsc pass if not.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A schema with a root `type: 'object'` and a union nested inside a property, e.g. a `properties.outcome` carrying a `oneOf`.",
+          "expected": "`rootUnionKey` returns `undefined`; the call proceeds and the schema reaches the vendor unchanged. Nested unions are legal on both vendors — only the ROOT position is refused — so a guard that walked the tree would reject working schemas. This is the single most important negative case: over-rejection here would break real callers, whereas under-rejection only restores today's behaviour."
+        },
+        {
+          "input": "A root `allOf` alongside a root `type: 'object'` — the real in-repo shape of CLASSIFY_SCHEMA (src/workflow/triage/classify.ts:77-90), whose root `allOf` carries an if/then conditional-required ('a `bugfix` classification MUST carry a magnitude').",
+          "expected": "`rootUnionKey` returns `undefined` and the call proceeds. This row exists because the review found it: an earlier draft of this LLD keyed the guard on all three of oneOf/anyOf/allOf, which would have rejected CLASSIFY_SCHEMA the moment anything routed the triage classification turn through `CliProvider.completeStructured` — and told the caller to 'wrap the union in an object envelope', nonsensical advice for a conjunction. `allOf` is a conjunction, not a union; only the `anyOf`-rooted shape was ever observed to break. Keeping `allOf` would have repeated this Story's own target mistake: asserting an unprobed vendor behaviour."
+        },
+        {
+          "input": "A degenerate root union with an empty branch array: `{ anyOf: [] }`.",
+          "expected": "`rootUnionKey` returns `undefined` and the call proceeds. The vendors' behaviour on an empty-branch root union was never established, and the guard must not assert a constraint it has not verified — asserting one would be the same class of unearned confidence the dead helper embodied. The schema will fail downstream on its own merits if it is invalid."
+        },
+        {
+          "input": "A root union reached by indirection: a root `$ref` pointing into `$defs` at a `oneOf`.",
+          "expected": "`rootUnionKey` returns `undefined` and the call proceeds to the vendor, which may then reject it. This is a KNOWN, deliberate gap, recorded as such rather than quietly omitted: resolving `$ref` correctly means implementing pointer resolution, and whether either vendor even resolves a root `$ref` to a union before refusing it was not tested. Guessing would re-create the dead helper's exact mistake — shipping an untested claim about vendor behaviour. The guard covers the shape that was actually observed to fail."
+        },
+        {
+          "input": "A root carrying BOTH a `oneOf`/`anyOf` union and `type: 'object'`.",
+          "expected": "`rootUnionKey` returns the union keyword and the call is rejected. The presence of a root `type` must NOT suppress the guard FOR A GENUINE UNION — that is precisely the condition `normaliseSchemaForAnthropic` (:341) tested with its early `'type' in root` return, and the prior session established that injecting or finding a root `type` does not make either vendor accept the union. Encoding the dead helper's premise into the new guard would reproduce the defect being removed."
+        },
+        {
+          "input": "A non-object schema value: `null`, `undefined`, a string, or an array.",
+          "expected": "`rootUnionKey` returns `undefined` without throwing. A guard that can itself throw on malformed input converts a clear downstream error into a confusing one raised from the wrong place."
+        },
+        {
+          "input": "`validateAgainstSchema(DOCGEN_OUTCOME_SCHEMA, value)` — a root-union schema used for LOCAL ajv validation.",
+          "expected": "Completely unaffected; still compiles and validates. The narrowing applies only to what `CliProvider.completeStructured` will REQUEST from a vendor, never to what the repo may validate locally. docgen's own schema test must stay green unchanged, which is the cheapest available proof that the guard was not placed too broadly."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The schema reaching the vendor is byte-identical to the schema the caller passed. `completeStructuredOnce` serialises it verbatim — inline for claude, to a tmpfile for codex — and this Story adds no normalisation, cloning, or rewriting on the success path, so a validated payload always matches the schema its caller wrote.",
+          "source": "c2"
+        },
+        {
+          "text": "`withTransientRetry` re-issues ONLY transient upstream failures; deterministic failures are re-thrown on the first attempt. Its own doc comment names 'bad schema' as the example of a deterministic failure, so a root-union rejection must not consume retries — placing the guard outside the wrapper honours an invariant the existing code already states.",
+          "source": "c4"
+        },
+        {
+          "text": "Nested unions remain legal and untouched. The repo's existing schema machinery deliberately recurses THROUGH `anyOf`/`allOf` branches rather than rejecting them, which is direct evidence that unions below the root are a supported shape; the guard must therefore be root-only.",
+          "source": "c8"
+        },
+        {
+          "text": "`validateAgainstSchema` continues to accept root unions. It is the module's most-used export — widely used across analyze/, workflow/, mcp/ and both providers — and runs ajv locally with no vendor involved, so the vendor constraint has no bearing on it. The narrowing is scoped to one consumer, not to the type.",
+          "source": "c6"
+        },
+        {
+          "text": "No production code path sends a root union to a CLI provider today — the repo's only root-level union is ajv-only and never provider-bound. The guard must therefore change no existing behaviour: if any currently-passing call starts failing, the guard is mis-scoped, not the caller.",
+          "source": "c5"
+        },
+        {
+          "text": "The hermetic sweep must stay free of billed calls. The existing structured-output probes are gated on `INSRC_LIVE_TESTS=1` plus `which claude`/`which codex` and spawn the real binaries; the new guard's tests must add nothing to that gated set, which the design makes natural — the guard rejects before the spawn, so there is no binary to reach.",
+          "source": "c7"
+        },
+        {
+          "text": "A helper must not survive as a claim that a broken case is handled. `normaliseSchemaForAnthropic`'s doc comment asserts the root-`type` injection fixes the rejection; that claim is false and the function has never run. Deleting it is what preserves this invariant — renaming or repurposing it while keeping the name would weaken the same guarantee the ISSUE exists to restore.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, run via `npx tsx --test` under Node 22 (`PATH=/opt/homebrew/opt/node@22/bin:$PATH`). Matches the idiom s1 located in src/workflow/artifacts/companion/__tests__/metamodel.test.ts and src/docgen/__tests__/schema.test.ts — assert over literal schema objects, no runner config, no mocking framework. NEW FILE: src/agent/providers/__tests__/structured-output-root-union.test.ts (NOT a `.live.test.ts` — the filename itself records that nothing here is gated or billed; s1 found no hermetic test file for structured-output.ts at all, so this creates the first one).",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin `rootUnionKey` as a total, pure, root-only predicate. This is the whole truth-table, written as a data-driven table so a new case is one row rather than one function — and so the ROOT-ONLY and TOTALITY properties are visible as rows rather than buried in prose.",
+          "subjects": [
+            "A root `oneOf` returns 'oneOf'; a root `anyOf` returns 'anyOf'. A root `allOf` returns undefined — `allOf` is a CONJUNCTION, not a union, and is deliberately outside the keyword set.",
+            "POSITIVE CONTROL, the most important row: a root `type:'object'` with a union nested under a property returns undefined — a nested union must NOT be reported. Over-rejection breaks working callers; this row is what distinguishes the intended root-only check from a tree walk.",
+            "A root carrying BOTH `type:'object'` and a union still returns the keyword — a root `type` must NOT suppress the guard. This row directly contradicts normaliseSchemaForAnthropic's early `'type' in root` return, so it is the row that proves the new guard did not inherit the deleted helper's disproved assumption.",
+            "An empty-branch root union returns undefined — degenerate, deliberately not claimed.",
+            "A root `$ref` into `$defs` at a union returns undefined — the KNOWN $ref gap, asserted as the documented behaviour so it is a recorded decision rather than an accident a later reader must re-derive.",
+            "TOTALITY: null, undefined, 42, 'str', and [] each return undefined without throwing.",
+            "PURITY: deep-equal the input schema against a pre-call structural clone — rootUnionKey must not mutate, unlike processSchemaForOpenAIStrict which mutates in place via processInPlace."
+          ],
+          "fixturesNeeded": [
+            "Inline literal schema objects only — no files, no tmpdirs. DOCGEN_OUTCOME_SCHEMA is imported from src/docgen/schema.ts as the one REAL in-repo root union, so at least one row is grounded in a schema the repo actually wrote rather than only in hand-made fixtures."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the guard actually fires on the real `CliProvider.completeStructured` path and that no subprocess is reached — the ISSUE's central claim. The mechanism needs no stubbing and no spawn interception: `CliProviderOpts.binPath` is injectable (cli-provider.ts:80), so the provider is pointed at a path that cannot exist. Whether the guard works is then readable off WHICH error comes back.",
+          "subjects": [
+            "GUARD FIRES: a claude-kind provider with an impossible binPath, called with a root-union schema, rejects with a message naming the keyword, BOTH vendor flags, and the envelope remedy. FALSIFYING MUTATION, to be run and confirmed red before the test is accepted: delete the guard line. The call then reaches runSubprocess and rejects with a spawn/ENOENT error instead — a message that shares no token with the expected one. The assertion is therefore not satisfiable by the pre-fix code, which is exactly the property my past vacuous checks lacked.",
+            "SAME FOR CODEX: identical assertion with kind:'codex'. The guard sits upstream of the kind branch, so one guard must cover both; running it per-kind is what proves that rather than assuming it. Under the pre-fix code this path would additionally have written a real tmpfile before failing — so the test also asserts no 'codex-schema-' tmpdir was created, which is a second, independent signal that the spawn path was never entered.",
+            "NO OVER-REJECTION (the negative control): the same impossible-binPath provider called with a plain object schema must reject with something that does NOT contain the guard's wording. This is the control that keeps the positive tests honest — a guard that rejected everything would pass every assertion above and fail only this one.",
+            "NON-RETRYABILITY, asserted two ways. (1) Structural: the rejection arrives in well under the 2s+4s backoff withTransientRetry would impose, so a wall-clock bound (< 1500ms) distinguishes 'threw once' from 'retried three times'. (2) Direct: assert isTransientCliError(<the guard's actual message>) === false. The second assertion is the one that survives a refactor — if someone later moves the guard inside the wrapper, the message is still proven non-transient, so a deterministic schema defect cannot silently become three billed vendor invocations. Note the first assertion must not be the only one: a timing bound is a weak proof on a loaded machine."
+          ],
+          "fixturesNeeded": [
+            "No fixtures. binPath is set to a path under an impossible directory so the test cannot accidentally find a real binary on PATH — critically, it must NOT be the bare name 'claude'/'codex', since resolveBin would then find the user's real installed binary and the negative control would make a billed call.",
+            "isTransientCliError is currently module-private (cli-provider.ts:409). Asserting against it directly requires exporting it. That export is part of this Story's change and must be noted in the plan — it is an intentional, minimal widening of the module surface for testability, not an incidental edit."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove the DELETION landed and stays landed — the ISSUE's second invariant, which a behavioural test cannot cover because deleted code has no behaviour to assert.",
+          "subjects": [
+            "A static assertion that the structured-output module namespace no longer exports `normaliseSchemaForAnthropic`, via a namespace import and an `in` check. This is a genuine regression guard rather than a tautology: it fails if the helper is ever re-added, which is the realistic way a false safety signal returns.",
+            "A deliberate NON-test, recorded so its absence is a decision: there is NO test asserting `notImplementedStructuredOutput` still exists. It is left in place as a stub contract, and pinning an unused export with a test would be exactly the kind of green-but-meaningless check this Story is cleaning up after."
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "live",
+          "purpose": "EXPLICITLY NOTHING ADDED. Recorded as a level so the choice is legible rather than looking like an omission.",
+          "subjects": [
+            "No new gated test. The existing src/agent/providers/__tests__/local-agents-structured.live.test.ts stays exactly as it is — it is gated on INSRC_LIVE_TESTS=1 plus which claude/which codex and spawns the real billed binaries, and this Story adds no row to it. The vendor rejection it once probed was established in the prior session and is now encoded as the guard's premise; re-probing it on every live run would spend billed calls to re-learn a settled fact.",
+            "This is what makes the ISSUE's 'assert the guard without a billed live call' invariant structurally true rather than aspirational: the guard rejects BEFORE the spawn, so there is no binary for a test to need. The hermetic suite can prove the guard completely because the guard's whole job happens before any vendor is involved."
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: the rootUnionKey truth table — oneOf/anyOf at the root each return their own keyword, and a root allOf returns undefined",
+            "integration: GUARD FIRES on kind:'claude' with an impossible binPath, rejecting with a message naming the keyword"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: SAME FOR CODEX — the identical rejection for kind:'codex', proving one guard covers both vendors",
+            "integration: no 'codex-schema-' tmpdir is created on the reject path"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: nested-union row returns undefined (no over-rejection)",
+            "unit: root `type` present alongside a root union still returns the keyword (the deleted helper's premise is not inherited)",
+            "integration: NO OVER-REJECTION negative control — a plain object schema does not hit the guard",
+            "unaltered: src/docgen/__tests__/schema.test.ts must stay green, proving a real in-repo root union is still locally validatable"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: isTransientCliError(<guard message>) === false",
+            "integration: the rejection arrives in < 1500ms, below the 2s+4s backoff three retries would cost"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "contract: 'normaliseSchemaForAnthropic' is absent from the module namespace",
+            "the build's own repo-wide reference re-check, re-run rather than read off this LLD"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "unit: TOTALITY rows — null/undefined/42/'str'/[] each return undefined without throwing",
+            "unit: PURITY row — the input schema deep-equals a pre-call clone"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "the full hermetic sweep runs with INSRC_LIVE_TESTS unset and the new file's test count is non-zero — i.e. none of the new tests are gated or skipped. This is the criterion that catches the failure mode where a guard test is written but silently skipped, which would reproduce the exact 'green suite over an unverified claim' problem the ISSUE names."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per s1: `CliProvider.completeStructured` (cli-provider.ts:175) wraps `completeStructuredOnce` (:183) in `withTransientRetry`, and that method hands the caller's schema to the vendor VERBATIM — inline via `'--json-schema', JSON.stringify(schema)` for claude (:193), or written to a tmpdir file and passed as `['exec','--output-schema',schemaPath,'--json']` for codex (:206-210). There is no pre-flight check of any kind. If a caller passes a root-level union, the schema reaches the binary, the binary refuses it, and the failure surfaces as a claude envelope error or a codex non-zero exit — possibly after up to three billed re-spawns, because `withTransientRetry` classifies retryability by string-matching the message against `isTransientCliError`. The module also carries `normaliseSchemaForAnthropic` (structured-output.ts:341) whose doc comment claims to handle exactly this case by injecting a root `type: 'object'`; s1 found it has ZERO references anywhere in `src/` including tests, and the prior session established its algorithm does not satisfy either vendor, so it is dead code asserting a false guarantee. Its neighbour comment block is also mis-attached: the 'Phases B.1-B.5 land per-provider implementations' paragraph documenting `notImplementedStructuredOutput` (:359) sits ABOVE the normalise helper's own comment. s1's test.locate found no hermetic test file for structured-output.ts at all; the one suite exercising its schema-shaping half is `local-agents-structured.live.test.ts`, gated on `INSRC_LIVE_TESTS=1` plus `which claude`/`which codex` and spawning the real billed binaries — and the anyOf-rooted fixture that once documented this very rejection was removed in 617734f, so the constraint currently has no assertion of any kind.",
+      "stateAfter": "A root-level union is refused locally, by name, before any subprocess exists. `rootUnionKey` is a new pure export of structured-output.ts; `CliProvider.completeStructured` calls it as its first act, OUTSIDE `withTransientRetry`, and throws a deterministic Error naming the offending keyword, both vendor flags, and the envelope remedy. The success path is byte-for-byte unchanged — no normalisation, no cloning, no rewriting — so every schema that works today still works and still reaches the vendor exactly as written. `normaliseSchemaForAnthropic` and its doc comment are gone, leaving the 'Phases B.1-B.5' block correctly adjacent to the stub it describes. `isTransientCliError` becomes an export so the non-retryability of the guard's message is assertable rather than merely asserted in prose. A new hermetic file, `src/agent/providers/__tests__/structured-output-root-union.test.ts`, covers the predicate's truth table (including the nested-union and root-`type`-present rows that keep it honest in both directions) and drives the real provider path with an impossible `binPath`, so the guard is fully proven with no vendor process and nothing billed.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "RE-VERIFY, do not trust this document: run a repo-wide reference search for `normaliseSchemaForAnthropic` and confirm it is still zero-caller. s1's finding is a point-in-time fact about the tree at design time. If any reference now exists, STOP and re-decide — a live caller turns 'delete dead code' into 'fix a live bug', which is a different judgement than this ISSUE authorises.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the `rootUnionKey` predicate to structured-output.ts as a new export. Purely additive: nothing calls it yet, so the tree's behaviour is unchanged at this point and the step is independently revertable.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the predicate's unit truth table in the new hermetic test file and RUN IT, including the two rows that constrain the predicate in opposite directions — nested union returns undefined (no over-rejection) and root-`type`-present-with-union still returns the keyword (the deleted helper's premise is not inherited). The predicate must be proven correct in isolation BEFORE it is wired into a call path, so that a later integration failure is unambiguously about placement rather than about the check itself.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Export `isTransientCliError` from cli-provider.ts. An intentional, minimal widening of the module surface for testability — called out explicitly rather than slipped in, because without it the non-retryability claim can only be asserted by timing, which is a weak proof on a loaded machine.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Wire the guard: call `rootUnionKey` as the first statement of `completeStructured` and throw on a hit. Placement is load-bearing and must be OUTSIDE `withTransientRetry` — inside it, retryability would depend on whether the message happens to brush the `isTransientCliError` pattern. This is the only step that changes runtime behaviour.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Write the integration assertions against a provider constructed with an impossible `binPath`, for BOTH kinds, and run the falsifying mutation FIRST: with the guard line removed the call must reach the spawn and fail with a path/ENOENT error sharing no token with the expected message. Confirm that red before accepting the test. A guard test that also passes against the pre-guard code proves nothing, and that is the specific way these checks have gone vacuous here before.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Add the negative control — a plain object schema against the same impossible-binPath provider must fail with something that does NOT contain the guard's wording — plus the two non-retryability assertions (`isTransientCliError(<guard message>) === false`, and a sub-1500ms wall-clock bound). The negative control is what keeps every positive assertion honest: a guard that rejected everything would satisfy all of them and fail only this.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Delete `normaliseSchemaForAnthropic` and its doc comment. Then READ the resulting region of the file to confirm the 'Phases B.1-B.5' block now sits directly above `notImplementedStructuredOutput` — verify it rather than assume the deletion fixed the mis-attachment as a side effect. Leave `notImplementedStructuredOutput` in place: it is also zero-caller, but it is a deliberate stub contract, not a false claim that a broken case is handled.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Add the contract-level assertion that `normaliseSchemaForAnthropic` is absent from the module namespace, so the false safety signal cannot silently return.",
+          "rollbackable": true
+        },
+        {
+          "order": 10,
+          "action": "Run the full hermetic sweep under Node 22 with `INSRC_LIVE_TESTS` UNSET, and check the new file's reported test count is non-zero. A guard test that is written but silently skipped reproduces exactly the 'green suite over an unverified claim' failure this Story exists to remove, and a passing sweep does not by itself rule it out — the count must be read. Confirm `src/docgen/__tests__/schema.test.ts` is still green unchanged, which is the cheapest proof the guard was not scoped too broadly.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The public surface changes in three ways, all of them safe for current callers, and the reasoning rests on evidence rather than on assumption. (1) `CliProvider.completeStructured` gains a rejection path. Formally this narrows what an existing public method accepts, which would normally be breaking — but s1's scan of every `*_SCHEMA` const outside `__tests__` found exactly ONE root-level union in the repo, `DOCGEN_OUTCOME_SCHEMA` (docgen/schema.ts:72), and it is consumed only by ajv in its own test and never handed to a provider. So no existing call path can hit the new rejection. This is also a falsifiable claim rather than a reassurance: if any currently-passing call starts failing after the guard lands, the guard is mis-scoped and must be revisited, not the caller. (2) `rootUnionKey` and `isTransientCliError` are purely additive exports — no existing import can break. (3) `normaliseSchemaForAnthropic` is REMOVED, which is a breaking change to the module's declared surface in the abstract. It carries no deprecation window and no shim, and the justification is specifically that it has zero callers AND never worked: a shim would preserve the false signal that is the whole defect. Step 1 re-verifies the zero-caller precondition at build time rather than inheriting it from this document. Also unchanged by design: `validateAgainstSchema` still accepts root unions in full, because it runs ajv locally with no vendor involved. That asymmetry — a schema may be validated locally but not REQUESTED from a CLI provider — is the one genuinely confusing consequence of this change, which is why the guard's message must state it rather than leave a reader to infer it. REVIEW CORRECTION: the original draft claimed DOCGEN_OUTCOME_SCHEMA was the repo's only non-test root-level union. That was false as stated — CLASSIFY_SCHEMA (src/workflow/triage/classify.ts:84) carries a root-level `allOf`, and src/daemon/tools/builtins/db/index.ts:1846 carries an `anyOf` nested under `properties.key`. The `anyOf` there is nested and so always out of scope; CLASSIFY_SCHEMA's root `allOf` is a conjunction, not a union, and is now out of scope by construction because the guard keys only on `oneOf`/`anyOf`. With that narrowing, DOCGEN_OUTCOME_SCHEMA is again the only in-repo schema the guard could reject, and it is ajv-only and never provider-bound — so the no-existing-caller-breaks claim holds on corrected evidence rather than on the original miscount.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "chosenAlternative": "a1",
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Reject locally at the chokepoint",
+        "chosen": true,
+        "oneLineSummary": "completeStructuredOnce pre-flights the schema and throws a named, non-retryable error on a root-level union before either CLI is spawned.",
+        "approach": "Add an exported pure predicate to structured-output.ts — `rootUnionKey(schema)` — that inspects only the schema root. Call it once in the CliProvider structured path so a single call site covers both vendors. On a hit, throw a deterministic error whose message names the offending key, the fact that BOTH claude --json-schema and codex --output-schema refuse it, and the remedy. The throw must be classified as a deterministic failure, not transient, so withTransientRetry does not re-spawn the binary on it. normaliseSchemaForAnthropic is deleted outright: its algorithm is disproved, so there is nothing to make real — keeping it would contradict the guard sitting two functions away. The orphaned 'not implemented' doc comment is re-attached to notImplementedStructuredOutput as part of the same edit. REFINED AT s4: the guard's call site moved from completeStructuredOnce to completeStructured, i.e. OUTSIDE withTransientRetry, so non-retryability is structural rather than contingent on error wording.",
+        "pros": [
+          "The error names the real constraint at the moment of violation, so a future caller learns the rule instead of reading an opaque vendor HTTP 400 or a codex schema-parse exit.",
+          "Honours the repo's no-silent-rewrite stance: the caller's declared contract reaches the model unchanged or not at all, so the validated payload always matches the schema the caller wrote.",
+          "Fully assertable hermetically — the predicate is pure, and the throw is observable without any billed call, satisfying the ISSUE's second invariant directly.",
+          "Deleting the dead helper removes the false safety signal rather than relocating it; zero callers means zero migration risk.",
+          "Smallest blast radius: one predicate, one guard call, one deletion. No existing production caller sends a root union, so nothing regresses."
+        ],
+        "cons": [
+          "Does not make a root-union schema WORK — a future caller holding one must do the envelope wrap themselves, duplicating that wrap at each such site.",
+          "DOCGEN_OUTCOME_SCHEMA stays un-sendable to a CLI provider; if something later wants to send it, this alternative converts a silent vendor failure into a local rejection but still requires the caller change.",
+          "A deterministic throw inside a provider is a behaviour change for any caller that currently relies on the vendor error text; none exist today, but the error type must be chosen so callers can distinguish it."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Wrap into an object envelope at the chokepoint",
+        "chosen": false,
+        "oneLineSummary": "completeStructuredOnce transparently wraps a root union into an object envelope and unwraps the envelope field from the response.",
+        "approach": "Extend structured-output.ts with a bidirectional adapter returning both the envelope schema and an unwrap function — identity when no wrap occurred, and a field read when it did. The CliProvider structured path applies the wrap before serialising for either vendor and applies unwrap to the parsed claude structured_output / codex --json stream payload before the result is handed back, so callers still receive a value matching THEIR schema. normaliseSchemaForAnthropic is 'made real' in the sense the ISSUE allows — its file position and name are reused for the new adapter — but its actual algorithm (inject root type) is discarded as disproved.",
+        "pros": [
+          "A root union becomes usable rather than merely diagnosed: DOCGEN_OUTCOME_SCHEMA and any TypeBox union render could be sent to a CLI provider with no caller change.",
+          "The wrap is invisible to callers because unwrap restores the caller-declared shape, so no downstream validator or type assertion changes.",
+          "Reuses the existing tree-walk/rewrite idiom the module already owns in processSchemaForOpenAIStrict, so the shaping half of the module finally has a production caller."
+        ],
+        "cons": [
+          "Silent rewrite of a caller's declared contract — directly against the repo's stated preference that an upstream-incompatible schema should surface rather than get quietly reshaped, which normaliseSchemaForAnthropic's own comment asserts as the design intent.",
+          "Two-sided: a wrap is only correct if the unwrap fires on BOTH vendor response paths, which differ. An unwrap that misses one path returns an envelope where the caller expects the union — a silent shape corruption the caller's own validator may then reject with a confusing error.",
+          "The envelope field name becomes a wire-contract detail invented by the provider and visible in the model's output; a model may also fill the envelope differently than it would fill a bare union, changing answer quality in a way nothing in the hermetic suite can detect.",
+          "Solves a problem no production caller currently has — zero root-union schemas reach a provider today — so it pays ongoing two-sided complexity for a latent case.",
+          "Hermetic assertion is weaker: the wrap/unwrap round-trip is testable, but whether the WRAPPED schema is actually accepted by each vendor is only knowable from a billed live call, so the guard's core claim stays unverified in the hermetic sweep."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "VIOLATES fi3, the ISSUE's hermetic-assertion invariant, and that is decisive: the claim the whole fix rests on — that an envelope-wrapped union is actually ACCEPTED by claude --json-schema and codex --output-schema — is knowable only from a billed live call, so the hermetic suite would go green while the premise stayed unverified. That is the precise failure mode the invariant was written to prevent. Also VIOLATES rp1 by silently rewriting the caller's declared contract and inventing a wire-visible envelope field, trading the project's first-priority axis (accuracy) for convenience. Only PARTIAL on fi1, because the wrap is single-sited but the unwrap must cover two differing vendor response paths, and PARTIAL on fi2, because keeping the helper's name while discarding its entire algorithm is a subtler version of the same false signal — now harder to spot because the function is genuinely called. The one real benefit, making root unions usable, is owed to no existing caller: s1 found the repo's only root union is ajv-only and never provider-bound."
+      },
+      {
+        "id": "a3",
+        "name": "Reject at the chokepoint plus a repo-wide static schema assertion",
+        "chosen": false,
+        "oneLineSummary": "a1's runtime guard, plus a hermetic test that scans every exported schema const in the repo and fails if one carries a root-level union without an explicit opt-out.",
+        "approach": "Take a1 whole — pure root-union predicate, deterministic non-retryable throw, deletion of normaliseSchemaForAnthropic, comment re-attachment. Then add a second, static layer: a hermetic test that imports the repo's provider-bound schema consts and asserts no root union among them, so a root union is caught when it is WRITTEN rather than when it is first sent. DOCGEN_OUTCOME_SCHEMA is the one known exception and must be handled explicitly — either an allow-list entry justified by the fact it is ajv-only and never provider-bound, or by narrowing the scan to schemas actually reachable from a completeStructured call site.",
+        "pros": [
+          "Catches the defect at authoring time, which is the only point at which it is free to fix; the runtime throw is then a backstop rather than the primary signal.",
+          "Satisfies the ISSUE's hermetic-assertion invariant twice over: the predicate and the throw are unit-asserted, and the repo-wide scan is itself a hermetic test needing no binary.",
+          "Documents the constraint where a schema author will actually trip over it."
+        ],
+        "cons": [
+          "The scan needs a reliable notion of 'provider-bound schema', and the repo has no such marker — deriving it means either an allow-list that drifts as schemas are added, or reachability analysis well beyond this Story's size.",
+          "An allow-list is itself a false-signal risk of the same family the ISSUE is about: an entry added to silence the scan looks like a considered exemption.",
+          "Prior experience in this repo is that source-scanning tests read prose and template literals as source and produce confident wrong answers; a const-scanning test is a cheaper version of the same hazard.",
+          "Strictly larger than the ISSUE's fixIntent, which asks for a guard and a disposition, not a repo-wide lint."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Ranked second, and only because it strictly CONTAINS a1 — the increment is the part that fails. VIOLATES rp2 on scope: it exceeds the ISSUE's fixIntent, which asks for a guard and a disposition rather than a repo-wide schema lint, and it needs a notion of 'provider-bound schema' the repo does not have, so it lands on either a drifting allow-list or reachability analysis, both larger than a sized bugfix. Only PARTIAL on rp1, because the allow-list the scan requires — forced immediately by the legitimately-ajv-only DOCGEN_OUTCOME_SCHEMA at docgen/schema.ts:72 — reproduces exactly the false-safety-signal pattern this ISSUE exists to delete: an entry added to silence the scan is indistinguishable from a considered exemption. Its fi3 pass is also not load-bearing, since fi3 is already fully met by a1 alone. The authoring-time catch is genuinely valuable and is recorded as a follow-up open question rather than folded in."
+      }
+    ],
+    "openQuestions": [
+      "The Story arrived with an EMPTY acceptanceCriteria list, so ac1-ac7 were derived inside this LLD from the ISSUE's three fixIntent invariants plus the s5 edge cases. They are therefore self-consistent by construction — a weaker guarantee than mapping against criteria an upstream artifact fixed independently. The plan and build stages should treat ac1-ac7 as the inherited contract rather than re-deriving their own.",
+      "Whether a root-level `allOf`, and whether a root `type: 'object'` present ALONGSIDE a root union, change either vendor's answer is UNPROBED. The only in-repo record of the rejection (local-agents-structured.live.test.ts:26) covers the `anyOf`-rooted shape with no root `type`; the fixture itself was deleted in 617734f. The guard is therefore scoped to exactly what was observed — `oneOf`/`anyOf` at the root — and deliberately under-rejects rather than over-rejects, since under-rejection only restores today's behaviour whereas over-rejection breaks working schemas. Settling the two open shapes needs one deliberate out-of-band billed probe, which the ISSUE's no-billed-call rule constrains for the GUARD'S TEST but not for a one-time design probe.",
+      "The guard throws a plain `Error` rather than a named class. Chosen deliberately: nothing in the provider layer defines a structured-output error taxonomy, and introducing one is wider than this ISSUE authorises. Non-retryability is instead carried structurally and asserted directly, which is what a class would have bought. If a caller ever needs to BRANCH on this failure programmatically rather than report it, a named error class becomes the right follow-up.",
+      "A root union reached through a root `$ref` into `$defs` is NOT detected — a known, deliberate gap. Closing it needs JSON-pointer resolution, and it was never established whether either vendor resolves a root `$ref` to a union before refusing it. Guessing would repeat the deleted helper's exact mistake of shipping an untested claim about vendor behaviour. Worth re-opening only with a real caller or a real probe.",
+      "a3's authoring-time schema scan — catching a root union when it is WRITTEN rather than when it is first sent — is the one rejected idea worth keeping. It was excluded from this Story on scope and because the allow-list it needs reproduces the false-signal pattern being removed. It belongs on the backlog as its own item, contingent on the repo first gaining a reliable marker for which schemas are provider-bound.",
+      "`processSchemaForOpenAIStrict` also has NO production caller — s1 found it referenced only from the gated live suite and one doc comment. That is a pre-existing gap wider than this Story and is deliberately NOT addressed here; it is recorded so this LLD is not read as a claim that the OpenAI-strict path is wired."
+    ],
+    "sequenceDefinition": {
+      "id": "root-union-guard-flow",
+      "participants": [
+        {
+          "id": "caller",
+          "label": "caller (workflow / analyze / companion)"
+        },
+        {
+          "id": "completeStructured",
+          "label": "CliProvider.completeStructured"
+        },
+        {
+          "id": "rootUnionKey",
+          "label": "rootUnionKey (structured-output.ts)"
+        },
+        {
+          "id": "withTransientRetry",
+          "label": "withTransientRetry"
+        },
+        {
+          "id": "completeStructuredOnce",
+          "label": "completeStructuredOnce"
+        },
+        {
+          "id": "vendor",
+          "label": "claude | codex binary"
+        }
+      ],
+      "messages": [
+        {
+          "from": "caller",
+          "to": "completeStructured",
+          "kind": "call",
+          "label": "completeStructured(messages, schema, opts)"
+        },
+        {
+          "from": "completeStructured",
+          "to": "rootUnionKey",
+          "kind": "call",
+          "label": "rootUnionKey(schema)"
+        },
+        {
+          "from": "rootUnionKey",
+          "to": "completeStructured",
+          "kind": "return",
+          "label": "'oneOf' | 'anyOf' | undefined"
+        },
+        {
+          "from": "completeStructured",
+          "to": "caller",
+          "kind": "return",
+          "label": "[root union] throw: names the keyword, both vendor flags, the envelope remedy",
+          "note": "No subprocess spawned, no tmpfile written, nothing billed. Thrown OUTSIDE withTransientRetry, so it can never be retried."
+        },
+        {
+          "from": "completeStructured",
+          "to": "withTransientRetry",
+          "kind": "call",
+          "label": "[undefined] proceed"
+        },
+        {
+          "from": "withTransientRetry",
+          "to": "completeStructuredOnce",
+          "kind": "call",
+          "label": "op() — up to 3 attempts, transient errors only"
+        },
+        {
+          "from": "completeStructuredOnce",
+          "to": "vendor",
+          "kind": "call",
+          "label": "--json-schema <inline> | --output-schema <tmpfile>",
+          "note": "Schema passed VERBATIM. This Story adds no rewriting on the success path."
+        },
+        {
+          "from": "vendor",
+          "to": "caller",
+          "kind": "return",
+          "label": "parsed structured output"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:341",
+      "quotedText": "export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:193",
+      "quotedText": "'--json-schema', JSON.stringify(schema),"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:210",
+      "quotedText": "const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:409",
+      "quotedText": "function isTransientCliError(message: string): boolean {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/schema.ts:72",
+      "quotedText": "export const DOCGEN_OUTCOME_SCHEMA = {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:80",
+      "quotedText": "export function validateAgainstSchema<T>("
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/__tests__/local-agents-structured.live.test.ts:55",
+      "quotedText": "const GATE = process.env['INSRC_LIVE_TESTS'] === '1';"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:302",
+      "quotedText": "for (const arrKey of ['anyOf', 'allOf'] as const) {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:151",
+      "quotedText": "private async withTransientRetry<T>(label: string, op: () => Promise<T>): Promise<T> {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:80",
+      "quotedText": "readonly binPath?: string | undefined;"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:359",
+      "quotedText": "export function notImplementedStructuredOutput(provider: string): never {"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/docgen/__tests__/schema.test.ts:22",
+      "quotedText": "const validate = ajv.compile(DOCGEN_OUTCOME_SCHEMA);"
+    },
+    {
+      "id": "c13",
+      "kind": "convention",
+      "ref": "src/workflow/artifacts/companion/__tests__/metamodel.test.ts:98",
+      "quotedText": "assert.equal(validateAgainstSchema(schema, good).ok, true);"
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "s1:symbol.locate — structured-output.ts exported surface and which exports have real callers",
+      "quotedText": "TWO ARE DEAD: normaliseSchemaForAnthropic (declared at :341, ZERO references anywhere in src/ including tests) and notImplementedStructuredOutput (declared at :359, ZERO references)."
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "s1:data-model.trace — which schemas in the repo actually carry a root-level union",
+      "quotedText": "A scan of every *_SCHEMA const outside __tests__ found exactly ONE root-level union: DOCGEN_OUTCOME_SCHEMA (src/docgen/schema.ts:72) ... consumed only by ajv directly and never handed to a provider."
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-1f7ade1a889013da",
+      "quotedText": "the dead helper must not survive as a false signal of safety — either removed or made real and actually called — and the constraint should be asserted by a test that does NOT require a billed live call, so the guard keeps working in the hermetic sweep."
+    }
+  ]
+}

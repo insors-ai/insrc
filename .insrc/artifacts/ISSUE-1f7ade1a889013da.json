@@ -20,7 +20,12 @@
     "issueHash": "1f7ade1a889013da",
     "epicSlug": "both-cli-providers-reject-top-level",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "approvedAt": "2026-10-03T18:01:07.606Z",
+    "parentRef": {
+      "slug": "documentation-generation-framework-docgen-produces-self",
+      "storyId": "s6"
+    }
   },
   "body": {
     "title": "Guard structured-output schemas against the cross-vendor top-level union rejection",

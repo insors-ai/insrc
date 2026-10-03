@@ -1,0 +1,30 @@
+<!-- insrc:artifact CR-3a98d27994547262-S001 -->
+
+# Code review: 3a98d27994547262:S001
+
+⚠️ **WARN** — HIGH 0 · MED 1 · LOW 2 · model `client`
+
+**Changed files:** 6
+
+## adherence — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/workflow/storage.ts:352 | The ISSUE's fixIntent named inheritedEpicSlug as 'the intended path' for BOTH reads. finalizePlan does use it; buildRecordFolderArgs does NOT — it calls readEpicDefinitionCore directly and applies its own empty-label guard. The deviation is forced by the contract, not a shortcut: inheritedEpicSlug returns a non-optional `string` and demands a `string` fallback, while buildRecordFolderArgs must return `string \| undefined` so the downstream `epicSlug ?? epicHash` default stays reachable — a property its own test pins ('the hash fallback is still REACHABLE for a work item with no definition artifact'). Routing through the helper there would have required inventing a fallback value and would have made that guard unreachable. The intent's SUBSTANCE (label from the definition head, empty treated as absent) is met at both sites; only the mechanism differs, and recording that is cheaper than implying the helper was used throughout. |
+
+## conventions — 0 finding(s)
+
+_No findings._
+
+## coverage — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | src/workflow/storage.ts:353 | A REGRESSION I INTRODUCED AND THEN FIXED, recorded because the first version shipped past my own tests. The initial change read `head.epicSlug ?? upstream.epicSlug`, and `??` catches undefined but passes an EMPTY STRING through. fileSeg maps an empty label to the literal segment 'artifact', so a definition head storing `epicSlug: ''` would have produced a folder named `artifact-E20261002d4c3b2a1` AND suppressed the upstream label that was about to be correct — strictly worse than the defect being fixed. All six new tests and the 85-test focused baseline passed with that bug present, because none seeded an empty head label. Found by probing the edge case directly rather than by the suite, fixed with an explicit `length > 0` guard mirroring inheritedEpicSlug, and now covered by a test that mutation-proves (dropping the guard reds 1). The residual lesson for this dimension: `??` is not a substitute for the helper's emptiness check, and a test suite that only seeds well-formed labels cannot tell the difference. |
+
+## quality — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | src/workflow/storage.ts:346 | buildRecordFolderArgs now issues a second artifact read on the standalone route: `upstream` reads the LLD for the ANCHOR and `head` reads the definition core for the LABEL. On the epic route `head` is bound to `upstream`, so no extra read happens there. The cost is one extra JSON read per standalone BUILD-record write — a write-path operation that already does several — and the alternative was to collapse anchor and label onto one source, which would have changed the anchor and broken the behaviour three existing tests pin. Recorded as a deliberate trade rather than left for a later reader to rediscover; the comment at the site states it. |
+

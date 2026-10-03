@@ -337,19 +337,38 @@ export function buildRecordFolderArgs(
 	standalone:   boolean,
 	ownCreatedAt: string,
 ): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
-	// S001/t5 — the non-standalone branch resolves through the DEFINITION artifact
-	// (DEF or ISSUE alike) rather than the define artifact alone. It previously
-	// returned an undefined label for a work item defined by an ISSUE, and that
-	// undefined is what reached the `epicSlug ?? epicHash` default and produced a
-	// folder named with the raw hash. The standalone branch still reads the LLD,
-	// which is the nearest upstream for a build on that route.
+	// The ANCHOR comes from the nearest upstream, which differs by route: the
+	// standalone route reads the LLD and degrades to the record's own createdAt,
+	// while the epic route reads the DEFINITION artifact (DEF or ISSUE alike)
+	// rather than the define artifact alone — S001/t5, which stopped an
+	// ISSUE-anchored work item from landing in a raw-hash folder.
 	const upstream = standalone
 		? readArtifactCore(repoPath, lldArtifactId(epicHash, storyId))
 		: readEpicDefinitionCore(repoPath, epicHash);
+
+	// ISSUE-3a98d279 — the LABEL, by contrast, comes from the DEFINITION HEAD on
+	// BOTH routes. It used to come from whatever the nearest upstream persisted,
+	// which on the standalone route is the LLD; an LLD that had re-derived its own
+	// slug therefore named the folder, and a work item whose definition and LLD
+	// disagreed ended up with two. This closes the asymmetry a previous comment
+	// here described as deliberate.
+	//
+	// The upstream label remains the FALLBACK, so a work item with no definition
+	// artifact keeps whatever label its LLD carries instead of degrading to a
+	// raw-hash folder. On the epic route `head` IS `upstream`, so nothing changes
+	// there and no second read is issued.
+	// An EMPTY stored label counts as ABSENT, matching inheritedEpicSlug's own
+	// guard. `??` alone would not do it: it catches undefined but passes '' through,
+	// and fileSeg turns an empty label into the literal segment 'artifact' — so a
+	// head storing an empty string would name the folder `artifact-E<segment>` and
+	// suppress the upstream label that was about to be used. Verified by probe
+	// before this guard existed.
+	const head = standalone ? readEpicDefinitionCore(repoPath, epicHash) : upstream;
+	const headLabel = head.epicSlug !== undefined && head.epicSlug.length > 0 ? head.epicSlug : undefined;
 	return {
 		createdAtISO: upstream.createdAt ?? ownCreatedAt,
 		workItemKind: standalone ? 'standalone' : 'epic',
-		epicSlug:     upstream.epicSlug,
+		epicSlug:     headLabel ?? upstream.epicSlug,
 	};
 }
 

@@ -454,3 +454,99 @@ test('t5 — the hash fallback is still REACHABLE for a work item with no defini
 		assert.ok(md.includes(T5_HASH), `degrades to the hash rather than throwing: ${md}`);
 	} finally { r.cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-3a98d279 — buildRecordFolderArgs takes the LABEL from the definition
+// head on BOTH routes, while the ANCHOR still comes from the nearest upstream.
+//
+// The standalone route used to take both from the LLD, so an LLD that had
+// re-derived its own slug named the BUILD's folder and a work item whose ISSUE
+// and LLD disagreed ended up with two folders for one identity segment.
+// ---------------------------------------------------------------------------
+
+const LABEL_HEAD = 'the-definition-head-label';
+const LABEL_LLD  = 'a-label-the-lld-coined';
+
+/** An ISSUE head and an LLD that DISAGREE about the label. The LLD also carries
+ *  its own createdAt, so the anchor and the label can be told apart. */
+function seedDisagreeing(repo: string, lldCreatedAt = '2026-10-02T19:00:00.000Z'): void {
+	writeAtomic(join(repo, '.insrc/artifacts', `ISSUE-${T5_HASH}.json`),
+		JSON.stringify({ meta: { createdAt: T5_CREATED, epicSlug: LABEL_HEAD, standalone: true } }));
+	writeAtomic(join(repo, '.insrc/artifacts', `LLD-${T5_HASH}-S001.json`),
+		JSON.stringify({ meta: { createdAt: lldCreatedAt, epicSlug: LABEL_LLD, standalone: true } }));
+}
+
+test('3a98d279 — the STANDALONE route takes the label from the head, not the LLD', () => {
+	const r = t5Repo();
+	try {
+		seedDisagreeing(r.repo);
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.epicSlug, LABEL_HEAD, 'the head names the folder');
+		assert.notEqual(fa.epicSlug, LABEL_LLD, 'the LLD must not');
+		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.ok(md.includes(LABEL_HEAD), md);
+		assert.ok(!md.includes(LABEL_LLD), md);
+	} finally { r.cleanup(); }
+});
+
+test('3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD\'s createdAt', () => {
+	// The label and the anchor come from DIFFERENT places on this route, and the
+	// change moved only the label. Asserted together so a later edit cannot quietly
+	// swap the anchor's source while the label assertion keeps passing.
+	const r = t5Repo();
+	try {
+		const lldCreated = '2026-10-02T19:00:00.000Z';
+		seedDisagreeing(r.repo, lldCreated);
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.createdAtISO, lldCreated, 'anchor from the LLD');
+		assert.notEqual(fa.createdAtISO, T5_CREATED, 'NOT from the head');
+		assert.equal(fa.epicSlug, LABEL_HEAD, 'label from the head');
+		assert.equal(fa.workItemKind, 'standalone');
+	} finally { r.cleanup(); }
+});
+
+test('3a98d279 — with no definition head the LLD\'s label is still the fallback, not a raw hash', () => {
+	const r = t5Repo();
+	try {
+		// LLD only: nothing to inherit, so the upstream label must still be used
+		// rather than degrading this work item into a hash-named folder.
+		writeAtomic(join(r.repo, '.insrc/artifacts', `LLD-${T5_HASH}-S001.json`),
+			JSON.stringify({ meta: { createdAt: '2026-10-02T19:00:00.000Z', epicSlug: LABEL_LLD, standalone: true } }));
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.epicSlug, LABEL_LLD, 'the upstream label survives as the fallback');
+		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.ok(!md.includes(`${T5_HASH}-E`), `must not regress to a raw-hash folder: ${md}`);
+	} finally { r.cleanup(); }
+});
+
+test('3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it', () => {
+	const r = t5Repo();
+	try {
+		seedDisagreeing(r.repo);
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', false, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.epicSlug, LABEL_HEAD);
+		assert.equal(fa.createdAtISO, T5_CREATED, 'the epic route anchors on the head, as before');
+		assert.equal(fa.workItemKind, 'epic');
+	} finally { r.cleanup(); }
+});
+
+test('3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`', () => {
+	// Caught by reviewing this very change: `??` catches undefined but passes ''
+	// through, and fileSeg maps an empty label to the literal segment 'artifact'. So
+	// without a length guard a head storing an empty string both named the folder
+	// `artifact-E<segment>` AND suppressed the upstream label that would have been
+	// correct — strictly worse than the behaviour being fixed.
+	const r = t5Repo();
+	try {
+		writeAtomic(join(r.repo, '.insrc/artifacts', `ISSUE-${T5_HASH}.json`),
+			JSON.stringify({ meta: { createdAt: T5_CREATED, epicSlug: '', standalone: true } }));
+		writeAtomic(join(r.repo, '.insrc/artifacts', `LLD-${T5_HASH}-S001.json`),
+			JSON.stringify({ meta: { createdAt: '2026-10-02T19:00:00.000Z', epicSlug: LABEL_LLD, standalone: true } }));
+
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, '2026-10-03T00:00:00.000Z');
+		assert.equal(fa.epicSlug, LABEL_LLD, 'the empty head label is ignored and the upstream one is used');
+		assert.notEqual(fa.epicSlug, '', 'an empty string must never be returned as a label');
+		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.ok(!md.includes('/artifact-E'), `no folder may be named 'artifact': ${md}`);
+	} finally { r.cleanup(); }
+});

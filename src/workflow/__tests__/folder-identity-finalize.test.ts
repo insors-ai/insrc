@@ -238,3 +238,50 @@ test('t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at a
 		assert.ok(folder.includes('/docs/epics/'), `an epic item belongs under docs/epics, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-3a98d279 — the LABEL comes from the definition head, not the LLD.
+//
+// The sibling tests above cover the LLD's OWN label being inherited from the
+// head. These cover the next hop: a PLAN finalized against an LLD whose label
+// DISAGREES with the head. That is the live arrangement that forked work items
+// — an LLD written before the label fix kept its own re-derived slug, and every
+// downstream stage followed it instead of the definition.
+// ---------------------------------------------------------------------------
+
+/** What an LLD written before the label fix persisted for itself. */
+const LLD_OWN_SLUG = 'a-label-the-lld-coined-for-itself';
+
+test('3a98d279 — a PLAN whose LLD carries a DIFFERENT label still takes the definition head\'s', async () => {
+	const repo = seedIssueRepo({ standalone: true });
+	try {
+		// The ISSUE says HEAD_SLUG; the approved LLD says something else entirely.
+		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG });
+		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-3a98-plan', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+
+		const meta = result.finalized.artifact.meta as { epicSlug?: string };
+		assert.equal(meta.epicSlug, HEAD_SLUG, 'the PLAN must carry the head\'s label');
+		assert.notEqual(meta.epicSlug, LLD_OWN_SLUG, 'and must NOT inherit the LLD\'s own');
+
+		const folder = folderFor(repo, result.finalized.artifact.meta as never, 'S001');
+		assert.ok(folder.includes(`${HEAD_SLUG}-E`), `must land in the head's folder, got ${folder}`);
+		assert.ok(!folder.includes(LLD_OWN_SLUG), `the LLD's label must name no folder, got ${folder}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('3a98d279 — with NO definition head, a PLAN still falls back rather than composing an empty label', async () => {
+	// Proves the fallback stayed reachable at this call site after the source change.
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-3a98-nohead-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG });
+		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-3a98-nohead', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+		const slug = String((result.finalized.artifact.meta as { epicSlug?: string }).epicSlug ?? '');
+		assert.ok(slug.length > 0, 'a label must still be produced');
+		assert.ok(!slug.startsWith('-'), `no folder name may begin with a separator, got ${slug}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

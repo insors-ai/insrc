@@ -20,7 +20,155 @@
     "issueHash": "3a98d27994547262",
     "epicSlug": "finalizeplan-buildrecordfolderargs-take-work-item-s",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "finalizePlan derives the plan's folder label from the LLD's persisted slug, via the expression `const epicSlug = lld.meta.epicSlug ?? safeDeriveSlug(intent.focus);`",
+          "evidence": "Both probes confirm it exactly: grep matched `src/workflow/orchestrator.ts:2537` and the read of that anchor returned the line verbatim — `const epicSlug = lld.meta.epicSlug ?? safeDeriveSlug(intent.focus);`. The cited line and the quoted text agree with the file.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildRecordFolderArgs carries a comment stating 'The standalone branch still reads the LLD.'",
+          "evidence": "grep found the comment in the real source at `src/workflow/storage.ts:344` — '// folder named with the raw hash. The standalone branch still reads the LLD,'. The quoted text is present verbatim.",
+          "action": "Verified. Optional precision: citation c2 names the file with no line, and the evidence pins it to :344, so the anchor can be tightened.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "The premise is sound; only the citation's granularity is loose. The evidence gives the exact line, so adding it is a mechanical correction derived entirely from the gathered match.",
+            "artifactEdits": [
+              {
+                "find": "`code` `src/workflow/storage.ts` — \"The standalone branch still reads the LLD.\"",
+                "replace": "`code` `src/workflow/storage.ts:344` — \"The standalone branch still reads the LLD.\""
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "p3",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "buildRecordFolderArgs is branch-asymmetric about the label source: its non-standalone path resolves through readEpicDefinitionCore while its standalone path reads the LLD's own artifact record.",
+          "evidence": "HALF-CONFIRMED ONLY. The non-standalone half is verified: grep matched `: readEpicDefinitionCore(repoPath, epicHash);` at src/workflow/storage.ts:348. The standalone half is NOT addressed by the evidence — the probe `standalone\\s*\\n?\\s*\\?\\s*readArtifactCore\\(repoPath, lldArtifactId` returned ZERO matches, so nothing here shows what the standalone branch reads.",
+          "action": "Re-probe the standalone branch with a single-line pattern, since the failure is a bad probe rather than a contradiction: ripgrep patterns are matched per line and this one spanned a line break across the ternary. `readArtifactCore\\(repoPath, lldArtifactId` would re-derive it. Until that runs, treat the asymmetry as asserted-not-verified.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither confirms nor contradicts the standalone half, so this is unverifiable rather than wrong. It does not change what gets built — the prescribed change (route both reads through the head) stands on the confirmed half and on p1 — so it is MED, not HIGH. No artifact edit is proposed because the premise may well be correct; what is missing is a probe that can see it.",
+            "options": [
+              "Re-run with the single-line pattern `readArtifactCore\\(repoPath, lldArtifactId` to confirm the standalone branch's source",
+              "Add an explicit line anchor for the standalone branch to citation c2's neighbourhood so a read, not a grep, confirms it",
+              "Leave as asserted and let the build stage's own reading settle it, accepting that this premise entered the record unverified"
+            ]
+          }
+        },
+        {
+          "claimId": "p4",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "readEpicDefinitionCore exists and resolves the definition artifact DEF-first-then-ISSUE on a first-readable-wins basis.",
+          "evidence": "The CONTENT is verified but the ANCHOR is off by two lines. grep confirms the DEF-then-ISSUE loop at src/workflow/storage.ts:318, and the read of :317 returns the signature `export function readEpicDefinitionCore(repoPath: string, epicHash: string): EpicDefinitionCore {`. The cited :320 resolves to a different line — `if (core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined) {` — which is inside the same function but is the first-readable-wins test, not the DEF-then-ISSUE ordering the citation describes.",
+          "action": "Re-anchor citation c3 from :320 to :318, the line that actually carries the DEF-then-ISSUE iteration the quoted text paraphrases.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "A stale anchor pointing at the right function but the wrong line. The prescribed change is unaffected — readEpicDefinitionCore demonstrably exists and demonstrably reads DEF then ISSUE — so this is imprecision, not a defect that alters the build. The replacement line is taken directly from the grep match.",
+            "artifactEdits": [
+              {
+                "find": "`src/workflow/storage.ts:320` — \"readEpicDefinitionCore",
+                "replace": "`src/workflow/storage.ts:318` — \"readEpicDefinitionCore"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "p5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "An inherit-then-fallback label helper already exists and is exported with the signature `inheritedEpicSlug(repoPath: string, epicHash: string, fallback: string): string`.",
+          "evidence": "grep and read agree: `export function inheritedEpicSlug(repoPath: string, epicHash: string, fallback: string): string {` is at src/workflow/storage.ts:213, matching the cited anchor and the quoted signature exactly.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p6",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "inheritedEpicSlug treats an EMPTY stored label as absent and falls back, rather than composing a folder name from an empty string.",
+          "evidence": "grep and read both return `return inherited !== undefined && inherited.length > 0 ? inherited : fallback;` at src/workflow/storage.ts:215. The `length > 0` test is the empty-label guard the premise claims, so an empty stored label does fall back.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "buildRecordFolderArgs is called from standalone-record.ts with the standalone flag passed as `merged.meta.standalone === true`.",
+          "evidence": "grep and read both return the call site verbatim at src/workflow/runners/build/standalone-record.ts:241, including the `merged.meta.standalone === true` argument the premise names.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p8",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "buildRecordFolderArgs has exactly ONE non-test call site, so changing its label source has a single write-path blast radius.",
+          "evidence": "CONFIRMED by re-derivation. Of the 12 matches, exactly ONE is a non-test call in source: src/workflow/runners/build/standalone-record.ts:241. The only other source hit is the DEFINITION at src/workflow/storage.ts:333 (`export function buildRecordFolderArgs(`), which is not a call site; the remaining hits are four calls in src/workflow/__tests__/storage.test.ts and six in docs markdown.",
+          "action": "none — verified sound. The count holds on the strict reading the premise uses (non-test call sites), and the blast-radius conclusion follows.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p9",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Work item e20235c17f083a16 has an ISSUE whose epicSlug is 'artifact-docs-folders-fork-per-stage' and an LLD whose epicSlug is 'make-work-item-keep-exactly-one' — the two differing labels the reproduction depends on.",
+          "evidence": "Both labels are corroborated. The LLD's own rendered header carries `**Epic:** \\`make-work-item-keep-exactly-one\\`` (docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/LLD.md:7), and that same LLD's citation c9 records the ISSUE's epicSlug as 'artifact-docs-folders-fork-per-stage' (LLD.md:374 and :411). So one work item demonstrably carries two different labels, which is the arrangement the reproduction needs.",
+          "action": "none — verified sound. Worth noting the confirmation came from rendered markdown rather than the JSON store the premise anchors on; the two agree, so the premise stands.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p10",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The identity ANCHOR is already resolved through the definition head, so this defect concerns only the LABEL and not the identity segment — readEpicCreatedAt reads the definition core rather than the define artifact alone.",
+          "evidence": "grep confirms `const createdAt = readEpicDefinitionCore(repoPath, epicHash).createdAt;` at src/workflow/storage.ts:250, which is the anchor read resolving through the definition head rather than the define artifact alone — exactly the premise's claim that the anchor is already fixed and only the label remains.",
+          "action": "none — verified sound. This is the premise that keeps the issue's scope honest: it is why the record claims the label only and does not reopen identity.",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 8
+      },
+      "reviewedAt": "2026-10-03T14:35:12.944Z",
+      "model": "client"
+    },
+    "reviewResolutions": {
+      "p3": {
+        "findingId": "p3",
+        "status": "resolved",
+        "note": "Premise CONFIRMED by a working probe; the finding was an artifact of my own bad probe, not of the record. The original pattern spanned a line break across the ternary, and ripgrep matches per line, so it could never hit. Re-probed single-line: src/workflow/storage.ts:347 is `? readArtifactCore(repoPath, lldArtifactId(epicHash, storyId))` and :348 is `: readEpicDefinitionCore(repoPath, epicHash)`. The branch asymmetry the premise asserts is exactly what the source does.",
+        "resolvedAt": "2026-10-03T14:35:53.141Z"
+      },
+      "p4": {
+        "findingId": "p4",
+        "status": "resolved",
+        "note": "Already corrected by the review's own auto-edit: citation c3 now reads src/workflow/storage.ts:318, the line carrying the DEF-then-ISSUE iteration its quoted text paraphrases. Verified in the artifact. The content was never in doubt — only the anchor.",
+        "resolvedAt": "2026-10-03T14:36:09.333Z"
+      }
+    },
+    "approvedAt": "2026-10-03T14:36:16.557Z",
+    "parentRef": {
+      "slug": "artifact-docs-folders-fork-per-stage"
+    }
   },
   "body": {
     "title": "Inherit a work item's folder label from its definition head, not from its LLD",

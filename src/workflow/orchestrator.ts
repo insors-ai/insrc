@@ -2534,7 +2534,13 @@ function finalizePlan(
 	const epicHash = requireEpicHash(intent);
 	const storyId  = requireStoryId(intent);
 	const lld = requireApprovedLld(intent.repoPath, epicHash, storyId);
-	const epicSlug = lld.meta.epicSlug ?? safeDeriveSlug(intent.focus);
+	// ISSUE-3a98d279 — the LABEL comes from the work item's DEFINITION HEAD, not
+	// from the LLD. It previously read `lld.meta.epicSlug`, so an LLD that had
+	// re-derived its own slug named the plan's folder, and a work item whose
+	// definition and LLD disagreed ended up with two folders for one identity
+	// segment. safeDeriveSlug stays the fallback for a work item with no definition
+	// artifact to inherit from.
+	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, safeDeriveSlug(intent.focus));
 
 	// Deterministic cross-artifact checks — the plan peers of the
 	// define/LLD invariant validators.

@@ -196,6 +196,45 @@ export function workItemKindOf(meta: { readonly standalone?: boolean | undefined
  *  (callers fall back to the artifact's own createdAt). Reads the hash-flat JSON
  *  store — the epic's DEF always pre-exists before any HLD/LLD/PLAN/BUILD/CR, so
  *  this is a finalize-time stamp helper, never called during path resolution. */
+/**
+ * S001/t7 — the work item's LABEL, inherited from its definition head.
+ *
+ * The one shape shared by every finalizer that has to name a work item's folder:
+ * take the definition head's slug when it has one, otherwise derive a fresh one.
+ * An EMPTY slug counts as absent, so a stored empty string can never compose a
+ * folder name beginning with '-'.
+ *
+ * Extracted so it is reachable by a test. The two orchestrator finalizers that
+ * carried this inline are module-private `async` functions with no seam, which is
+ * how t3's and t4a's changes came to be the only ones in this Story with no
+ * covering test — the mutation sweep at t7 caught both as mutations that did not
+ * bite, because there was nothing asserting on them.
+ */
+export function inheritedEpicSlug(repoPath: string, epicHash: string, fallback: string): string {
+	const inherited = readEpicDefinitionCore(repoPath, epicHash).epicSlug;
+	return inherited !== undefined && inherited.length > 0 ? inherited : fallback;
+}
+
+/**
+ * S001/t7 — the work item's PLACEMENT (`docs/epics` vs `docs/standalone`),
+ * inherited from its definition head with an optional caller-supplied fallback
+ * (the LLD's own flag, where the caller has one).
+ *
+ * Returns `true` ONLY for an explicit true, so callers can spread
+ * `...(flag === true ? { standalone: true } : {})` and never write a `false`.
+ * Writing false is what an earlier fix removed: it flipped a standalone record at
+ * completion time, relocating its markdown out of docs/standalone and orphaning
+ * the original. Omitting the key instead lets mergeWithPrior carry a prior true
+ * forward, so that bug cannot return through this path.
+ */
+export function inheritedStandalone(
+	repoPath: string,
+	epicHash: string,
+	fallback?: boolean | undefined,
+): boolean | undefined {
+	return readEpicDefinitionCore(repoPath, epicHash).standalone ?? fallback;
+}
+
 export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {
 	// S001/t2 — resolves through the DEFINITION artifact (DEF or ISSUE alike)
 	// rather than the define artifact alone. Signature and meaning are unchanged;

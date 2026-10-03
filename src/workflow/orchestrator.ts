@@ -112,7 +112,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, readEpicDefinitionCore, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -2265,10 +2265,7 @@ async function finalizeStandaloneLld(
 	// and therefore different folders. safeDeriveSlug stays the fallback for a work
 	// item with no definition artifact to inherit from, and an empty-string label
 	// counts as absent so it can never compose a folder name starting with '-'.
-	const inheritedSlug = readEpicDefinitionCore(intent.repoPath, epicHash).epicSlug;
-	const epicSlug = inheritedSlug !== undefined && inheritedSlug.length > 0
-		? inheritedSlug
-		: safeDeriveSlug(intent.focus);
+	const epicSlug = inheritedEpicSlug(intent.repoPath, epicHash, safeDeriveSlug(intent.focus));
 
 	// A standalone LLD has no parent Epic, so there is no EXTERNAL acceptance
 	// contract to validate the test-strategy mapping against — the LLD is
@@ -2555,7 +2552,7 @@ function finalizePlan(
 	// Only an explicit TRUE is written: asserting false is what a prior fix removed
 	// so that mergeWithPrior could carry a true value forward, and reinstating it
 	// would relocate a standalone record's markdown and orphan the original.
-	const inheritedStandalone = readEpicDefinitionCore(intent.repoPath, epicHash).standalone ?? lld.meta.standalone;
+	const standaloneFlag = inheritedStandalone(intent.repoPath, epicHash, lld.meta.standalone);
 
 	const artifact: PlanArtifact = {
 		meta: {
@@ -2566,7 +2563,7 @@ function finalizePlan(
 			// Work-item folder anchor (sc2): a plan belongs to an Epic Story, keyed
 			// on the Epic's define createdAt so it lands in the Story's folder.
 			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
-			...(inheritedStandalone === true ? { standalone: true } : {}),
+			...(standaloneFlag === true ? { standalone: true } : {}),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,

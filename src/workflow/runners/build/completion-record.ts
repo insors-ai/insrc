@@ -20,7 +20,7 @@
 
 import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
-import { readEpicDefinitionCore } from '../../storage.js';
+import { inheritedStandalone } from '../../storage.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -52,11 +52,11 @@ export async function ensureBuildRecordOnCompletion(
 		// only an explicit TRUE is written, never a false. An unreadable definition
 		// artifact therefore still omits the key, so mergeWithPrior keeps carrying a
 		// prior true forward and the old relocation bug cannot return.
-		const inheritedStandalone = readEpicDefinitionCore(repoPath, ref.epicHash).standalone;
+		const standaloneFlag = inheritedStandalone(repoPath, ref.epicHash);
 		const base: BuildRecord = {
 			meta: {
 				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now,
-				...(inheritedStandalone === true ? { standalone: true } : {}),
+				...(standaloneFlag === true ? { standalone: true } : {}),
 			},
 			body: { tasks: [] },
 		};

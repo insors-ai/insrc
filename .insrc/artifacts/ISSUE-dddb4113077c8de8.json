@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791033672363-4mpj8z",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-03T13:22:28.575Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 76211,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "dddb4113077c8de8",
+    "epicSlug": "build-record-renderer-only-artifact-renderer",
+    "standalone": true,
+    "magnitude": "small"
+  },
+  "body": {
+    "title": "Emit the artifact-id marker from the BUILD record renderer",
+    "reproduction": "1. Complete a Story so a BUILD record and its BUILD.md exist.\n2. Approve it the way every other artifact is approved — by passing the markdown path:\n   `insrc_workflow_approve({ artifactPath: '<...>/S001/BUILD.md' })`\n3. OBSERVED: it refuses with 'jsonPathForMd: cannot resolve the canonical JSON for <path> — a nested work-item artifact md must carry an insrc:artifact marker (its path no longer encodes the hash id). No marker was found.' The same call shape succeeds for an LLD, a PLAN, an ISSUE or a CR.\n   EXPECTED: a BUILD record is approvable by its markdown path, like every other artifact kind.\n\nThe asymmetry is measurable rather than a matter of opinion. Counting marker emissions across the artifact renderers gives two occurrences each for define, issue, hld, plan, lld, spec, extend and cr — and zero for the BUILD renderer. It shows on disk as well: sampled CR.md files contain a marker, and every sampled BUILD.md contains none.\n\nWorkaround in use today: approve by `epicHash` instead of by path, which batches every pending artifact under the work item rather than naming the one being approved.",
+    "rootCause": "The BUILD renderer never emits the marker, so there is nothing in a BUILD.md that identifies which record it renders.\n\nResolution from markdown back to JSON is marker-based by design, and the refusal message states the reason: the path 'no longer encodes the hash id'. Once the docs tree moved to `<slug>-E<date><hash8>/S<nnn>/<KIND>.md`, the filename became the bare kind and the folder carries only the first eight hex digits of the hash — so the only place a full artifact id can live is the marker inside the file. Eight renderers put it there. The BUILD renderer does not, and its output therefore cannot be mapped back to its record.\n\nThis is the same root fact that forced the docs-tree migration to locate markerless BUILD markdown by a (kind, hash8, story) path SHAPE rather than by id — a fallback that exists only because the marker is missing, and that cannot distinguish two work items sharing a hash8 prefix.\n\nOne correction worth carrying, because a source comment currently asserts otherwise: that fallback's comment says 'Rendered BUILD/CR ledgers carry no insrc:artifact marker', but only BUILD is markerless. The CR renderer does emit one and real CR.md files contain it. The comment should be corrected so it stops overstating the problem.",
+    "fixIntent": "A BUILD.md should identify the record it renders, the same way every other artifact's markdown does, so that resolving markdown back to JSON works uniformly and approval by path stops being a special case.\n\nTwo limits to state rather than design around. First, this does not retroactively repair anything: BUILD markdown already on disk stays markerless until it is next re-rendered, so any check that assumes a marker is present must tolerate the older files. Second, the migration's path-shape fallback for markerless BUILD markdown should NOT be removed as part of this — it is still the only way to locate those existing files, and removing it would strand them.\n\nWorth covering as acceptance: a freshly rendered BUILD.md resolves back to its JSON by path, and the renderer's byte-identity goldens are updated deliberately rather than incidentally, since adding a line changes every expected output."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts:149",
+      "quotedText": "export function renderBuildRecordMd(rec: BuildRecord): string {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:916",
+      "quotedText": "work-item artifact md must carry an insrc:artifact marker (its path no longer encodes the hash id)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:370",
+      "quotedText": "export function artifactIdMarker(id: string): string {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/issue.ts:64",
+      "quotedText": "lines.push(artifactIdMarker(issueArtifactId(issueHash)));"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:331",
+      "quotedText": "artifactIdMarker(id),"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/migrate-docs-tree.ts",
+      "quotedText": "Markerless nested md. Rendered BUILD/CR ledgers carry no insrc:artifact marker, and a nested filename is the bare `<KIND>.md`"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "BUILD-e20235c17f083a16-S001 — approval by artifactPath was refused this session and had to fall back to the epicHash form"
+    }
+  ]
+}

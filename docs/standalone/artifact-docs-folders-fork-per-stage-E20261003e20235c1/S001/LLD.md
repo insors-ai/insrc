@@ -229,7 +229,7 @@ No shape change; the INVARIANT that the segment is stable for a work item become
 
 ## 4. Diagrams
 
-- [ER model](docs/standalone/make-work-item-keep-exactly-one-E20261003e20235c1/S001/er-model.html)
+- [ER model](docs/standalone/artifact-docs-folders-fork-per-stage-E20261003e20235c1/S001/er-model.html)
 
 ## 5. Error paths
 

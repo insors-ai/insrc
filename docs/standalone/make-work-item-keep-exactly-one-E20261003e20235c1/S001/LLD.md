@@ -73,7 +73,7 @@ function readEpicDefinitionCore(repoPath: string, epicHash: string): { createdAt
 - None.
 
 **Postconditions:**
-- NEW, and the single place the DEF-equals-ISSUE equivalence is expressed for folder placement. Composed entirely from existing pieces: it calls readArtifactCore with defineArtifactId(epicHash) and then, only if that yields no usable values, with issueArtifactId(epicHash).
+- NEW, and the single place the DEF-equals-ISSUE equivalence is expressed for the work item's epic-level properties. Folder placement is ONE consumer, not the only one: the sibling Story ISSUE-6f31771d060cb412 consumes this same accessor to inherit a Story's acceptance contract from the definition artifact's body, where this Story reads its metadata. The user ruled the two be designed as one rule, so the accessor is deliberately scoped to the work item's definition rather than to this Story's use of it, and that sibling Story widens it from these three metadata fields to the definition as a whole. ORDERING: this Story lands the accessor first. Composed entirely from existing pieces: it calls readArtifactCore with defineArtifactId(epicHash) and then, only if that yields no usable values, with issueArtifactId(epicHash).
 - Order is DEF first, ISSUE second, copied from the identical order already used by the tracker resolver's readEpicIdentity so the two cannot disagree about which artifact defines a work item.
 - First-READABLE-wins, not first-PRESENT-wins: because readArtifactCore swallows a parse failure into {}, a corrupt DEF falls through to the ISSUE rather than poisoning the result.
 

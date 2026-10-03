@@ -197,15 +197,21 @@ export function workItemKindOf(meta: { readonly standalone?: boolean | undefined
  *  store — the epic's DEF always pre-exists before any HLD/LLD/PLAN/BUILD/CR, so
  *  this is a finalize-time stamp helper, never called during path resolution. */
 export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {
-	const json = artifactJsonPath(repoPath, defineArtifactId(epicHash));
-	if (!existsSync(json)) return undefined;
-	try {
-		const parsed = JSON.parse(readFileSync(json, 'utf8')) as { meta?: { createdAt?: unknown } };
-		const c = parsed.meta?.createdAt;
-		return typeof c === 'string' && c.length > 0 ? c : undefined;
-	} catch {
-		return undefined;
-	}
+	// S001/t2 — resolves through the DEFINITION artifact (DEF or ISSUE alike)
+	// rather than the define artifact alone. Signature and meaning are unchanged;
+	// what changes is that an ISSUE-anchored work item now yields its real anchor
+	// instead of undefined.
+	//
+	// Why this is the DEEPER half of the folder fork, and why it is fixed before
+	// the label: every caller applies `?? nowISO`, so a DEF-only read silently
+	// anchored each stage to that stage's own clock. deriveWorkItemIdentity builds
+	// epicSegment from the anchor DATE only, so two stages straddling midnight
+	// forked on the supposedly STABLE identity segment — a fork no label fix
+	// would prevent, and one that a same-day fixture cannot see at all.
+	const createdAt = readEpicDefinitionCore(repoPath, epicHash).createdAt;
+	// The non-empty check is preserved from the previous implementation: an empty
+	// string is not a usable anchor and must degrade to the caller's fallback.
+	return createdAt !== undefined && createdAt.length > 0 ? createdAt : undefined;
 }
 
 /** A work item's epic-level properties, as carried on its definition artifact.

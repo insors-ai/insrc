@@ -379,9 +379,21 @@ export function planMigration(repoPath: string): MigrationPlan {
 			}
 		}
 
-		if (anchor === undefined || slug === undefined) {
-			const reason = anchor === undefined ? 'no anchor createdAt (no DEF/LLD/member createdAt)' : 'no slug source (no member epicSlug, no slug-named filename)';
-			for (const m of members) unmappable.push({ artifactId: m.id, reason: `${reason} for work item ${hash}` });
+		// A work item with NO slug source anywhere falls back to its HASH as the
+		// label. This is not a guess and not a new convention: every writer in the
+		// path scheme composes with `epicSlug ?? epicHash`, so the hash is already
+		// the documented label for an unlabelled work item, and such a folder is
+		// exactly what the live writer produces today.
+		//
+		// Treating it as unmappable instead was a real divergence from the writer,
+		// and an all-or-nothing one: applyMigration refuses the WHOLE plan while any
+		// entry is unmappable, so two ledger-only work items with no definition head
+		// blocked convergence for every other work item in the repo.
+		const label = slug ?? hash;
+		if (anchor === undefined) {
+			for (const m of members) {
+				unmappable.push({ artifactId: m.id, reason: `no anchor createdAt (no DEF/LLD/member createdAt) for work item ${hash}` });
+			}
 			continue;
 		}
 
@@ -390,7 +402,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 			let to: string;
 			try {
 				identity = deriveWorkItemIdentity(m.hash, anchor, m.storyId);
-				to = resolveArtifactMdPath(repoPath, identity, m.kind, workItemKind, slug);
+				to = resolveArtifactMdPath(repoPath, identity, m.kind, workItemKind, label);
 			} catch (err) {
 				unmappable.push({ artifactId: m.id, reason: `cannot resolve destination: ${err instanceof Error ? err.message : String(err)}` });
 				continue;

@@ -142,18 +142,50 @@ test('planMigration: an artifact already at its nested destination is SKIPPED (i
 	}
 });
 
-test('planMigration: fail-loud — a work item with no slug source AND a missing md is recorded in unmappable[]', () => {
+test('planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer', () => {
+	// BEHAVIOUR CHANGED DELIBERATELY (S001/t9). This previously asserted that such
+	// an item went to unmappable[], and its title claimed the md was missing — it
+	// was not; the fixture seeds a present flat md. Marking it unmappable diverged
+	// from every writer in the path scheme, each of which composes with
+	// `epicSlug ?? epicHash`, so the hash is already the documented label for an
+	// unlabelled work item. It also made convergence all-or-nothing: applyMigration
+	// refuses the whole plan while any entry is unmappable, so two ledger-only work
+	// items with no definition head blocked the entire repo.
+	//
+	// Genuine fail-loud is unchanged and covered separately: no ANCHOR is still
+	// unmappable, and so is an artifact whose md is missing entirely.
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-mig-'));
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-		// A lone BUILD: hash-named md gives no slug, meta has no epicSlug → missing-slug.
+		// A lone BUILD: hash-named md gives no slug, and meta carries no epicSlug.
 		const h = '00112233445566aa';
 		seedJson(repo, `BUILD-${h}-s1`, { createdAt: DEF_CREATED, epicHash: h, storyId: 's1', standalone: false });
 		seedMd(repo, `docs/builds/BUILD-${h}-s1.md`, null, '# build');
 		const plan = planMigration(repo);
+		assert.equal(plan.unmappable.length, 0, `expected no unmappable, got ${JSON.stringify(plan.unmappable)}`);
+		assert.equal(plan.moves.length, 1);
+		// The hash is the label, so the folder is `<hash>-E<date><hash8>`.
+		assert.ok(plan.moves[0]!.to.includes(`${h}-E`), plan.moves[0]!.to);
+		assert.ok(plan.moves[0]!.to.endsWith(join('S001', 'BUILD.md')), plan.moves[0]!.to);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('planMigration: a work item with no ANCHOR is still fail-loud unmappable', () => {
+	// The hash fallback covers a missing LABEL only. Without an anchor createdAt
+	// there is no identity SEGMENT to key a folder on, so there is nothing to
+	// guess at and the item must be reported rather than placed.
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-mig-noanchor-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		const h = '00112233445566bb';
+		seedJson(repo, `BUILD-${h}-s1`, { epicHash: h, storyId: 's1', standalone: false });   // no createdAt
+		seedMd(repo, `docs/builds/BUILD-${h}-s1.md`, null, '# build');
+		const plan = planMigration(repo);
 		assert.equal(plan.moves.length, 0);
 		assert.equal(plan.unmappable.length, 1);
-		assert.match(plan.unmappable[0]!.reason, /no slug source/);
+		assert.match(plan.unmappable[0]!.reason, /no anchor createdAt/);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

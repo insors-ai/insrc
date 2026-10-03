@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mkdtempSync } from 'node:fs';
@@ -252,4 +252,133 @@ test('applyMigration: a git-mv failure rolls the run back and leaves no partial 
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
+});
+
+// ---------------------------------------------------------------------------
+// S001/t6 — converge folders that ALREADY exist, scattered. Before t6 the
+// migration only indexed FLAT md paths, so a nested-but-misplaced artifact was
+// reported unmappable rather than moved — which is exactly a forked folder.
+// ---------------------------------------------------------------------------
+
+const T6_HASH = 'b7a6c5d4e3f20191';
+const T6_ANCHOR = '2026-10-02T18:19:50.067Z';          // -> E20261002
+const T6_SEG = `E20261002${T6_HASH.slice(0, 8)}`;
+const GOOD = 'the-real-label';
+const DRIFTED = 'a-drifted-label';
+
+/** Reproduce the live four-folder condition: one work item, four artifacts, four
+ *  folders, by three different drift mechanisms (label, top-level, raw hash). */
+function seedFourFolders(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t6-converge-'));
+	const wr = (rel: string, body: string): void => {
+		const abs = join(repo, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body);
+	};
+	const meta = (kind: string, storyId?: string): string => JSON.stringify({
+		meta: {
+			workflow: kind.toLowerCase(), epicHash: T6_HASH, epicSlug: GOOD, standalone: true,
+			createdAt: T6_ANCHOR, epicCreatedAt: T6_ANCHOR,
+			...(storyId !== undefined ? { storyId } : {}),
+		},
+		body: {},
+	});
+	const md = (id: string): string => `${artifactIdMarker(id)}\n\n# ${id}\n`;
+
+	// The JSON store is the authoritative artifact set.
+	wr(`.insrc/artifacts/ISSUE-${T6_HASH}.json`,        meta('ISSUE'));
+	wr(`.insrc/artifacts/LLD-${T6_HASH}-S001.json`,     meta('LLD', 'S001'));
+	wr(`.insrc/artifacts/PLAN-${T6_HASH}-S001.json`,    meta('PLAN', 'S001'));
+	wr(`.insrc/artifacts/BUILD-${T6_HASH}-S001.json`,   meta('BUILD', 'S001'));
+
+	// ...and the md files, scattered across FOUR folders.
+	wr(`docs/standalone/${GOOD}-${T6_SEG}/ISSUE.md`,            md(`ISSUE-${T6_HASH}`));
+	wr(`docs/standalone/${DRIFTED}-${T6_SEG}/S001/LLD.md`,      md(`LLD-${T6_HASH}-S001`));      // label drift
+	wr(`docs/epics/${DRIFTED}-${T6_SEG}/S001/PLAN.md`,          md(`PLAN-${T6_HASH}-S001`));     // + top-level drift
+	wr(`docs/epics/${T6_HASH}-${T6_SEG}/S001/BUILD.md`,         md(`BUILD-${T6_HASH}-S001`));    // + raw-hash label
+
+	// applyMigration shells out to git, so the fixture must be a repo.
+	gitInit(repo);
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+/** Every docs folder carrying the work item's identity segment. */
+function foldersForSegment(repo: string): string[] {
+	const out: string[] = [];
+	for (const top of ['docs/standalone', 'docs/epics']) {
+		const abs = join(repo, top);
+		if (!existsSync(abs)) continue;
+		for (const name of readdirSync(abs)) if (name.endsWith(T6_SEG)) out.push(`${top}/${name}`);
+	}
+	return out.sort();
+}
+
+test('t6 — a pre-seeded FOUR-folder work item converges onto ONE', () => {
+	const r = seedFourFolders();
+	try {
+		// PRECONDITION asserted FIRST. Without this the end-state assertion would
+		// pass on a fixture that only ever had one folder.
+		assert.equal(foldersForSegment(r.repo).length, 4,
+			`fixture must start with four folders, got ${JSON.stringify(foldersForSegment(r.repo))}`);
+
+		const plan = planMigration(r.repo);
+		assert.ok(plan.moves.length >= 3, `expected moves for the three misplaced artifacts, got ${plan.moves.length}`);
+		applyMigration(r.repo, plan);
+
+		const after = foldersForSegment(r.repo);
+		assert.equal(after.length, 1, `expected one folder, got ${JSON.stringify(after)}`);
+		assert.equal(after[0], `docs/standalone/${GOOD}-${T6_SEG}`,
+			'and it is the one the definition artifact designates: standalone top-level, the ISSUE\'s label');
+	} finally { r.cleanup(); }
+});
+
+test('t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled', () => {
+	const r = seedFourFolders();
+	try {
+		applyMigration(r.repo, planMigration(r.repo));
+		const dest = join(r.repo, `docs/standalone/${GOOD}-${T6_SEG}`);
+		assert.ok(existsSync(join(dest, 'S001/BUILD.md')), 'the raw-hash-labelled BUILD moved');
+		assert.ok(existsSync(join(dest, 'S001/PLAN.md')),  'the wrong-top-level PLAN moved');
+		assert.ok(existsSync(join(dest, 'S001/LLD.md')),   'the label-drifted LLD moved');
+		assert.ok(existsSync(join(dest, 'ISSUE.md')),      'and the already-correct ISSUE stayed');
+		// Nothing left behind under the drifted names.
+		assert.ok(!existsSync(join(r.repo, `docs/epics/${T6_HASH}-${T6_SEG}`)));
+	} finally { r.cleanup(); }
+});
+
+test('t6 — planMigration is READ-ONLY: planning alone moves nothing', () => {
+	const r = seedFourFolders();
+	try {
+		const before = foldersForSegment(r.repo);
+		planMigration(r.repo);
+		planMigration(r.repo);
+		assert.deepEqual(foldersForSegment(r.repo), before, 'planning must not touch the tree');
+		assert.equal(foldersForSegment(r.repo).length, 4, 'all four folders still present after planning twice');
+	} finally { r.cleanup(); }
+});
+
+test('t6 — convergence is idempotent: a second plan after applying has nothing left to move', () => {
+	const r = seedFourFolders();
+	try {
+		applyMigration(r.repo, planMigration(r.repo));
+		const second = planMigration(r.repo);
+		assert.equal(second.moves.length, 0, `a converged tree yields no moves, got ${JSON.stringify(second.moves)}`);
+		assert.equal(second.unmappable.length, 0,
+			`and nothing becomes unmappable: ${JSON.stringify(second.unmappable)}`);
+	} finally { r.cleanup(); }
+});
+
+test('t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at', () => {
+	const r = seedFourFolders();
+	try {
+		// A JSON artifact with no md anywhere, flat or nested.
+		writeFileSync(
+			join(r.repo, `.insrc/artifacts/CR-${T6_HASH}-S001.json`),
+			JSON.stringify({ meta: { workflow: 'cr', epicHash: T6_HASH, storyId: 'S001', epicSlug: GOOD, standalone: true, createdAt: T6_ANCHOR, epicCreatedAt: T6_ANCHOR }, body: {} }),
+		);
+		const plan = planMigration(r.repo);
+		assert.ok(plan.unmappable.some(u => u.artifactId === `CR-${T6_HASH}-S001`),
+			`the md-less artifact must be reported, got ${JSON.stringify(plan.unmappable)}`);
+		assert.ok(!plan.moves.some(m => m.kind === 'CR'), 'and no move is invented for it');
+	} finally { r.cleanup(); }
 });

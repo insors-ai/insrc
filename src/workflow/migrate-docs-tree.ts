@@ -31,7 +31,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
@@ -119,6 +119,25 @@ function readMarker(mdPath: string): string | undefined {
 /** Build the id → current flat md path index by scanning the flat dirs: a
  *  marker-bearing md maps by its marker, a markerless `BUILD-*`/`CR-*` md maps by
  *  its filename id. A file with neither is a non-artifact and is left out. */
+/** Index every md already NESTED under a work-item folder, by artifact id.
+ *
+ *  S001/t6. The flat index alone cannot see a misplaced nested artifact, and a
+ *  misplaced nested artifact is precisely what a forked folder contains: the file
+ *  is in the right SHAPE (`<slug>-<segment>/[S<nnn>/]<KIND>.md`) but under the
+ *  wrong label or the wrong top-level. Indexing these lets the existing
+ *  group-resolution logic — which already settles on ONE anchor and ONE slug per
+ *  work item — emit the convergence moves it could not previously express. */
+function indexNestedMd(repoPath: string): Map<string, string> {
+	const index = new Map<string, string>();
+	for (const location of listWorkItems(repoPath)) {
+		for (const abs of listArtifactMdPaths(repoPath, location)) {
+			const marker = readMarker(abs);
+			if (marker !== undefined && !index.has(marker)) index.set(marker, abs);
+		}
+	}
+	return index;
+}
+
 function indexFlatMd(repoPath: string): Map<string, string> {
 	const index = new Map<string, string>();
 	for (const dir of FLAT_DIRS) {
@@ -155,7 +174,15 @@ interface Artifact {
 	readonly epicCreatedAt: string | undefined;
 	readonly epicSlug: string | undefined;
 	readonly standalone: boolean;
+	/** Set only when the md sits in a legacy FLAT dir. Kept separate from
+	 *  {@link Artifact.mdPath} because the slug can be parsed out of a flat
+	 *  FILENAME, which a nested `<KIND>.md` never carries. */
 	readonly flatPath: string | undefined;
+	/** The md's CURRENT location, flat or nested, or undefined when no md exists.
+	 *  S001/t6: previously only flat paths were indexed, so a NESTED md sitting at
+	 *  the wrong nested path was reported unmappable instead of being moved —
+	 *  which is exactly the already-forked-folder case. */
+	readonly mdPath: string | undefined;
 }
 
 /** Read the (small) subset of companion-JSON meta the migration needs. */
@@ -197,7 +224,8 @@ export function planMigration(repoPath: string): MigrationPlan {
 	const unmappable:   Unmappable[]    = [];
 	if (!existsSync(artifactsDir)) return { moves, linkRewrites, unmappable };
 
-	const flatIndex = indexFlatMd(repoPath);
+	const flatIndex   = indexFlatMd(repoPath);
+	const nestedIndex = indexNestedMd(repoPath);
 
 	// 1. Enumerate the authoritative artifact set from the JSON store.
 	const artifacts: Artifact[] = [];
@@ -217,6 +245,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 			epicSlug: meta.epicSlug,
 			standalone: meta.standalone === true || parsed.kind === 'SPEC',
 			flatPath: flatIndex.get(id),
+			mdPath:   flatIndex.get(id) ?? nestedIndex.get(id),
 		});
 	}
 
@@ -274,13 +303,14 @@ export function planMigration(repoPath: string): MigrationPlan {
 				continue;
 			}
 
-			if (m.flatPath === undefined) {
-				// Not in a flat dir. Either already nested (idempotent skip) or its md is gone.
-				if (existsSync(to)) continue;   // already at its destination — skip
-				unmappable.push({ artifactId: m.id, reason: `md file not found in a flat docs dir and not at its nested destination ${relative(repoPath, to)}` });
+			if (m.mdPath === undefined) {
+				// No md anywhere — neither flat nor nested. Either already at its
+				// destination (idempotent skip) or the file is simply gone.
+				if (existsSync(to)) continue;
+				unmappable.push({ artifactId: m.id, reason: `md file not found in a flat or nested docs dir and not at its destination ${relative(repoPath, to)}` });
 				continue;
 			}
-			if (m.flatPath === to) continue;   // already placed (defensive; flat != nested in practice)
+			if (m.mdPath === to) continue;   // already correctly placed
 
 			const prior = toSeen.get(to);
 			if (prior !== undefined) {
@@ -288,7 +318,7 @@ export function planMigration(repoPath: string): MigrationPlan {
 				continue;
 			}
 			toSeen.set(to, m.id);
-			moves.push({ from: m.flatPath, to, kind: m.kind, identity, groupHash: hash });
+			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
 		}
 	}
 
@@ -344,6 +374,24 @@ function validatePostMoveLinks(repoPath: string): void {
  * non-empty `unmappable[]` (fail-loud) and rolls the whole run back (leaving no
  * partial mix) on any git-mv or validation failure BEFORE committing.
  */
+/** Remove each given directory if empty, then walk UPWARD removing newly-empty
+ *  parents. Stops at the two docs top-levels, which are never removed even when
+ *  empty, and never escapes the repo. Best-effort: a non-empty or unreadable
+ *  directory is simply left alone. */
+function pruneEmptyDirsUpward(repoPath: string, dirs: ReadonlySet<string>): void {
+	const stopAt = new Set([join(repoPath, 'docs', 'epics'), join(repoPath, 'docs', 'standalone'), join(repoPath, 'docs'), repoPath]);
+	for (const start of dirs) {
+		let dir = start;
+		while (!stopAt.has(dir) && dir.startsWith(repoPath) && existsSync(dir)) {
+			let entries: readonly string[];
+			try { entries = readdirSync(dir); } catch { break; }
+			if (entries.length > 0) break;
+			try { rmdirSync(dir); } catch { break; }
+			dir = dirname(dir);
+		}
+	}
+}
+
 export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 	if (plan.unmappable.length > 0) {
 		const lines = plan.unmappable.map(u => `  - ${u.artifactId}: ${u.reason}`).join('\n');
@@ -363,10 +411,22 @@ export function applyMigration(repoPath: string, plan: MigrationPlan): void {
 	const startSha = git(repoPath, 'rev-parse', 'HEAD').trim();
 
 	try {
+		const vacated = new Set<string>();
 		for (const mv of plan.moves) {
 			mkdirSync(dirname(mv.to), { recursive: true });
 			git(repoPath, 'mv', mv.from, mv.to);
+			vacated.add(dirname(mv.from));
 		}
+		// S001/t6 — prune the directories the moves emptied.
+		//
+		// `git mv` relocates FILES and leaves the vacated directory behind. For the
+		// original flat-to-nested migration that was harmless: the flat dirs were
+		// shared and stayed populated. For folder CONVERGENCE it defeats the point —
+		// a work item would still show four folders in the docs tree, three of them
+		// empty, which is precisely the confusion the Story exists to remove. git
+		// does not track empty directories, so this is a filesystem concern only and
+		// cannot lose content.
+		pruneEmptyDirsUpward(repoPath, vacated);
 		for (const lr of plan.linkRewrites) {
 			const abs = plan.moves.find(m => m.from === lr.file)?.to ?? lr.file;
 			const content = readFileSync(abs, 'utf8');

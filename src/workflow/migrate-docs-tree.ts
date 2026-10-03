@@ -201,6 +201,20 @@ function artifactShapeKey(kind: ArtifactKind, hash: string, storyId: string | un
 	return `${kind}|${hash.slice(0, 8)}|${story}`;
 }
 
+/** Every md in the docs tree — nested work-item folders plus the legacy flat
+ *  dirs. Used by the link-rewrite scan, which must see files that are NOT moving
+ *  as well as those that are. */
+function allDocsMdPaths(repoPath: string): string[] {
+	const out: string[] = [];
+	for (const location of listWorkItems(repoPath)) out.push(...listArtifactMdPaths(repoPath, location));
+	for (const dir of FLAT_DIRS) {
+		const abs = join(repoPath, dir);
+		if (!existsSync(abs)) continue;
+		for (const name of readdirSync(abs)) if (name.endsWith('.md')) out.push(join(abs, name));
+	}
+	return out;
+}
+
 function indexFlatMd(repoPath: string): Map<string, string> {
 	const index = new Map<string, string>();
 	for (const dir of FLAT_DIRS) {
@@ -401,16 +415,29 @@ export function planMigration(repoPath: string): MigrationPlan {
 		}
 	}
 
-	// 3. Cross-document link rewrites: scan each moved md for a repo-relative
-	//    reference to another moved artifact's OLD flat path.
-	const flatToNestedRel = new Map<string, string>();
-	for (const mv of moves) flatToNestedRel.set(relative(repoPath, mv.from), relative(repoPath, mv.to));
-	for (const mv of moves) {
-		let content: string;
-		try { content = readFileSync(mv.from, 'utf8'); } catch { continue; }
-		for (const [flatRel, nestedRel] of flatToNestedRel) {
-			if (flatRel !== relative(repoPath, mv.from) && content.includes(flatRel)) {
-				linkRewrites.push({ file: mv.from, from: flatRel, to: nestedRel });
+	// 3. Cross-document link rewrites: find every md that REFERENCES a moved
+	//    artifact's old path, and record the rewrite.
+	//
+	//    This used to scan only the files that were THEMSELVES moving, which left a
+	//    hole that convergence walks straight into: when a work item's folders are
+	//    merged, the artifact already sitting in the destination folder does NOT
+	//    move, and it is typically the ISSUE — the one document most likely to link
+	//    to its own Story's LLD and PLAN. Its links pointed at paths that no longer
+	//    existed, and nothing rewrote them. So the scan now covers every md in the
+	//    docs tree, moving or not.
+	const movedRel = new Map<string, string>();
+	for (const mv of moves) movedRel.set(relative(repoPath, mv.from), relative(repoPath, mv.to));
+	if (movedRel.size > 0) {
+		for (const abs of allDocsMdPaths(repoPath)) {
+			const selfRel = relative(repoPath, abs);
+			let content: string;
+			try { content = readFileSync(abs, 'utf8'); } catch { continue; }
+			for (const [fromRel, toRel] of movedRel) {
+				// A file never rewrites a reference to its own old path: the move
+				// itself relocates it, and `applyMigration` reads it at its
+				// destination.
+				if (fromRel === selfRel) continue;
+				if (content.includes(fromRel)) linkRewrites.push({ file: abs, from: fromRel, to: toRel });
 			}
 		}
 	}

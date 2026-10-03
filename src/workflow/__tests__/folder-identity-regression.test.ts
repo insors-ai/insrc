@@ -13,9 +13,9 @@
  * so a later change cannot quietly re-aim it:
  *
  *  - a DEF-bearing epic chain composes the SAME paths it composed before the
- *    Story (the baseline is COMPUTED from the DEF's own createdAt + slug, not
- *    typed in as a literal — a hand-copied expected string would pass even if
- *    both sides drifted together);
+ *    Story. The expected paths are PINNED LITERALS, licensed by path-scheme.ts
+ *    being unedited across the Story; an expectation computed with the functions
+ *    under test drifts along with them and proves nothing.
  *  - `workItemKindOf` still collapses absent and `false` to 'epic', so the
  *    standalone inheritance added in t4 cannot reclassify an epic artifact;
  *  - path construction stays PURE — it composes for a repo directory that does
@@ -61,8 +61,21 @@ test('t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical path
 		// DEF's createdAt and its label from the DEF's epicSlug. Recompute the
 		// baseline from those two values DIRECTLY — independent of the accessor
 		// under test — so agreement is evidence rather than a shared assumption.
-		const baselineIdentity = deriveWorkItemIdentity(EPIC_HASH, DEF_CREATED, 'S002');
-		const baselineRoot = `${EPIC_SLUG}-${baselineIdentity.epicSegment}`;
+		// CRITIQUE APPLIED — the baseline is now PINNED, not computed.
+		//
+		// This test previously derived its expected paths with the SAME post-change
+		// deriveWorkItemIdentity / resolveArtifactMdPath it was checking, and the
+		// header called that a virtue ("computed, not a literal"). That reasoning was
+		// backwards: a computed expectation moves WITH the implementation, so both
+		// sides can drift together and the assertion still passes. A pinned literal
+		// cannot drift — which is the entire property a regression baseline needs.
+		//
+		// What licenses pinning these exact strings is that path-scheme.ts is
+		// UNEDITED across the whole Story (verified by diff against the baseline
+		// commit), so today's output IS the pre-change output. If either the segment
+		// scheme or the folder layout changes, these strings fail, which is the point.
+		const PINNED_HLD = join(repo, 'docs/epics/an-epic-with-many-stories-E20260311abcdef01/HLD.md');
+		const PINNED_LLD = join(repo, 'docs/epics/an-epic-with-many-stories-E20260311abcdef01/S002/LLD.md');
 
 		// What the post-change accessor resolves.
 		const core = readEpicDefinitionCore(repo, EPIC_HASH);
@@ -77,8 +90,8 @@ test('t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical path
 		const hld = resolveArtifactMdPath(repo, deriveWorkItemIdentity(EPIC_HASH, core.createdAt!), 'HLD', kind, core.epicSlug!);
 		const lld = resolveArtifactMdPath(repo, deriveWorkItemIdentity(EPIC_HASH, core.createdAt!, 'S002'), 'LLD', kind, core.epicSlug!);
 
-		assert.equal(hld, join(repo, 'docs', 'epics', baselineRoot, 'HLD.md'));
-		assert.equal(lld, join(repo, 'docs', 'epics', baselineRoot, 'S002', 'LLD.md'));
+		assert.equal(hld, PINNED_HLD);
+		assert.equal(lld, PINNED_LLD);
 
 		// The segment is DATE-only, so every stage of the chain — DEF, HLD, LLD,
 		// PLAN, spanning four different days — must still land in ONE folder keyed
@@ -211,14 +224,18 @@ test('t7/t4a — the caller fallback is used only when the head is SILENT', () =
 	} finally { cleanup(); }
 });
 
-test('t7/t4a — a FALSE is never produced as a truthy stamp, so no standalone record is relocated', () => {
+test('t7/t4a — a stored FALSE is reported as false, never silently promoted to true', () => {
 	const { repo, cleanup } = seedIssueRepo({ standalone: false });
 	try {
 		const flag = inheritedStandalone(repo, BUGFIX_HASH, undefined);
+		// SCOPE OF THIS TEST, stated because its previous version overreached: this
+		// asserts only what the HELPER returns. It used to also re-type the call
+		// sites' `...(flag === true ? ... : {})` spread inside the test body and
+		// assert on that copy — which proved nothing about any call site and stayed
+		// green through a mutation that made finalizePlan write `standalone: false`
+		// outright. That prohibition is now asserted where it actually lives, over
+		// WRITTEN artifact metadata, in folder-identity-finalize.test.ts.
 		assert.equal(flag, false);
-		// The call sites spread on `=== true`, so a false must contribute NO key —
-		// writing `standalone: false` is what previously flipped a standalone record
-		// at completion time and orphaned its markdown.
-		assert.deepEqual({ ...(flag === true ? { standalone: true } : {}) }, {});
+		assert.notEqual(flag, true);
 	} finally { cleanup(); }
 });

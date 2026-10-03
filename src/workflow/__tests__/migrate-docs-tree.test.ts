@@ -11,9 +11,10 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { test } from 'node:test';
 
@@ -346,13 +347,36 @@ test('t6 — the raw-hash-labelled folder and the wrong-top-level folder are bot
 	} finally { r.cleanup(); }
 });
 
-test('t6 — planMigration is READ-ONLY: planning alone moves nothing', () => {
+/** Every file under `docs/` plus the sha256 of its contents, so a comparison can
+ *  detect a rewritten, added or deleted file — not just a renamed folder. */
+function docsFingerprint(repo: string): Record<string, string> {
+	const out: Record<string, string> = {};
+	const walk = (rel: string): void => {
+		const abs = join(repo, rel);
+		if (!existsSync(abs)) return;
+		for (const name of readdirSync(abs).sort()) {
+			const childRel = `${rel}/${name}`;
+			const childAbs = join(repo, childRel);
+			if (statSync(childAbs).isDirectory()) walk(childRel);
+			else out[childRel] = createHash('sha256').update(readFileSync(childAbs)).digest('hex');
+		}
+	};
+	walk('docs');
+	return out;
+}
+
+test('t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL', () => {
 	const r = seedFourFolders();
 	try {
-		const before = foldersForSegment(r.repo);
+		// CRITIQUE APPLIED — this used to compare only the list of folder NAMES, so a
+		// planner that rewrote, added or deleted a file INSIDE a folder would still
+		// have passed. The claim is byte-identity, so the comparison is now over every
+		// file path under docs/ and the sha256 of each file's contents.
+		const before = docsFingerprint(r.repo);
+		assert.equal(Object.keys(before).length, 4, `the fixture's four md files must all be fingerprinted, got ${Object.keys(before).length}`);
 		planMigration(r.repo);
 		planMigration(r.repo);
-		assert.deepEqual(foldersForSegment(r.repo), before, 'planning must not touch the tree');
+		assert.deepEqual(docsFingerprint(r.repo), before, 'planning must leave every file and every byte untouched');
 		assert.equal(foldersForSegment(r.repo).length, 4, 'all four folders still present after planning twice');
 	} finally { r.cleanup(); }
 });
@@ -511,5 +535,88 @@ test('t6a — end to end: the disagreeing work item converges onto exactly ONE f
 			[`docs/standalone/${HEAD_SLUG}-${T6_SEG}`],
 			'exactly one folder, named for the definition head',
 		);
+	} finally { cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// S001/t8 — link rewriting for CONVERGENCE.
+//
+// Found by the post-build validate gate: the rewrite scan only ever looked at
+// files that were themselves moving. Convergence breaks exactly that assumption.
+// When several folders merge, the artifact ALREADY in the destination folder does
+// not move — and it is usually the ISSUE, the document most likely to link to its
+// own Story's LLD and PLAN. Its links kept pointing at paths that no longer
+// existed, and no test covered it.
+// ---------------------------------------------------------------------------
+
+/** The GOOD folder is the destination, so its ISSUE.md does NOT move — and it
+ *  links to the LLD and PLAN, which do. */
+function seedConvergenceWithLinks(): { repo: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-t8-links-'));
+	const wr = (rel: string, body: string): void => {
+		const abs = join(repo, rel);
+		mkdirSync(join(abs, '..'), { recursive: true });
+		writeFileSync(abs, body);
+	};
+	const meta = (storyId?: string): string => JSON.stringify({
+		meta: {
+			epicHash: T6_HASH, epicSlug: GOOD, standalone: true,
+			createdAt: T6_ANCHOR, epicCreatedAt: T6_ANCHOR,
+			...(storyId !== undefined ? { storyId } : {}),
+		},
+		body: {},
+	});
+	const md = (id: string, extra = ''): string => `${artifactIdMarker(id)}\n\n# ${id}\n\n${extra}\n`;
+
+	wr(`.insrc/artifacts/ISSUE-${T6_HASH}.json`,    meta());
+	wr(`.insrc/artifacts/LLD-${T6_HASH}-S001.json`, meta('S001'));
+	wr(`.insrc/artifacts/PLAN-${T6_HASH}-S001.json`, meta('S001'));
+
+	// The ISSUE is ALREADY at its destination — it will not move.
+	const lldOld  = `docs/standalone/${DRIFTED}-${T6_SEG}/S001/LLD.md`;
+	const planOld = `docs/epics/${DRIFTED}-${T6_SEG}/S001/PLAN.md`;
+	wr(`docs/standalone/${GOOD}-${T6_SEG}/ISSUE.md`, md(`ISSUE-${T6_HASH}`,
+		`See the [design](${lldOld}) and the [plan](${planOld}).`));
+	wr(lldOld,  md(`LLD-${T6_HASH}-S001`));
+	wr(planOld, md(`PLAN-${T6_HASH}-S001`));
+
+	gitInit(repo);
+	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t8 — a link in an UNMOVED file pointing at a moved path is rewritten', () => {
+	const { repo, cleanup } = seedConvergenceWithLinks();
+	const issueMd = join(repo, `docs/standalone/${GOOD}-${T6_SEG}/ISSUE.md`);
+	try {
+		const plan = planMigration(repo);
+		// PRECONDITION: the ISSUE really does not move, so this cannot pass by the
+		// old "scan the moved files" path.
+		assert.ok(
+			!plan.moves.some(m => m.from === issueMd),
+			'the ISSUE must NOT be among the moves — that is the whole point',
+		);
+		const forIssue = plan.linkRewrites.filter(lr => lr.file === issueMd);
+		assert.equal(forIssue.length, 2, `both links in the unmoved ISSUE must be rewritten, got ${JSON.stringify(forIssue)}`);
+
+		applyMigration(repo, plan);
+
+		const after = readFileSync(issueMd, 'utf8');
+		assert.ok(!after.includes(DRIFTED), `no stale path may survive:\n${after}`);
+		assert.ok(after.includes(`docs/standalone/${GOOD}-${T6_SEG}/S001/LLD.md`), after);
+		assert.ok(after.includes(`docs/standalone/${GOOD}-${T6_SEG}/S001/PLAN.md`), after);
+	} finally { cleanup(); }
+});
+
+test('t8 — a file never rewrites a reference to its OWN old path', () => {
+	// Its move already relocates it; applyMigration reads it at the destination.
+	const { repo, cleanup } = seedConvergenceWithLinks();
+	try {
+		const plan = planMigration(repo);
+		for (const lr of plan.linkRewrites) {
+			assert.notEqual(
+				lr.from, relative(repo, lr.file),
+				`a file must not rewrite its own old path: ${JSON.stringify(lr)}`,
+			);
+		}
 	} finally { cleanup(); }
 });

@@ -697,20 +697,203 @@ test('t2: readEpicDefinition NEVER throws — missing, malformed, and a malforme
 	} finally { s.cleanup(); }
 });
 
-test('t2: the reader is UNWIRED — the DEF body type carries `stories`, and reading it changes no resolution outcome', () => {
+test('t3: the reader is now WIRED — the DEF body type carries `stories`, and an undeclared story no longer resolves', () => {
 	const s = setupRepo();
 	try {
 		const dir = join(s.repo, '.insrc/artifacts');
-		// `stories` is now part of the narrow body shape (setupRepo declares none).
+		// `stories` is part of the narrow body shape (setupRepo declares none).
 		const def = readEpicDefinition(dir, EPIC_HASH);
 		assert.deepEqual(def!.artifact.body?.stories, [], 'the DEF fixture declares an empty story list, and the type can now see it');
 
-		// Behaviour-unchanged guard: calling the reader does not alter resolution,
-		// and t1's red cases are STILL red after t2 — t3 is what turns them green.
-		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'the real story still resolves');
-		assert.notEqual(resolveWorkflowRef(s.repo, 's9'), null,
-			'STILL the dummy ref — t2 wires nothing, so t1 case (b) remains red until t3');
+		// INVERTED at t3 (was the t2 behaviour-unchanged guard). t2 added the
+		// reader but called it from nowhere, so `s9` still produced a dummy ref;
+		// t3 consumes it from buildRef, so the undeclared story now refuses.
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'the real story — an LLD exists — still resolves');
+		assert.equal(resolveWorkflowRef(s.repo, 's9'), null,
+			'no dummy ref: s9 has neither a story-scoped artifact nor a declaration on the DEF');
 	} finally { s.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// S001/t3 — story existence is VERIFIED inside buildRef (the dummy-ref fix)
+// ---------------------------------------------------------------------------
+
+const DECL_HASH = 'eeee5555ffff6666';
+
+/** A single-epic repo whose DEF DECLARES s1 and s2 but ships a story-scoped
+ *  artifact only for s1 — so the two existence clauses can be told apart. */
+function setupDeclaredStoryRepo(): { repo: string; dir: string; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-decl-'));
+	const dir = join(repo, '.insrc/artifacts');
+	writeJson(join(dir, `DEF-${DECL_HASH}.json`), {
+		meta: {
+			workflow: 'define', runId: 'd1', repoPath: repo, epicHash: DECL_HASH,
+			epicSlug: 'declared-stories', createdAt: CREATED, schemaVersion: 1,
+		},
+		body: {
+			flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [],
+			stories: [
+				{ id: 's1', title: 'one', userValue: 'x', acceptanceCriteria: [] },
+				{ id: 's2', title: 'two', userValue: 'x', acceptanceCriteria: [] },
+			],
+			openQuestions: [],
+		},
+		citations: [],
+	});
+	writeJson(join(dir, `LLD-${DECL_HASH}-s1.json`), {
+		meta: {
+			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: DECL_HASH,
+			epicSlug: 'declared-stories', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+		},
+		body: {},
+	});
+	return { repo, dir, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test('t3 — the ARTIFACT clause: a story with an LLD resolves, and one with only a PLAN resolves too', () => {
+	const s = setupRepo();
+	try {
+		// setupRepo ships both an LLD and a PLAN for s1.
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'LLD + PLAN present → resolves');
+
+		// A PLAN alone is sufficient: drop the LLD and the story still exists.
+		rmSync(join(s.repo, '.insrc/artifacts', `LLD-${EPIC_HASH}-s1.json`));
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'PLAN alone is still an existing story');
+	} finally { s.cleanup(); }
+});
+
+test('t3 — neither artifact nor declaration → REFUSAL, not a dummy ref', () => {
+	const s = setupRepo();
+	try {
+		// setupRepo's DEF declares `stories: []`, so s9 has no basis at all.
+		assert.equal(resolveWorkflowRef(s.repo, 's9'), null);
+		assert.equal(resolveWorkflowRef(s.repo, 's9/t3'), null, 'the task level refuses with its story');
+	} finally { s.cleanup(); }
+});
+
+test('t3 — the DECLARATION clause alone suffices: a DEF-declared story with no LLD and no PLAN resolves', () => {
+	const s = setupDeclaredStoryRepo();
+	try {
+		const declaredOnly = resolveWorkflowRef(s.repo, 's2');
+		assert.notEqual(declaredOnly, null, 's2 is declared in the DEF body.stories — the define-to-design window');
+		assert.equal(declaredOnly!.level, 'story');
+		assert.equal(declaredOnly!.storyId, 's2');
+
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 's1 is both declared and has an LLD');
+		assert.equal(resolveWorkflowRef(s.repo, 's3'), null, 's3 is neither declared nor built');
+	} finally { s.cleanup(); }
+});
+
+test('t3 — an ISSUE-anchored epic blesses ordinal 1 and REFUSES ordinal 2 (the one-story convention)', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-bare-issue-'));
+	const dir = join(repo, '.insrc/artifacts');
+	try {
+		// A just-approved bugfix: the ISSUE exists, nothing downstream does yet.
+		writeJson(join(dir, `ISSUE-${BUG_HASH}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'i1', repoPath: repo, issueHash: BUG_HASH,
+				epicSlug: 'bare-issue', createdAt: CREATED, standalone: true,
+				magnitude: 'small', schemaVersion: 1,
+			},
+			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+			citations: [],
+		});
+		const first = resolveWorkflowRef(repo, 'S001');
+		assert.notEqual(first, null, 'ordinal 1 is the standalone route’s single declared story');
+		assert.equal(first!.storyId, 'S001');
+		assert.equal(resolveWorkflowRef(repo, 'S002'), null, 'an ISSUE declares no second story');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('t3 — s1 / S1 / S001 verify identically, inherited from storyIdToOrdinal', () => {
+	const s = setupBugfixRepo();
+	try {
+		// The artifacts are named `-S001`; every spelling of ordinal 1 must pass.
+		for (const spelling of ['S001', 'S1', 's1']) {
+			const r = resolveWorkflowRef(s.repo, spelling, { epicHash: BUG_HASH });
+			assert.notEqual(r, null, `spelling '${spelling}' must verify against the S001 artifacts`);
+		}
+		// And every spelling of a nonexistent ordinal must refuse.
+		for (const spelling of ['S002', 'S2', 's2']) {
+			assert.equal(resolveWorkflowRef(s.repo, spelling, { epicHash: BUG_HASH }), null,
+				`spelling '${spelling}' names ordinal 2, which does not exist`);
+		}
+	} finally { s.cleanup(); }
+});
+
+test('t3 — an EPIC-level call is entirely unverified and unchanged (asserted, not assumed)', () => {
+	const s = setupRepo();
+	try {
+		const epic = resolveWorkflowRef(s.repo, '#1');
+		assert.notEqual(epic, null);
+		assert.equal(epic!.level, 'epic');
+		assert.equal(epic!.storyId, undefined, 'no storyId → the verification gate never runs');
+
+		// Even with every story-scoped artifact removed, the epic still resolves.
+		rmSync(join(s.repo, '.insrc/artifacts', `LLD-${EPIC_HASH}-s1.json`));
+		rmSync(join(s.repo, '.insrc/artifacts', `PLAN-${EPIC_HASH}-s1.json`));
+		const bare = resolveWorkflowRef(s.repo, '#1');
+		assert.notEqual(bare, null, 'epic-level resolution does not depend on any story existing');
+		assert.equal(bare!.level, 'epic');
+	} finally { s.cleanup(); }
+});
+
+test('t3 — task-level NON-extension: an existing story with an unknown taskId still resolves, `task` absent', () => {
+	const s = setupRepo();
+	try {
+		const r = resolveWorkflowRef(s.repo, 's1/t99');
+		assert.notEqual(r, null, 'the story exists, so the ref is minted — the task is not verified');
+		assert.equal(r!.level, 'task');
+		assert.equal(r!.taskId, 't99');
+		assert.equal(r!.task, undefined, 'an unknown task leaves `task` absent, exactly as before t3');
+	} finally { s.cleanup(); }
+});
+
+test('t3 — never throws: an unparseable story label and a malformed definition artifact each yield a refusal', () => {
+	const s = setupRepo();
+	try {
+		for (const bad of ['s', 'sx', 's1x', 'sx/t3', 'S00x']) {
+			assert.doesNotThrow(() => resolveWorkflowRef(s.repo, bad), `'${bad}' must not throw`);
+			assert.equal(resolveWorkflowRef(s.repo, bad), null, `'${bad}' must refuse`);
+		}
+		// A definition artifact that is not JSON at all must also degrade quietly.
+		const dir = join(s.repo, '.insrc/artifacts');
+		writeFileSync(join(dir, `DEF-${EPIC_HASH}.json`), 'not json at all');
+		assert.doesNotThrow(() => resolveWorkflowRef(s.repo, 's1'));
+	} finally { s.cleanup(); }
+});
+
+test('t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story whose LLD is intact', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-degrade-'));
+	const dir = join(repo, '.insrc/artifacts');
+	try {
+		// Identity must still be obtainable, so an ISSUE backs the corrupt DEF.
+		// The ISSUE alone would bless ONLY ordinal 1 — yet s2 must resolve,
+		// because its LLD exists and clause 1 is evaluated independently.
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, `DEF-${DECL_HASH}.json`), '{ this is not json');
+		writeJson(join(dir, `ISSUE-${DECL_HASH}.json`), {
+			meta: {
+				workflow: 'issue', runId: 'i1', repoPath: repo, issueHash: DECL_HASH,
+				epicSlug: 'degraded', createdAt: CREATED, standalone: true,
+				magnitude: 'sized', schemaVersion: 1,
+			},
+			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
+			citations: [],
+		});
+		writeJson(join(dir, `LLD-${DECL_HASH}-s2.json`), {
+			meta: {
+				workflow: 'design.story', runId: 'l2', repoPath: repo, epicHash: DECL_HASH,
+				epicSlug: 'degraded', storyId: 's2', createdAt: CREATED, schemaVersion: 1,
+			},
+			body: {},
+		});
+		const r = resolveWorkflowRef(repo, 's2');
+		assert.notEqual(r, null, 'the intact LLD carries s2 despite an unreadable DEF and an ISSUE that blesses only ordinal 1');
+		assert.equal(r!.storyId, 's2');
+		// The inverse still holds: ordinal 3 has no artifact and no declaration.
+		assert.equal(resolveWorkflowRef(repo, 's3'), null);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
 test('resolver — unknown / malformed identifier → null', () => {

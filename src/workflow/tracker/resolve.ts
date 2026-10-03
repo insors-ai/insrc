@@ -204,8 +204,8 @@ interface EpicDefinition {
  *  aborting. readEpicIdentity itself cannot be reused here: it returns only
  *  {epicSlug, createdAt, tracker}, and the story-existence check needs the BODY.
  *
- *  UNWIRED as of S001/t2 — nothing calls it yet. S001/t3 consumes it from
- *  buildRef to decide whether a named story exists. Never throws. */
+ *  Consumed by {@link storyExists} (S001/t3) to decide whether a named story
+ *  exists. Never throws. */
 export function readEpicDefinition(dir: string, epicHash: string): EpicDefinition | null {
 	for (const [kind, name] of [
 		['def',   `DEF-${epicHash}.json`],
@@ -237,12 +237,57 @@ function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string
 	return exact;   // unchanged miss — callers treat a bad path as "absent"
 }
 
+/** Whether `storyId` names a story that actually EXISTS under `epicHash`.
+ *
+ *  Two independent clauses, either of which suffices:
+ *
+ *    1. a story-scoped artifact (LLD or PLAN) resolves for the ordinal, via the
+ *       existing {@link storyArtifactPath} — so the two story-id spellings and
+ *       the ordinal-scan fallback are inherited rather than reimplemented;
+ *    2. the epic's definition artifact DECLARES it — a DEF through
+ *       `body.stories`, an ISSUE as exactly one story at ordinal 1 (the
+ *       documented standalone/bugfix convention).
+ *
+ *  Clause 1 is evaluated FIRST and without reading the definition artifact, so
+ *  degradation is PER-CLAUSE: a corrupt or absent DEF never disqualifies an
+ *  epic whose LLD for the story is intact. Clause 2 covers the inverse window —
+ *  a story declared by a Define (or a just-approved bugfix) that has no LLD and
+ *  no PLAN yet.
+ *
+ *  Never throws: an unparseable story label is a refusal, not an exception,
+ *  because no consumer of this module has a handler. */
+function storyExists(dir: string, epicHash: string, storyId: string): boolean {
+	let want: number;
+	try { want = storyIdToOrdinal(storyId); } catch { return false; }
+
+	for (const prefix of ['LLD', 'PLAN'] as const) {
+		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId))) return true;
+	}
+
+	const def = readEpicDefinition(dir, epicHash);
+	if (def === null) return false;
+	// An ISSUE declares no story list — the bugfix route is one story at ordinal 1.
+	if (def.kind === 'issue') return want === 1;
+	for (const story of def.artifact.body?.stories ?? []) {
+		try { if (storyIdToOrdinal(story.id) === want) return true; } catch { continue; }
+	}
+	return false;
+}
+
 /** Assemble a `ResolvedRef` for a located node. Returns null when NEITHER the
  *  epic's DEF nor its ISSUE artifact yields a slug + createdAt (both are
  *  required to mint the hierarchical id). */
 function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: string): ResolvedRef | null {
 	const dmeta = readEpicIdentity(dir, epicHash);
 	if (dmeta === null) {
+		return null;
+	}
+
+	// No dummy refs: a story-or-task-level reference is minted only for a story
+	// that EXISTS. Gated on `storyId` being supplied, so epic-level calls — and
+	// resolveByIssue's epic sub-case — are entirely unaffected. Deliberately NOT
+	// extended to `taskId`: an unknown task leaves `task` absent, as before.
+	if (storyId !== undefined && !storyExists(dir, epicHash, storyId)) {
 		return null;
 	}
 	const epicSlug  = dmeta.epicSlug;

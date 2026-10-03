@@ -4,7 +4,9 @@
     "epicHash": "e20235c17f083a16",
     "storyId": "S001",
     "createdAt": "2026-10-03T11:47:00.658Z",
-    "updatedAt": "2026-10-03T11:54:21.877Z"
+    "updatedAt": "2026-10-03T12:34:55.212Z",
+    "standalone": true,
+    "approvedAt": "2026-10-03T12:34:55.279Z"
   },
   "body": {
     "tasks": [
@@ -40,12 +42,103 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-e20235c17f083a16-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/PLAN-e20235c17f083a16-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-03T11:54:21.877Z"
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/e20235c17f083a16-E20261003e20235c1/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-work-item-keep-exactly-one-E20261003e20235c1/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/folder-identity-finalize.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/folder-identity-regression.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/migrate-docs-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-03T12:34:55.212Z"
       }
     ],
-    "commit": "b590168"
+    "commit": "1c413b0"
   }
 }

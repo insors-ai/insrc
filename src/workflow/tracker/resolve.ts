@@ -223,13 +223,13 @@ export function readEpicDefinition(dir: string, epicHash: string): EpicDefinitio
  *  lowercase label. The exact name is tried FIRST — so every existing lookup keeps
  *  its current single-stat fast path — and only on a miss does it scan for a
  *  sibling whose story segment denotes the same ORDINAL. */
-function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string): string {
+function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string, files?: readonly string[]): string {
 	const exact = join(dir, `${prefix}-${epicHash}-${storyId}.json`);
 	if (existsSync(exact)) return exact;
 	let want: number;
 	try { want = storyIdToOrdinal(storyId); } catch { return exact; }
 	const re = prefix === 'LLD' ? LLD_RE : PLAN_RE;
-	for (const f of listFiles(dir)) {
+	for (const f of files ?? listFiles(dir)) {
 		const m = re.exec(f);
 		if (m === null || m[1] !== epicHash) continue;
 		try { if (storyIdToOrdinal(m[2]!) === want) return join(dir, f); } catch { continue; }
@@ -237,7 +237,7 @@ function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string
 	return exact;   // unchanged miss — callers treat a bad path as "absent"
 }
 
-/** HOW an epic evidences a story, strongest first.
+/** HOW an epic evidences a story.
  *
  *    `artifact` — a story-scoped LLD or PLAN exists for the ordinal.
  *    `declared` — the epic's DEF names the story in `body.stories`.
@@ -245,9 +245,15 @@ function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string
  *                 is taken to have exactly one story at ordinal 1 by the
  *                 standalone/bugfix convention.
  *
- *  The first two are EXPLICIT: something on disk names this story. The third is
- *  a CONVENTION that every bugfix epic satisfies identically, which is why it
- *  ranks last — see {@link resolveByLabel}. */
+ *  These are three KINDS but only TWO ranks. `artifact` and `declared` are both
+ *  EXPLICIT — something on disk names this story — and {@link resolveByLabel}
+ *  treats them as ONE tier; it does not prefer a built story over a merely
+ *  declared one. `implied` ranks below both, because every bugfix epic in a repo
+ *  satisfies it identically and so it can never single one out.
+ *
+ *  Whether `artifact` should outrank `declared` is an open question, deliberately
+ *  not decided here: it would change which epic wins when one has built the story
+ *  and another has only defined it, and no requirement calls for that today. */
 type StoryEvidence = 'artifact' | 'declared' | 'implied';
 
 /** Evidence ranks that count as explicit, i.e. outrank the bare convention. */
@@ -272,12 +278,12 @@ const EXPLICIT_EVIDENCE: ReadonlySet<StoryEvidence> = new Set<StoryEvidence>(['a
  *
  *  Never throws: an unparseable story label is a refusal, not an exception,
  *  because no consumer of this module has a handler. */
-function storyEvidence(dir: string, epicHash: string, storyId: string): StoryEvidence | null {
+function storyEvidence(dir: string, epicHash: string, storyId: string, files?: readonly string[]): StoryEvidence | null {
 	let want: number;
 	try { want = storyIdToOrdinal(storyId); } catch { return null; }
 
 	for (const prefix of ['LLD', 'PLAN'] as const) {
-		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId))) return 'artifact';
+		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId, files))) return 'artifact';
 	}
 
 	const def = readEpicDefinition(dir, epicHash);
@@ -467,19 +473,29 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 	// let an unrelated bugfix shadow a DEF epic that actually ships s1. Explicit
 	// evidence therefore wins outright when it is unique; the convention is
 	// consulted only when nothing explicit answers.
-	const candidates: { readonly ref: ResolvedRef; readonly evidence: StoryEvidence }[] = [];
+	// Candidacy is decided by EVIDENCE ALONE, and only the winner is built.
+	// Building every candidate first would cost a handful of file reads per epic
+	// to construct references that are then discarded — and it would let an epic
+	// with real evidence but unusable identity vanish from the tally, silently
+	// turning genuine ambiguity into a confident answer. Evidence decides who
+	// competes; a winner that cannot be built is a refusal, not a hand-off to
+	// the runner-up.
+	// The directory listing is read ONCE and reused across every candidate.
+	// storyArtifactPath falls back to a listing scan whenever the exact filename
+	// misses, which is the common case here, so without this the whole artifacts
+	// dir was re-read twice per epic.
+	const files = listFiles(dir);
+	const candidates: { readonly hash: string; readonly evidence: StoryEvidence }[] = [];
 	for (const h of hashes) {
-		const evidence = storyEvidence(dir, h, storyId);
-		if (evidence === null) continue;
-		const ref = buildRef(dir, h, storyId, taskId);
-		if (ref !== null) candidates.push({ ref, evidence });
+		const evidence = storyEvidence(dir, h, storyId, files);
+		if (evidence !== null) candidates.push({ hash: h, evidence });
 	}
 	for (const explicit of [true, false]) {
 		const tier = candidates.filter(c => EXPLICIT_EVIDENCE.has(c.evidence) === explicit);
 		// A tie WITHIN a tier is genuine ambiguity and refuses outright — it must
 		// not fall through to a weaker tier and be resolved by accident.
 		if (tier.length > 1) return null;
-		if (tier.length === 1) return tier[0]!.ref;
+		if (tier.length === 1) return buildRef(dir, tier[0]!.hash, storyId, taskId);
 	}
 	return null;
 }

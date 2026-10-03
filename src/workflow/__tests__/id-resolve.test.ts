@@ -1012,6 +1012,64 @@ test('t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated pee
 	} finally { s.cleanup(); }
 });
 
+test('t4 — an epic with real evidence but UNUSABLE identity counts toward ambiguity instead of vanishing', () => {
+	const s = setupRepo();
+	try {
+		// Raised by the cold review of this Story. Candidacy is decided by
+		// EVIDENCE, before any attempt to build a reference — so an epic that
+		// genuinely declares the story but whose identity cannot be minted still
+		// occupies its slot in the tally. The alternative (building every
+		// candidate and keeping those that succeed) let such an epic disappear
+		// silently, turning genuine ambiguity into a confident answer about the
+		// one survivor.
+		writeJson(join(s.repo, '.insrc/artifacts', `DEF-${RIVAL_HASH}.json`), {
+			meta: {
+				workflow: 'define', runId: 'd7', repoPath: s.repo, epicHash: RIVAL_HASH,
+				epicSlug: 'broken-anchor', createdAt: 'not-a-date', schemaVersion: 1,
+			},
+			body: {
+				flavor: 'new-capability', problem: 'q.', nonGoals: [], assumptions: [], constraints: [],
+				stories: [{ id: 's1', title: 'one', userValue: 'x', acceptanceCriteria: [] }],
+				openQuestions: [],
+			},
+			citations: [],
+		});
+		// Two epics evidence s1 explicitly — setupRepo's (an LLD) and this one
+		// (a declaration). It stays ambiguous even though only one could ever
+		// produce a reference.
+		assert.equal(resolveWorkflowRef(s.repo, 's1'), null,
+			'a corrupt-but-evidencing epic must not be silently dropped from the tally');
+
+		// Scoping to the broken epic refuses, because its identity is unusable.
+		assert.equal(resolveWorkflowRef(s.repo, 's1', { epicHash: RIVAL_HASH }), null);
+		// Scoping to the healthy one still works.
+		assert.equal(resolveWorkflowRef(s.repo, 's1', { epicHash: EPIC_HASH })?.epicHash, EPIC_HASH);
+	} finally { s.cleanup(); }
+});
+
+test('t4 — a lone candidate whose reference cannot be built is a REFUSAL, not a hand-off', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-lone-broken-'));
+	const dir = join(repo, '.insrc/artifacts');
+	try {
+		// The only epic evidencing s1 has an unmintable createdAt. There is no
+		// runner-up to fall back to, and the answer must be null rather than a
+		// malformed reference.
+		writeJson(join(dir, `DEF-${DECL_HASH}.json`), {
+			meta: {
+				workflow: 'define', runId: 'd6', repoPath: repo, epicHash: DECL_HASH,
+				epicSlug: 'lone-broken', createdAt: 'not-a-date', schemaVersion: 1,
+			},
+			body: {
+				flavor: 'new-capability', problem: 'q.', nonGoals: [], assumptions: [], constraints: [],
+				stories: [{ id: 's1', title: 'one', userValue: 'x', acceptanceCriteria: [] }],
+				openQuestions: [],
+			},
+			citations: [],
+		});
+		assert.equal(resolveWorkflowRef(repo, 's1'), null);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 // ---------------------------------------------------------------------------
 // S001/t6 — resolveByIssue: assert the no-op rather than assuming it
 // ---------------------------------------------------------------------------

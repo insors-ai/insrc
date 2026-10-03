@@ -280,10 +280,46 @@ test('resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash +
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+/** A tmp repo with two epics where only epic A holds s1/t1 — epic B is a
+ *  DEF-only bystander (no declared stories, no LLD, no PLAN). */
+function mkBystanderEpicRepo(): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-bystander-'));
+	const dir = join(repo, ARTIFACTS_DIR);
+	mkdirSync(dir, { recursive: true });
+	seedEpic(dir, EPIC_A_HASH, 'epic-alpha', EPIC_A_CREATED, '101');
+	writeFileSync(join(dir, `DEF-${EPIC_B_HASH}.json`), JSON.stringify({
+		meta: { workflow: 'define', epicHash: EPIC_B_HASH, epicSlug: 'epic-beta', createdAt: EPIC_B_CREATED, approvedAt: EPIC_B_CREATED },
+		body: { problem: 'p', stories: [] },
+		citations: [],
+	}));
+	return repo;
+}
+
+test('resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)', () => {
+	// ADDED at S001/t5. The pre-existing multi-epic test below passes under BOTH
+	// the old count rule and the new evidence rule, because its fixture gives
+	// both epics a full s1/t1 — genuine ambiguity. So it pins nothing about the
+	// change. This arm is the discriminating one: with a DEF-only bystander
+	// present, the count rule refused and the evidence rule resolves.
+	const repo = mkBystanderEpicRepo();
+	try {
+		const r = resolveWorkflowRef(repo, 's1/t1');
+		assert.notEqual(r, null, 'the bystander epic evidences no s1, so the label is unambiguous');
+		assert.equal(r!.epicHash, EPIC_A_HASH);
+		assert.equal(r!.taskId, 't1');
+		// The bystander itself still refuses the story it does not have.
+		assert.equal(resolveWorkflowRef(repo, 's1/t1', { epicHash: EPIC_B_HASH }), null);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped', () => {
 	const multi = mkMultiEpicRepo();
 	try {
-		assert.equal(resolveWorkflowRef(multi, 's1/t1'), null);   // unchanged multi-epic refusal
+		// Still a refusal, but now for a different REASON: seedEpic gives BOTH
+		// epics a DEF declaring s1 plus an LLD and a PLAN, so both genuinely
+		// evidence s1/t1. That is real ambiguity, which the evidence rule
+		// refuses exactly as the old count rule did.
+		assert.equal(resolveWorkflowRef(multi, 's1/t1'), null);
 	} finally { rmSync(multi, { recursive: true, force: true }); }
 
 	const single = mkSingleEpicRepo();

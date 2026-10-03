@@ -300,18 +300,25 @@ test('resolver — both-way helpers', () => {
 	} finally { s.cleanup(); }
 });
 
-test('resolver — label is ambiguous in a multi-epic dir', () => {
+test('resolver — a second epic that does NOT hold the label no longer makes it ambiguous (INVERTED at S001/t5)', () => {
 	const s = setupRepo();
 	try {
-		// Add a second epic → label `s1/t3` can no longer be scoped.
+		// INVERTED at S001/t5. This test previously asserted that merely ADDING
+		// a second epic made `s1/t3` unresolvable — the count rule, and the
+		// defect ISSUE-792f9324fc43d95c reports. The second epic below declares
+		// no stories and ships no LLD/PLAN, so it cannot evidence s1 at all and
+		// has no business shadowing it.
 		const other = 'aaaaaaaa11112222';
 		writeJson(join(s.repo, '.insrc/artifacts', `DEF-${other}.json`), {
 			meta: { workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: other, epicSlug: 'other', createdAt: CREATED, schemaVersion: 1 },
 			body: { flavor: 'new-capability', problem: 'y.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
 			citations: [],
 		});
-		assert.equal(resolveWorkflowRef(s.repo, 's1/t3'), null);       // ambiguous
-		// But the issue# + hierId (epic-scoped) still resolve.
+		const r = resolveWorkflowRef(s.repo, 's1/t3');
+		assert.notEqual(r, null, 'exactly one epic evidences s1 — the bystander epic does not create ambiguity');
+		assert.equal(r!.epicHash, EPIC_HASH);
+		assert.equal(r!.taskId, 't3');
+		// The issue# + hierId forms are unaffected either way.
 		assert.equal(resolveWorkflowRef(s.repo, '#9')?.taskId, 't3');
 		assert.equal(resolveWorkflowRef(s.repo, CANON_TASK)?.taskId, 't3');
 	} finally { s.cleanup(); }
@@ -457,10 +464,14 @@ test('resolver — a DEF-bearing epic is untouched by the ISSUE fallback (regres
 	} finally { s.cleanup(); }
 });
 
-test('resolver — a DEF-less bugfix epic still counts for multi-epic ambiguity (refuses to guess)', () => {
+test('resolver — a bugfix epic is not shadowed by a DEF epic that lacks its story (INVERTED at S001/t5)', () => {
 	const s = setupBugfixRepo();
 	try {
-		// A SECOND epic, DEF-anchored. An unscoped label must now refuse.
+		// INVERTED at S001/t5. This previously asserted that the mere PRESENCE
+		// of a second, DEF-anchored epic made the bugfix's own `S001/t1`
+		// unresolvable. That is the reported defect seen from the bugfix side:
+		// the DEF epic below declares no stories and ships no story artifacts,
+		// so only the bugfix epic evidences S001.
 		writeJson(join(s.dir, `DEF-${EPIC_HASH}.json`), {
 			meta: {
 				workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: EPIC_HASH,
@@ -469,12 +480,14 @@ test('resolver — a DEF-less bugfix epic still counts for multi-epic ambiguity 
 			body: { flavor: 'new-capability', problem: 'y.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
 			citations: [],
 		});
-		assert.equal(
-			resolveWorkflowRef(s.repo, 'S001/t1'), null,
-			'two epics present (one ISSUE-anchored, one DEF-anchored) → an unscoped label is ambiguous and must NOT guess',
-		);
-		// Scoping by hash disambiguates, as it does for DEF epics.
+		const r = resolveWorkflowRef(s.repo, 'S001/t1');
+		assert.notEqual(r, null, 'only the ISSUE-anchored epic evidences S001 — the DEF bystander must not shadow it');
+		assert.equal(r!.epicHash, BUG_HASH);
+		assert.equal(r!.taskId, 't1');
+		// Scoping by hash still works, as it does for DEF epics.
 		assert.equal(resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH })?.taskId, 't1');
+		// And the bystander still refuses the story it does not have.
+		assert.equal(resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: EPIC_HASH }), null);
 	} finally { s.cleanup(); }
 });
 

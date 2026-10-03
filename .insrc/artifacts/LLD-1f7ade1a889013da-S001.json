@@ -285,6 +285,13 @@
         "choice": "Guard the three probed keywords only",
         "rationale": "The only option fully backed by the probe on BOTH binaries. claude names exactly oneOf/allOf/anyOf; codex additionally names enum/not, but claude's behaviour on those two was never probed, so covering them would reintroduce the unprobed-vendor-claim mistake this Story exists to remove. Recorded as deliberate codex-only non-coverage; widen only after probing claude.",
         "resolvedAt": "2026-10-03T19:04:15.043Z"
+      },
+      "q8cc398bc": {
+        "question": "The Story arrived with an EMPTY acceptanceCriteria list, so ac1-ac7 were derived inside this LLD from the ISSUE's three fixIntent invariants plus the s5 edge cases. They are therefore self-consistent by construction — a weaker guarantee than mapping against criteria an upstream artifact fixed independently. The plan and build stages should treat ac1-ac7 as the inherited contract rather than re-deriving their own.",
+        "status": "resolved",
+        "choice": "Inherit plus independent trace check",
+        "rationale": "Keeps ac1-ac7 as the single contract the LLD asks for, and replaces the self-consistent-by-construction weakness with an explicit per-criterion trace back to the ISSUE's three fixIntent invariants and the s5 edge cases. Gaps surface as LLD amendments rather than the plan silently re-deriving a second contract. No extra upstream approval round.",
+        "resolvedAt": "2026-10-03T19:05:13.821Z"
       }
     }
   },

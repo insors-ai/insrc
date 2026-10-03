@@ -729,3 +729,33 @@ test('t9 — a companion is never overwritten at its destination', () => {
 		assert.equal(readFileSync(join(dest, 'er-model.html'), 'utf8'), 'PRE-EXISTING — must survive');
 	} finally { cleanup(); }
 });
+
+test('t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost', () => {
+	// Applying to this repo aborted a 57-move run with `git mv: fatal: destination
+	// exists` when one artifact turned out to be rendered at TWO paths. Refusing the
+	// plan would re-introduce all-or-nothing blocking; moving fails hard; picking a
+	// winner would destroy a render. So: skip, keep both, log.
+	const { repo, cleanup } = seedFourFolders();
+	try {
+		// Give the LLD a second render at its own destination, with different content.
+		const dest = join(repo, `docs/standalone/${GOOD}-${T6_SEG}/S001`);
+		mkdirSync(dest, { recursive: true });
+		writeFileSync(join(dest, 'LLD.md'), `${artifactIdMarker(`LLD-${T6_HASH}-S001`)}\n\n# a SECOND render\n`);
+		execFileSync('git', ['add', '-A'], { cwd: repo, encoding: 'utf8' });
+		execFileSync('git', ['commit', '-q', '-m', 'second render'], { cwd: repo, encoding: 'utf8' });
+
+		const plan = planMigration(repo);
+		assert.equal(plan.unmappable.length, 0, 'a duplicate must NOT block the plan');
+		assert.ok(
+			!plan.moves.some(m => m.to === join(dest, 'LLD.md')),
+			'no move may target a path that already holds a different file',
+		);
+		// The rest of the plan still applies — this is the property the abort destroyed.
+		applyMigration(repo, plan);
+		assert.ok(existsSync(join(dest, 'LLD.md')), 'the destination render survives');
+		assert.ok(
+			existsSync(join(repo, `docs/standalone/${DRIFTED}-${T6_SEG}/S001/LLD.md`)),
+			'and so does the other one — nothing is destroyed',
+		);
+	} finally { cleanup(); }
+});

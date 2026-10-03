@@ -429,6 +429,26 @@ export function planMigration(repoPath: string): MigrationPlan {
 				unmappable.push({ artifactId: m.id, reason: `destination collision with ${prior} at ${relative(repoPath, to)}` });
 				continue;
 			}
+			// The destination already holds a DIFFERENT file. In practice this is one
+			// artifact rendered twice, at two paths, by writers that disagreed about
+			// the label — so both copies are "its" md and neither is a stray.
+			//
+			// Skip rather than refuse, and skip rather than move. Refusing would be
+			// all-or-nothing and would block convergence for every unrelated work item
+			// (the condition this plan already had to stop doing once). Moving would
+			// make `git mv` fail hard mid-run — which is what happened on this repo,
+			// aborting a 57-move apply and rolling the whole thing back. Choosing a
+			// winner would DESTROY one render, and that is a human's call, not a
+			// migration's. So both copies stay, the folder does not converge, and the
+			// condition is logged loudly enough to act on.
+			if (existsSync(to)) {
+				log.warn(
+					{ artifactId: m.id, keeping: relative(repoPath, to), alsoAt: relative(repoPath, m.mdPath) },
+					'migrate-docs-tree: duplicate render — the destination already holds a different file for this artifact; ' +
+					'leaving BOTH in place (this folder will not converge until one is removed by hand)',
+				);
+				continue;
+			}
 			toSeen.set(to, m.id);
 			moves.push({ from: m.mdPath, to, kind: m.kind, identity, groupHash: hash });
 		}

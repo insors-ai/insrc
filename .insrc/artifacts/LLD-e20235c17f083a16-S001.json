@@ -27,10 +27,10 @@
     "sizeClass": "bugfix",
     "questionResolutions": {
       "qf7a908b1": {
-        "question": "SCOPE EXPANSION, needs the reviewer's ruling: the approved ISSUE describes label drift and the epics-versus-standalone split, but this LLD also fixes readEpicCreatedAt's DEF-only read, which addresses a LATENT and more severe fork \u2014 the identity segment itself can differ between stages of a bugfix work item, and no label fix would prevent that. It is the same root cause and the same reader, which is why it was judged in scope, but it widens the Story beyond the ISSUE's wording. Confirm or cut it; if cut, migration step 2 and acceptance criterion ac6 come out with it.",
+        "question": "SCOPE EXPANSION, needs the reviewer's ruling: the approved ISSUE describes label drift and the epics-versus-standalone split, but this LLD also fixes readEpicCreatedAt's DEF-only read, which addresses a LATENT and more severe fork — the identity segment itself can differ between stages of a bugfix work item, and no label fix would prevent that. It is the same root cause and the same reader, which is why it was judged in scope, but it widens the Story beyond the ISSUE's wording. Confirm or cut it; if cut, migration step 2 and acceptance criterion ac6 come out with it.",
         "status": "resolved",
         "choice": "Keep the added scope: the Story also fixes readEpicCreatedAt's DEF-only read, closing the identity-segment drift alongside the label and placement drift.",
-        "rationale": "Ruled by the user in chat. The three symptoms the ISSUE names and the latent fourth share one root cause \u2014 an epic-level property not inherited by an ISSUE-anchored work item \u2014 and one reader fixes all four, so splitting them would mean touching the same function twice and shipping a known-broken identity invariant in between. Confirmed live during this stage: the LLD forked to a second folder (make-work-item-keep-exactly-one vs the ISSUE's artifact-docs-folders-fork-per-stage) and BOTH artifacts carry epicCreatedAt absent, so each folder anchor came from its own clock and the identity segment matched only because both ran on the same UTC day. Migration step 2 and acceptance criterion ac6 therefore STAY IN, and the cross-midnight smoke fixture is mandatory rather than optional, because a same-day fixture cannot see this defect at all.",
+        "rationale": "Ruled by the user in chat. The three symptoms the ISSUE names and the latent fourth share one root cause — an epic-level property not inherited by an ISSUE-anchored work item — and one reader fixes all four, so splitting them would mean touching the same function twice and shipping a known-broken identity invariant in between. Confirmed live during this stage: the LLD forked to a second folder (make-work-item-keep-exactly-one vs the ISSUE's artifact-docs-folders-fork-per-stage) and BOTH artifacts carry epicCreatedAt absent, so each folder anchor came from its own clock and the identity segment matched only because both ran on the same UTC day. Migration step 2 and acceptance criterion ac6 therefore STAY IN, and the cross-midnight smoke fixture is mandatory rather than optional, because a same-day fixture cannot see this defect at all.",
         "resolvedAt": "2026-10-03T06:06:29.954Z"
       },
       "q9d7a5b5e": {
@@ -41,7 +41,7 @@
         "resolvedAt": "2026-10-03T06:08:00.938Z"
       },
       "qf9266e0b": {
-        "question": "CHECKLIST SHORTFALL cd3: every api errors entry uses the type 'none' with a condition explaining why the function cannot throw, which is not a concrete error type. This is deliberate rather than an omission \u2014 the never-throwing, best-effort behaviour is load-bearing, since the DEF-to-ISSUE fallthrough works precisely because a parse failure degrades to an empty result \u2014 but it means the document has no named error type anywhere.",
+        "question": "CHECKLIST SHORTFALL cd3: every api errors entry uses the type 'none' with a condition explaining why the function cannot throw, which is not a concrete error type. This is deliberate rather than an omission — the never-throwing, best-effort behaviour is load-bearing, since the DEF-to-ISSUE fallthrough works precisely because a parse failure degrades to an empty result — but it means the document has no named error type anywhere.",
         "status": "resolved",
         "choice": "Accept 'none' as a deliberate deviation",
         "rationale": "The never-throwing, degrade-to-empty behaviour is the mechanism, not an omission: the DEF-to-ISSUE fallthrough works precisely because a parse failure becomes an empty result rather than propagating, and that is already recorded as an invariant to preserve. Reshaping the API to satisfy a checklist item would change load-bearing behaviour to improve a document, which is the wrong trade. Naming the swallowed types was tempting but would have meant asserting which errors JSON.parse and the read can raise without verifying it, and an unverified list is worse than an honest 'none' with a stated condition. The obligation this creates and which the plan must carry: lock the behaviour in with a test that a corrupt DEF alongside a valid ISSUE yields the ISSUE's values, so the deviation is proven rather than merely asserted.",
@@ -58,7 +58,7 @@
         "question": "GROUNDING, stated so it is not mistaken for analyze-derived: every path, line and symbol cited as existing was read directly from the working tree and verified, and the two numeric claims (the 18:19 versus 20:03 anchor divergence and the three absent BUILD meta fields) were read from the artifact JSON on disk. But this grounding came from direct reads and scoped greps rather than from insrc_analyze_step calls, contrary to the s1 step's instruction.",
         "status": "resolved",
         "choice": "Targeted analyze cross-check of load-bearing claims only",
-        "rationale": "A full re-ground would mostly re-prove facts already verified against primary source, while accepting the deviation outright would skip the one thing scoped greps genuinely can miss: graph-derived callers and symbol relations for the functions being changed. The targeted pass is therefore where the accuracy-first principle actually buys something. The two numeric claims stay on their correct source: the 18:19 versus 20:03 anchor divergence and the three absent BUILD meta fields are values inside artifact JSON on disk, not indexed code, so analyze cannot verify them better than reading the files does. OBLIGATION this creates, to be discharged BEFORE the LLD is approved rather than deferred into the plan: run insrc_analyze_step over readArtifactCore, readEpicCreatedAt, buildRecordFolderArgs and workItemKindOf and their callers, and correct the LLD if the graph contradicts any cited relation \u2014 in particular the claim that roughly eighteen call sites consume the derivation helpers and that sixty-two sites construct artifact paths, both of which came from grep counts rather than the graph.",
+        "rationale": "A full re-ground would mostly re-prove facts already verified against primary source, while accepting the deviation outright would skip the one thing scoped greps genuinely can miss: graph-derived callers and symbol relations for the functions being changed. The targeted pass is therefore where the accuracy-first principle actually buys something. The two numeric claims stay on their correct source: the 18:19 versus 20:03 anchor divergence and the three absent BUILD meta fields are values inside artifact JSON on disk, not indexed code, so analyze cannot verify them better than reading the files does. OBLIGATION this creates, to be discharged BEFORE the LLD is approved rather than deferred into the plan: run insrc_analyze_step over readArtifactCore, readEpicCreatedAt, buildRecordFolderArgs and workItemKindOf and their callers, and correct the LLD if the graph contradicts any cited relation — in particular the claim that roughly eighteen call sites consume the derivation helpers and that sixty-two sites construct artifact paths, both of which came from grep counts rather than the graph.",
         "resolvedAt": "2026-10-03T06:10:25.458Z"
       }
     },
@@ -72,7 +72,7 @@
           "kind": "inventory",
           "severity": "LOW",
           "premise": "readEpicCreatedAt has exactly four callers, all in src/workflow/orchestrator.ts (lines 1325, 1787, 2144, 2548), and each applies a `?? nowISO`-style fallback, so a DEF-only read silently degrades to the calling stage's own clock.",
-          "evidence": "Confirmed twice over. All four read anchors (orchestrator.ts:1325, :1787, :2144, :2548) resolve, and `epicCreatedAt: readEpicCreatedAt` matches exactly 3 times in src with the fourth site using a different line break. An independent insrc_analyze_step usage.example walk over the CALLS graph returned totalCallers: 4, all in orchestrator.ts \u2014 the graph and the reads agree exactly.",
+          "evidence": "Confirmed twice over. All four read anchors (orchestrator.ts:1325, :1787, :2144, :2548) resolve, and `epicCreatedAt: readEpicCreatedAt` matches exactly 3 times in src with the fourth site using a different line break. An independent insrc_analyze_step usage.example walk over the CALLS graph returned totalCallers: 4, all in orchestrator.ts — the graph and the reads agree exactly.",
           "action": "none - the inventory of four callers is exact and independently corroborated by the graph",
           "fixability": "auto"
         },
@@ -89,8 +89,8 @@
           "claimId": "cl3",
           "kind": "inventory",
           "severity": "MED",
-          "premise": "Roughly eighteen non-test call sites consume the two derivation helpers workItemKindOf and workItemAnchorCreatedAt, spread across gates.ts, questions.ts, chain.ts, orchestrator.ts, code-review/subject-paths.ts and the two build-step phases \u2014 and this Story edits NONE of them.",
-          "evidence": "The COUNT IS WRONG and understated by about half. A non-test scoped re-derivation gives workItemKindOf 16 call sites and workItemAnchorCreatedAt 19, for 35 total \u2014 not the 'roughly eighteen' the LLD claims. My original figure came from a grep scoped to a subset of files rather than the whole non-test tree. The analyze graph walk reported 9 and 12 caller ENTITIES over five files, omitting chain.ts and code-review/subject-paths.ts which direct reads confirm do call them, so the graph is a subset too and neither source alone supports 'eighteen'.",
+          "premise": "Roughly eighteen non-test call sites consume the two derivation helpers workItemKindOf and workItemAnchorCreatedAt, spread across gates.ts, questions.ts, chain.ts, orchestrator.ts, code-review/subject-paths.ts and the two build-step phases — and this Story edits NONE of them.",
+          "evidence": "The COUNT IS WRONG and understated by about half. A non-test scoped re-derivation gives workItemKindOf 16 call sites and workItemAnchorCreatedAt 19, for 35 total — not the 'roughly eighteen' the LLD claims. My original figure came from a grep scoped to a subset of files rather than the whole non-test tree. The analyze graph walk reported 9 and 12 caller ENTITIES over five files, omitting chain.ts and code-review/subject-paths.ts which direct reads confirm do call them, so the graph is a subset too and neither source alone supports 'eighteen'.",
           "action": "Correct the figure to 35 non-test call sites (16 + 19) and state that it is grep-derived over the non-test tree. Note that this makes the LLD's argument STRONGER rather than weaker: the avoided blast radius is twice what was claimed, which is the central reason a1 was chosen over a2.",
           "fixability": "auto",
           "proposedFix": {
@@ -112,11 +112,11 @@
           "kind": "inventory",
           "severity": "MED",
           "premise": "Sixty-two non-test call sites construct artifact markdown paths via resolveArtifactMdPath or one of the *ArtifactPaths builders, which is the blast radius the design avoids touching.",
-          "evidence": "The COUNT IS WRONG in the other direction. A non-test scoped re-derivation gives resolveArtifactMdPath 17 call sites and the seven named *ArtifactPaths builders 35, for 52 total \u2014 not 62. The earlier 62 almost certainly included test files. Worse for corroboration: the analyze graph walk over resolveArtifactMdPath returned totalCallers: 0, which is plainly false given storage.ts:301/361/382 call it, so the CALLS graph cannot verify this claim at all and the grep is the only usable source.",
+          "evidence": "The COUNT IS WRONG in the other direction. A non-test scoped re-derivation gives resolveArtifactMdPath 17 call sites and the seven named *ArtifactPaths builders 35, for 52 total — not 62. The earlier 62 almost certainly included test files. Worse for corroboration: the analyze graph walk over resolveArtifactMdPath returned totalCallers: 0, which is plainly false given storage.ts:301/361/382 call it, so the CALLS graph cannot verify this claim at all and the grep is the only usable source.",
           "action": "Correct the figure to 52 non-test call sites (17 + 35), grep-derived. Also record that the graph returned zero callers for resolveArtifactMdPath, because that is the specific reason the targeted analyze cross-check could not corroborate this number and a reader should not expect it to.",
           "fixability": "auto",
           "proposedFix": {
-            "rationale": "52 rather than 62 does not change any decision \u2014 the argument against a2 is that it puts a disk read behind every one of these sites, which is just as true at 52 \u2014 but an inflated count is still an inflated count, and the graph's zero-caller answer is worth recording so nobody later mistakes the graph for a check that passed.",
+            "rationale": "52 rather than 62 does not change any decision — the argument against a2 is that it puts a disk read behind every one of these sites, which is just as true at 52 — but an inflated count is still an inflated count, and the graph's zero-caller answer is worth recording so nobody later mistakes the graph for a check that passed.",
             "artifactEdits": [
               {
                 "find": "Puts a disk read behind all sixty-two non-test path-construction sites, including hot paths; the sibling label resolver was measured at a 130x slowdown this week for exactly this shape of change.",
@@ -129,7 +129,7 @@
           "claimId": "cl5",
           "kind": "inventory",
           "severity": "LOW",
-          "premise": "Only two sites write `standalone: true` into PERSISTED ARTIFACT META \u2014 orchestrator.ts:872 (the ISSUE) and :2303 (the standalone LLD) \u2014 so the PLAN and BUILD records carry it absent. Other `standalone: true` occurrences across src are triage routes, build-step prompt payloads, a type declaration and log lines rather than metadata writes.",
+          "premise": "Only two sites write `standalone: true` into PERSISTED ARTIFACT META — orchestrator.ts:872 (the ISSUE) and :2303 (the standalone LLD) — so the PLAN and BUILD records carry it absent. Other `standalone: true` occurrences across src are triage routes, build-step prompt payloads, a type declaration and log lines rather than metadata writes.",
           "evidence": "The claim survives as WORDED, but only because of its qualifier. `standalone: *true,` matches 3 times in orchestrator.ts, not 2. The third is line 2338, which a direct read confirms is a log.info payload (`{ workflow: 'design.story', runId, epicHash, storyId, standalone: true, sizeClass, ... }`) rather than persisted artifact meta. Both claimed read anchors, :872 and :2303, resolve and are genuine meta writes. The whole-tree grep saturated at 50 hits with zero resolving under src, confirming the probe cannot scope this one.",
           "action": "Keep the claim but do not let the qualifier erode: it is true that exactly two sites write the flag into PERSISTED META, and false that only two sites write the literal. The LLD already states it in the qualified form, which is why this is LOW rather than a correction.",
           "fixability": "auto"
@@ -147,7 +147,7 @@
           "claimId": "cl7",
           "kind": "closed-union",
           "severity": "LOW",
-          "premise": "There are exactly four unconditional slug derivations in orchestrator.ts. Three are definition heads that must mint a label because nothing precedes them \u2014 :686 (SPEC), :858 (ISSUE), :1152 (DEF) \u2014 and only :2260, inside finalizeStandaloneLld, re-derives for a work item that already has one. Three sibling finalizers at :1751, :2082 and :2529 already use the inherit-then-fallback form.",
+          "premise": "There are exactly four unconditional slug derivations in orchestrator.ts. Three are definition heads that must mint a label because nothing precedes them — :686 (SPEC), :858 (ISSUE), :1152 (DEF) — and only :2260, inside finalizeStandaloneLld, re-derives for a work item that already has one. Three sibling finalizers at :1751, :2082 and :2529 already use the inherit-then-fallback form.",
           "evidence": "Confirmed as a closed union. `= safeDeriveSlug(` returns exactly 4 non-test matches (orchestrator.ts:686, :858, :1152, :2260) and `meta.epicSlug ?? safeDeriveSlug` returns 3 (:1751, :2082, :2529), so the seven derivations partition exactly as claimed with no eighth. `async function finalizeStandaloneLld` resolves uniquely and :2260 falls inside it. All four read anchors resolve.",
           "action": "none - the union is exact, and it is what bounds the fix to one site while naming the three definition heads as deliberate non-targets",
           "fixability": "auto"
@@ -201,8 +201,8 @@
           "claimId": "cl13",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "The live reproduction the design rests on: this Story's own LLD carries epicSlug 'make-work-item-keep-exactly-one' while its approved ISSUE carries 'artifact-docs-folders-fork-per-stage', and BOTH carry epicCreatedAt absent \u2014 so two folders exist for identity segment E20261003e20235c1 and each folder anchor came from its own clock.",
-          "evidence": "NOT verifiable by these probes, and said plainly rather than scored as a pass. Both slug literals matched 3 times each with ZERO hits under src, because they live in artifact JSON and docs paths while the probes grep the source tree. The facts were established by direct reads earlier in this session \u2014 the two artifact metas and the two sibling folders under segment E20261003e20235c1 \u2014 so the claim is true but on primary-source evidence the review engine structurally cannot reach.",
+          "premise": "The live reproduction the design rests on: this Story's own LLD carries epicSlug 'make-work-item-keep-exactly-one' while its approved ISSUE carries 'artifact-docs-folders-fork-per-stage', and BOTH carry epicCreatedAt absent — so two folders exist for identity segment E20261003e20235c1 and each folder anchor came from its own clock.",
+          "evidence": "NOT verifiable by these probes, and said plainly rather than scored as a pass. Both slug literals matched 3 times each with ZERO hits under src, because they live in artifact JSON and docs paths while the probes grep the source tree. The facts were established by direct reads earlier in this session — the two artifact metas and the two sibling folders under segment E20261003e20235c1 — so the claim is true but on primary-source evidence the review engine structurally cannot reach.",
           "action": "Leave the claim, and treat this as the documented boundary of probe-based review rather than as a confirmation. Any reviewer wanting to check it must list the docs tree and read the two artifact JSONs directly.",
           "fixability": "manual"
         }
@@ -294,15 +294,17 @@
         "note": "Accepted as the documented boundary of probe-based review rather than as a confirmation: the facts live in artifact JSON and docs paths, which the probes do not reach. They were established by direct reads earlier in this session.",
         "resolvedAt": "2026-10-03T06:16:25.224Z"
       }
-    }
+    },
+    "approvedAt": "2026-10-03T06:58:56.285Z",
+    "rangeBase": "785bf35f6d8d9164479f7279f74a4703de2aeddf"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "A work item's docs folder is named from two things: a human-readable label and a stable identity segment. Today each workflow stage works those out for itself, so one work item can end up with several folders \u2014 the live bugfix epic has four, one artifact in each. This Story makes the work item's definition artifact (its DEF, or its ISSUE for a bugfix) the single place those properties are decided, and has every later stage inherit them instead of recomputing. The mechanism is not new: the folder's anchor timestamp is already carried down exactly this way, so the change extends an existing pattern to the two properties that were left out, and fixes the one reader that recognises a DEF but not an equivalent ISSUE."
+      "prose": "A work item's docs folder is named from two things: a human-readable label and a stable identity segment. Today each workflow stage works those out for itself, so one work item can end up with several folders — the live bugfix epic has four, one artifact in each. This Story makes the work item's definition artifact (its DEF, or its ISSUE for a bugfix) the single place those properties are decided, and has every later stage inherit them instead of recomputing. The mechanism is not new: the folder's anchor timestamp is already carried down exactly this way, so the change extends an existing pattern to the two properties that were left out, and fixes the one reader that recognises a DEF but not an equivalent ISSUE."
     },
     "hldContextSlice": {
-      "frameworkSummary": "Standalone feature \u2014 no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
       "ownedContracts": [],
       "consumedContracts": [],
       "boundary": {
@@ -500,7 +502,7 @@
             }
           ],
           "preconditions": [
-            "The supplied meta actually carries the flag when the work item is standalone \u2014 which is precisely what this Story makes true."
+            "The supplied meta actually carries the flag when the work item is standalone — which is precisely what this Story makes true."
           ],
           "postconditions": [
             "CONSUMED UNCHANGED, listed to fix the boundary. This helper and its thirty-five call sites are deliberately NOT edited. They were never wrong: they faithfully report what the meta says. All of them become correct as a consequence of the metas being correct, which is why the blast radius is the finalizers plus one folder-arg function rather than the whole path layer."
@@ -682,7 +684,7 @@
           "source": "c1"
         },
         {
-          "text": "Markdown path construction is pure: resolveArtifactMdPath and the *ArtifactPaths builders perform no filesystem read and return the same path for the same inputs. The definition artifact is consulted only at finalize time, never during path resolution \u2014 the rule readEpicCreatedAt's own doc comment states about itself.",
+          "text": "Markdown path construction is pure: resolveArtifactMdPath and the *ArtifactPaths builders perform no filesystem read and return the same path for the same inputs. The definition artifact is consulted only at finalize time, never during path resolution — the rule readEpicCreatedAt's own doc comment states about itself.",
           "source": "c3"
         },
         {
@@ -733,7 +735,7 @@
           ],
           "fixturesNeeded": [
             "A temp repo with .insrc/artifacts holding a DEF only",
-            "A temp repo holding an ISSUE only (no DEF) \u2014 the bugfix shape",
+            "A temp repo holding an ISSUE only (no DEF) — the bugfix shape",
             "A temp repo whose DEF file is deliberately invalid JSON alongside a valid ISSUE on the same hash",
             "A temp repo holding BOTH a DEF and an ISSUE on one hash",
             "A definition artifact whose epicSlug is an empty string, and one where it is a non-string"
@@ -743,14 +745,14 @@
           "level": "integration",
           "purpose": "Prove the property the Story actually promises, which no unit test can show: that a whole chain lands in ONE folder. These assert over the real composed paths rather than over any single helper.",
           "subjects": [
-            "A full standalone/bugfix chain \u2014 ISSUE, then standalone LLD, then PLAN, then BUILD \u2014 writes every markdown artifact into exactly one folder, asserted by enumerating the docs tree and counting folders carrying the work item's identity segment",
+            "A full standalone/bugfix chain — ISSUE, then standalone LLD, then PLAN, then BUILD — writes every markdown artifact into exactly one folder, asserted by enumerating the docs tree and counting folders carrying the work item's identity segment",
             "That one folder sits under docs/standalone and its label equals the ISSUE's epicSlug, not a label derived from any later stage's focus prose",
             "A standalone LLD's persisted meta.epicSlug EQUALS its ISSUE's, which is the direct inversion of the live defect where the ISSUE said 'regression-hierarchical-label-resolver-listepichashes-src' and the LLD said 'lld-revision-supersedes-earlier-pass-whose'",
             "PLAN and BUILD metas both carry standalone true, so neither stage is the point at which placement flips",
             "A standalone story's BUILD.md renders with the standalone heading and 'Standalone: yes', not 'Build (plan-driven)' with 'Standalone: no'",
             "An ISSUE-anchored BUILD record's folder label is the real slug, and the raw 16-hex hash appears nowhere in the folder name",
             "REGRESSION GUARD, asserted not assumed: an epic-parented chain (DEF, HLD, LLD, PLAN, BUILD) produces byte-identical paths to those produced before the change, so the thirty-five unedited workItemKindOf call sites are provably unaffected",
-            "DEGRADATION: a work item with neither DEF nor ISSUE behaves exactly as today \u2014 label from the stage's own prose or the hash \u2014 and nothing throws",
+            "DEGRADATION: a work item with neither DEF nor ISSUE behaves exactly as today — label from the stage's own prose or the hash — and nothing throws",
             "The migration converges a pre-seeded work item that already has FOUR folders, one artifact each, onto one, and reports anything it cannot place as Unmappable rather than guessing or overwriting",
             "planMigration remains read-only: calling it leaves the docs tree byte-identical, and only applyMigration moves anything"
           ],
@@ -765,9 +767,9 @@
           "level": "smoke",
           "purpose": "Guard the two structural invariants that no behavioural test would catch, both of which bound whether this design is admissible at all.",
           "subjects": [
-            "PURITY: the markdown path builders perform NO filesystem read. Asserted structurally rather than by inspection \u2014 construct a path for a repo directory that does not exist and assert a correct string is still returned, which is only possible if nothing is read",
+            "PURITY: the markdown path builders perform NO filesystem read. Asserted structurally rather than by inspection — construct a path for a repo directory that does not exist and assert a correct string is still returned, which is only possible if nothing is read",
             "The definition artifact is consulted at finalize time only and never during path resolution, the rule readEpicCreatedAt's own doc comment states about itself",
-            "CLOCK INDEPENDENCE: two stages finalized with their own clocks on OPPOSITE sides of midnight UTC still resolve to one identity segment, because both inherit the definition artifact's anchor. This is the latent fork, and it is invisible under same-day fixtures \u2014 the live work item's 18:19 and 20:03 timestamps masked it \u2014 so the fixture must deliberately straddle a date boundary or the test proves nothing"
+            "CLOCK INDEPENDENCE: two stages finalized with their own clocks on OPPOSITE sides of midnight UTC still resolve to one identity segment, because both inherit the definition artifact's anchor. This is the latent fork, and it is invisible under same-day fixtures — the live work item's 18:19 and 20:03 timestamps masked it — so the fixture must deliberately straddle a date boundary or the test proves nothing"
           ],
           "fixturesNeeded": [
             "A nonexistent repo path, for the purity assertion",
@@ -865,7 +867,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "The definition-artifact reader exists, resolves DEF-then-ISSUE with first-READABLE-wins, reports label, placement and anchor together, and never throws \u2014 with its resolution order and degradation contract proven in isolation. No production behaviour has changed yet, because nothing consumes it: this is deliberately a landing state rather than a change, so the reader's order can be falsified before anything depends on it.",
+          "action": "The definition-artifact reader exists, resolves DEF-then-ISSUE with first-READABLE-wins, reports label, placement and anchor together, and never throws — with its resolution order and degradation contract proven in isolation. No production behaviour has changed yet, because nothing consumes it: this is deliberately a landing state rather than a change, so the reader's order can be falsified before anything depends on it.",
           "rollbackable": true
         },
         {
@@ -875,7 +877,7 @@
         },
         {
           "order": 3,
-          "action": "Newly written downstream artifacts carry an inherited label and an inherited placement flag in their own meta, so no stage re-derives either from its own prose. The standalone LLD finalizer now matches the inherit-then-fallback form its three siblings already use, and the PLAN and BUILD writers record the placement flag rather than omitting it \u2014 without reinstating an asserted false, which a prior fix removed so that a prior true value could be carried forward.",
+          "action": "Newly written downstream artifacts carry an inherited label and an inherited placement flag in their own meta, so no stage re-derives either from its own prose. The standalone LLD finalizer now matches the inherit-then-fallback form its three siblings already use, and the PLAN and BUILD writers record the placement flag rather than omitting it — without reinstating an asserted false, which a prior fix removed so that a prior true value could be carried forward.",
           "rollbackable": true
         },
         {
@@ -899,7 +901,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Two exported functions change behaviour without changing signature, and one private return shape is widened additively. readEpicCreatedAt keeps `(repoPath, epicHash) => string | undefined` and its stated meaning, but now returns a value where it previously returned undefined for an ISSUE-anchored work item; its four callers all apply `?? nowISO`, so each silently improves and none needs editing. buildRecordFolderArgs keeps its five parameters and its returned shape, but its epicSlug field is now populated where it was previously undefined; callers already handle `string | undefined`, so the type contract is unchanged. readArtifactCore is module-private and gains one optional field, which no existing caller reads. workItemKindOf, workItemAnchorCreatedAt, safeDeriveSlug and every *ArtifactPaths builder keep both signature and semantics exactly. The one genuinely visible change is that a bugfix work item's artifacts resolve to DIFFERENT paths than before the fix \u2014 the correct ones \u2014 which is the point of the Story and is why steps 5 and 6 exist to bring already-written files along rather than leaving readers pointing at vacated locations. Artifacts stay self-describing throughout: nothing starts depending on the definition artifact being present at read time, so a work item whose definition artifact is later deleted keeps resolving exactly as before.",
+      "backwardCompat": "Two exported functions change behaviour without changing signature, and one private return shape is widened additively. readEpicCreatedAt keeps `(repoPath, epicHash) => string | undefined` and its stated meaning, but now returns a value where it previously returned undefined for an ISSUE-anchored work item; its four callers all apply `?? nowISO`, so each silently improves and none needs editing. buildRecordFolderArgs keeps its five parameters and its returned shape, but its epicSlug field is now populated where it was previously undefined; callers already handle `string | undefined`, so the type contract is unchanged. readArtifactCore is module-private and gains one optional field, which no existing caller reads. workItemKindOf, workItemAnchorCreatedAt, safeDeriveSlug and every *ArtifactPaths builder keep both signature and semantics exactly. The one genuinely visible change is that a bugfix work item's artifacts resolve to DIFFERENT paths than before the fix — the correct ones — which is the point of the Story and is why steps 5 and 6 exist to bring already-written files along rather than leaving readers pointing at vacated locations. Artifacts stay self-describing throughout: nothing starts depending on the definition artifact being present at read time, so a work item whose definition artifact is later deleted keeps resolving exactly as before.",
       "zeroDowntime": true,
       "dataRewriteRequired": true
     },
@@ -908,7 +910,7 @@
         "id": "a1",
         "name": "Stamp the epic's identity at finalize time, extending the epicCreatedAt precedent",
         "oneLineSummary": "One reader of the definition artifact (DEF or ISSUE) returns the work item's label, placement and anchor; every finalizer stamps all three into the artifact's own meta, exactly as epicCreatedAt is already stamped.",
-        "approach": "Generalize the existing readEpicCreatedAt into a single definition-artifact reader that resolves DEF-then-ISSUE for one epic hash and returns the work item's three epic-level properties together: epicSlug, standalone and the anchor createdAt. Each stage finalizer stamps the returned values into the artifact meta it is about to persist, in place of re-deriving them. finalizeStandaloneLld stops calling safeDeriveSlug unconditionally and inherits like its three siblings; the PLAN and BUILD writers stamp standalone instead of omitting it; and buildRecordFolderArgs consults the same reader rather than defineArtifactId alone, so an ISSUE-anchored epic is no longer slugless. Derivation stays where the repo already put it \u2014 workItemKindOf and workItemAnchorCreatedAt keep reading the artifact's own meta, so all thirty-five existing call sites become correct without being touched, and the documented rule that the definition artifact is read only at finalize time and never during path resolution is preserved. The reader is the single place the DEF-equals-ISSUE equivalence is expressed, which also closes the readEpicCreatedAt identity-segment drift as the same change rather than a second one.",
+        "approach": "Generalize the existing readEpicCreatedAt into a single definition-artifact reader that resolves DEF-then-ISSUE for one epic hash and returns the work item's three epic-level properties together: epicSlug, standalone and the anchor createdAt. Each stage finalizer stamps the returned values into the artifact meta it is about to persist, in place of re-deriving them. finalizeStandaloneLld stops calling safeDeriveSlug unconditionally and inherits like its three siblings; the PLAN and BUILD writers stamp standalone instead of omitting it; and buildRecordFolderArgs consults the same reader rather than defineArtifactId alone, so an ISSUE-anchored epic is no longer slugless. Derivation stays where the repo already put it — workItemKindOf and workItemAnchorCreatedAt keep reading the artifact's own meta, so all thirty-five existing call sites become correct without being touched, and the documented rule that the definition artifact is read only at finalize time and never during path resolution is preserved. The reader is the single place the DEF-equals-ISSUE equivalence is expressed, which also closes the readEpicCreatedAt identity-segment drift as the same change rather than a second one.",
         "pros": [
           "Follows a precedent already in the codebase for this exact problem rather than introducing a new mechanism, so the result is one consistent rule instead of two.",
           "Fixes all three reported symptoms and the latent identity-segment drift through one reader, because all four are the same missing inheritance.",
@@ -934,7 +936,7 @@
           "A rename on the definition artifact propagates to the whole work item automatically, since there is one copy of the label."
         ],
         "cons": [
-          "Breaks the documented invariant that resolveArtifactMdPath is pure construction with no filesystem read, and that definition reads happen only at finalize time \u2014 this is the opposite of the rule the module states about itself.",
+          "Breaks the documented invariant that resolveArtifactMdPath is pure construction with no filesystem read, and that definition reads happen only at finalize time — this is the opposite of the rule the module states about itself.",
           "Puts a disk read behind all fifty-two non-test path-construction sites (17 via resolveArtifactMdPath plus 35 via the named *ArtifactPaths builders, grep-derived; a CALLS-graph walk returns zero callers for resolveArtifactMdPath and so cannot corroborate this figure), including hot paths; the sibling label resolver was measured at a 130x slowdown this week for exactly this shape of change.",
           "Loses the self-describing property: an artifact's own meta no longer says where it lives, so the migration tool and any offline reader must also resolve indirectly.",
           "A missing or corrupt definition artifact makes every path for that work item unresolvable, converting a degraded label into total inaccessibility.",
@@ -955,7 +957,7 @@
         ],
         "cons": [
           "Treats the symptom and leaves the cause in place: the metas stay inconsistent, so anything else reading placement or label out of them is still wrong, including the BUILD record's plan-driven title and its 'Standalone: no' line.",
-          "Does not address the identity-segment drift at all \u2014 when the segment itself differs, as it can today for a bugfix work item spanning midnight, there is nothing stable left to match on.",
+          "Does not address the identity-segment drift at all — when the segment itself differs, as it can today for a bugfix work item spanning midnight, there is nothing stable left to match on.",
           "Introduces a directory scan into folder resolution, so the result depends on filesystem state and on which folder happened to be created first, making paths non-deterministic for the same inputs.",
           "Two folders already existing for one segment, which is the live situation, has no defined winner."
         ],
@@ -984,10 +986,10 @@
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "SCOPE EXPANSION, needs the reviewer's ruling: the approved ISSUE describes label drift and the epics-versus-standalone split, but this LLD also fixes readEpicCreatedAt's DEF-only read, which addresses a LATENT and more severe fork \u2014 the identity segment itself can differ between stages of a bugfix work item, and no label fix would prevent that. It is the same root cause and the same reader, which is why it was judged in scope, but it widens the Story beyond the ISSUE's wording. Confirm or cut it; if cut, migration step 2 and acceptance criterion ac6 come out with it.",
+      "SCOPE EXPANSION, needs the reviewer's ruling: the approved ISSUE describes label drift and the epics-versus-standalone split, but this LLD also fixes readEpicCreatedAt's DEF-only read, which addresses a LATENT and more severe fork — the identity segment itself can differ between stages of a bugfix work item, and no label fix would prevent that. It is the same root cause and the same reader, which is why it was judged in scope, but it widens the Story beyond the ISSUE's wording. Confirm or cut it; if cut, migration step 2 and acceptance criterion ac6 come out with it.",
       "PROVENANCE, affects how much weight every criterion in this document carries: the Story arrived with an EMPTY acceptanceCriteria list, and the Epic constraints and HLD shared contracts handed to the judging step were likewise empty. So ac1-ac10 and the eight constraints lc1-lc8 the alternatives were scored against are all LLD-authored from the approved ISSUE's fix intent plus two invariants the modules state about themselves. They are this document's proposal, not a contract it is honouring. The root cause of Stories arriving with empty acceptanceCriteria was previously deferred and remains unfixed.",
       "CHECKLIST SHORTFALL cd1: readEpicDefinitionCore is a function this Story adds, so its signature references neither an existing symbol nor a shared contract, which the audit scored as partial rather than passing. Mitigated by composing it only from existing pieces (readArtifactCore, defineArtifactId, issueArtifactId) and by copying its resolution order from the tracker resolver's existing definition reader, but a reviewer should confirm that adding a reader here is preferable to widening readEpicCreatedAt's return type in place.",
-      "CHECKLIST SHORTFALL cd3: every api errors entry uses the type 'none' with a condition explaining why the function cannot throw, which is not a concrete error type. This is deliberate rather than an omission \u2014 the never-throwing, best-effort behaviour is load-bearing, since the DEF-to-ISSUE fallthrough works precisely because a parse failure degrades to an empty result \u2014 but it means the document has no named error type anywhere.",
+      "CHECKLIST SHORTFALL cd3: every api errors entry uses the type 'none' with a condition explaining why the function cannot throw, which is not a concrete error type. This is deliberate rather than an omission — the never-throwing, best-effort behaviour is load-bearing, since the DEF-to-ISSUE fallthrough works precisely because a parse failure degrades to an empty result — but it means the document has no named error type anywhere.",
       "GROUNDING, stated so it is not mistaken for analyze-derived: every path, line and symbol cited as existing was read directly from the working tree and verified, and the two numeric claims (the 18:19 versus 20:03 anchor divergence and the three absent BUILD meta fields) were read from the artifact JSON on disk. But this grounding came from direct reads and scoped greps rather than from insrc_analyze_step calls, contrary to the s1 step's instruction.",
       "SEPARATE DEFECT found while running this very stage, needs its own ledger entry and is NOT part of this Story: starting design.story with { epicSlug, storyId } and no epicHash silently minted a fresh work-item hash 711427ca90326429, for which no artifact exists, instead of resolving the approved ISSUE e20235c17f083a16 by its slug or failing loudly. Re-running with an explicit epicHash anchored correctly. A silent work-item fork on a slug miss is worse than the folder fork this Story fixes, because it produces an entire parallel work item rather than a duplicate folder."
     ],
@@ -1166,7 +1168,7 @@
       "id": "c10",
       "kind": "prior-artifact",
       "ref": ".insrc/artifacts/BUILD-792f9324fc43d95c-S001.json",
-      "quotedText": "epicSlug, standalone and sizeClass all absent \u2014 the live record that produced the raw-hash folder under docs/epics."
+      "quotedText": "epicSlug, standalone and sizeClass all absent — the live record that produced the raw-hash folder under docs/epics."
     }
   ]
 }

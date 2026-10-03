@@ -121,7 +121,12 @@ interface SchemaFixture {
 
 const FIXTURES: readonly SchemaFixture[] = [
 	{
-		// Mirrors BULLETS_SCHEMA from working-memory/bullet-extractor.ts.
+		// Shape originally mirrored BULLETS_SCHEMA from working-memory/bullet-extractor.ts,
+		// which is NOT present in this repository (zero non-test references, no such
+		// file). Kept as a PROVIDER-CAPABILITY probe in its own right: a closed object
+		// with a bounded string array is a shape both CLIs must honour, whoever asked
+		// for it. Two sibling fixtures that mirrored equally-absent schemas were removed
+		// because they FAILED on provider limits rather than on anything this repo owns.
 		name:   'closed object + bounded string array',
 		prompt: 'List three short bullets about TypeScript. Keep each under 80 chars.',
 		schema: {
@@ -144,7 +149,10 @@ const FIXTURES: readonly SchemaFixture[] = [
 		},
 	},
 	{
-		// Mirrors SECTION_REVIEW_SCHEMA from agent/section-flow/audit/section-review.ts.
+		// Shape originally mirrored SECTION_REVIEW_SCHEMA from
+		// agent/section-flow/audit/section-review.ts, also NOT present in this
+		// repository. Kept for the same reason: an enum-discriminated verdict is a
+		// shape worth asserting both CLIs accept.
 		name:   'enum-discriminated verdict',
 		prompt: 'Review this code: `function add(a,b){return a+b}`. Decide whether it is acceptable. Respond with verdict + reasoning.',
 		schema: {
@@ -163,78 +171,6 @@ const FIXTURES: readonly SchemaFixture[] = [
 				`verdict must be in enum; got ${String(p.verdict)}`);
 			assert.equal(typeof p.reasoning, 'string', 'reasoning is a string');
 			assert.ok((p.reasoning as string).length > 0, 'reasoning non-empty');
-		},
-	},
-	{
-		// Mirrors Phase1AskSchema from meta-task/schema.ts -- the exact shape
-		// that broke direct Anthropic on the C.5 cutover. The C.7 hotfix
-		// (normaliseSchemaForAnthropic) injected `type: 'object'` at the
-		// root; this fixture exercises whether the local subprocess accepts
-		// an anyOf-rooted union with the root type stamped on.
-		name:   'anyOf-rooted discriminated union (Phase1Ask-shaped)',
-		prompt: 'Decide whether this claim is sufficient or needs context: "User wants a rate limiter." If context is needed, list 1-3 short context requests.',
-		schema: {
-			type: 'object',
-			anyOf: [
-				{ type: 'object', additionalProperties: false, required: ['kind'], properties: { kind: { const: 'sufficient' } } },
-				{ type: 'object', additionalProperties: false, required: ['kind', 'requests'],
-					properties: {
-						kind: { const: 'context-needed' },
-						requests: { type: 'array', minItems: 1, maxItems: 3, items: { type: 'string', minLength: 1 } },
-					},
-				},
-			],
-		},
-		assertShape: payload => {
-			assert.ok(payload !== null && typeof payload === 'object');
-			const p = payload as { kind?: unknown; requests?: unknown };
-			assert.ok(p.kind === 'sufficient' || p.kind === 'context-needed', `kind discriminator must be sufficient|context-needed; got ${String(p.kind)}`);
-			if (p.kind === 'context-needed') {
-				assert.ok(Array.isArray(p.requests), 'context-needed branch must have requests array');
-				assert.ok((p.requests as unknown[]).length >= 1, 'requests is non-empty');
-			}
-		},
-	},
-	{
-		// Mirrors FACT_GAP_ANALYSIS_SCHEMA -- nested array of objects with
-		// per-item enum and required fields.
-		name:   'nested array of objects with per-item enums',
-		prompt: 'List two facts a developer needs to add a HTTP rate limiter. For each: id, fact, status (one of present|partial|absent), why.',
-		schema: {
-			type: 'object',
-			additionalProperties: false,
-			required: ['requiredFacts'],
-			properties: {
-				requiredFacts: {
-					type:     'array',
-					minItems: 1,
-					maxItems: 5,
-					items: {
-						type: 'object',
-						additionalProperties: false,
-						required: ['id', 'fact', 'why', 'status'],
-						properties: {
-							id:     { type: 'string', minLength: 1, maxLength: 32 },
-							fact:   { type: 'string', minLength: 1, maxLength: 200 },
-							why:    { type: 'string', minLength: 1, maxLength: 300 },
-							status: { type: 'string', enum: ['present', 'partial', 'absent'] },
-						},
-					},
-				},
-			},
-		},
-		assertShape: payload => {
-			assert.ok(payload !== null && typeof payload === 'object');
-			const p = payload as { requiredFacts?: unknown };
-			assert.ok(Array.isArray(p.requiredFacts), 'requiredFacts is an array');
-			assert.ok((p.requiredFacts as unknown[]).length >= 1, 'requiredFacts non-empty');
-			for (const f of p.requiredFacts as Array<Record<string, unknown>>) {
-				assert.equal(typeof f['id'], 'string');
-				assert.equal(typeof f['fact'], 'string');
-				assert.equal(typeof f['why'], 'string');
-				assert.ok(['present', 'partial', 'absent'].includes(f['status'] as string),
-					`status must be in enum; got ${String(f['status'])}`);
-			}
 		},
 	},
 ];

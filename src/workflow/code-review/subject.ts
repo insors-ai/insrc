@@ -34,11 +34,16 @@
  */
 
 import { requireApprovedLld, requireApprovedPlan, ArtifactMissingError, ArtifactNotApprovedError } from '../gates.js';
-import { changedFiles as realChangedFiles, NoBuildChangesError } from '../runners/build/changed-files.js';
+import { getLogger } from '../../shared/logger.js';
+import { changedFiles as realChangedFiles, LEDGER_EXCLUDE_GLOBS, NoBuildChangesError } from '../runners/build/changed-files.js';
+import type { ChangedFilesOptions } from '../runners/build/changed-files.js';
+import { resolveStoryRangeBase } from '../runners/build/range-base.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
 import type { CodeReviewSubjectResult } from './types.js';
+
+const log = getLogger('workflow:code-review:subject');
 
 // S002 t2: the git changed-file seam + its `NoBuildChangesError` moved to the
 // shared `runners/build/changed-files.ts` so the BUILD runner reuses it without
@@ -53,7 +58,10 @@ export interface SubjectDeps {
 	readonly requireApprovedPlan: (repoPath: string, epicHash: string, storyId: string) => PlanArtifact;
 	/** Returns the Story's build changed-file set (repo-relative paths), or
 	 *  throws `NoBuildChangesError` when it cannot be derived. */
-	readonly changedFiles: (repoPath: string) => Promise<readonly string[]>;
+	readonly changedFiles: (repoPath: string, opts?: ChangedFilesOptions) => Promise<readonly string[]>;
+	/** The Story's range base (ISSUE-5f7a7cb9); defaults to the one resolver the
+	 *  BUILD writers use, so the review and the record measure from the same commit. */
+	readonly resolveRangeBase?: ((repoPath: string, epicHash: string, storyId: string) => string | undefined) | undefined;
 	/** Reads the persisted build record for identity; `null` when none. Read-only. */
 	readonly readBuildRecord?: (repoPath: string, epicHash: string, storyId: string) => StandaloneBuildRecord | null;
 }
@@ -91,16 +99,43 @@ export async function resolveCodeReviewSubject(
 		if (!(err instanceof ArtifactMissingError || err instanceof ArtifactNotApprovedError)) throw err;
 	}
 
-	// 2. The git-derived changed-file set. A derivation failure => 'no-build-record'.
-	let changedFiles: readonly string[];
-	try {
-		changedFiles = await deps.changedFiles(repoPath);
-	} catch (err) {
-		if (err instanceof NoBuildChangesError) {
-			return { ok: false, reason: 'no-build-record' };
+	// 2. The git-derived changed-file set.
+	//
+	// The review measures from the Story's range base and leaves the workflow's
+	// own ledger files out (ISSUE-5f7a7cb9): with the Story committed, the only
+	// dirty path is often an approval-stamped artifact json, and without this that
+	// one file became the whole reviewed set.
+	//
+	// That derivation asks more of git than the old one did — a base it can
+	// resolve and exclude pathspecs it accepts — so it must not become a new way
+	// for the review to fail to start. Each attempt that throws steps DOWN to a
+	// plainer one, and the last is the call this function has always made. Only
+	// when THAT fails is the answer 'no-build-record', exactly as before.
+	const base = (deps.resolveRangeBase ?? resolveStoryRangeBase)(repoPath, epicHash, storyId);
+	const attempts: ReadonlyArray<{ readonly label: string; readonly opts: ChangedFilesOptions | undefined }> = [
+		...(base !== undefined ? [{ label: 'range base + ledger exclusion', opts: { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS } }] : []),
+		{ label: 'ledger exclusion only', opts: { excludeGlobs: LEDGER_EXCLUDE_GLOBS } },
+		{ label: 'plain working-tree derivation', opts: undefined },
+	];
+	let changedFiles: readonly string[] | undefined;
+	for (const [i, attempt] of attempts.entries()) {
+		try {
+			// The last attempt passes ONE argument, so it is byte-for-byte the old call.
+			changedFiles = attempt.opts === undefined
+				? await deps.changedFiles(repoPath)
+				: await deps.changedFiles(repoPath, attempt.opts);
+			break;
+		} catch (err) {
+			if (!(err instanceof NoBuildChangesError)) throw err;
+			const next = attempts[i + 1];
+			if (next === undefined) return { ok: false, reason: 'no-build-record' };
+			log.warn(
+				{ repoPath, epicHash, storyId, failed: attempt.label, fallingBackTo: next.label, err: err.message },
+				'resolveCodeReviewSubject: changed-set derivation failed; falling back to a plainer one',
+			);
 		}
-		throw err;
 	}
+	if (changedFiles === undefined) return { ok: false, reason: 'no-build-record' };
 
 	const buildRecord = deps.readBuildRecord?.(repoPath, epicHash, storyId) ?? null;
 

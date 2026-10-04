@@ -102,6 +102,17 @@ export interface CodeReviewStepDone {
 	readonly counts:   CodeReviewStepCounts;
 	readonly path:     string;
 	readonly jsonPath: string;
+	/**
+	 * Present ONLY when findings were dropped as out of scope (ISSUE-11e4fa88): how
+	 * many, per dimension, and the size of the changed set they were tested
+	 * against. The dropped findings themselves are on the record (`outOfScope`).
+	 * `verdict` and `counts` above do not include them.
+	 */
+	readonly scopeDropped?: {
+		readonly count:        number;
+		readonly changedFiles: number;
+		readonly byDimension:  Readonly<Record<string, number>>;
+	} | undefined;
 }
 
 export interface CodeReviewStepError {

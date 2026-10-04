@@ -493,12 +493,28 @@ async function driveRunner(
 	releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
 	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
+	// ISSUE-11e4fa88 — say so when findings were dropped. The operator reads this
+	// response, not the record, and a clean-looking verdict that hides discarded
+	// findings reports the opposite of what the reviewer said.
+	const byDimension: Record<string, number> = {};
+	for (const dim of outcome.artifact.body.dimensions) {
+		const n = dim.outOfScope?.length ?? 0;
+		if (n > 0) byDimension[dim.dimension] = n;
+	}
+	const count = Object.values(byDimension).reduce((a, b) => a + b, 0);
+	if (count > 0) {
+		log.warn(
+			{ storyId: subject.storyId, count, byDimension, changedFiles: subject.changedFiles.length },
+			'insrc_code_review_step: findings dropped as out of scope (not counted in the verdict)',
+		);
+	}
 	return {
 		next:     'done',
 		verdict:  outcome.artifact.body.verdict,
 		counts:   outcome.artifact.body.counts,
 		path:     paths.md,
 		jsonPath: paths.json,
+		...(count > 0 ? { scopeDropped: { count, changedFiles: subject.changedFiles.length, byDimension } } : {}),
 	};
 }
 
@@ -539,14 +555,25 @@ function validateJudgements(raw: readonly DimensionResult[] | undefined, subject
 			return { ok: false, message: `dimension '${dimension}' has no findings array.` };
 		}
 		const kept: DimensionFinding[] = [];
+		const dropped: DimensionFinding[] = [];
 		for (const f of dr.findings) {
 			const bad = validateFinding(f, dimension);
 			if (bad !== null) return { ok: false, message: bad };
 			// scope-drop: keep only findings whose file is in the changed set
 			// (daemon-path parity). fileOf = the substring before the first ':'.
+			//
+			// ISSUE-11e4fa88 — the filter is unchanged, but a dropped finding is no
+			// longer discarded: it is carried on the dimension as `outOfScope`. It
+			// used to fall off the end of this loop, so a dimension whose findings
+			// were all filtered away was indistinguishable from one the reviewer
+			// found clean.
 			if (changed.has(fileOf((f as DimensionFinding).location))) kept.push(f as DimensionFinding);
+			else dropped.push(f as DimensionFinding);
 		}
-		byDimension.set(dimension, { dimension, findings: kept });
+		byDimension.set(dimension, {
+			dimension, findings: kept,
+			...(dropped.length > 0 ? { outOfScope: dropped } : {}),
+		});
 	}
 
 	const missing = expected.filter(d => !seen.has(d));

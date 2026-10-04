@@ -57,6 +57,18 @@ export interface DimensionFinding {
 export interface DimensionResult {
 	readonly dimension: ReviewDimension;
 	readonly findings:  readonly DimensionFinding[];
+	/**
+	 * Findings the reviewer submitted that were DROPPED because their file is
+	 * outside the Story's changed set (ISSUE-11e4fa88). Carried verbatim so a
+	 * quiet dimension can be told apart from one whose findings were filtered
+	 * away: an absent key means nothing was dropped.
+	 *
+	 * NOT part of the verdict. `counts` and `verdict` fold over `findings` only;
+	 * nothing here can block or warn. Omitted (not empty) when there is nothing to
+	 * report, so a record with no drops is byte-identical to one written before
+	 * this field existed.
+	 */
+	readonly outOfScope?: readonly DimensionFinding[] | undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -337,17 +337,34 @@ function renderCodeReviewMd(a: CodeReviewArtifact): string {
 		`**Changed files:** ${body.subject.changedFiles.length}`,
 		'',
 	];
-	for (const dim of body.dimensions) {
-		lines.push(`## ${dim.dimension} — ${dim.findings.length} finding(s)`, '');
-		if (dim.findings.length === 0) {
-			lines.push('_No findings._', '');
-			continue;
-		}
+	// ISSUE-11e4fa88 — findings dropped on scope are SHOWN, never counted. Every
+	// line below is emitted only when something was dropped, so a record with no
+	// drops renders byte-identically to before.
+	const droppedTotal = body.dimensions.reduce((n, d) => n + (d.outOfScope?.length ?? 0), 0);
+	if (droppedTotal > 0) {
+		lines.push(
+			`**Dropped as out of scope:** ${droppedTotal} finding(s) named a file outside the ${body.subject.changedFiles.length} changed file(s). ` +
+			'They are listed under their dimension and are NOT counted in the verdict above.',
+			'',
+		);
+	}
+	const table = (findings: DimensionResult['findings']): void => {
 		lines.push('| Severity | Location | Message |', '| --- | --- | --- |');
-		for (const f of dim.findings) {
+		for (const f of findings) {
 			lines.push(`| ${f.severity} | ${escapeCell(f.location)} | ${escapeCell(f.message)} |`);
 		}
 		lines.push('');
+	};
+	for (const dim of body.dimensions) {
+		const dropped = dim.outOfScope ?? [];
+		const suffix = dropped.length > 0 ? `, ${dropped.length} dropped as out of scope` : '';
+		lines.push(`## ${dim.dimension} — ${dim.findings.length} finding(s)${suffix}`, '');
+		if (dim.findings.length === 0) lines.push(dropped.length > 0 ? '_No findings in scope._' : '_No findings._', '');
+		else table(dim.findings);
+		if (dropped.length > 0) {
+			lines.push('**Dropped as out of scope (not counted):**', '');
+			table(dropped);
+		}
 	}
 	return lines.join('\n') + '\n';
 }

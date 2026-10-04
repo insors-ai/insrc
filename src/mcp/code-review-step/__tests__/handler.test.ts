@@ -484,3 +484,88 @@ test('s10 ac6: a fresh index (no decline) still drives runReview with the DEFAUL
 	const body = (JSON.parse(json.content) as { body: { groundingMode: string } }).body;
 	assert.equal(body.groundingMode, 'full', 'the fresh path still stamps full');
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-11e4fa88 — a finding dropped on scope is VISIBLE: carried on the record,
+// rendered in the markdown, and reported on the response. The filter itself and
+// the verdict are unchanged.
+// ---------------------------------------------------------------------------
+
+/** The flow from the issue's own measurement: findings about real source files
+ *  submitted against a changed set that does not contain them. */
+function droppedFlow(): Promise<{ done: CodeReviewStepOutput; writes: { path: string; content: string }[] }> {
+	reset();
+	return runFullFlow({}, judgements({
+		adherence: [
+			{ dimension: 'adherence', severity: 'MED',  location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
+			{ dimension: 'adherence', severity: 'HIGH', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
+		],
+		coverage: [
+			{ dimension: 'coverage', severity: 'LOW', location: 'src/a.ts:3',      message: 'kept' },
+			{ dimension: 'coverage', severity: 'MED', location: 'src/gone.ts:7',   message: 'untested branch' },
+		],
+	}));
+}
+
+test('11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted', async () => {
+	const { done, writes } = await droppedFlow();
+	assert.ok(done.next === 'done');
+	// The verdict folds over the KEPT findings only: one LOW => pass. A HIGH and two
+	// MEDs were submitted and dropped; none of them may move this.
+	assert.equal(done.verdict, 'pass');
+	assert.deepEqual(done.counts, { high: 0, med: 0, low: 1 });
+
+	const body = (JSON.parse(writes.find(w => w.path.endsWith('.json'))!.content) as { body: { dimensions: DimensionResult[]; counts: unknown; verdict: string } }).body;
+	assert.equal(body.verdict, 'pass');
+	assert.deepEqual(body.counts, { high: 0, med: 0, low: 1 });
+	const dim = (d: ReviewDimension): DimensionResult => body.dimensions.find(x => x.dimension === d)!;
+
+	assert.deepEqual(dim('adherence').findings, [], 'nothing in scope for adherence');
+	assert.deepEqual(dim('adherence').outOfScope, [
+		{ dimension: 'adherence', severity: 'MED',  location: 'src/elsewhere.ts:12', message: 'breaks the contract' },
+		{ dimension: 'adherence', severity: 'HIGH', location: 'src/elsewhere.ts:40', message: 'a | piped message' },
+	], 'both dropped findings are on the record exactly as submitted');
+	assert.deepEqual(dim('coverage').findings.map(f => f.location), ['src/a.ts:3']);
+	assert.deepEqual(dim('coverage').outOfScope?.map(f => f.location), ['src/gone.ts:7']);
+	// A dimension with nothing dropped carries NO key — not an empty array.
+	assert.ok(!('outOfScope' in dim('quality')), 'absent, so an untouched dimension is byte-identical to before');
+	assert.ok(!('outOfScope' in dim('conventions')));
+});
+
+test('11e4fa88 — the response says how many were dropped, per dimension, and against how large a set', async () => {
+	const { done } = await droppedFlow();
+	assert.ok(done.next === 'done');
+	assert.deepEqual(done.scopeDropped, {
+		count: 3,
+		changedFiles: CHANGED.length,
+		byDimension: { adherence: 2, coverage: 1 },
+	});
+});
+
+test('11e4fa88 — the markdown lists the dropped findings and says they are not counted', async () => {
+	const { writes } = await droppedFlow();
+	const md = writes.find(w => w.path.endsWith('.md'))!.content;
+	assert.match(md, /\*\*Dropped as out of scope:\*\* 3 finding\(s\) named a file outside the 2 changed file\(s\)\. They are listed under their dimension and are NOT counted in the verdict above\./);
+	assert.match(md, /^## adherence — 0 finding\(s\), 2 dropped as out of scope$/m);
+	assert.match(md, /^_No findings in scope\._$/m, 'a dimension emptied by the filter no longer reads as a clean one');
+	assert.match(md, /^## coverage — 1 finding\(s\), 1 dropped as out of scope$/m);
+	assert.match(md, /^\| MED \| src\/elsewhere\.ts:12 \| breaks the contract \|$/m);
+	assert.match(md, /^\| HIGH \| src\/elsewhere\.ts:40 \| a \\\| piped message \|$/m, 'dropped rows are cell-escaped like kept ones');
+	assert.match(md, /^## quality — 0 finding\(s\)$/m, 'a dimension with no drops is rendered as before');
+	// The headline still reports only what was counted.
+	assert.match(md, /\*\*PASS\*\* — HIGH 0 · MED 0 · LOW 1 ·/);
+});
+
+test('11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature', async () => {
+	reset();
+	const { done, writes } = await runFullFlow({}, judgements({
+		adherence: [{ dimension: 'adherence', severity: 'MED', location: 'src/a.ts:1', message: 'x' }],
+	}));
+	assert.ok(done.next === 'done');
+	assert.ok(!('scopeDropped' in done), 'no key on the response');
+	const json = writes.find(w => w.path.endsWith('.json'))!.content;
+	const md = writes.find(w => w.path.endsWith('.md'))!.content;
+	assert.ok(!json.includes('outOfScope'), 'no key anywhere on the record');
+	assert.ok(!/out of scope|in scope/i.test(md), 'no dropped-findings wording in the markdown');
+	assert.match(md, /^## conventions — 0 finding\(s\)\n\n_No findings\._$/m);
+});

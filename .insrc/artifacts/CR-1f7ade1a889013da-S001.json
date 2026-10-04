@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791087997552-613frv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T04:26:37.552Z",
+    "model": "client",
+    "elapsedMs": 1,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        ".insrc/artifacts/BUILD-1f7ade1a889013da-S001.json",
+        ".insrc/artifacts/PLAN-1f7ade1a889013da-S001.json",
+        "docs/standalone/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/BUILD.md",
+        "src/agent/providers/__tests__/structured-output-root-union.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/agent/providers/structured-output.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": ".insrc/artifacts/BUILD-1f7ade1a889013da-S001.json:1",
+            "message": "Task t1's second acceptance check is NOT met: 'The actual search output is recorded in the BUILD record, so the precondition is evidenced rather than asserted.' The record's body.summary asserts the conclusion ('Zero callers, so no shim') but carries no search command and no output — the string 'structured-output.ts:341' appears nowhere in it. The gate was run, twice (once as t1 and again inside t8 immediately before the deletion, which is what the plan critique added it for), and both returned exactly one line; but that evidence lives only in the session transcript and the commit prose, which is precisely the 'asserted rather than evidenced' state the check was written to prevent. The build validate gate independently raised this.",
+            "expectationRef": "PLAN t1 acceptanceChecks[1]",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/agent/providers/cli-provider.ts:191",
+            "message": "The plan's ten tasks landed in a SINGLE commit, so the sequencing the plan made load-bearing is not reconstructible from git history. The plan required the predicate to be unit-proven BEFORE the guard was wired (so a later integration failure is unambiguously about placement) and the falsifying mutation to be run and confirmed red BEFORE the assertions were accepted. Both did happen in that order — the file genuinely failed to load at t3 for want of the t4 export, and the mutation was run twice — but a reviewer reading only the repo cannot verify it, and the commit message is the sole record. Noting it because the plan's value here was mostly in its ordering, and collapsing the tasks discards the externally checkable evidence of having followed it.",
+            "expectationRef": "PLAN migrationSteps ordering / t3 before t5, t7 after t6",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/agent/providers/__tests__/structured-output-root-union.test.ts:200",
+            "message": "The plan's promised 'no codex schema tmpdir' assertion is absent. This is NOT a departure: the same acceptance check carried an explicit escape — 'If the set-difference proves awkward, DROP the check rather than keep a flaky one' — and the falsifying mutation showed it was worse than flaky, it was VACUOUS, passing with the guard removed. completeStructuredOnce creates the dir and removes it unconditionally in a finally, so before/after sets are equal either way and the assertion could never fail. Dropped with the reason recorded in place of the test. Logged as an observation so the absence reads as an exercised clause rather than an omission.",
+            "expectationRef": "PLAN t6 acceptanceChecks[3]",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/agent/providers/structured-output.ts:318",
+            "message": "The change exports a named type `RootUnionKey` that the approved LLD contract did not specify — the LLD gave the return type as the inline union `'oneOf' | 'anyOf' | 'allOf' | undefined`. Additive and arguably better (the test file consumes it to type its truth-table rows), and it breaks nothing, but it is a public surface addition beyond what the contract named. Flagged as an observation rather than a breach because no documented rule forbids it and the LLD's intent is preserved exactly.",
+            "expectationRef": "LLD contractDetails.api[0].signature",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/structured-output.ts:318",
+            "message": "NO coverage finding is raised, and the reason is recorded deliberately so the silence is not mistaken for an oversight. Every symbol in this review's grounding carries testsReaching: EMPTY — including the two artifact JSONs and the BUILD markdown, which can have no tests at all. All six entries came back as kind:'file' with a null summary and no symbol-level detail, so the empty edges are an artifact of file-level granularity on freshly-written files, not evidence of unexercised code. Raising a HIGH from that would be fabricating a finding from hollow grounding. Coverage was therefore judged by RUNNING the suite: the new hermetic file reports 27 tests, 27 pass, 0 skipped, and the falsifying mutation independently proves 4 of them are not satisfiable by the pre-guard code. The full sweep on Node 22 with INSRC_LIVE_TESTS unset is 4353 tests / 4235 pass / 2 fail / 113 skipped, where the 2 failures are the known pre-existing sqlite data-driver defects and the delta versus the pre-build baseline is +27 tests and +27 passes with failures and skips unchanged.",
+            "expectationRef": "rootUnionKey, CliProvider.completeStructured",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:191",
+            "message": "The guard is CliProvider-only, while two other providers also implement completeStructured over a StructuredSchema: ollama.ts:536 and mcp-sampling-provider.ts:210. Neither is guarded. This is correct scoping rather than a gap — the constraint being enforced is specific to the two vendor CLI FLAGS (--json-schema / --output-schema) and was probed only against those binaries, so extending the rejection to Ollama's format field would assert an unverified engine behaviour, which is the precise mistake the deleted helper made and this Story exists to remove. Recorded so the narrow placement reads as deliberate, and so anyone who later sees a root union fail against Ollama knows this path was considered and left alone for want of evidence.",
+            "expectationRef": "LLD contractDetails.api[1] placement rationale",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/agent/providers/structured-output.ts:360",
+            "message": "`rootUnionKey` reports only a NON-EMPTY branch array, so `{ anyOf: [] }` and a non-array `oneOf` both return undefined and proceed to the vendor. Deliberate and tested in both directions, but it means a degenerate schema gets the opaque upstream failure this Story was filed to replace rather than the named local one. Accepted because the vendors' behaviour on a degenerate combinator was never probed and claiming it would repeat the unverified-vendor-claim pattern; the practical exposure is nil, since no caller constructs an empty combinator. Noted as the one place where the guard knowingly declines to help.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 5
+    }
+  }
+}

@@ -16,3 +16,23 @@ Implemented all ten plan tasks for the root-union guard. Added `rootUnionKey` (p
 ## Changes
 
 - `.insrc/artifacts/PLAN-1f7ade1a889013da-S001.json` — **insrc-build** (2026-10-04T04:16:39.098Z)
+
+## t1 / t8 gate evidence (recorded per PLAN t1 acceptanceChecks[1])
+
+The zero-caller precondition was run as a command, twice, and these are its outputs.
+
+t1, before any edit:
+    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts'
+    src/agent/providers/structured-output.ts:341:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {
+    1 line
+
+t8, re-run immediately before the deletion (the plan critique added this because t1's result was eight tasks old and must not be inherited):
+    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__'
+    src/agent/providers/structured-output.ts:397:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {
+    1 non-test line
+
+After the deletion, and again after the t9 falsification had re-added and removed the helper:
+    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__' | wc -l
+    0
+
+The line number moved 341 -> 397 between the two runs because t2 inserted the new predicate above it; the identity of the single match is unchanged. Both runs returned exactly one, so the gate's halt-or-proceed condition resolved to proceed on real output rather than on an inherited claim.

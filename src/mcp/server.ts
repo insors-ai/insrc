@@ -685,7 +685,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'  2. Emit the judgements JSON ({ judgements: DimensionResult[] } — one per ' +
 				'dimension, each finding a `file:line` location), then phase=\'judgements\' ' +
 				'with judgements=<your JSON> + state. Server folds + persists and returns ' +
-				'{ next: \'done\', verdict, counts, path, jsonPath }.\n\n' +
+				'{ next: \'done\', verdict, counts, path, jsonPath }. When findings were dropped because their file is outside ' +
+				'the Story\'s changed set, the frame also carries `scopeDropped` { count, changedFiles, byDimension }: those findings ' +
+				'are NOT in `verdict`/`counts`; they are kept on the record as each dimension\'s `outOfScope`.\n\n' +
 				'Preserve `state` verbatim between calls; a malformed turn returns a ' +
 				'next:\'error\' frame naming the fault (nothing is written).',
 			annotations: {

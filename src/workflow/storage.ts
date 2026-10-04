@@ -235,6 +235,31 @@ export function inheritedStandalone(
 	return readEpicDefinitionCore(repoPath, epicHash).standalone ?? fallback;
 }
 
+/**
+ * A STORY's placement: {@link inheritedStandalone} widened by one more source,
+ * the Story's own LLD.
+ *
+ * The definition head alone is not enough. A triage-routed Small story has NO
+ * definition head — its only upstream artifact is a standalone LLD — so a
+ * head-only read returned nothing, the BUILD record was written without its
+ * `standalone` flag, and it was filed under docs/epics/ with a raw-hash folder
+ * name (ISSUE-0855311b). The head still wins when both speak, for the reason
+ * ISSUE-3a98d279 gives: the head is authoritative, the LLD is the fallback.
+ *
+ * Same contract as {@link inheritedStandalone}: callers write only an explicit
+ * true, never a false.
+ */
+export function inheritedStoryStandalone(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+	fallback?: boolean | undefined,
+): boolean | undefined {
+	return readEpicDefinitionCore(repoPath, epicHash).standalone
+		?? readArtifactCore(repoPath, lldArtifactId(epicHash, storyId)).standalone
+		?? fallback;
+}
+
 export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {
 	// S001/t2 — resolves through the DEFINITION artifact (DEF or ISSUE alike)
 	// rather than the define artifact alone. Signature and meaning are unchanged;
@@ -366,10 +391,45 @@ export function buildRecordFolderArgs(
 	const head = standalone ? readEpicDefinitionCore(repoPath, epicHash) : upstream;
 	const headLabel = head.epicSlug !== undefined && head.epicSlug.length > 0 ? head.epicSlug : undefined;
 	return {
-		createdAtISO: upstream.createdAt ?? ownCreatedAt,
+		// ISSUE-0855311b — the standalone route falls back to the HEAD's anchor before
+		// the record's own clock. A bugfix built with no LLD has an ISSUE head and no
+		// upstream, so anchoring on `ownCreatedAt` filed its BUILD in a folder dated
+		// the day of the build, beside (not in) the one its ISSUE sits in. The LLD
+		// still wins when present, so 3a98d279's anchor rule is untouched; and with
+		// neither artifact the record's own createdAt is still the anchor (Trivial).
+		createdAtISO: upstream.createdAt ?? head.createdAt ?? ownCreatedAt,
 		workItemKind: standalone ? 'standalone' : 'epic',
 		epicSlug:     headLabel ?? upstream.epicSlug,
 	};
+}
+
+/**
+ * The folder a Story's RECORDS (BUILD, code review) belong in, resolved from
+ * the work item on disk rather than from whatever the calling writer happens to
+ * be holding.
+ *
+ * ONE derivation for every record writer, so a Story's BUILD and its code review
+ * cannot be filed apart. Each used to assemble these arguments itself: the BUILD
+ * writer from its own `meta.standalone`, the code-review writer from the LLD it
+ * had been handed, falling back to the build record it had been handed. A writer
+ * holding neither — the MCP code-review path is given no build record — defaulted
+ * to `epic`, no label and today's date, and wrote the review to
+ * docs/epics/<hash>-E<today>/ (ISSUE-0855311b, ISSUE-b2e16601).
+ *
+ * Placement is the Story's ({@link inheritedStoryStandalone}), with the persisted
+ * BUILD record's flag and then the caller's as fallbacks. The record's own anchor
+ * is the persisted BUILD record's `createdAt`, so a review of a Trivial build
+ * (no head, no LLD) lands in the folder that build was written to.
+ */
+export function storyRecordFolderArgs(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+	fallback: { readonly standalone?: boolean | undefined; readonly ownCreatedAt: string },
+): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
+	const build = readArtifactCore(repoPath, buildArtifactId(epicHash, storyId));
+	const standalone = inheritedStoryStandalone(repoPath, epicHash, storyId, build.standalone ?? fallback.standalone) === true;
+	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, build.createdAt ?? fallback.ownCreatedAt);
 }
 
 /** Absolute path to a canonical artifact JSON from its (hash-based) id. The

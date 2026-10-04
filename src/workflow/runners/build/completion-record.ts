@@ -20,7 +20,7 @@
 
 import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
-import { inheritedStandalone } from '../../storage.js';
+import { inheritedStoryStandalone } from '../../storage.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -52,7 +52,9 @@ export async function ensureBuildRecordOnCompletion(
 		// only an explicit TRUE is written, never a false. An unreadable definition
 		// artifact therefore still omits the key, so mergeWithPrior keeps carrying a
 		// prior true forward and the old relocation bug cannot return.
-		const standaloneFlag = inheritedStandalone(repoPath, ref.epicHash);
+		// ISSUE-0855311b — widened from the head alone to the head OR the Story's
+		// LLD: a triage-routed Small story has no definition head at all.
+		const standaloneFlag = inheritedStoryStandalone(repoPath, ref.epicHash, ref.storyId);
 		const base: BuildRecord = {
 			meta: {
 				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now,

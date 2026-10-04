@@ -26,6 +26,8 @@ import {
 	lldFilenamePrefix,
 	buildArtifactPaths,
 	buildRecordFolderArgs,
+	inheritedStoryStandalone,
+	storyRecordFolderArgs,
 	readEpicCreatedAt,
 	readEpicDefinitionCore,
 	stubArtifactPaths,
@@ -548,5 +550,114 @@ test('3a98d279 — an EMPTY head label counts as absent, so it cannot name a fol
 		assert.notEqual(fa.epicSlug, '', 'an empty string must never be returned as a label');
 		const md = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
 		assert.ok(!md.includes('/artifact-E'), `no folder may be named 'artifact': ${md}`);
+	} finally { r.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-0855311b / 43d72766 / b2e16601 — a Story's records (BUILD, code review)
+// resolve their folder from the work item on disk, through ONE derivation, so
+// they cannot be filed apart from the Story or from each other.
+// ---------------------------------------------------------------------------
+
+const SR_OWN = '2026-10-04T09:40:00.000Z';
+
+/** Seed one artifact's meta under .insrc/artifacts. */
+function seedMeta(repo: string, id: string, meta: Record<string, unknown>): void {
+	writeAtomic(join(repo, '.insrc/artifacts', `${id}.json`), JSON.stringify({ meta }));
+}
+
+test('0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last', () => {
+	const r = t5Repo();
+	try {
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S001'), undefined, 'nothing on disk, no caller');
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S001', true), true, 'the caller is used when the work item is silent');
+
+		// LLD only — the triage-routed Small story, which has no definition head.
+		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: T5_CREATED, standalone: true });
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S001'), true, 'the LLD answers when there is no head');
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S002'), undefined, 'another Story\'s LLD does not answer');
+
+		// A head that speaks outranks the LLD.
+		seedMeta(r.repo, `ISSUE-${T5_HASH}`, { createdAt: T5_CREATED, standalone: false });
+		assert.equal(inheritedStoryStandalone(r.repo, T5_HASH, 'S001', true), false, 'the head is authoritative');
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — the standalone route anchors on the HEAD before the record\'s own clock when there is no LLD', () => {
+	const r = t5Repo();
+	try {
+		// A bugfix built with no LLD: an ISSUE head dated the 2nd, a build on the 4th.
+		seedMeta(r.repo, `ISSUE-${T5_HASH}`, { createdAt: T5_CREATED, epicSlug: 'a-real-label', standalone: true });
+		const fa = buildRecordFolderArgs(r.repo, T5_HASH, 'S001', true, SR_OWN);
+		assert.equal(fa.createdAtISO, T5_CREATED, 'the ISSUE\'s date, so the BUILD lands in the ISSUE\'s folder');
+		assert.notEqual(fa.createdAtISO, SR_OWN, 'NOT the day of the build');
+		assert.equal(
+			buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md,
+			join(r.repo, 'docs/standalone', `a-real-label-E20261002${T5_HASH.slice(0, 8)}`, 'S001', 'BUILD.md'),
+		);
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD', () => {
+	const r = t5Repo();
+	try {
+		const lldCreated = '2026-10-04T05:42:00.000Z';
+		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: lldCreated, epicSlug: LABEL_LLD, standalone: true });
+		// The caller holds nothing useful: no flag, and an anchor from another day.
+		const fa = storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: '2026-10-09T00:00:00.000Z' });
+		assert.deepEqual(fa, { createdAtISO: lldCreated, workItemKind: 'standalone', epicSlug: LABEL_LLD });
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE\'s folder, caller holding nothing', () => {
+	const r = t5Repo();
+	try {
+		// What the MCP code-review path had: no LLD and no build record handed in.
+		// It used to answer epic / no label / today.
+		seedMeta(r.repo, `ISSUE-${T5_HASH}`, { createdAt: T5_CREATED, epicSlug: LABEL_HEAD, standalone: true });
+		seedMeta(r.repo, `BUILD-${T5_HASH}-S001`, { createdAt: SR_OWN, standalone: true });
+		const fa = storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: '2026-10-09T00:00:00.000Z' });
+		assert.deepEqual(fa, { createdAtISO: T5_CREATED, workItemKind: 'standalone', epicSlug: LABEL_HEAD });
+	} finally { r.cleanup(); }
+});
+
+test('b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one', () => {
+	const r = t5Repo();
+	try {
+		seedDisagreeing(r.repo);
+		const fa = storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN });
+		assert.equal(fa.epicSlug, LABEL_HEAD, 'the head names the folder');
+		assert.notEqual(fa.epicSlug, LABEL_LLD, 'the LLD\'s stored label must not');
+		assert.equal(fa.workItemKind, 'standalone');
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record', () => {
+	const r = t5Repo();
+	try {
+		seedMeta(r.repo, `BUILD-${T5_HASH}-S001`, { createdAt: SR_OWN, standalone: true });
+		const fa = storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: '2026-10-09T00:00:00.000Z' });
+		assert.deepEqual(fa, { createdAtISO: SR_OWN, workItemKind: 'standalone', epicSlug: undefined },
+			'the review lands in the folder the build was written to, not one dated by the caller');
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort', () => {
+	const r = t5Repo();
+	try {
+		// Nothing on disk at all: the caller's values are all there is.
+		assert.deepEqual(
+			storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { standalone: true, ownCreatedAt: SR_OWN }),
+			{ createdAtISO: SR_OWN, workItemKind: 'standalone', epicSlug: undefined },
+		);
+		assert.equal(storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN }).workItemKind, 'epic');
+
+		// A DEF with no standalone key is an epic-parented story: head label, head anchor, epic.
+		seedMeta(r.repo, `DEF-${T5_HASH}`, { createdAt: T5_CREATED, epicSlug: LABEL_HEAD });
+		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: '2026-10-02T19:00:00.000Z', epicSlug: LABEL_LLD });
+		assert.deepEqual(
+			storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN }),
+			{ createdAtISO: T5_CREATED, workItemKind: 'epic', epicSlug: LABEL_HEAD },
+		);
 	} finally { r.cleanup(); }
 });

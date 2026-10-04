@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 import { getLogger } from '../../../shared/logger.js';
 import { execFileSync } from 'node:child_process';
 
-import { writeAtomic, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs } from '../../storage.js';
+import { writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
@@ -238,7 +238,16 @@ function headShortSha(repoPath: string): string | undefined {
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
 function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
-	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone === true, merged.meta.createdAt);
+	// The record's own flag, OR what the work item itself says. The flag alone was
+	// not enough: a record written without it (any writer that could not resolve
+	// the route) was filed under docs/epics/ even though its Story's LLD and ISSUE
+	// sat under docs/standalone/, and every later re-render — an approval included —
+	// put it back there. Reading the Story keeps the record beside its siblings
+	// whatever its own meta carries. Only ever widens to standalone: an explicit
+	// true on the record is never overridden.
+	const standalone = merged.meta.standalone === true
+		|| inheritedStoryStandalone(repoPath, merged.meta.epicHash, merged.meta.storyId) === true;
+	const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, standalone, merged.meta.createdAt);
 	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
 }
 
@@ -282,7 +291,13 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
 	const paths = pathsForMerged(repoPath, merged);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
-	const md = renderBuildRecordMd(merged);
+	// The id marker is prepended HERE, not in the renderer, so the renderer's
+	// output (and every golden pinned on it) is unchanged. The md is named by
+	// folder while the json is named by hash, so the marker is the only thing that
+	// lets `jsonPathForMd` resolve this file back to its record — without it a
+	// BUILD was the one artifact that could not be approved by its md path
+	// (ISSUE-43d72766).
+	const md = `${artifactIdMarker(buildArtifactId(merged.meta.epicHash, merged.meta.storyId))}\n\n${renderBuildRecordMd(merged)}`;
 	writeAtomic(paths.md, md);
 	return paths;
 }

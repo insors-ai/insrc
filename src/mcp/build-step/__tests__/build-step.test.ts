@@ -22,7 +22,7 @@ import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateProviderForTests } from '../phases/validate.js';
-import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
+import { approveArtifactByJsonPath, jsonPathForMd } from '../../../workflow/gates.js';
 import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../workflow/runners/build/completion-record.js';
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
@@ -1174,4 +1174,117 @@ test('validate: an EPIC-parented work item is unchanged — no flag written, rec
 		const md = findBuildMd(repo);
 		assert.ok(md !== undefined && md.includes('/docs/epics/'), `expected docs/epics/, got: ${md ?? '(none)'}`);
 	} finally { _setBuildValidateProviderForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-0855311b / ISSUE-43d72766 — the FIRST validate write for a standalone
+// story with NO definition head (a triage-routed Small story: LLD only, or a
+// Trivial: nothing). The head-only lookup found nothing, so the record was
+// written with no flag and no size class and filed under docs/epics/<hash>-E…/.
+// ---------------------------------------------------------------------------
+
+/** A standalone LLD and NOTHING else — no DEF, no ISSUE. */
+function seedStandaloneLldOnly(repo: string): void {
+	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
+			standalone: true, approvedAt: CREATED_AT,
+		},
+		body: { openQuestions: [] }, citations: [],
+	}, null, 2));
+}
+
+function readBuildRecord(repo: string): { meta: Record<string, unknown>; body: Record<string, unknown> } {
+	return JSON.parse(readFileSync(join(artifactsDir(repo), `BUILD-${HASH}-s1.json`), 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+}
+
+async function validateWith(repo: string, standalone: Record<string, unknown>): Promise<void> {
+	_setBuildValidateProviderForTests({
+		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+	});
+	try {
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: standalone as never }));
+		assert.equal(out['next'], 'done');
+	} finally { _setBuildValidateProviderForTests(undefined); }
+}
+
+test('0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD', async () => {
+	const repo = mkRepo();
+	try {
+		seedStandaloneLldOnly(repo);
+		await validateWith(repo, { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small', triageRationale: 'one obvious approach' });
+
+		const rec = readBuildRecord(repo);
+		assert.equal(rec.meta['standalone'], true, 'the route reaches the record on its FIRST write');
+		assert.equal(rec.meta['sizeClass'], 'small', 'and so does the size class the caller declared');
+		assert.equal(rec.meta['triageRationale'], 'one obvious approach');
+
+		// The exact folder the LLD occupies — not docs/epics/, and not a raw-hash name.
+		const expected = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'standalone', 'tag-filtering').md;
+		assert.equal(findBuildMd(repo), expected);
+		assert.ok(!expected.includes(`${HASH}-E`), 'sanity: the expected folder is slug-named');
+		assert.match(readFileSync(expected, 'utf8'), /^<!-- insrc:artifact BUILD-a3f4b8c9d1e2f3a4-s1 -->\n\n# Build \(standalone small\)/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written', async () => {
+	const repo = mkRepo();
+	try {
+		// A Trivial build: nothing on disk can say what it is, so the declaration must.
+		await validateWith(repo, { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'a guard' });
+		const rec = readBuildRecord(repo);
+		assert.equal(rec.meta['standalone'], true);
+		assert.equal(rec.meta['sizeClass'], 'trivial');
+		const md = findBuildMd(repo);
+		assert.ok(md !== undefined && md.includes('/docs/standalone/'), `expected docs/standalone/, got: ${md ?? '(none)'}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('0855311b — validate: a caller\'s declaration does NOT relabel a story whose definition head says otherwise', async () => {
+	const repo = mkRepo();
+	try {
+		// The DEF exists and carries no standalone key: an epic-parented story. The
+		// declaration counts only when there is no head at all.
+		seedDef(repo); seedLld(repo);
+		await validateWith(repo, { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small', triageRationale: 'r' });
+		const rec = readBuildRecord(repo);
+		assert.ok(!('standalone' in rec.meta), 'no flag');
+		assert.ok(!('sizeClass' in rec.meta), 'and no size class: an epic record is never titled as a standalone one');
+		assert.ok(!('triageRationale' in rec.meta));
+		const md = findBuildMd(repo);
+		assert.ok(md !== undefined && md.includes('/docs/epics/'), `expected docs/epics/, got: ${md ?? '(none)'}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('0855311b — completion: an LLD-only story\'s record is written standalone, beside the LLD', async () => {
+	const repo = mkRepo();
+	try {
+		seedStandaloneLldOnly(repo);
+		const paths = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.equal(paths?.md, buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'standalone', 'tag-filtering').md);
+		assert.equal(readBuildRecord(repo).meta['standalone'], true);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path', async () => {
+	const repo = mkRepo();
+	try {
+		seedStandaloneLldOnly(repo);
+		// A record as the old writer left it: no `standalone`, no `sizeClass`.
+		writeFileSync(join(artifactsDir(repo), `BUILD-${HASH}-s1.json`), JSON.stringify({
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-07-20T00:00:00.000Z', updatedAt: '2026-07-20T00:00:00.000Z' },
+			body: { tasks: [{ id: 's1', passed: true }] },
+		}, null, 2));
+		// Any later write re-renders it — completion is the one an approval triggers.
+		const paths = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
+		const expected = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'standalone', 'tag-filtering').md;
+		assert.equal(paths?.md, expected, 'anchored on the LLD, not on the record\'s own (different) createdAt');
+		assert.ok(existsSync(expected));
+		// Where the old derivation put it: epic split, raw-hash label, the record's own date.
+		assert.ok(!existsSync(buildArtifactPaths(repo, HASH, 's1', '2026-07-20T00:00:00.000Z', 'epic').md),
+			'nothing is written to the docs/epics/<hash>-E<own date>/ folder');
+		// The marker is what makes the md resolvable: without it this throws.
+		assert.equal(jsonPathForMd(expected), join(artifactsDir(repo), `BUILD-${HASH}-s1.json`));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

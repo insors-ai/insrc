@@ -166,7 +166,9 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 		// same record, and the check would pass for any output whatsoever, including
 		// one that changed every byte. Frozen string instead, so the comparison has
 		// an independent right-hand side. (t2, ISSUE-93081bff91ae5108.)
-		assert.equal(readFileSync(md, 'utf8'), THIN_WRAPPER_GOLDEN);
+		// The persisted file carries the artifact-id marker ahead of the rendered
+		// body (ISSUE-43d72766); the renderer's own output is still the golden.
+		assert.equal(readFileSync(md, 'utf8'), `<!-- insrc:artifact BUILD-${HASH}-s1 -->\n\n${THIN_WRAPPER_GOLDEN}`);
 		assert.equal(readJson(json).meta['standalone'], true);
 	});
 });
@@ -722,4 +724,38 @@ test('t5 — the render keys on sizeClass, so it survives a record whose flag is
 	} as unknown as BuildRecord);
 	assert.ok(md.includes('standalone bugfix'), 'the heading still reads standalone from sizeClass alone');
 	assert.ok(md.includes('**Standalone:** no'), 'while the meta line honestly reports the absent flag');
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-43d72766 / ISSUE-0855311b — the persist files a record by what its
+// STORY is, not only by the flag the record happens to carry.
+// ---------------------------------------------------------------------------
+
+test('43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/', async () => {
+	await withRepo((repo) => {
+		// The story's only upstream: a standalone LLD. No DEF, no ISSUE.
+		writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
+			meta: { createdAt: '2026-10-04T05:42:00.000Z', epicSlug: 'lock-insrc-chat', standalone: true },
+		}));
+		// Written by a caller that could not say what route it serves: no flag at all.
+		const { md } = persistBuildRecord(repo, {
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-04T08:50:00.000Z', updatedAt: '2026-10-04T08:50:00.000Z' },
+			body: { tasks: [{ id: 's1', passed: true }] },
+		});
+		assert.equal(md, join(repo, 'docs', 'standalone', `lock-insrc-chat-E20261004${HASH.slice(0, 8)}`, 'S001', 'BUILD.md'));
+		assert.ok(readFileSync(md, 'utf8').startsWith(`<!-- insrc:artifact BUILD-${HASH}-s1 -->\n\n# Build (`));
+	});
+});
+
+test('43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)', async () => {
+	await withRepo((repo) => {
+		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`), JSON.stringify({
+			meta: { createdAt: '2026-07-18T00:00:00.000Z', epicSlug: 'tag-filtering' },
+		}));
+		writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
+			meta: { createdAt: '2026-07-19T00:00:00.000Z', epicSlug: 'tag-filtering' },
+		}));
+		const { md } = persistBuildRecord(repo, planRec([{ id: 's1/t1', passed: true }], '2026-07-20T00:00:00.000Z'));
+		assert.equal(md, join(repo, 'docs', 'epics', `tag-filtering-E20260718${HASH.slice(0, 8)}`, 'S001', 'BUILD.md'));
+	});
 });

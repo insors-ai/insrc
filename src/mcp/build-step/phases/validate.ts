@@ -23,7 +23,7 @@ import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } 
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
-import { inheritedStandalone, lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
+import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 
 const log = getLogger('mcp:build-step:validate');
@@ -115,7 +115,18 @@ async function handleStandaloneValidate(
 	}
 
 	const prompt = renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath });
-	return runValidateSession(repoPath, prompt, { epicHash, storyId, taskId: storyId }, summary);
+	// Carry the route the caller declared into the persist. This branch KNOWS it is
+	// serving a standalone story; discarding that here left the shared persist to
+	// re-derive it from a definition head a Small story does not have (ISSUE-0855311b).
+	// Only what the caller actually supplied is carried: the `sizeClass` DEFAULT above
+	// selects a prompt and must not be stamped on a record as if it had been declared.
+	return runValidateSession(repoPath, prompt, {
+		epicHash, storyId, taskId: storyId,
+		standalone: {
+			...(ctx.sizeClass !== undefined && ctx.sizeClass.length > 0 ? { sizeClass: ctx.sizeClass } : {}),
+			...(ctx.triageRationale !== undefined && ctx.triageRationale.length > 0 ? { triageRationale: ctx.triageRationale } : {}),
+		},
+	}, summary);
 }
 
 /** Shared: run the read-only verdict session under the sc6 routing seam, parse the
@@ -125,7 +136,11 @@ async function handleStandaloneValidate(
 async function runValidateSession(
 	repoPath: string,
 	prompt:   string,
-	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
+	ident:    {
+		readonly epicHash: string; readonly storyId: string; readonly taskId: string;
+		/** Present ONLY on the standalone branch: the route the caller declared. */
+		readonly standalone?: { readonly sizeClass?: string; readonly triageRationale?: string } | undefined;
+	},
 	/** The implementer's narrative, if supplied — see BuildStepInputValidate.summary. */
 	summary?: string,
 ): Promise<BuildStepDone | BuildStepError> {
@@ -188,11 +203,32 @@ async function runValidateSession(
 				// unreadable definition artifact still omits the key, so mergeWithPrior
 				// keeps carrying a prior true forward and the relocation bug it was
 				// guarding against cannot return.
-				const standaloneFlag = inheritedStandalone(repoPath, epicHash);
+				//
+				// ISSUE-0855311b — and where the head is SILENT. A triage-routed Small
+				// story has no definition head (its only upstream is a standalone LLD),
+				// so the head-only read above found nothing and the record was filed
+				// under docs/epics/ with a raw-hash name. The read now falls back to the
+				// Story's LLD, and then to the route the standalone branch declared.
+				//
+				// The declaration counts ONLY when there is no definition head at all. A
+				// head that exists and does not say `standalone` is an answer, not a
+				// silence: that is an epic-parented Story, and a caller's declaration
+				// must not relabel it. The plan-driven branch passes no declaration, so
+				// it still never asserts a route it cannot know.
+				const noHead = Object.keys(readEpicDefinitionCore(repoPath, epicHash)).length === 0;
+				const standaloneFlag = inheritedStoryStandalone(
+					repoPath, epicHash, storyId, ident.standalone !== undefined && noHead ? true : undefined,
+				);
+				// The declared size class and rationale ride with the route: they are
+				// stamped only on a record that IS standalone, so an epic-parented
+				// record is never titled as a standalone one.
+				const declared = standaloneFlag === true ? ident.standalone : undefined;
 				const rec = {
 					meta: {
 						workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now,
 						...(standaloneFlag === true ? { standalone: true } : {}),
+						...(declared?.sizeClass !== undefined ? { sizeClass: declared.sizeClass } : {}),
+						...(declared?.triageRationale !== undefined ? { triageRationale: declared.triageRationale } : {}),
 					},
 					body: {
 						tasks: [{ id: taskId, passed }],

@@ -1,6 +1,6 @@
-# Build (plan-driven) — Story S001
+# Build (standalone small) — Story S001
 
-**Standalone:** no  ·  **Created:** 2026-10-04T08:50:42.280Z  ·  **Updated:** 2026-10-04T08:50:42.280Z
+**Standalone:** yes  ·  **Created:** 2026-10-04T08:50:42.280Z  ·  **Updated:** 2026-10-04T08:50:42.280Z
 
 **Commit:** e0d0adf
 

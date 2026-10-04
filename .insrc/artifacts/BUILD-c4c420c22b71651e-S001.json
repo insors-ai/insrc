@@ -4,7 +4,9 @@
     "epicHash": "c4c420c22b71651e",
     "storyId": "S001",
     "createdAt": "2026-10-04T08:50:42.280Z",
-    "updatedAt": "2026-10-04T08:50:42.280Z"
+    "updatedAt": "2026-10-04T08:50:42.280Z",
+    "standalone": true,
+    "sizeClass": "small"
   },
   "body": {
     "tasks": [

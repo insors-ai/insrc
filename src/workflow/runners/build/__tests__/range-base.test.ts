@@ -16,7 +16,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { resolveStoryRangeBase } from '../range-base.js';
+import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../range-base.js';
 import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../storage.js';
 
 const HASH = 'abc123def4567890';
@@ -181,5 +181,123 @@ test('t6: an empty epicHash or storyId yields undefined without touching the fil
 	try {
 		assert.equal(resolveStoryRangeBase(s.repo, '', 's1'), undefined);
 		assert.equal(resolveStoryRangeBase(s.repo, HASH, ''), undefined);
+	} finally { s.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-5f7a7cb9 S001/t3 — step 0, the build-start file.
+//
+// Every fixture here ALSO seeds a different approval-time stamp on the PLAN, so
+// each assertion distinguishes "the build-start file was used" from "it was
+// ignored and the next step answered": with no competing stamp both would return
+// the same thing only by accident, or undefined, and prove nothing.
+// ---------------------------------------------------------------------------
+
+/** Write a Story's build-start file with arbitrary content. */
+function seedBuildStart(repo: string, epicHash: string, storyId: string, content: unknown): string {
+	const rel = buildStartRelPath(epicHash, storyId);
+	mkdirSync(dirname(join(repo, rel)), { recursive: true });
+	writeFileSync(join(repo, rel), typeof content === 'string' ? content : JSON.stringify(content, null, 2) + '\n');
+	return rel;
+}
+
+const PLAN_STAMP = 'e'.repeat(40);
+
+/** A repo with two commits and a PLAN stamped with PLAN_STAMP. Returns the
+ *  first commit, a real one that a build-start file can legitimately name. */
+function mkStampedRepo(): { repo: string; git: (...a: string[]) => string; cleanup: () => void; first: string } {
+	const s = mkRepo();
+	const first = s.git('rev-parse', 'HEAD');
+	writeFileSync(join(s.repo, 'second.ts'), 'export const t = 2;\n');
+	s.git('add', '.'); s.git('commit', '-qm', 'second');
+	seedArtifact(s.repo, planArtifactId(HASH, 'S001'), { workflow: 'plan', rangeBase: PLAN_STAMP });
+	return { ...s, first };
+}
+
+test('T18: buildStartRelPath is the one path, outside the artifact store', () => {
+	assert.equal(buildStartRelPath(HASH, 'S001'), `.insrc/build-start/${HASH}-S001.json`);
+	assert.ok(!buildStartRelPath(HASH, 'S001').startsWith(`${ARTIFACTS_DIR}/`), 'it must not sit where the approval sweep looks');
+});
+
+test('T18: a VALID build-start file wins over a different approval-time stamp on the PLAN', () => {
+	const s = mkStampedRepo();
+	try {
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), PLAN_STAMP, 'fixture precondition: without the file the PLAN stamp answers');
+		seedBuildStart(s.repo, HASH, 'S001', { epicHash: HASH, storyId: 'S001', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' });
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), s.first);
+		assert.deepEqual(readBuildStart(s.repo, HASH, 'S001'), {
+			kind: 'valid',
+			stamp: { epicHash: HASH, storyId: 'S001', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' },
+		});
+	} finally { s.cleanup(); }
+});
+
+test('T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order', () => {
+	const s = mkStampedRepo();
+	try {
+		seedBuildStart(s.repo, HASH, 'S001', `{"stampedAt":"2026-10-04T10:00:00Z","note":"set by hand","rangeBase":"${s.first}","storyId":"S001","epicHash":"${HASH}"}`);
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), s.first);
+	} finally { s.cleanup(); }
+});
+
+test('T18: one Story\'s build-start file does not answer for another Story of the same epic', () => {
+	const s = mkStampedRepo();
+	try {
+		seedBuildStart(s.repo, HASH, 'S001', { epicHash: HASH, storyId: 'S001', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' });
+		seedArtifact(s.repo, planArtifactId(HASH, 'S002'), { workflow: 'plan', rangeBase: 'f'.repeat(40) });
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S002'), 'f'.repeat(40));
+	} finally { s.cleanup(); }
+});
+
+test('T19: an invalid build-start file is IGNORED and the approval-time stamp is returned', () => {
+	const s = mkStampedRepo();
+	try {
+		const good = { epicHash: HASH, storyId: 'S001', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' };
+		const cases: ReadonlyArray<readonly [string, unknown, RegExp]> = [
+			['not json',                    '{ this is not json',                              /not json/],
+			['a json array',                '[]',                                              /different Story|not a json object/],
+			['json null',                   'null',                                            /not a json object/],
+			['names another Story',         { ...good, storyId: 'S002' },                      /different Story/],
+			['names another epic',          { ...good, epicHash: '0'.repeat(16) },             /different Story/],
+			['rangeBase missing',           { epicHash: HASH, storyId: 'S001', stampedAt: good.stampedAt }, /40-hex/],
+			['rangeBase abbreviated',       { ...good, rangeBase: s.first.slice(0, 12) },      /40-hex/],
+			['rangeBase a ref name',        { ...good, rangeBase: 'HEAD' },                    /40-hex/],
+			['stampedAt missing',           { epicHash: HASH, storyId: 'S001', rangeBase: s.first }, /stampedAt/],
+			['stampedAt not a time',        { ...good, stampedAt: 'yesterday-ish' },           /stampedAt/],
+			['commit not in this repo',     { ...good, rangeBase: '1'.repeat(40) },            /does not have/],
+		];
+		for (const [name, content, reason] of cases) {
+			seedBuildStart(s.repo, HASH, 'S001', content);
+			const read = readBuildStart(s.repo, HASH, 'S001');
+			assert.equal(read.kind, 'invalid', `${name}: must read as invalid, got ${JSON.stringify(read)}`);
+			assert.match((read as { reason: string }).reason, reason, name);
+			assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), PLAN_STAMP, `${name}: resolution must continue to the PLAN stamp`);
+		}
+	} finally { s.cleanup(); }
+});
+
+test('T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid', () => {
+	const s = mkStampedRepo();
+	try {
+		const tree = s.git('rev-parse', 'HEAD^{tree}');
+		seedBuildStart(s.repo, HASH, 'S001', { epicHash: HASH, storyId: 'S001', rangeBase: tree, stampedAt: '2026-10-04T10:00:00.000Z' });
+		assert.equal(readBuildStart(s.repo, HASH, 'S001').kind, 'invalid');
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), PLAN_STAMP);
+	} finally { s.cleanup(); }
+});
+
+test('T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range', () => {
+	const s = mkRepo();
+	try {
+		seedBuildStart(s.repo, HASH, 'S001', { epicHash: HASH, storyId: 'S001', rangeBase: '1'.repeat(40), stampedAt: '2026-10-04T10:00:00.000Z' });
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), undefined);
+	} finally { s.cleanup(); }
+});
+
+test('T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain', () => {
+	const s = mkStampedRepo();
+	try {
+		assert.deepEqual(readBuildStart(s.repo, HASH, 'S001'), { kind: 'absent' });
+		assert.equal(resolveStoryRangeBase(s.repo, HASH, 'S001'), PLAN_STAMP);
 	} finally { s.cleanup(); }
 });

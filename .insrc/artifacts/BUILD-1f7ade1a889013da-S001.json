@@ -4,8 +4,9 @@
     "epicHash": "1f7ade1a889013da",
     "storyId": "S001",
     "createdAt": "2026-10-03T19:25:17.913Z",
-    "updatedAt": "2026-10-04T04:16:39.098Z",
-    "standalone": true
+    "updatedAt": "2026-10-04T04:29:34.742Z",
+    "standalone": true,
+    "approvedAt": "2026-10-04T04:29:34.799Z"
   },
   "body": {
     "tasks": [
@@ -18,16 +19,51 @@
         "passed": false
       }
     ],
-    "summary": "Implemented all ten plan tasks for the root-union guard. Added `rootUnionKey` (pure, total, root-only) to structured-output.ts and called it as the first statement of CliProvider.completeStructured, outside withTransientRetry so non-retryability is structural rather than contingent on error wording. Exported isTransientCliError for direct assertion. Deleted normaliseSchemaForAnthropic \u2014 zero callers and a conclusively falsified premise \u2014 which also re-attached the orphaned \"Phases B.1-B.5\" docblock to the stub it describes (verified by reading the region). Added 25 hermetic tests in a new non-live file; nothing joined the INSRC_LIVE_TESTS-gated set, because the guard rejects before any subprocess is spawned. The falsifying mutation found three assertions that passed WITHOUT the guard: a \"no codex tmpdir\" check that was structurally vacuous (the provider rmSync's the dir in a finally, so it is gone before observation) \u2014 dropped with the reason recorded in its place \u2014 and both non-retryability checks, which were confirming a property of the spawn-ENOENT error instead; each now pins the message identity first. Re-run, the mutation kills 4 of 4 guard assertions. Sweep on Node 22 with INSRC_LIVE_TESTS unset: 4351 tests, 4233 pass, 2 fail, 113 skipped; the 2 failures are the known pre-existing sqlite data-driver defects, unrelated to this change (+25 tests and +25 passes vs before, failures and skips unchanged).\n\n## t1 / t8 gate evidence (recorded per PLAN t1 acceptanceChecks[1])\n\nThe zero-caller precondition was run as a command, twice, and these are its outputs.\n\nt1, before any edit:\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts'\n    src/agent/providers/structured-output.ts:341:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {\n    1 line\n\nt8, re-run immediately before the deletion (the plan critique added this because t1's result was eight tasks old and must not be inherited):\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__'\n    src/agent/providers/structured-output.ts:397:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {\n    1 non-test line\n\nAfter the deletion, and again after the t9 falsification had re-added and removed the helper:\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__' | wc -l\n    0\n\nThe line number moved 341 -> 397 between the two runs because t2 inserted the new predicate above it; the identity of the single match is unchanged. Both runs returned exactly one, so the gate's halt-or-proceed condition resolved to proceed on real output rather than on an inherited claim.",
+    "summary": "Implemented all ten plan tasks for the root-union guard. Added `rootUnionKey` (pure, total, root-only) to structured-output.ts and called it as the first statement of CliProvider.completeStructured, outside withTransientRetry so non-retryability is structural rather than contingent on error wording. Exported isTransientCliError for direct assertion. Deleted normaliseSchemaForAnthropic — zero callers and a conclusively falsified premise — which also re-attached the orphaned \"Phases B.1-B.5\" docblock to the stub it describes (verified by reading the region). Added 25 hermetic tests in a new non-live file; nothing joined the INSRC_LIVE_TESTS-gated set, because the guard rejects before any subprocess is spawned. The falsifying mutation found three assertions that passed WITHOUT the guard: a \"no codex tmpdir\" check that was structurally vacuous (the provider rmSync's the dir in a finally, so it is gone before observation) — dropped with the reason recorded in its place — and both non-retryability checks, which were confirming a property of the spawn-ENOENT error instead; each now pins the message identity first. Re-run, the mutation kills 4 of 4 guard assertions. Sweep on Node 22 with INSRC_LIVE_TESTS unset: 4351 tests, 4233 pass, 2 fail, 113 skipped; the 2 failures are the known pre-existing sqlite data-driver defects, unrelated to this change (+25 tests and +25 passes vs before, failures and skips unchanged).\n\n## t1 / t8 gate evidence (recorded per PLAN t1 acceptanceChecks[1])\n\nThe zero-caller precondition was run as a command, twice, and these are its outputs.\n\nt1, before any edit:\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts'\n    src/agent/providers/structured-output.ts:341:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {\n    1 line\n\nt8, re-run immediately before the deletion (the plan critique added this because t1's result was eight tasks old and must not be inherited):\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__'\n    src/agent/providers/structured-output.ts:397:export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {\n    1 non-test line\n\nAfter the deletion, and again after the t9 falsification had re-added and removed the helper:\n    $ grep -rn 'normaliseSchemaForAnthropic' src --include='*.ts' | grep -v '__tests__' | wc -l\n    0\n\nThe line number moved 341 -> 397 between the two runs because t2 inserted the new predicate above it; the identity of the single match is unchanged. Both runs returned exactly one, so the gate's halt-or-proceed condition resolved to proceed on real output rather than on an inherited claim.",
     "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-1f7ade1a889013da-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T04:29:34.742Z"
+      },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-1f7ade1a889013da-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T04:16:39.098Z"
+        "timestamp": "2026-10-04T04:29:34.742Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T04:29:34.742Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/structured-output-root-union.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T04:29:34.742Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T04:29:34.742Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T04:29:34.742Z"
       }
     ],
-    "commit": "94b1b4f"
+    "commit": "6ca328e"
   }
 }

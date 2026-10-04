@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791088202253-1ru3km",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T04:32:05.547Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 123293,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "43d72766d3b9a2c1",
+    "epicSlug": "build-record-writer-mis-files-standalone",
+    "standalone": true,
+    "magnitude": "small"
+  },
+  "body": {
+    "title": "A standalone Story's BUILD record is filed under docs/epics/ and carries no artifact marker",
+    "reproduction": "Run a standalone (triage-routed) Story through to its build validation, then try to approve the BUILD record by its markdown path.\n\nSYMPTOM 1 — the ledger folder forks. Expected: the BUILD record lands beside the Story's other artifacts under `docs/standalone/<slug>-E<date><hash8>/S001/`. Observed: it lands under `docs/epics/<slug>-E<date><hash8>/S001/`, so one Story now owns two sibling folders — `docs/epics/.../S001/BUILD.md` alongside `docs/standalone/.../S001/{LLD,PLAN,CR}.md`. The rendered header also reads `**Standalone:** no` for a Story that is standalone.\n\nSYMPTOM 2 — the record cannot be approved by md path. Expected: `insrc_workflow_approve({ artifactPath: '.../S001/BUILD.md' })` stamps `approvedAt`, as it does for LLD, PLAN and CR. Observed: it fails with `jsonPathForMd: cannot resolve the canonical JSON for '.../S001/BUILD.md' — a nested work-item artifact md must carry an insrc:artifact marker (its path no longer encodes the hash id). No marker was found.` Approval succeeds only when pointed at `.insrc/artifacts/BUILD-<epicHash>-<storyId>.json` directly. Checking the four artifact mds for the same Story, LLD, PLAN and CR each open with their `<!-- insrc:artifact ... -->` line and BUILD is the only one without.\n\nBoth were observed live on ISSUE-1f7ade1a S001 (2026-10-04). Scope of the evidence, stated plainly: the defect was seen on that ONE Story, not surveyed across many. The generalisation to any standalone Story rests on the mechanism rather than on repetition — a first write has no prior record to merge from, which is true of every Story's first record.\n\nA diagnostic worth keeping: writing `meta.standalone: true` onto the existing BUILD json by hand and then running validate again showed the value SURVIVED the next write. The merge-forward the writer depends on does work once a prior exists, which rules out 'merge-forward is broken' and isolates the defect to the FIRST write of a Story's record.",
+    "rootCause": "Two independent omissions in the same writer; neither is a crash, so both produce a quietly wrong artifact.\n\nSymptom 1. The BUILD persist is shared by the plan-driven and standalone branches, and it deliberately omits the `standalone` key rather than guess — the record is built as `meta: { workflow: 'build', epicHash, storyId, createdAt, updatedAt }` with no `standalone` field, and the comment above it states the accepted consequence directly: 'on a first write the absent key reads as false everywhere (every reader tests `=== true`).' That reasoning holds for an epic-parented Story, where false is the right answer. It is wrong for a standalone one, and a first write is precisely the case where no prior record exists to merge from. `workItemKindOf` then maps the absent flag to `'epic'` because it returns `meta.standalone === true ? 'standalone' : 'epic'`, `topSegment` maps `'epic'` to the literal `epics`, and the record is written under the wrong top-level split. The renderer reads the same absent flag at `bits.push(\\`**Standalone:** ${rec.meta.standalone ? 'yes' : 'no'}\\`)`, which is why the header agrees with the wrong path instead of contradicting it. The comment claims a prior fix made the two halves fail independently as a belt-and-braces measure; on this run both halves failed together, so that second defence did not hold on this path and should be re-checked rather than assumed. The information needed to get it right is already in scope: fourteen lines earlier the same function reads `lld.meta` and calls `workItemKindOf(lld.meta)` to build `lldMdRelPath`, so the correct kind is resolved and then discarded before the persist.\n\nSymptom 2. The standalone BUILD renderer assembles its markdown without an `insrc:artifact` marker line — a grep for `insrc:artifact` in that module returns nothing. Since the artifact tree moved to ID-anchored folders, the path no longer encodes the hash id, so `jsonPathForMd` depends on that marker to resolve md -> json. The BUILD renderer is the one writer that never adopted it, which is why approval by md path works for every other artifact kind and fails only for BUILD.",
+    "fixIntent": "Make the persisted BUILD record carry the Story's real work-item kind on its first write, and make its rendered markdown resolvable by path like every sibling artifact.\n\nFor the mis-filing: stop leaving the flag to merge-forward on a first write. The resolved value is already available in the same scope, so the correction is to thread it into the persist rather than to derive anything new — and whatever shape it takes, it must not reintroduce the original defect the omission was guarding against, namely a shared path writing `false` unconditionally and re-labelling standalone records that reached validation. That constraint is why the key was dropped in the first place and it still applies.\n\nFor the marker: have the BUILD renderer emit the same `insrc:artifact` line its siblings emit, so `insrc_workflow_approve` accepts the md path.\n\nTwo things are deliberately left to the fix stage rather than settled here. First, whether the renderer should keep reading `meta.standalone` at all or be handed the already-resolved kind — the claim that the renderer no longer reads the flag is contradicted by this run's output, so it needs re-checking against the code rather than trusting the comment. Second, whether existing mis-filed records elsewhere in the tree should be migrated or left — this Story's own record was corrected by hand (moved, `epics` variant pruned, flag seeded, marker added), but that was a one-off repair of a single Story and is not a general migration. A regression test should pin the FIRST-write case specifically, since that is the only case that fails and the one a happy-path test would miss."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts:180",
+      "quotedText": "meta: { workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now },"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts:168",
+      "quotedText": "NO `standalone` key. This persist is SHARED by the plan-driven and standalone branches, so it cannot know which route it is serving — writing `false` unconditionally re-labelled every standalone record that reached validation. Omitting it lets mergeWithPrior carry the prior value forward; on a first write the absent key reads as false everywhere (every reader tests `=== true`)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts:111",
+      "quotedText": "lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:189",
+      "quotedText": "export function workItemKindOf(meta: { readonly standalone?: boolean | undefined }): WorkItemKind {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts:98",
+      "quotedText": "function topSegment(workItemKind: WorkItemKind): string {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts:161",
+      "quotedText": "bits.push(`**Standalone:** ${rec.meta.standalone ? 'yes' : 'no'}`);"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-1f7ade1a889013da S001 — the live reproduction",
+      "quotedText": "BUILD.md landed at docs/epics/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/ while the same Story's LLD.md, PLAN.md and CR.md sit under docs/standalone/."
+    }
+  ]
+}

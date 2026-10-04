@@ -4,8 +4,9 @@
     "epicHash": "5f7a7cb95b643ae5",
     "storyId": "S001",
     "createdAt": "2026-10-04T15:17:30.878Z",
-    "updatedAt": "2026-10-04T16:10:32.571Z",
-    "standalone": true
+    "updatedAt": "2026-10-04T16:26:51.747Z",
+    "standalone": true,
+    "approvedAt": "2026-10-04T16:26:51.821Z"
   },
   "body": {
     "tasks": [
@@ -42,124 +43,138 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-5f7a7cb95b643ae5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:26:51.747Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/PLAN-5f7a7cb95b643ae5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/diff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/build-start.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/phases/implement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/mcp/code-review-step/__tests__/handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/mcp/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/subject.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/grounding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/subject.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/changed-files.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/range-base.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/changed-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/completion-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/range-base.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T16:10:32.571Z"
+        "timestamp": "2026-10-04T16:26:51.747Z"
       }
     ],
-    "commit": "8de52b0"
+    "commit": "d390bd3"
   }
 }

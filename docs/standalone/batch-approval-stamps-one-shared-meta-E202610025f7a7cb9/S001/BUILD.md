@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-04T15:17:30.878Z  ·  **Updated:** 2026-10-04T16:10:32.571Z
+**Standalone:** yes  ·  **Created:** 2026-10-04T15:17:30.878Z  ·  **Updated:** 2026-10-04T16:26:51.747Z
 
-**Commit:** 8de52b0
+**Commit:** d390bd3
 
 ## Summary
 
@@ -22,20 +22,22 @@ Each Story now gets its own range base, stamped in a non-approvable build-start 
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/daemon/tools/builtins/git/__tests__/diff.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/daemon/tools/builtins/git/diff.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/mcp/build-step/__tests__/build-start.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/mcp/build-step/phases/implement.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/mcp/build-step/phases/validate.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/mcp/code-review-step/__tests__/handler.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/mcp/code-review-step/handler.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/code-review/__tests__/diff-grounding.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/code-review/__tests__/subject.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/code-review/grounding.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/code-review/subject.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/runners/build/__tests__/changed-files.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/runners/build/__tests__/range-base.test.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/runners/build/changed-files.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
-- `src/workflow/runners/build/range-base.ts` — **insrc-build** (2026-10-04T16:10:32.571Z)
+- `.insrc/artifacts/CR-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `.insrc/artifacts/PLAN-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/CR.md` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/daemon/tools/builtins/git/__tests__/diff.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/daemon/tools/builtins/git/diff.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/mcp/build-step/__tests__/build-start.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/mcp/build-step/phases/implement.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/mcp/build-step/phases/validate.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/mcp/code-review-step/__tests__/handler.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/mcp/code-review-step/handler.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/code-review/__tests__/diff-grounding.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/code-review/__tests__/subject.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/code-review/grounding.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/code-review/subject.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/runners/build/__tests__/changed-files.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/runners/build/__tests__/range-base.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/runners/build/changed-files.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `src/workflow/runners/build/range-base.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)

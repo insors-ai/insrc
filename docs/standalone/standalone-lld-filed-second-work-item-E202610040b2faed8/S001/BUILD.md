@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-04T15:00:19.614Z  ·  **Updated:** 2026-10-04T15:05:48.915Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-04T15:00:19.614Z  ·  **Updated:** 2026-10-04T16:26:51.846Z
 
-**Commit:** b482fab
+**Commit:** d390bd3
 
 ## Scope
 
@@ -21,3 +21,8 @@ The standalone LLD finalizer now stamps the work item's folder anchor (meta.epic
 ## Tasks validated
 
 - ✗ `S001`
+
+## Changes
+
+- `.insrc/artifacts/BUILD-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.846Z)
+- `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/BUILD.md` — **insrc-build** (2026-10-04T16:26:51.846Z)

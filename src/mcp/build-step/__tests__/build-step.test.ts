@@ -1096,3 +1096,82 @@ test('t7: the summary input is OPTIONAL — a controller that never supplies it 
 			'omitting the field and passing undefined produce the same record shape');
 	} finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
 });
+
+
+// ---------------------------------------------------------------------------
+// The validate writer resolves the ROUTE instead of abstaining from it
+//
+// Two Stories (1f7ade1a, 93081bff) had their BUILD record filed under
+// docs/epics/ while their own ISSUE/LLD/PLAN sat under docs/standalone/. The
+// cause was an omission, not a wrong value: the shared persist left
+// `meta.standalone` absent so mergeWithPrior could carry a prior forward, which
+// works on a SECOND write but not a FIRST, where the absent key reads as false
+// and `workItemKindOf` answers 'epic'.
+//
+// The persist layer's "absent means epic" default is CORRECT and is pinned
+// elsewhere (build-record.test.ts) — it must not manufacture a route it was
+// never given. What was wrong is that its CALLER abstained too, despite the
+// route being readable from the work item's definition head. These tests pin
+// the caller's half; the `=== true` guard keeps the old prohibition intact.
+// ---------------------------------------------------------------------------
+
+/** Seed an ISSUE-anchored definition head, the shape a triage-routed bugfix
+ *  gets. `standalone` lives here, which is why the writer can read it. */
+function seedStandaloneIssue(repo: string): void {
+	writeFileSync(join(artifactsDir(repo), `ISSUE-${HASH}.json`), JSON.stringify({
+		meta: {
+			workflow: 'issue', issueHash: HASH, epicSlug: 'tag-filtering',
+			createdAt: CREATED_AT, approvedAt: CREATED_AT,
+			standalone: true, magnitude: 'small',
+		},
+		body: { title: 't', reproduction: 'r', rootCause: 'rc', fixIntent: 'fi' },
+		citations: [],
+	}, null, 2));
+}
+
+test('validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head', async () => {
+	const repo = mkRepo();
+	try {
+		seedStandaloneIssue(repo); seedLld(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }));
+		assert.equal(out['next'], 'done');
+
+		// FIRST write — there is no prior record, so nothing can be carried
+		// forward and the flag has to come from the definition head or not at all.
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'standalone', 'tag-filtering');
+		assert.ok(existsSync(json), `the record must land on the STANDALONE path; nothing at ${json}`);
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: { standalone?: boolean } };
+		assert.equal(rec.meta.standalone, true, 'the writer must supply the route it can read');
+
+		// And the markdown must be under docs/standalone/, which is the symptom
+		// that was actually reported. FALSIFYING MUTATION: drop the
+		// inheritedStandalone lookup in validate.ts and this goes to docs/epics/.
+		const md = findBuildMd(repo);
+		assert.ok(md !== undefined && md.includes('/docs/standalone/'),
+			`expected the record under docs/standalone/, got: ${md ?? '(none)'}`);
+	} finally { _setBuildValidateProviderForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/', async () => {
+	const repo = mkRepo();
+	try {
+		// seedDef writes a DEF with NO standalone key, which is what an
+		// epic-parented Story looks like. The negative control: if the fix
+		// manufactured `true`, or wrote `false` unconditionally, this moves.
+		seedDef(repo); seedLld(repo);
+		_setBuildValidateProviderForTests({
+			async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; },
+		});
+		assert.equal(outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }))['next'], 'done');
+
+		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
+		assert.ok(!('standalone' in rec.meta),
+			'only an explicit TRUE is ever written — a false must stay ABSENT so a prior true can survive');
+		const md = findBuildMd(repo);
+		assert.ok(md !== undefined && md.includes('/docs/epics/'), `expected docs/epics/, got: ${md ?? '(none)'}`);
+	} finally { _setBuildValidateProviderForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});

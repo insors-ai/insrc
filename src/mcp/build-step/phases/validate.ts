@@ -23,7 +23,7 @@ import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } 
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
-import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
+import { inheritedStandalone, lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 
 const log = getLogger('mcp:build-step:validate');
@@ -165,19 +165,35 @@ async function runValidateSession(
 				// Empty / whitespace-only is treated as omitted: storing '' would render
 				// an empty `## Summary` section, which is worse than no section.
 				const narrative = summary?.trim();
+				// READ the route from the work item instead of abstaining from it.
+				//
+				// This persist is shared by the plan-driven and standalone branches, so
+				// it cannot know from its own arguments which one it is serving. The
+				// original response was to omit the `standalone` key entirely and let
+				// mergeWithPrior carry a prior value forward. That held for a SECOND
+				// write, but a FIRST write has no prior, so the absent key read as false
+				// (every reader tests `=== true`), `workItemKindOf` returned 'epic', and
+				// a standalone Story's record was filed under docs/epics/ while its own
+				// ISSUE/LLD/PLAN sat under docs/standalone/ — observed on two separate
+				// Stories (1f7ade1a and 93081bff).
+				//
+				// The route does not have to be guessed: it is READABLE from the work
+				// item's definition head, which is where every other writer gets it.
+				// `completion-record.ts` already resolved it exactly this way, so the
+				// validate writer was the lone outlier and the two could disagree about
+				// the same Story.
+				//
+				// The original prohibition still stands, and the `=== true` guard is what
+				// honours it: only an explicit TRUE is ever written, never a false. An
+				// unreadable definition artifact still omits the key, so mergeWithPrior
+				// keeps carrying a prior true forward and the relocation bug it was
+				// guarding against cannot return.
+				const standaloneFlag = inheritedStandalone(repoPath, epicHash);
 				const rec = {
-					// NO `standalone` key. This persist is SHARED by the plan-driven and
-					// standalone branches, so it cannot know which route it is serving —
-					// writing `false` unconditionally re-labelled every standalone record
-					// that reached validation. Omitting it lets mergeWithPrior carry the
-					// prior value forward; on a first write the absent key reads as false
-					// everywhere (every reader tests `=== true`).
-					//
-					// Belt-and-braces BY DESIGN: t8 already stopped the renderer reading
-					// this flag, so the two halves fail independently. Leaving a shared
-					// path writing a value it cannot determine is how this defect would
-					// return wearing different clothes.
-					meta: { workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now },
+					meta: {
+						workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now,
+						...(standaloneFlag === true ? { standalone: true } : {}),
+					},
 					body: {
 						tasks: [{ id: taskId, passed }],
 						...(narrative !== undefined && narrative.length > 0 ? { summary: narrative } : {}),

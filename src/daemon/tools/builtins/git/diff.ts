@@ -7,6 +7,9 @@
  *   - from / to            arbitrary two-side diff (commits or refs)
  *   - from + !to           diff from <commit> to HEAD
  *   - path                 restricts the diff to a file or directory
+ *   - exclude              repo-root globs left OUT of the diff, applied by git
+ *                          itself (to the body AND the numstat file list), so
+ *                          excluded hunks never count against maxBytes
  *
  * Diffs can be huge. The tool caps output at maxBytes (default 256 KB,
  * configurable) and returns a structured summary alongside the raw
@@ -62,6 +65,11 @@ export const gitDiffTool: Tool = {
       from: { type: 'string', description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' },
       to: { type: 'string', description: 'Ending ref. When omitted with `from`, defaults to HEAD.' },
       path: { type: 'string', description: 'Restrict the diff to this file or directory.' },
+      exclude: {
+        type: 'array',
+        items: { type: 'string', minLength: 1 },
+        description: 'Globs, relative to the repository root, to leave out of the diff (git glob pathspec: `*` does not cross `/`, `**` does). Applied to both the diff body and the file list.',
+      },
       context: { type: 'number', description: 'Lines of context around each change (git -U). Default 3.', minimum: 0, maximum: 50 },
       ignoreWhitespace: { type: 'boolean', description: 'Pass -w to git diff.' },
       maxBytes: {
@@ -81,6 +89,18 @@ export const gitDiffTool: Tool = {
     const from = strInput(input, 'from');
     const to = strInput(input, 'to');
     const path = strInput(input, 'path');
+    // Validated BEFORE git runs: a malformed list must not degrade into "no
+    // exclusion", which would silently put the excluded paths back in the diff.
+    const rawExclude = input['exclude'];
+    if (rawExclude !== undefined && !isExcludeList(rawExclude)) {
+      return {
+        output: '[git:diff] invalid-input: `exclude` must be an array of non-empty strings',
+        format: 'text',
+        success: false,
+        error: 'invalid-input',
+      };
+    }
+    const exclude: readonly string[] = rawExclude ?? [];
     const context = typeof input['context'] === 'number' ? input['context'] : undefined;
     const ignoreWhitespace = boolInput(input, 'ignoreWhitespace');
     const maxBytes = Math.min(
@@ -92,11 +112,13 @@ export const gitDiffTool: Tool = {
     if (from !== undefined) { diffOpts.from = from; }
     if (to !== undefined) { diffOpts.to = to; }
     if (path !== undefined) { diffOpts.path = path; }
+    if (exclude.length > 0) { diffOpts.exclude = exclude; }
     if (context !== undefined) { diffOpts.context = context; }
     const statOpts: DiffOpts = { staged };
     if (from !== undefined) { statOpts.from = from; }
     if (to !== undefined) { statOpts.to = to; }
     if (path !== undefined) { statOpts.path = path; }
+    if (exclude.length > 0) { statOpts.exclude = exclude; }
     const { argv, mode, range } = buildDiffArgv(diffOpts);
     const statArgv = buildStatArgv(statOpts);
 
@@ -154,16 +176,37 @@ export const gitDiffTool: Tool = {
 // argv builders
 // ---------------------------------------------------------------------------
 
-interface DiffOpts {
+export interface DiffOpts {
   staged?: boolean;
   from?: string;
   to?: string;
   path?: string;
+  exclude?: readonly string[];
   context?: number;
   ignoreWhitespace?: boolean;
 }
 
-function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; range: string } {
+function isExcludeList(v: unknown): v is string[] {
+  return Array.isArray(v) && v.every(g => typeof g === 'string' && g.length > 0);
+}
+
+/**
+ * The pathspec tail shared by BOTH commands, so the body and the numstat file
+ * list can never disagree about what was left out.
+ *
+ * git refuses a pathspec list made only of exclusions on older versions and
+ * anchors a bare one at the cwd on newer ones, so an exclusion always rides on an
+ * explicit positive pathspec: the caller's `path`, else the whole repository.
+ * `top` anchors every exclusion at the repository root whatever the cwd, and
+ * `glob` makes `*` stop at a directory separator.
+ */
+function pathspecArgs(o: DiffOpts): string[] {
+  const exclude = o.exclude ?? [];
+  if (exclude.length === 0) { return o.path ? ['--', o.path] : []; }
+  return ['--', o.path ? o.path : ':(top)', ...exclude.map(g => `:(top,exclude,glob)${g}`)];
+}
+
+export function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; range: string } {
   const base = ['git', 'diff', '--no-color'];
   if (o.ignoreWhitespace) { base.push('-w'); }
   if (typeof o.context === 'number') { base.push(`-U${o.context}`); }
@@ -184,15 +227,15 @@ function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; range: stri
     range = 'index -- worktree';
   }
 
-  if (o.path) { base.push('--', o.path); }
+  base.push(...pathspecArgs(o));
   return { argv: base, mode, range };
 }
 
-function buildStatArgv(o: DiffOpts): string[] {
+export function buildStatArgv(o: DiffOpts): string[] {
   const base = ['git', 'diff', '--no-color', '--numstat'];
   if (o.staged) { base.push('--cached'); }
   else if (o.from) { base.push(`${o.from}..${o.to ?? 'HEAD'}`); }
-  if (o.path) { base.push('--', o.path); }
+  base.push(...pathspecArgs(o));
   return base;
 }
 

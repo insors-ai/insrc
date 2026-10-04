@@ -20,7 +20,11 @@
     "issueHash": "5f7a7cb95b643ae5",
     "epicSlug": "batch-approval-stamps-one-shared-meta",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "approvedAt": "2026-10-04T13:13:01.463Z",
+    "parentRef": {
+      "slug": "batch-approval-stamps-one-shared-meta"
+    }
   },
   "body": {
     "title": "Sibling Stories approved together share one range base, so a later build reports its siblings' commits as its own changes",

@@ -20,7 +20,11 @@
     "issueHash": "dddb4113077c8de8",
     "epicSlug": "build-record-renderer-only-artifact-renderer",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T16:58:20.831Z",
+    "parentRef": {
+      "slug": "build-record-renderer-only-artifact-renderer"
+    }
   },
   "body": {
     "title": "Emit the artifact-id marker from the BUILD record renderer",

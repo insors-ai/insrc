@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicHash": "dddb4113077c8de8",
+    "storyId": "S001",
+    "createdAt": "2026-10-04T16:58:33.403Z",
+    "updatedAt": "2026-10-04T16:58:39.099Z",
+    "approvedAt": "2026-10-04T16:58:39.227Z"
+  },
+  "body": {
+    "summary": "Closed by hand on 2026-10-04: no build ran under this issue. The fix it asks for shipped inside the misfiling fix (commit d7a8ae8, ISSUE-0855311b / 43d72766 / b2e16601): the BUILD record writer now prepends the artifact-id marker to BUILD.md. Verified on 2026-10-04: the marker is emitted at src/workflow/runners/build/standalone-record.ts, three tests assert it on a rendered BUILD.md (including the byte-identity golden), and two freshly written BUILD.md files resolve back to their json by markdown path. BUILD.md files rendered before the fix stay markerless until re-rendered, as the issue specifies. No change log is recorded here because the change belongs to that other commit.",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "commit": "fdc24eb",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-dddb4113077c8de8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:58:39.099Z"
+      }
+    ]
+  }
+}

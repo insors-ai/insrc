@@ -317,6 +317,21 @@ function readArtifactCore(repoPath: string, artifactId: string): EpicDefinitionC
 	}
 }
 
+/** An artifact's stamped `meta.epicCreatedAt`, when it carries a non-empty one.
+ *  Best-effort like {@link readArtifactCore}: absent, unreadable or malformed is
+ *  `undefined`. Kept out of {@link EpicDefinitionCore} because it is a property
+ *  of a downstream artifact, not of the definition head. */
+function readEpicCreatedAtStamp(repoPath: string, artifactId: string): string | undefined {
+	const json = join(repoPath, ARTIFACTS_DIR, `${artifactId}.json`);
+	if (!existsSync(json)) return undefined;
+	try {
+		const stamp = (JSON.parse(readFileSync(json, 'utf8')) as { meta?: { epicCreatedAt?: unknown } }).meta?.epicCreatedAt;
+		return typeof stamp === 'string' && stamp.length > 0 ? stamp : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 /** The work item's DEFINITION artifact core: `DEF-<hash>` first, then
  *  `ISSUE-<hash>`.
  *
@@ -397,7 +412,13 @@ export function buildRecordFolderArgs(
 		// the day of the build, beside (not in) the one its ISSUE sits in. The LLD
 		// still wins when present, so 3a98d279's anchor rule is untouched; and with
 		// neither artifact the record's own createdAt is still the anchor (Trivial).
-		createdAtISO: upstream.createdAt ?? head.createdAt ?? ownCreatedAt,
+		//
+		// The LLD's anchor is its `epicCreatedAt` when it carries one, because that is
+		// what the LLD's OWN folder is keyed on (workItemAnchorCreatedAt). Reading its
+		// bare createdAt instead filed the records a day away from the LLD whenever
+		// the two differed.
+		createdAtISO: (standalone ? readEpicCreatedAtStamp(repoPath, lldArtifactId(epicHash, storyId)) : undefined)
+			?? upstream.createdAt ?? head.createdAt ?? ownCreatedAt,
 		workItemKind: standalone ? 'standalone' : 'epic',
 		epicSlug:     headLabel ?? upstream.epicSlug,
 	};

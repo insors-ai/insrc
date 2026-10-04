@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import {
 	amendmentArtifactPath,
@@ -659,5 +659,27 @@ test('0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, a
 			storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN }),
 			{ createdAtISO: T5_CREATED, workItemKind: 'epic', epicSlug: LABEL_HEAD },
 		);
+	} finally { r.cleanup(); }
+});
+
+test('0855311b — the LLD\'s stamped epicCreatedAt is its anchor, so records land in the LLD\'s own folder', () => {
+	const r = t5Repo();
+	try {
+		// An ISSUE on the 1st, its LLD written on the 2nd and stamped with the
+		// ISSUE's date: the LLD's own folder is keyed on the stamp (the 1st).
+		const issueCreated = '2026-10-01T11:00:00.000Z';
+		const lldCreated   = '2026-10-02T09:00:00.000Z';
+		seedMeta(r.repo, `ISSUE-${T5_HASH}`, { createdAt: issueCreated, epicSlug: LABEL_HEAD, standalone: true });
+		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: lldCreated, epicCreatedAt: issueCreated, epicSlug: LABEL_HEAD, standalone: true });
+
+		const lldMd = lldArtifactPaths(r.repo, T5_HASH, 'S001', issueCreated, 'standalone', LABEL_HEAD).md;
+		const fa = storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN });
+		assert.equal(fa.createdAtISO, issueCreated, 'the stamp, not the day the LLD was written');
+		const buildMd = buildArtifactPaths(r.repo, T5_HASH, 'S001', fa.createdAtISO, fa.workItemKind, fa.epicSlug).md;
+		assert.equal(dirname(buildMd), dirname(lldMd), 'the record sits in the LLD\'s own folder');
+
+		// An empty stamp is no stamp: the LLD's createdAt is the anchor, as before.
+		seedMeta(r.repo, `LLD-${T5_HASH}-S001`, { createdAt: lldCreated, epicCreatedAt: '', epicSlug: LABEL_HEAD, standalone: true });
+		assert.equal(storyRecordFolderArgs(r.repo, T5_HASH, 'S001', { ownCreatedAt: SR_OWN }).createdAtISO, lldCreated);
 	} finally { r.cleanup(); }
 });

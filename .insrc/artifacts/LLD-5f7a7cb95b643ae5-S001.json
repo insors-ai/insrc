@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1791121268454-htixf9",
+    "runId": "wf-1791123201298-2a2306",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-04T13:48:21.236Z",
+    "createdAt": "2026-10-04T14:18:53.331Z",
     "attribution": {
       "outputs": [
         {
@@ -14,155 +14,129 @@
         }
       ]
     },
-    "elapsedMs": 432735,
+    "elapsedMs": 332031,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "5f7a7cb95b643ae5",
     "epicSlug": "batch-approval-stamps-one-shared-meta",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1791121268454-htixf9",
-    "hldEffectiveHash": "8d188708f9395cf4c67bcff850f25692eb6bc571152b2ddcc71dbe5ad09ac069",
+    "hldBaseRunId": "wf-1791123201298-2a2306",
+    "hldEffectiveHash": "0101722b7dd1628a28d6680b16c8a089bd661be158228dd97c73e342d300822c",
     "hldAmendmentsApplied": [],
     "standalone": true,
-    "sizeClass": "bugfix",
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
       "verdict": "block",
       "findings": [
         {
-          "claimId": "t1",
-          "ref": "3.2",
+          "claimId": "v1",
+          "ref": "2.2 postcondition 1 / 3.4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A finished build is recognisable from the records: an approved BUILD record of a completed Story has at least one task, every recorded task has passed === true, and when a PLAN exists every plan task id is among the record's task ids.",
+          "evidence": "The code allows what the rule assumes away. validate.ts:165 records passed as true only when the verdict says so, :234 stores it per task, and the validate prompt tells the judge 'If you are unsure, fail' (validate-task.md:42); BuildRecordTask.passed is optional (standalone-record.ts:37); the completion writer contributes no tasks (completion-record.ts:63). Nothing stops a BUILD record with a failed or unset task from being approved. I checked the rule against the records on disk in this repo (read-only script over .insrc/artifacts): of 72 approved BUILD records, 35 satisfy the finished rule and 37 do not: 26 have at least one task whose passed is not true, 6 have all tasks passed but do not cover their PLAN's task ids (a Story that has a PLAN but was built through the standalone route records the story id, e.g. PLAN t1..t5 against a record holding 'S001'), and 5 have no tasks. So about half of the Stories this repo treats as complete would never count as finished. The failure direction is safe for the base (the stamp is kept, never moved onto the Story's work), but a later rebuild of such a Story keeps its first build's starting point and its change log lists everything since, which is the outcome the design rejects alternative a2 for.",
+          "action": "Decide what 'finished' means given that approved records with non-passed tasks are common: relax the passed requirement, or keep it and add the never-re-stamps case to the declared limitations with its remedy (delete or edit the build-start file).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The rule is stricter than the records the workflow actually produces, so its fallback (a2's behaviour) will be the common case for rebuilds.",
+            "options": [
+              "Finished = approved after the stamp AND every plan task id recorded (or, with no plan, at least one task); drop the passed === true requirement, since approval is the human's completion act",
+              "Keep passed === true and declare: a Story approved with a failed, unset or differently-keyed task is never re-stamped; remedy is to delete its build-start file before rebuilding",
+              "Treat a record whose single task id equals the story id as covering the plan (the standalone-route-with-a-plan case)"
+            ]
+          }
+        },
+        {
+          "claimId": "v2",
+          "ref": "3.4",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both BUILD writers pass an exact-path `exclude` holding their own record's json and md, applied in changedFiles before the emptiness check and to the range, so adding buildStartRelPath to it keeps the build-start file out of the change log whether it is uncommitted, committed in range, or untracked.",
-          "evidence": "validate.ts:250 and completion-record.ts:74 both pass `exclude: [own.json, own.md]`; changed-files.ts:91 turns that list into the drop set, :104 applies it to the working set before the emptiness check and :113 applies it to the range. Adding the build-start path to the same list covers the three states the design names (uncommitted, committed in range, untracked). The previous HIGH is resolved.",
+          "premise": "On the plan-driven route validate records the plan task's id, which is in the same id space as the PLAN's body.tasks[].id; on the standalone route it records the storyId; and the record merge keeps earlier tasks and the approval stamp.",
+          "evidence": "resolve.ts:438 derives the task id with ordinalToTaskId, the bare form (t1, t2), and the PLAN files on disk use the same form in body.tasks[].id, so the id spaces match on the plan-driven route. validate.ts:234 writes one task per call. standalone-record.ts:349 unions prior and new tasks by id and :372 writes the union; :364 keeps a prior approvedAt. The merge does keep earlier tasks. The one mismatch is not in the id space but in the route: a Story with a PLAN that is validated through the standalone branch records the story id (see v1).",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "t2",
-          "ref": "2.5 / c8",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "git_diff builds its body and numstat argument vectors in two builders that append `-- <path>` only when a path is given, so an `exclude` list can be appended to both as `:(top,exclude,glob)` pathspecs; in git's glob pathspec `*` does not cross `/`, `top` anchors at the repo root regardless of cwd, and exclusions combine with a positive path.",
-          "evidence": "diff.ts:187 and :195 are the two builders, each appending `-- <path>` only when a path is given, and :104-105 run them as separate commands, so the same pathspecs can be appended to both. The git semantics are outside the repo; I checked them by running git 2.55.0 in a throwaway repository rather than from these reads: with `:(top)` plus the four `:(top,exclude,glob)` specs, `.insrc/artifacts/templates/t.json` and `.insrc/artifacts/formats/f.md` were kept and `.insrc/artifacts/LLD-x.json`, the build-start file and everything under docs/epics and docs/standalone were dropped; a sibling `docs/epics-notes/n.md` was kept; the result was identical from a subdirectory; a positive `src` path combined with the exclusions; and the body carried no excluded hunk. Two things for the build: the tool's input schema is closed (:74 additionalProperties:false), so `exclude` must be added there as well as in the handler, and the oldest git version this must work on is not stated.",
-          "action": "none — verified sound (state a minimum git version if one matters)",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "t3",
-          "ref": "4 error case 5",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "When git rejects the pathspecs or the range, git_diff's body or numstat command exits non-zero and the tool already returns a failure for that; changedFiles and the diff grounding then surface it as they do today, which for the code review means the diff is reported unavailable.",
-          "evidence": "Two statements in this error case do not match the code. (1) 'body or numstat command exits non-zero; the tool already returns a failure for that': only the body does (diff.ts:116). A failed numstat is swallowed into an empty file list at :126 and the tool still reports success. With identical pathspecs on both commands a rejection fails the body too, so the outcome holds, but the stated mechanism is half wrong. (2) 'The review reports that the diff is unavailable': true for the degraded path only. On the graph path a failed range diff throws NoBuildChangesError (changed-files.ts:69), which the subject resolver maps to { ok:false, reason:'no-build-record' } (subject.ts:99-100), and the handler turns that into a 'no-subject' error (handler.ts:248): the review cannot start. Today the review passes no base, so it cannot fail this way. The design validates only the build-start stamp with `git cat-file`; the approval-time fallback is returned as stored (range-base.ts:66), so a fallback base that git can no longer resolve now blocks the review outright.",
-          "action": "Say what the graph path does when the range diff fails (decline as designed, or fall back to the working-tree set), and either validate the fallback bases the same way as the stamp or accept the decline explicitly. Correct the numstat sentence.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "A new hard-decline path for the review is introduced without being named.",
-            "options": [
-              "Apply the commit-exists check to every base the resolver returns",
-              "In the subject resolver, treat a failed range diff as 'no base' and return the working-tree set",
-              "Keep the decline and document it as intended"
-            ]
-          }
-        },
-        {
-          "claimId": "t4",
-          "ref": "2.2 postcondition 1",
-          "kind": "ordering",
-          "severity": "MED",
-          "premise": "A BUILD record's approvedAt being later than the build-start stamp means the previous build finished, so replacing the stamp in that state never puts the base on the Story's own in-progress work.",
-          "evidence": "The rule equates 'approvedAt later than the stamp' with 'the previous build finished'. The code does not guarantee that. The batch sweep lists every unapproved BUILD record under the epic (gates.ts:693, :700) and approves each (:783-788); the only withhold is under enforcement, which is off by default (:749). So a Story with one validated task and more to build is approved whenever someone batch-approves a sibling's LLD or PLAN. Its next implement call then sees approvedAt later than stampedAt, replaces the stamp with the current HEAD, and the base now sits after the Story's own first task. The following validate writes a change log for the later task only, and because the new body replaces the prior one field by field (standalone-record.ts:370-371) the first task's files drop off the record. The early approval is an existing hole, not something this design creates, but the re-stamp rule turns it into a moved base, which is the state the issue says must not happen.",
-          "action": "Name this state in the edge table and decide it: either tie the re-stamp to something an early sweep cannot produce, or accept it as a consequence of the existing sweep behaviour and say so.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The rebuild signal is weaker than the design states.",
-            "options": [
-              "Re-stamp only when the approved record's task set already contains the task now being implemented (a genuine rebuild), not when a new task id is starting",
-              "Keep the rule and list premature batch approval as a known cause of a moved base",
-              "Fix the sweep separately (skip a BUILD whose plan has unvalidated tasks) and reference that issue here"
-            ]
-          }
-        },
-        {
-          "claimId": "t5",
-          "ref": "6 backward compat",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Stories with no build-start file, including builds in flight when the change lands, resolve their base exactly as today.",
-          "evidence": "Contradicted for one class of in-flight build. The plan-driven and Small routes write no BUILD record at implement (implement.ts:62-82 return the prompt; the only write is the Trivial one at :133); the record first appears at validate (validate.ts:253). A Story that has committed work but has not yet run a validate when the change lands therefore has no record and no stamp, so the skip rule cannot fire and its next implement call stamps the current HEAD, after its own commits. Its base does not resolve 'exactly as today'. The previous draft listed this as a declared limitation; this draft dropped the row and replaced it with the stronger sentence.",
-          "action": "Restore the limitation (edge table and backward compat) or narrow the sentence to in-flight builds that already have a validated task.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The claim is stronger than the stamping rules support; the behaviour itself is a one-time migration effect.",
-            "options": [
-              "Reword to: builds in flight with at least one validated task resolve as today; a build with commits but no validated task is stamped at its next implement and can miss those commits",
-              "Also skip stamping when an approval-time base exists and commits since it touch files other than ledger files (heavier)"
-            ]
-          }
-        },
-        {
-          "claimId": "t6",
-          "ref": "2.6 / 2.7 / 2.8",
+          "claimId": "v3",
+          "ref": "2.2 / ac3",
           "kind": "closed-union",
+          "severity": "MED",
+          "premise": "With the finished-build rule, no state remains in which stampBuildStart writes HEAD for a Story whose own work is already committed, other than the limitations the edge table declares.",
+          "evidence": "One state is not named. The finished check guards only the REPLACEMENT of a valid stamp. With no valid stamp the rules are: skip when the BUILD record is unapproved and has a task, otherwise stamp. A Story whose record has tasks, is not finished, and IS approved falls through to 'stamp' at the current HEAD, after its own commits. The sweep produces exactly that record: gates.ts:700 lists every unapproved record and :783-788 approve each, so a mid-build Story is approved whenever a sibling is batch-approved. It then needs only to have no valid stamp: it was in flight when the change was installed, or its stamp was judged invalid (malformed, or its commit pruned), which the error table says is 'replaced by a fresh stamp unless the skip rule applies'. The design's own edge rows cover in-flight with an UNAPPROVED record (skipped) and in-flight with NO record (declared limitation), not in-flight with an approved partial record.",
+          "action": "Either apply the same finished test on the no-stamp path (skip when the record has tasks and is not finished, whether or not it is approved), or add this state to the declared limitations.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The skip rule keys on 'unapproved', which the early sweep defeats; the finished test already exists and can be reused.",
+            "options": [
+              "No valid stamp: skip when the record has at least one task and the build is not finished; stamp only when there is no record, a task-less record, or a finished one",
+              "Keep the rule and declare: an in-flight Story that was batch-approved early and has no valid stamp is stamped at its next implement"
+            ]
+          }
+        },
+        {
+          "claimId": "v4",
+          "ref": "2.7 / 2.8 / ac7",
+          "kind": "ordering",
           "severity": "LOW",
-          "premise": "The callers affected by the changed signatures are exactly: changedFiles via the review subject seam and collectBuildChangeLog; assembleDiffCodeReviewGrounding via the review-step handler's degraded path; resolveCodeReviewSubject's callers all receive the base and ledger exclusion through its defaults.",
-          "evidence": "subject.ts:97 is the one changedFiles call on the review side; changed-files.ts:162 is collectBuildChangeLog's call, which builds its options from base and exclude only and so stays byte-identical; handler.ts:344 is the only assembleDiffGrounding call. resolveCodeReviewSubject has three callers (handler via its dep, daemon/code-review-rpc.ts:73, daemon/index.ts:753), all through the default deps, so the daemon-driven review gets the same base and exclusion. git_diff is also on the analyze tool surface (tool-surface.ts:137); the new input is optional there.",
-          "action": "none — verified sound",
+          "premise": "The three-step fallback on both review paths means the review can start in every state in which it can start today, and a failure of the new derivation is distinguishable from a clean result.",
+          "evidence": "Today's only failure paths are the ones cited: changed-files.ts:69 throws, subject.ts:100 maps it to no-build-record, handler.ts:248 turns that into no-subject; grounding.ts:272 throws on the degraded path. With attempt 3 being today's exact call, the review declines only where it declines today, so the earlier finding is resolved and no existing caller receives a new failure. On masking: a step down is recorded as a log warning only. The subject and the response carry nothing that says the range or the exclusion was abandoned, so a review that fell back to the working tree (ledger files included) or to the last commit looks the same to the controller as one scoped to the Story. That is no worse than today's behaviour, and the design does not claim otherwise.",
+          "action": "none — verified sound (optional: carry the fallback step on the subject or the response so it is visible outside the log)",
           "fixability": "manual"
         },
         {
-          "claimId": "t7",
-          "ref": "2.8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The degraded grounding reads a working-tree diff and otherwise the last commit through two deps, splitting one size-capped body per file; excluding ledger globs inside git on each of those diffs and adding a range diff keeps source hunks within the cap.",
-          "evidence": "grounding.ts:212 and :215 are the working-tree and last-commit reads, :225 splits the single body per file, and :270 is the one git_diff call both deps go through; diff.ts:129-130 apply the cap to git's stdout. Excluding inside git means excluded hunks never reach that stdout, so the earlier body-cap finding is resolved.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "t8",
-          "ref": "3.1 / c2 / c3",
+          "claimId": "v5",
+          "ref": "2.2 precondition 2 / T17",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "The approval sweep matches only DEF/HLD/LLD/PLAN/BUILD ids under .insrc/artifacts and implement writes a BUILD record only on the Trivial branch, so a build-start file under .insrc/build-start is not approvable and stamping before the Trivial record write means that route's task-less record never triggers the skip rule.",
-          "evidence": "gates.ts:691-693 scan .insrc/artifacts for the five id prefixes only. implement.ts:116 admits, :133 writes the Trivial record and :139 shows its body has no tasks, so with the stamp taken first a later call finds a valid stamp and returns 'kept'; a task-less record cannot satisfy the skip rule.",
+          "premise": "range-base.ts cannot import gates.ts at runtime because gates.ts imports completion-record.ts, which imports range-base.ts; today range-base.ts has no import of gates.ts, so a test asserting on its import statements passes.",
+          "evidence": "gates.ts:60 imports completion-record.ts and completion-record.ts:22 imports range-base.ts, so a runtime import of gates from range-base would be a cycle, as stated; range-base.ts:60 is the stampedBase helper the design says it will mirror. One detail for T17: range-base.ts:48 already has `import type { ApprovableArtifactMeta } from '../../gates.js'`. It is erased at compile and is not a cycle, but a test that scans import statements for 'gates.js' will fail on it unless it excludes type-only imports.",
+          "action": "none — verified sound (word T17 as 'no runtime import of gates.ts')",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "v6",
+          "ref": "2.5 / c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "git_diff fails only when its body command fails; a failed numstat yields an empty file list with success; and its input schema is closed, so `exclude` must be declared there.",
+          "evidence": "diff.ts:116 fails the tool on a non-zero body exit; :126 turns a failed numstat into an empty list and continues; :74 closes the input schema. The corrected sentences in section 2.5 and the error table match these lines, and c8 quotes :126 verbatim.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "t9",
+          "claimId": "v7",
+          "ref": "6 backward compat / 4 edge rows 8-9",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The in-flight class with commits but no validate is declared as a limitation, and the 'exactly as today' statement is limited to Stories with no build-start file, which matches the code: no BUILD record exists before validate on the plan-driven and Small routes.",
+          "evidence": "implement.ts:82 goes straight to rendering the prompt on the plan-driven route with no record write, and validate.ts:253 is where the record is first persisted. The restored limitation and the narrowed 'exactly as today' sentence now describe that correctly.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "v8",
           "ref": "5 acceptance mapping",
           "kind": "cross-artifact",
-          "severity": "MED",
-          "premise": "The acceptance mapping covers the Story's acceptance criteria, including the issue's two preserved constraints (an unresolvable base yields an empty change set; nothing moves an existing base forward).",
-          "evidence": "LLD.md:265-267 map a single criterion, ac1, to three tests. The issue's two preserved constraints (an unresolvable base yields an empty set, range-base.ts:114; nothing moves an existing base forward) and 'no approvable record earlier than today' each have tests in section 5 but no criterion, where the previous draft carried six. Anything that checks the build against the acceptance mapping will check only the sibling case.",
-          "action": "Restore the criteria for the preserved constraints, the no-early-record guarantee and the review scoping, and map the existing tests to them.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The tests exist; the mapping lost them.",
-            "options": [
-              "Re-add ac2-ac6 from the previous draft with the current test names",
-              "Keep one criterion and state that the unit and integration lists are all required"
-            ]
-          }
+          "severity": "LOW",
+          "premise": "Seven acceptance criteria are defined and each maps to numbered tests that exist in the test levels, covering the two preserved constraints, the no-early-record guarantee and the review scoping.",
+          "evidence": "LLD.md:305-311 map ac1 through ac7 to numbered tests, and each number appears in the test levels above the table: ac2 to T16 and T33, ac3 to the stamping tests and T29, ac7 to the fallback and unchanged-call tests. The earlier finding is resolved.",
+          "action": "none — verified sound",
+          "fixability": "manual"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 4,
-        "low": 5
+        "med": 2,
+        "low": 6
       },
-      "reviewedAt": "2026-10-04T13:51:23.510Z",
+      "reviewedAt": "2026-10-04T14:21:12.985Z",
       "model": "client"
     }
   },
   "body": {
     "summary": {
-      "prose": "A Story's change set is measured from a starting commit. Today that commit is recorded when the plan is approved, so Stories approved together share one starting point and a later Story's record lists its siblings' files. This design records the starting commit when the Story's build begins, in a small file that cannot be approved or mistaken for the Story's work, and makes the code review measure from the same commit while leaving the workflow's own record files out of what it reviews.",
+      "prose": "A Story's change set is measured from a starting commit. Today that commit is recorded when the plan is approved, so Stories approved together share one starting point and a later Story's record lists its siblings' files. This design records the starting commit when the Story's build begins, in a small file that cannot be approved or mistaken for the Story's work, and moves it only after that build is both approved and complete. The code review measures from the same commit and leaves the workflow's own record files out of what it reviews, and if that new measurement fails it falls back to what it does today.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -207,7 +181,7 @@
           ],
           "returns": {
             "type": "string | undefined",
-            "meaning": "The Story's base commit. New first step: the Story's build-start file, when it parses, names this Story, and its commit exists in the repo. Then the existing steps unchanged: the approval-time stamp on the PLAN then LLD, then the commit that introduced that artifact. Undefined when nothing resolves."
+            "meaning": "The Story's base commit. New first step: the Story's build-start file, when it parses, names this Story, and its commit exists in the repo. Then the existing steps, unchanged in every respect: the approval-time stamp on the PLAN then LLD (returned as stored, as today), then the commit that introduced that artifact. Undefined when nothing resolves."
           },
           "errors": [],
           "preconditions": [
@@ -215,12 +189,13 @@
           ],
           "postconditions": [
             "A build-start file that is unreadable, malformed, names another Story, or names a commit git cannot find is ignored with a logged warning and resolution continues with the existing steps.",
-            "No fallback to HEAD^ or the empty tree is introduced."
+            "No fallback to HEAD^ or the empty tree is introduced.",
+            "With no build-start file the returned value is exactly today's."
           ]
         },
         {
           "name": "stampBuildStart",
-          "signature": "function stampBuildStart(repoPath: string, epicHash: string, storyId: string): 'stamped' | 'kept' | 'skipped-work-exists' | 'no-head'",
+          "signature": "function stampBuildStart(repoPath: string, epicHash: string, storyId: string): 'stamped' | 'kept' | 'skipped-work-exists' | 'not-written'",
           "parameters": [
             {
               "name": "repoPath",
@@ -242,15 +217,18 @@
             }
           ],
           "returns": {
-            "type": "'stamped' | 'kept' | 'skipped-work-exists' | 'no-head'",
-            "meaning": "What happened. `stamped`: the file now holds HEAD's full sha. `kept`: a valid stamp already existed for a build still in progress and was left alone. `skipped-work-exists`: no stamp existed but the Story already has an unapproved BUILD record with at least one task, so HEAD may already contain its work and nothing was written. `no-head`: HEAD could not be resolved and nothing was written."
+            "type": "'stamped' | 'kept' | 'skipped-work-exists' | 'not-written'",
+            "meaning": "`stamped`: the file now holds HEAD's full sha. `kept`: a valid stamp exists and the previous build is not finished, so it was left alone. `skipped-work-exists`: no valid stamp exists but the Story already has an unapproved BUILD record with at least one task, so HEAD may already contain its work and nothing was written. `not-written`: HEAD could not be resolved or the file could not be written; nothing was written."
           },
           "errors": [],
           "preconditions": [
-            "New function in src/workflow/runners/build/range-base.ts, beside the resolver. Synchronous. Never throws: a failure to write the file is caught, logged, and reported as `no-head`, the outcome that means nothing was written."
+            "New function in src/workflow/runners/build/range-base.ts, beside the resolver. Synchronous. Never throws.",
+            "It reads the Story's BUILD record json and PLAN json directly from .insrc/artifacts, the way the module's existing stampedBase helper reads an artifact, and does not import src/workflow/gates.ts (that would be an import cycle through completion-record.ts)."
           ],
           "postconditions": [
-            "A valid existing stamp is replaced only when the Story's BUILD record carries an approvedAt later than the stamp's stampedAt, which means the previous build finished and this is a rebuild.",
+            "A valid existing stamp is replaced only when the previous build is FINISHED, which requires all of: the BUILD record's approvedAt is later than the stamp's stampedAt; the record has at least one task; every recorded task has passed === true; and, when a PLAN json exists for the Story, every task id in the plan's body.tasks is among the record's task ids.",
+            "When a PLAN json exists but cannot be read or parsed, the previous build counts as not finished and the stamp is kept.",
+            "A BUILD record approved while the plan still has unbuilt tasks, or while a recorded task has not passed, never causes a re-stamp.",
             "It never writes or changes any artifact record."
           ]
         },
@@ -285,7 +263,7 @@
           "parameters": [],
           "returns": {
             "type": "readonly string[]",
-            "meaning": "Exactly four repo-root globs: `.insrc/artifacts/*.json`, `.insrc/build-start/**`, `docs/epics/**`, `docs/standalone/**`. Exported from src/workflow/runners/build/changed-files.ts. In git's glob pathspec `*` does not cross a directory separator, so the first glob covers only json files directly inside .insrc/artifacts and leaves .insrc/artifacts/templates and .insrc/artifacts/formats alone."
+            "meaning": "Exactly four repo-root globs: `.insrc/artifacts/*.json`, `.insrc/build-start/**`, `docs/epics/**`, `docs/standalone/**`. Exported from src/workflow/runners/build/changed-files.ts. In git's glob pathspec `*` does not cross a directory separator, so the first glob covers only json files directly inside .insrc/artifacts."
           },
           "errors": [],
           "preconditions": [],
@@ -300,7 +278,7 @@
             {
               "name": "exclude",
               "type": "string[]",
-              "purpose": "Globs, relative to the repo root, to leave out of the diff. Each is passed to git as a `:(top,exclude,glob)<glob>` pathspec on BOTH the body command and the numstat command. When no `path` is given the positive pathspec is `:(top)`; when `path` is given it stays the positive pathspec.",
+              "purpose": "Globs, relative to the repo root, to leave out of the diff. Each is passed to git as a `:(top,exclude,glob)<glob>` pathspec on BOTH the body command and the numstat command. When no `path` is given the positive pathspec is `:(top)`; when `path` is given it stays the positive pathspec. The input is declared in the tool's closed input schema as well as read in the handler.",
               "optional": true
             }
           ],
@@ -315,10 +293,12 @@
             }
           ],
           "preconditions": [
-            "Omitting `exclude`, or passing an empty array, builds exactly today's git arguments."
+            "Omitting `exclude`, or passing an empty array, builds exactly today's git arguments.",
+            "The pathspec form was verified on git 2.55.0 only. No minimum git version is asserted; a git that rejects the form fails the body command, which callers handle by the fallback described under resolveCodeReviewSubject and assembleDiffCodeReviewGrounding."
           ],
           "postconditions": [
-            "The body command and the numstat command always receive the same pathspecs."
+            "The body command and the numstat command always receive the same pathspecs.",
+            "Failure handling is unchanged: a failed body command fails the tool; a failed numstat command still yields an empty file list with success."
           ]
         },
         {
@@ -339,12 +319,12 @@
           "errors": [
             {
               "type": "NoBuildChangesError",
-              "condition": "Unchanged from today."
+              "condition": "Unchanged from today: any git_diff it runs fails."
             }
           ],
           "preconditions": [],
           "postconditions": [
-            "With `excludeGlobs` absent the git_diff inputs are byte-identical to today's."
+            "With `excludeGlobs` absent the git_diff inputs are byte-identical to today's, so collectBuildChangeLog and both BUILD writers are unaffected."
           ]
         },
         {
@@ -360,18 +340,19 @@
           ],
           "returns": {
             "type": "unchanged",
-            "meaning": "The subject's changedFiles is now changedFiles(repoPath, { base: <the Story's base>, excludeGlobs: LEDGER_EXCLUDE_GLOBS }): the Story's non-ledger working-tree changes, or when there are none, its non-ledger files since its base."
+            "meaning": "The subject's changedFiles comes from the first of three attempts that does not throw NoBuildChangesError: (1) changedFiles with the Story's base and LEDGER_EXCLUDE_GLOBS; (2) changedFiles with LEDGER_EXCLUDE_GLOBS and no base; (3) changedFiles with no options, which is today's call. Each step down is logged as a warning. Only when attempt 3 throws is the result `no-build-record`, exactly as today."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
             "A tree dirty only with ledger files is treated as clean and the range is used.",
-            "With no resolvable base and a clean (after exclusion) tree the result is what changedFiles returns today for that case; no range is substituted."
+            "The review can start in every state in which it can start today: a base that git cannot resolve, or a git that rejects the exclusion pathspecs, costs precision and never the review.",
+            "With no resolvable base attempt 1 is attempt 2."
           ]
         },
         {
           "name": "assembleDiffCodeReviewGrounding",
-          "signature": "function assembleDiffCodeReviewGrounding(repoPath: string, deps?: DiffGroundingDeps, opts?: { base?: string; excludeGlobs?: readonly string[] }): Promise<...>  // DiffGroundingDeps.workingTreeDiff and lastCommitDiff gain a trailing excludeGlobs parameter; DiffGroundingDeps gains rangeDiff(repoPath, base, excludeGlobs)",
+          "signature": "function assembleDiffCodeReviewGrounding(repoPath: string, deps?: DiffGroundingDeps, opts?: { base?: string; excludeGlobs?: readonly string[] }): Promise<...>  // DiffGroundingDeps.workingTreeDiff and lastCommitDiff gain an optional trailing excludeGlobs parameter; DiffGroundingDeps gains rangeDiff(repoPath, base, excludeGlobs)",
           "parameters": [
             {
               "name": "opts.base",
@@ -388,19 +369,19 @@
           ],
           "returns": {
             "type": "unchanged",
-            "meaning": "Order: working-tree diff; else, with a base, the base..HEAD diff, whose result stands even when empty; else, with no base, the existing last-commit fallback. All three with the exclusions applied."
+            "meaning": "With opts: working-tree diff; else, with a base, the base..HEAD diff, whose result stands even when empty; else the existing last-commit fallback; all with the exclusions applied. If any diff in that sequence fails, the same three-step fallback as the review subject applies: retry the sequence without the base, then run today's sequence with no opts. Each step down is logged as a warning."
           },
           "errors": [
             {
               "type": "DiffUnavailableError",
-              "condition": "Unchanged from today."
+              "condition": "Unchanged from today: thrown only when today's sequence itself fails."
             }
           ],
           "preconditions": [
-            "Called with no opts it behaves exactly as today."
+            "Called with no opts it makes exactly today's calls on its deps."
           ],
           "postconditions": [
-            "beginDiffOnlyReview in src/mcp/code-review-step/handler.ts passes { base: resolveStoryRangeBase(repo, subject.epicHash, subject.storyId), excludeGlobs: LEDGER_EXCLUDE_GLOBS }."
+            "beginDiffOnlyReview in src/mcp/code-review-step/handler.ts, its only caller, passes { base: resolveStoryRangeBase(repo, subject.epicHash, subject.storyId), excludeGlobs: LEDGER_EXCLUDE_GLOBS }."
           ]
         }
       ]
@@ -409,7 +390,7 @@
       {
         "entity": "Build-start file (.insrc/build-start/<epicHash>-<storyId>.json)",
         "change": "new",
-        "details": "One small json file per Story: { epicHash, storyId, rangeBase (40-hex commit sha), stampedAt (ISO time) }. Written by stampBuildStart from the implement phase on every admitted route (plan-driven, Small, and Trivial before its record write); the call is fail-open, so a stamping problem never blocks a build. It is not an artifact: it has no artifact id, sits outside .insrc/artifacts, and the approval sweep cannot see it. It is a tracked file like any other, so it may be committed with the Story's work.",
+        "details": "One small json file per Story: { epicHash, storyId, rangeBase (40-hex commit sha), stampedAt (ISO time) }. Written by stampBuildStart from the implement phase on every admitted route (plan-driven, Small, and Trivial before its record write); the call is fail-open, so a stamping problem never blocks a build. It is not an artifact: it has no artifact id, sits outside .insrc/artifacts, and the approval sweep cannot see it. It is a plain tracked file, so it may be committed with the Story's work, and a person can correct its rangeBase by hand.",
         "callSites": [
           "src/mcp/build-step/phases/implement.ts",
           "src/workflow/runners/build/range-base.ts"
@@ -418,7 +399,7 @@
       {
         "entity": "BUILD writers' exclusion list",
         "change": "invariant-change",
-        "details": "The validate phase and the completion writer each pass an `exclude` holding their own record's json and md. Each now also adds buildStartRelPath(epicHash, storyId). Consequences: a tree dirty only with the build-start file is treated as clean, so the range is used; and the file never appears in a change log whether it is uncommitted or was committed inside the range. The BUILD writers do NOT use the ledger globs; what else a change log lists is unchanged.",
+        "details": "Current behaviour: the validate phase and the completion writer each pass an `exclude` holding only their own record's json and md. Each now also adds buildStartRelPath(epicHash, storyId). A tree dirty only with the build-start file is treated as clean, so the range is used; and the file never appears in a change log whether it is uncommitted or was committed inside the range. The BUILD writers do NOT use the ledger globs; what else a change log lists is unchanged.",
         "callSites": [
           "src/mcp/build-step/phases/validate.ts",
           "src/workflow/runners/build/completion-record.ts"
@@ -427,10 +408,20 @@
       {
         "entity": "ApprovableArtifactMeta.rangeBase (approval-time stamp)",
         "change": "invariant-change",
-        "details": "Unchanged in how it is written. It is no longer the first source of a Story's base: it is consulted only when the Story has no valid build-start file.",
+        "details": "Current behaviour: it is the first source of a Story's base. It is unchanged in how it is written and read, and is now consulted only when the Story has no valid build-start file.",
         "callSites": [
           "src/workflow/gates.ts",
           "src/workflow/runners/build/range-base.ts"
+        ]
+      },
+      {
+        "entity": "BuildRecord and PLAN artifact (read only)",
+        "change": "invariant-change",
+        "details": "No field is added or changed. New reader: stampBuildStart reads BuildRecord.meta.approvedAt and body.tasks[].{id, passed}, and the PLAN's body.tasks[].id, to decide whether the previous build is finished. Current behaviour relied on: the validate phase records one task per call with the plan task's id (plan-driven) or the storyId (standalone), and the record merge keeps earlier tasks and the approval stamp.",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/mcp/build-step/phases/validate.ts",
+          "src/workflow/runners/plan/schemas.ts"
         ]
       }
     ],
@@ -440,41 +431,55 @@
         {
           "scenario": "HEAD cannot be resolved when the build starts (empty repo, or not a git repo).",
           "detection": "The `git rev-parse HEAD` call inside stampBuildStart exits non-zero or returns something that is not a 40-hex sha.",
-          "response": "Write nothing, log a warning, return `no-head`. The implement phase continues.",
+          "response": "Write nothing, log a warning, return `not-written`. The implement phase continues.",
           "userImpact": "The build proceeds. The Story's base falls to the existing resolution steps, as today.",
           "recoverable": true
         },
         {
           "scenario": "The build-start file cannot be written (permissions, full disk).",
           "detection": "The directory create or file write inside stampBuildStart throws; the function catches it.",
-          "response": "Log a warning naming the path and return `no-head` (the outcome that means nothing was written). The implement phase continues.",
-          "userImpact": "Same as above: the build proceeds on today's base resolution.",
+          "response": "Log a warning naming the path and return `not-written`. The implement phase continues.",
+          "userImpact": "Same as above.",
           "recoverable": true
         },
         {
           "scenario": "The build-start file exists but is unreadable, is not valid json, lacks a 40-hex rangeBase, or names a different epicHash or storyId.",
           "detection": "The resolver and the stamper both read it through one private reader that parses and checks the four fields against the Story asked for.",
-          "response": "The resolver ignores it with a warning and continues with the existing steps. The stamper treats it as absent, so its normal rules apply and a fresh stamp replaces it unless the in-flight-build rule says to skip.",
-          "userImpact": "None beyond a log line; a corrupt stamp heals at the next build start.",
+          "response": "The resolver ignores it with a warning and continues with the existing steps. The stamper treats it as absent, so a fresh stamp replaces it unless the in-flight-build skip rule applies.",
+          "userImpact": "A log line; a corrupt stamp heals at the next build start.",
           "recoverable": true
         },
         {
-          "scenario": "The stamped commit no longer exists in the repo (history rewritten and pruned).",
+          "scenario": "The commit named in the build-start file no longer exists in the repo (history rewritten and pruned).",
           "detection": "The shared reader runs `git cat-file -e <sha>^{commit}`; a non-zero exit marks the stamp invalid.",
           "response": "Treated exactly like a malformed stamp.",
           "userImpact": "The base falls to the approval-time stamp or the introducing commit, which may be wider. This is today's behaviour for such a repo.",
           "recoverable": true
         },
         {
-          "scenario": "git rejects the exclusion pathspecs or the range (very old git, or a base it cannot resolve).",
-          "detection": "git_diff's body or numstat command exits non-zero; the tool already returns a failure for that.",
-          "response": "Unchanged handling: changedFiles and the diff grounding surface the failure the way they do today for a failed diff (an empty set for the BUILD writers' range step, DiffUnavailableError for the degraded review). No retry without the exclusions.",
-          "userImpact": "The review reports that the diff is unavailable rather than silently reviewing ledger files.",
+          "scenario": "The PLAN json exists but cannot be read or parsed when the stamper checks whether the previous build is finished.",
+          "detection": "The read or JSON.parse inside the stamper's completeness check throws, or body.tasks is not an array of objects with string ids; the check catches this.",
+          "response": "The previous build counts as not finished; the stamp is kept.",
+          "userImpact": "A rebuild of that Story keeps its old starting point until the plan is readable. The base never moves forward on doubtful evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "On the review's graph path, the diff from the Story's base fails (the approval-time stamp names a commit git cannot resolve), or git rejects the exclusion pathspecs.",
+          "detection": "git_diff's BODY command exits non-zero, the tool returns a failure, and changedFiles throws NoBuildChangesError; resolveCodeReviewSubject catches it. A failing numstat command alone is not detected (the tool swallows it into an empty list), but the same pathspecs go to both commands, so a rejected pathspec or range fails the body too.",
+          "response": "Step down: retry with the exclusions and no base; if that throws, make today's call with no options. Log a warning at each step. Only a failure of today's call yields `no-build-record`.",
+          "userImpact": "The review starts. In the fallback it reviews what it reviews today (the working tree, ledger files included) instead of the Story's range.",
+          "recoverable": true
+        },
+        {
+          "scenario": "On the review's degraded path, a diff in the new sequence fails for the same reasons.",
+          "detection": "The grounding's diff dep throws DiffUnavailableError; assembleDiffCodeReviewGrounding catches it while opts are in effect.",
+          "response": "Step down the same way: the sequence without the base, then today's sequence with no opts. Log a warning at each step. DiffUnavailableError leaves the function only when today's sequence fails.",
+          "userImpact": "The degraded review still runs, on today's last-commit diff in the worst case.",
           "recoverable": true
         },
         {
           "scenario": "git_diff is called with an `exclude` that is not an array of non-empty strings.",
-          "detection": "Input validation at the top of the tool's handler, beside the existing input reads.",
+          "detection": "Input validation in the tool's handler, beside the existing input reads; the closed input schema also declares the field as an array of strings.",
           "response": "Return the tool's invalid-input failure without running git.",
           "userImpact": "None for workflow callers, which pass the constant.",
           "recoverable": true
@@ -487,31 +492,47 @@
         },
         {
           "input": "The implement phase is called again for a Story whose build is in progress (a retry, or the next task).",
-          "expected": "`kept`: the stamp is not moved, even though HEAD may now include the Story's own commits."
+          "expected": "`kept`: the stamp is not moved."
         },
         {
-          "input": "A Story whose BUILD record was approved is built again.",
-          "expected": "The record's approvedAt is later than the stamp's stampedAt, so the stamp is replaced with the current HEAD and the new change log covers only the rebuild."
+          "input": "A plan-driven Story with three tasks has validated one. Someone batch-approves the epic to approve a sibling's plan, which also approves this Story's BUILD record. The Story's next implement call arrives.",
+          "expected": "`kept`: the record is approved after the stamp, but the plan's other two task ids are not in the record, so the build is not finished. The base stays before the Story's first task and the next validate's change log still lists the first task's files."
         },
         {
-          "input": "A Story that was already mid-build when this change was installed: no build-start file, an unapproved BUILD record with tasks.",
-          "expected": "`skipped-work-exists`: nothing is written, and the base resolves by the existing steps exactly as before the change."
+          "input": "A Story whose only recorded task failed validation is approved early, then implemented again.",
+          "expected": "`kept`: a recorded task has not passed."
+        },
+        {
+          "input": "A plan-driven Story with every plan task recorded as passed and its BUILD record approved is built again.",
+          "expected": "`stamped`: the stamp is replaced with the current HEAD and the new change log covers only the rebuild."
+        },
+        {
+          "input": "A standalone Story (one task, no plan) whose task passed and whose BUILD record was approved is implemented again, for instance to act on code-review findings raised after approval.",
+          "expected": "`stamped`: by the workflow's own definition approval of the BUILD record completed the Story, so this is a rebuild. The earlier files leave the change log on the next validate. Declared limitation: if the approval was premature, the first pass's files are lost from the record; they remain in git."
+        },
+        {
+          "input": "A Story is rebuilt a second time after a first rebuild, without its BUILD record being approved again.",
+          "expected": "`kept`: the record's approvedAt is earlier than the first rebuild's stamp. The second rebuild measures from the first rebuild's start. Declared limitation."
+        },
+        {
+          "input": "A Story that was mid-build when this change was installed and has already validated a task: no build-start file, an unapproved BUILD record with tasks.",
+          "expected": "`skipped-work-exists`: nothing is written and the base resolves exactly as before the change."
+        },
+        {
+          "input": "A plan-driven or Small Story that was mid-build when this change was installed, with commits but no validate yet: no build-start file and no BUILD record.",
+          "expected": "`stamped` at the current HEAD, which is after the Story's own commits; nothing on disk distinguishes this from a fresh start. Declared limitation, one-time at upgrade: that Story's change log omits its earlier commits. Remedy: set rangeBase in the build-start file to the right commit by hand."
         },
         {
           "input": "Trivial route, first implement call: no stamp and no BUILD record yet.",
-          "expected": "The stamp is written first, then the route writes its task-less BUILD record. A later implement call sees a valid stamp and keeps it; the task-less record never triggers the skip rule."
+          "expected": "The stamp is written first, then the route writes its task-less record. Later calls keep the stamp; the task-less record never triggers the skip rule."
         },
         {
           "input": "The build-start file is committed together with the Story's source.",
-          "expected": "It is inside base..HEAD, and the BUILD writers remove it by exact path, so the change log is exactly the Story's other files."
+          "expected": "The BUILD writers remove it by exact path, so the change log is exactly the Story's other files."
         },
         {
-          "input": "The build-start file is the only uncommitted change when validate runs.",
-          "expected": "After exact-path exclusion the working set is empty, so the range from the base is used and lists the Story's committed files."
-        },
-        {
-          "input": "The build-start file is untracked when validate runs.",
-          "expected": "Plain git diff never reports it; the result is the same as the previous case."
+          "input": "The build-start file is the only uncommitted change, or is untracked, when validate runs.",
+          "expected": "The working set is empty after exclusion, so the range from the base is used and lists the Story's committed files."
         },
         {
           "input": "Code review with the Story committed and only an approval-stamped artifact json uncommitted.",
@@ -519,15 +540,15 @@
         },
         {
           "input": "Code review where the Story changed .insrc/artifacts/templates/x.md and .insrc/conventions/y.md.",
-          "expected": "Both files are in the reviewed set: no ledger glob matches them."
+          "expected": "Both files are in the reviewed set."
         },
         {
           "input": "Degraded review of a range whose ledger hunks alone exceed the 256 KB body cap and sort before the source hunks.",
-          "expected": "The ledger hunks are never emitted, so the source hunks are within the cap and every changed source file gets its diff text."
+          "expected": "The ledger hunks are never emitted, so every changed source file gets its diff text."
         },
         {
           "input": "Degraded review with a base, where the Story changed only ledger files.",
-          "expected": "The range diff is empty after exclusion and that empty result stands; the last-commit fallback is not used."
+          "expected": "The range diff succeeds and is empty; that result stands and no fallback runs. Fallback is for failure, not for emptiness."
         },
         {
           "input": "Degraded review with no resolvable base and a clean tree.",
@@ -539,45 +560,87 @@
         },
         {
           "input": "A build is stamped, abandoned before any commit, and resumed after other Stories' commits have landed.",
-          "expected": "The old stamp is kept, so the change set includes those other commits. Accepted limitation; deleting the build-start file before resuming resets it."
+          "expected": "The old stamp is kept, so the change set includes those commits. Declared limitation; deleting the build-start file before resuming resets it."
         }
       ],
-      "invariantsToPreserve": []
+      "invariantsToPreserve": [
+        {
+          "text": "An unresolvable base yields an empty change set; the resolver never substitutes HEAD^ or the empty tree.",
+          "source": "c1"
+        },
+        {
+          "text": "With no build-start file, resolveStoryRangeBase returns exactly what it returns today.",
+          "source": "c1"
+        },
+        {
+          "text": "changedFiles applies its exact-path exclusion before the emptiness check and again to the range, and with no excludeGlobs its git_diff inputs are today's.",
+          "source": "c4"
+        },
+        {
+          "text": "The code review can start in every state in which it can start today.",
+          "source": "c5"
+        },
+        {
+          "text": "The batch approval sweep and what it can approve are unchanged.",
+          "source": "c2"
+        }
+      ]
     },
     "testStrategy": {
       "testLevels": [
         {
+          "level": "contract",
+          "purpose": "The Story carries no enumerated acceptance criteria, so the criteria the acceptance mapping refers to are defined here. Each is a guarantee the build must prove.",
+          "subjects": [
+            "ac1: a Story's BUILD change log lists only that Story's files, even when its plan was approved in the same sweep as its siblings'",
+            "ac2: an unresolvable base yields an empty change set; no range is substituted",
+            "ac3: nothing moves a Story's base forward onto its own work, in particular not an approval that arrives mid-build",
+            "ac4: no approvable record exists earlier than today, and the build-start file is not approvable and never appears in a change log",
+            "ac5: the code review measures from the same base and does not review ledger files, on both of its paths, including when ledger hunks exceed the diff cap",
+            "ac6: user-authored files under .insrc stay reviewable",
+            "ac7: the code review can start in every state in which it can start today, and every caller that passes no new option behaves exactly as today"
+          ]
+        },
+        {
           "level": "unit",
           "purpose": "The stamping rules and the resolver's new first step, each against a real temporary git repo.",
           "subjects": [
-            "stampBuildStart: no stamp, no BUILD record -> `stamped`, file holds HEAD's full sha and the Story's ids",
-            "stampBuildStart: valid stamp, HEAD moved -> `kept`, file bytes unchanged",
-            "stampBuildStart: valid stamp and a BUILD record whose approvedAt is later than stampedAt -> `stamped` at the new HEAD",
-            "stampBuildStart: no stamp and an unapproved BUILD record with one task -> `skipped-work-exists`, no file",
-            "stampBuildStart: no stamp and a task-less BUILD record -> `stamped`",
-            "stampBuildStart: repo with no commits -> `no-head`, no file; unwritable directory -> `no-head`, no throw",
-            "stampBuildStart: malformed file, file naming another Story, file naming a missing commit -> replaced by a fresh stamp",
-            "resolveStoryRangeBase: a valid build-start file wins over a different approval-time stamp on the PLAN",
-            "resolveStoryRangeBase: malformed, wrong-Story and missing-commit files are ignored and the approval-time stamp is returned",
-            "resolveStoryRangeBase: no build-start file -> every existing range-base test still passes unchanged"
+            "T1 stampBuildStart: no stamp, no BUILD record -> `stamped`; file holds HEAD's full sha and the Story's ids",
+            "T2 stampBuildStart: valid stamp, HEAD moved, no BUILD record -> `kept`; file bytes unchanged",
+            "T3 stampBuildStart, mid-build approval: plan with tasks t1,t2,t3; record has t1 passed and approvedAt later than stampedAt -> `kept`; file bytes unchanged",
+            "T4 stampBuildStart: record approved after the stamp but its one task has passed false -> `kept`",
+            "T5 stampBuildStart: record approved after the stamp but task-less -> `kept`",
+            "T6 stampBuildStart, finished plan-driven build: plan tasks t1,t2; record has both passed and approvedAt later than stampedAt -> `stamped` at the new HEAD",
+            "T7 stampBuildStart, finished standalone build: no PLAN json; record has one passed task and approvedAt later than stampedAt -> `stamped`",
+            "T8 stampBuildStart: record complete and approved, but approvedAt EARLIER than stampedAt -> `kept`",
+            "T9 stampBuildStart: PLAN json present but malformed, record complete and approved -> `kept`",
+            "T10 stampBuildStart: no stamp and an unapproved BUILD record with one task -> `skipped-work-exists`, no file",
+            "T11 stampBuildStart: no stamp and a task-less BUILD record -> `stamped`",
+            "T12 stampBuildStart: repo with no commits -> `not-written`, no file; unwritable directory -> `not-written`, no throw",
+            "T13 stampBuildStart: malformed file, file naming another Story, file naming a missing commit -> replaced by a fresh stamp",
+            "T14 resolveStoryRangeBase: a valid build-start file wins over a different approval-time stamp on the PLAN",
+            "T15 resolveStoryRangeBase: malformed, wrong-Story and missing-commit files are ignored and the approval-time stamp is returned",
+            "T16 resolveStoryRangeBase: no build-start file -> every existing range-base test passes unchanged, including the one asserting undefined when nothing resolves",
+            "T17 range-base.ts does not import gates.ts (asserted on the module's import statements)"
           ],
           "fixturesNeeded": [
             "mkCleanGitRepo temp repo with at least two commits",
-            "a PLAN json carrying meta.rangeBase",
-            "BUILD record json fixtures: task-less, with tasks, approved"
+            "PLAN json fixtures: with meta.rangeBase, with a task list, malformed",
+            "BUILD record json fixtures: task-less, one failed task, partial against the plan, complete, approved before and after the stamp"
           ]
         },
         {
           "level": "unit",
           "purpose": "git-level exclusion in the git_diff tool and the globs, run against real git so the glob semantics are git's and not a re-implementation.",
           "subjects": [
-            "git_diff with `exclude`: an excluded file is absent from BOTH the body and the file list; a kept file is present in both",
-            "git_diff with no `exclude` and with an empty array: the git argument vectors equal today's (asserted on the argument builder)",
-            "git_diff with `path` and `exclude` together: the path is still the positive pathspec",
-            "git_diff with a non-array or empty-string `exclude`: invalid-input, git not run",
-            "LEDGER_EXCLUDE_GLOBS against one commit touching every location: the exact kept set is [.insrc/artifacts/formats/f.md, .insrc/artifacts/templates/t.json, .insrc/conventions/c.md, .insrc/feedback/fb.md, .insrc/templates/tp.md, src/a.ts] and the exact dropped set is [.insrc/artifacts/LLD-x.json, .insrc/build-start/x-S001.json, docs/epics/e/S001/LLD.md, docs/standalone/s/S001/BUILD.md]",
-            "the same globs when git_diff's cwd is a subdirectory of the repo: the result is identical (proves the `top` anchoring)",
-            "changedFiles with excludeGlobs: a tree dirty only with an artifact json falls through to the range; without excludeGlobs the recorded git_diff inputs equal today's"
+            "T18 git_diff with `exclude`: an excluded file is absent from BOTH the body and the file list; a kept file is present in both",
+            "T19 git_diff with no `exclude` and with an empty array: the git argument vectors equal today's (asserted on the argument builders)",
+            "T20 git_diff with `path` and `exclude` together: the path is still the positive pathspec",
+            "T21 git_diff with a non-array or empty-string `exclude`: invalid-input, git not run; and the tool's input schema declares `exclude`",
+            "T22 LEDGER_EXCLUDE_GLOBS against one commit touching every location: the exact kept set is [.insrc/artifacts/formats/f.md, .insrc/artifacts/templates/t.json, .insrc/conventions/c.md, .insrc/feedback/fb.md, .insrc/templates/tp.md, docs/epics-notes/n.md, src/a.ts] and the exact dropped set is [.insrc/artifacts/LLD-x.json, .insrc/build-start/x-S001.json, docs/epics/e/S001/LLD.md, docs/standalone/s/S001/BUILD.md]",
+            "T23 the same globs when git_diff's cwd is a subdirectory of the repo: identical result",
+            "T24 changedFiles with excludeGlobs: a tree dirty only with an artifact json falls through to the range",
+            "T25 changedFiles without excludeGlobs: the recorded git_diff inputs equal today's; collectBuildChangeLog passes no excludeGlobs"
           ],
           "fixturesNeeded": [
             "temp git repo with the listed files committed in one commit over a base commit"
@@ -585,35 +648,41 @@
         },
         {
           "level": "integration",
-          "purpose": "The defect and both earlier review findings, end to end through the real implement and validate phases and the real approval gate.",
+          "purpose": "The defect and the earlier review findings, end to end through the real implement and validate phases and the real approval gate.",
           "subjects": [
-            "Two Stories under one epic, plans approved in one batch (the approval rewrite committed). Build and commit Story 1, then implement+commit+validate Story 2: Story 2's BUILD change log is EXACTLY its own files, and Story 1's is exactly its own",
-            "The same flow with the build-start file committed alongside the Story's source: exact-set change log, build-start file absent",
-            "The same flow with the build-start file left uncommitted and nothing else dirty: the range is used, exact-set change log",
-            "Rebuild: approve Story 1's BUILD, call implement again (stamp replaced), commit a new file, validate: the change log is exactly the new file",
-            "After an implement call on the plan-driven and Small routes no BUILD record exists for the Story; a batch approval by epicHash at that moment approves no BUILD record and the Story is not complete",
-            "Completion writer (completion-record) with a committed build-start file: exact-set change log"
+            "T26 Two Stories under one epic, plans approved in one batch (the approval rewrite committed). Build and commit Story 1, then implement+commit+validate Story 2: Story 2's BUILD change log is EXACTLY its own files, and Story 1's is exactly its own",
+            "T27 The same flow with the build-start file committed alongside the Story's source: exact-set change log, build-start file absent",
+            "T28 The same flow with the build-start file left uncommitted and nothing else dirty: the range is used, exact-set change log",
+            "T29 Mid-build approval end to end: a plan-driven Story with two tasks implements, commits and validates task 1; a batch approval by epicHash approves its BUILD record; it implements, commits and validates task 2: the change log is EXACTLY the files of task 1 and task 2",
+            "T30 Rebuild: a Story with every task passed has its BUILD approved; implement again (stamp replaced), commit a new file, validate: the change log is exactly the new file",
+            "T31 After an implement call on the plan-driven and Small routes no BUILD record exists for the Story; a batch approval by epicHash at that moment approves no BUILD record for it",
+            "T32 Completion writer with a committed build-start file: exact-set change log",
+            "T33 A Story with no resolvable base and a clean tree: validate writes an empty change log"
           ],
           "fixturesNeeded": [
             "mkCleanGitRepo",
-            "two PLAN fixtures under one epicHash",
+            "two PLAN fixtures under one epicHash, one with two tasks",
             "the build-step test harness in src/mcp/build-step/__tests__/build-step.test.ts"
           ]
         },
         {
           "level": "integration",
-          "purpose": "The code review measures from the Story's base and never reviews ledger files, on both of its paths.",
+          "purpose": "The code review measures from the Story's base, never reviews ledger files, and never loses the ability to start.",
           "subjects": [
-            "resolveCodeReviewSubject, real changedFiles: Story committed, only an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files",
-            "resolveCodeReviewSubject: a Story that edited .insrc/artifacts/templates/t.json -> that file is in changedFiles",
-            "assembleDiffCodeReviewGrounding with real git: a base..HEAD range whose ledger files total more than 256 KB and sort before src/ -> every src file has a pseudo-symbol with non-empty diff text, and no ledger path appears; the same fixture WITHOUT excludeGlobs loses the src text (shows the test can fail)",
-            "assembleDiffCodeReviewGrounding: base given and only ledger files changed -> empty result, lastCommitDiff not called",
-            "assembleDiffCodeReviewGrounding: no opts -> the calls made on the deps equal today's",
-            "beginDiffOnlyReview: the grounding dep receives the Story's resolved base and LEDGER_EXCLUDE_GLOBS"
+            "T34 resolveCodeReviewSubject, real changedFiles: Story committed, only an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files",
+            "T35 resolveCodeReviewSubject: a Story that edited .insrc/artifacts/templates/t.json -> that file is in changedFiles",
+            "T36 resolveCodeReviewSubject, real git: the resolved base names a commit that does not exist -> ok is true and changedFiles equals what today's no-option call returns; one warning logged",
+            "T37 resolveCodeReviewSubject with a changedFiles dep that throws whenever excludeGlobs is passed -> the third attempt is called with no options and its result is returned",
+            "T38 resolveCodeReviewSubject with a dep that always throws -> `no-build-record`, as today",
+            "T39 assembleDiffCodeReviewGrounding with real git: a base..HEAD range whose ledger files total more than 256 KB and sort before src/ -> every src file has a pseudo-symbol with non-empty diff text and no ledger path appears; the same fixture WITHOUT excludeGlobs loses src text (shows the test can fail)",
+            "T40 assembleDiffCodeReviewGrounding: base given and only ledger files changed -> empty result; lastCommitDiff not called",
+            "T41 assembleDiffCodeReviewGrounding: rangeDiff throws -> the sequence is retried without the base; exclusions throw too -> today's sequence runs with no excludeGlobs argument",
+            "T42 assembleDiffCodeReviewGrounding: no opts -> the calls made on the deps, including their arguments, equal today's; existing diff-grounding tests pass unchanged",
+            "T43 beginDiffOnlyReview: the grounding dep receives the Story's resolved base and LEDGER_EXCLUDE_GLOBS"
           ],
           "fixturesNeeded": [
             "temp git repo with a generated >256 KB artifact json and docs markdown committed in the range",
-            "handler test deps recording their arguments"
+            "subject and handler test deps that record their arguments and can be made to throw"
           ]
         }
       ],
@@ -621,31 +690,93 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "Two Stories approved in one batch: Story 2's BUILD change log is exactly its own files",
-            "resolveCodeReviewSubject: only an artifact json dirty -> changedFiles is exactly the Story's source files",
-            "Degraded review over a >256 KB ledger range: every src file has diff text"
+            "T26",
+            "T27",
+            "T28",
+            "T30",
+            "T32"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "T16",
+            "T33"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "T2",
+            "T3",
+            "T4",
+            "T5",
+            "T8",
+            "T9",
+            "T10",
+            "T29"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "T31",
+            "T27",
+            "T28",
+            "T32"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "T34",
+            "T39",
+            "T40",
+            "T43",
+            "T18",
+            "T24"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "T22",
+            "T23",
+            "T35"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "T36",
+            "T37",
+            "T38",
+            "T41",
+            "T42",
+            "T19",
+            "T25"
           ]
         }
       ],
       "testFramework": "node:test run through tsx, node:assert/strict"
     },
     "migration": {
-      "stateBefore": "A Story's base comes from a stamp written when its plan (or standalone LLD) is approved, else from the commit that introduced that artifact (range-base.ts, gates.ts). Stories approved in one sweep share one base, so a later Story's change log lists its siblings' files. The code review does not use a base at all: its graph path takes the working tree, and its degraded path takes the working tree or else the last commit; an uncommitted approval-stamped artifact json therefore becomes the whole reviewed set (subject.ts, grounding.ts, handler.ts). The git_diff tool cannot exclude paths, and its body is capped at 256 KB, which ledger hunks alone can exceed (diff.ts).",
-      "stateAfter": "The implement phase records HEAD in a per-Story build-start file the first time a Story's build starts; the resolver reads that file first and falls back to the existing steps. The BUILD writers exclude the Story's build-start file by exact path. The code review, on both paths, measures from the Story's base and excludes four ledger globs inside git, so ledger files are neither listed nor counted against the body cap, while user-authored files under .insrc stay reviewable. No approvable record is written earlier than today, and the approval sweep is unchanged.",
+      "stateBefore": "A Story's base comes from a stamp written when its plan (or standalone LLD) is approved, else from the commit that introduced that artifact (range-base.ts, gates.ts). Stories approved in one sweep share one base, so a later Story's change log lists its siblings' files. The code review does not use a base: its graph path takes the working tree and its degraded path takes the working tree or else the last commit, so an uncommitted approval-stamped artifact json becomes the whole reviewed set (subject.ts, grounding.ts, handler.ts). The git_diff tool cannot exclude paths and its body is capped at 256 KB, which ledger hunks alone can exceed (diff.ts).",
+      "stateAfter": "The implement phase records HEAD in a per-Story build-start file when a Story's build starts, and replaces it only after a build that is both approved and complete. The resolver reads that file first and otherwise behaves as today. The BUILD writers exclude the Story's build-start file by exact path. The code review, on both paths, measures from the Story's base and excludes four ledger globs inside git, and falls back step by step to today's derivation if the new one fails. No approvable record is written earlier than today, and the approval sweep is unchanged.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the optional `exclude` input to the git_diff tool, applied as git exclude pathspecs to both its body and numstat commands; with the input absent or empty the argument vectors are today's.",
+          "action": "Add the optional `exclude` input to the git_diff tool (handler and closed input schema), applied as git exclude pathspecs to both its body and numstat commands; with the input absent or empty the argument vectors are today's.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Add the `excludeGlobs` option to changedFiles and export the ledger glob constant beside it; no existing caller passes the option yet.",
+          "action": "Add the `excludeGlobs` option to changedFiles and export the ledger glob constant beside it; no existing caller passes the option.",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Add the build-start path helper, the shared stamp reader and stampBuildStart to range-base.ts, and make the resolver consult a valid build-start file first.",
+          "action": "Add the build-start path helper, the shared stamp reader, the finished-build check and stampBuildStart to range-base.ts, and make the resolver consult a valid build-start file first.",
           "rollbackable": true
         },
         {
@@ -660,7 +791,7 @@
         },
         {
           "order": 6,
-          "action": "Pass the Story's base and the ledger globs from the review subject resolver, and add the base and globs options to the diff grounding and pass them from the degraded review path.",
+          "action": "Make the review subject resolver pass the Story's base and the ledger globs with its three-step fallback; add the base and globs options and the same fallback to the diff grounding, and pass them from the degraded review path.",
           "rollbackable": true
         },
         {
@@ -669,62 +800,60 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Every changed signature is additive and optional: git_diff's `exclude`, changedFiles' `excludeGlobs`, the grounding's third parameter and the widened test seams. Callers that pass nothing get today's behaviour. No existing artifact is rewritten and no stored field changes meaning. Stories with no build-start file (everything built before this change, and builds in flight when it lands) resolve their base exactly as today. Reverting the code leaves build-start files on disk as inert json that nothing reads. The one behaviour change for existing users is intended: a code review no longer lists files under docs/epics, docs/standalone, .insrc/build-start or the json files directly inside .insrc/artifacts.",
+      "backwardCompat": "Every changed signature is additive and optional: git_diff's `exclude`, changedFiles' `excludeGlobs`, the grounding's third parameter and the widened test seams. Callers that pass nothing get today's behaviour. No existing artifact is rewritten and no stored field changes meaning. A Story with no build-start file resolves its base exactly as today; that covers everything built before this change and any build in flight that has already validated a task. One class of in-flight build is NOT preserved and is a declared limitation: a plan-driven or Small Story with commits but no validate yet has no BUILD record, so its next implement call stamps the current HEAD and its change log omits its earlier commits; the remedy is to correct rangeBase in its build-start file by hand, or to validate in-flight work before installing the change. Reverting the code leaves build-start files on disk as inert json that nothing reads. The intended behaviour change for existing users: a code review no longer lists files under docs/epics, docs/standalone, .insrc/build-start or the json files directly inside .insrc/artifacts, and when a Story's base resolves it reviews the Story's range rather than only the last commit.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Build-start file, excluded by the BUILD writers; ledger excluded from the review at the git level",
-        "oneLineSummary": "A non-approvable build-start file carries the base; the BUILD writers exclude it by exact path; the review excludes one precise list of ledger globs inside git itself, so they leave both the file list and the capped diff body.",
-        "approach": "Keep the non-approvable build-start file and its stamping rules. Close the two gaps the second review found. (1) The BUILD writers add the Story's build-start file to the exact-path exclusion they already use for their own record, so it can neither stand in for the Story's work nor appear in the change log, whether it is uncommitted, committed with the work, or untracked. (2) The git_diff builtin gains an optional list of exclusion globs applied as git exclude pathspecs to both its body and its file-list commands. One constant names the ledger globs precisely: json files directly inside .insrc/artifacts/, everything under .insrc/build-start/, docs/epics/ and docs/standalone/. The review's graph path and degraded path both pass the Story's base and those globs, so ledger hunks are removed before the body cap is applied and user-authored files under .insrc stay reviewable.",
+        "name": "Build-start file; re-stamp only after an approved AND complete build; review falls back to today's derivation on any failure",
+        "oneLineSummary": "The third revision's design, with the re-stamp rule tightened to require a complete build and the review guarded so it can never fail to start in a way it cannot today.",
+        "approach": "Keep the non-approvable build-start file, the BUILD writers' exact-path exclusion of it, and the git-level exclusion of four ledger globs from the review. Change two things. (1) A valid stamp is replaced only when the Story's BUILD record is approved after the stamp was taken AND the build is complete: the record has at least one task, every recorded task passed, and, when the Story has a plan, every task id in the plan is among the recorded tasks. A record approved while tasks remain is therefore kept. (2) On both review paths, if the new derivation (base plus exclusions) fails, log a warning and run today's derivation unchanged, so the review has no new failure mode.",
         "pros": [
-          "The change log is exactly the Story's files in every tracking state of the build-start file",
-          "Ledger hunks cannot consume the diff body cap, which measurement shows they do today",
-          "User-authored templates, formats, conventions and feedback under .insrc remain in the review",
-          "One exclusion mechanism (git) and one list, shared by both review paths",
-          "No approvable record exists earlier than today"
+          "A batch approval that reaches a half-built Story's BUILD record cannot move the base onto that Story's own commits",
+          "The review can start in every state in which it can start today",
+          "No approvable record exists earlier than today",
+          "Change log exact in every tracking state of the build-start file; ledger hunks cannot consume the diff cap"
         ],
         "cons": [
-          "Adds an input to a general-purpose builtin tool",
-          "A new kind of on-disk state beside the artifact store",
-          "A Story with commits but no validate yet when the update lands is still stamped at its next implement",
-          "Interleaved Stories still overlap"
+          "The stamper reads the plan's task ids directly from the PLAN json, because importing the plan reader would create an import cycle",
+          "A single-task Story approved after a passing validate and then worked on again is treated as a rebuild",
+          "A build with commits but no validate yet when the update lands is still stamped after its own commits (declared limitation)",
+          "Adds an input to a general-purpose builtin tool"
         ],
         "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Same carrier, but filter ledger files after the diff, per file",
-        "oneLineSummary": "Leave git_diff alone; the review filters the file list in code and fetches the diff body one kept file at a time.",
-        "approach": "Keep the build-start file and the BUILD writers' exact-path exclusion as in a1. For the review, filter the returned file list with a matcher in code, and on the degraded path call git_diff once per kept file using its existing single `path` input so each file gets its own body cap.",
+        "name": "Never replace a stamp automatically",
+        "oneLineSummary": "Stamp once per Story and keep it for the Story's life; a rebuild keeps the original starting point.",
+        "approach": "Same carrier and review changes as a1, but stampBuildStart never replaces a valid stamp. The base can then never move forward for any reason. A Story rebuilt after completion reports everything since its first build started.",
         "pros": [
-          "No change to the builtin tool's inputs",
-          "Each file gets a full body cap to itself"
+          "The simplest rule; no reading of the BUILD record's approval or the plan",
+          "The base can never land on the Story's own work"
         ],
         "cons": [
-          "One git process per changed file on the degraded path; a large Story means dozens of sequential diffs",
-          "The file list still has to be fetched unfiltered first",
-          "Two filtering mechanisms (code for the list, per-file calls for the body) that must stay in agreement"
+          "A rebuild's change log includes every sibling commit that landed since the first build, which is the defect this Story exists to remove, reintroduced for rebuilds",
+          "The only reset is deleting the file by hand"
         ],
-        "costEstimate": "M",
-        "reasonRejected": "Reaches the same result but with two mechanisms and a process per file on the degraded path."
+        "costEstimate": "S",
+        "reasonRejected": "Strongest on never moving the base, but reintroduces the Story's own defect for rebuilds."
       },
       {
         "id": "a3",
-        "name": "Keep the build-start file out of git instead of excluding it",
-        "oneLineSummary": "Have the workflow add .insrc/build-start/ to the repo's .gitignore so the file is never tracked.",
-        "approach": "Keep the carrier, and solve the change-log leak by writing an ignore rule for the build-start directory into each repo, relying on plain git diff not reporting untracked or ignored files. The review half is as in a1.",
+        "name": "Close the early-approval hole in the sweep instead",
+        "oneLineSummary": "Keep the approved-means-finished rule and stop the batch sweep approving a BUILD record whose Story has tasks left.",
+        "approach": "Same carrier and review changes as a1. Keep the third revision's re-stamp rule unchanged and instead change the batch approval sweep to skip a BUILD record that does not cover its plan's tasks.",
         "pros": [
-          "No change to the BUILD writers"
+          "Fixes the existing early-approval hole for every consumer, not only for the stamp"
         ],
         "cons": [
-          "Edits a user-owned file in every repo, and fails silently where the rule is removed or the file was already committed",
-          "The change log's correctness would depend on repository configuration rather than on the writer"
+          "Changes approval behaviour, which is outside this Story's subject and affects every epic",
+          "Single approval by path would still approve early, so the stamp rule would still need its own guard"
         ],
-        "costEstimate": "S",
-        "reasonRejected": "Makes the change log's correctness depend on repository configuration and edits a user-owned file."
+        "costEstimate": "M",
+        "reasonRejected": "Leaves the stamp rule exposed to approval by path and reaches outside the Story."
       }
     ],
     "chosenAlternative": "a1",
@@ -777,26 +906,38 @@
       "id": "c8",
       "kind": "code",
       "ref": "src/daemon/tools/builtins/git/diff.ts",
-      "quotedText": "if (o.path) { base.push('--', o.path); }"
+      "quotedText": "const files = stat.code === 0 ? parseNumstat(stat.stdout) : [];"
     },
     {
       "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts",
+      "quotedText": "export interface BuildRecordTask {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts",
+      "quotedText": "tasks: [{ id: taskId, passed }],"
+    },
+    {
+      "id": "c11",
       "kind": "prior-artifact",
       "ref": "ISSUE-5f7a7cb95b643ae5"
     },
     {
-      "id": "c10",
+      "id": "c12",
       "kind": "stakeholder",
       "ref": "user decisions, 2026-10-04",
-      "quotedText": "revise the design"
+      "quotedText": "fix the design"
     },
     {
-      "id": "c11",
+      "id": "c13",
       "kind": "step-output",
       "ref": "s1"
     },
     {
-      "id": "c12",
+      "id": "c14",
       "kind": "step-output",
       "ref": "s3"
     }

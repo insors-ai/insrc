@@ -30,6 +30,8 @@ import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../wor
 import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
 import { codeReviewSubjectPathArgs } from '../../workflow/code-review/subject-paths.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../../workflow/runners/build/changed-files.js';
+import { resolveStoryRangeBase } from '../../workflow/runners/build/range-base.js';
 import { buildAdherencePrompt } from '../../workflow/code-review/dimensions/adherence.js';
 import { buildConventionsPrompt } from '../../workflow/code-review/dimensions/conventions.js';
 import { buildCoveragePrompt } from '../../workflow/code-review/dimensions/coverage.js';
@@ -341,7 +343,13 @@ async function beginDiffOnlyReview(
 	let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
 	try {
-		const diff = await deps.assembleDiffGrounding(repo);
+		// The same base and the same ledger exclusion the graph path's subject uses
+		// (ISSUE-5f7a7cb9), so the two paths review the same Story range. `undefined`
+		// for the seams keeps the assembler's own default.
+		const diff = await deps.assembleDiffGrounding(repo, undefined, {
+			base:         resolveStoryRangeBase(repo, subject.epicHash, subject.storyId),
+			excludeGlobs: LEDGER_EXCLUDE_GLOBS,
+		});
 		grounding = diff.grounding;
 		changedFiles = diff.changedFiles;
 	} catch (err) {

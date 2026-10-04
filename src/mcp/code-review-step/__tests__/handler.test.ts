@@ -5,10 +5,16 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import { runCodeReview } from '../../../workflow/code-review/runner.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-files.js';
+import { buildStartRelPath } from '../../../workflow/runners/build/range-base.js';
 import type { CodeReviewStepOutput } from '../types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../../workflow/code-review/types.js';
 
@@ -448,6 +454,48 @@ test('s10: the degraded judgements turn drives runReview with groundingMode:degr
 	const body = (JSON.parse(json.content) as { body: { groundingMode: string; verdict: string } }).body;
 	assert.equal(body.groundingMode, 'degraded', 'the persisted record is stamped degraded');
 	assert.equal(body.verdict, 'warn');
+});
+
+// ISSUE-5f7a7cb9 S001/t7 (T48): the degraded path hands the assembler the Story's
+// resolved base and the ledger globs. Driven against a REAL repo carrying a
+// build-start file for this Story, so "the resolved base" is what the shipping
+// resolver returns and not a value the test invented.
+test('T48: the degraded review passes the Story\'s resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler', async () => {
+	reset();
+	const repo = mkdtempSync(join(tmpdir(), 'cr-handler-base-'));
+	try {
+		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+		writeFileSync(join(repo, 'a.ts'), 'export const a = 1;\n');
+		git('add', '-A'); git('commit', '-qm', 'base');
+		const base = git('rev-parse', 'HEAD');
+		mkdirSync(join(repo, '.insrc', 'build-start'), { recursive: true });
+		writeFileSync(join(repo, buildStartRelPath(EPIC, STORY)), JSON.stringify({ epicHash: EPIC, storyId: STORY, rangeBase: base, stampedAt: '2026-10-04T10:00:00.000Z' }) + '\n');
+
+		const seen: unknown[][] = [];
+		const { deps } = makeDeps({
+			fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+			assembleDiffGrounding: async (...a: unknown[]) => { seen.push(a); return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
+		});
+		const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo }, deps));
+		assert.ok(cw.next === 'confirm_wait');
+		const declined = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, deps));
+		assert.ok(declined.next === 'emit_judgements');
+
+		assert.equal(seen.length, 1);
+		assert.deepEqual(seen[0], [repo, undefined, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS }]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base', async () => {
+	reset();
+	const seen: unknown[][] = [];
+	const { deps } = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: ['src/a.ts'] }),
+		assembleDiffGrounding: async (...a: unknown[]) => { seen.push(a); return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
+	});
+	await declineTo(deps);
+	assert.deepEqual(seen, [['/repo', undefined, { base: undefined, excludeGlobs: LEDGER_EXCLUDE_GLOBS }]]);
 });
 
 // error: the diff cannot be read => diff-unavailable, nothing written.

@@ -31,6 +31,9 @@ import type { CodeReviewGrounding, ChangedSymbolSummary } from './types.js';
 import { gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData, GitDiffFileStat } from '../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
+import { getLogger } from '../../shared/logger.js';
+
+const log = getLogger('workflow:code-review:grounding');
 
 /** A graph entity, flattened to just what a summary/edge needs. */
 export interface GroundedEntity {
@@ -191,10 +194,27 @@ export interface DiffGroundingDeps {
 	/** The working-tree changed set (unstaged ∪ staged) + its hunks. Empty `files`
 	 *  ⇒ a clean tree (the caller falls back to `lastCommitDiff`); a git failure
 	 *  throws `DiffUnavailableError`. */
-	readonly workingTreeDiff: (repoPath: string) => Promise<DiffResult>;
+	readonly workingTreeDiff: (repoPath: string, excludeGlobs?: readonly string[]) => Promise<DiffResult>;
 	/** The last commit's changed set + hunks (`HEAD^..HEAD`, else the root commit
 	 *  vs the empty tree). A git failure throws `DiffUnavailableError`. */
-	readonly lastCommitDiff:  (repoPath: string) => Promise<DiffResult>;
+	readonly lastCommitDiff:  (repoPath: string, excludeGlobs?: readonly string[]) => Promise<DiffResult>;
+	/** The Story's committed range `base..HEAD` + its hunks (ISSUE-5f7a7cb9).
+	 *  OPTIONAL so seams written before it existed stay valid; without it the
+	 *  assembler behaves as if no base were known. A git failure throws
+	 *  `DiffUnavailableError`. */
+	readonly rangeDiff?: ((repoPath: string, base: string, excludeGlobs?: readonly string[]) => Promise<DiffResult>) | undefined;
+}
+
+/** What the degraded review knows about the Story it is reviewing. Both fields
+ *  are optional; with neither, the assembler makes exactly the calls it made
+ *  before they existed. */
+export interface DiffGroundingOptions {
+	/** The Story's range base. With a clean (after exclusion) working tree the
+	 *  reviewed diff is `base..HEAD` instead of only the last commit. */
+	readonly base?: string | undefined;
+	/** Globs git leaves out of every diff, so excluded hunks never count against
+	 *  the diff body cap. */
+	readonly excludeGlobs?: readonly string[] | undefined;
 }
 
 /**
@@ -208,13 +228,50 @@ export interface DiffGroundingDeps {
 export async function assembleDiffCodeReviewGrounding(
 	repoPath: string,
 	deps:     DiffGroundingDeps = realDiffGroundingDeps(),
+	opts?:    DiffGroundingOptions,
 ): Promise<{ grounding: CodeReviewGrounding; changedFiles: readonly string[] }> {
-	let diff = await deps.workingTreeDiff(repoPath);
-	if (diff.files.length === 0) {
-		// Clean working tree — fall back to the last commit (HEAD^..HEAD, else root).
-		diff = await deps.lastCommitDiff(repoPath);
+	const globs = opts?.excludeGlobs !== undefined && opts.excludeGlobs.length > 0 ? opts.excludeGlobs : undefined;
+	const base  = opts?.base !== undefined && opts.base.length > 0 && deps.rangeDiff !== undefined ? opts.base : undefined;
+
+	// One sequence, run with progressively less asked of git. With neither a
+	// base nor globs every call below passes ONE argument, so it is exactly the
+	// sequence this function has always run.
+	const sequence = async (b: string | undefined, g: readonly string[] | undefined): Promise<DiffResult> => {
+		const working = g !== undefined ? await deps.workingTreeDiff(repoPath, g) : await deps.workingTreeDiff(repoPath);
+		if (working.files.length > 0) return working;
+		// Clean working tree. With the Story's base, review its whole committed
+		// range — and let that result STAND even when it is empty: a Story that
+		// changed only ledger files has nothing to review, and the last commit
+		// would be somebody else's.
+		if (b !== undefined && deps.rangeDiff !== undefined) return deps.rangeDiff(repoPath, b, g);
+		// No base: fall back to the last commit (HEAD^..HEAD, else root).
+		return g !== undefined ? deps.lastCommitDiff(repoPath, g) : deps.lastCommitDiff(repoPath);
+	};
+
+	// The base and the exclusions each ask more of git than the old sequence did
+	// (a resolvable commit; exclude pathspecs it accepts). Neither may become a
+	// new way for the review to be unavailable, so a failure steps down, and the
+	// last step is the old sequence. Only ITS failure leaves this function.
+	const attempts: ReadonlyArray<{ readonly label: string; readonly base: string | undefined; readonly globs: readonly string[] | undefined }> = [
+		...(base !== undefined ? [{ label: 'range base + exclusions', base, globs }] : []),
+		...(globs !== undefined ? [{ label: 'exclusions only', base: undefined, globs }] : []),
+		{ label: 'plain working-tree / last-commit sequence', base: undefined, globs: undefined },
+	];
+	let diff: DiffResult | undefined;
+	for (const [i, attempt] of attempts.entries()) {
+		try {
+			diff = await sequence(attempt.base, attempt.globs);
+			break;
+		} catch (err) {
+			const next = attempts[i + 1];
+			if (!(err instanceof DiffUnavailableError) || next === undefined) throw err;
+			log.warn(
+				{ repoPath, failed: attempt.label, fallingBackTo: next.label, err: err.message },
+				'assembleDiffCodeReviewGrounding: diff derivation failed; falling back to a plainer one',
+			);
+		}
 	}
-	const symbols = buildDiffSymbols(diff);
+	const symbols = buildDiffSymbols(diff as DiffResult);
 	return { grounding: { symbols }, changedFiles: symbols.map(s => s.file) };
 }
 
@@ -276,27 +333,36 @@ async function runDiff(repoPath: string, input: Record<string, unknown>): Promis
 	return { files: data.files, body: extractDiffBody(res.output), truncated: data.truncated };
 }
 
+/** The `exclude` input for `git_diff`, or nothing at all when there are no
+ *  globs — so a call without them sends exactly the input it always sent. */
+function excludeInput(globs: readonly string[] | undefined): { exclude?: string[] } {
+	return globs !== undefined && globs.length > 0 ? { exclude: [...globs] } : {};
+}
+
 /** The real diff seams, backed by the `git_diff` builtin. Read-only. */
 export function realDiffGroundingDeps(): DiffGroundingDeps {
 	return {
-		async workingTreeDiff(repoPath) {
+		async workingTreeDiff(repoPath, excludeGlobs) {
 			// Union the unstaged + staged diffs (matches subject.ts's changed set).
-			const unstaged = await runDiff(repoPath, { staged: false });
-			const staged   = await runDiff(repoPath, { staged: true });
+			const unstaged = await runDiff(repoPath, { staged: false, ...excludeInput(excludeGlobs) });
+			const staged   = await runDiff(repoPath, { staged: true, ...excludeInput(excludeGlobs) });
 			const byPath = new Map<string, GitDiffFileStat>();
 			for (const f of [...unstaged.files, ...staged.files]) byPath.set(f.path, f);
 			const body = [unstaged.body, staged.body].filter(Boolean).join('\n');
 			return { files: [...byPath.values()], body, truncated: unstaged.truncated || staged.truncated };
 		},
-		async lastCommitDiff(repoPath) {
+		async lastCommitDiff(repoPath, excludeGlobs) {
 			// HEAD^..HEAD (the last commit). If HEAD has no parent (a single-commit
 			// repo), diff the empty tree against HEAD so the root commit is reviewable.
 			try {
-				return await runDiff(repoPath, { from: 'HEAD^' });
+				return await runDiff(repoPath, { from: 'HEAD^', ...excludeInput(excludeGlobs) });
 			} catch (err) {
 				if (!(err instanceof DiffUnavailableError)) throw err;
-				return await runDiff(repoPath, { from: EMPTY_TREE_HASH });
+				return await runDiff(repoPath, { from: EMPTY_TREE_HASH, ...excludeInput(excludeGlobs) });
 			}
+		},
+		async rangeDiff(repoPath, base, excludeGlobs) {
+			return runDiff(repoPath, { from: base, ...excludeInput(excludeGlobs) });
 		},
 	};
 }

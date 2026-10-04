@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c4c420c22b71651e",
+    "storyId": "S001",
+    "createdAt": "2026-10-04T08:50:42.280Z",
+    "updatedAt": "2026-10-04T08:50:42.280Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "Added a vscode-free chat/group-lock.ts that locks the chat's editor group the first time the chat tab is the active tab (fresh open and after reload), retrying on both panel view-state and tab-model changes and issuing the command at most once per panel. Wired from the single webviewPanelChannel adapter in extension.ts behind the new insrc.chat.lockGroup setting (default on); chat-panel.ts now exports CHAT_VIEW_TYPE. 13 unit tests plus 3 wiring tests added; 12 mutations of the module all turn the suite red. The manual smoke check in a real VS Code window has not been run.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-c4c420c22b71651e-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/vs-code-plugin-lock-insrc-chat-E20261004c4c420c2/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/group-lock.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/group-lock.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/vscode.d.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T08:50:42.280Z"
+      }
+    ],
+    "commit": "e0d0adf"
+  }
+}

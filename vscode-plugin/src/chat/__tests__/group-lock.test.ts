@@ -253,6 +253,33 @@ test('a synchronously throwing lock command is reported via warn, does not throw
   assert.equal(h.locks(), 1);
 });
 
+test('a throwing tab subscription is reported via warn, does not throw, and leaves no listener behind', () => {
+  // An editor fork without window.tabGroups: attach must never throw into panel create/restore.
+  const viewState = emitter();
+  let locks = 0;
+  const warnings: string[] = [];
+  const lock = createChatGroupLock({
+    enabled: () => true,
+    viewType: CHAT_VIEW_TYPE,
+    activeTabInput: () => CHAT_TAB,
+    onTabsChanged: () => {
+      throw new Error('no tabGroups');
+    },
+    lockActiveGroup: () => {
+      locks += 1;
+      return Promise.resolve();
+    },
+    warn: (m) => warnings.push(m),
+  });
+  assert.doesNotThrow(() =>
+    lock.attach({ active: true, onDidChangeViewState: (l) => viewState.on(l), onDidDispose: () => undefined }),
+  );
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0]!, /no tabGroups/);
+  assert.equal(viewState.live(), 0, 'the view-state subscription taken before the failure is disposed');
+  assert.equal(locks, 0, 'no lock without a working tab source');
+});
+
 test('a throwing enabled() is reported via warn and a later event retries and locks', () => {
   const h = harness({ active: true, tab: CHAT_TAB, enabledThrowsOnce: true });
   assert.doesNotThrow(() => h.attach());

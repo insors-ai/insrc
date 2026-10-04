@@ -4,7 +4,7 @@
     "epicHash": "5f7a7cb95b643ae5",
     "storyId": "S001",
     "createdAt": "2026-10-04T15:17:30.878Z",
-    "updatedAt": "2026-10-04T15:55:42.810Z",
+    "updatedAt": "2026-10-04T16:01:21.570Z",
     "standalone": true
   },
   "body": {
@@ -24,60 +24,92 @@
       {
         "id": "t4",
         "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
       }
     ],
-    "summary": "t1: git_diff accepts an optional exclude list of repo-root globs, applied by git to both the diff body and the numstat file list. t2: changedFiles forwards excludeGlobs to all three diffs and exports LEDGER_EXCLUDE_GLOBS. t3: a per-Story build-start file with one shared reader, consulted first by the range-base resolver. t4: stampBuildStart and the single finished-build test. Tests run against real git; every mutation of each production change turned its suite red (8 for t1, 11 for t2, 13 for t3, 29 for t4, one of which needed an added test).",
+    "summary": "t1: git_diff accepts an optional exclude list of repo-root globs, applied by git to both the diff body and the numstat file list. t2: changedFiles forwards excludeGlobs to all three diffs and exports LEDGER_EXCLUDE_GLOBS. t3: a per-Story build-start file with one shared reader, consulted first by the range-base resolver. t4: stampBuildStart and the single finished-build test. t5: the implement phase stamps on every admitted route and both BUILD writers exclude the stamp file. Tests run against real git and the real phases; every mutation of each production change turned its suite red (8, 11, 13, 29 and 7).",
     "changeLog": [
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-5f7a7cb95b643ae5-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/diff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:01:21.570Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:01:21.570Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/changed-files.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/range-base.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/changed-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T16:01:21.570Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/range-base.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-04T15:55:42.810Z"
+        "timestamp": "2026-10-04T16:01:21.570Z"
       }
     ],
-    "commit": "afd6c24"
+    "commit": "9e27893"
   }
 }

@@ -7,12 +7,13 @@
     "storyId": "S001",
     "createdAt": "2026-10-04T12:52:39.593Z",
     "triageRationale": "Approved small bugfix (issue -> build): one fold branch drops out-of-scope findings without recording it; the fix adds disclosure only.",
-    "updatedAt": "2026-10-04T12:56:56.487Z"
+    "updatedAt": "2026-10-04T13:03:17.329Z",
+    "approvedAt": "2026-10-04T13:03:17.426Z"
   },
   "body": {
     "focus": "Fix ISSUE-11e4fa8831105a05: code-review findings whose file is outside the Story's changed set are dropped in silence. Keep the filter, but make every scope-drop visible: recorded per dimension on the persisted code-review record (and rendered in CR.md), reported on the insrc_code_review_step response, and logged. The verdict and counts must not change.",
     "producesLld": false,
-    "commit": "8e5e186",
+    "commit": "09d06cb",
     "tasks": [
       {
         "id": "S001",

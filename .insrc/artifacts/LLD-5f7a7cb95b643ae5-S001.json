@@ -420,7 +420,7 @@
           "scenario": "The build-start file exists but is unreadable, is not valid json, lacks a 40-hex rangeBase, or names a different epicHash or storyId.",
           "detection": "The resolver and the stamper both read it through one private reader that parses and checks the four fields against the Story asked for.",
           "response": "The resolver ignores it with a warning and continues with the existing steps. The stamper treats it as absent and applies its no-valid-stamp rule: it writes a fresh stamp unless the BUILD record shows unfinished work, in which case it writes nothing.",
-          "userImpact": "A log line. For a Story with no recorded work the stamp heals at the next build start; for a Story with unfinished recorded work the base falls to the existing steps until someone corrects the file.",
+          "userImpact": "A log line. For a Story with no recorded task a fresh stamp is written at the next build start, which is after any commits it has already made (declared limitation 1); for a Story with unfinished recorded work the base falls to the existing steps until someone corrects the file.",
           "recoverable": true
         },
         {
@@ -493,7 +493,7 @@
           "expected": "`stamped`: approval of a passed build completed the Story, so this is a rebuild. Declared limitation: if the approval was premature, the first pass's files leave the change log on the next validate; they remain in git."
         },
         {
-          "input": "An approved Story whose record can never be FINISHED (a task whose passed is not true, or no tasks) is rebuilt. On this repo's history that is about 31 of 72 approved records.",
+          "input": "An approved Story whose record is not FINISHED (a task whose passed is not true, no tasks, or every task passed but only part of the plan covered with no whole-Story task) is rebuilt. On this repo's history that is 34 of 72 approved records: 26 with a task not passed, 5 with no tasks, 3 covering only part of their plan.",
           "expected": "With a valid stamp, `kept`; with none and recorded tasks, `skipped-work-exists`. The rebuild measures from its earlier base, so its change log is a superset that can include other Stories' commits. Declared limitation, in the safe direction: nothing is dropped. Remedy: write or correct the build-start file by hand with the commit the rebuild starts from."
         },
         {
@@ -505,8 +505,8 @@
           "expected": "`skipped-work-exists`: nothing is written and the base resolves exactly as before the change."
         },
         {
-          "input": "A plan-driven or Small Story that was mid-build when this change was installed, with commits but no validate yet: no build-start file and no BUILD record.",
-          "expected": "`stamped` at the current HEAD, which is after the Story's own commits; nothing on disk distinguishes this from a fresh start. Declared limitation, one-time at upgrade: that Story's change log omits its earlier commits. Remedy: set rangeBase in the build-start file to the right commit by hand, or validate in-flight work before installing."
+          "input": "A Story with commits already landed, no recorded task and no valid stamp: a plan-driven or Small Story mid-build when this change was installed (no BUILD record), a Trivial Story in the same position (task-less record), or any Story whose stamp was deleted or judged invalid before its first validate.",
+          "expected": "`stamped` at the current HEAD, which is after the Story's own commits; nothing on disk distinguishes this from a fresh start. Declared limitation: that Story's change log omits its earlier commits. Remedy: set rangeBase in the build-start file to the right commit by hand, or validate in-flight work before installing."
         },
         {
           "input": "Trivial route, first implement call: no stamp and no BUILD record yet.",
@@ -795,7 +795,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Every changed signature is additive and optional: git_diff's `exclude`, changedFiles' `excludeGlobs`, the grounding's third parameter and the widened test seams. Callers that pass nothing get today's behaviour. No existing artifact is rewritten and no stored field changes meaning. A Story with no build-start file resolves its base exactly as today; that covers everything built before this change and any build in flight whose record shows unfinished work. Declared limitations: (1) a plan-driven or Small Story in flight at install with commits but no validate yet has no BUILD record, so its next implement call stamps the current HEAD and its change log omits its earlier commits; (2) an approved Story whose record is not finished (a task not passed, or no tasks; about 31 of this repo's 72 approved records) keeps its earlier base when rebuilt, so that rebuild's change log is a superset; (3) a finished single-task Story reworked after approval is treated as a rebuild; (4) a second rebuild without re-approval measures from the first rebuild's start; (5) a review that falls back says so only in the log. For (1), (2) and (4) the remedy is to write or correct rangeBase in the Story's build-start file by hand. Reverting the code leaves build-start files on disk as inert json that nothing reads. The intended behaviour change for existing users: a code review no longer lists files under docs/epics, docs/standalone, .insrc/build-start or the json files directly inside .insrc/artifacts, and when a Story's base resolves it reviews the Story's range rather than only the last commit.",
+      "backwardCompat": "Every changed signature is additive and optional: git_diff's `exclude`, changedFiles' `excludeGlobs`, the grounding's third parameter and the widened test seams. Callers that pass nothing get today's behaviour. No existing artifact is rewritten and no stored field changes meaning. A Story with no build-start file resolves its base exactly as today; that covers everything built before this change and any build in flight whose record shows unfinished work. Declared limitations: (1) whenever a Story has commits already landed, no recorded task and no valid stamp, its next implement call stamps the current HEAD and its change log omits those earlier commits; this covers a plan-driven or Small Story in flight at install (no BUILD record), a Trivial Story in the same position (its record is task-less), and, at any time, a Story whose stamp was deleted or judged invalid before its first validate; (2) an approved Story whose record is not finished (a task not passed, no tasks, or every task passed but only part of the plan covered; 34 of this repo's 72 approved records) keeps its earlier base when rebuilt, so that rebuild's change log is a superset; (3) a finished single-task Story reworked after approval is treated as a rebuild; (4) a second rebuild without re-approval measures from the first rebuild's start; (5) a review that falls back says so only in the log. For (1), (2) and (4) the remedy is to write or correct rangeBase in the Story's build-start file by hand. Reverting the code leaves build-start files on disk as inert json that nothing reads. The intended behaviour change for existing users: a code review no longer lists files under docs/epics, docs/standalone, .insrc/build-start or the json files directly inside .insrc/artifacts, and when a Story's base resolves it reviews the Story's range rather than only the last commit.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -804,14 +804,14 @@
         "id": "a1",
         "name": "Strict finished-build test, applied whether or not a stamp exists; records that cannot pass it are declared",
         "oneLineSummary": "One finished-build test decides every stamping case; it stays strict so the base only ever errs toward staying put, and the approved records it can never pass are a declared limitation with a manual remedy.",
-        "approach": "Keep the build-start file, the BUILD writers' exact-path exclusion, the git-level ledger exclusion and the review's three-step fallback. One test, `finished`, is true when the BUILD record is approved, has at least one task, every task has passed === true, and (when a PLAN exists) either every plan task id is recorded or the record holds a task whose id is the storyId (a whole-Story validation through the standalone route). The stamper uses it in both branches: with a valid stamp, replace it only when finished and approved after the stamp; with no valid stamp, write nothing when the record has tasks and is not finished, whether or not it is approved. Approved records that are not finished (a task not passed, or no tasks) never trigger a re-stamp; that is declared, with the remedy of setting rangeBase by hand.",
+        "approach": "Keep the build-start file, the BUILD writers' exact-path exclusion, the git-level ledger exclusion and the review's three-step fallback. One test, `finished`, is true when the BUILD record is approved, has at least one task, every task has passed === true, and (when a PLAN exists) either every plan task id is recorded or the record holds a task whose id is the storyId (a whole-Story validation through the standalone route). The stamper uses it in both branches: with a valid stamp, replace it only when finished and approved after the stamp; with no valid stamp, write nothing when the record has tasks and is not finished, whether or not it is approved. Approved records that are not finished (a task not passed, no tasks, or only part of the plan covered) never trigger a re-stamp; that is declared, with the remedy of setting rangeBase by hand.",
         "pros": [
           "No state stamps HEAD onto a Story's own commits when its record shows unfinished work, approved or not",
           "Every error in the rule is in the safe direction: the base stays put",
           "Whole-Story validations of a planned Story count as covering the plan"
         ],
         "cons": [
-          "On this repo's history about 31 of 72 approved records would never count as finished, so a rebuild of those keeps its earlier base and lists a superset",
+          "On this repo's history 34 of 72 approved records do not count as finished, so a rebuild of those keeps its earlier base and lists a superset",
           "The remedy for those is manual"
         ],
         "costEstimate": "M"

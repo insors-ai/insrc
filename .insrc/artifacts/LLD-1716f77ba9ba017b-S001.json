@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791143766097-bxkynw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T19:58:58.877Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 172777,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "epicSlug": "two-sets-eyes-review-rule-only",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791143766097-bxkynw",
+    "hldEffectiveHash": "9c39702f35b748773317c7984b3e209ce1ffca2429fc8b14b08c88d06fad1318",
+    "hldAmendmentsApplied": [],
+    "standalone": true
+  },
+  "body": {
+    "summary": {
+      "prose": "Every review is done by the party that did not write the work. Each artifact and build records who wrote it (the controller or the daemon), each review records who did it, and the two existing review tools send the work to the other side. Approval of a DEF, HLD, LLD or BUILD requires a review by the other party; the user can still override with a reason.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Route every review to the other party"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "finalizeArtifact",
+          "signature": "finalizeArtifact(intent, stepOutputs, runId, elapsedMs, llmResponse, model?, attribution?, authoredBy?: 'controller' | 'daemon'): Promise<FinalizeResult>",
+          "parameters": [
+            {
+              "name": "authoredBy",
+              "type": "'controller' | 'daemon'",
+              "purpose": "The party that authored the artifact. The MCP synthesize phase passes `controller`; both daemon workflow-run calls pass `daemon`.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<FinalizeResult>",
+            "meaning": "Unchanged, except the artifact's meta carries authoredBy when it was given."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Omitting authoredBy produces the same output as today."
+          ]
+        },
+        {
+          "name": "persistBuildRecord",
+          "signature": "persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string }",
+          "parameters": [
+            {
+              "name": "rec.meta.authoredBy",
+              "type": "'controller' | 'daemon'",
+              "purpose": "The party that wrote the code. The two build-step writers stamp `controller`. The approval-time writer stamps nothing.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "Unchanged. The existing merge keeps an authoredBy already on the record."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "reviewArtifactFile",
+          "signature": "reviewArtifactFile(opts): Promise<ReviewArtifactResult>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<ReviewArtifactResult>",
+            "meaning": "Unchanged, except the review it stamps carries reviewedBy `daemon`. The controller loop's verdicts phase stamps reviewedBy `controller`."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "runCodeReview",
+          "signature": "runCodeReview(subject, provider, opts & { reviewedBy?: 'controller' | 'daemon' }): Promise<CodeReviewOutcome>",
+          "parameters": [
+            {
+              "name": "reviewedBy",
+              "type": "'controller' | 'daemon'",
+              "purpose": "The party running the review. The MCP handler passes `controller`; the daemon's code-review method passes `daemon`.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewOutcome>",
+            "meaning": "Unchanged, except the code-review record's meta carries reviewedBy when it was given."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "approveArtifactByJsonPath(jsonPath: string, opts?: { overrideReview?: string }): ApprovalResult",
+          "parameters": [],
+          "returns": {
+            "type": "ApprovalResult",
+            "meaning": "Unchanged on success."
+          },
+          "errors": [
+            {
+              "type": "ReviewBlockedError",
+              "condition": "Existing: the review's verdict blocks. New: a DEF, HLD or LLD has no review; or any artifact's review was done by the party that authored it, both parties known. None of these applies when overrideReview is given."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "ISSUE, SPEC and PLAN artifacts need no review and are approved on the user's approval alone.",
+            "An unknown author or an unknown reviewer never withholds approval by itself.",
+            "The override reason is recorded on the artifact, as today."
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "approveWorkflowTarget(req: WorkflowApproveRequest, opts?): Promise<WorkflowApproveResult>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "Unchanged shape. A BUILD record is withheld into skipped[] when the Story has no code review, whether or not the enforcement setting is on, and when the code review was done by the party that authored the build, both known. overrideReview approves past either."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A batch approval skips each withheld artifact with its reason and continues."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Party fields",
+        "change": "field-add",
+        "details": "Optional `authoredBy` on artifact meta and BUILD record meta; optional `reviewedBy` on the design review stamp and the code-review record. Both take 'controller' or 'daemon'. Two small shared readers return the party: the explicit field when present; otherwise, for older design artifacts and reviews, `controller` when the stored model label is 'client' and `daemon` for any other label; otherwise unknown. An older BUILD record's author is unknown.",
+        "callSites": [
+          "src/workflow/types.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/review/types.ts",
+          "src/workflow/code-review/types.ts"
+        ]
+      },
+      {
+        "entity": "Daemon request to review an existing design artifact",
+        "change": "new",
+        "details": "A new daemon stream method, workflow.review, takes an artifact path and runs reviewArtifactFile with the provider the role router resolves for the `review` role, as the TUI review service does. It refuses an artifact the daemon authored. The MCP server gets one helper to call it and one to call the existing codeReview.run, both built like the existing workflow-run stream helper.",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/daemon-stream.ts"
+        ]
+      },
+      {
+        "entity": "Routing inside insrc_review_step and insrc_code_review_step",
+        "change": "invariant-change",
+        "details": "On `start`, each tool reads the author party. Daemon-authored: today's controller loop, unchanged. Controller-authored or unknown: the tool asks the daemon to review, waits, and returns `done` with the verdict in the same turn. If the daemon is unreachable, fails, is too old to know the request, or exceeds the wait limit, the tool returns an error saying so; it never falls back to a controller review. The controller-loop phases refuse to stamp a review of controller-authored work.",
+        "callSites": [
+          "src/mcp/review-step/phases/start.ts",
+          "src/mcp/review-step/phases/verdicts.ts",
+          "src/mcp/code-review-step/handler.ts",
+          "src/daemon/code-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Written rule",
+        "change": "invariant-change",
+        "details": "The steering source, the two review tool descriptions and the daemon comments are rewritten to say: the party that did not author the work reviews it, in both directions; the review tools route this themselves; the same model on both sides is acceptable; approval requires the review. The guides and the plugin copy follow from the steering source.",
+        "callSites": [
+          "src/prompts/steering-block.md",
+          "src/mcp/server.ts",
+          "src/daemon/workflow-rpc.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A review tool asks the daemon to review and the daemon is not running, closes the connection, fails part-way, or does not know the request because it is an older build.",
+          "detection": "The MCP stream helper sees a connection error, a close before the final frame, an error frame, or an `unknown method` answer.",
+          "response": "The tool returns an error naming the cause (and, for an older daemon, telling the user to update it). Nothing is stamped. No controller review is offered.",
+          "userImpact": "The artifact has no review, so approval is withheld. The user starts or updates the daemon and retries, or overrides at approval with a reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon review takes longer than the tool's wait limit.",
+          "detection": "A timer in the review tool expires before the final frame arrives.",
+          "response": "The tool aborts the request and returns a timeout error. Nothing is stamped.",
+          "userImpact": "Same as a failed review: retry or override.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A party is asked to review its own work: the daemon is asked to review a daemon-authored artifact or build, or the controller submits verdicts or judgements for controller-authored work.",
+          "detection": "The reviewer reads the author party before stamping and compares it with its own.",
+          "response": "The request is refused with a same-party error. Nothing is stamped.",
+          "userImpact": "The user is told which party must review instead.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An artifact or review written before this change, with no party field.",
+          "expected": "It stays readable. A design artifact's and a review's party is inferred from the stored model label; a BUILD record's author is unknown. An unknown party never withholds approval by itself."
+        },
+        {
+          "input": "An unapproved DEF, HLD, LLD or BUILD record that was never reviewed.",
+          "expected": "Withheld at approval until it is reviewed or the user overrides. Already approved records are not re-examined."
+        },
+        {
+          "input": "An ISSUE, SPEC or PLAN with no review.",
+          "expected": "Approved on the user's approval alone."
+        },
+        {
+          "input": "A daemon workflow run reviews the artifact it just authored (its opt-in finalize review).",
+          "expected": "The review is stamped `daemon` on a `daemon`-authored artifact, so approval withholds it as a same-party review until the controller reviews it or the user overrides."
+        },
+        {
+          "input": "A batch approval covers reviewed and unreviewed artifacts.",
+          "expected": "The unreviewed and same-party ones are listed in skipped[] with a reason; the rest are approved."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A review whose verdict blocks withholds approval unless overridden, and the override reason is recorded on the artifact.",
+          "source": "c1"
+        },
+        {
+          "text": "Calling finalizeArtifact, persistBuildRecord or runCodeReview without the new argument produces the same output as today.",
+          "source": "c2"
+        },
+        {
+          "text": "The daemon-authored path through both review tools (the controller loop) behaves as it does today.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "The Story lists no acceptance criteria, so they are defined here.",
+          "subjects": [
+            "ac1: controller-authored work is reviewed by the daemon and daemon-authored work by the controller, for design artifacts and for code, through the two existing review tools",
+            "ac2: new artifacts, BUILD records and reviews record their party; older ones stay readable",
+            "ac3: approval of a DEF, HLD, LLD or BUILD requires a review by the other party, with the existing override; ISSUE, SPEC and PLAN need none",
+            "ac4: a failed daemon review is reported and never replaced by a controller review",
+            "ac5: the steering and both review tool descriptions state the rule in both directions"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Party stamps and readers.",
+          "subjects": [
+            "T1 the two readers: explicit field wins; model label 'client' reads as controller and any other label as daemon; nothing stored reads as unknown",
+            "T2 finalizeArtifact stamps the authoredBy it is given and writes the same output as before when given none",
+            "T3 a BUILD record keeps its authoredBy across a later write that omits it",
+            "T4 each review path stamps its own party: controller loop, reviewArtifactFile, and runCodeReview with each value"
+          ],
+          "fixturesNeeded": [
+            "the existing finalizeArtifact test harness"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The approval gate.",
+          "subjects": [
+            "T5 a DEF, an HLD and an LLD with no review are withheld and approved with an override; an ISSUE, a SPEC and a PLAN with no review are approved",
+            "T6 a same-party review withholds; an other-party non-blocking review approves; an unknown author or reviewer does not withhold",
+            "T7 a BUILD record is withheld with no code review (enforcement off and on) and with a same-party code review; an override approves",
+            "T8 a batch approval lists withheld artifacts in skipped[] and approves the rest"
+          ],
+          "fixturesNeeded": [
+            "the existing gate test fixtures"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Routing in the two review tools, with the daemon faked.",
+          "subjects": [
+            "T9 insrc_review_step: controller-authored or unknown-author artifact goes to the daemon and returns done with the verdict; daemon-authored runs the controller loop as before",
+            "T10 insrc_code_review_step: the same two routes",
+            "T11 daemon unreachable, error frame, `unknown method` and timeout each return an error, stamp nothing and offer no controller loop",
+            "T12 the daemon refuses to review daemon-authored work, and the controller-loop phases refuse to stamp a review of controller-authored work"
+          ],
+          "fixturesNeeded": [
+            "a fake daemon over the stream helper's injected connect"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The written rule.",
+          "subjects": [
+            "T13 the steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "T9",
+            "T10",
+            "T12"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "T1",
+            "T2",
+            "T3",
+            "T4"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "T5",
+            "T6",
+            "T7",
+            "T8"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "T11"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "T13"
+          ]
+        }
+      ],
+      "testFramework": "node:test via `npx tsx --test` under Node 22"
+    },
+    "migration": {
+      "stateBefore": "No record says which party authored an artifact or a build. The review tools always run the controller loop. Approval refuses only a blocking review: an unreviewed design artifact is approvable, and an unreviewed BUILD is withheld only under an enforcement setting that is off by default. The steering says review is a controller task.",
+      "stateAfter": "Artifacts, BUILD records and reviews record their party. The two review tools send the work to the party that did not author it. Approval of a DEF, HLD, LLD or BUILD requires a review by the other party, with the existing override. The steering states the rule in both directions.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional party fields and the two readers; stamp the author at artifact finalize and in the build-step BUILD writers; stamp the reviewer in each review path.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the daemon request to review an existing artifact and the two MCP stream helpers; make each reviewer refuse its own party's work.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Route inside insrc_review_step and insrc_code_review_step by author party.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make the approval gate require an other-party review for DEF, HLD, LLD and BUILD, with the existing override.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Rewrite the steering source, the two tool descriptions and the daemon comments.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data is rewritten; the new fields are optional and older records stay readable. Three behaviours change for users: (1) insrc_review_step and insrc_code_review_step on controller-authored work now return the daemon's verdict in one turn instead of handing the controller a review to do; (2) an unapproved DEF, HLD, LLD or BUILD with no review can no longer be approved without a review or an override reason; (3) the daemon and the MCP server must both be on the new build, otherwise the tools report a failed daemon review. Known limit: the daemon cannot run tests, so its code review reports test results as unverified.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Explicit party fields, routing inside the review tools",
+        "oneLineSummary": "Record author and reviewer party as explicit fields; the two existing review tools route to the other party; the gate checks the fields.",
+        "approach": "Add an optional author party to artifact meta and BUILD record meta, and an optional reviewer party to the design review stamp and the code-review record. The writers that know their side stamp it. The existing insrc_review_step and insrc_code_review_step tools read the author and either run today's controller loop (daemon-authored) or ask the daemon to review (controller-authored or unknown). The approval gate requires a review by the other party.",
+        "pros": [
+          "The answer comes from the record, not from an assumption",
+          "No new tool for the controller to learn; the steering stays simple",
+          "Uses reviewers that already exist on both sides"
+        ],
+        "cons": [
+          "Needs one new daemon request to review an existing design artifact",
+          "Touches two tools and the gate"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Infer the party from the model label",
+        "oneLineSummary": "Add no fields; treat the model label 'client' as the controller and anything else as the daemon.",
+        "approach": "Derive author and reviewer party from labels already stored (the artifact's attribution and the review's model). Routing and the gate use the derived value.",
+        "pros": [
+          "No data change"
+        ],
+        "cons": [
+          "BUILD records carry no such label, so code authorship cannot be derived",
+          "A label is a model name, not a party; the rule would rest on a naming convention"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Covers design artifacts but cannot tell who authored a build, so code review cannot be routed or gated. Kept only as the fallback for reading older design artifacts."
+      },
+      {
+        "id": "a3",
+        "name": "Steering only",
+        "oneLineSummary": "Rewrite the steering to say who reviews and leave the tools and the gate unchanged.",
+        "approach": "State the rule in both directions in the steering and tool descriptions and rely on the controller to call the right reviewer. Nothing is recorded or enforced.",
+        "pros": [
+          "Smallest change"
+        ],
+        "cons": [
+          "Nothing enforces the rule; the issue exists because a written rule was not enough",
+          "The controller has no way to ask the daemon for a design review today"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Enforces nothing and leaves the controller with no way to request a daemon design review; it restates the situation the issue describes."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "How long should a review tool wait for the daemon review? On 2026-10-04 a non-controller design review of a 40 KB design took 12 minutes for one pass and 27 minutes with its automatic second pass. A tool call may not be able to wait that long."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/review-step/phases/start.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-1716f77ba9ba017b"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-04",
+      "quotedText": "review artifacts need to be submitted for approval"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-04",
+      "quotedText": "these 3 don't need review steps, only user approval"
+    }
+  ]
+}

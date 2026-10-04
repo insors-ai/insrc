@@ -20,7 +20,11 @@
     "issueHash": "0855311b6b32eb72",
     "epicSlug": "bug-build-record-triage-routed-small",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T12:10:45.255Z",
+    "parentRef": {
+      "slug": "bug-build-record-triage-routed-small"
+    }
   },
   "body": {
     "title": "File a small standalone story's BUILD record beside its design doc, not under docs/epics with a raw-hash folder name",

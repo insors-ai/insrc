@@ -20,7 +20,11 @@
     "issueHash": "b2e16601ad94f39b",
     "epicSlug": "code-review-record-takes-its-folder",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T12:11:00.851Z",
+    "parentRef": {
+      "slug": "code-review-record-takes-its-folder"
+    }
   },
   "body": {
     "title": "A code-review record can land in a second folder for the same work item",

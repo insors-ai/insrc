@@ -20,7 +20,11 @@
     "issueHash": "43d72766d3b9a2c1",
     "epicSlug": "build-record-writer-mis-files-standalone",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T12:10:57.416Z",
+    "parentRef": {
+      "slug": "build-record-writer-mis-files-standalone"
+    }
   },
   "body": {
     "title": "A standalone Story's BUILD record is filed under docs/epics/ and carries no artifact marker",

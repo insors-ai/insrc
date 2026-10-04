@@ -20,7 +20,11 @@
     "issueHash": "11e4fa8831105a05",
     "epicSlug": "controller-code-review-silently-discards-every",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T12:52:36.912Z",
+    "parentRef": {
+      "slug": "controller-code-review-silently-discards-every"
+    }
   },
   "body": {
     "title": "Code-review findings outside the changed set are discarded without a word",

@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "11e4fa8831105a05",
+    "storyId": "S001",
+    "createdAt": "2026-10-04T12:52:39.593Z",
+    "triageRationale": "Approved small bugfix (issue -> build): one fold branch drops out-of-scope findings without recording it; the fix adds disclosure only.",
+    "updatedAt": "2026-10-04T12:56:56.487Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-11e4fa8831105a05: code-review findings whose file is outside the Story's changed set are dropped in silence. Keep the filter, but make every scope-drop visible: recorded per dimension on the persisted code-review record (and rendered in CR.md), reported on the insrc_code_review_step response, and logged. The verdict and counts must not change.",
+    "producesLld": false,
+    "commit": "8e5e186",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "The controller code-review path still filters out findings whose file is outside the changed set, but no longer discards them: each dimension carries its dropped findings verbatim as outOfScope on the record, CR.md lists them and says they are not counted, and the insrc_code_review_step response reports scopeDropped (total, per dimension, changed-set size) with a warn log. Verdict and counts are unchanged, and a record with no drops is byte-identical. 4 tests added; 13 mutations each turn them red. The daemon-driven dimension judges apply the same filter and remain silent.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-11e4fa8831105a05.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T12:56:56.487Z"
+      }
+    ]
+  }
+}

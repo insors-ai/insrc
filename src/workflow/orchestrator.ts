@@ -2291,11 +2291,21 @@ async function finalizeStandaloneLld(
 		? intent.params['specHash'] as string
 		: undefined;
 
+	// The work item's folder ANCHOR, inherited from its definition artifact like
+	// the label above. Without it the anchor falls back to this LLD's own
+	// createdAt, so an LLD written on a later day than its ISSUE composed a second
+	// folder (ISSUE-0b2faed8) — and the BUILD / code-review records, which follow
+	// the LLD, went with it. Omitted, not defaulted, when there is no definition
+	// artifact: a standalone LLD that IS the work item's first record keeps
+	// anchoring on its own createdAt, exactly as before.
+	const epicCreatedAt = readEpicCreatedAt(intent.repoPath, epicHash);
+
 	const meta = {
 		workflow:      'design.story' as const,
 		runId,
 		repoPath:      intent.repoPath,
 		createdAt:     new Date().toISOString(),
+		...(epicCreatedAt !== undefined ? { epicCreatedAt } : {}),
 		attribution:   attribution ?? singleModelAttribution(model),
 		elapsedMs,
 		repoIndexedAt: intent.repoIndexedAt,

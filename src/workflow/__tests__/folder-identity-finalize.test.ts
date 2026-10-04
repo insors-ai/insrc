@@ -132,6 +132,52 @@ test('t8/t3 CALL SITE: with NO definition head, the finalized LLD still falls ba
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+// ---------------------------------------------------------------------------
+// ISSUE-0b2faed8 — the standalone LLD's folder ANCHOR.
+//
+// The label tests above could not see this: they check the label segment only,
+// and ISSUE_MADE is months before the day these tests run, so the DATE segment
+// was wrong the whole time and nothing looked at it. The anchor decides that
+// segment, and the BUILD / code-review records follow the LLD's anchor.
+// ---------------------------------------------------------------------------
+
+test('ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE persists the ISSUE\'s anchor and lands in the ISSUE\'s folder', async () => {
+	const repo = seedIssueRepo({ standalone: true });
+	try {
+		const emit = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(standaloneLldIntent(repo), {}, 'wf-anchor-a', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+
+		const artifact = result.finalized.artifact as LldArtifact;
+		const meta = artifact.meta as { createdAt: string; epicCreatedAt?: string };
+		// Fixture precondition: the two clocks really are on different days, or the
+		// folder assertion below would hold with or without the fix.
+		assert.notEqual(meta.createdAt.slice(0, 10), ISSUE_MADE.slice(0, 10), 'the LLD must be written on a different day than the ISSUE');
+		assert.equal(meta.epicCreatedAt, ISSUE_MADE, 'the persisted LLD must carry the ISSUE\'s createdAt as its anchor');
+
+		// The finalizer returns the artifact, not a path: the writer composes the
+		// path from this persisted metadata, so the shipping builder over the
+		// metadata the finalizer wrote IS where the document lands.
+		const folder = folderFor(repo, artifact.meta, 'S001');
+		assert.ok(folder.includes(`${HEAD_SLUG}-E20260409`), `the LLD must be filed under the ISSUE's day, got ${folder}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anchor and files under its own day', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-anchor-nohead-'));
+	try {
+		const emit = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
+		const result = await finalizeArtifact(standaloneLldIntent(repo), {}, 'wf-anchor-b', 5, emit, 'client');
+		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
+		const artifact = result.finalized.artifact as LldArtifact;
+		const meta = artifact.meta as { createdAt: string; epicCreatedAt?: string };
+		assert.equal('epicCreatedAt' in meta, false, 'no definition head means no inherited anchor, not a defaulted one');
+		const day = meta.createdAt.slice(0, 10).replace(/-/g, '');
+		const folder = folderFor(repo, artifact.meta, 'S001');
+		assert.ok(folder.includes(`-E${day}`), `the LLD files under its own day, got ${folder}`);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('t8/t3 CALL SITE: an EMPTY label on the definition head is treated as absent at the call site too', async () => {
 	const repo = seedIssueRepo({ slug: '', standalone: true });
 	try {

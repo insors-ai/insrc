@@ -1,0 +1,23 @@
+<!-- insrc:artifact BUILD-0b2faed872727348-S001 -->
+
+# Build (standalone trivial) — Story S001
+
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-04T15:00:19.614Z  ·  **Updated:** 2026-10-04T15:05:48.915Z
+
+**Commit:** b482fab
+
+## Scope
+
+Make the standalone LLD finalizer stamp meta.epicCreatedAt from the work item's definition record (readEpicCreatedAt), as the plan finalizer does, so a standalone LLD is filed in its issue's folder whatever day it is written; a standalone LLD with no definition record keeps its own creation time. Then move the misfiled LLD of ISSUE-5f7a7cb95b643ae5 into docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/ and give its record the anchor.
+
+## Triage rationale
+
+One finalizer in one file omits the folder anchor its sibling finalizers stamp from the same reader.
+
+## Summary
+
+The standalone LLD finalizer now stamps the work item's folder anchor (meta.epicCreatedAt) from its definition record, so an LLD written on a later day than its issue is filed in the issue's folder; with no definition record the key is omitted. Two tests through the real finalize entry point cover both cases and each was seen to fail with its mutation. The misfiled LLD of ISSUE-5f7a7cb9 was moved beside its ISSUE and PLAN and its record given the anchor.
+
+## Tasks validated
+
+- ✗ `S001`

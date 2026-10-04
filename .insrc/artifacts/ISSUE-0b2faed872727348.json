@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791125972764-oxcs2a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T15:00:08.545Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 35775,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "0b2faed872727348",
+    "epicSlug": "standalone-lld-filed-second-work-item",
+    "standalone": true,
+    "magnitude": "small",
+    "approvedAt": "2026-10-04T15:00:12.741Z",
+    "parentRef": {
+      "slug": "artifact-docs-folders-fork-per-stage"
+    }
+  },
+  "body": {
+    "title": "File a standalone LLD in its work item's folder",
+    "reproduction": "File an issue on one day and write its design (a standalone LLD) on a later day.\n\nObserved on ISSUE-5f7a7cb95b643ae5: the issue was created on 2026-10-02 and its LLD on 2026-10-04. The issue and the plan are under `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/` (ISSUE.md, S001/PLAN.md). The LLD is alone under `docs/standalone/batch-approval-stamps-one-shared-meta-E202610045f7a7cb9/S001/LLD.md`. The LLD's record has no folder anchor (`meta.epicCreatedAt` is absent) while the plan's record carries the issue's creation time.\n\nExpected: every document of one work item is in one folder, named for the day the work item was created.\n\nActual: the LLD is in a second folder named for the day the LLD was written. Records that take their folder from the LLD (the build record and the code-review record of a standalone Story) would follow it there.",
+    "rootCause": "A work item's folder name is built from a label and an anchor date. The anchor is `meta.epicCreatedAt` when the record carries one, otherwise the record's own creation time.\n\nThe plan finalizer and the epic-level finalizers stamp `epicCreatedAt` by reading the work item's definition record (the DEF or the ISSUE). The standalone LLD finalizer inherits the label from that same definition record but never stamps the anchor, so it uses the LLD's own creation time. On the same day as the issue the two dates give the same folder name, which is why the gap was not seen; on a later day they differ.\n\nThe earlier folder fixes addressed the label at every writer and the placement of build and code-review records; this writer's anchor was not among them.",
+    "fixIntent": "Make the standalone LLD carry its work item's anchor, taken from the same source the plan uses, so the LLD is filed with its issue regardless of the day it is written. A standalone LLD with no definition record to inherit from keeps today's behaviour (its own creation time).\n\nMove the already-misfiled LLD of ISSUE-5f7a7cb95b643ae5 into the work item's folder and give its record the anchor, so the records that follow it (build, code review) land in the same place. Other standalone LLDs that may already sit in a second folder are not migrated by this fix."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts",
+      "quotedText": "const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), workItemKindOf(meta), epicSlug).md;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts",
+      "quotedText": "epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts",
+      "quotedText": "export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-5f7a7cb95b643ae5-S001",
+      "quotedText": "docs/standalone/batch-approval-stamps-one-shared-meta-E202610045f7a7cb9/S001/LLD.md"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-04",
+      "quotedText": "ok, fix this as an issue and then move the LLD to the right folder"
+    }
+  ]
+}

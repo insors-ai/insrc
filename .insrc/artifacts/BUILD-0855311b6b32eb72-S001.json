@@ -7,12 +7,13 @@
     "storyId": "S001",
     "createdAt": "2026-10-04T12:11:09.893Z",
     "triageRationale": "Three approved small bugfixes with one shared cause: each record writer derives the work item's folder from a different, incomplete source. One shared resolver in src/workflow/storage.ts plus its call sites.",
-    "updatedAt": "2026-10-04T12:24:24.234Z"
+    "updatedAt": "2026-10-04T12:42:57.460Z",
+    "approvedAt": "2026-10-04T12:42:57.596Z"
   },
   "body": {
     "focus": "Fix three overlapping misfiling issues together (ISSUE-0855311b6b32eb72, ISSUE-43d72766d3b9a2c1, ISSUE-b2e16601ad94f39b): a story's BUILD and code-review records must land in the same docs folder as the story's other artifacts on every route. Resolve top-level split, slug and date anchor from the work item's definition head (DEF/ISSUE) with the story's LLD as fallback, in ONE shared resolver used by the BUILD writers and the code-review writer; stamp standalone + sizeClass on a standalone BUILD record's first write; emit the insrc:artifact marker from the BUILD renderer.",
     "producesLld": false,
-    "commit": "d7a8ae8",
+    "commit": "4fd8409",
     "tasks": [
       {
         "id": "S001",

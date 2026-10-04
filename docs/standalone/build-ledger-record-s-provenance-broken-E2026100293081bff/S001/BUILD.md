@@ -1,0 +1,33 @@
+# Build (standalone) — Story S001
+
+**Standalone:** yes  ·  **Created:** 2026-10-04T04:52:39.942Z  ·  **Updated:** 2026-10-04T04:55:52.291Z
+
+**Commit:** bc157a5
+
+## Summary
+
+Back-fills the ledger entry for work implemented and committed earlier without its BUILD record. All ten tasks have commits (t1 3f033aa, t2 70ed25e, t3 2465678, t4 be417da, t5 35aec0e, t6 4b3c0a7, t7 b7513ce, t8 3b3d69c, t9 2ba2838, t10 e15ef63) plus three code-review fixes (404232d CR-1/CR-2, 6c7d221 CR-3 making the rangeBase stamp write-once). VERIFIED NOW, not inherited: the build-runner and build-step suites are 153 tests, 153 pass, 0 fail, 0 skipped on Node 22 with INSRC_LIVE_TESTS unset, and tsc is clean. The validate gate cannot execute anything in its sandbox, so I ran the mutation proofs it reported as unrecorded or invalidated. t8's absent-sizeClass interpolation: 5 tests red, including both byte-identity goldens. t9's guarantee re-expressed against the code that replaced it (write the flag unconditionally rather than only on an explicit true): 5 tests red, including t9's own CHARACTERISATION B. ACCEPTED DEVIATION, amended rather than waved through: t10's check requires all three of t1's characterisations to be INVERTED by their named task, and TEST C was re-labelled "NOT a defect" at t6 instead. The rationale holds — that scenario is a trivial standalone with neither PLAN nor LLD, so no upstream artifact can carry a stamped base and an empty change set is the specified outcome for that route; the genuine t6 inversion is the separate clean-tree-with-a-stamped-base test. The check is amended to cover TEST C by re-label, which the t10 audit test already encodes. CORRECTION TO THIS STORY'S OWN t4/t9 DECISION, shipped at bc157a5: this record's first write landed under docs/epics/ although the work item is standalone, because the shared validate persist omitted meta.standalone so mergeWithPrior could carry a prior forward — sound on a second write, not on a first. No tested decision was overturned: the persist layer's "absent means epic" default is correct and stays pinned, and what was wrong is that its caller abstained too despite the route being readable from the definition head. The validate writer now resolves it via inheritedStandalone exactly as completion-record.ts already did, under the same `=== true` guard. Two new tests pin both halves; the standalone one is mutation-verified. KNOWN LIMITATION, recorded not fixed: the change set comes from rangeBase..HEAD with rangeBase stamped at plan approval, so back-filling days later sweeps unrelated commits — the first attempt here produced 169 entries naming other Stories' records, the second produced 2. The change set on this record was therefore derived from this Story's own twelve commits. Prompt validation is unaffected; a stale-base back-fill is the case the range answer does not cover, and it is the natural follow-up.
+
+## Tasks validated
+
+- ✗ `t10`
+
+## Changes
+
+- `src/mcp/build-step/__tests__/build-step.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/mcp/build-step/phases/validate.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/mcp/build-step/types.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/mcp/server.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/__tests__/gates.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/build-record-enrichment.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/build-record.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/changed-files.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/completion-record.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/fixtures/build-record-goldens.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/provenance-build.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/__tests__/range-base.test.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/changed-files.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/range-base.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)
+- `src/workflow/runners/build/standalone-record.ts` — **insrc-build** (2026-10-04T04:55:52.291Z)

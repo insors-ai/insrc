@@ -87,6 +87,24 @@ declare module 'vscode' {
     iconPath?: Uri | { readonly light: Uri; readonly dark: Uri } | undefined;
     reveal(viewColumn?: ViewColumn): void;
     onDidDispose(listener: () => unknown): Disposable;
+    /** Fires when the panel's `active` / `visible` state changes (chat group lock). */
+    onDidChangeViewState(listener: (e: unknown) => unknown): Disposable;
+  }
+
+  /** A tab in an editor group; `input` identifies what it shows (chat group lock). */
+  export interface Tab {
+    readonly input: unknown;
+  }
+
+  export interface TabGroup {
+    readonly activeTab: Tab | undefined;
+  }
+
+  /** The window's editor tab model (chat group lock: is the chat the active tab?). */
+  export interface TabGroups {
+    readonly activeTabGroup: TabGroup;
+    onDidChangeTabs(listener: (e: unknown) => unknown): Disposable;
+    onDidChangeTabGroups(listener: (e: unknown) => unknown): Disposable;
   }
 
   /**
@@ -99,6 +117,8 @@ declare module 'vscode' {
   }
 
   export namespace window {
+    /** The editor tab model across all groups (chat group lock). */
+    export const tabGroups: TabGroups;
     export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
     export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
     /** Surface a non-blocking error toast (sc8 Notifier — a rejected config write). */

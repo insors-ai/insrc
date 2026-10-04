@@ -94,6 +94,47 @@ test('S006: the edit-governor module is vscode-free', () => {
   assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'edit-governor.ts has no vscode require');
 });
 
+// ---- Chat group lock: setting + wiring (behaviour is pinned in group-lock.test.ts) ----
+
+test('group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)', () => {
+  const pkg = JSON.parse(read(PKG)) as {
+    contributes: { configuration: Array<{ properties?: Record<string, { type?: string; default?: unknown; scope?: string }> }> };
+  };
+  const props = Object.assign({}, ...pkg.contributes.configuration.map((g) => g.properties ?? {}));
+  assert.ok('insrc.chat.lockGroup' in props, 'insrc.chat.lockGroup config contributed');
+  assert.equal(props['insrc.chat.lockGroup'].type, 'boolean');
+  assert.equal(props['insrc.chat.lockGroup'].default, true, 'lock defaults on');
+  assert.equal(props['insrc.chat.lockGroup'].scope, 'machine');
+});
+
+test('group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter', () => {
+  const src = read(EXT);
+  const block = /if \(chatEnabled\) \{([\s\S]*?)\n  \}/.exec(src);
+  assert.ok(block, 'the chatEnabled block is present');
+  const b = block![1]!;
+  assert.match(b, /createChatGroupLock\(\{/, 'builds the group lock inside the flag gate');
+  assert.match(b, /getConfiguration\(\)\.get<boolean>\('insrc\.chat\.lockGroup'\) !== false/, 'reads the setting live with the full dotted key, default on');
+  assert.match(b, /viewType: CHAT_VIEW_TYPE/, 'passes the exported chat view type');
+  assert.match(b, /activeTabInput: \(\) => vscode\.window\.tabGroups\.activeTabGroup\.activeTab\?\.input/, 'hands over the raw tab input (the predicate lives in group-lock.ts)');
+  assert.match(b, /tabGroups\.onDidChangeTabs\(/, 'retries on tab changes');
+  assert.match(b, /tabGroups\.onDidChangeTabGroups\(/, 'retries on tab-group changes');
+  assert.match(b, /executeCommand\('workbench\.action\.lockEditorGroup'\)/, 'the lock seam runs the built-in lock command');
+  assert.match(
+    b,
+    /const webviewPanelChannel = \(panel: vscode\.WebviewPanel\): ChatPanelChannel => \{[\s\S]*?chatGroupLock\.attach\(panel\);[\s\S]*?return \{/,
+    'the single create+restore adapter attaches the lock',
+  );
+  // The view-type literal lives only in chat-panel.ts; extension.ts compares nothing itself.
+  assert.doesNotMatch(src, /insrc\.chatPanel/, 'no chat view-type literal in extension.ts');
+  assert.match(b, /registerWebviewPanelSerializer\(CHAT_VIEW_TYPE,/, 'the serializer is keyed by the exported constant');
+});
+
+test('group-lock: the module is vscode-free', () => {
+  const src = read(join(HERE, '..', 'group-lock.ts'));
+  assert.doesNotMatch(src, /from ['"]vscode['"]/, 'group-lock.ts imports nothing from vscode');
+  assert.doesNotMatch(src, /require\(['"]vscode['"]\)/, 'group-lock.ts has no vscode require');
+});
+
 // ---- S007: docs-review pane wiring ----
 
 test('S007: package.json contributes the insrc.chat.docsReview command', () => {

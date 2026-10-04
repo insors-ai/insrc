@@ -49,7 +49,8 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createChatPanelHost, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createChatPanelHost, CHAT_VIEW_TYPE, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createChatGroupLock } from './chat/group-lock.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
@@ -469,11 +470,34 @@ export function activate(context: vscode.ExtensionContext): void {
     // S001 (bugfix): the ONE adapter that wraps any WebviewPanel (freshly created OR restored by
     // VS Code's WebviewPanelSerializer) into a ChatPanelChannel, so a restored panel is wired
     // identically to a fresh one. Sets the themed tab icon on either path.
+    //
+    // The chat's editor group is locked (insrc.chat.lockGroup, default on) so a file picked in
+    // the Explorer opens in another group, not as a tab over the chat. All the logic — when to
+    // lock, and what counts as the chat tab — lives in the vscode-free group-lock module; these
+    // are thin seams only.
+    const chatGroupLock = createChatGroupLock({
+      enabled: () => vscode.workspace.getConfiguration().get<boolean>('insrc.chat.lockGroup') !== false,
+      viewType: CHAT_VIEW_TYPE,
+      activeTabInput: () => vscode.window.tabGroups.activeTabGroup.activeTab?.input,
+      onTabsChanged: (listener) => {
+        const tabs = vscode.window.tabGroups.onDidChangeTabs(() => listener());
+        const groups = vscode.window.tabGroups.onDidChangeTabGroups(() => listener());
+        return {
+          dispose: () => {
+            tabs.dispose();
+            groups.dispose();
+          },
+        };
+      },
+      lockActiveGroup: () => vscode.commands.executeCommand('workbench.action.lockEditorGroup'),
+      warn: panelLog.warn,
+    });
     const webviewPanelChannel = (panel: vscode.WebviewPanel): ChatPanelChannel => {
       panel.iconPath = {
         light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon.svg')),
         dark: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-icon-dark.svg')),
       };
+      chatGroupLock.attach(panel);
       return {
         setHtml: (html) => {
           panel.webview.html = html;
@@ -564,7 +588,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // adapter as a fresh open and hands it to chatHost.adopt(), so history + wiring are restored
     // in place. Any failure disposes the panel (never throw into VS Code's restore path).
     context.subscriptions.push(
-      vscode.window.registerWebviewPanelSerializer('insrc.chatPanel', {
+      vscode.window.registerWebviewPanelSerializer(CHAT_VIEW_TYPE, {
         deserializeWebviewPanel: (panel) => {
           try {
             chatHost.adopt(webviewPanelChannel(panel));

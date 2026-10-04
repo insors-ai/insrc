@@ -99,7 +99,9 @@ export interface ChatPanelHost {
   dispose(): void;
 }
 
-const VIEW_TYPE = 'insrc.chatPanel';
+/** The chat panel's webview view type (also the WebviewPanelSerializer key). */
+export const CHAT_VIEW_TYPE = 'insrc.chatPanel';
+const VIEW_TYPE = CHAT_VIEW_TYPE;
 const NOOP_LOGGER: ChatPanelLogger = { warn: () => {}, error: () => {} };
 
 /** Escape a value for safe embedding in an HTML attribute / the CSP meta content. */

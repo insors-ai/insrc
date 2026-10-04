@@ -313,6 +313,62 @@ function isObject(x: unknown): x is Record<string, unknown> {
 
 
 // ---------------------------------------------------------------------------
+// Root-level union detection (cross-vendor CLI constraint)
+// ---------------------------------------------------------------------------
+
+/** The three JSON Schema combinator keywords both CLI vendors refuse at the
+ *  schema ROOT. Ordered so the reported key is deterministic when a root
+ *  carries more than one. */
+const ROOT_UNION_KEYS = ['oneOf', 'anyOf', 'allOf'] as const;
+
+export type RootUnionKey = typeof ROOT_UNION_KEYS[number];
+
+/**
+ * Report the root-level union keyword a schema carries, or `undefined`.
+ *
+ * Both CLI vendors refuse a combinator at the TOP LEVEL of a structured-output
+ * schema, and a root `type: 'object'` does NOT exempt it. Probed directly
+ * against both binaries on 2026-10-03:
+ *
+ *   claude --json-schema  -> 400 input_schema does not support oneOf, allOf,
+ *                            or anyOf at the top level
+ *   codex --output-schema -> schema must have type 'object' and not have
+ *                            'oneOf'/'anyOf'/'allOf'/'enum'/'not' at the top
+ *                            level
+ *
+ * Deliberately NARROW, and each limit is a recorded decision rather than an
+ * oversight:
+ *
+ *   - ROOT-ONLY. Only the schema's own keys are read; nothing recurses. A union
+ *     BELOW the root is legal on both vendors -- `processInPlace` above walks
+ *     straight through `anyOf`/`allOf` branches -- so a tree walk here would
+ *     reject schemas that work today. Over-rejection breaks callers; under-
+ *     rejection merely restores current behaviour.
+ *   - `enum`/`not` are NOT covered. codex's message names them; claude's does
+ *     not, and claude was never probed on them. Covering them would assert an
+ *     unverified vendor behaviour, which is the mistake this guard replaced.
+ *   - A root `$ref` is NOT resolved. Whether either vendor resolves a pointer
+ *     before refusing was not probed. In practice a bare root `$ref` already
+ *     fails on both for the separate missing-root-`type` rule, so the blind
+ *     spot cannot hide a schema that would otherwise have worked.
+ *   - An EMPTY branch array is not reported: the vendors' behaviour on a
+ *     degenerate `{ anyOf: [] }` was not established.
+ *
+ * Total over any input and free of side effects -- a guard that can itself
+ * throw, or that mutates its caller's schema, is worse than no guard. Note the
+ * contrast with `processSchemaForOpenAIStrict`, which mutates in place.
+ */
+export function rootUnionKey(schema: StructuredSchema): RootUnionKey | undefined {
+	if (!isObject(schema)) return undefined;
+	for (const key of ROOT_UNION_KEYS) {
+		const branches = schema[key];
+		if (Array.isArray(branches) && branches.length > 0) return key;
+	}
+	return undefined;
+}
+
+
+// ---------------------------------------------------------------------------
 // Stable error builder for "not implemented" provider stubs
 // ---------------------------------------------------------------------------
 
@@ -323,39 +379,6 @@ function isObject(x: unknown): x is Record<string, unknown> {
  * never hit it in production; tests gated on the same flag see a clear
  * "not yet implemented" rather than a malformed response.
  */
-/**
- * Anthropic's `tools[].input_schema` requires a top-level
- * `type: 'object'` declaration. TypeBox `Type.Union([Type.Object(...),
- * ...])` renders as `{ anyOf: [{type:'object', ...}, ...], title }` with
- * no root `type`, which Anthropic rejects with HTTP 400.
- *
- * This adapter clones the schema and injects `type: 'object'` at the
- * root iff:
- *   - the root has no `type` field, AND
- *   - the root is a discriminated union (anyOf / oneOf) whose every
- *     branch declares `type: 'object'`.
- *
- * Anything else is returned unchanged so an upstream-incompatible schema
- * still surfaces as an API error rather than getting silently rewritten.
- */
-export function normaliseSchemaForAnthropic(schema: StructuredSchema): StructuredSchema {
-  const root = schema as Record<string, unknown>;
-  if ('type' in root) {
-    return schema;
-  }
-  const branches = (root['anyOf'] ?? root['oneOf']) as unknown;
-  if (!Array.isArray(branches) || branches.length === 0) {
-    return schema;
-  }
-  const allObject = branches.every(b =>
-    b !== null && typeof b === 'object' && (b as Record<string, unknown>)['type'] === 'object',
-  );
-  if (!allObject) {
-    return schema;
-  }
-  return { ...root, type: 'object' };
-}
-
 export function notImplementedStructuredOutput(provider: string): never {
 	throw new Error(
 		`structured-output: provider '${provider}' does not implement completeStructured yet. `

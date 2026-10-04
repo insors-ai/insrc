@@ -23,7 +23,9 @@
     "epicSlug": "both-cli-providers-reject-top-level",
     "storyId": "S001",
     "lldRunId": "wf-1791050481658-ob70yg",
-    "lldEffectiveHash": "11048c72b5609f32dc85b790c6d04c03de94c6516bedebb2eabe7155eb913c37"
+    "lldEffectiveHash": "11048c72b5609f32dc85b790c6d04c03de94c6516bedebb2eabe7155eb913c37",
+    "approvedAt": "2026-10-03T19:16:49.072Z",
+    "rangeBase": "32eeceb6ca087d8f86c494590261d6fa6b56aa18"
   },
   "body": {
     "summary": {

@@ -50,6 +50,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
+import { rootUnionKey } from './structured-output.js';
 
 const log = getLogger('cli-provider');
 
@@ -177,6 +178,31 @@ export class CliProvider implements LLMProvider {
 		schema: StructuredSchema,
 		opts?: StructuredCompletionOpts,
 	): Promise<T> {
+		// Pre-flight the schema root BEFORE the retry wrapper is entered.
+		//
+		// The placement is load-bearing, not stylistic. `withTransientRetry`
+		// decides retryability by STRING MATCH on the message via
+		// `isTransientCliError`, so a deterministic rejection raised INSIDE the
+		// wrapper would be re-spawned three times the moment its wording
+		// happened to brush that pattern. Throwing outside the wrapper makes
+		// non-retryability structural rather than contingent on error prose.
+		// (The message is also written to avoid that vocabulary, as a second
+		// defence that survives a future relocation.)
+		const unionKey = rootUnionKey(schema);
+		if (unionKey !== undefined) {
+			throw new Error(
+				`structured-output: the schema ROOT carries '${unionKey}'. Both `
+				+ `'claude --json-schema' and 'codex --output-schema' refuse a `
+				+ `oneOf/anyOf/allOf at the top level, whether or not a root `
+				+ `'type' is present. This is about what a CLI provider will `
+				+ `ACCEPT, not about the schema being well-formed — `
+				+ `validateAgainstSchema still accepts it locally, which is why `
+				+ `the same schema can validate here and be refused upstream. `
+				+ `Wrap the union under one object property at the call site: `
+				+ `{ type: 'object', properties: { <field>: <the union> }, `
+				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
+			);
+		}
 		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts));
 	}
 
@@ -406,7 +432,7 @@ function delay(ms: number): Promise<void> {
  *  upstream text inside its envelope (`API Error: Connection closed
  *  mid-response`), which is echoed into our thrown message, so matching the
  *  string is sufficient. */
-function isTransientCliError(message: string): boolean {
+export function isTransientCliError(message: string): boolean {
 	return /connection closed mid-response|api error|overloaded|rate.?limit|too many requests|internal server error|service unavailable|timeout|\b(429|500|502|503|504|529)\b/i.test(message);
 }
 

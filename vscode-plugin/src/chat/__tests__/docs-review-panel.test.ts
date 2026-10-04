@@ -252,6 +252,105 @@ test('MED-3: a slow refresh response cannot overwrite a newer one (sequence guar
   assert.deepEqual((last.payload as { artifacts: DocsArtifactSummary[] }).artifacts, second, 'the newer response wins regardless of completion order');
 });
 
+// ISSUE-605c7057 — the opened-DOCUMENT half of the same guard. Two pending artifacts,
+// content() gated per id so the two opens can be completed in either order.
+function openRaceHarness() {
+  const fc = fakeChannel();
+  const docs: DocsArtifactSummary[] = [
+    { id: 'LLD-a-s1', kind: 'LLD', title: 'a', status: 'pending' },
+    { id: 'LLD-b-s2', kind: 'LLD', title: 'b', status: 'pending' },
+  ];
+  const gates = new Map<string, { resolve: (c: DocsContent) => void; reject: (e: Error) => void }>();
+  const client: DocsReviewClient = {
+    async pending() { return docs; },
+    content: (id) => new Promise<DocsContent>((resolve, reject) => { gates.set(id, { resolve, reject }); }),
+    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
+    async comment() {},
+  };
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  const body = (id: string): DocsContent => ({ markdown: `body of ${id}`, openQuestions: [], blocked: false });
+  const contents = () => fc.posted.filter((p) => p.payload.type === 'docs-content');
+  return { fc, host, gates, body, contents };
+}
+
+test('ISSUE-605c7057: a slow earlier open cannot overwrite a newer one (newer wins, either completion order)', async () => {
+  // The older open completes LAST — the order that used to show the wrong document.
+  const late = openRaceHarness();
+  late.host.open();
+  await tick();
+  late.fc.send(env('open-doc', { artifactId: 'LLD-a-s1' }));
+  await tick();
+  late.fc.send(env('open-doc', { artifactId: 'LLD-b-s2' }));
+  await tick();
+  late.gates.get('LLD-b-s2')!.resolve(late.body('LLD-b-s2'));
+  await tick();
+  late.gates.get('LLD-a-s1')!.resolve(late.body('LLD-a-s1'));
+  await tick();
+  assert.deepEqual(late.contents().map((p) => p.payload.artifactId), ['LLD-b-s2'], 'only the newer document is ever posted');
+
+  // The older open completes FIRST — it is already superseded, so it is still dropped.
+  const early = openRaceHarness();
+  early.host.open();
+  await tick();
+  early.fc.send(env('open-doc', { artifactId: 'LLD-a-s1' }));
+  await tick();
+  early.fc.send(env('open-doc', { artifactId: 'LLD-b-s2' }));
+  await tick();
+  early.gates.get('LLD-a-s1')!.resolve(early.body('LLD-a-s1'));
+  await tick();
+  early.gates.get('LLD-b-s2')!.resolve(early.body('LLD-b-s2'));
+  await tick();
+  assert.deepEqual(early.contents().map((p) => p.payload.artifactId), ['LLD-b-s2'], 'only the newer document is ever posted');
+});
+
+test('ISSUE-605c7057: a superseded open that FAILS does not replace the current document with its error', async () => {
+  const h = openRaceHarness();
+  h.host.open();
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: 'LLD-a-s1' }));
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: 'LLD-b-s2' }));
+  await tick();
+  h.gates.get('LLD-b-s2')!.resolve(h.body('LLD-b-s2'));
+  await tick();
+  h.gates.get('LLD-a-s1')!.reject(new Error('daemon timeout'));
+  await tick();
+  const posted = h.contents();
+  assert.deepEqual(posted.map((p) => p.payload.artifactId), ['LLD-b-s2'], "the stale open's failure is not posted");
+  assert.equal(posted[0]!.payload.blocked, false, 'the current document is not marked blocked by another document\'s failure');
+});
+
+test('ISSUE-605c7057: a failure of the CURRENT open still posts blocked:true (fail-closed kept)', async () => {
+  const h = openRaceHarness();
+  h.host.open();
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: 'LLD-a-s1' }));
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: 'LLD-b-s2' }));
+  await tick();
+  h.gates.get('LLD-a-s1')!.resolve(h.body('LLD-a-s1'));
+  await tick();
+  h.gates.get('LLD-b-s2')!.reject(new Error('daemon timeout'));
+  await tick();
+  const posted = h.contents();
+  assert.deepEqual(posted.map((p) => p.payload.artifactId), ['LLD-b-s2']);
+  assert.equal(posted[0]!.payload.blocked, true, 'approve stays suppressed when the current body never loaded');
+  assert.match(String(posted[0]!.payload.markdown), /unavailable/);
+});
+
+test('ISSUE-605c7057: a list refresh does not discard an in-flight open', async () => {
+  const h = openRaceHarness();
+  h.host.open();
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: 'LLD-a-s1' }));
+  await tick();
+  h.fc.send(env('open-doc', { artifactId: '' })); // boot-ping -> refreshPending
+  await tick();
+  h.gates.get('LLD-a-s1')!.resolve(h.body('LLD-a-s1'));
+  await tick();
+  assert.deepEqual(h.contents().map((p) => p.payload.artifactId), ['LLD-a-s1'], 'the open still renders after a refresh');
+});
+
 // RENAMED (S001/t4). The old name said "no innerHTML" and the old body asserted
 // it, which stopped being the contract the moment the body started rendering
 // markdown. Asserting the SCRUB IS PRESENT is the stronger check anyway: a

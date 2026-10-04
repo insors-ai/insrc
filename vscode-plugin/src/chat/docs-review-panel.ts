@@ -1232,8 +1232,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // (open() + the webview boot-ping + each decision all trigger a refresh; real IPC
   // latency means "last-to-complete" would otherwise win, not "last-requested").
   let refreshSeq = 0;
+  // The same guard for the opened DOCUMENT: two quick opens must show the one requested
+  // LAST, not whichever content IPC completes last. A separate counter from refreshSeq,
+  // because a list refresh (every decision triggers one) must not discard an open.
+  let openSeq = 0;
 
-  const post = (msg: HostToWebview): void => {
+  const post =(msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
     channel.postMessage(envelope(msg));
   };
@@ -1267,12 +1271,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * empty index plus a notice rather than refusing to open the document. That is
    * the same rule the body renderer follows — degraded means less, never blank.
    *
-   * NOTE (recorded, not fixed here): openDoc takes no sequence number, so two
-   * quick opens with the first IPC slower will display the wrong document. That
-   * is a PRE-EXISTING gap — the pane's monotonic guard (refreshSeq, :66/:75/:78/:83)
-   * covers refreshPending and the docs-LIST only — and it is out of scope for this
-   * Story, filed separately. What this task does guarantee is narrower and real:
-   * the index and the markdown ride one message, so they can never disagree.
+   * Which document's message is posted at all is openDoc's concern (its openSeq
+   * guard drops a superseded open). What this guarantees is narrower: the index
+   * and the markdown ride one message, so they can never disagree.
    */
   function deriveSections(markdown: string): {
     sections: SectionIndex;
@@ -1291,8 +1292,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
 
   async function openDoc(artifactId: string): Promise<void> {
     const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
+    const mySeq = ++openSeq;
     try {
       const content = await deps.client.content(artifactId);
+      if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
       // t5 — derive the index ONCE per opened document (not per interaction) and
       // post it on the SAME message as the markdown it came from. Deriving it
       // here, from `content.markdown`, is what makes the two inseparable.
@@ -1375,6 +1378,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
+      // A superseded open's failure is not the CURRENT document's failure: posting it
+      // would replace the document the reviewer is on with another one's error.
+      if (mySeq !== openSeq) return;
       // A content-load failure means the reviewer never saw the body — suppress approve
       // (blocked:true) so the review gate is not defeated; request-changes stays available.
       post({

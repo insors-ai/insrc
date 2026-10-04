@@ -47,14 +47,14 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
 // Type-only: shares t5's single declaration of `meta.rangeBase` without creating
 // a runtime dependency on the approval gate (erased at compile).
 import type { ApprovableArtifactMeta } from '../../gates.js';
-import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../storage.js';
+import { ARTIFACTS_DIR, buildArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
 
 const log = getLogger('workflow:build:range-base');
 
@@ -126,6 +126,165 @@ export function readBuildStart(repoPath: string, epicHash: string, storyId: stri
 	if (typeof stampedAt !== 'string' || Number.isNaN(Date.parse(stampedAt))) return { kind: 'invalid', reason: 'stampedAt is not a time' };
 	if (!commitExists(repoPath, rangeBase)) return { kind: 'invalid', reason: 'rangeBase names a commit this repository does not have' };
 	return { kind: 'valid', stamp: { epicHash, storyId, rangeBase, stampedAt } };
+}
+
+// ---------------------------------------------------------------------------
+// Stamping (ISSUE-5f7a7cb95b643ae5 S001/t4)
+// ---------------------------------------------------------------------------
+
+/** What {@link stampBuildStart} did. */
+export type StampOutcome =
+	/** The file now holds HEAD's full sha. */
+	| 'stamped'
+	/** A valid stamp exists and was left alone. */
+	| 'kept'
+	/** No valid stamp, and the BUILD record shows unfinished work — HEAD may
+	 *  already contain that work, so nothing was written. */
+	| 'skipped-work-exists'
+	/** HEAD could not be resolved, or the file could not be written. */
+	| 'not-written';
+
+/** What the stamper needs to know about a Story's BUILD record. */
+interface BuildFacts {
+	/** A record json is on disk, readable or not. */
+	readonly exists:     boolean;
+	/** The record could not be parsed into the shape below. */
+	readonly unreadable: boolean;
+	readonly approvedAt: string | undefined;
+	readonly tasks:      ReadonlyArray<{ readonly id: string; readonly passed: boolean }>;
+}
+
+/** Read the BUILD record DIRECTLY (as `stampedBase` reads an upstream artifact)
+ *  rather than through the gates module: gates imports the completion writer,
+ *  which imports this file, so a runtime import here would be a cycle. */
+function readBuildFacts(repoPath: string, epicHash: string, storyId: string): BuildFacts {
+	const p = join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`);
+	if (!existsSync(p)) return { exists: false, unreadable: false, approvedAt: undefined, tasks: [] };
+	try {
+		const parsed = JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: unknown }; body?: { tasks?: unknown } };
+		const approvedAt = typeof parsed.meta?.approvedAt === 'string' && parsed.meta.approvedAt.length > 0 ? parsed.meta.approvedAt : undefined;
+		const rawTasks = parsed.body?.tasks;
+		if (rawTasks !== undefined && !Array.isArray(rawTasks)) return { exists: true, unreadable: true, approvedAt, tasks: [] };
+		const tasks: Array<{ id: string; passed: boolean }> = [];
+		for (const t of rawTasks ?? []) {
+			const id = (t as { id?: unknown } | null)?.id;
+			if (typeof id !== 'string') return { exists: true, unreadable: true, approvedAt, tasks: [] };
+			// `passed` is optional on the record; only a literal true counts.
+			tasks.push({ id, passed: (t as { passed?: unknown }).passed === true });
+		}
+		return { exists: true, unreadable: false, approvedAt, tasks };
+	} catch {
+		return { exists: true, unreadable: true, approvedAt: undefined, tasks: [] };
+	}
+}
+
+/** The Story's plan task ids: `none` when it has no PLAN (a standalone build),
+ *  `unreadable` when a PLAN json exists but cannot be read into task ids. */
+function readPlanTaskIds(repoPath: string, epicHash: string, storyId: string): readonly string[] | 'none' | 'unreadable' {
+	const p = join(repoPath, ARTIFACTS_DIR, `${planArtifactId(epicHash, storyId)}.json`);
+	if (!existsSync(p)) return 'none';
+	try {
+		const tasks = (JSON.parse(readFileSync(p, 'utf8')) as { body?: { tasks?: unknown } }).body?.tasks;
+		if (!Array.isArray(tasks)) return 'unreadable';
+		const ids: string[] = [];
+		for (const t of tasks) {
+			const id = (t as { id?: unknown } | null)?.id;
+			if (typeof id !== 'string') return 'unreadable';
+			ids.push(id);
+		}
+		return ids;
+	} catch {
+		return 'unreadable';
+	}
+}
+
+/**
+ * Whether the Story's build is FINISHED: the ONE test both stamping branches use.
+ *
+ * Approval alone is not enough. The batch approval sweep approves every
+ * unapproved BUILD record under an epic, including one whose Story has validated
+ * one task of several, or whose task failed — so `approvedAt` can precede the end
+ * of the build. FINISHED therefore also requires that the record shows the work
+ * done: at least one task, every task passed, and the plan covered.
+ *
+ * Coverage is satisfied by every plan task id being recorded, OR by a recorded
+ * task whose id is the storyId: that is what the standalone validate route
+ * records, and it validates the Story as a whole. Plan task ids are the bare
+ * `tN` form and can never equal a storyId, so the two cannot be confused.
+ *
+ * Every doubt resolves to NOT finished, which keeps the base where it is. The
+ * cost of a false negative is a rebuild that lists too much; the cost of a false
+ * positive is a base moved onto the Story's own commits, which drops its files.
+ */
+function isFinished(facts: BuildFacts, plan: readonly string[] | 'none' | 'unreadable', storyId: string): boolean {
+	if (!facts.exists || facts.unreadable) return false;
+	if (facts.approvedAt === undefined) return false;
+	if (facts.tasks.length === 0) return false;
+	if (!facts.tasks.every(t => t.passed)) return false;
+	if (plan === 'unreadable') return false;
+	if (plan === 'none') return true;
+	const recorded = new Set(facts.tasks.map(t => t.id));
+	return recorded.has(storyId) || plan.every(id => recorded.has(id));
+}
+
+/** HEAD's full sha, or undefined when there is no HEAD (no commits, not a repo). */
+function headFullSha(repoPath: string): string | undefined {
+	try {
+		const out = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+		return SHA40.test(out) ? out : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Record where a Story's build starts. Called by the implement phase on every
+ * admitted route; synchronous, never throws, and never touches an artifact
+ * record. Its caller treats it as fail-open: no outcome blocks a build.
+ *
+ *   Valid stamp present → replaced only when the build is FINISHED and was
+ *     approved AFTER the stamp was taken (a rebuild); otherwise `kept`. A retry,
+ *     the next task, or an approval that arrives mid-build all keep it.
+ *   No valid stamp → nothing is written when the record has a task and the build
+ *     is not FINISHED, approved or not: HEAD may already hold that work. With no
+ *     record, a task-less record, or a FINISHED build, HEAD is stamped.
+ *
+ * So no state in which the record shows unfinished work puts HEAD in the stamp.
+ * A record that exists but cannot be read counts as unfinished work.
+ */
+export function stampBuildStart(repoPath: string, epicHash: string, storyId: string): StampOutcome {
+	try {
+		if (epicHash.length === 0 || storyId.length === 0) return 'not-written';
+		const read  = readBuildStart(repoPath, epicHash, storyId);
+		const facts = readBuildFacts(repoPath, epicHash, storyId);
+		const finished = isFinished(facts, readPlanTaskIds(repoPath, epicHash, storyId), storyId);
+
+		if (read.kind === 'valid') {
+			// A NaN on either side compares false, so an unparseable approvedAt keeps.
+			const rebuilt = finished && Date.parse(facts.approvedAt ?? '') > Date.parse(read.stamp.stampedAt);
+			if (!rebuilt) return 'kept';
+		} else {
+			const showsWork = facts.unreadable || facts.tasks.length > 0;
+			if (showsWork && !finished) return 'skipped-work-exists';
+		}
+
+		const head = headFullSha(repoPath);
+		if (head === undefined) {
+			log.warn({ repoPath, epicHash, storyId }, 'stampBuildStart: HEAD could not be resolved; no build-start file written');
+			return 'not-written';
+		}
+		const stamp: BuildStartStamp = { epicHash, storyId, rangeBase: head, stampedAt: new Date().toISOString() };
+		const abs = join(repoPath, buildStartRelPath(epicHash, storyId));
+		mkdirSync(dirname(abs), { recursive: true });
+		writeFileSync(abs, JSON.stringify(stamp, null, 2) + '\n');
+		return 'stamped';
+	} catch (err) {
+		log.warn(
+			{ repoPath, epicHash, storyId, path: buildStartRelPath(epicHash, storyId), err: err instanceof Error ? err.message : String(err) },
+			'stampBuildStart: could not write the build-start file',
+		);
+		return 'not-written';
+	}
 }
 
 /** The upstream artifacts a build may be anchored on, in precedence order: the

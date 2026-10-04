@@ -1237,7 +1237,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // because a list refresh (every decision triggers one) must not discard an open.
   let openSeq = 0;
 
-  const post =(msg: HostToWebview): void => {
+  const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
     channel.postMessage(envelope(msg));
   };

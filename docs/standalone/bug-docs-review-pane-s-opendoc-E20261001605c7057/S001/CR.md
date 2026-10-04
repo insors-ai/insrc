@@ -1,0 +1,33 @@
+<!-- insrc:artifact CR-605c70574633ed67-S001 -->
+
+# Code review: 605c70574633ed67:S001
+
+⚠️ **WARN** — HIGH 0 · MED 1 · LOW 4 · model `client`
+
+**Changed files:** 2
+
+## adherence — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:1741 | The issue's expected behaviour is that a response for a request the reviewer has moved on from is discarded. A click on a stale row (id no longer in `pending`) is dropped at :1743-1746 before openDoc runs, so openSeq is not advanced and an earlier in-flight open still renders after the reviewer clicked something else. The rendered document carries its own artifactId and controls, so the reviewer cannot approve a document other than the one shown; this is an edge the fix does not cover, not a reintroduction of the reported defect. It also means no open can be left permanently superseded with nothing shown: every increment of openSeq is followed by that open's own success or failure post. |
+
+## conventions — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:1240 | Unrelated whitespace change in this commit: `const post = (msg` became `const post =(msg`. Stray edit in a bugfix diff; formatting only. |
+
+## coverage — 1 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| LOW | vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:274 | The four ISSUE-605c7057 tests exercise both guards and the separate-counter decision and pass (run: 197 of 198 pass in this file; the one failure is the known unrelated t1 daemon-files check). By reading, each fails under its obvious mutation: dropping the success guard posts both documents in the late-completion case, dropping the failure guard posts the stale error, and a counter shared with refreshSeq empties the 'list refresh does not discard an in-flight open' case. Not covered: a stale-row click during an in-flight open, a decision result arriving after a newer open, and dispose/reopen with an open in flight. The tool's grounding for this fix is two file-level diff entries with empty testsReaching, so nothing here is derived from it. |
+
+## quality — 2 finding(s)
+
+| Severity | Location | Message |
+| --- | --- | --- |
+| MED | vscode-plugin/src/chat/docs-review-panel.ts:1408 | decide() posts docs-content for its own artifact at :1408 (approve withheld) and :1424 (decision failed) without consulting or advancing openSeq, so the pane still has unguarded writers of the document area. Sequence: reviewer on A clicks approve, then opens B; B renders; A's approve then returns skipped or throws, and B's body is replaced by A's 'not approved' / 'decision failed' text. In the other order a later open response erases A's withheld-approval notice before it is read. Both posts are blocked:true and their controls target A, so nothing can be approved by mistake, and the behaviour predates this commit. It is the remaining gap against the issue's 'one consistent rule for stale responses'. refreshPending's failure branch (:1258) is a third unguarded writer, with artifactId '' and no controls. |
+| LOW | vscode-plugin/src/chat/docs-review-panel.ts:1238 | openSeq (like refreshSeq before it) lives for the host's lifetime and is not advanced when the panel is disposed (:1774-1778, :1786). An open still in flight when the panel is closed and reopened passes the guard and posts into the new panel, which then shows a document nobody opened there. The message is self-consistent (its own id and controls). Advancing both counters on dispose would close it. |
+

@@ -20,7 +20,11 @@
     "issueHash": "1716f77ba9ba017b",
     "epicSlug": "two-sets-eyes-review-rule-only",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "approvedAt": "2026-10-04T17:03:49.121Z",
+    "parentRef": {
+      "slug": "two-sets-eyes-review-rule-only"
+    }
   },
   "body": {
     "title": "Route every review to the party that did not author the work",

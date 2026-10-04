@@ -39,8 +39,28 @@ export class NoBuildChangesError extends Error {
 	}
 }
 
-/** Additive options for {@link changedFiles}. Both fields are OPTIONAL and the
- *  derivation is bit-for-bit unchanged when neither is supplied, so every
+/**
+ * The workflow's OWN ledger files, as repo-root globs in git's glob-pathspec
+ * dialect (`*` stops at a directory separator, `**` does not).
+ *
+ * These are records ABOUT the work — artifact json, the build-start stamps, and
+ * the rendered documents — not the work itself, so a code review leaves them out.
+ * The first glob is deliberately flat: `.insrc/artifacts/templates/` and
+ * `.insrc/artifacts/formats/` hold USER-authored files that a Story may change
+ * and that must stay reviewable, as must `.insrc/templates|feedback|conventions`.
+ *
+ * Passed to git (see {@link ChangedFilesOptions.excludeGlobs}) rather than
+ * matched here, so there is one implementation of the glob semantics — git's.
+ */
+export const LEDGER_EXCLUDE_GLOBS: readonly string[] = Object.freeze([
+	'.insrc/artifacts/*.json',
+	'.insrc/build-start/**',
+	'docs/epics/**',
+	'docs/standalone/**',
+]);
+
+/** Additive options for {@link changedFiles}. Every field is OPTIONAL and the
+ *  derivation is bit-for-bit unchanged when none is supplied, so every
  *  existing single-argument call site keeps its current result. */
 export interface ChangedFilesOptions {
 	/** Start of the Story's COMMITTED range. Consulted ONLY when the working tree
@@ -55,6 +75,11 @@ export interface ChangedFilesOptions {
 	 *  normalising here keeps every caller from having to remember. Applied to the
 	 *  UNION, so an exclusion can never be half-applied to one derivation. */
 	readonly exclude?: readonly string[] | undefined;
+	/** Globs git itself leaves out of EVERY diff this derivation runs (unstaged,
+	 *  staged and range), forwarded as `git_diff`'s `exclude`. Unlike `exclude`,
+	 *  which filters the reported paths here, these never reach the diff at all —
+	 *  so a tree dirty only with matching files is clean for the emptiness gate. */
+	readonly excludeGlobs?: readonly string[] | undefined;
 }
 
 /** Run one `git_diff` and collect its changed paths into `into`. */
@@ -90,10 +115,17 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	// versa) is the exact half-fix shape this Story is closing.
 	const drop = new Set((opts?.exclude ?? []).map(e => toRepoRelative(repoPath, e)));
 	const keep = (found: ReadonlySet<string>): string[] => [...found].filter(f => !drop.has(f));
+	// Spread onto every diff below from this ONE value, for the same reason as the
+	// closure above: a glob applied to the working-tree diffs but not the range
+	// would be a half-applied exclusion. Absent or empty, the key is not sent at
+	// all, so the tool's input is exactly what it was before the option existed.
+	const globs = opts?.excludeGlobs !== undefined && opts.excludeGlobs.length > 0
+		? { exclude: [...opts.excludeGlobs] }
+		: {};
 
 	const working = new Set<string>();
 	for (const staged of [false, true]) {
-		await collectDiff(repoPath, { staged }, working);
+		await collectDiff(repoPath, { staged, ...globs }, working);
 	}
 	// Exclusion runs BEFORE the emptiness gate, and that order is the whole point.
 	// The record's own json + md are the paths THIS collector's caller is about to
@@ -109,7 +141,7 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	// result still cannot depend on which range was supplied.
 	if (opts?.base !== undefined && opts.base.length > 0) {
 		const ranged = new Set<string>();
-		await collectDiff(repoPath, { from: opts.base }, ranged);
+		await collectDiff(repoPath, { from: opts.base, ...globs }, ranged);
 		return keep(ranged);
 	}
 	return kept;

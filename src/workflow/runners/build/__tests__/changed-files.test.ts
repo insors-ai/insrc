@@ -22,7 +22,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { changedFiles, collectBuildChangeLog, NoBuildChangesError } from '../changed-files.js';
+import { changedFiles, collectBuildChangeLog, LEDGER_EXCLUDE_GLOBS, NoBuildChangesError } from '../changed-files.js';
+import { gitDiffTool } from '../../../../daemon/tools/builtins/git/diff.js';
+import type { GitDiffData } from '../../../../daemon/tools/builtins/git/diff.js';
 
 // ---------------------------------------------------------------------------
 // t2 — changedFiles (real git): a staged new file is in the changed set
@@ -414,4 +416,147 @@ test('t4: an exclusion path OUTSIDE the repo is left alone rather than relativis
 		assert.deepEqual(filtered, ['dirty.ts'],
 			'a path outside the repo cannot match a git path — relativising it would produce ../.. noise that might');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-5f7a7cb9 S001/t2 — excludeGlobs + LEDGER_EXCLUDE_GLOBS.
+//
+// The globs are handed to git, so every assertion on what they match runs
+// against REAL git: a matcher re-implemented in the test would only agree with
+// itself. Kept and dropped sets are asserted EXACTLY — a subset check passes for
+// a glob that matches nothing as happily as for one that matches too much.
+// ---------------------------------------------------------------------------
+
+/** One path for every location the ledger globs must decide, in one commit. */
+const LEDGER_KEPT = [
+	'.insrc/artifacts/formats/f.md',
+	'.insrc/artifacts/templates/t.json',
+	'.insrc/conventions/c.md',
+	'.insrc/feedback/fb.md',
+	'.insrc/templates/tp.md',
+	'docs/epics-notes/n.md',
+	'src/a.ts',
+];
+const LEDGER_DROPPED = [
+	'.insrc/artifacts/LLD-x.json',
+	'.insrc/build-start/x-S001.json',
+	'docs/epics/e/S001/LLD.md',
+	'docs/standalone/s/S001/BUILD.md',
+];
+
+function mkLedgerRepo(): { repo: string; base: string } {
+	const { repo, base: _unused } = mkRangeRepo();
+	void _unused;
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+	const base = git('rev-parse', 'HEAD');
+	for (const f of [...LEDGER_KEPT, ...LEDGER_DROPPED]) {
+		mkdirSync(join(repo, dirname(f)), { recursive: true });
+		writeFileSync(join(repo, f), `${f}\n`);
+	}
+	git('add', '-A'); git('commit', '-qm', 'one commit touching every location');
+	return { repo, base };
+}
+
+test('T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)', async () => {
+	const { repo, base } = mkLedgerRepo();
+	try {
+		const all = [...await changedFiles(repo, { base })].sort();
+		assert.deepEqual(all, [...LEDGER_KEPT, ...LEDGER_DROPPED].sort(), 'fixture precondition: without the globs every path is in the range');
+
+		const kept = [...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort();
+		assert.deepEqual(kept, [...LEDGER_KEPT].sort());
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T26: the constant is exactly the four globs, and frozen', () => {
+	assert.deepEqual([...LEDGER_EXCLUDE_GLOBS], ['.insrc/artifacts/*.json', '.insrc/build-start/**', 'docs/epics/**', 'docs/standalone/**']);
+	assert.ok(Object.isFrozen(LEDGER_EXCLUDE_GLOBS));
+});
+
+test('T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo', async () => {
+	const { repo, base } = mkLedgerRepo();
+	try {
+		const res = await gitDiffTool.execute(
+			{ cwd: join(repo, 'src'), from: base, exclude: [...LEDGER_EXCLUDE_GLOBS] },
+			{ sessionId: 't', repoPath: repo, send: () => {}, requestId: 0 },
+		);
+		assert.equal(res.success, true, res.error);
+		const fromSubdir = (res.data as GitDiffData).files.map(f => f.path).sort();
+		assert.deepEqual(fromSubdir, [...LEDGER_KEPT].sort(), 'the exclusions anchor at the repo root, not at the cwd');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		// The observed state: the Story is committed and an approval rewrote a
+		// TRACKED artifact json, leaving it as the only dirty path.
+		const artifact = '.insrc/artifacts/PLAN-abc-S001.json';
+		mkdirSync(join(repo, dirname(artifact)), { recursive: true });
+		writeFileSync(join(repo, artifact), '{"v":1}\n');
+		execFileSync('git', ['add', '-A'], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'the plan'], { cwd: repo });
+		writeFileSync(join(repo, artifact), '{"v":2,"approvedAt":"now"}\n');   // unstaged
+
+		assert.deepEqual([...await changedFiles(repo, { base })], [artifact],
+			'fixture precondition: without the globs the dirty artifact IS the whole set and the range is never consulted');
+
+		const withGlobs = [...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })];
+		assert.deepEqual(withGlobs, ['shipped.ts'], 'the artifact is not evidence of a dirty tree, so the committed range is derived — and the artifact is excluded from it too');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		const artifact = '.insrc/artifacts/BUILD-abc-S001.json';
+		mkdirSync(join(repo, dirname(artifact)), { recursive: true });
+		writeFileSync(join(repo, artifact), '{}\n');
+		execFileSync('git', ['add', '-A'], { cwd: repo });   // staged, never committed
+		const withGlobs = [...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })];
+		assert.deepEqual(withGlobs, ['shipped.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+/** Record every input `changedFiles` hands to git_diff, by swapping the tool's
+ *  `execute` for the duration of `fn`. The tool is the seam `changedFiles`
+ *  actually calls, so this observes the real inputs rather than a copy. */
+async function recordDiffInputs(fn: () => Promise<unknown>): Promise<Record<string, unknown>[]> {
+	const seen: Record<string, unknown>[] = [];
+	const real = gitDiffTool.execute;
+	gitDiffTool.execute = async (input, deps) => { seen.push({ ...input }); return real.call(gitDiffTool, input, deps); };
+	try { await fn(); } finally { gitDiffTool.execute = real; }
+	return seen;
+}
+
+test('T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today\'s — no `exclude` key at all', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		for (const opts of [undefined, { base }, { base, exclude: ['x'] }, { base, excludeGlobs: [] as string[] }]) {
+			const seen = await recordDiffInputs(() => changedFiles(repo, opts));
+			assert.deepEqual(seen, [
+				{ cwd: repo, staged: false },
+				{ cwd: repo, staged: true },
+				...(opts?.base !== undefined ? [{ cwd: repo, from: base }] : []),
+			], `opts=${JSON.stringify(opts)}`);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T29: WITH excludeGlobs every one of the three diffs carries them', async () => {
+	const { repo, base } = mkRangeRepo();
+	try {
+		const seen = await recordDiffInputs(() => changedFiles(repo, { base, excludeGlobs: ['a/**', 'b/*.json'] }));
+		assert.deepEqual(seen, [
+			{ cwd: repo, staged: false, exclude: ['a/**', 'b/*.json'] },
+			{ cwd: repo, staged: true,  exclude: ['a/**', 'b/*.json'] },
+			{ cwd: repo, from: base,    exclude: ['a/**', 'b/*.json'] },
+		]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected', async () => {
+	const seenOpts: unknown[] = [];
+	await collectBuildChangeLog('/repo', { ...CTX, base: 'abc', exclude: ['own.json'] }, async (_repo: string, opts?: unknown) => { seenOpts.push(opts); return []; });
+	assert.deepEqual(seenOpts, [{ base: 'abc', exclude: ['own.json'] }]);
 });

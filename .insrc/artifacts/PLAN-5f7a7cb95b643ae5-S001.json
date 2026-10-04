@@ -23,7 +23,9 @@
     "epicSlug": "batch-approval-stamps-one-shared-meta",
     "storyId": "S001",
     "lldRunId": "wf-1791123735324-yqq3go",
-    "lldEffectiveHash": "b1168f0c3850d1977b103304bf22e7c8e00205dc4104e9b52a242da839744380"
+    "lldEffectiveHash": "b1168f0c3850d1977b103304bf22e7c8e00205dc4104e9b52a242da839744380",
+    "approvedAt": "2026-10-04T15:14:17.579Z",
+    "rangeBase": "f40c807601b1888939cd53c1a2b0ec905726fe00"
   },
   "body": {
     "summary": {

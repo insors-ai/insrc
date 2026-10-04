@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791131412628-90un44",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T16:30:47.780Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 35147,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f20bd1548038128c",
+    "epicSlug": "shell-helper-behind-builtin-tools-drops",
+    "standalone": true,
+    "magnitude": "sized"
+  },
+  "body": {
+    "title": "Keep capped tool output up to the cap and report truncation",
+    "reproduction": "Run the `git_diff` tool over a diff larger than its size cap.\n\nObserved on 2026-10-04 while building ISSUE-5f7a7cb95b643ae5: a range whose diff was about 8 KB, read with `maxBytes: 1024`, came back with an EMPTY diff body and `truncated: false`. The file list (which comes from a separate command) still named both changed files.\n\nExpected: the body holds the first `maxBytes` of the diff and `truncated` is true.\n\nActual: everything from the first chunk that crosses the cap onward is discarded, including the part of that chunk that would have fit. When the whole diff arrives in one chunk larger than the cap, nothing is kept. The returned body is then shorter than the cap, so the tool reports that it was not truncated.",
+    "rootCause": "Two pieces of code disagree about what a cap means.\n\n1. The shared shell helper counts output bytes as they arrive and appends a chunk only while the running total is still within the cap. A chunk that takes the total past the cap is dropped whole, and so is every later chunk. The helper's result carries no field saying that output was dropped.\n\n2. The `git_diff` tool has no truncation signal to read, so it infers one: it treats the output as truncated when its length is at least the cap. Because the helper drops the crossing chunk whole, the kept output is normally SHORTER than the cap, so the inference says false exactly when truncation happened.\n\nThe helper is shared by about 60 builtin tool files, so the same chunk-dropping applies to every tool that passes a cap, and any other tool that infers truncation from output length has the same blind spot.",
+    "fixIntent": "Make a capped read keep the output up to the cap and say when it cut something off, and make `git_diff` report truncation from that statement rather than from the output's length.\n\n- The shell helper keeps the part of the crossing chunk that fits, for both output streams.\n- The helper's result says whether each stream was truncated.\n- `git_diff` reports `truncated` from the helper's statement.\n- Other builtin tools that infer truncation from output length are found and switched to the same statement.\n- A tool call whose output is within its cap behaves exactly as it does today.\n\nWhether a multi-byte character split at the cap boundary is trimmed, and how the new result field is named, are design decisions for the next stage."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/shell-helper.ts",
+      "quotedText": "if (stdoutBytes <= maxBytes) { stdout += chunk.toString('utf8'); }"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/diff.ts",
+      "quotedText": "const truncated = diff.stdout.length >= maxBytes;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/__tests__/diff.test.ts",
+      "quotedText": "an over-cap diff can come back SHORTER"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-04",
+      "quotedText": "log this as an issue first"
+    }
+  ]
+}

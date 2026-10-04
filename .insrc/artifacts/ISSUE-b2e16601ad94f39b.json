@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791090863095-vxq845",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T05:15:59.390Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 96292,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b2e16601ad94f39b",
+    "epicSlug": "code-review-record-takes-its-folder",
+    "standalone": true,
+    "magnitude": "small"
+  },
+  "body": {
+    "title": "A code-review record can land in a second folder for the same work item",
+    "reproduction": "Run a code review on a standalone Story whose LLD stored a different label from its definition head, then look at where the CR landed.\n\nSteps:\n1. Take a work item whose definition head (ISSUE or DEF) carries one `epicSlug` while its LLD's stored `meta.epicSlug` carries another. This happens on its own when an LLD's label was derived from its focus string rather than inherited.\n2. Run a code review for that Story to completion.\n3. List the `docs/standalone/` (or `docs/epics/`) folders whose names end in the item's `E<date><hash8>` anchor.\n\nEXPECTED: one folder per work item, holding every artifact for it.\n\nOBSERVED: two, differing only in the slug. Verified live on 93081bff S001 (2026-10-04). The ISSUE's `epicSlug` is `build-ledger-record-s-provenance-broken`; the LLD's stored `meta.epicSlug` is `design-fix-issue-93081bff91ae5108-make-completed`. CR.md was written to `docs/standalone/design-fix-issue-93081bff91ae5108-make-completed-E2026100293081bff/S001/`, while ISSUE.md, LLD.md, PLAN.md and BUILD.md all sat in `docs/standalone/build-ledger-record-s-provenance-broken-E2026100293081bff/`. Same `E2026100293081bff` anchor, two slugs, so the Story's artifacts were split across sibling directories.\n\nThe detail that isolates the cause: the LLD's own FILE is in the CORRECT folder. So the path derivation already resolves the right label — it is the label persisted in that artifact's meta that is wrong, and the CR writer reads the persisted value rather than re-deriving it.",
+    "rootCause": "The code-review record derives its folder label from the LLD's stored meta rather than from the work item's definition head. The subject's path arguments are assembled as `epicSlug: subject.approvedLld?.meta.epicSlug`, and both consumers of that value use it unchanged — the controller-driven MCP path and the daemon-side runner each call the same `codeReviewArtifactPaths(...)` with `pa.epicSlug` / `cra.epicSlug`. One assignment therefore decides the folder for both routes.\n\nThat stored value is not guaranteed to match the definition head's. The observed label reads as one derived from the LLD's own focus string — `design-fix-issue-93081bff91ae5108-make-completed` for a work item whose head says `build-ledger-record-s-provenance-broken` — though the derivation itself was not traced to a line, so treat the mechanism behind the disagreement as inferred. The defect does not depend on it: what matters is that the stored label CAN disagree with the head, which the live evidence establishes however it came to disagree. Because the LLD's own file is nevertheless placed correctly, the two label SOURCES visibly disagree inside the same artifact — the path that wrote it inherited the head's label, while the meta it persisted kept the other one.\n\nThis is the same root cause as the shipped ISSUE-3a98d279, which made exactly this move for the PLAN and BUILD readers so that, in its words, 'a PLAN's or BUILD's folder no longer depends on what its LLD happened to persist'. The CR writer was not in that change's scope, so it is the remaining reader still trusting the persisted label. That makes this an EXTENSION of 3a98d279 to a writer it did not cover, not a regression of it and not a duplicate: 3a98d279 is complete for what it claimed.\n\nThe consequence is a split ledger rather than a lost artifact. Nothing is overwritten and no content is lost, so this is a correctness-of-placement defect: a reader looking for a Story's review finds its folder without one, and tooling that enumerates a work item's artifacts by folder sees an incomplete set.",
+    "fixIntent": "Make the code-review record land in the same folder as the Story it reviews, by resolving its label from the work item's definition head instead of from whatever its LLD persisted.\n\nThis is a change of SOURCE, following a precedent that already exists rather than inventing an approach: the inherit-then-fallback semantics, and the decision that the head is authoritative, were settled by ISSUE-3a98d279 for the sibling writers. Identity, anchor and placement rules are unchanged; no new field is introduced; and because a single assignment feeds both the MCP and daemon routes, one source change should cover both rather than two parallel edits.\n\nTwo consequences to state rather than design around. Existing CR markdown already written at an old label is converged by the existing docs-tree migration, not by this change — the same division of labour 3a98d279 recorded. And the LLD's stored meta stays wrong afterwards: this makes readers stop depending on it, which is the defect being reported, but it does not correct the stored value.\n\nDELIBERATELY NOT DECIDED HERE:\n  - WHETHER the LLD's focus-derived stored label should itself be corrected at the source, so no future reader can be misled by it. That is a separate question about what an LLD persists, with its own blast radius across already-written artifacts, and it should not be folded into a placement fix.\n  - Whether any OTHER artifact writer still reads a persisted label; this issue names only the one with a live reproduction, and an audit of the remaining writers would be worth doing on its own terms."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject-paths.ts:32",
+      "quotedText": "epicSlug:     subject.approvedLld?.meta.epicSlug,"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/code-review-step/handler.ts:495",
+      "quotedText": "const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:205",
+      "quotedText": "const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, pa.createdAtISO, pa.workItemKind, pa.epicSlug);"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject-paths.ts:24",
+      "quotedText": "readonly epicSlug:     string | undefined;"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-3a98d27994547262 — the shipped precedent this extends",
+      "quotedText": "Make both reads resolve the label from the work item's definition head, so a PLAN's or BUILD's folder no longer depends on what its LLD happened to persist. ... this is a change of SOURCE, not of behaviour or contract."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-93081bff91ae5108 S001 — the live two-folder reproduction",
+      "quotedText": "CR.md landed at docs/standalone/design-fix-issue-93081bff91ae5108-make-completed-E2026100293081bff/S001/ beside the real folder build-ledger-record-s-provenance-broken-E2026100293081bff/ holding ISSUE/LLD/PLAN/BUILD"
+    }
+  ]
+}

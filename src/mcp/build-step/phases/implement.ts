@@ -23,6 +23,7 @@ import { readLldArtifact } from '../../../workflow/gates.js';
 import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import { renderResolvedDecisions } from '../../../workflow/questions.js';
 import { admitBuild, admitStandaloneBuild } from '../../../workflow/runners/build/admission.js';
+import { stampBuildStart } from '../../../workflow/runners/build/range-base.js';
 import {
 	persistStandaloneBuildRecord,
 	standaloneEpicHashFromFocus,
@@ -68,6 +69,10 @@ export async function handleImplement(
 		return { next: 'refused', refusal: verdict.refusal };
 	}
 
+	// The build is admitted, so this is where the Story's build STARTS: record
+	// HEAD as its range base (ISSUE-5f7a7cb9). Kept on a retry or a later task.
+	noteBuildStart(repoPath, ref.epicHash, ref.storyId);
+
 	// Surface the design decisions made at plan-start (recorded on the Story
 	// LLD's meta.questionResolutions) into the template's "## Resolved design
 	// decisions" section. Best-effort — a missing LLD just leaves it empty.
@@ -88,6 +93,18 @@ export async function handleImplement(
 		issueRef:   ref.issueRef,
 		prompt,
 	};
+}
+
+/** Stamp the Story's build start, FAIL-OPEN: no outcome, and no failure, may
+ *  block or alter the implement turn. `stampBuildStart` documents that it never
+ *  throws; the catch is here so that promise is not something a build depends on. */
+function noteBuildStart(repoPath: string, epicHash: string, storyId: string): void {
+	try {
+		const outcome = stampBuildStart(repoPath, epicHash, storyId);
+		log.info({ storyId, outcome }, 'insrc_build_step[implement]: build-start stamp');
+	} catch (e) {
+		log.warn({ storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[implement]: build-start stamp failed; continuing');
+	}
 }
 
 /** The no-plan standalone implement path. Small implements the approved
@@ -118,6 +135,11 @@ function handleStandaloneImplement(
 		log.info({ storyId, sizeClass, reason: verdict.refusal.reason }, 'insrc_build_step[implement]: standalone admission refused');
 		return { next: 'refused', refusal: verdict.refusal };
 	}
+
+	// Admitted on either standalone route. Stamped BEFORE the Trivial branch
+	// below writes its task-less record, so the stamp is taken at build start
+	// whatever that record later says.
+	noteBuildStart(repoPath, epicHash, storyId);
 
 	let lldMdRelPath: string | undefined;
 	let resolvedDecisions = '';

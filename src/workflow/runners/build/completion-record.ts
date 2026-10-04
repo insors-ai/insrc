@@ -19,7 +19,7 @@
  */
 
 import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
-import { resolveStoryRangeBase } from './range-base.js';
+import { buildStartRelPath, resolveStoryRangeBase } from './range-base.js';
 import { inheritedStoryStandalone } from '../../storage.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
@@ -71,7 +71,8 @@ export async function ensureBuildRecordOnCompletion(
 		// an unresolvable base yields empty rather than a substituted range.
 		const rangeBase = resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
 		const ctx = {
-			author: 'insrc-build', timestamp: now, exclude: [own.json, own.md],
+			// ...and the Story's build-start file, as the validate writer does.
+			author: 'insrc-build', timestamp: now, exclude: [own.json, own.md, buildStartRelPath(ref.epicHash, ref.storyId)],
 			...(rangeBase !== undefined ? { base: rangeBase } : {}),
 		};
 		const changeLog = listChanged !== undefined

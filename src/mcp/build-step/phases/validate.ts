@@ -20,7 +20,7 @@ import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import { renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
-import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import { buildStartRelPath, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
@@ -246,8 +246,12 @@ async function runValidateSession(
 				// `undefined` means no base could be established, which yields an
 				// empty change set rather than a substituted (wrong) range.
 				const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
+				// The Story's build-start file is excluded beside the record's own
+				// paths, by the same exact-path filter: it is the workflow's stamp, not
+				// the Story's work, so it must neither appear in the change log nor, as
+				// the only dirty path, keep the committed range from being derived.
 				const changeLog = await collectBuildChangeLog(repoPath, {
-					author: 'insrc-build', timestamp: now, exclude: [own.json, own.md],
+					author: 'insrc-build', timestamp: now, exclude: [own.json, own.md, buildStartRelPath(epicHash, storyId)],
 					...(base !== undefined ? { base } : {}),
 				});
 				persistBuildRecord(repoPath, {

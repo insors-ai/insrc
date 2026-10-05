@@ -73,6 +73,46 @@ export interface EditSessionOpts {
 	readonly timeoutMs?: number | undefined;
 }
 
+/** Options for {@link CliProvider.runReviewSession}. */
+export interface ReviewSessionOpts {
+	/** The repo root the CLI runs inside. */
+	readonly cwd:        string;
+	/** Time allowed for the whole call, its one possible retry included. */
+	readonly deadlineMs: number;
+}
+
+/** A reviewer session ran past the time it was given. Never retried. */
+export class ReviewSessionTimeoutError extends Error {
+	constructor(readonly deadlineMs: number) {
+		super(`review session passed its time limit of ${Math.round(deadlineMs / 1000)}s`);
+		this.name = 'ReviewSessionTimeoutError';
+	}
+}
+
+/** The built-in tools a reviewer session may use: reading only. */
+export const REVIEW_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob'];
+/** The insrc analyze tools a reviewer session may call for drill-down. */
+export const REVIEW_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
+
+/** claude arguments for a reviewer session. `--tools` restricts the built-in
+ *  tools to reading, so nothing that can write or run a command exists in the
+ *  session at all; no `--permission-mode` is passed. */
+export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
+	return [
+		'--print',
+		'--output-format', 'json',
+		'--json-schema', JSON.stringify(schema),
+		'--tools', REVIEW_SESSION_READ_TOOLS.join(','),
+		'--allowedTools', [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS].join(','),
+		...modelArgs,
+	];
+}
+
+/** codex arguments for a reviewer session: a read-only sandbox, never `--full-auto`. */
+export function codexReviewSessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[]): string[] {
+	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
+}
+
 export interface CliProviderOpts {
 	readonly kind: CliKind;
 	/** Default model name passed via `--model`. Optional; the CLI's own default applies when absent. */
@@ -288,6 +328,76 @@ export class CliProvider implements LLMProvider {
 			const { agentText } = await this.runCodex(args, prompt, exec);
 			return { text: agentText ?? '', stopReason: 'end_turn' as const };
 		});
+	}
+
+
+	// -- runReviewSession -----------------------------------------------
+
+	/**
+	 * Run ONE read-only reviewer session: the CLI starts in `opts.cwd` with
+	 * tools limited to reading the repo and to the insrc analyze tools, cannot
+	 * edit anything, and returns an answer checked against `schema`.
+	 *
+	 * The read-only sibling of {@link runEditSession}, used by the design-review
+	 * template (LLD-f2f08ccf89f8ab25-S001). Both CLIs do this in a single run —
+	 * probed live on 2026-10-05:
+	 *   - claude: `--tools Read,Grep,Glob` leaves no built-in tool that can write,
+	 *     `--allowedTools` admits the two insrc analyze tools, and `--json-schema`
+	 *     still yields `structured_output` after tool use.
+	 *   - codex:  `--sandbox read-only` refuses writes, its registered insrc MCP
+	 *     server is callable, and `--output-schema` shapes the final message.
+	 *
+	 * `opts.deadlineMs` is the time allowed for THIS call, retry included. Unlike
+	 * every other call on this provider it is NOT wrapped in the three-attempt
+	 * transient retry: a transient CLI error is retried at most once, and only
+	 * with the time that remains. Passing the deadline throws
+	 * {@link ReviewSessionTimeoutError}, which is never retried.
+	 */
+	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+		const startedAt = Date.now();
+		for (let attempt = 1; ; attempt++) {
+			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
+			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+			try {
+				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs });
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				// The subprocess runner reports its own kill as exit code -9.
+				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+				if (attempt >= 2 || !isTransientCliError(msg)) throw err;
+				log.warn({ provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
+			}
+		}
+	}
+
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number }): Promise<T> {
+		if (this.kind === 'claude') {
+			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
+			if (envelope.is_error) {
+				throw new Error(`claude review session failed: ${envelope.result ?? 'no error message'}`);
+			}
+			if (envelope.structured_output === undefined) {
+				throw new Error('claude review session returned no structured_output');
+			}
+			return envelope.structured_output as T;
+		}
+		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-review-schema-'));
+		try {
+			const schemaPath = join(tmpDir, 'schema.json');
+			writeFileSync(schemaPath, JSON.stringify(schema));
+			const { events } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
+			// A tool-using run narrates before it answers: the answer is the LAST message.
+			const messages = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
+			const text = messages[messages.length - 1]?.item?.text;
+			if (text === undefined) throw new Error('codex review session emitted no agent_message item');
+			try {
+				return JSON.parse(text) as T;
+			} catch (err) {
+				throw new Error(`codex review session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
+			}
+		} finally {
+			rmSync(tmpDir, { recursive: true, force: true });
+		}
 	}
 
 

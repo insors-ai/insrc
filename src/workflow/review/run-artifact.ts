@@ -51,10 +51,11 @@ export interface ReviewArtifactResult {
 	readonly pendingUser: readonly Finding[];
 }
 
-const REVIEW_SECTION = '<!-- insrc:review -->';
+/** The marker that opens the rendered review section appended to an artifact's md. */
+export const REVIEW_SECTION = '<!-- insrc:review -->';
 
 /** Strip a previously-appended review section so re-runs don't stack. */
-function stripReviewSection(md: string): string {
+export function stripReviewSection(md: string): string {
 	const i = md.indexOf('\n' + REVIEW_SECTION);
 	return i === -1 ? md : md.slice(0, i).replace(/\s+$/, '') + '\n';
 }

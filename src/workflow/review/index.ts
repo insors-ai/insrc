@@ -37,7 +37,7 @@ export { applyAutoFixes, pendingUserFindings } from './apply.js';
 export type { AutoFixResult, AppliedFix, SkippedFix } from './apply.js';
 export { runTemplateReview } from './template-review.js';
 export type { ReviewSessionProvider } from './template-review.js';
-export { reviewArtifactFile } from './run-artifact.js';
+export { reviewArtifactFile, stripReviewSection, REVIEW_SECTION } from './run-artifact.js';
 export type { ReviewArtifactOpts, ReviewArtifactResult } from './run-artifact.js';
 export { applyOneFinding } from './apply.js';
 export { resolveReviewFinding, effectiveReviewVerdict, listPendingReviewFindings } from './resolve.js';

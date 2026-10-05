@@ -20,11 +20,11 @@ import { resolveRepoPath } from '../../resolve-repo.js';
 import { getLogger } from '../../../shared/logger.js';
 import { jsonPathForMd } from '../../../workflow/gates.js';
 import {
-	buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, TEMPLATE_ANSWER_SCHEMA,
+	buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, stripReviewSection,
+	TEMPLATE_ANSWER_SCHEMA,
 } from '../../../workflow/review/index.js';
 import { saveState } from '../state-store.js';
 import type { ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepInputStart, ReviewStepStatePayload } from '../types.js';
-import { stripReviewSection } from './findings.js';
 
 const log = getLogger('mcp:review-step:start');
 

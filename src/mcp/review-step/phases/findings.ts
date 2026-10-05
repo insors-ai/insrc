@@ -20,8 +20,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { getLogger } from '../../../shared/logger.js';
 import { writeAtomic } from '../../../workflow/storage.js';
 import {
-	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport, reviewTemplateFor,
-	tallyFindings, validateTemplateAnswer,
+	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport, REVIEW_SECTION,
+	reviewTemplateFor, stripReviewSection, tallyFindings, validateTemplateAnswer,
 } from '../../../workflow/review/index.js';
 import type { ReviewReport } from '../../../workflow/review/index.js';
 import { loadState, releaseState } from '../state-store.js';
@@ -30,7 +30,6 @@ import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '.
 const log = getLogger('mcp:review-step:findings');
 
 const REVIEW_MODEL = 'client';
-const REVIEW_SECTION = '<!-- insrc:review -->';
 
 export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone | ReviewStepError {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
@@ -100,11 +99,4 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 		path:     state.mdPath,
 		jsonPath: state.jsonPath,
 	};
-}
-
-/** Strip a previously-appended review section so re-runs don't stack.
- *  Mirrors `run-artifact.ts`. */
-export function stripReviewSection(md: string): string {
-	const i = md.indexOf('\n' + REVIEW_SECTION);
-	return i === -1 ? md : md.slice(0, i).replace(/\s+$/, '') + '\n';
 }

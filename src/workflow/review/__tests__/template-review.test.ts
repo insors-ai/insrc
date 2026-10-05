@@ -173,6 +173,24 @@ test('T11 a provider with no session capability fails at once and the old pipeli
 	assert.deepEqual(f.oneShot, [], 'no fallback to extract, probe and verify');
 });
 
+test('a review cancelled before or during its session returns no report', async () => {
+	// Cancelled before it starts: no session is run at all.
+	const before = fakeProvider([answer(SPEC)]);
+	const early = new AbortController();
+	early.abort();
+	await assert.rejects(run(before, { signal: early.signal }), /review: aborted/);
+	assert.equal(before.sessions.length, 0);
+
+	// Cancelled while the session runs: the valid answer it returns is not turned into a report.
+	const during = new AbortController();
+	const f = fakeProvider([answer(SPEC)]);
+	const session = f.provider as unknown as { runReviewSession: (...a: unknown[]) => Promise<unknown> };
+	const inner = session.runReviewSession.bind(session);
+	session.runReviewSession = async (...a: unknown[]) => { const r = await inner(...a); during.abort(); return r; };
+	await assert.rejects(run(f, { signal: during.signal }), /review: aborted/);
+	assert.equal(f.sessions.length, 1);
+});
+
 // --- T12 -----------------------------------------------------------------------
 
 /** sha256 of the extraction prompt for `# BODY`, taken BEFORE this change. */

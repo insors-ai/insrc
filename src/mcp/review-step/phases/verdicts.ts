@@ -23,7 +23,7 @@ import { getLogger } from '../../../shared/logger.js';
 import { writeAtomic } from '../../../workflow/storage.js';
 import {
 	applyAutoFixes, computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, normalizeFinding,
-	pendingUserFindings, renderReviewReport, tallyFindings,
+	pendingUserFindings, renderReviewReport, REVIEW_SECTION, stripReviewSection, tallyFindings,
 } from '../../../workflow/review/index.js';
 import type { Claim, Finding, RawFinding, ReviewReport } from '../../../workflow/review/index.js';
 import { loadState, releaseState } from '../state-store.js';
@@ -32,7 +32,6 @@ import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
 const log = getLogger('mcp:review-step:verdicts');
 
 const REVIEW_MODEL = 'client';
-const REVIEW_SECTION = '<!-- insrc:review -->';
 
 export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
@@ -106,11 +105,4 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 		path:     state.mdPath,
 		jsonPath: state.jsonPath,
 	};
-}
-
-/** Strip a previously-appended review section so re-runs don't stack.
- *  Mirrors `run-artifact.ts`. */
-function stripReviewSection(md: string): string {
-	const i = md.indexOf('\n' + REVIEW_SECTION);
-	return i === -1 ? md : md.slice(0, i).replace(/\s+$/, '') + '\n';
 }

@@ -72,17 +72,25 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 		`The design review passed its time limit of ${minutes(limitMs)} (template ${template.id}). No review was recorded.`,
 	);
 
+	/** Read through a function: the signal can flip while a session is awaited. */
+	const aborted = (): boolean => opts.signal?.aborted === true;
+
 	/** One session, started with only the time that remains on the review's deadline. */
 	const ask = async (prompt: string): Promise<RawTemplateAnswer> => {
-		if (opts.signal?.aborted === true) throw new Error('review: aborted');
+		if (aborted()) throw new Error('review: aborted');
 		const remainingMs = limitMs - (nowMs() - startedAt);
 		if (remainingMs <= 0) throw timedOut();
+		let raw: RawTemplateAnswer;
 		try {
-			return await session.runReviewSession<RawTemplateAnswer>(prompt, TEMPLATE_ANSWER_SCHEMA as StructuredSchema, { cwd: repo, deadlineMs: remainingMs });
+			raw = await session.runReviewSession<RawTemplateAnswer>(prompt, TEMPLATE_ANSWER_SCHEMA as StructuredSchema, { cwd: repo, deadlineMs: remainingMs });
 		} catch (err) {
 			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw timedOut();
 			throw err;
 		}
+		// The session cannot be interrupted mid-run, so an abort raised while it ran
+		// is honoured here: a cancelled review never returns a report to be stamped.
+		if (aborted()) throw new Error('review: aborted');
+		return raw;
 	};
 
 	emit('template');

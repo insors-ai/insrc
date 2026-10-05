@@ -100,13 +100,13 @@ const WORKFLOW_CLI_TIMEOUT_MS = 900_000;
 // Pure driver
 // ---------------------------------------------------------------------------
 
-/** Incremental progress event. `phase` is one of: `decompose`, `plan-ready`,
- *  `grounding` (running analyze for a step), `step-start`, `step-done`,
- *  `synthesize-attempt`, `synthesize-retry`, `correction-round`, `done`. */
 /** What a run says when it was asked to review the artifact it just authored. */
 export const REVIEW_SKIPPED_DETAIL =
 	'not reviewed: this run authored the artifact, so it needs a controller review (insrc_review_step) or an override reason at approval';
 
+/** Incremental progress event. `phase` is one of: `decompose`, `plan-ready`,
+ *  `grounding` (running analyze for a step), `step-start`, `step-done`,
+ *  `synthesize-attempt`, `synthesize-retry`, `correction-round`, `review-skipped`, `done`. */
 export interface WorkflowProgress {
 	readonly phase:    string;
 	readonly stepId?:  string | undefined;

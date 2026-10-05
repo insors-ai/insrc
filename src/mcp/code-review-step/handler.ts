@@ -687,6 +687,20 @@ async function reviewByDaemon(
 			{ repo, epicHash, storyId, groundingMode: mode, ...(deps.client !== undefined ? { client: deps.client } : {}) },
 			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS },
 		);
+		// `codeReview.run` is older than the grounding mode and the reviewer stamp, so
+		// a daemon that predates them accepts this request and silently ignores both:
+		// it grounds on the graph when the diff was asked for, does not cap the
+		// verdict, and stamps no reviewer. The unknown-method check cannot catch
+		// that. What came back is checked against what was asked.
+		const got = { mode: res.artifact.body.groundingMode, reviewedBy: res.artifact.meta.reviewedBy };
+		if (got.mode !== mode || got.reviewedBy !== 'daemon') {
+			throw new ReviewStreamError(
+				'unknown-method',
+				`codeReview.run: the daemon answered with grounding '${String(got.mode)}' and reviewer '${String(got.reviewedBy)}' ` +
+				`where '${mode}' and 'daemon' were asked for; it is older than this request. Update the daemon and restart it. ` +
+				'The record it wrote does not count as this review',
+			);
+		}
 		const cra = codeReviewSubjectPathArgs(subject);
 		const paths = codeReviewArtifactPaths(repo, epicHash, storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
 		const model = res.artifact.meta.model;

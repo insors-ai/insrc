@@ -26,10 +26,9 @@ import {
 	pendingUserFindings, renderReviewReport, REVIEW_SECTION, stripReviewSection, tallyFindings,
 } from '../../../workflow/review/index.js';
 import type { Claim, Finding, RawFinding, ReviewReport } from '../../../workflow/review/index.js';
+import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
-
-import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
 
 const log = getLogger('mcp:review-step:verdicts');
 

@@ -147,8 +147,8 @@
       "q939cb900": {
         "question": "Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.",
         "status": "resolved",
-        "choice": "Keep 10 minutes for DEF too",
-        "rationale": "Provisional, chosen by the controller on the pattern the user picked for the design-review limits on 2026-10-05 (ship a default, then time real runs): 10 minutes is the default wait limit, and the plan includes a task that times a real daemon DEF review and reports whether the default fits. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews. Not yet confirmed by the user.",
+        "choice": "30 minutes for a DEF review (was: keep 10 minutes)",
+        "rationale": "The provisional 10 minute default was tested by the build task that times a real daemon DEF review: it took 777 s (12 min 57 s) on 2026-10-05, so 10 minutes would have cut it off. The limit was raised to 30 minutes and the user confirmed keeping 30 on 2026-10-05, noting that it sounds high and that why a DEF review takes about 13 minutes needs further investigation. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews.",
         "resolvedAt": "2026-10-05T09:23:24.440Z"
       }
     }
@@ -391,7 +391,7 @@
         },
         {
           "scenario": "The daemon review takes longer than the tool's wait limit.",
-          "detection": "A timer in the review tool expires before the final frame arrives. The wait limit is 11 minutes for a design review (the review's own hard cap of 10 minutes plus a margin) and 10 minutes for a DEF review or a code review.",
+          "detection": "A timer in the review tool expires before the final frame arrives. The wait limit is 11 minutes for a design review (the review's own hard cap of 10 minutes plus a margin) 10 minutes for a code review, and 30 minutes for a DEF review. The DEF limit started at 10 minutes and was raised after the build timed a real one: 777 s on 2026-10-05 (399 s for the first pass over 19 premises, then 378 s for the re-review the pipeline runs after it applies a fix).",
           "response": "The tool aborts the request and returns a timeout error. Nothing is stamped.",
           "userImpact": "Same as a failed review: retry or override.",
           "recoverable": true

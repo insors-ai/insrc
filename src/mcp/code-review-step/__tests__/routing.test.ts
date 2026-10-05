@@ -235,6 +235,27 @@ test('T17 a diff the daemon cannot read comes back as a failed daemon review nam
 	assert.deepEqual(h.writes, []);
 });
 
+// --- a daemon older than the grounding mode ------------------------------------
+
+for (const [what, answer] of [
+	['ignored the degraded mode', { meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'full' } }],
+	['stamped no reviewer', { meta: { model: 'claude:opus' }, body: { verdict: 'warn', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'degraded' } }],
+] as const) {
+	test(`an older daemon that ${what} is an error, not a verdict`, async () => {
+		reset();
+		const h = harness('controller', {
+			fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }),   // asks for degraded
+			reviewByDaemon: async () => ({ runId: 'cr-old', artifact: answer as never }),
+		});
+		const out = await start(h.deps);
+		assert.ok(out.next === 'error', JSON.stringify(out));
+		assert.equal(out.error.code, 'daemon-review-unknown-method');
+		assert.match(out.error.message, /Update the daemon and restart it/);
+		assert.match(out.error.message, /does not count as this review/);
+		assert.equal((out as unknown as Record<string, unknown>)['verdict'], undefined, 'the older daemon\'s verdict is not reported');
+	});
+}
+
 // --- T11: a failed daemon review -------------------------------------------------
 
 const FAILURES = [

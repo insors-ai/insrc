@@ -16,7 +16,10 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 
 import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
+import { DiffUnavailableError } from '../../workflow/code-review/grounding.js';
+import { DEFAULT_DEPS, runCodeReview } from '../../workflow/code-review/runner.js';
 import type { RunCodeReviewOpts } from '../../workflow/code-review/runner.js';
+import type { DimensionResult } from '../../workflow/code-review/types.js';
 import { artifactJsonPath, buildArtifactId } from '../../workflow/storage.js';
 import { buildAuthorParty, codeReviewRunStart } from '../code-review-rpc.js';
 import type { CodeReviewRunDeps } from '../code-review-rpc.js';
@@ -123,10 +126,6 @@ test('a declined subject is still an error frame, before the author is looked at
 });
 
 // --- the grounding mode (LLD-1716f77ba9ba017b-S001, test T17; plan task t6) -------
-
-import type { DimensionResult } from '../../workflow/code-review/types.js';
-import { DiffUnavailableError } from '../../workflow/code-review/grounding.js';
-import { DEFAULT_DEPS, runCodeReview } from '../../workflow/code-review/runner.js';
 
 const DIFF_GROUNDING = { symbols: [], conventions: [], contractRefs: [] } as never;
 

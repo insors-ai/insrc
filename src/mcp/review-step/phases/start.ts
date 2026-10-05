@@ -121,9 +121,6 @@ export async function handleStart(
 }
 
 
-/** Resolve the artifact's (md, json) pair. Given a `.md`/`.html` path the
- *  canonical json is found via `jsonPathForMd`; given a `.json` path its
- *  `.md` sibling is derived by extension swap. */
 /** How long the tool waits for the daemon's review of a design (HLD / LLD).
  *  That review is one reviewer session with a hard limit of 10 minutes, so the
  *  tool waits one minute longer and never gives up on a review that is about to
@@ -181,6 +178,9 @@ async function reviewByDaemon(
 	}
 }
 
+/** Resolve the artifact's (md, json) pair. Given a `.md`/`.html` path the
+ *  canonical json is found via `jsonPathForMd`; given a `.json` path its
+ *  `.md` sibling is derived by extension swap. */
 function resolvePaths(artifact: string): { mdPath: string; jsonPath: string } {
 	if (artifact.endsWith('.json')) {
 		return { jsonPath: artifact, mdPath: artifact.replace(/\.json$/, '.md') };

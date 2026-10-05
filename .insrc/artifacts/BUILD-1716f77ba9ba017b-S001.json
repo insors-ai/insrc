@@ -4,8 +4,9 @@
     "epicHash": "1716f77ba9ba017b",
     "storyId": "S001",
     "createdAt": "2026-10-05T09:32:49.002Z",
-    "updatedAt": "2026-10-05T10:59:13.107Z",
-    "standalone": true
+    "updatedAt": "2026-10-05T11:10:14.432Z",
+    "standalone": true,
+    "approvedAt": "2026-10-05T11:10:14.483Z"
   },
   "body": {
     "tasks": [
@@ -586,6 +587,6 @@
         "timestamp": "2026-10-05T10:59:13.107Z"
       }
     ],
-    "commit": "1739ed1"
+    "commit": "20c9f74"
   }
 }

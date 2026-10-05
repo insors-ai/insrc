@@ -54,12 +54,9 @@ interface CodeReviewRunParams {
 	/** How to ground the review. `degraded` grounds on the diff, stamps the
 	 *  record `degraded` and caps the verdict at warn; omitted or `full` grounds
 	 *  on the graph, as this request always has. */
-	readonly groundingMode?: 'full' | 'degraded';
+	readonly groundingMode?: 'full' | 'degraded' | undefined;
 }
 
-/** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
- *  terminal `done` (with the outcome) or `error`. Never throws — a bad payload,
- *  a declined subject, or a run failure is sent as an `error` / declined frame. */
 /** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
  *  real thing; a test replaces the ones it needs to. */
 export interface CodeReviewRunDeps {
@@ -72,6 +69,9 @@ export interface CodeReviewRunDeps {
 	readonly write?: ((absPath: string, content: string) => void) | undefined;
 }
 
+/** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
+ *  terminal `done` (with the outcome) or `error`. Never throws — a bad payload,
+ *  a declined subject, or a run failure is sent as an `error` / declined frame. */
 export async function codeReviewRunStart(
 	rawParams: unknown,
 	send:      (msg: IpcStreamMessage) => void,

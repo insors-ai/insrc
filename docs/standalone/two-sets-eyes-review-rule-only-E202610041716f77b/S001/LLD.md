@@ -208,7 +208,7 @@ Today a DEF, HLD or LLD with no review is approvable, and many existing tests re
   - Response: The tool returns an error naming the cause (and, for an older daemon, telling the user to update it). Nothing is stamped. No controller review is offered.
   - User impact: The artifact has no review, so approval is withheld. The user starts or updates the daemon and retries, or overrides at approval with a reason.
 - **The daemon review takes longer than the tool's wait limit.** (recoverable)
-  - Detection: A timer in the review tool expires before the final frame arrives. The wait limit is 11 minutes for a design review (the review's own hard cap of 10 minutes plus a margin) and 10 minutes for a DEF review or a code review.
+  - Detection: A timer in the review tool expires before the final frame arrives. The wait limit is 11 minutes for a design review (the review's own hard cap of 10 minutes plus a margin) 10 minutes for a code review, and 30 minutes for a DEF review. The DEF limit started at 10 minutes and was raised after the build timed a real one: 777 s on 2026-10-05 (399 s for the first pass over 19 premises, then 378 s for the re-review the pipeline runs after it applies a fix).
   - Response: The tool aborts the request and returns a timeout error. Nothing is stamped.
   - User impact: Same as a failed review: retry or override.
 - **A party is asked to review its own work: the daemon is asked to review a daemon-authored artifact or build, or the controller submits verdicts or judgements for controller-authored work.** (recoverable)
@@ -336,7 +336,7 @@ State the rule in both directions in the steering and tool descriptions and rely
 ## Resolved questions
 
 - `q939cb900` — Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.
-  - **resolved**: Keep 10 minutes for DEF too — Provisional, chosen by the controller on the pattern the user picked for the design-review limits on 2026-10-05 (ship a default, then time real runs): 10 minutes is the default wait limit, and the plan includes a task that times a real daemon DEF review and reports whether the default fits. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews. Not yet confirmed by the user. _(2026-10-05T09:23:24.440Z)_
+  - **resolved**: 30 minutes for a DEF review (was: keep 10 minutes) — The provisional 10 minute default was tested by the build task that times a real daemon DEF review: it took 777 s (12 min 57 s) on 2026-10-05, so 10 minutes would have cut it off. The limit was raised to 30 minutes and the user confirmed keeping 30 on 2026-10-05, noting that it sounds high and that why a DEF review takes about 13 minutes needs further investigation. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews.
 
 ## Citations
 

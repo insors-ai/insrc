@@ -24,10 +24,9 @@ import {
 	reviewTemplateFor, stripReviewSection, tallyFindings, validateTemplateAnswer,
 } from '../../../workflow/review/index.js';
 import type { ReviewReport } from '../../../workflow/review/index.js';
+import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '../types.js';
-
-import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
 
 const log = getLogger('mcp:review-step:findings');
 

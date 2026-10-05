@@ -4,7 +4,7 @@
     "epicHash": "1716f77ba9ba017b",
     "storyId": "S001",
     "createdAt": "2026-10-05T09:32:49.002Z",
-    "updatedAt": "2026-10-05T09:32:49.002Z",
+    "updatedAt": "2026-10-05T09:44:15.026Z",
     "standalone": true
   },
   "body": {
@@ -12,60 +12,141 @@
       {
         "id": "t1",
         "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
       }
     ],
-    "summary": "t1: added the optional author and reviewer party fields and the two readers (src/workflow/review/party.ts) that fall back to the stored model label. Nothing writes the fields yet.",
+    "summary": "t2: finalizeArtifact takes an optional authoredBy and stamps it on the finalized meta for every workflow; the MCP synthesize phase passes controller and the daemon run passes daemon through one finalize helper shared by the first attempt and the correction retries. Both build-step writers stamp controller on the BUILD record.",
     "changeLog": [
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-1716f77ba9ba017b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/standalone-implement.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/workflow-step/__tests__/handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/workflow-step/phases/synthesize.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/author-stamp.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/review/__tests__/party.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/review/party.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
       },
       {
         "target": {
           "file": "src/workflow/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:32:49.002Z"
+        "timestamp": "2026-10-05T09:44:15.026Z"
       }
     ],
-    "commit": "1544816"
+    "commit": "72ba02f"
   }
 }

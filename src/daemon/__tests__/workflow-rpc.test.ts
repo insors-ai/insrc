@@ -211,3 +211,17 @@ test('runWorkflowServerSide fails clearly when synthesize stays invalid across a
 		assert.equal(provider.calls, 4);   // 1 plan + 3 synth attempts
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+test('T2 the daemon run finalizes through ONE call, so a correction retry cannot skip the author stamp', () => {
+	// No test drives a correction round end to end (it needs a full design run that
+	// fails its boundary audit and then passes). What this pins instead is the
+	// structure that makes the retry safe: the run's first attempt and its retries
+	// all go through `finalizeAsDaemon`, and that helper holds the file's only
+	// finalizeArtifact call. A second, direct call would be an unstamped path.
+	const src = readFileSync(new URL('../workflow-rpc.ts', import.meta.url), 'utf8');
+	const code = src.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
+	const calls = code.match(/\bfinalizeArtifact\(/g) ?? [];
+	assert.equal(calls.length, 1, 'exactly one finalizeArtifact call in the daemon run');
+	assert.match(code, /finalizeArtifact\([^)]*attributionNow\(\), 'daemon'\)/, 'and that call stamps the daemon');
+	assert.equal((code.match(/\bfinalizeAsDaemon\(/g) ?? []).length, 2, 'used by the first attempt and by the correction retry');
+});

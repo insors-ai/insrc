@@ -23,7 +23,9 @@
     "epicSlug": "plan-build-structured-design-review-template",
     "storyId": "S001",
     "lldRunId": "wf-1791180422005-29ykwt",
-    "lldEffectiveHash": "f2f08ccf89f8ab252ea8cd02e81857294475ba425d5a5285f5160562ce9ba014"
+    "lldEffectiveHash": "f2f08ccf89f8ab252ea8cd02e81857294475ba425d5a5285f5160562ce9ba014",
+    "approvedAt": "2026-10-05T07:04:14.055Z",
+    "rangeBase": "54b9a288ccb1183bab68ed27917aed79408d9992"
   },
   "body": {
     "summary": {

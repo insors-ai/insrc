@@ -16,13 +16,17 @@
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */
 
+import type { DesignIntent, RawTemplateAnswer } from '../../workflow/review/template.js';
 import type { Claim, Evidence, ReviewReport, ReviewVerdict } from '../../workflow/review/types.js';
 
 // ---------------------------------------------------------------------------
 // Phases
 // ---------------------------------------------------------------------------
 
-export type ReviewStepPhase = 'start' | 'claims' | 'verdicts';
+/** `findings` is the design-review path: for an HLD or LLD, `start` returns
+ *  `emit_findings` and the controller answers once with phase='findings'. Every
+ *  other artifact keeps start → claims → verdicts. */
+export type ReviewStepPhase = 'start' | 'claims' | 'verdicts' | 'findings';
 
 /** Kick off a review over a persisted artifact. `artifact` is the `.md`
  *  (or `.html`) path; the canonical `.json` is resolved via `jsonPathForMd`.
@@ -59,10 +63,19 @@ export interface RawVerdict {
 	readonly proposedFix?: unknown;
 }
 
+/** The controller's answer to a design-review template (matching
+ *  `TEMPLATE_ANSWER_SCHEMA`): every check item, with the premises examined. */
+export interface ReviewStepInputFindings {
+	readonly phase:    'findings';
+	readonly findings: RawTemplateAnswer;
+	readonly state:    string;
+}
+
 export type ReviewStepInput =
 	| ReviewStepInputStart
 	| ReviewStepInputClaims
-	| ReviewStepInputVerdicts;
+	| ReviewStepInputVerdicts
+	| ReviewStepInputFindings;
 
 // ---------------------------------------------------------------------------
 // Outputs
@@ -72,6 +85,18 @@ export interface ReviewStepEmitClaims {
 	readonly next:     'emit_claims';
 	readonly guidance: string;
 	readonly stage:    string;
+	readonly prompt:   { readonly system: string; readonly user: string };
+	readonly schema:   Record<string, unknown>;
+	readonly state:    string;
+}
+
+/** `start` on a design document (HLD / LLD): the review template to answer. */
+export interface ReviewStepEmitFindings {
+	readonly next:     'emit_findings';
+	readonly guidance: string;
+	readonly stage:    string;
+	/** The id of the template in use (`design-issue` / `design-spec`). */
+	readonly template: string;
 	readonly prompt:   { readonly system: string; readonly user: string };
 	readonly schema:   Record<string, unknown>;
 	readonly state:    string;
@@ -113,6 +138,7 @@ export interface ReviewStepError {
 
 export type ReviewStepOutput =
 	| ReviewStepEmitClaims
+	| ReviewStepEmitFindings
 	| ReviewStepEmitVerdicts
 	| ReviewStepDone
 	| ReviewStepError;
@@ -129,6 +155,9 @@ export interface ReviewStepStatePayload {
 	readonly repo:        string;
 	readonly stage:       string;
 	readonly markdown:    string;
+	/** Set at `start` for a design document: which review template applies. Its
+	 *  presence is what marks the run as a template review. */
+	readonly templateIntent?: DesignIntent | undefined;
 	/** Set after the `claims` turn. */
 	readonly claims?:     readonly Claim[] | undefined;
 	/** Set after the `claims` turn (the gathered ground truth). */

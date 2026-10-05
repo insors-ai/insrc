@@ -30,6 +30,12 @@ export async function handleClaims(input: ReviewStepInputClaims): Promise<Review
 		throw new Error(`insrc_review_step[claims]: missing \`state\` token from the prior start response.`);
 	}
 	const state = loadState(input.state);
+	if (state.templateIntent !== undefined) {
+		throw new Error(
+			`insrc_review_step[claims]: this run reviews a design document against a template — ` +
+			`call phase='findings', not phase='claims'.`,
+		);
+	}
 
 	const claims = normalizeClaimsEnvelope(input.claims ?? {});
 	const evidence = await gatherEvidence(claims as Claim[], state.repo);

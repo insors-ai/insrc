@@ -230,6 +230,14 @@ blocking findings (apply / accept-with-note / override), THEN present-ask-approv
 with `insrc_workflow_approve({ artifactPath })`. A review-blocked artifact comes
 back from approve in `skipped[]` with a reason (relay it); pass `overrideReview`
 only with the user's explicit override reason.
+
+For a DESIGN document (an HLD or LLD) `start` returns `emit_findings` instead of
+`emit_claims`: a fixed checklist, chosen by whether the design answers an ISSUE
+or a SPEC. Check every item against the real code and docs yourself — use insrc
+analyze for drill-down — then answer once with `phase:'findings'`. Report each
+premise as `holds`, `does-not-hold` or `could-not-verify`; only `does-not-hold`
+blocks approval. An answer that breaks the checklist is rejected with the
+reasons and stamps nothing; correct it and send `findings` again.
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->

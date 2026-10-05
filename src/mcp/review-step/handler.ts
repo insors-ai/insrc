@@ -16,6 +16,7 @@ import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { handleClaims } from './phases/claims.js';
+import { handleFindings } from './phases/findings.js';
 import { handleStart } from './phases/start.js';
 import { handleVerdicts } from './phases/verdicts.js';
 import type {
@@ -56,11 +57,12 @@ async function dispatch(input: unknown): Promise<ReviewStepOutput> {
 			case 'start':    return handleStart(step);
 			case 'claims':   return await handleClaims(step);
 			case 'verdicts': return handleVerdicts(step);
+			case 'findings': return handleFindings(step);
 			default:
 				return errorResult(
 					'bad-phase',
 					`insrc_review_step: unknown phase '${(step as { phase: string }).phase}'. ` +
-					`Expected 'start' | 'claims' | 'verdicts'.`,
+					`Expected 'start' | 'claims' | 'verdicts' | 'findings'.`,
 					false,
 				);
 		}

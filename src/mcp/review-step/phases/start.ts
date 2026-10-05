@@ -19,13 +19,16 @@ import { resolveRepoPath } from '../../resolve-repo.js';
 
 import { getLogger } from '../../../shared/logger.js';
 import { jsonPathForMd } from '../../../workflow/gates.js';
-import { buildExtractPrompt, EXTRACT_SCHEMA } from '../../../workflow/review/index.js';
+import {
+	buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, TEMPLATE_ANSWER_SCHEMA,
+} from '../../../workflow/review/index.js';
 import { saveState } from '../state-store.js';
-import type { ReviewStepEmitClaims, ReviewStepInputStart, ReviewStepStatePayload } from '../types.js';
+import type { ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepInputStart, ReviewStepStatePayload } from '../types.js';
+import { stripReviewSection } from './findings.js';
 
 const log = getLogger('mcp:review-step:start');
 
-export async function handleStart(input: ReviewStepInputStart): Promise<ReviewStepEmitClaims> {
+export async function handleStart(input: ReviewStepInputStart): Promise<ReviewStepEmitClaims | ReviewStepEmitFindings> {
 	const repo = await resolveRepoPath(input.repo);
 	if (repo === undefined) {
 		throw new Error(
@@ -44,6 +47,36 @@ export async function handleStart(input: ReviewStepInputStart): Promise<ReviewSt
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: Record<string, unknown> };
 	const stage = typeof artifact.meta?.['workflow'] === 'string' ? (artifact.meta['workflow'] as string) : 'unknown';
 	const markdown = readFileSync(mdPath, 'utf8');
+
+	// A design document (HLD / LLD) is reviewed against a template: the
+	// controller checks every item with its own tools and answers once.
+	if (isDesignStage(stage)) {
+		const epicHash = typeof artifact.meta?.['epicHash'] === 'string' ? (artifact.meta['epicHash'] as string) : undefined;
+		const plan = resolveDesignReview(repo, epicHash);
+		const design = stripReviewSection(markdown);
+		const designState: ReviewStepStatePayload = {
+			runId:       `rev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+			startedAtMs: Date.now(),
+			mdPath, jsonPath, repo, stage,
+			markdown:    design,
+			templateIntent: plan.intent,
+		};
+		const designToken = saveState(designState);
+		log.info({ runId: designState.runId, stage, template: plan.template.id, mdPath }, 'insrc_review_step[start]: emitting review template');
+		return {
+			next:     'emit_findings',
+			guidance:
+				`This is a design document: review it against checklist \`${plan.template.id}\`. Check every item ` +
+				`against the real code and docs with your own tools (use insrc analyze for drill-down), then call ` +
+				`insrc_review_step with phase="findings", findings=<your JSON matching the schema>, ` +
+				`state=<the state field verbatim>.`,
+			stage,
+			template: plan.template.id,
+			prompt:   buildTemplateReviewPrompt(plan.template, design, stage),
+			schema:   TEMPLATE_ANSWER_SCHEMA,
+			state:    designToken,
+		};
+	}
 
 	const state: ReviewStepStatePayload = {
 		runId:       `rev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

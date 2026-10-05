@@ -95,9 +95,9 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 			'this is the fixed OUTER call envelope.',
 	},
 	insrc_review_step: {
-		phases: ['start', 'claims', 'verdicts'],
+		phases: ['start', 'claims', 'verdicts', 'findings'],
 		dynamicNote:
-			'Multi-turn: the claims / verdicts bodies are schemas the run hands back — ' +
+			'Multi-turn: the claims / verdicts / findings bodies are schemas the run hands back — ' +
 			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
 	},
 	insrc_code_review_step: {
@@ -624,6 +624,13 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'phase=\'verdicts\' with verdicts=<your JSON> + state. Server returns ' +
 				'{ next: \'done\', verdict, counts, report, applied, pending } once the amended ' +
 				'artifact + stamped review are written to disk.\n\n' +
+				'DESIGN documents (an HLD or LLD) take a shorter path: phase=\'start\' returns ' +
+				'{ next: \'emit_findings\', template, prompt, schema, state } — a fixed review ' +
+				'checklist. Check every item against the real code and docs with your own tools ' +
+				'(use insrc analyze for drill-down), then call phase=\'findings\' with ' +
+				'findings=<your JSON> + state. Each premise is reported as `holds`, ' +
+				'`does-not-hold` or `could-not-verify`; only `does-not-hold` blocks approval. An ' +
+				'answer that breaks the checklist is rejected with the reasons and stamps nothing.\n\n' +
 				'The `guidance` field on each response explains the next call; `prompt` + ' +
 				'`schema` are authoritative. Preserve `state` verbatim between calls.',
 			annotations: {
@@ -632,8 +639,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				openWorldHint:  false,
 			},
 			inputSchema: {
-				phase: z.enum(['start', 'claims', 'verdicts'])
-					.describe('Which turn of the loop this call carries.'),
+				phase: z.enum(['start', 'claims', 'verdicts', 'findings'])
+					.describe('Which turn of the loop this call carries. `findings` answers a design-review template (after next=emit_findings).'),
 				artifact: z.string()
 					.describe('Only for phase=start. The artifact `.md` / `.html` / `.json` path to review.')
 					.optional(),
@@ -647,6 +654,10 @@ export function buildInsrcMcpServerWithRegistry(): {
 				verdicts: z.object({ verdicts: z.array(z.record(z.string(), z.unknown())).optional() })
 					.passthrough()
 					.describe('Only for phase=verdicts. The per-claim verdicts JSON your LLM emitted (matches the emit_verdicts schema).')
+					.optional(),
+				findings: z.object({ items: z.array(z.record(z.string(), z.unknown())).optional() })
+					.passthrough()
+					.describe('Only for phase=findings. The answer to the design-review template (matches the emit_findings schema).')
 					.optional(),
 				state: z.string()
 					.describe('Opaque continuation token from the prior response. Required after phase=start.')

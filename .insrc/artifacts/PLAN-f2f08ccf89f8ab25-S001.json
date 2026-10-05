@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791182900663-ze4h83",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-05T06:50:56.951Z",
+    "epicCreatedAt": "2026-10-05T06:50:56.951Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 156281,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f2f08ccf89f8ab25",
+    "epicSlug": "plan-build-structured-design-review-template",
+    "storyId": "S001",
+    "lldRunId": "wf-1791180422005-29ykwt",
+    "lldEffectiveHash": "f2f08ccf89f8ab252ea8cd02e81857294475ba425d5a5285f5160562ce9ba014"
+  },
+  "body": {
+    "summary": {
+      "prose": "The build first teaches the review record to say whether a finding is wrong or merely unverified, and adds the two review templates with their settings. It then probes the claude and codex CLIs to learn how a read-only reviewer session can return a checked answer, builds that session, and routes design reviews to it, leaving every other review untouched. The controller review tool gets the same template, and the last task times real reviews against the proposed limits.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Record a finding's outcome and gate on it",
+        "summary": "Add the optional outcome and item fields to a finding and the template id and unverified count to a report. Set a template finding's severity from its outcome, make the verdict warn when only could-not-verify findings exist, render 'Does not hold' and 'Could not verify' as two labelled lists, and keep a holds result out of the findings that need a human. Reviews with no outcome behave exactly as today.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A review with a does-not-hold finding blocks approval; one with only could-not-verify findings gives warn and is approvable; one with only holds gives pass",
+          "The rendered review lists the two problem kinds separately and says which one blocks",
+          "A review record with no outcome fields keeps its verdict, its rendering and its gate result"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T4 severity follows outcome"
+          },
+          {
+            "level": "unit",
+            "name": "T5 verdict by outcome, and today's verdict when no outcome is present"
+          },
+          {
+            "level": "unit",
+            "name": "T6 the rendered review lists the two problem kinds separately"
+          },
+          {
+            "level": "unit",
+            "name": "T7 approval with could-not-verify only, with does-not-hold, and after a resolution or override"
+          },
+          {
+            "level": "unit",
+            "name": "T8 an older review record keeps its verdict and gate result"
+          },
+          {
+            "level": "unit",
+            "name": "T17 a holds result is not among the findings that need a human"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Templates, settings, intent and answer validation",
+        "summary": "Add the two review templates as data (ISSUE: 5 items, 8 premises; SPEC: 8 items, 16 premises) with the thresholds and the 4 / 6 / 8 minute limits exposed as settings whose defaults are those values. Add the resolution of a design's intent and complexity from the artifact store, the 10 minute hard cap that no setting can raise, the template prompt (template, then instructions including the use of insrc analyze, then the design last), and the validation of a reviewer's answer against the template.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A design with an ISSUE artifact for its epicHash resolves to the ISSUE template; any other design resolves to the SPEC template",
+          "With no setting present the defaults are used: 8 and 16 premises, and 4, 6 and 8 minutes",
+          "A changed setting changes the threshold or limit used; a limit above 10 minutes is reduced to 10",
+          "Validation rejects an unanswered item, too many premises, an invalid outcome and a does-not-hold finding naming no file, and accepts `not applicable` with a reason"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T1 each template has an id, a threshold and its items; ISSUE threshold below SPEC"
+          },
+          {
+            "level": "unit",
+            "name": "T2 intent resolution from the artifact store"
+          },
+          {
+            "level": "unit",
+            "name": "T3 answer validation, each rejection and each acceptance"
+          },
+          {
+            "level": "unit",
+            "name": "T15 deadline by complexity, defaults, a changed setting, and the 10 minute cap"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Probe each CLI for a tool-using structured run",
+        "summary": "Run claude and codex live, each with tools limited to reading and the insrc analyze tools and a schema-checked final answer in the same run. Record per CLI whether it works and the exact flags used. This decides, per CLI, whether the reviewer session is one run or a tool run followed by a tool-less structured run. No production code changes in this Task.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The build record states, for claude and for codex separately, the flags tried, whether a file read and an insrc analyze call succeeded, whether a write was refused, and whether the final answer matched the schema",
+          "The record names which path each CLI will use: one run, or two"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "probe: claude and codex each run with read and insrc analyze tools and a schema-checked answer"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Read-only reviewer session on the CLI provider",
+        "summary": "Add the reviewer session beside the edit session, using the path the probe found for each CLI: no edit permission, read and insrc analyze tools only, a deadline passed in by the caller, at most one retry on a transient error and only inside the time that remains. A CLI that passed the probe uses one run; a CLI that did not uses a tool run followed by a tool-less structured run.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A reviewer session can read a file and call insrc analyze, cannot write a file, and returns an answer matching the schema",
+          "The session stops at the deadline it is given and is never retried more than once",
+          "The one-shot calls and the edit session behave as before"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "T14 a reviewer session reads a file, calls insrc analyze, cannot write, and returns a schema-matching answer"
+          },
+          {
+            "level": "unit",
+            "name": "session arguments carry no edit permission and the caller's deadline; a transient error is retried once inside the remaining time"
+          },
+          {
+            "level": "unit",
+            "name": "one-shot calls and the edit session build the same arguments as before"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Route design reviews to the template session",
+        "summary": "For stage design.epic and design.story, the review run resolves the template and deadline, runs one reviewer session, validates the answer, repeats once with the validation errors if it fails, and stamps the report. The whole review shares one deadline. It applies no automatic edits to a design and runs no second pass. A provider that cannot run a session fails the review with a clear message. Every other stage keeps the existing pipeline untouched.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A design review makes one session and no extract, probe or per-premise call",
+          "An invalid first answer causes exactly one repeat; a second invalid answer, a session failure or a passed deadline fails the review and stamps nothing",
+          "A DEF review and an ISSUE review send the same extraction prompt as before this change, byte for byte"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T9 a design stage runs one session and no extract, probe or per-premise call; the prompt carries the template, the insrc analyze instruction and the design last"
+          },
+          {
+            "level": "integration",
+            "name": "T10 one repeat on an invalid answer; failure and no stamp on a second"
+          },
+          {
+            "level": "integration",
+            "name": "T11 session failure, timeout and a provider with no session capability"
+          },
+          {
+            "level": "integration",
+            "name": "T12 DEF and ISSUE reviews send the unchanged extraction prompt, byte for byte"
+          },
+          {
+            "level": "integration",
+            "name": "T16 one deadline for the whole review"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Template review in the controller review tool",
+        "summary": "For a design stage, insrc_review_step's start returns the template prompt with next emit_findings, and a new findings phase validates the answer with the same code as the session path and stamps the review. Add the phase to every place the phase list is declared: the tool registration and input validation, the phase type, the dispatch, and the test that pins the list. Other stages keep start, claims, verdicts.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "On a design, start returns emit_findings and the findings phase stamps the review",
+          "An answer the session path's validation rejects is rejected by the findings phase with the same errors, and nothing is stamped",
+          "On a DEF, start still returns the extract prompt and the claims and verdicts phases work as before",
+          "The registered tool accepts phase `findings` and its phase list names it"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T13 start and findings on a design; start, claims and verdicts on a DEF; the registered tool accepts phase findings"
+          },
+          {
+            "level": "unit",
+            "name": "the schema-registry test lists findings among the review tool's phases"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Time a real design review",
+        "summary": "Run the finished non-controller review on two real designs in this repo, one answering an ISSUE and one answering a SPEC, and record how long each took and how many premises it examined. Compare with the 4 / 6 / 8 minute defaults and the thresholds, and report whether the defaults fit. No code change unless a default is shown to be wrong.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "The build record states, for each of the two reviews, the template used, the time taken, the premises examined and the verdict",
+          "Each review finished inside its time limit, or the record says which default needs changing and why"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "two real design reviews, one per template, timed and recorded"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "ac1: an HLD or LLD is reviewed against a fixed template chosen by intent; a design for an ISSUE gets the lower threshold and a design for a SPEC the higher one",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2: the reviewer checks the items itself in one session with read access to the repo and insrc analyze; no pre-declared probes are run for a design review",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac3: every finding is identified as holds, does-not-hold or could-not-verify, and the two problem kinds are reported in separate labelled lists",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac4: only does-not-hold blocks approval; a review with only could-not-verify findings is approvable",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac5: a DEF and every non-design artifact is reviewed as today, and older review records read as today",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "T1 each template has an id, a threshold and its check items; the ISSUE threshold is lower than the SPEC threshold",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T2 intent resolution: an ISSUE artifact for the design's epicHash gives `issue`; none gives `spec`",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T3 validation rejects an answer with an unanswered item, with more premises than the threshold, with an invalid outcome, or with a does-not-hold finding that names no file; it accepts `not applicable` with a reason and an answer under the threshold",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T4 severity follows outcome: does-not-hold keeps HIGH or MED; holds and could-not-verify become LOW",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T15 deadline by complexity: an ISSUE design gets 4 minutes, a standalone feature design 6, a design under an Epic 8; any requested limit above 10 minutes is reduced to 10",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T5 computeReviewVerdict: a does-not-hold finding gives block; only could-not-verify findings give warn; only holds gives pass; findings with no outcome give today's verdict",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T6 the rendered review section lists 'Does not hold' and 'Could not verify' separately and says which one blocks",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T7 approval: a design whose review has only could-not-verify findings is approved; one with an unresolved does-not-hold finding is refused; a resolution or an override approves it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T8 a review record written before this change keeps its verdict and its gate result",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T17 the findings that need a human are the does-not-hold and could-not-verify ones; a holds result is not among them",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T9 a design stage runs ONE reviewer session and makes no extract call, no probe and no per-premise call; the prompt carries the template for the resolved intent, the instruction to use insrc analyze for drill-down, and the design at the end",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "T10 an invalid first answer causes exactly one repeat carrying the validation errors; a second invalid answer fails the review and stamps nothing",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "T11 a session failure or timeout fails the review and stamps nothing; a provider with no session capability fails at once and the old pipeline is not run",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "T12 a DEF review and an ISSUE review still run extract, probe and verify and send the same extraction prompt as before this change, byte for byte",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "T13 insrc_review_step on a design stage returns the template prompt with next emit_findings, and its findings phase validates and stamps with the same rules; on a DEF it still returns the extract prompt; the registered tool accepts phase `findings` and its phase list names it",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "T16 one deadline for the whole review: a validation repeat and a transient-error retry are each started with only the time that remains, a transient error is retried at most once, and a review whose deadline passes fails with a message naming the limit and stamps nothing",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "T14 a reviewer session started in a fixture repo can read a file and call insrc analyze, cannot write a file, and returns an answer matching the schema",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract details, data model changes, error paths and test strategy (LLD-f2f08ccf89f8ab25-S001)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 invariants to preserve: a DEF, an ISSUE and every other non-design artifact is reviewed by the existing pipeline unchanged"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-05, resolution of the LLD's three open questions",
+      "quotedText": "yes, go with recommended"
+    }
+  ]
+}

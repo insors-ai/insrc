@@ -1870,6 +1870,13 @@ async function main(): Promise<void> {
 			const mod = await import('./code-review-rpc.js');
 			return mod.codeReviewRunStart(params, send, signal);
 		},
+		// Daemon-side review of an EXISTING design artifact (DEF / HLD / LLD) the
+		// daemon did not author. `insrc_review_step` sends controller-authored
+		// work here; a daemon-authored artifact is refused with an `error` frame.
+		'workflow.review': async (params, send, signal) => {
+			const mod = await import('./workflow-review-rpc.js');
+			return mod.workflowReviewStart(params, send, signal);
+		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };
 			const { Ollama } = await import('ollama');

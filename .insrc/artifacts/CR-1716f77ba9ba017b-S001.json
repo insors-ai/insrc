@@ -1,0 +1,180 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791197683753-lr4z91",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-05T10:54:43.813Z",
+    "model": "claude:opus",
+    "elapsedMs": 178733,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "S001"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/code-review-rpc.test.ts",
+        "src/daemon/__tests__/workflow-review-rpc.test.ts",
+        "src/daemon/__tests__/workflow-rpc.test.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/index.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/__tests__/review-rule-text.test.ts",
+        "src/mcp/__tests__/review-stream.test.ts",
+        "src/mcp/build-step/__tests__/build-start.test.ts",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/standalone-implement.test.ts",
+        "src/mcp/build-step/phases/implement.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/code-review-step/__tests__/handler.test.ts",
+        "src/mcp/code-review-step/__tests__/routing.test.ts",
+        "src/mcp/code-review-step/__tests__/ux-handler.test.ts",
+        "src/mcp/code-review-step/handler.ts",
+        "src/mcp/code-review-step/types.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/review-step/__tests__/review-step-findings.test.ts",
+        "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+        "src/mcp/review-step/__tests__/review-step.test.ts",
+        "src/mcp/review-step/handler.ts",
+        "src/mcp/review-step/phases/findings.ts",
+        "src/mcp/review-step/phases/start.ts",
+        "src/mcp/review-step/phases/verdicts.ts",
+        "src/mcp/review-step/types.ts",
+        "src/mcp/server.ts",
+        "src/mcp/workflow-step/__tests__/amendments-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/define-extend-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-epic-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-story-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/handler.test.ts",
+        "src/mcp/workflow-step/__tests__/plan-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/questions-gate-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+        "src/mcp/workflow-step/phases/synthesize.ts",
+        "src/prompts/steering-block.md",
+        "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+        "src/workflow/__tests__/approve-build-completion.test.ts",
+        "src/workflow/__tests__/approve-build-record-completion.test.ts",
+        "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "src/workflow/__tests__/approve-workflow-target.test.ts",
+        "src/workflow/__tests__/author-stamp.test.ts",
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/__tests__/chain.test.ts",
+        "src/workflow/__tests__/companion-validation-gate.test.ts",
+        "src/workflow/__tests__/er-companion-finalize.test.ts",
+        "src/workflow/__tests__/gates.test.ts",
+        "src/workflow/__tests__/helpers/other-party-review.ts",
+        "src/workflow/__tests__/other-party-review-gate.test.ts",
+        "src/workflow/__tests__/other-party-review-helper.test.ts",
+        "src/workflow/__tests__/plan-gate.test.ts",
+        "src/workflow/__tests__/scope-extend.test.ts",
+        "src/workflow/code-review/__tests__/runner.test.ts",
+        "src/workflow/code-review/author.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/review/__tests__/party.test.ts",
+        "src/workflow/review/__tests__/same-party-refusal.test.ts",
+        "src/workflow/review/__tests__/template-review.test.ts",
+        "src/workflow/review/index.ts",
+        "src/workflow/review/party.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/review/types.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/completion-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/types.ts",
+        "vscode-plugin/assets/steering-block.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/__tests__/workflow-review-rpc.test.ts:1",
+            "message": "Missing or unverifiable: the two promised live-level tests have no test in the changed set. No changed test file is gated on INSRC_LIVE_TESTS for this Story; the only live suites under the daemon and review test directories are analyze-rpc.live.test.ts and calibration.live.test.ts, both pre-existing and unrelated. If these were run by hand, the evidence would sit in the build record, and none was supplied. The 10 minute limit this check was meant to time was later raised to 30 minutes (commit 1739ed1).",
+            "expectationRef": "live: a real daemon review of a controller-authored DEF, timed against the 10 minute limit; live: both review tools on real controller-authored work return the daemon's verdict, and one such artifact is approved with no override",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/review-step/__tests__/review-step-routing.test.ts:139",
+            "message": "Present but differs from the promise: the plan promised a wait limit of 11 minutes for a design and 10 for a DEF. The test asserts 11 minutes for a design and 30 minutes for a DEF, matching commit 1739ed1. The test follows the code, so the plan's promised name is stale rather than the behaviour untested; the plan or LLD should be amended to record the 30 minute limit.",
+            "expectationRef": "T11 insrc_review_step: daemon unreachable, error frame, older daemon and timeout each return an error, stamp nothing and offer no controller loop; the wait limit is 11 minutes for a design and 10 for a DEF",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/other-party-review-gate.test.ts:1",
+            "message": "Present but unverified: every other promised test (T1-T18) was found by name in the changed test files, but no pass-state is confirmed. No build record was supplied and my attempt to run the suites was denied by the permission mode. This includes the promise that the workflow and MCP suites pass with every approving test moved onto the helper: 17 seed/write helpers do call stampOtherPartyReview, but the suites were not run. Run `npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' 'src/daemon/**/*.test.ts'` under Node 22 to confirm.",
+            "expectationRef": "the workflow and MCP suites pass with every approving test moved onto the helper",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:1",
+            "message": "Grounding caveat, not a coverage gap: most changed production symbols show an empty testsReaching (approveArtifactByJsonPath, otherPartyReviewGap, reviewerPartyOf, handleReviewStep, handleStart, reviewByDaemon, reviewArtifactFile, reviewStreamRequest, stampAuthor and others), but the graph records only calls made from named helper functions, not from top-level test() callbacks. Named tests that exercise them directly were found: other-party-review-gate.test.ts (T5-T8, T18), party.test.ts (T1), review-step-routing.test.ts (T9, T11, T12, T14), same-party-refusal.test.ts (T15), review-stream.test.ts (T11), author-stamp.test.ts (T2). I therefore raised no not-exercised HIGH findings from the empty edges.",
+            "expectationRef": "testsReaching edges for changed production symbols",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:215",
+            "message": "Duplication: `modelLabelFor(cfg, repoOverride, clientDefault): string` has the same signature and the same single callee (`resolveShaperKind`) as the function of the same name in src/daemon/workflow-rpc.ts:570. Two private copies of the provider-to-model-label mapping can drift, so a review record and a workflow artifact could label the same resolved provider differently. Export one and import it in the other. Rated LOW because the bodies were not compared and the summaries do not show whether this Story introduced the copy.",
+            "counterpartRef": "modelLabelFor (src/daemon/workflow-rpc.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/daemon-stream.ts:430",
+            "message": "Duplication: `reviewStreamRequest` carries its own socket-lifecycle helpers (`finish`, `onAbort`, `failWith`) alongside the `cleanup`/`finish`/`onAbort`/`onData` set that `runWorkflowStream` already has in the same file. The two NDJSON stream clients look like parallel implementations of connect, frame-parse, abort and settle-once, so a fix to one (for example a partial-line or abort race) will not reach the other. Consider one shared stream core parameterised by the terminal-frame handler. Inferred from the call edges only; the bodies were not compared.",
+            "counterpartRef": "runWorkflowStream (src/mcp/daemon-stream.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/workflow-step/phases/synthesize.ts:133",
+            "message": "Duplication: `formatFailure` here renders a `ValidationResult` failure, and src/daemon/workflow-rpc.ts:585 has a `formatFailure` over the same structural shape (`ok`/`message`/`details`). The controller synthesize path and the daemon run path therefore format the same finalize failure with separate code, and the retry message a model sees can differ by party. Likely predates this Story; sharing one helper would remove the drift.",
+            "counterpartRef": "formatFailure (src/daemon/workflow-rpc.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 6
+    }
+  }
+}

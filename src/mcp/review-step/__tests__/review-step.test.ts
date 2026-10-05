@@ -45,7 +45,10 @@ function makeFixture(): { repo: string; mdPath: string; jsonPath: string; cleanu
 	writeFileSync(
 		jsonPath,
 		JSON.stringify(
-			{ meta: { workflow: 'plan' }, body: { tasks: ['extend the two exported constants in foo.'] } },
+			// Authored by the daemon, so this tool's own phases (the controller's
+			// review) are the ones that run. Controller-authored work is sent to the
+			// daemon instead: see review-step-routing.test.ts.
+			{ meta: { workflow: 'plan', authoredBy: 'daemon' }, body: { tasks: ['extend the two exported constants in foo.'] } },
 			null,
 			2,
 		) + '\n',

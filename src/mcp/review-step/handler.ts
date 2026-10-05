@@ -15,11 +15,13 @@
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
+import { SamePartyReviewError } from '../../workflow/review/party.js';
 import { handleClaims } from './phases/claims.js';
 import { handleFindings } from './phases/findings.js';
 import { handleStart } from './phases/start.js';
 import { handleVerdicts } from './phases/verdicts.js';
 import type {
+	ReviewStepDeps,
 	ReviewStepInput,
 	ReviewStepMcpEnvelope,
 	ReviewStepOutput,
@@ -30,8 +32,8 @@ const TRACE_PATH = process.env['INSRC_REVIEW_STEP_TRACE'];
 
 const log = getLogger('mcp:review-step:handler');
 
-export async function handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope> {
-	const result = await dispatch(input);
+export async function handleReviewStep(input: unknown, deps: ReviewStepDeps = {}): Promise<ReviewStepMcpEnvelope> {
+	const result = await dispatch(input, deps);
 	if (TRACE_PATH !== undefined) {
 		try {
 			appendFileSync(TRACE_PATH, JSON.stringify({ input, output: result }) + '\n', 'utf8');
@@ -43,7 +45,7 @@ export async function handleReviewStep(input: unknown): Promise<ReviewStepMcpEnv
 	};
 }
 
-async function dispatch(input: unknown): Promise<ReviewStepOutput> {
+async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewStepOutput> {
 	if (typeof input !== 'object' || input === null || !('phase' in input)) {
 		return errorResult(
 			'bad-input',
@@ -54,7 +56,7 @@ async function dispatch(input: unknown): Promise<ReviewStepOutput> {
 	const step = input as ReviewStepInput;
 	try {
 		switch (step.phase) {
-			case 'start':    return handleStart(step);
+			case 'start':    return await handleStart(step, deps);
 			case 'claims':   return await handleClaims(step);
 			case 'verdicts': return handleVerdicts(step);
 			case 'findings': return handleFindings(step);
@@ -69,7 +71,7 @@ async function dispatch(input: unknown): Promise<ReviewStepOutput> {
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_review_step: uncaught error');
-		return errorResult('internal', msg, false);
+		return errorResult(err instanceof SamePartyReviewError ? 'same-party-review' : 'internal', msg, false);
 	}
 }
 

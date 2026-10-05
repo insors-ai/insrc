@@ -38,7 +38,7 @@ function fixture(opts: { workflow?: string; issue?: boolean; priorReview?: boole
 	const mdPath = join(dir, 's1.md');
 	const jsonPath = join(dir, 's1.json');
 	writeFileSync(mdPath, opts.priorReview === true ? `${DESIGN_MD}\n<!-- insrc:review -->\n\n## Review\n\nOLD REVIEW TEXT\n` : DESIGN_MD);
-	writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: opts.workflow ?? 'design.story', epicHash: 'abcd', storyId: 'S001' }, body: { note: 'untouched' } }, null, 2) + '\n');
+	writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: opts.workflow ?? 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'daemon' }, body: { note: 'untouched' } }, null, 2) + '\n');
 	return { repo, mdPath, jsonPath, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 

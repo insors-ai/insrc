@@ -29,6 +29,8 @@ import type { Claim, Finding, RawFinding, ReviewReport } from '../../../workflow
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
 
+import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
+
 const log = getLogger('mcp:review-step:verdicts');
 
 const REVIEW_MODEL = 'client';
@@ -81,6 +83,13 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[verdicts]: no artifact md at ${state.mdPath}`);
 
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
+	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
+	// the controller authored. `start` already sends such work to the daemon; this
+	// holds the rule at the point of the stamp, whatever led here.
+	if (authorPartyOf(artifact.meta) === 'controller') {
+		releaseState(input.state);
+		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
+	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	const fixed = applyAutoFixes(md, artifact.body, report);
 

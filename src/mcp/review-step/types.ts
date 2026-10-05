@@ -16,6 +16,8 @@
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */
 
+import type { WorkflowReviewDone } from '../../daemon/workflow-review-rpc.js';
+import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../daemon-stream.js';
 import type { DesignIntent, RawTemplateAnswer } from '../../workflow/review/template.js';
 import type { Claim, Evidence, ReviewReport, ReviewVerdict } from '../../workflow/review/types.js';
 
@@ -125,6 +127,17 @@ export interface ReviewStepDone {
 	readonly pending:  number;
 	readonly path:     string;
 	readonly jsonPath: string;
+	/** The party that did the review. `daemon` when the tool sent the work to
+	 *  the daemon (controller-authored or unknown-author work); absent when the
+	 *  controller reviewed it through this tool's own phases. */
+	readonly reviewedBy?: 'daemon' | undefined;
+}
+
+/** The tool's collaborators. Each defaults to the real thing; a test replaces
+ *  the daemon request. */
+export interface ReviewStepDeps {
+	/** Ask the daemon to review an existing design artifact (`workflow.review`). */
+	readonly reviewByDaemon?: ((params: ReviewArtifactStreamParams, opts: ReviewStreamOpts) => Promise<WorkflowReviewDone>) | undefined;
 }
 
 export interface ReviewStepError {

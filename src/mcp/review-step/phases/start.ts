@@ -20,15 +20,22 @@ import { resolveRepoPath } from '../../resolve-repo.js';
 import { getLogger } from '../../../shared/logger.js';
 import { jsonPathForMd } from '../../../workflow/gates.js';
 import {
-	buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, stripReviewSection,
+	authorPartyOf, buildExtractPrompt, buildTemplateReviewPrompt, EXTRACT_SCHEMA, isDesignStage, resolveDesignReview, stripReviewSection,
 	TEMPLATE_ANSWER_SCHEMA,
 } from '../../../workflow/review/index.js';
 import { saveState } from '../state-store.js';
-import type { ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepInputStart, ReviewStepStatePayload } from '../types.js';
+import { reviewArtifactStream, ReviewStreamError } from '../../daemon-stream.js';
+import type {
+	ReviewStepDeps, ReviewStepDone, ReviewStepEmitClaims, ReviewStepEmitFindings, ReviewStepError, ReviewStepInputStart,
+	ReviewStepStatePayload,
+} from '../types.js';
 
 const log = getLogger('mcp:review-step:start');
 
-export async function handleStart(input: ReviewStepInputStart): Promise<ReviewStepEmitClaims | ReviewStepEmitFindings> {
+export async function handleStart(
+	input: ReviewStepInputStart,
+	deps:  ReviewStepDeps = {},
+): Promise<ReviewStepEmitClaims | ReviewStepEmitFindings | ReviewStepDone | ReviewStepError> {
 	const repo = await resolveRepoPath(input.repo);
 	if (repo === undefined) {
 		throw new Error(
@@ -47,6 +54,14 @@ export async function handleStart(input: ReviewStepInputStart): Promise<ReviewSt
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: Record<string, unknown> };
 	const stage = typeof artifact.meta?.['workflow'] === 'string' ? (artifact.meta['workflow'] as string) : 'unknown';
 	const markdown = readFileSync(mdPath, 'utf8');
+
+	// The party that did not author the work reviews it. This tool's own phases
+	// are the CONTROLLER's review, so they run only for work the daemon authored.
+	// Controller-authored work, and work whose author is not known, goes to the
+	// daemon — decided here, before any prompt is handed back.
+	if (authorPartyOf(artifact.meta) !== 'daemon') {
+		return await reviewByDaemon({ repo, mdPath, jsonPath, stage }, deps);
+	}
 
 	// A design document (HLD / LLD) is reviewed against a template: the
 	// controller checks every item with its own tools and answers once.
@@ -109,6 +124,56 @@ export async function handleStart(input: ReviewStepInputStart): Promise<ReviewSt
 /** Resolve the artifact's (md, json) pair. Given a `.md`/`.html` path the
  *  canonical json is found via `jsonPathForMd`; given a `.json` path its
  *  `.md` sibling is derived by extension swap. */
+/** How long the tool waits for the daemon's review. A design review (HLD / LLD)
+ *  is one reviewer session with a hard limit of 10 minutes, so the tool waits one
+ *  minute longer and never gives up on a review that is about to finish. Any
+ *  other artifact goes through the older pipeline, which has no limit of its
+ *  own; 10 minutes is the default (provisional — see the LLD's resolved question). */
+export const DESIGN_REVIEW_WAIT_MS = 11 * 60_000;
+export const PIPELINE_REVIEW_WAIT_MS = 10 * 60_000;
+
+/** The retryable causes: the same call can succeed once the cause is gone. */
+const RETRYABLE: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);
+
+async function reviewByDaemon(
+	a:    { readonly repo: string; readonly mdPath: string; readonly jsonPath: string; readonly stage: string },
+	deps: ReviewStepDeps,
+): Promise<ReviewStepDone | ReviewStepError> {
+	const timeoutMs = isDesignStage(a.stage) ? DESIGN_REVIEW_WAIT_MS : PIPELINE_REVIEW_WAIT_MS;
+	log.info({ stage: a.stage, mdPath: a.mdPath, timeoutMs }, 'insrc_review_step[start]: not daemon-authored; asking the daemon to review');
+	try {
+		const done = await (deps.reviewByDaemon ?? reviewArtifactStream)({ artifactPath: a.mdPath, repo: a.repo }, { timeoutMs });
+		return {
+			next:       'done',
+			verdict:    done.verdict as ReviewStepDone['verdict'],
+			counts:     done.counts,
+			report:     done.report,
+			applied:    done.applied,
+			pending:    done.pending,
+			path:       a.mdPath,
+			jsonPath:   a.jsonPath,
+			reviewedBy: 'daemon',
+		};
+	} catch (err) {
+		// No controller review is offered in its place: the controller authored
+		// this work (or may have), so its review would not be a second pair of eyes.
+		const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
+		const cause = err instanceof Error ? err.message : String(err);
+		log.warn({ stage: a.stage, mdPath: a.mdPath, failure, cause }, 'insrc_review_step[start]: the daemon review did not complete; nothing stamped');
+		return {
+			next: 'error',
+			error: {
+				code: `daemon-review-${failure}`,
+				message:
+					`The daemon review of this ${a.stage} artifact did not complete: ${cause}. No review was recorded. ` +
+					`The daemon reviews this artifact because the daemon did not author it; the review is not replaced ` +
+					`by a controller review. Fix the cause and call insrc_review_step again, or approve with an override reason.`,
+				retryable: RETRYABLE.has(failure),
+			},
+		};
+	}
+}
+
 function resolvePaths(artifact: string): { mdPath: string; jsonPath: string } {
 	if (artifact.endsWith('.json')) {
 		return { jsonPath: artifact, mdPath: artifact.replace(/\.json$/, '.md') };

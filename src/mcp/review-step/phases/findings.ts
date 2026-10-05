@@ -27,6 +27,8 @@ import type { ReviewReport } from '../../../workflow/review/index.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepError, ReviewStepInputFindings } from '../types.js';
 
+import { authorPartyOf, SamePartyReviewError } from '../../../workflow/review/party.js';
+
 const log = getLogger('mcp:review-step:findings');
 
 const REVIEW_MODEL = 'client';
@@ -79,6 +81,13 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 	// A design is not edited by its review: stamp meta.review and append the
 	// rendered report; the body is written back untouched.
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
+	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
+	// the controller authored. `start` already sends such work to the daemon; this
+	// holds the rule at the point of the stamp, whatever led here.
+	if (authorPartyOf(artifact.meta) === 'controller') {
+		releaseState(input.state);
+		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
+	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	writeAtomic(state.jsonPath, JSON.stringify({ ...artifact, meta: { ...artifact.meta, review: report } }, null, 2) + '\n');
 	writeAtomic(state.mdPath, `${md.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`);

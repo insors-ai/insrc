@@ -681,7 +681,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 	);
 
 	// -------------------------------------------------------------------
-	// insrc_code_review_step — controller-driven, multi-turn CODE review
+	// insrc_code_review_step — multi-turn CODE review by the other party
 	// (code-review S008). Peer of insrc_review_step, but over a Story's built
 	// CODE (not a design artifact), under the same rule: the party that did not
 	// write the code reviews it, and the tool routes by the BUILD record's

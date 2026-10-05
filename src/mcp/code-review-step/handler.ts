@@ -5,10 +5,15 @@
 
 /**
  * Top-level dispatcher for `insrc_code_review_step` (code-review S008) — the
- * controller-driven, multi-turn CODE-review surface. Mirrors
- * `mcp/review-step/handler.ts`.
+ * multi-turn CODE-review surface. Mirrors `mcp/review-step/handler.ts`.
  *
- * Loop: start → emit_judgements → judgements → done.
+ * The party that did not write the code reviews it. `start` reads the author
+ * from the Story's BUILD record at the point a review would begin: code the
+ * controller wrote, or of unknown author, is sent to the daemon
+ * (`codeReview.run`) and its verdict returned as `done`; code the daemon wrote
+ * is reviewed by the controller through the loop below.
+ *
+ * The controller's loop: start → emit_judgements → judgements → done.
  *   - phase='start': resolve the sc1 subject in-process (decline → error) +
  *     fetch the sc2 grounding over the daemon IPC (unavailable → error), save
  *     the opaque state, and hand the controller the four per-dimension prompts +

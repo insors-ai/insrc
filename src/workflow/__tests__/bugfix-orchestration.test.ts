@@ -292,11 +292,18 @@ test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not 
 	});
 });
 
-test('ac3: a bugfix BUILD + enforce OFF + absent CR -> completes byte-identical (no new path)', async () => {
+// CHANGED by ISSUE-1716f77b (LLD-1716f77ba9ba017b-S001, T7): a bugfix build is
+// completed like any other, and completion now requires a code review whatever
+// the enforcement setting. This used to assert the opposite for enforce OFF.
+test('ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4bf');
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
-		assert.equal(out.skipped.length, 0);
-		assert.ok(isApproved(p));
+		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
+		assert.ok(!isApproved(p));
+		writeCR(repo, 's4bf', 'pass');
+		const reviewed = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		assert.equal(reviewed.skipped.length, 0);
+		assert.ok(isApproved(p), 'and completes once its code review exists');
 	});
 });

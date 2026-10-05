@@ -27,7 +27,7 @@ import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
-import { enforceCodeReviewGate, resolveEnforce } from './code-review/gate.js';
+import { enforceCodeReviewGate } from './code-review/gate.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
@@ -35,6 +35,8 @@ import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
+import { authorPartyOf, reviewerPartyOf } from './review/party.js';
+import type { Party, PartyOrUnknown } from './review/party.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
 import type { ReviewResolution } from './types.js';
@@ -43,6 +45,7 @@ import {
 	ARTIFACTS_DIR,
 	STUB_DIR,
 	artifactJsonPath,
+	codeReviewArtifactId,
 	defineArtifactId,
 	defineArtifactPaths,
 	hldArtifactId,
@@ -589,6 +592,17 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 		}
 		reviewOverride = { reason: override, at: new Date().toISOString() };
 	}
+	// The other-party review rule: a DEF, HLD or LLD must have been reviewed, a
+	// BUILD record's Story must have a code review, and no review may have been
+	// done by the party that authored the work. An override reason approves past
+	// each and is recorded like any other override.
+	const missing = otherPartyReviewGap(jsonPath, artifact.meta);
+	if (missing !== undefined) {
+		if (override === undefined || override.length === 0) {
+			throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
+		}
+		reviewOverride = reviewOverride ?? { reason: override, at: new Date().toISOString() };
+	}
 	const approvedAt = new Date().toISOString();
 	// The range base is read HERE, at approval, so it cannot depend on whether
 	// anyone later remembered to commit the artifact. Absent when HEAD is
@@ -617,6 +631,83 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	const next = { ...artifact, meta: nextMeta };
 	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
 	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
+}
+
+/** The artifact kinds whose approval requires a review, read from the
+ *  hash-flat json's id prefix (the same key the BUILD completion check uses):
+ *  a design review for DEF / HLD / LLD, a code review for BUILD. Every other
+ *  kind (ISSUE, SPEC, PLAN, CR, EXT) is approved on the user's approval alone. */
+function reviewRequiredFor(jsonPath: string): 'design' | 'code' | undefined {
+	const id = basename(jsonPath);
+	if (/^(DEF|HLD|LLD)-/.test(id)) return 'design';
+	if (id.startsWith('BUILD-')) return 'code';
+	return undefined;
+}
+
+const PARTY_REVIEW_TOOL: Record<Party, string> = {
+	controller: 'a daemon review (run insrc_review_step: it sends controller-authored work to the daemon)',
+	daemon:     'a controller review (run insrc_review_step)',
+};
+
+/**
+ * What stops this artifact from being approved under the other-party review
+ * rule, or undefined when nothing does:
+ *
+ *   - a DEF, HLD or LLD that has no review;
+ *   - a BUILD record whose Story has no code-review record;
+ *   - a review (for a BUILD record, its code review) done by the party that
+ *     authored the work, when BOTH parties are known.
+ *
+ * An unknown author or an unknown reviewer never withholds approval by itself.
+ * The BUILD record's code review is read from the artifact store beside it.
+ */
+function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta): { readonly message: string; readonly summary: string } | undefined {
+	const required = reviewRequiredFor(jsonPath);
+	const author = authorPartyOf(meta);
+
+	let reviewer: PartyOrUnknown | undefined;   // undefined = there is no review to speak of
+	let what = 'review';
+	if (required === 'code') {
+		what = 'code review';
+		const m = meta as { epicHash?: unknown; storyId?: unknown };
+		const crPath = typeof m.epicHash === 'string' && typeof m.storyId === 'string'
+			? join(dirname(jsonPath), `${codeReviewArtifactId(m.epicHash, m.storyId)}.json`)
+			: undefined;
+		const cr = crPath !== undefined ? readJsonOrUndefined(crPath) as { meta?: unknown } | undefined : undefined;
+		if (cr === undefined) {
+			return {
+				message: 'Completion requires a code review of this Story, and none has been run. Run insrc_code_review_step first.',
+				summary: 'completion requires a code review; none was run',
+			};
+		}
+		reviewer = reviewerPartyOf(cr.meta);
+	} else if (meta.review !== undefined) {
+		reviewer = reviewerPartyOf(meta.review);
+	} else if (required === 'design') {
+		const need = author === 'unknown' ? 'a review (run insrc_review_step)' : PARTY_REVIEW_TOOL[author];
+		return {
+			message: `Approval requires a review of this artifact, and it has none. It needs ${need}.`,
+			summary: 'approval requires a review; none was run',
+		};
+	}
+
+	if (reviewer !== undefined && author !== 'unknown' && reviewer === author) {
+		return {
+			message:
+				`This artifact's ${what} was done by the ${author}, which also authored the work. ` +
+				`It needs ${what === 'code review' ? PARTY_REVIEW_TOOL[author].replace('insrc_review_step', 'insrc_code_review_step') : PARTY_REVIEW_TOOL[author]}.`,
+			summary: `the ${what} was done by the party that authored the work (${author})`,
+		};
+	}
+	return undefined;
+}
+
+function readJsonOrUndefined(path: string): unknown {
+	try {
+		return JSON.parse(readFileSync(path, 'utf8')) as unknown;
+	} catch {
+		return undefined;
+	}
 }
 
 /** Raised when a batch approve targets an epic that has zero still-pending
@@ -718,9 +809,6 @@ export async function approveWorkflowTarget(
 	const approved:   { path: string; result: ApprovalResult }[] = [];
 	const skipped:    { path: string; reason: string }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
-	// Resolve enforcement ONCE with the same resolver the gate uses, so the gate
-	// call and the BUILD-completion withhold below never disagree.
-	const effectiveEnforce = resolveEnforce(opts?.enforce);
 
 	const approveOne = (jsonPath: string): void => {
 		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
@@ -739,21 +827,11 @@ export async function approveWorkflowTarget(
 				skipped.push({ path: jsonPath, reason: gate.message });
 				return;   // withhold completion — no meta.review approve, no approvedAt
 			}
-			// Story-completion (BUILD approval) requires a code review to have RUN
-			// when enforcing: a BUILD with no CR record (gate 'no-review') is withheld
-			// rather than silently completing. Scoped to the BUILD artifact — keyed on
-			// the 'BUILD-' id prefix (buildArtifactId), NOT meta.workflow — and only
-			// under effective enforcement with no explicit override. Every other kind,
-			// enforce-off, and an overrideReview bypass fall through unchanged (fail-open).
-			if (
-				effectiveEnforce &&
-				gate.status === 'no-review' &&
-				req.overrideReview === undefined &&
-				basename(jsonPath).startsWith('BUILD-')
-			) {
-				skipped.push({ path: jsonPath, reason: 'completion requires a code review; none was run' });
-				return;   // withhold completion — no approvedAt
-			}
+			// A BUILD record whose Story has NO code review (or a same-party one) is
+			// not decided here: approveArtifactByJsonPath refuses it, whatever the
+			// enforcement setting, and the catch below routes it to skipped[]. That
+			// function is the one every approval goes through (the TUI calls it
+			// directly), so the rule cannot be bypassed by skipping this one.
 		}
 		try {
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });

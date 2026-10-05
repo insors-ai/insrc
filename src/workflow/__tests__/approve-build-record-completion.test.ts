@@ -19,10 +19,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { approveWorkflowTarget, jsonPathForMd } from '../gates.js';
-import { artifactJsonPath, buildArtifactId } from '../storage.js';
+import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'abc123def4567890';
@@ -46,6 +46,10 @@ test('single BUILD target with no prior json => the hook CREATES the record, the
 	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's7'));
 		assert.ok(!existsSync(json), 'precondition: the BUILD json does not exist yet');
+		// The Story's code review exists (completion requires one, ISSUE-1716f77b);
+		// what is missing is only the BUILD record, which the hook creates.
+		mkdirSync(dirname(json), { recursive: true });
+		writeFileSync(artifactJsonPath(repo, codeReviewArtifactId(HASH, 's7')), JSON.stringify({ meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } }));
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.ok(existsSync(json), 'the completion hook created the BUILD json');
 		assert.equal(out.approved.length, 1, 'the created BUILD is approved (not skipped)');

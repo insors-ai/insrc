@@ -157,14 +157,32 @@ test('ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[
 // ac6 — fail-open by default + BUILD-scoped
 // ---------------------------------------------------------------------------
 
-test('ac6: BUILD + enforce OFF + absent CR => completes byte-identical (approved, no-review, skipped empty)', async () => {
+// CHANGED by ISSUE-1716f77b (LLD-1716f77ba9ba017b-S001, T7): this used to assert
+// that a BUILD with no code review COMPLETES when enforcement is off. Completion
+// now requires a code review whatever the enforcement setting; the setting still
+// decides only whether a BLOCKING review withholds (ac5 above, and the test below).
+test('ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
-		assert.deepEqual(out.approved.map(a => a.path), [p]);
-		assert.ok(isApproved(p));
+		assert.deepEqual(out.approved, []);
+		assert.deepEqual(out.skipped, [{ path: p, reason: 'completion requires a code review; none was run' }]);
+		assert.ok(!isApproved(p));
 		assert.equal(out.codeReview[0]!.status, 'no-review');
-		assert.equal(out.skipped.length, 0, 'enforce off never withholds — byte-identical to before this story');
+
+		const overridden = await approveWorkflowTarget({ repoPath: repo, artifactPath: p, overrideReview: 'reviewed by hand' }, { enforce: false });
+		assert.deepEqual(overridden.approved.map(a => a.path), [p]);
+		assert.ok(isApproved(p));
+	});
+});
+
+test('ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory', async () => {
+	await withRepo(async (repo, dir) => {
+		const p = writeArtifact(dir, `BUILD-${HASH}-s1.json`, { workflow: 'build', storyId: 's1' });
+		writeCR(repo, 's1', 'block');
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
+		assert.deepEqual(out.approved.map(a => a.path), [p], 'a code review HAS run; with enforcement off its verdict does not withhold');
+		assert.equal(out.skipped.length, 0);
 	});
 });
 

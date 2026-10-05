@@ -189,7 +189,9 @@
       },
       "reviewedAt": "2026-10-05T06:37:44.630Z",
       "model": "client"
-    }
+    },
+    "approvedAt": "2026-10-05T06:45:25.201Z",
+    "rangeBase": "bc0ba4589a5263f253c5ac8dc5c84f744dc6f4d0"
   },
   "body": {
     "summary": {

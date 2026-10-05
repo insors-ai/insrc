@@ -1,0 +1,613 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791192207908-a1wvdp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-05T09:29:05.059Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 337143,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "epicSlug": "two-sets-eyes-review-rule-only",
+    "storyId": "S001",
+    "lldRunId": "wf-1791143766097-bxkynw",
+    "lldEffectiveHash": "9c39702f35b748773317c7984b3e209ce1ffca2429fc8b14b08c88d06fad1318"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This build makes the review tools send each piece of work to the party that did not write it, and makes approval depend on that review having happened. It first records who authored each artifact and who reviewed it, then adds a daemon request for reviewing an existing design document and routes the two review tools by author, and only then tightens the approval gate. About 31 existing test files approve fixtures that were never reviewed, so they are moved onto a shared helper before the gate changes, which keeps the suites passing after every task. The last task times a real daemon review of a definition document to check the 10 minute wait limit, which was chosen provisionally."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Party fields and their readers",
+        "summary": "Add the optional authoredBy field to artifact meta and BUILD record meta and the optional reviewedBy field to the design review stamp and the code-review record. Add the two shared readers that return a party: the explicit field first, then the stored model label for older design artifacts and reviews, otherwise unknown. Nothing writes the fields yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An explicit field wins over a contradicting model label",
+          "For an artifact's author: every attribution entry 'client' reads as controller, none as daemon, a mixture or no entries as unknown",
+          "For a review: model 'client' reads as controller, any other label as daemon, none as unknown; a BUILD record with no field reads as unknown"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T1 the author reader and the reviewer reader: explicit field wins, model label fallback, unknown when nothing is stored"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Stamp the author on artifacts and BUILD records",
+        "summary": "finalizeArtifact takes an optional authoredBy and writes it into the meta it builds for every workflow. The MCP synthesize phase passes controller; the daemon workflow run passes daemon on its first finalize and on its correction retry. The two build-step writers, the validate phase and the Trivial implement write, stamp controller on the BUILD record. The approval-time writer stamps nothing, and the existing merge keeps a value already on the record.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An artifact finalized through the MCP synthesize phase carries authoredBy controller; one finalized by the daemon run, including its correction retry, carries daemon",
+          "Calling finalizeArtifact without the argument writes the same output as before",
+          "A BUILD record written by either build-step writer carries authoredBy controller and keeps it across a later write that omits it; the approval-time writer adds none"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T2 finalizeArtifact stamps the authoredBy it is given and writes the same output as before when given none"
+          },
+          {
+            "level": "unit",
+            "name": "T2 the synthesize phase stamps controller; the daemon run stamps daemon on first finalize and on the correction retry"
+          },
+          {
+            "level": "unit",
+            "name": "T3 a BUILD record written by each build-step writer carries controller and keeps it across a later write that omits it"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Stamp the reviewer on reviews",
+        "summary": "reviewArtifactFile stamps reviewedBy daemon on both its pipeline path and its template path. The controller's verdicts phase and findings phase stamp controller. runCodeReview takes an optional reviewedBy and writes it on the code-review record; the MCP handler passes controller and the daemon code review passes daemon.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A DEF reviewed by reviewArtifactFile and an LLD reviewed by it both carry reviewedBy daemon",
+          "A review stamped by the verdicts phase and one stamped by the findings phase carry reviewedBy controller",
+          "A code-review record carries the reviewedBy its caller gave, and none when the caller gave none"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T4 reviewArtifactFile writes daemon on its pipeline path (a DEF) and its template path (an LLD)"
+          },
+          {
+            "level": "unit",
+            "name": "T4 the verdicts phase (a DEF) and the findings phase (an LLD and an HLD) write controller"
+          },
+          {
+            "level": "unit",
+            "name": "T4 runCodeReview writes each reviewedBy value it is given and none when given none"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Each reviewer refuses its own party's work on the daemon side",
+        "summary": "reviewArtifactFile refuses a daemon-authored artifact before any provider call, which covers the TUI review service. The daemon workflow run no longer calls it for its opt-in finalize review: it skips the review, says in its progress that the artifact needs a controller review, and returns no review. The daemon code review reads the build's author from the BUILD record's json and refuses daemon-authored code. The comments on the run option and the finalize step are rewritten.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "reviewArtifactFile on a daemon-authored DEF and on a daemon-authored LLD throws a same-party error and makes no provider call; a controller-authored or unknown-author artifact is reviewed",
+          "The TUI review service surfaces that refusal with a message naming a controller review or an override",
+          "A daemon workflow run started with review true makes no review call, emits the progress line, returns no review and leaves the artifact unstamped",
+          "The daemon code review sends an error frame for daemon-authored code and stamps nothing"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T15 reviewArtifactFile refuses a daemon-authored DEF and LLD before any provider call; the TUI review service surfaces the refusal; controller-authored and unknown-author artifacts are reviewed"
+          },
+          {
+            "level": "integration",
+            "name": "T16 a daemon workflow run with review true makes no review call, emits the progress line, returns no review and leaves the artifact unstamped"
+          },
+          {
+            "level": "integration",
+            "name": "T12 the daemon code review refuses daemon-authored code with an error frame and stamps nothing"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Daemon request to review an existing design artifact, and the MCP stream helpers",
+        "summary": "Register a daemon stream method, workflow.review, that takes an artifact path and runs reviewArtifactFile with the provider resolved for the review role, streaming progress and a final frame. The same-party refusal added in t4 is what produces its error frame for daemon-authored work, which is why this task follows t4. Add two MCP helpers, one for it and one for codeReview.run, built like the workflow-run helper but treating a plain line with a top-level error and no stream field as a final failure, and one with a top-level result and no stream field as a protocol error.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "workflow.review on a controller-authored artifact streams progress and ends with a done frame carrying the verdict and reviewedBy daemon; on a daemon-authored one it ends with an error frame",
+          "Each helper resolves on the done frame and rejects on an error frame, on a connection error and on a close before the final frame",
+          "A fake daemon that answers with a plain unknown-method line and keeps the socket open makes each helper reject at once, not at its timer"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T12 workflow.review streams progress and a done frame for controller-authored work and an error frame for daemon-authored work"
+          },
+          {
+            "level": "integration",
+            "name": "T11 each stream helper resolves on done and rejects on an error frame, a connection error and an early close"
+          },
+          {
+            "level": "integration",
+            "name": "T11 a plain unknown-method line with the socket kept open makes each helper reject at once, not at its timer"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The daemon code review takes a grounding mode",
+        "summary": "The daemon code-review request accepts a grounding mode. With degraded it grounds on the diff, stamps the record degraded and caps the verdict at warn, as the controller path does. A diff it cannot read ends in an error frame naming that cause. With full, or with none given, it behaves as today.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A request with the degraded mode produces a record stamped degraded whose verdict is no better than warn",
+          "A diff that cannot be read ends in an error frame and no record is written",
+          "A request with no mode produces the same record as before this change"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T17 the daemon code review with the degraded mode writes a degraded record with a verdict no better than warn"
+          },
+          {
+            "level": "integration",
+            "name": "T17 a diff the daemon cannot read ends in an error frame and no record; no mode given behaves as before"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Route insrc_review_step by author",
+        "summary": "On start the tool reads the author before it chooses a path. Daemon-authored work runs the existing controller loop. Controller-authored or unknown-author work is sent to the daemon review request; the tool waits up to its limit (11 minutes for an HLD or LLD, 10 minutes for a DEF) and returns done with the verdict, or an error that names the cause and offers no controller review. The verdicts phase and the findings phase refuse controller-authored work. The fixtures of the two review-step suites get a daemon author so they keep exercising the controller loop.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A controller-authored or unknown-author DEF and LLD each return done with the daemon's verdict and never return the extract prompt or the template prompt",
+          "A daemon-authored DEF returns emit_claims and a daemon-authored LLD returns emit_findings, as today",
+          "Daemon unreachable, an error frame, an older daemon and a timeout each return an error, stamp nothing and offer no controller loop",
+          "With a fake daemon and an injected timer, the tool waits with the 11 minute limit for an HLD or LLD and the 10 minute limit for a DEF",
+          "The verdicts phase and the findings phase each refuse controller-authored work and stamp nothing",
+          "The two existing review-step suites pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T9 insrc_review_step sends controller-authored and unknown-author work to the daemon and returns done; daemon-authored work runs the controller loop"
+          },
+          {
+            "level": "integration",
+            "name": "T14 a controller-authored LLD goes to the daemon before the template prompt is returned; a daemon-authored LLD returns emit_findings"
+          },
+          {
+            "level": "integration",
+            "name": "T11 insrc_review_step: daemon unreachable, error frame, older daemon and timeout each return an error, stamp nothing and offer no controller loop; the wait limit is 11 minutes for a design and 10 for a DEF"
+          },
+          {
+            "level": "integration",
+            "name": "T12 the verdicts phase and the findings phase (LLD and HLD) refuse controller-authored work and stamp nothing"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Route insrc_code_review_step by author",
+        "summary": "The tool keeps its start phase with all of its outcomes: the wait prompt for a stale index, the three routes to a diff review, and its two tool-side errors. At the point where it would hand the controller the judgements prompt it reads the build's author, including on the resumed call. Daemon-authored code gets the judgements prompt as today. Controller-authored or unknown-author code is sent to the daemon code review with the full or degraded mode and a 10 minute wait limit. The judgements phase refuses controller-authored code. The fixtures of the two code-review suites get a BUILD record with a daemon author.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A stale index returns confirm_wait and asks no daemon",
+          "A declined wait, a wait that times out and empty grounding each ask the daemon with the degraded mode; fresh grounding with symbols asks with the full mode",
+          "A resumed call after confirm_wait on controller-authored code asks the daemon and does not return emit_judgements",
+          "An unavailable freshness check and unavailable grounding each return their existing error and ask no daemon; a diff the daemon cannot read is reported as a failed daemon review",
+          "With a fake daemon and an injected timer, the tool waits with the 10 minute limit and returns a timeout error past it",
+          "Daemon-authored code returns emit_judgements as today, and the judgements phase refuses controller-authored code",
+          "The two existing code-review suites pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "T10 insrc_code_review_step sends controller-authored and unknown-author code to the daemon; daemon-authored code returns emit_judgements"
+          },
+          {
+            "level": "integration",
+            "name": "T17 the start phase keeps every outcome: confirm_wait, the three degraded routes, the full route, the two tool-side errors, the resumed call, and a failed daemon review for an unreadable diff"
+          },
+          {
+            "level": "integration",
+            "name": "T11 insrc_code_review_step: daemon unreachable, error frame, older daemon and the 10 minute timeout each return an error and stamp nothing"
+          },
+          {
+            "level": "integration",
+            "name": "T12 the judgements phase refuses controller-authored code and stamps nothing"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Shared test helper, and existing tests moved onto it",
+        "summary": "Add one shared test helper that stamps a review by the party that did not author a fixture, reading the author with the shared reader from t1; a fixture with no author gets a review the gate still accepts. List, from a search of the test tree, every test that approves a DEF, HLD, LLD or BUILD fixture that was never reviewed (about 31 files in six folders), and move each onto the helper. The list is written into the build record with each file marked migrated or not-applicable. This is done before the gate changes, so the suites stay green at every step.",
+        "size": "L",
+        "order": 9,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The helper stamps a review whose reviewer party is the other party to the fixture's author, and a review the gate accepts when the fixture has no author",
+          "The build record lists every test file found by the search, by folder, each marked migrated or not-applicable, and the count matches the search",
+          "The workflow and MCP suites pass before and after this task"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T18 the shared helper stamps a review by the party that did not author the fixture"
+          },
+          {
+            "level": "integration",
+            "name": "the workflow and MCP suites pass with every approving test moved onto the helper"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Approval requires an other-party review",
+        "summary": "approveArtifactByJsonPath refuses a DEF, HLD or LLD that has no review, a BUILD record whose Story has no code-review record, and any artifact whose review was done by the party that authored it when both are known. An override reason approves past each and is written on the artifact. ISSUE, SPEC and PLAN need no review. approveWorkflowTarget stops deciding the BUILD no-review rule itself and relies on the refusal; its existing blocked-verdict check stays.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "A DEF, an HLD and an LLD with no review are each withheld and approved with an override; an ISSUE, a SPEC and a PLAN with no review are approved",
+          "A same-party review withholds; an other-party non-blocking review approves; an unknown author or reviewer does not withhold",
+          "An other-party review with a blocking verdict still withholds without an override",
+          "An override reason that approves past a missing or same-party review is written on the artifact",
+          "A BUILD record is withheld with no code review, with enforcement off and on, and with a same-party code review, through approveWorkflowTarget and through the TUI approve service",
+          "A batch approval lists each withheld artifact in skipped with its reason and approves the rest"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T5 a DEF, an HLD and an LLD with no review are withheld and approved with an override that is written on the artifact; ISSUE, SPEC and PLAN are approved"
+          },
+          {
+            "level": "unit",
+            "name": "T6 a same-party review withholds; an other-party non-blocking review approves; a blocking one still withholds; unknown author or reviewer does not withhold"
+          },
+          {
+            "level": "unit",
+            "name": "T7 a BUILD record is withheld with no code review (enforcement off and on) and with a same-party one; an override approves; the same through the TUI approve service"
+          },
+          {
+            "level": "unit",
+            "name": "T8 a batch approval lists withheld artifacts in skipped[] and approves the rest"
+          },
+          {
+            "level": "unit",
+            "name": "T18 a fixture stamped with the shared helper is approved with no override"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "State the rule in both directions",
+        "summary": "Rewrite the review section of the steering source, the two review tool descriptions and the remaining daemon comments: the party that did not author the work reviews it, the review tools route this themselves, the same model on both sides is acceptable, and approval requires the review. Regenerate the plugin's copy of the steering source.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "The steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task",
+          "The plugin's copy of the steering source is identical to the source"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "T13 the steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task"
+          },
+          {
+            "level": "unit",
+            "name": "T13 the plugin's copy of the steering source is identical to the source"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Time a real daemon DEF review and confirm the route end to end",
+        "summary": "Run last, on the finished build. Run the daemon review request on a real controller-authored DEF in this repo and record how long it took against the 10 minute wait limit. Run the two review tools once each on real controller-authored work, then approve one really-reviewed artifact without an override. No code change unless the limit is shown to be wrong.",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "The build record states the time a daemon DEF review took and whether the 10 minute default fits",
+          "The build record states the verdict each review tool returned on real controller-authored work and that the review was stamped by the daemon",
+          "One artifact reviewed this way is approved with no override reason"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "a real daemon review of a controller-authored DEF, timed against the 10 minute limit"
+          },
+          {
+            "level": "live",
+            "name": "both review tools on real controller-authored work return the daemon's verdict, and one such artifact is approved with no override"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "ac1: controller-authored work is reviewed by the daemon and daemon-authored work by the controller, for design artifacts and for code, through the two existing review tools",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t7",
+          "t8",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac2: new artifacts, BUILD records and reviews record their party; older ones stay readable",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac3: approval of a DEF, HLD, LLD or BUILD requires a review by the other party, with the existing override; ISSUE, SPEC and PLAN need none",
+        "coveredByTaskIds": [
+          "t9",
+          "t10",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac4: a failed daemon review is reported and never replaced by a controller review",
+        "coveredByTaskIds": [
+          "t5",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "ac5: the steering and both review tool descriptions state the rule in both directions",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "T1 the two readers: explicit field wins; model label 'client' reads as controller and any other label as daemon; nothing stored reads as unknown",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "T2 finalizeArtifact stamps the authoredBy it is given and writes the same output as before when given none",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T3 a BUILD record keeps its authoredBy across a later write that omits it",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "T4 each review path stamps its own party: the controller's verdicts phase (a DEF) and its findings phase (an LLD and an HLD) write `controller`; reviewArtifactFile writes `daemon` on both its pipeline path and its template path; runCodeReview writes each value it is given",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "T5 a DEF, an HLD and an LLD with no review are withheld and approved with an override; an ISSUE, a SPEC and a PLAN with no review are approved",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "T6 a same-party review withholds; an other-party non-blocking review approves; an unknown author or reviewer does not withhold",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "T7 a BUILD record is withheld with no code review (enforcement off and on) and with a same-party code review; an override approves; the same holds when it is approved through the TUI approve service",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "T8 a batch approval lists withheld artifacts in skipped[] and approves the rest",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "T18 the shared test helper stamps a review by the party that did not author the fixture, and a fixture stamped with it is approved with no override",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "T9 insrc_review_step: controller-authored or unknown-author artifact goes to the daemon and returns done with the verdict; daemon-authored runs the controller loop as before",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "T10 insrc_code_review_step: the same two routes",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "T11 daemon unreachable, error frame and timeout each return an error, stamp nothing and offer no controller loop; a fake daemon that answers `{ id, error: 'unknown method: workflow.review' }` with no stream field and keeps the socket open makes the tool fail at once with the update-the-daemon message, not after the wait limit",
+        "coveredByTaskIds": [
+          "t5",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "T12 the daemon refuses to review daemon-authored work; the controller's verdicts phase, its findings phase (for an LLD and for an HLD) and its judgements phase each refuse controller-authored work and stamp nothing",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "T14 insrc_review_step on a controller-authored LLD goes to the daemon before the template prompt is ever returned; on a daemon-authored LLD it returns emit_findings as today",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "T15 reviewArtifactFile refuses a daemon-authored artifact before any provider call, for both a DEF and an LLD, and the TUI review service surfaces that refusal; a controller-authored or unknown-author artifact is reviewed",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "T16 a daemon workflow run started with `review: true` makes no review call, emits a progress line saying the artifact needs a controller review, returns no review and leaves the artifact unstamped",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "T17 insrc_code_review_step on controller-authored code keeps its start phase: a stale index returns confirm_wait and asks no daemon; a declined wait, a wait that times out and empty grounding each ask the daemon with the degraded mode, and the record is `degraded` with a verdict no better than warn; fresh grounding with symbols asks with the full mode; an unavailable freshness check returns an error and asks no daemon; the author is read on the resumed call too; grounding that cannot be fetched returns grounding-unavailable and asks no daemon; a diff the daemon cannot read comes back as a failed daemon review naming the cause and stamps nothing",
+        "coveredByTaskIds": [
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "T13 the steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration steps 1, 2, 3 and 5: party fields and stamps, the daemon review request with its stream helpers and same-party refusal, routing in the two review tools, and the written rule"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration step 4 and the stamping and gate sites: all gate checks live in approveArtifactByJsonPath, and reviewArtifactFile is the one place the daemon side refuses its own work"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 existing tests to update: about 31 test files that approve unreviewed fixtures move to a shared helper, and four review-tool suites get daemon-authored fixtures"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 resolved open question q939cb900: keep the 10 minute wait limit for a daemon DEF review, provisionally, and time a real one"
+    }
+  ]
+}

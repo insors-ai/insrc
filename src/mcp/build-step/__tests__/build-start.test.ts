@@ -32,9 +32,10 @@ import { tmpdir } from 'node:os';
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateProviderForTests } from '../phases/validate.js';
 import { approveArtifactByJsonPath, approveWorkflowTarget } from '../../../workflow/gates.js';
-import { ARTIFACTS_DIR, buildArtifactId, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
+import { ARTIFACTS_DIR, buildArtifactId, codeReviewArtifactId, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../workflow/runners/build/completion-record.js';
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'b7c8d9e0f1a2b3c4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
@@ -227,6 +228,8 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		const start = stampedBase(fx, 's1');
 		work(fx, 'task-one.ts', 'everything');
 		await validate(fx, 's1/t1', 't1');
+		// Completing a Story requires a code review by the other party; this one has it.
+		stampOtherPartyReview(artifact(fx, buildArtifactId(HASH, 's1')));
 		commitRecords(fx, 'build record after t1');
 
 		// A batch approval of the epic, aimed at anything else, sweeps this BUILD record up.
@@ -240,7 +243,10 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		work(fx, 'task-two.ts', 'everything');
 		await validate(fx, 's1/t2', 't2');
 
-		assert.deepEqual(changeLog(fx, 's1'), ['task-one.ts', 'task-two.ts']);
+		// Both tasks' files, and nothing of the work is lost. The Story's code-review
+		// record (completion requires one) was committed inside the range, so it is
+		// listed too, as any record committed since the build started is.
+		assert.deepEqual(changeLog(fx, 's1'), [`${ARTIFACTS_DIR}/${codeReviewArtifactId(HASH, 's1')}.json`, 'task-one.ts', 'task-two.ts']);
 	} finally { fx.cleanup(); }
 });
 
@@ -282,6 +288,7 @@ test('T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild\'s 
 		work(fx, 'first-build.ts', 'everything');
 		await validate(fx, 's1/t1', 't1');
 		assert.deepEqual(changeLog(fx, 's1'), ['first-build.ts']);
+		stampOtherPartyReview(artifact(fx, buildArtifactId(HASH, 's1')));   // completion requires an other-party code review
 		commitRecords(fx, 'build record');
 		approveArtifactByJsonPath(artifact(fx, buildArtifactId(HASH, 's1')));   // the Story is complete
 		commitRecords(fx, 'BUILD approved');

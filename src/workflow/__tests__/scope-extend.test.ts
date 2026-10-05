@@ -26,6 +26,7 @@ import { applyAmendments } from '../amendments/applier.js';
 import type { AmendmentRecord } from '../amendments/types.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
 import type { HldBody } from '../artifacts/hld.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -49,7 +50,7 @@ function seedDefine(repo: string, opts: { approved: boolean; slug?: string; stor
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	};
 	writeFileSync(paths.json, JSON.stringify(define, null, 2) + '\n');
-	if (opts.approved) approveArtifactByJsonPath(paths.json);
+	if (opts.approved) { stampOtherPartyReview(paths.json); approveArtifactByJsonPath(paths.json); }
 	return paths.json;
 }
 

@@ -31,6 +31,7 @@ import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath, requireApprovedHld } from '../../../workflow/gates.js';
 import { approveAmendment } from '../../../workflow/amendments/store.js';
 import { defineArtifactPaths, extendArtifactPaths, hldArtifactPaths, ARTIFACTS_DIR } from '../../../workflow/storage.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope {
 	readonly content: readonly { readonly type: 'text'; readonly text: string }[];
@@ -67,6 +68,7 @@ function seed(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(definePaths.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(definePaths.json);
 
 	const hldPaths = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
@@ -96,6 +98,7 @@ function seed(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(hldPaths.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(hldPaths.json);
 }
 

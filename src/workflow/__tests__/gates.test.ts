@@ -26,6 +26,7 @@ import {
 	requireApprovedEpic,
 } from '../gates.js';
 import { defineArtifactPaths } from '../storage.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
@@ -155,6 +156,7 @@ test('approveArtifactByJsonPath sets meta.approvedAt', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
+		stampOtherPartyReview(path);   // approval requires an other-party review
 		const r = approveArtifactByJsonPath(path);
 		assert.equal(r.workflow, 'define');
 		assert.match(r.approvedAt, /^\d{4}-\d{2}-\d{2}T/);
@@ -193,6 +195,7 @@ test('reject then approve clears the rejection', () => {
 	try {
 		const path = writeFixture(repo);
 		rejectArtifactByJsonPath(path, 'try again');
+		stampOtherPartyReview(path);   // approval requires an other-party review
 		approveArtifactByJsonPath(path);
 		const raw = JSON.parse(readFileSync(path, 'utf8'));
 		assert.ok(raw.meta.approvedAt);
@@ -236,6 +239,7 @@ test('requireApprovedEpic returns the Define artifact after approval', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
+		stampOtherPartyReview(path);   // approval requires an other-party review
 		approveArtifactByJsonPath(path);
 		const epic = requireApprovedEpic(repo, HASH);
 		assert.equal(epic.body.flavor, 'new-capability');

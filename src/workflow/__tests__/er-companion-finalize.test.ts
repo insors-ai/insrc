@@ -26,6 +26,7 @@ import { defineArtifactPaths } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 import type { HldArtifact } from '../artifacts/hld.js';
 import type { LldArtifact } from '../artifacts/lld.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const EPIC_HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED   = '2026-07-17T07:42:28.275Z';
@@ -115,6 +116,7 @@ function seedOneStoryEpic(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
+	stampOtherPartyReview(dp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(dp.json);
 }
 

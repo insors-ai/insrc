@@ -28,6 +28,7 @@ import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath, jsonPathForMd } from '../../../workflow/gates.js';
 import { computeHldEffectiveHash } from '../../../workflow/artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../../../workflow/storage.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
@@ -59,6 +60,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [],
 	}, null, 2));
+	stampOtherPartyReview(dp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
@@ -75,6 +77,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
+	stampOtherPartyReview(hp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(hp.json);
 
 	const lp = lldArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
@@ -94,7 +97,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [],
 	}, null, 2));
-	if (opts.lldApproved) approveArtifactByJsonPath(lp.json);
+	if (opts.lldApproved) { stampOtherPartyReview(lp.json); approveArtifactByJsonPath(lp.json); }
 }
 
 // ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ import { buildChainReport, formatChainReport } from '../chain.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
@@ -37,6 +38,12 @@ const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
+
+/** Approve a fixture the way a real one is approved: reviewed by the other party first. */
+function approveReviewed(jsonPath: string): void {
+	stampOtherPartyReview(jsonPath);
+	approveArtifactByJsonPath(jsonPath);
+}
 
 function writeDefine(repo: string, epicHash: string, opts: { stories: string[] } = { stories: ['s1', 's2'] }): string {
 	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic');
@@ -143,7 +150,7 @@ test('chain: approved Define, no HLD → run-hld', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
 		const path = writeDefine(repo, HASH);
-		approveArtifactByJsonPath(path);
+		approveReviewed(path);
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'run-hld');
 		assert.equal(r.define.approved, true);
@@ -153,7 +160,7 @@ test('chain: approved Define, no HLD → run-hld', () => {
 test('chain: unapproved HLD → approve-hld', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
-		approveArtifactByJsonPath(writeDefine(repo, HASH));
+		approveReviewed(writeDefine(repo, HASH));
 		writeHld(repo, HASH, 'hld-1');
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'approve-hld');
@@ -163,8 +170,8 @@ test('chain: unapproved HLD → approve-hld', () => {
 test('chain: approved HLD, no LLDs → run-lld for first Story', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
-		approveArtifactByJsonPath(writeDefine(repo, HASH));
-		approveArtifactByJsonPath(writeHld(repo, HASH, 'hld-1').path);
+		approveReviewed(writeDefine(repo, HASH));
+		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'run-lld');
 		if (r.nextAction.kind === 'run-lld') {
@@ -176,8 +183,8 @@ test('chain: approved HLD, no LLDs → run-lld for first Story', () => {
 test('chain: unapproved LLD blocks the chain → approve-lld', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
-		approveArtifactByJsonPath(writeDefine(repo, HASH));
-		approveArtifactByJsonPath(writeHld(repo, HASH, 'hld-1').path);
+		approveReviewed(writeDefine(repo, HASH));
+		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
 		const hash = computeHldEffectiveHash('hld-1', []);
 		writeLld(repo, HASH, 's1', 'hld-1', hash);
 		const r = buildChainReport(repo, HASH);
@@ -188,8 +195,8 @@ test('chain: unapproved LLD blocks the chain → approve-lld', () => {
 test('chain: pending amendment surfaces before further LLDs', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
-		approveArtifactByJsonPath(writeDefine(repo, HASH));
-		approveArtifactByJsonPath(writeHld(repo, HASH, 'hld-1').path);
+		approveReviewed(writeDefine(repo, HASH));
+		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
 		proposeAmendment(repo, pendingAmendment(HASH, `AMD-${HASH}-1`, 'hld-1'));
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'review-amendment');
@@ -200,10 +207,10 @@ test('chain: pending amendment surfaces before further LLDs', () => {
 test('chain: all Stories approved, no tracker → push-tracker', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-chain-'));
 	try {
-		approveArtifactByJsonPath(writeDefine(repo, HASH, { stories: ['s1'] }));
-		approveArtifactByJsonPath(writeHld(repo, HASH, 'hld-1').path);
+		approveReviewed(writeDefine(repo, HASH, { stories: ['s1'] }));
+		approveReviewed(writeHld(repo, HASH, 'hld-1').path);
 		const hash = computeHldEffectiveHash('hld-1', []);
-		approveArtifactByJsonPath(writeLld(repo, HASH, 's1', 'hld-1', hash));
+		approveReviewed(writeLld(repo, HASH, 's1', 'hld-1', hash));
 		const r = buildChainReport(repo, HASH);
 		assert.equal(r.nextAction.kind, 'push-tracker');
 	} finally { rmSync(repo, { recursive: true, force: true }); }

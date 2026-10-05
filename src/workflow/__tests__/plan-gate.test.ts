@@ -27,6 +27,7 @@ import {
 	requireApprovedLld,
 } from '../gates.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../storage.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
@@ -45,6 +46,7 @@ function seedDefineAndHld(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
+	stampOtherPartyReview(dp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic');
@@ -61,6 +63,7 @@ function seedDefineAndHld(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
+	stampOtherPartyReview(hp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(hp.json);
 }
 

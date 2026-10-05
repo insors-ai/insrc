@@ -39,6 +39,7 @@ import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 
@@ -75,6 +76,7 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(definePath);   // approval requires an other-party review
 	approveArtifactByJsonPath(definePath);
 
 	// Approved HLD
@@ -115,6 +117,7 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(hldPath);   // approval requires an other-party review
 	approveArtifactByJsonPath(hldPath);
 }
 
@@ -382,6 +385,7 @@ test('design.story: refuses without an approved HLD', async () => {
 				stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }], openQuestions: [] },
 			citations: [],
 		}, null, 2));
+		stampOtherPartyReview(definePath);   // approval requires an other-party review
 		approveArtifactByJsonPath(definePath);
 
 		const startOut = payload(await handleWorkflowStep({

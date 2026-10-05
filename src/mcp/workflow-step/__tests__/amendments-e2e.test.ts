@@ -46,6 +46,7 @@ import {
 	listAmendments,
 } from '../../../workflow/amendments/store.js';
 import { scanLldStaleness } from '../../../workflow/amendments/staleness.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {
@@ -79,6 +80,7 @@ function seed(repo: string, epicHash: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(defPath);   // approval requires an other-party review
 	approveArtifactByJsonPath(defPath);
 
 	const hldPaths = hldArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
@@ -114,6 +116,7 @@ function seed(repo: string, epicHash: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(hldPath);   // approval requires an other-party review
 	approveArtifactByJsonPath(hldPath);
 }
 

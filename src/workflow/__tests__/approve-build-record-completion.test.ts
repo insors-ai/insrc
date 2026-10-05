@@ -23,6 +23,7 @@ import { join } from 'node:path';
 
 import { approveWorkflowTarget, jsonPathForMd } from '../gates.js';
 import { artifactJsonPath, buildArtifactId } from '../storage.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -61,6 +62,7 @@ test('non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scop
 	await withRepo(async (repo, dir) => {
 		const lld = join(dir, `LLD-${HASH}-s7.json`);
 		writeFileSync(lld, JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's7' }, body: {}, citations: [] }, null, 2));
+		stampOtherPartyReview(lld);   // approval requires an other-party review
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: lld }, { enforce: false });
 		assert.equal(out.approved.length, 1, 'the LLD is approved');
 		const builds = readdirSync(dir).filter((f) => f.startsWith('BUILD-'));

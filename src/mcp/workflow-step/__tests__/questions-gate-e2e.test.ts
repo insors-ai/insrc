@@ -39,6 +39,7 @@ import { _setQuestionProviderForTests } from '../../../workflow/questions.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../../../workflow/storage.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import type { QuestionResolution as QR } from '../../../workflow/types.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
@@ -87,6 +88,7 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(dp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
@@ -111,6 +113,7 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(hp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(hp.json);
 }
 

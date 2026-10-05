@@ -34,6 +34,7 @@ import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 
@@ -66,6 +67,7 @@ function seedApprovedDefine(repo: string, epicHash: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
+	stampOtherPartyReview(paths.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(paths.json);
 }
 

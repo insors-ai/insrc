@@ -26,6 +26,7 @@ import { approveArtifactByJsonPath, jsonPathForMd } from '../../../workflow/gate
 import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../workflow/runners/build/completion-record.js';
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
@@ -470,6 +471,7 @@ test('validate[standalone]: the persisted record is approvable by the completion
 		});
 		// The completion act: approve the persisted BUILD record by its json path.
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
+		stampOtherPartyReview(json);   // completion requires an other-party code review
 		approveArtifactByJsonPath(json);
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
 		assert.equal(typeof rec.meta['approvedAt'], 'string', 'approval stamps approvedAt on the standalone BUILD record');

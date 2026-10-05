@@ -26,6 +26,7 @@ import { join } from 'node:path';
 
 import { approveWorkflowTarget } from '../gates.js';
 import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -49,6 +50,9 @@ function writeArtifact(
 	if (opts.review !== undefined)  meta['review']  = opts.review;
 	const p = join(dir, name);
 	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
+	// A design artifact given no review of its own gets a passing other-party one:
+	// approval requires it, and these tests are about the CODE-review gate.
+	if (opts.review === undefined && /^(DEF|HLD|LLD)-/.test(name)) stampOtherPartyReview(p);
 	return p;
 }
 

@@ -38,6 +38,7 @@ import {
 	PLAN_DRIVEN_RECORD, PLAN_DRIVEN_GOLDEN,
 	PATHOLOGICAL_RECORD, PATHOLOGICAL_GOLDEN,
 } from './fixtures/build-record-goldens.js';
+import { stampOtherPartyReview } from '../../../__tests__/helpers/other-party-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -180,6 +181,7 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 test('approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)', async () => {
 	await withRepo(async (repo) => {
 		const { json } = persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
+		stampOtherPartyReview(json);   // completion requires an other-party code review
 		// enforce off → the code-review gate is advisory; completion proceeds + stamps approvedAt.
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path), [json], 'the BUILD record is approved');

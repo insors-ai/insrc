@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { approveWorkflowTarget, NoPendingArtifactsError, ArtifactMissingError } from '../gates.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'abc123def4567890';
 
@@ -34,6 +35,9 @@ function writeArtifact(dir: string, name: string, workflow: string, blocked = fa
 	if (blocked) meta['review'] = { verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', summary: 'x' }], counts: { high: 1, med: 0, low: 0 } };
 	const p = join(dir, name);
 	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
+	// A "clean" design artifact is one that HAS been reviewed, by the other party,
+	// with nothing blocking: approval requires that review.
+	if (!blocked && /^(DEF|HLD|LLD)-/.test(name)) stampOtherPartyReview(p);
 	return p;
 }
 

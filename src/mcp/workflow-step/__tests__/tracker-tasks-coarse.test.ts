@@ -26,6 +26,7 @@ import { registerWorkflowRunners } from '../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath } from '../../../workflow/gates.js';
 import { defineArtifactPaths, planArtifactPaths } from '../../../workflow/storage.js';
+import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
@@ -62,6 +63,7 @@ function seed(repo: string, opts: { approvePlan: boolean }): void {
 		},
 		citations: [],
 	}, null, 2));
+	stampOtherPartyReview(dp.json);   // approval requires an other-party review
 	approveArtifactByJsonPath(dp.json);
 
 	const pp = planArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');

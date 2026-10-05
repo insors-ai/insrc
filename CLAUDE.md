@@ -213,8 +213,8 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). **This is the ONLY supported way to run a workflow — always drive it turn-by-turn in-session.** |
 | `insrc_workflow_run` | Daemon-side async run (START → POLL). **NOT recommended — do not use.** The async poll/handoff can stall in a resolution loop and error out on completion; drive workflows with `insrc_workflow_step` instead. |
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
-| `insrc_review_step` | Independent controller review of a design artifact (DEF/HLD/LLD) before approval. |
-| `insrc_code_review_step` | Post-build code review over the changed code (adherence / conventions / coverage / quality). |
+| `insrc_review_step` | Review of a design artifact (DEF/HLD/LLD) by the party that did not author it, before approval. The tool routes it. |
+| `insrc_code_review_step` | Post-build code review by the party that did not write the code (adherence / conventions / coverage / quality). The tool routes it. |
 | `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
 | `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |
 | `insrc_guide` | Return one workflow's full step-by-step procedure from the canonical steering source. |

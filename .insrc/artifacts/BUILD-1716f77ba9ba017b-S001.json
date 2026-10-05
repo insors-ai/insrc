@@ -4,7 +4,7 @@
     "epicHash": "1716f77ba9ba017b",
     "storyId": "S001",
     "createdAt": "2026-10-05T09:32:49.002Z",
-    "updatedAt": "2026-10-05T09:52:08.247Z",
+    "updatedAt": "2026-10-05T10:01:22.506Z",
     "standalone": true
   },
   "body": {
@@ -24,235 +24,274 @@
       {
         "id": "t4",
         "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
       }
     ],
-    "summary": "t4: the daemon side refuses to review daemon-authored work. reviewArtifactFile throws a same-party error before any provider call (covers the TUI review service); the daemon run reports review-skipped instead of reviewing its own artifact; the daemon code review refuses daemon-authored code with an error frame.",
+    "summary": "t5: new daemon stream method workflow.review (src/daemon/workflow-review-rpc.ts) reviews an existing design artifact the daemon did not author; two MCP stream helpers call it and codeReview.run, and fail at once on an older daemon's plain unknown-method line.",
     "changeLog": [
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-1716f77ba9ba017b-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/code-review-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-review-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/workflow-rpc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/daemon/code-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T10:01:22.506Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/build-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/__tests__/standalone-implement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/phases/implement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/code-review-step/__tests__/handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/daemon-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/review-step/__tests__/review-step-findings.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/review-step/__tests__/review-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/review-step/phases/findings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/review-step/phases/verdicts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/workflow-step/__tests__/handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/mcp/workflow-step/phases/synthesize.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/author-stamp.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/runner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/runner.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/__tests__/party.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/__tests__/same-party-refusal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/__tests__/template-review.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/party.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/run-artifact.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       },
       {
         "target": {
           "file": "src/workflow/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-05T09:52:08.247Z"
+        "timestamp": "2026-10-05T10:01:22.506Z"
       }
     ],
-    "commit": "5866461"
+    "commit": "f191aec"
   }
 }

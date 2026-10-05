@@ -25,7 +25,10 @@ import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import { authorPartyOf, SamePartyReviewError } from '../workflow/review/party.js';
 import type { PartyOrUnknown } from '../workflow/review/party.js';
 import { artifactJsonPath, buildArtifactId } from '../workflow/storage.js';
-import type { runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
+import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../workflow/code-review/grounding.js';
+import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
+import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
+import { resolveStoryRangeBase } from '../workflow/runners/build/range-base.js';
 import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.js';
 import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
 import {
@@ -51,6 +54,10 @@ interface CodeReviewRunParams {
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
 	 *  back to that CLI (claude/codex) instead of Ollama. */
 	readonly client?:   'claude' | 'codex';
+	/** How to ground the review. `degraded` grounds on the diff, stamps the
+	 *  record `degraded` and caps the verdict at warn; omitted or `full` grounds
+	 *  on the graph, as this request always has. */
+	readonly groundingMode?: 'full' | 'degraded';
 }
 
 /** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
@@ -63,6 +70,9 @@ export interface CodeReviewRunDeps {
 	/** The provider and its label for this review. */
 	readonly resolveProvider?: ((repoPath: string, client: 'claude' | 'codex' | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
 	readonly runReview?: typeof RunCodeReview | undefined;
+	readonly assembleDiffGrounding?: typeof assembleDiffCodeReviewGrounding | undefined;
+	/** Where the record is written (the runner's `write`). */
+	readonly write?: ((absPath: string, content: string) => void) | undefined;
 }
 
 /** The party that wrote the code under review, read from the Story's BUILD
@@ -122,17 +132,46 @@ export async function codeReviewRunStart(
 		const runId      = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 		// 5. Drive the runner, streaming each progress frame.
-		const runCodeReview = deps.runReview ?? (await import('../workflow/code-review/runner.js')).runCodeReview;
+		const runner = await import('../workflow/code-review/runner.js');
+		const runCodeReview = deps.runReview ?? runner.runCodeReview;
 		let stageIndex = 0;
-		const outcome = await runCodeReview(resolved.subject, provider, {
+		const base = {
 			runId, modelLabel, signal,
 			// This request is the daemon's review.
-			reviewedBy: 'daemon',
-			onProgress: (f) => send({
+			reviewedBy: 'daemon' as const,
+			onProgress: (f: CodeReviewProgress) => send({
 				id: 0, stream: 'progress',
 				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null },
 			}),
-		});
+		};
+		let outcome: Awaited<ReturnType<typeof RunCodeReview>>;
+		if (params.groundingMode === 'degraded') {
+			// The caller could not get graph grounding for this Story (a stale index,
+			// or no symbols). Ground on the diff instead, exactly as the controller's
+			// diff-only path does: the same range base and ledger exclusion, the
+			// subject re-keyed to the diff's changed set, the record stamped
+			// `degraded`, and the verdict capped at warn.
+			let diff: Awaited<ReturnType<typeof assembleDiffCodeReviewGrounding>>;
+			try {
+				diff = await (deps.assembleDiffGrounding ?? assembleDiffCodeReviewGrounding)(repoPath, undefined, {
+					base:         resolveStoryRangeBase(repoPath, params.epicHash, params.storyId),
+					excludeGlobs: LEDGER_EXCLUDE_GLOBS,
+				});
+			} catch (err) {
+				if (!(err instanceof DiffUnavailableError)) throw err;
+				send({ id: 0, stream: 'error', data: { error: `codeReview.run: could not read the changed-file diff — ${err.message}`, reason: 'diff-unavailable', recoverable: false } });
+				return;
+			}
+			outcome = await runCodeReview(
+				{ ...resolved.subject, changedFiles: diff.changedFiles }, provider,
+				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true },
+				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), assembleGrounding: async () => diff.grounding },
+			);
+		} else if (deps.write !== undefined) {
+			outcome = await runCodeReview(resolved.subject, provider, base, { ...runner.DEFAULT_DEPS, write: deps.write });
+		} else {
+			outcome = await runCodeReview(resolved.subject, provider, base);
+		}
 
 		// 6. Terminal frame. A runner {ok:false} is an error frame; {ok:true}
 		//    carries the outcome + artifact on `done`.
@@ -169,11 +208,18 @@ function parseParams(raw: unknown): CodeReviewRunParams {
 	const storyId = o['storyId'];
 	if (typeof storyId !== 'string' || storyId.length === 0) throw new Error('codeReview.run: `storyId` is required');
 	const client = o['client'];
+	// A mode this daemon does not know is refused, never read as `full`: the
+	// caller asked for a specific grounding and must not get another one silently.
+	const mode = o['groundingMode'];
+	if (mode !== undefined && mode !== 'full' && mode !== 'degraded') {
+		throw new Error(`codeReview.run: \`groundingMode\` must be 'full' or 'degraded', got ${JSON.stringify(mode)}`);
+	}
 	return {
 		epicHash,
 		storyId,
 		...(typeof o['repo'] === 'string' ? { repo: o['repo'] } : {}),
 		...(client === 'claude' || client === 'codex' ? { client } : {}),
+		...(mode === 'full' || mode === 'degraded' ? { groundingMode: mode } : {}),
 	};
 }
 

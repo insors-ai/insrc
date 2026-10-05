@@ -18,8 +18,15 @@
  * validate-then-write, no-pass-on-failure) lives in `runCodeReview`.
  */
 
+import { readFileSync } from 'node:fs';
+
 import { getLogger } from '../shared/logger.js';
-import type { IpcStreamMessage } from '../shared/types.js';
+import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
+import { authorPartyOf, SamePartyReviewError } from '../workflow/review/party.js';
+import type { PartyOrUnknown } from '../workflow/review/party.js';
+import { artifactJsonPath, buildArtifactId } from '../workflow/storage.js';
+import type { runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
+import type { resolveCodeReviewSubject } from '../workflow/code-review/subject.js';
 import { buildShaperProvider, resolveShaperKind } from '../analyze/context/shaper-provider.js';
 import {
 	loadAnalyzeConfig,
@@ -29,6 +36,8 @@ import {
 } from '../config/analyze.js';
 
 const log = getLogger('daemon:code-review-rpc');
+
+type CodeReviewSubjectResolution = Awaited<ReturnType<typeof resolveCodeReviewSubject>>;
 
 /** CLI-provider subprocess timeout for a code-review run — a full four-judge
  *  pass over a large changed set can run several minutes; the CLI default
@@ -47,10 +56,31 @@ interface CodeReviewRunParams {
 /** `codeReview.run` stream handler. Emits `progress` frames per phase, then a
  *  terminal `done` (with the outcome) or `error`. Never throws — a bad payload,
  *  a declined subject, or a run failure is sent as an `error` / declined frame. */
+/** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
+ *  real thing; a test replaces the ones it needs to. */
+export interface CodeReviewRunDeps {
+	readonly resolveSubject?: ((repoPath: string, epicHash: string, storyId: string) => Promise<CodeReviewSubjectResolution>) | undefined;
+	/** The provider and its label for this review. */
+	readonly resolveProvider?: ((repoPath: string, client: 'claude' | 'codex' | undefined) => { provider: LLMProvider; modelLabel: string }) | undefined;
+	readonly runReview?: typeof RunCodeReview | undefined;
+}
+
+/** The party that wrote the code under review, read from the Story's BUILD
+ *  record. `unknown` when there is no record or it says nothing. */
+export function buildAuthorParty(repoPath: string, epicHash: string, storyId: string): PartyOrUnknown {
+	try {
+		const rec = JSON.parse(readFileSync(artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId)), 'utf8')) as { meta?: unknown };
+		return authorPartyOf(rec.meta);
+	} catch {
+		return 'unknown';
+	}
+}
+
 export async function codeReviewRunStart(
 	rawParams: unknown,
 	send:      (msg: IpcStreamMessage) => void,
 	signal:    AbortSignal,
+	deps:      CodeReviewRunDeps = {},
 ): Promise<void> {
 	// 1. Parse the request.
 	let params: CodeReviewRunParams;
@@ -69,26 +99,30 @@ export async function codeReviewRunStart(
 	try {
 		// 2. Resolve the fixed subject. A DECLINE (no approved contract / build) is
 		//    NOT a verdict — the handler sends an error frame and never runs.
-		const { resolveCodeReviewSubject } = await import('../workflow/code-review/subject.js');
-		const resolved = await resolveCodeReviewSubject(repoPath, params.epicHash, params.storyId);
+		const resolveSubject = deps.resolveSubject ?? (await import('../workflow/code-review/subject.js')).resolveCodeReviewSubject;
+		const resolved = await resolveSubject(repoPath, params.epicHash, params.storyId);
 		if (!resolved.ok) {
 			log.info({ repoPath, epicHash: params.epicHash, storyId: params.storyId, reason: resolved.reason }, 'codeReview.run declined');
 			send({ id: 0, stream: 'error', data: { error: `codeReview.run declined: ${resolved.reason}`, reason: resolved.reason, recoverable: false } });
 			return;
 		}
 
-		// 3. Resolve the high-tier provider (k10) — per-repo override > global
+		// 3. This is the daemon's review, so it does not review code the daemon
+		//    wrote. Checked before a provider is built: no review is spent.
+		if (buildAuthorParty(repoPath, params.epicHash, params.storyId) === 'daemon') {
+			const refusal = new SamePartyReviewError('daemon', `the code of Story ${params.storyId}`);
+			log.info({ repoPath, epicHash: params.epicHash, storyId: params.storyId }, 'codeReview.run refused: same-party review');
+			send({ id: 0, stream: 'error', data: { error: refusal.message, reason: 'same-party-review', recoverable: false } });
+			return;
+		}
+
+		// 4. Resolve the high-tier provider (k10) — per-repo override > global
 		//    config > invoking CLI > Ollama, mirroring workflow-rpc's resolution.
-		const cfg = loadAnalyzeConfig();
-		const clientDefault: AnalyzeShaperProviderKind | undefined =
-			params.client === 'claude' ? 'cli-claude' : params.client === 'codex' ? 'cli-codex' : undefined;
-		const repoOverride = resolveRepoShaperProvider(repoPath);
-		const provider   = buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: CODE_REVIEW_CLI_TIMEOUT_MS });
-		const modelLabel = modelLabelFor(cfg, repoOverride, clientDefault);
+		const { provider, modelLabel } = (deps.resolveProvider ?? defaultProvider)(repoPath, params.client);
 		const runId      = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-		// 4. Drive the runner, streaming each progress frame.
-		const { runCodeReview } = await import('../workflow/code-review/runner.js');
+		// 5. Drive the runner, streaming each progress frame.
+		const runCodeReview = deps.runReview ?? (await import('../workflow/code-review/runner.js')).runCodeReview;
 		let stageIndex = 0;
 		const outcome = await runCodeReview(resolved.subject, provider, {
 			runId, modelLabel, signal,
@@ -100,7 +134,7 @@ export async function codeReviewRunStart(
 			}),
 		});
 
-		// 5. Terminal frame. A runner {ok:false} is an error frame; {ok:true}
+		// 6. Terminal frame. A runner {ok:false} is an error frame; {ok:true}
 		//    carries the outcome + artifact on `done`.
 		if (!outcome.ok) {
 			send({ id: 0, stream: 'error', data: { error: outcome.error, recoverable: false } });
@@ -115,6 +149,17 @@ export async function codeReviewRunStart(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function defaultProvider(repoPath: string, client: 'claude' | 'codex' | undefined): { provider: LLMProvider; modelLabel: string } {
+	const cfg = loadAnalyzeConfig();
+	const clientDefault: AnalyzeShaperProviderKind | undefined =
+		client === 'claude' ? 'cli-claude' : client === 'codex' ? 'cli-codex' : undefined;
+	const repoOverride = resolveRepoShaperProvider(repoPath);
+	return {
+		provider:   buildShaperProvider(cfg, { repoOverride, clientDefault, cliTimeoutMs: CODE_REVIEW_CLI_TIMEOUT_MS }),
+		modelLabel: modelLabelFor(cfg, repoOverride, clientDefault),
+	};
+}
 
 function parseParams(raw: unknown): CodeReviewRunParams {
 	if (typeof raw !== 'object' || raw === null) throw new Error('codeReview.run: params must be an object');

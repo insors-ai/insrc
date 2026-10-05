@@ -21,6 +21,7 @@ import type { LLMProvider } from '../../shared/types.js';
 import { writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
 import type { AppliedFix, SkippedFix } from './apply.js';
+import { authorPartyOf, SamePartyReviewError } from './party.js';
 import { renderReviewReport } from './report.js';
 import { runReview } from './review.js';
 import { isDesignStage, resolveDesignReview } from './template.js';
@@ -71,6 +72,10 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 
 	const artifact = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 	const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown';
+	// This function is the daemon's review, so it does not review the daemon's own
+	// work. Checked before anything is sent to a model. It holds for every caller:
+	// the daemon's review request, the TUI review service, and any other.
+	if (authorPartyOf(artifact.meta) === 'daemon') throw new SamePartyReviewError('daemon', `this ${stage} artifact`);
 	const rawMd = readFileSync(opts.mdPath, 'utf8');
 	const md = stripReviewSection(rawMd);
 

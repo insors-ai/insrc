@@ -40,7 +40,6 @@ import { startRun, resumeRun } from '../workflow/executor.js';
 import { resolveDraftDeps } from '../workflow/draft-deps.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
 import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
-import { reviewArtifactFile } from '../workflow/review/index.js';
 import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, type OutputModelStamp, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
 import { modelSummary } from '../workflow/attribution.js';
@@ -104,6 +103,10 @@ const WORKFLOW_CLI_TIMEOUT_MS = 900_000;
 /** Incremental progress event. `phase` is one of: `decompose`, `plan-ready`,
  *  `grounding` (running analyze for a step), `step-start`, `step-done`,
  *  `synthesize-attempt`, `synthesize-retry`, `correction-round`, `done`. */
+/** What a run says when it was asked to review the artifact it just authored. */
+export const REVIEW_SKIPPED_DETAIL =
+	'not reviewed: this run authored the artifact, so it needs a controller review (insrc_review_step) or an override reason at approval';
+
 export interface WorkflowProgress {
 	readonly phase:    string;
 	readonly stepId?:  string | undefined;
@@ -129,11 +132,11 @@ export interface RunWorkflowOpts {
 	 *  the corrected content — never re-running the design steps. DEFAULT 3.
 	 *  Set 0 to reproduce the historical terminate-on-first-boundary-fail. */
 	readonly maxCorrectionRounds?: number | undefined;
-	/** Auto-run the grounded review cycle at finalize. DEFAULT FALSE — review
-	 *  is a CONTROLLER task (independent 2nd eyes via insrc_review_step), not a
-	 *  daemon self-review, since a daemon-side review runs the SAME provider
-	 *  that authored the artifact. Set true only for fully-autonomous runs with
-	 *  no controller in the loop. */
+	/** Formerly: auto-run the review at finalize. A daemon run authors its
+	 *  artifact, and the party that did not author the work reviews it, so the
+	 *  run never reviews what it wrote. Setting this true makes the run report
+	 *  (progress phase `review-skipped`) that the artifact needs a controller
+	 *  review (insrc_review_step); no review is run or returned. */
 	readonly review?:          boolean | undefined;
 	/** S003 RoleRouter for per-step, per-role provider resolution. When present,
 	 *  each decompose/step/synthesize call resolves its own provider by the
@@ -155,8 +158,8 @@ export interface RunWorkflowResult {
 	 *  `mixed(...)` summary otherwise. Surfaced on the `done`/`poll` IPC frames in
 	 *  place of the retired run-wide scalar. */
 	readonly model:    string;
-	/** The finalize review result, when review ran and succeeded. Its
-	 *  `verdict` is what a subsequent `approve` enforces. */
+	/** Never set: a daemon run does not review the artifact it authored. Kept so
+	 *  consumers of the result and of the `done` frame need no change. */
 	readonly review?:  ReviewReport | undefined;
 }
 
@@ -335,38 +338,19 @@ export async function runWorkflowServerSide(
 	});
 	log.info({ workflow: intent.workflow, runId, model: opts.modelLabel, path: paths.md }, 'workflow.run: artifact written');
 
-	// 5. Review at finalize — OPT-IN (default off; enable with `review:true`).
-	//    Review is a CONTROLLER task (insrc_review_step, independent 2nd eyes):
-	//    a daemon-side review here would run the SAME provider that authored the
-	//    artifact — self-review, not independent. This path stays only for
-	//    fully-autonomous runs with no controller in the loop. When it runs it
-	//    stamps `meta.review` (whose block verdict `approve` enforces); a review
-	//    failure is non-fatal since the artifact is already persisted.
-	let review: ReviewReport | undefined;
+	// 5. No review at finalize. The run just authored this artifact, so a review
+	//    here would be the daemon reviewing its own work: the party that did not
+	//    author the work reviews it. `review: true` is still accepted, and is
+	//    answered out loud rather than silently ignored: the run says the artifact
+	//    needs a controller review and returns none.
 	if (opts.review === true) {
-		checkAbort();
-		opts.onProgress?.({ phase: 'review' });
-		try {
-			const res = await reviewArtifactFile({
-				mdPath: paths.md, jsonPath: paths.json, repo: intent.repoPath,
-				provider, model: opts.modelLabel, reviewedAt: new Date().toISOString(),
-				onProgress: (m) => opts.onProgress?.({ phase: 'review', detail: m }),
-				...(opts.signal !== undefined ? { signal: opts.signal } : {}),
-			});
-			review = res.report;
-			const c = res.report.counts;
-			opts.onProgress?.({ phase: 'review-done', detail: `${res.report.verdict} · HIGH=${c.high} MED=${c.med} LOW=${c.low}` });
-		} catch (err) {
-			log.warn(
-				{ runId, err: err instanceof Error ? err.message : String(err) },
-				'workflow.run: review failed; artifact persisted without meta.review',
-			);
-		}
+		opts.onProgress?.({ phase: 'review-skipped', detail: REVIEW_SKIPPED_DETAIL });
+		log.info({ workflow: intent.workflow, runId, path: paths.md }, 'workflow.run: review requested but skipped (daemon-authored artifact needs a controller review)');
 	}
 
 	opts.onProgress?.({ phase: 'done' });
 	const model = modelSummary((finalized.artifact as { meta: ArtifactMetaBase }).meta);
-	return { path: paths.md, artifact: finalized.artifact, runId, model, ...(review !== undefined ? { review } : {}) };
+	return { path: paths.md, artifact: finalized.artifact, runId, model };
 }
 
 // ---------------------------------------------------------------------------
@@ -381,7 +365,8 @@ interface WorkflowRunParams {
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
 	 *  back to that CLI (claude/codex) instead of Ollama. */
 	readonly client?:   'claude' | 'codex';
-	/** Opt out of the finalize review cycle for this run (default: review runs). */
+	/** Ask for a review at finalize. The run does not review its own artifact: it
+	 *  reports `review-skipped` instead (see RunWorkflowOpts.review). */
 	readonly review?:   boolean;
 }
 
@@ -399,7 +384,7 @@ export interface PreparedWorkflowRun {
 	/** When set, drive inside `runWithClientProviderContext(clientDefault, …)`
 	 *  so bare `buildRun` grounding resolves to the same CLI provider. */
 	readonly clientDefault: AnalyzeShaperProviderKind | undefined;
-	/** Opt-in finalize review (default off — a controller task). */
+	/** The caller asked for a finalize review; answered with `review-skipped`. */
 	readonly review:        boolean | undefined;
 	/** S003 RoleRouter: per-step, per-role provider resolution. The driver uses
 	 *  this to serve each operation by its own role's model (ac1). `provider` +

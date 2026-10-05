@@ -35,6 +35,8 @@ export type {
 } from './template.js';
 export { applyAutoFixes, pendingUserFindings } from './apply.js';
 export type { AutoFixResult, AppliedFix, SkippedFix } from './apply.js';
+export { authorPartyOf, otherParty, reviewerPartyOf, SamePartyReviewError } from './party.js';
+export type { Party, PartyOrUnknown } from './party.js';
 export { runTemplateReview } from './template-review.js';
 export type { ReviewSessionProvider } from './template-review.js';
 export { reviewArtifactFile, stripReviewSection, REVIEW_SECTION } from './run-artifact.js';

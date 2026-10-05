@@ -22,7 +22,8 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { runWorkflowServerSide } from '../workflow-rpc.js';
+import { REVIEW_SKIPPED_DETAIL, runWorkflowServerSide } from '../workflow-rpc.js';
+import type { WorkflowProgress } from '../workflow-rpc.js';
 import type { LLMProvider, LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { WorkflowIntent } from '../../workflow/types.js';
 import type { RoleRouter, ResolvedProvider, RoleResolution } from '../../analyze/context/role-router.js';
@@ -165,23 +166,43 @@ test('runWorkflowServerSide does NOT review by default (review is a controller t
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('runWorkflowServerSide reviews at finalize when review:true is opted in', async () => {
+test('T16 a run asked to review (review:true) makes no review call, says the artifact needs a controller review, and stamps nothing', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
 	try {
-		// plan + synthesize, then the review cycle's extract + one verify turn.
-		const REVIEW_EXTRACT = { claims: [{ id: 'c1', kind: 'citation', text: 'a grounded claim', anchors: [], probe: {} }] };
-		const REVIEW_VERIFY = { severity: 'LOW', evidence: 'verified sound', action: 'none — verified sound', fixability: 'manual' };
-		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT, REVIEW_EXTRACT, REVIEW_VERIFY]);
+		// The queue holds a review's extract answer too. If the run reviewed its own
+		// artifact it would consume it, and the call count below would be 3.
+		const REVIEW_EXTRACT = { claims: [] };
+		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT, REVIEW_EXTRACT]);
+		const frames: WorkflowProgress[] = [];
 		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
 			runId: 'wf-test-r', epicKey: 'demo-stub-r', modelLabel: 'ollama:qwen3-test', review: true,
+			onProgress: (f) => frames.push(f),
 		});
-		// review result surfaced + stamped into the persisted meta
-		assert.ok(out.review, 'review present on result');
-		assert.equal(out.review.verdict, 'pass');
-		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as { meta: { review?: { verdict: string } } };
-		assert.equal(json.meta.review?.verdict, 'pass');
-		// decompose + synthesize + review(extract + verify) = 4 provider turns
-		assert.equal(provider.calls, 4);
+		assert.equal(provider.calls, 2, 'decompose + synthesize only: no review turn');
+		assert.equal(out.review, undefined, 'no review is returned');
+		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as { meta: { review?: unknown; authoredBy?: string } };
+		assert.equal(json.meta.review, undefined, 'the artifact is left unstamped');
+		assert.equal(json.meta.authoredBy, 'daemon');
+		assert.ok(!readFileSync(out.path, 'utf8').includes('insrc:review'), 'and no review section is appended to the document');
+
+		const skipped = frames.filter(f => f.phase === 'review-skipped');
+		assert.equal(skipped.length, 1, 'the skip is announced once');
+		assert.equal(skipped[0]!.detail, REVIEW_SKIPPED_DETAIL);
+		assert.match(REVIEW_SKIPPED_DETAIL, /controller review \(insrc_review_step\)/);
+		assert.ok(frames.every(f => f.phase !== 'review' && f.phase !== 'review-done'), 'no review phase is reported');
+		assert.ok(frames.findIndex(f => f.phase === 'review-skipped') < frames.findIndex(f => f.phase === 'done'));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('T16 a run not asked to review announces nothing about a review', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
+	try {
+		const frames: WorkflowProgress[] = [];
+		await runWorkflowServerSide(stubIntent(repo), new FakeProvider([STUB_PLAN, STUB_ARTIFACT]), {
+			runId: 'wf-test-q', epicKey: 'demo-stub-q', modelLabel: 'ollama:qwen3-test',
+			onProgress: (f) => frames.push(f),
+		});
+		assert.ok(frames.every(f => !f.phase.startsWith('review')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

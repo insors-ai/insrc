@@ -74,3 +74,19 @@ export function reviewerPartyOf(review: unknown): PartyOrUnknown {
 export function otherParty(author: Party): Party {
 	return author === 'controller' ? 'daemon' : 'controller';
 }
+
+/**
+ * A party was asked to review its own work. Raised before any model call, so
+ * no review is spent; nothing is stamped.
+ */
+export class SamePartyReviewError extends Error {
+	constructor(readonly party: Party, what: string) {
+		super(
+			`Same-party review refused: ${what} was authored by the ${party}, so the ${party} cannot review it. ` +
+			(party === 'daemon'
+				? 'It needs a controller review (insrc_review_step for a design artifact, insrc_code_review_step for code) or an override reason at approval.'
+				: 'It needs a daemon review (the review tools request one themselves) or an override reason at approval.'),
+		);
+		this.name = 'SamePartyReviewError';
+	}
+}

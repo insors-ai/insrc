@@ -56,8 +56,8 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). **This is the ONLY supported way to run a workflow — always drive it turn-by-turn in-session.** |
 | `insrc_workflow_run` | Daemon-side async run (START → POLL). **NOT recommended — do not use.** The async poll/handoff can stall in a resolution loop and error out on completion; drive workflows with `insrc_workflow_step` instead. |
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
-| `insrc_review_step` | Independent controller review of a design artifact (DEF/HLD/LLD) before approval. |
-| `insrc_code_review_step` | Post-build code review over the changed code (adherence / conventions / coverage / quality). |
+| `insrc_review_step` | Review of a design artifact (DEF/HLD/LLD) by the party that did not author it, before approval. The tool routes it. |
+| `insrc_code_review_step` | Post-build code review by the party that did not write the code (adherence / conventions / coverage / quality). The tool routes it. |
 | `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
 | `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |
 | `insrc_guide` | Return one workflow's full step-by-step procedure from the canonical steering source. |
@@ -208,53 +208,88 @@ phase.
 After the build has produced its changes, run `code-review` over the changed
 code, PRESENT the verdict, then COMPLETE the Story by approving its **BUILD**
 artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is
-the code-review-gated completion act: under `codeReview.enforce` (config, off /
-advisory by default) a `block` — or no review having run — withholds completion
-into `skipped[]` unless you pass an explicit `overrideReview`.
+the code-review-gated completion act. A Story with NO code review, or one
+reviewed by the party that wrote the code, is always withheld into `skipped[]`.
+A code review whose verdict is `block` withholds completion under
+`codeReview.enforce` (config, off / advisory by default). Either is passed only
+with an explicit `overrideReview`.
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
-## review — independent design-artifact review (`insrc_review_step`)
+## review — design-artifact review by the other party (`insrc_review_step`)
 
 Run this on a written artifact (DEF / HLD / LLD) BEFORE approving it — two sets
-of eyes. A daemon self-review runs the SAME model that authored the artifact
-(no independent perspective); `insrc_review_step` moves the review's reasoning
-into YOU, the controller, and the reviewer must be a DIFFERENT actor than the
-author. It extracts the artifact's load-bearing premises, the server re-runs
+of eyes. The rule runs in BOTH directions: **the party that did not author the
+work reviews it.** There are two parties: the controller (you, this session)
+and the daemon. An artifact you authored through `insrc_workflow_step` is
+reviewed by the daemon; an artifact the daemon authored is reviewed by you. The
+same model on both sides is fine: what matters is that the reviewer is the
+other party, working from its own reading of the code. A subagent you spawn is
+still you, so it is not a second party.
+
+You do not choose the reviewer. Call `insrc_review_step` with `phase:'start'`
+and the tool routes by who authored the artifact:
+
+- **You authored it (or the author is not recorded):** the tool asks the daemon
+  to review, waits, and returns `done` with the daemon's verdict in the same
+  call. This can take several minutes. If the daemon is not running, is too old
+  to know the request, fails, or passes the wait limit, the tool returns an
+  error naming the cause. It does NOT fall back to a review by you: fix the
+  cause and call again, or tell the user, who can approve with an override
+  reason.
+- **The daemon authored it:** you review it, through the loop below.
+
+Your review loop, for a daemon-authored artifact: `phase:'start'` → `claims` →
+`verdicts`. It extracts the artifact's load-bearing premises, the server re-runs
 deterministic probes against real source, and you judge the verdicts against
-that evidence.
+that evidence. For a DESIGN document (an HLD or LLD) `start` returns
+`emit_findings` instead of `emit_claims`: a fixed checklist, chosen by whether
+the design answers an ISSUE or a SPEC. Check every item against the real code
+and docs yourself — use insrc analyze for drill-down — then answer once with
+`phase:'findings'`. Report each premise as `holds`, `does-not-hold` or
+`could-not-verify`; only `does-not-hold` blocks approval. An answer that breaks
+the checklist is rejected with the reasons and stamps nothing; correct it and
+send `findings` again.
 
-Loop: `phase:'start'` → `claims` → `verdicts`. It stamps `meta.review`; a
-`block` verdict (unresolved HIGH/MED findings) then gates approval. Resolve the
-blocking findings (apply / accept-with-note / override), THEN present-ask-approve
-with `insrc_workflow_approve({ artifactPath })`. A review-blocked artifact comes
-back from approve in `skipped[]` with a reason (relay it); pass `overrideReview`
-only with the user's explicit override reason.
-
-For a DESIGN document (an HLD or LLD) `start` returns `emit_findings` instead of
-`emit_claims`: a fixed checklist, chosen by whether the design answers an ISSUE
-or a SPEC. Check every item against the real code and docs yourself — use insrc
-analyze for drill-down — then answer once with `phase:'findings'`. Report each
-premise as `holds`, `does-not-hold` or `could-not-verify`; only `does-not-hold`
-blocks approval. An answer that breaks the checklist is rejected with the
-reasons and stamps nothing; correct it and send `findings` again.
+Either way the review stamps `meta.review`, and **approval requires it**: a
+DEF, HLD or LLD with no review, or with a review done by the party that
+authored it, is withheld, and so is one whose verdict is `block` (unresolved
+HIGH/MED findings). Resolve the blocking findings (apply / accept-with-note /
+override), THEN present-ask-approve with
+`insrc_workflow_approve({ artifactPath })`. A withheld artifact comes back from
+approve in `skipped[]` with a reason (relay it); pass `overrideReview` only with
+the user's explicit override reason. An ISSUE, SPEC or PLAN needs no review,
+only the user's approval.
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->
-## code-review — post-build code review (`insrc_code_review_step`)
+## code-review — post-build code review by the other party (`insrc_code_review_step`)
 
 Run this over the changed code AFTER the build produces its changes. DISTINCT
-from `insrc_review_step` (which reviews the design artifact). Multi-turn:
-`phase:'start'` with `{ epicHash, storyId, repo? }` → `emit_judgements` hands you
-the four dimension prompts + grounding → emit the `{ judgements }` JSON →
-`done`. It writes a code-review record across four dimensions — **adherence /
+from `insrc_review_step` (which reviews the design artifact). The same rule
+applies: **the party that did not write the code reviews it**, and the tool
+routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
+
+- **You wrote the code (a build you drove with `insrc_build_step`), or the
+  author is not recorded:** the tool asks the daemon to review and returns
+  `done` with its verdict. If the index is stale it first returns
+  `confirm_wait`: ask the user, then call `start` again with that `state` and
+  `proceed` (true = wait for a fresh index, false = review the diff instead). A
+  review of the diff is recorded as `degraded` and can be `warn` at best. If the
+  daemon review does not complete the tool returns an error naming the cause;
+  it does NOT fall back to a review by you.
+- **The daemon wrote the code:** `start` returns `emit_judgements` with the
+  dimension prompts + grounding; emit the `{ judgements }` JSON → `done`.
+
+Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.
 
-If the graph grounding comes back hollow on just-created files (no symbol/test
-edges), judge coverage by RUNNING the suite and flag the caveat honestly —
-never fabricate a HIGH from empty grounding. PRESENT the verdict, then COMPLETE
-the Story by approving its **BUILD** artifact (see the `build` guide — BUILD
-approval is the code-review-gated completion act).
+When you are the reviewer and the graph grounding comes back hollow on
+just-created files (no symbol/test edges), judge coverage by RUNNING the suite
+and flag the caveat honestly — never fabricate a HIGH from empty grounding.
+PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
+(see the `build` guide — BUILD approval is the code-review-gated completion act,
+and a Story with no code review is always withheld).
 <!-- insrc:guide:code-review:end -->
 
 <!-- insrc:guide:tracker:start -->

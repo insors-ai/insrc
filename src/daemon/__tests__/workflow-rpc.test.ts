@@ -154,14 +154,14 @@ test('runWorkflowServerSide with a router captures per-output attribution — on
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('runWorkflowServerSide does NOT review by default (review is a controller task)', async () => {
+test('runWorkflowServerSide does NOT review the artifact it authors (the other party reviews it)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-wf-rpc-'));
 	try {
 		const provider = new FakeProvider([STUB_PLAN, STUB_ARTIFACT]);
 		const out = await runWorkflowServerSide(stubIntent(repo), provider, {
 			runId: 'wf-test-nr', epicKey: 'demo-stub-nr', modelLabel: 'ollama:qwen3-test',
 		});
-		assert.equal(out.review, undefined, 'daemon does not self-review by default');
+		assert.equal(out.review, undefined, 'the daemon does not review its own artifact');
 		assert.equal(provider.calls, 2);   // decompose + synthesize only — no review turns
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

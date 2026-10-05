@@ -4,14 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Input / output shapes for `insrc_review_step` — the controller-driven,
- * multi-turn review surface.
+ * Input / output shapes for `insrc_review_step` — the multi-turn review
+ * surface for a design artifact.
  *
- * The daemon does the DETERMINISTIC parts (read the artifact, gather
- * evidence, assemble + persist the report); the CONTROLLER (the MCP client
- * model — Claude / Codex) emits the CLAIMS and the VERDICTS. This moves the
- * review's LLM reasoning off the same provider that authored the artifact —
- * genuine "two sets of eyes". Mirrors `insrc_workflow_step`'s envelope.
+ * The party that did not author the work reviews it. For an artifact the
+ * DAEMON authored the reviewer is the controller: the server does the
+ * DETERMINISTIC parts (read the artifact, gather evidence, assemble + persist
+ * the report) and the CONTROLLER (the MCP client model — Claude / Codex) emits
+ * the CLAIMS and the VERDICTS. For an artifact the controller authored, or
+ * whose author is not recorded, `start` sends it to the daemon and returns the
+ * daemon's verdict as `done`. Mirrors `insrc_workflow_step`'s envelope.
  *
  * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
  */

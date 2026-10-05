@@ -590,29 +590,42 @@ export function buildInsrcMcpServerWithRegistry(): {
 	);
 
 	// -------------------------------------------------------------------
-	// insrc_review_step — controller-driven, multi-turn INDEPENDENT review.
+	// insrc_review_step — review of a design artifact by the OTHER PARTY.
 	//
-	// A daemon-side review runs the SAME provider that authored the
-	// artifact — no independent perspective. This tool moves the review's
-	// LLM reasoning into the CONTROLLER (the MCP client model): the server
-	// does the DETERMINISTIC parts (read artifact, gather evidence, assemble
-	// + persist the report); the CONTROLLER emits the claims + verdicts.
-	// Genuine "two sets of eyes". Stamps meta.review with model='client'.
+	// The party that did not author the work reviews it, in both directions.
+	// The tool routes by the artifact's author: work the daemon authored is
+	// reviewed HERE by the controller (the MCP client model) — the server does
+	// the DETERMINISTIC parts (read artifact, gather evidence, assemble +
+	// persist the report) and the controller emits the claims + verdicts.
+	// Work the controller authored, or whose author is not recorded, is sent
+	// to the daemon (`workflow.review`) and its verdict returned. The same
+	// model on both sides is acceptable; the party is what must differ.
 	// -------------------------------------------------------------------
 	registerAndRecord(
 		'insrc_review_step',
 		{
-			title: 'insrc review (controller-driven, multi-turn)',
+			title: 'insrc review (by the other party, multi-turn)',
 			description:
-				'Controller-driven INDEPENDENT review of a persisted workflow artifact. ' +
-				'A daemon self-review runs the SAME provider that authored the artifact — ' +
-				'no independent perspective; this tool moves the review\'s reasoning into ' +
-				'YOU (the controller), off that provider. The server does the DETERMINISTIC ' +
-				'parts (read the artifact, gather evidence by re-running probes against real ' +
-				'source, assemble + persist the report); YOU emit the claims + the verdicts. ' +
-				'Stamps `meta.review` with model=`client`; `approve` then enforces its block ' +
-				'verdict.\n\n' +
-				'Multi-turn loop:\n\n' +
+				'Review of a persisted workflow artifact by the party that did NOT author it. ' +
+				'The rule runs in both directions: an artifact the daemon authored is reviewed ' +
+				'by YOU (the controller); an artifact YOU authored (through insrc_workflow_step), ' +
+				'or whose author is not recorded, is reviewed by the daemon. The same model on ' +
+				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
+				'call phase=\'start\' and the tool routes it.\n\n' +
+				'When the daemon is the reviewer, phase=\'start\' itself asks the daemon, waits ' +
+				'(up to about 11 minutes) and returns { next: \'done\', verdict, counts, report, ' +
+				'applied, pending, reviewedBy: \'daemon\' } — there is no further turn. If the ' +
+				'daemon is not running, is too old to know the request, fails, or passes the ' +
+				'wait limit, it returns next:\'error\' naming the cause and stamps nothing. It ' +
+				'never falls back to a review by you; fix the cause and call again, or let the ' +
+				'user approve with an override reason.\n\n' +
+				'When YOU are the reviewer (a daemon-authored artifact), the server does the ' +
+				'DETERMINISTIC parts (read the artifact, gather evidence by re-running probes ' +
+				'against real source, assemble + persist the report) and YOU emit the claims + ' +
+				'the verdicts. Either way the review stamps `meta.review`, and approval ' +
+				'REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party ' +
+				'that authored it, is withheld, as is one whose verdict blocks.\n\n' +
+				'Your multi-turn loop (daemon-authored artifacts only):\n\n' +
 				'  1. phase=\'start\' with { artifact, repo? }. `artifact` is the `.md` (or ' +
 				'`.json`) path. Server returns { next: \'emit_claims\', prompt, schema, state }.\n' +
 				'  2. Emit the claims JSON (the artifact\'s load-bearing premises + their ' +
@@ -670,24 +683,39 @@ export function buildInsrcMcpServerWithRegistry(): {
 	// -------------------------------------------------------------------
 	// insrc_code_review_step — controller-driven, multi-turn CODE review
 	// (code-review S008). Peer of insrc_review_step, but over a Story's built
-	// CODE (not a design artifact): the daemon resolves the fixed subject +
-	// serves grounding over IPC and folds/persists the record via the SAME sc5
-	// runCodeReview; YOU (the controller) supply each of the four dimensions'
-	// judgement — a second set of eyes off the provider that authored the code.
+	// CODE (not a design artifact), under the same rule: the party that did not
+	// write the code reviews it, and the tool routes by the BUILD record's
+	// author. Code the daemon wrote is reviewed here by the controller: the
+	// daemon resolves the fixed subject + serves grounding over IPC and
+	// folds/persists the record via the SAME sc5 runCodeReview, and the
+	// controller supplies each dimension's judgement. Code the controller wrote
+	// (or of unknown author) is sent to the daemon's `codeReview.run`.
 	// -------------------------------------------------------------------
 	registerAndRecord(
 		'insrc_code_review_step',
 		{
-			title: 'insrc code review (controller-driven, multi-turn)',
+			title: 'insrc code review (by the other party, multi-turn)',
 			description:
-				'Controller-driven CODE review of a Story\'s built code across four ' +
-				'dimensions (adherence / conventions / coverage / quality). The daemon ' +
-				'resolves the fixed subject + serves grounding over IPC and folds + ' +
-				'persists the record; YOU emit each dimension\'s judgement — a second set ' +
-				'of eyes off the provider that authored the code. Produces the same ' +
-				'block/warn/pass CodeReviewArtifact (at CR-<epic>-<story>) as a daemon-' +
-				'driven review.\n\n' +
-				'Multi-turn loop:\n\n' +
+				'CODE review of a Story\'s built code across four dimensions (adherence / ' +
+				'conventions / coverage / quality), by the party that did NOT write the code. ' +
+				'The rule runs in both directions: code the daemon wrote is reviewed by YOU ' +
+				'(the controller); code YOU wrote (a build you drove with insrc_build_step), ' +
+				'or whose author is not recorded, is reviewed by the daemon. The same model on ' +
+				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
+				'call phase=\'start\' and the tool routes it by the Story\'s BUILD record. ' +
+				'Either way the result is a block/warn/pass CodeReviewArtifact at ' +
+				'CR-<epic>-<story>, and completing the Story (approving its BUILD record) ' +
+				'REQUIRES one, done by the other party.\n\n' +
+				'When the daemon is the reviewer, phase=\'start\' asks the daemon, waits (up to ' +
+				'10 minutes) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
+				'reviewedBy: \'daemon\', groundingMode }. A stale index first returns ' +
+				'{ next: \'confirm_wait\', staleFiles, state }: ask the user, then call ' +
+				'phase=\'start\' again with that state and `proceed` (true = wait for a fresh ' +
+				'index, false = review the diff). A diff review is recorded `degraded` and is ' +
+				'`warn` at best. If the daemon review does not complete, it returns ' +
+				'next:\'error\' naming the cause and stamps nothing; it never falls back to a ' +
+				'review by you.\n\n' +
+				'Your multi-turn loop (daemon-written code only):\n\n' +
 				'  1. phase=\'start\' with { epicHash, storyId, repo? }. Server resolves the ' +
 				'subject (declines with an error if there is no approved contract / build) ' +
 				'and fetches grounding, returning { next: \'emit_judgements\', prompts, ' +
@@ -886,11 +914,14 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'`artifactPath`, or a BATCH with `epicHash` (every review-clean, still-' +
 				'pending DEF/HLD/LLD/PLAN artifact under that epic). Exactly one of ' +
 				'artifactPath | epicHash.\n\n' +
-				'Stamps `approvedAt` and ENFORCES the independent review block-verdict: ' +
-				'a review-blocked artifact comes back in `skipped[]` {path,reason}, never ' +
-				'`approved[]` — relay both arrays to the user. Stamp-only: it does NOT ' +
+				'Stamps `approvedAt` and ENFORCES the review rule: a DEF, HLD or LLD needs a ' +
+				'review, and a BUILD record needs a code review of its Story, each done by the ' +
+				'party that did NOT author the work; a blocking verdict also withholds. A ' +
+				'withheld artifact comes back in `skipped[]` {path,reason}, never ' +
+				'`approved[]` — relay both arrays to the user. An ISSUE, SPEC or PLAN needs no ' +
+				'review. Stamp-only: it does NOT ' +
 				'gh-push or commit (that stays with the TUI approve). Pass `overrideReview` ' +
-				'to approve past a HIGH/MED block with a recorded reason. `repo` falls back ' +
+				'to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back ' +
 				'to the session workspace / INSRC_REPO (required only for an epicHash batch).',
 			annotations: {
 				readOnlyHint:   false,   // stamps approvedAt into the artifact JSON

@@ -4,12 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Top-level dispatcher for `insrc_review_step` — the controller-driven,
- * multi-turn review surface. Mirrors `mcp/workflow-step/handler.ts`.
+ * Top-level dispatcher for `insrc_review_step` — the multi-turn review surface
+ * for a design artifact. Mirrors `mcp/workflow-step/handler.ts`.
  *
- * Loop: start → emit_claims → claims → emit_verdicts → verdicts → done.
- * The server does the DETERMINISTIC parts (read artifact, gather evidence,
- * assemble + persist the report); the CONTROLLER emits the claims + verdicts.
+ * The party that did not author the artifact reviews it; `start` routes by
+ * author. Daemon-authored: the controller's loop,
+ * start → emit_claims → claims → emit_verdicts → verdicts → done
+ * (start → emit_findings → findings → done for an HLD or LLD), where the server
+ * does the DETERMINISTIC parts (read artifact, gather evidence, assemble +
+ * persist the report) and the CONTROLLER emits the claims + verdicts. Anything
+ * else: `start` asks the daemon to review and returns its verdict as `done`.
  */
 
 import { appendFileSync } from 'node:fs';

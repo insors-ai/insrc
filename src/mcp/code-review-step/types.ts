@@ -5,13 +5,16 @@
 
 /**
  * Input / output shapes for `insrc_code_review_step` (code-review S008) — the
- * controller-driven, multi-turn CODE-review surface.
+ * multi-turn CODE-review surface.
  *
- * The daemon does the DETERMINISTIC parts (resolve the subject, serve grounding
- * over IPC, fold the four dimensions + persist the record via the SAME sc5
- * `runCodeReview`); the CONTROLLER (the MCP client model) supplies each
- * dimension's JUDGEMENT — genuine "two sets of eyes" over the code, off the same
- * provider that authored it. Mirrors `insrc_review_step`'s envelope verbatim.
+ * The party that did not write the code reviews it. For code the DAEMON wrote
+ * the reviewer is the controller: the daemon does the DETERMINISTIC parts
+ * (resolve the subject, serve grounding over IPC, fold the four dimensions +
+ * persist the record via the SAME sc5 `runCodeReview`) and the CONTROLLER (the
+ * MCP client model) supplies each dimension's JUDGEMENT. For code the
+ * controller wrote, or whose author is not recorded, `start` sends it to the
+ * daemon and returns the daemon's verdict as `done`. Mirrors
+ * `insrc_review_step`'s envelope verbatim.
  *
  * Loop: start → emit_judgements → judgements → done  (or error at any turn).
  */

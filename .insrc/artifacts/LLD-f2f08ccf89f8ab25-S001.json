@@ -26,171 +26,6 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive story with real design choices and several build tasks inside the existing review subsystem; the review record's shape changes and the non-controller reviewer runs as a CLI subprocess without tools today.",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "item1-coverage",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Each of the five decisions in SPEC-1bb064e8e2a1edd1 is designed: a fixed per-kind checklist with dimensions and threshold, kind chosen by the design's intent, the reviewer firing its own probes and using insrc analyze, findings identified as does-not-hold or could-not-verify with only the first blocking, and scope limited to the design review flow.",
-          "evidence": "HOLDS. Read against SPEC-1bb064e8e2a1edd1 (SPEC.md:1 carries its marker): section 3.1 gives a fixed checklist per kind with dimensions and a threshold; 2.2 chooses the kind by intent; 3.2 has the reviewer check the items itself and names insrc analyze for drill-down; 3.3 and 3.4 identify findings by outcome and 2.4/2.5 let only does-not-hold block; 2.1 limits the template to design stages.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2",
-          "ref": "item1-coverage",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The design builds none of the spec's non-goals: a DEF review and an ISSUE review are not changed, and the extraction prompt in src/workflow/review/extract.ts is left as it is.",
-          "evidence": "HOLDS. The design no longer changes the old pipeline: the 'Old pipeline' entry is gone, migration step 4 leaves every other stage unchanged, invariant c1 names DEF and ISSUE, and T12 requires the same extraction prompt byte for byte. In the source, grep MAX_PREMISES returns 0 matches and src/workflow/review/extract.ts:90 is no longer the cap constant, so the interim cap is out of the working tree as well.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "item2-current-behaviour",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "runReview at src/workflow/review/review.ts:53 runs extractClaims, then gatherEvidence, then one verifyClaim call per claim, for every artifact stage.",
-          "evidence": "HOLDS. src/workflow/review/review.ts:53 declares runReview; :63 calls extractClaims, :67 gatherEvidence, :75 `findings.push(await verifyClaim(claim, ev, provider, signal))`.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p4",
-          "ref": "item2-current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today an unverifiable premise is rated MED (src/workflow/review/verify.ts:18) and the default block list is HIGH and MED (src/workflow/review/review.ts:47).",
-          "evidence": "HOLDS. src/workflow/review/verify.ts:18 reads ' *   - MED  : unverifiable, a stale anchor, or non-material.' and src/workflow/review/review.ts:47 reads `const DEFAULT_BLOCK_ON: readonly Severity[] = ['HIGH', 'MED'];`.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p5",
-          "ref": "item2-current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "effectiveReviewVerdict at src/workflow/review/resolve.ts:57 decides only from each finding's severity and its resolution.",
-          "evidence": "HOLDS. src/workflow/review/resolve.ts:62 `const unresolvedBlocking = report.findings.some(f => BLOCKING.has(f.severity) && res[f.claimId] === undefined);` reads only severity and the resolutions. The function returns block or pass, never warn, so the new warn verdict shows on the stored report only.",
-          "action": "None required.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "item2-current-behaviour",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "runEditSession at src/agent/providers/cli-provider.ts:276 is an existing session that runs the CLI in the repo with edit permission and is wrapped in the provider's transient retry.",
-          "evidence": "HOLDS. src/agent/providers/cli-provider.ts:276 declares runEditSession, :277 wraps it in `this.withTransientRetry('runEditSession', ...)`, and :280 passes `--permission-mode acceptEdits`.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p7",
-          "ref": "item2-current-behaviour",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "insrc_review_step's start phase returns the extract prompt with next emit_claims (src/mcp/review-step/phases/start.ts:63) for every stage.",
-          "evidence": "HOLDS. src/mcp/review-step/phases/start.ts:59 `const prompt = buildExtractPrompt(markdown, stage);` and :63 `next: 'emit_claims',`.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p8",
-          "ref": "item3-new-vs-reuse",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "None of the things the design calls new exists today in the review module, the review-step tool or the CLI provider: no emit_findings step, no reviewer session and no could-not-verify outcome.",
-          "evidence": "HOLDS. grep for emit_findings, runReviewSession and could-not-verify returned 14 matches, every one in this design's own LLD.md and none under src/.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p9",
-          "ref": "item4-change-sites",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The phase list of insrc_review_step is declared in src/mcp/server.ts (two sites), src/mcp/review-step/types.ts and src/mcp/review-step/handler.ts, and the design lists all of them as change sites for the findings phase.",
-          "evidence": "HOLDS. The grep finds the phase list at src/mcp/server.ts:98 and :635, src/mcp/review-step/types.ts:25 and src/mcp/review-step/handler.ts:63, and section 3.5 now lists server.ts, types.ts and handler.ts. One more hit is a test that pins the list, src/mcp/__tests__/schema-registry.test.ts:48 (`insrc_review_step: ['start', 'claims', 'verdicts'],`); it is not a production change site but it will fail until it is updated.",
-          "action": "When planning, include updating src/mcp/__tests__/schema-registry.test.ts:48 alongside T13.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p10",
-          "ref": "item4-change-sites",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Setting a template finding's severity from its outcome keeps the existing readers of the review record working, and the one reader that selects by fixability (pendingUserFindings, src/workflow/review/apply.ts:86) is covered by the stated fixability rule.",
-          "evidence": "HOLDS. src/workflow/review/report.ts:41 sorts by severity and src/workflow/artifact-content.ts:237 builds its head from counts.high and counts.med, so both work with could-not-verify and holds at LOW. src/workflow/review/apply.ts:89 selects `f.fixability === 'assisted' || f.fixability === 'manual'`; section 3.3 now states the fixability of template findings and that a holds result is not listed as needing a human, with test T17.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p11",
-          "ref": "item5-data-compat",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Adding optional fields to Finding and to ReviewReport leaves stored review records readable.",
-          "evidence": "HOLDS. src/workflow/review/types.ts:134 `export interface ReviewReport {` is a plain interface; the controller's earlier search of src/workflow found no validation of the stored record, which is read with a type cast. That search covered the fields in use, not every schema file.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p12",
-          "ref": "item7-error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "One deadline of at most 10 minutes for the whole design review is achievable on the CLI provider: the subprocess runner takes a per-call time limit, and the design keeps the reviewer session out of the three-attempt transient retry.",
-          "evidence": "HOLDS. The subprocess runner takes a per-call limit (src/agent/providers/cli-provider.ts:464 `timeoutMs: number,`, passed at :336), so each attempt can be started with the time that remains. The three-attempt retry (:153 `const maxAttempts = 3;`) is something the design now explicitly keeps the reviewer session out of, allowing one retry inside the remaining time. Section 2.1 states one deadline of at most 10 minutes for the whole review, and T16 tests it. The runner's own single re-spawn (lines 468-471, read by the controller) only fires when the spawn itself fails with ENOENT, so it adds no review time.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p13",
-          "ref": "item7-error-paths",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A provider that cannot run a session can be told apart from one that can, as the build stage already does through a structural interface at src/mcp/build-step/phases/validate.ts:34.",
-          "evidence": "HOLDS. src/mcp/build-step/phases/validate.ts:34 declares `runEditSession(prompt: string, opts: { cwd: string; timeoutMs?: number | undefined }): Promise<{ text: string }>;` as a structural interface the build stage resolves a provider against.",
-          "action": "None.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p14",
-          "ref": "item7-error-paths",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The claude and codex CLIs can run with tools limited to reading and the insrc analyze tools and still return a schema-checked final answer in the same run.",
-          "evidence": "COULD NOT VERIFY. Tried: read the structured call (src/agent/providers/cli-provider.ts:209 completeStructuredOnce, :217 `'--print',`) and the edit session. The first returns schema-checked output with no tools; the second uses tools and returns free text. Nothing in the repo runs a CLI with tools AND a schema-checked answer, or limits tools to reading plus insrc analyze. Missing: a live run of each CLI with those flags. The design lists this as an open question with a build-time probe (T14).",
-          "action": "Run the live probe first in the build. If a CLI cannot do both in one run, state the fallback (for example a fenced JSON answer that is parsed and validated) before building the rest on it.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p15",
-          "ref": "item8-tests",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Every acceptance criterion ac1 to ac5 maps to at least one test, every cited test T1 to T17 is defined, and no defined test is unmapped.",
-          "evidence": "HOLDS. Computed from the artifact json after the amendment: 17 tests defined (T1 to T17), none cited that is undefined, none defined that is unmapped; ac1 to ac5 each have at least two proving tests. The tool's read (LLD.md:1) only confirms the artifact marker.",
-          "action": "None.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 15
-      },
-      "reviewedAt": "2026-10-05T06:37:44.630Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-10-05T06:45:25.201Z",
     "rangeBase": "bc0ba4589a5263f253c5ac8dc5c84f744dc6f4d0",
     "questionResolutions": {
       "qfbb5069a": {
@@ -214,6 +49,190 @@
         "rationale": "User, 2026-10-05: \"yes, go with recommended\".",
         "resolvedAt": "2026-10-05T06:48:12.388Z"
       }
+    },
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of the five decisions of SPEC-1bb064e8e2a1edd1 is designed and built: a fixed per-intent checklist with a threshold, the reviewer probing for itself with insrc analyze, findings identified as does-not-hold or could-not-verify, only does-not-hold blocking, and scope limited to design reviews.",
+          "evidence": "Read src/workflow/review/template.ts (two templates, thresholds from settings, isDesignStage limited to design.epic and design.story, the prompt naming insrc_analyze_step), template-review.ts (one session, no extract or per-premise call) and verdict.ts (severityForOutcome returns LOW for anything but does-not-hold).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: a DEF, an ISSUE and a PLAN review is unchanged.",
+          "evidence": "git diff from the build's range base 9ce155b to HEAD shows no change to src/workflow/review/extract.ts, probe.ts, verify.ts or resolve.ts. The test 'T12' in src/workflow/review/__tests__/template-review.test.ts pins the sha256 of the extraction prompt for stages define, issue and plan and passes.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "For any stage other than design.epic and design.story, runReview still runs extract, probe and one verify call per premise.",
+          "evidence": "src/workflow/review/review.ts: the only new branch is `if (isDesignStage(opts.stage)) return runTemplateReview(artifactMarkdown, opts);` ahead of the unchanged extractClaims, gatherEvidence and verifyClaim loop.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "effectiveReviewVerdict and approveArtifactByJsonPath are unchanged and gate on severity.",
+          "evidence": "src/workflow/review/resolve.ts and src/workflow/gates.ts are not in the build's diff. resolve.ts:62 gates on `BLOCKING.has(f.severity)`. The approval tests in src/workflow/review/__tests__/outcome.test.ts (T7) approve a review with only could-not-verify findings and refuse one with a does-not-hold finding.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reviewer session is a new method beside runEditSession and leaves the one-shot calls and the edit session unchanged.",
+          "evidence": "src/agent/providers/cli-provider.ts adds runReviewSession, claudeReviewSessionArgs and codexReviewSessionArgs. The test 'one-shot calls and the edit session build the same arguments as before' in src/agent/providers/__tests__/cli-review-session.test.ts records the arguments of complete, completeStructured and runEditSession against a fake binary and they equal the pre-change lists.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both CLIs run a read-only, tool-using session that returns a schema-checked answer in one run, with the flags the design states.",
+          "evidence": "Ran the live test src/agent/providers/__tests__/cli-review-session.live.test.ts with INSRC_LIVE_TESTS=1 on 2026-10-05: both the claude and the codex case passed (read a file, called insrc analyze, no file created, answer matched the schema). The flags in the design equal claudeReviewSessionArgs and codexReviewSessionArgs.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The settings are five designReview.* keys declared in the config catalog and the VS Code manifest and read in template.ts.",
+          "evidence": "src/config/config-catalog.ts has 5 designReview entries and vscode-plugin/package.json has 5 insrc.designReview keys (counted with grep). readDesignReviewSettings in template.ts reads them. vscode-plugin/src/config/__tests__/manifest-catalog.test.ts, which requires the manifest to cover the catalog exactly, passes.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The files listed for the controller review surface are the complete set, including every place the phase list is declared.",
+          "evidence": "grep for the phase list finds it in src/mcp/server.ts (the phases list and the z.enum), src/mcp/review-step/types.ts and src/mcp/review-step/handler.ts, all listed and all changed; the pinning test src/mcp/__tests__/schema-registry.test.ts was updated. This very review was started through that path: start returned next emit_findings with template design-spec.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two listers of findings needing a human behave as the design says: pendingUserFindings leaves out a holds result, and listPendingReviewFindings (the TUI findings view) lists blocking findings only and is unchanged.",
+          "evidence": "src/workflow/review/apply.ts filters `f.outcome !== 'holds'` before the fixability filter. src/workflow/review/resolve.ts:47 listPendingReviewFindings filters `f.severity !== 'LOW'` and is called from src/cli/services/workflow.ts:186; resolve.ts is not in the build's diff.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A review record written before this change keeps its counts, verdict, rendering and gate result.",
+          "evidence": "verdict.ts returns the three-count shape unless a finding carries an outcome, and report.ts takes the two-list layout only when one does. Test T8 in outcome.test.ts checks counts, verdict, effective verdict, approval and rendering for a record with no outcome fields.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "One deadline covers the whole review: a repeat or a retry gets only the remaining time, a timeout is not retried, and a review past its deadline stamps nothing.",
+          "evidence": "template-review.ts computes `limitMs - (nowMs() - startedAt)` before each session and throws before starting one when nothing remains; cli-provider.ts runReviewSession does the same for its one retry and converts the runner's kill into ReviewSessionTimeoutError, which is rethrown, not retried. Covered by T16 in template-review.test.ts and by the deadline tests in cli-review-session.test.ts; 'a failed design review stamps nothing' compares the files byte for byte.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A provider that cannot run a reviewer session fails the review at once with no fallback to the old pipeline.",
+          "evidence": "template-review.ts throws 'needs a tool-capable reviewer' when the provider has no runReviewSession function; test T11 asserts the error and that neither complete nor completeStructured was called.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.3",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "When insrc analyze is unavailable inside the session, the review continues and the affected claim is reported as could-not-verify with the reason.",
+          "evidence": "Tried: read the prompt in template.ts, which tells the reviewer to continue with file reads and search and to say what was missing. Nothing in code enforces this and no test runs a session with the insrc server absent, so the behaviour rests on the reviewer model following the instruction. Missing: a live run with the insrc MCP server unregistered or the daemon stopped.",
+          "action": "Either accept this as prompt-level behaviour, or add a live test that runs a reviewer session without the insrc server.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion ac1 to ac5 maps to at least one test, and every test the design names exists and passes.",
+          "evidence": "The mapping lists T1 to T18 with none unmapped. The test files outcome.test.ts, template.test.ts, template-review.test.ts, cli-review-session.test.ts and review-step-findings.test.ts carry them by number. Suites run on 2026-10-05: workflow 1414, MCP 286, CLI 167, agent 82 with no failures; the gated live test T14 was run separately and passed for both CLIs.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-05T08:01:35.762Z",
+      "model": "client"
     }
   },
   "body": {
@@ -267,7 +286,8 @@
           "postconditions": [
             "A design review makes one reviewer session, plus at most one repeat when the first answer fails validation.",
             "The whole design review has ONE deadline: the time limit for the design's complexity, and never more than 10 minutes. The first session, the one validation repeat and any retry after a transient CLI error all run inside that same deadline; none of them gets a fresh limit. When the deadline passes the running session is stopped and the review fails.",
-            "The reviewer session is not wrapped in the provider's three-attempt transient retry the way the edit session is. A transient CLI error is retried at most once, and only inside the time that remains."
+            "The reviewer session is not wrapped in the provider's three-attempt transient retry the way the edit session is. Each session retries a transient CLI error at most once, and only inside the time that remains; since a review has at most two sessions, it can retry at most twice, always inside its single deadline. A timeout is never retried.",
+            "A review cancelled before or during its session returns no report, so nothing is stamped."
           ]
         },
         {
@@ -338,54 +358,70 @@
       {
         "entity": "Review template",
         "change": "new",
-        "details": "Two templates held as data in the review module, one per intent. Each has an id, a premise threshold, and an ordered list of check items grouped under dimensions. PROPOSED CONTENT, to be confirmed by the user. ISSUE template, threshold 8: (1) Fix targets the defect: the change addresses the root cause the ISSUE states and leaves out nothing from its fix intent. (2) Current behaviour: what the design says the code does today is true. (3) Change sites: the functions and files to change exist and the list is complete (callers, writers). (4) Preserved behaviour: each invariant the design promises to keep is real and the change does not break it. (5) Tests: each acceptance criterion has a test that would fail without the fix. SPEC template, threshold 16: (1) Coverage of intent: every decision or acceptance criterion upstream is designed, and no non-goal is built. (2) Current behaviour. (3) New versus reuse: what is called new does not already exist; what is reused exists with the stated shape. (4) Contracts and change sites: signatures, callers and inventories are complete. (5) Data and compatibility: stored shapes, older records, migration. (6) Boundaries: nothing owned by another Story or shared contract is redesigned (HLD and Epic stories). (7) Error paths: each failure is detectable and its handling is stated. (8) Tests: each acceptance criterion maps to a test. The threshold is the most premises (concrete claims) the reviewer examines across all items. Every item must be answered, with at least one premise or with `not applicable` and a reason. Code validates the answer: every item answered, premises within the threshold, every outcome valid, every does-not-hold finding naming the file it rests on. Each review also has a time limit set by the design's complexity, PROPOSED VALUES: 4 minutes for a design that answers an ISSUE; 6 minutes for a standalone feature design (the SPEC template, no Epic); 8 minutes for a design under an Epic (a DEF exists for its epicHash: the HLD and each Story's LLD). These limits apply to the whole review, not to each attempt. No design review may run longer than 10 minutes: that hard cap is fixed in code and no template value or setting can raise it.",
+        "details": "Two templates held as data in the review module, one per intent. Each has an id, a premise threshold, and an ordered list of check items grouped under dimensions. The user confirmed this content as configurable defaults on 2026-10-05. ISSUE template, threshold 8: (1) Fix targets the defect: the change addresses the root cause the ISSUE states and leaves out nothing from its fix intent. (2) Current behaviour: what the design says the code does today is true. (3) Change sites: the functions and files to change exist and the list is complete (callers, writers). (4) Preserved behaviour: each invariant the design promises to keep is real and the change does not break it. (5) Tests: each acceptance criterion has a test that would fail without the fix. SPEC template, threshold 16: (1) Coverage of intent: every decision or acceptance criterion upstream is designed, and no non-goal is built. (2) Current behaviour. (3) New versus reuse: what is called new does not already exist; what is reused exists with the stated shape. (4) Contracts and change sites: signatures, callers and inventories are complete. (5) Data and compatibility: stored shapes, older records, migration. (6) Boundaries: nothing owned by another Story or shared contract is redesigned (HLD and Epic stories). (7) Error paths: each failure is detectable and its handling is stated. (8) Tests: each acceptance criterion maps to a test. The threshold is the most premises (concrete claims) the reviewer examines across all items. Every item must be answered, with at least one premise or with `not applicable` and a reason. Code validates the answer: every item answered, premises within the threshold, every outcome valid, every does-not-hold finding naming the file it rests on. Each review also has a time limit set by the design's complexity, defaults: 4 minutes for a design that answers an ISSUE; 6 minutes for a standalone feature design (the SPEC template, no Epic); 8 minutes for a design under an Epic (a DEF exists for its epicHash: the HLD and each Story's LLD). These limits apply to the whole review, not to each attempt. No design review may run longer than 10 minutes: that hard cap is fixed in code and no template value or setting can raise it. The templates, the resolution of a design's intent and complexity, the prompt and the answer validation live in a new file, src/workflow/review/template.ts; the one-session review run is a new file, src/workflow/review/template-review.ts, called from runReview. src/workflow/review/extract.ts is NOT changed: it holds the extraction prompt of the old pipeline.",
         "callSites": [
-          "src/workflow/review/extract.ts",
-          "src/workflow/review/review.ts"
+          "src/workflow/review/template.ts",
+          "src/workflow/review/template-review.ts",
+          "src/workflow/review/review.ts",
+          "src/workflow/review/run-artifact.ts"
+        ]
+      },
+      {
+        "entity": "Design review settings",
+        "change": "new",
+        "details": "Five settings, each a whole number, read from the user's insrc config: designReview.premises.issue (default 8) and designReview.premises.spec (16), the most premises a review examines; designReview.timeLimitMs.issue (240000), designReview.timeLimitMs.feature (360000) and designReview.timeLimitMs.epic (480000), the time limit for the whole review. A missing file, an unreadable file or a value that is not a positive whole number falls back to that value's default. A time limit above 600000 (10 minutes) is reduced to it; that cap is a constant in code, not a setting. The settings are declared in the config catalog, and in the VS Code extension manifest, which must list every catalog setting.",
+        "callSites": [
+          "src/workflow/review/template.ts",
+          "src/config/config-catalog.ts",
+          "vscode-plugin/package.json"
         ]
       },
       {
         "entity": "Reviewer session",
         "change": "new",
-        "details": "A new capability on the CLI provider, beside runEditSession: start the CLI in the repo with read-only tools (file read, search) and the insrc analyze tools allowed, no edit permission, the time limit for the design's complexity (never more than the 10 minute hard cap), and a structured final answer. The prompt gives the template, then the instructions, then the design at the end. The instructions tell the reviewer to check each item against the real code and docs; to use insrc analyze for drill-down (how a module is built, whether a capability exists, who calls a symbol, whether code follows a documented rule); to read as much of a file as a claim needs; and never to mark something wrong because it did not look. The exact CLI flags for claude and codex are confirmed with a live probe during the build. The controller reviewer needs no session: insrc_review_step hands it the same template prompt for a design stage and it answers with its own tools.",
+        "details": "A new capability on the CLI provider, beside runEditSession: start the CLI in the repo with read-only tools (file read, search) and the insrc analyze tools allowed, no edit permission, the time limit for the design's complexity (never more than the 10 minute hard cap), and a structured final answer. The prompt gives the instructions, then the checklist, then the design at the end, following the project rule that structural reference trails. The instructions tell the reviewer to check each item against the real code and docs; to use insrc analyze for drill-down (how a module is built, whether a capability exists, who calls a symbol, whether code follows a documented rule); to read as much of a file as a claim needs; and never to mark something wrong because it did not look. Probed live on 2026-10-05: both CLIs do this in ONE run. claude: `--print --output-format json --json-schema <schema> --tools Read,Grep,Glob --allowedTools Read,Grep,Glob,mcp__insrc__insrc_analyze,mcp__insrc__insrc_analyze_step`. codex: `exec --json --output-schema <file> --sandbox read-only -C <repo>`; its answer is the last message of the run. No two-run fallback was needed. The controller reviewer needs no session: insrc_review_step hands it the same template prompt for a design stage and it answers with its own tools.",
         "callSites": [
           "src/agent/providers/cli-provider.ts",
-          "src/mcp/review-step/phases/start.ts",
-          "src/mcp/review-step/schema.ts"
+          "src/workflow/review/template-review.ts",
+          "src/mcp/review-step/phases/start.ts"
         ]
       },
       {
         "entity": "Finding",
         "change": "field-add",
-        "details": "Two optional fields. `outcome`: 'holds' | 'does-not-hold' | 'could-not-verify'. `item`: the id of the template check item the finding answers. For a template finding, severity is set from the outcome so every existing reader keeps working: does-not-hold is HIGH or MED as the reviewer judges how much it breaks, and both block; holds and could-not-verify are LOW and never block. A could-not-verify finding must say what the reviewer tried and what was missing. Findings from the old pipeline carry neither field and are read exactly as today. A template finding carries fixability `manual` when it does not hold or could not be verified. A `holds` result is recorded for the count and the report but is not listed among the findings that need a human.",
+        "details": "Two optional fields. `outcome`: 'holds' | 'does-not-hold' | 'could-not-verify'. `item`: the id of the template check item the finding answers. For a template finding, severity is set from the outcome so every existing reader keeps working: does-not-hold is HIGH or MED as the reviewer judges how much it breaks, and both block; holds and could-not-verify are LOW and never block. A could-not-verify finding must say what the reviewer tried and what was missing. Findings from the old pipeline carry neither field and are read exactly as today. A template finding carries fixability `manual` when it does not hold or could not be verified. A `holds` result is recorded for the count and the report but is not listed among the findings that need a human. Where this lives: the fields are declared in types.ts; the severity rule, the counts and the verdict are in a new file, verdict.ts, shared by both review paths; template.ts builds the findings from a validated answer; pendingUserFindings in apply.ts is the lister that leaves out a `holds` result. A second lister, listPendingReviewFindings in src/workflow/review/resolve.ts, feeds the TUI findings view and is NOT changed: it lists blocking findings only, so a could-not-verify finding appears in the rendered review and in the review tool's pending count but not in that view. verify.ts and resolve.ts are not changed.",
         "callSites": [
           "src/workflow/review/types.ts",
-          "src/workflow/review/verify.ts",
-          "src/workflow/review/resolve.ts"
+          "src/workflow/review/verdict.ts",
+          "src/workflow/review/template.ts",
+          "src/workflow/review/apply.ts"
         ]
       },
       {
         "entity": "ReviewReport",
         "change": "field-add",
-        "details": "Optional `template` (the template id used) and `counts.unverified` (the number of could-not-verify findings). The rendered review section lists 'Does not hold' and 'Could not verify' as two separate lists, each labelled, and states that only the first blocks approval.",
+        "details": "Optional `template` (the template id used) and `counts.unverified` (the number of could-not-verify findings). The rendered review section lists 'Does not hold' and 'Could not verify' as two separate lists, each labelled, and states that only the first blocks approval. The unverified count is produced with the other counts in verdict.ts and appears only on a template review, so an older report's counts keep their shape. The template id is set where a template review is assembled: template-review.ts for the session path and phases/findings.ts for the controller path.",
         "callSites": [
           "src/workflow/review/types.ts",
+          "src/workflow/review/verdict.ts",
           "src/workflow/review/report.ts",
-          "src/workflow/review/run-artifact.ts"
+          "src/workflow/review/template-review.ts",
+          "src/mcp/review-step/phases/findings.ts"
         ]
       },
       {
         "entity": "Controller review surface (insrc_review_step)",
         "change": "invariant-change",
-        "details": "Today `start` always returns the extract prompt and the loop is start, claims, verdicts. For a design stage, `start` returns the template prompt with next `emit_findings`, and a new `findings` phase validates the answer with the same code as the session path and stamps the review. Other stages keep start, claims, verdicts. The phase list is declared in more places than the phase files, and all of them change: the tool registration and its input validation in src/mcp/server.ts (the `phases` list and the `phase` enum), the phase type in src/mcp/review-step/types.ts, and the dispatch in src/mcp/review-step/handler.ts.",
+        "details": "Today `start` always returns the extract prompt and the loop is start, claims, verdicts. For a design stage, `start` returns the template prompt with next `emit_findings`, and a new `findings` phase validates the answer with the same code as the session path and stamps the review. Other stages keep start, claims, verdicts. The phase list is declared in more places than the phase files, and all of them change: the tool registration and its input validation in src/mcp/server.ts (the `phases` list and the `phase` enum), the phase type in src/mcp/review-step/types.ts, and the dispatch in src/mcp/review-step/handler.ts. The findings phase is a new file, phases/findings.ts. An answer it rejects is returned as a retryable error with the validation errors, and the run's state is kept so the corrected answer can be sent on the same token. The claims phase refuses a design run and the findings phase refuses a non-design run. The helper that strips an earlier review section is single-sourced in src/workflow/review/run-artifact.ts and used by both phases. The steering text and the tool description describe the design path.",
         "callSites": [
           "src/mcp/review-step/phases/start.ts",
+          "src/mcp/review-step/phases/findings.ts",
           "src/mcp/review-step/phases/claims.ts",
           "src/mcp/review-step/phases/verdicts.ts",
-          "src/mcp/review-step/schema.ts",
           "src/mcp/server.ts",
           "src/mcp/review-step/types.ts",
-          "src/mcp/review-step/handler.ts"
+          "src/mcp/review-step/handler.ts",
+          "src/prompts/steering-block.md"
         ]
       }
     ],
@@ -517,7 +553,8 @@
             "T11 a session failure or timeout fails the review and stamps nothing; a provider with no session capability fails at once and the old pipeline is not run",
             "T12 a DEF review and an ISSUE review still run extract, probe and verify and send the same extraction prompt as before this change, byte for byte",
             "T13 insrc_review_step on a design stage returns the template prompt with next emit_findings, and its findings phase validates and stamps with the same rules; on a DEF it still returns the extract prompt; the registered tool accepts phase `findings` and its phase list names it",
-            "T16 one deadline for the whole review: a validation repeat and a transient-error retry are each started with only the time that remains, a transient error is retried at most once, and a review whose deadline passes fails with a message naming the limit and stamps nothing"
+            "T16 one deadline for the whole review: a validation repeat and a transient-error retry are each started with only the time that remains, each session retries a transient error at most once, and a review whose deadline passes fails with a message naming the limit and stamps nothing",
+            "T18 a review cancelled before or during its session returns no report"
           ],
           "fixturesNeeded": [
             "a fake provider that records calls and returns a scripted session answer"
@@ -548,7 +585,8 @@
             "T10",
             "T11",
             "T14",
-            "T16"
+            "T16",
+            "T18"
           ]
         },
         {
@@ -665,11 +703,7 @@
       }
     ],
     "chosenAlternative": "a1",
-    "openQuestions": [
-      "Are the proposed check items and thresholds right? Proposed: 5 items and at most 8 premises for a design that answers an ISSUE; 8 items and at most 16 premises for a design that answers a SPEC. The spec left the numbers and items to this design, and they are the author's proposal, not yet confirmed by the user.",
-      "Can the claude and codex CLIs return a schema-checked final answer from a run that also uses tools, with tools limited to reading and to the insrc analyze tools? This has not been tried; the build confirms it with a live probe before the session is relied on.",
-      "Are the proposed time limits right: 4 minutes for an ISSUE design, 6 for a standalone feature design, 8 for a design under an Epic? The user fixed the hard cap at 10 minutes and asked for rational values by complexity; the three values are the author's proposal, and no reviewer session has been timed yet."
-    ]
+    "openQuestions": []
   },
   "citations": [
     {
@@ -718,6 +752,23 @@
       "kind": "stakeholder",
       "ref": "user, 2026-10-05",
       "quotedText": "should not touch the DEF/ISSUE reviews"
+    },
+    {
+      "id": "c9",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-05",
+      "quotedText": "yes, go with recommended"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "BUILD-f2f08ccf89f8ab25-S001"
+    },
+    {
+      "id": "c11",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-05",
+      "quotedText": "document corrected <- yes"
     }
   ]
 }

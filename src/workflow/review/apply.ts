@@ -86,6 +86,8 @@ function deepReplace(value: unknown, find: string, replace: string): { value: un
 export function pendingUserFindings(report: ReviewReport): readonly Finding[] {
 	const rank = (f: Finding): number => (f.fixability === 'assisted' ? 0 : 1);
 	return report.findings
+		// A template premise that HOLDS is recorded for the count, not for a human.
+		.filter(f => f.outcome !== 'holds')
 		.filter(f => f.fixability === 'assisted' || f.fixability === 'manual')
 		.slice()
 		.sort((a, b) => rank(a) - rank(b));

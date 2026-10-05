@@ -52,6 +52,12 @@ export type ReviewVerdict = 'pass' | 'warn' | 'block';
  */
 export type Fixability = 'auto' | 'assisted' | 'manual';
 
+/** What a template-driven review found for one premise. `does-not-hold` means
+ *  the design is WRONG; `could-not-verify` means the reviewer could not confirm
+ *  it. The two are never merged: only `does-not-hold` blocks approval. Absent on
+ *  every finding the extract → probe → verify pipeline produces. */
+export type FindingOutcome = 'holds' | 'does-not-hold' | 'could-not-verify';
+
 /** An exact-string edit to the artifact markdown. `find` MUST be a
  *  verbatim, unique substring of the artifact. */
 export interface ArtifactEdit {
@@ -129,6 +135,10 @@ export interface Finding {
 	readonly action: string;
 	readonly fixability: Fixability;
 	readonly proposedFix?: ProposedFix | undefined;
+	/** Template reviews only: what the reviewer found (see {@link FindingOutcome}). */
+	readonly outcome?: FindingOutcome | undefined;
+	/** Template reviews only: the id of the check item this finding answers. */
+	readonly item?: string | undefined;
 }
 
 export interface ReviewReport {
@@ -137,7 +147,11 @@ export interface ReviewReport {
 	readonly stage: string;
 	readonly verdict: ReviewVerdict;
 	readonly findings: readonly Finding[];
-	readonly counts: { readonly high: number; readonly med: number; readonly low: number };
+	/** `unverified` counts the `could-not-verify` findings; present only on a
+	 *  template review, so an older report's counts keep their shape. */
+	readonly counts: { readonly high: number; readonly med: number; readonly low: number; readonly unverified?: number | undefined };
+	/** The id of the review template used; absent on a pipeline review. */
+	readonly template?: string | undefined;
 	readonly reviewedAt: string;
 	readonly model: string;
 }

@@ -27,6 +27,8 @@ export function renderReviewReport(r: ReviewReport): string {
 		`### ${VERDICT_EMOJI[r.verdict]} Review \`${r.verdict.toUpperCase()}\` — ${r.artifact} (${r.stage})`,
 	);
 	lines.push('');
+	if (r.findings.some(f => f.outcome !== undefined)) return renderTemplateReport(r, lines);
+
 	lines.push(
 		`**${r.counts.high} HIGH · ${r.counts.med} MED · ${r.counts.low} LOW** · `
 		+ `model \`${r.model}\` · reviewed ${r.reviewedAt}`,
@@ -72,6 +74,53 @@ export function renderReviewReport(r: ReviewReport): string {
 		}
 	}
 
+	return lines.join('\n');
+}
+
+/**
+ * A template review: the two problem kinds are reported in SEPARATE labelled
+ * lists and never share a severity column, so a reader cannot mistake "the
+ * reviewer could not confirm this" for "this is wrong".
+ */
+function renderTemplateReport(r: ReviewReport, lines: string[]): string {
+	const wrong      = r.findings.filter(f => f.outcome === 'does-not-hold')
+		.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+	const unverified = r.findings.filter(f => f.outcome === 'could-not-verify');
+	const holds      = r.findings.filter(f => f.outcome === 'holds').length;
+
+	lines.push(
+		`**${wrong.length} do not hold · ${unverified.length} could not be verified · ${holds} hold** · `
+		+ (r.template !== undefined ? `template \`${r.template}\` · ` : '')
+		+ `model \`${r.model}\` · reviewed ${r.reviewedAt}`,
+	);
+	lines.push('');
+	lines.push('Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.');
+
+	lines.push('');
+	lines.push('#### Does not hold (blocks approval)');
+	lines.push('');
+	if (wrong.length === 0) {
+		lines.push('_None._');
+	} else {
+		lines.push('| Check item | Severity | Premise | Evidence | Action |');
+		lines.push('| --- | --- | --- | --- | --- |');
+		for (const f of wrong) {
+			lines.push('| ' + [cell(f.item ?? f.ref ?? f.claimId), cell(f.severity), cell(f.premise), cell(f.evidence), cell(f.action)].join(' | ') + ' |');
+		}
+	}
+
+	lines.push('');
+	lines.push('#### Could not verify (does not block)');
+	lines.push('');
+	if (unverified.length === 0) {
+		lines.push('_None._');
+	} else {
+		lines.push('| Check item | Premise | What was tried and what was missing | Action |');
+		lines.push('| --- | --- | --- | --- |');
+		for (const f of unverified) {
+			lines.push('| ' + [cell(f.item ?? f.ref ?? f.claimId), cell(f.premise), cell(f.evidence), cell(f.action)].join(' | ') + ' |');
+		}
+	}
 	return lines.join('\n');
 }
 

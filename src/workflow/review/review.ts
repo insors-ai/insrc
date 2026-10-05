@@ -20,7 +20,7 @@ import type { LLMProvider } from '../../shared/types.js';
 import { extractClaims } from './extract.js';
 import { gatherEvidence } from './probe.js';
 import { verifyClaim } from './verify.js';
-import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
+import type { Finding, FindingOutcome, ReviewReport, ReviewVerdict, Severity } from './types.js';
 
 const log = getLogger('review');
 
@@ -121,7 +121,21 @@ function tally(findings: readonly Finding[]): ReviewReport['counts'] {
 		else if (f.severity === 'MED') med++;
 		else low++;
 	}
-	return { high, med, low };
+	// The fourth count appears only when the review used a template, so the
+	// counts of a pipeline review are byte-identical to what they were.
+	if (!findings.some(f => f.outcome !== undefined)) return { high, med, low };
+	return { high, med, low, unverified: findings.filter(f => f.outcome === 'could-not-verify').length };
+}
+
+/**
+ * The severity a template finding carries, derived from its outcome so that
+ * every reader that gates on severity keeps working unchanged: a premise that
+ * does not hold is HIGH or MED (as the reviewer judged how much it breaks) and
+ * blocks; one that holds, or that could not be verified, is LOW and never does.
+ */
+export function severityForOutcome(outcome: FindingOutcome, judged?: Severity): Severity {
+	if (outcome !== 'does-not-hold') return 'LOW';
+	return judged === 'HIGH' ? 'HIGH' : 'MED';
 }
 
 /**
@@ -132,7 +146,8 @@ function tally(findings: readonly Finding[]): ReviewReport['counts'] {
 function computeVerdict(findings: readonly Finding[], blockOn: readonly Severity[]): ReviewVerdict {
 	const block = findings.some(f => blockOn.includes(f.severity));
 	if (block) return 'block';
-	const warn = findings.some(f => f.severity !== 'LOW');
+	// An unverified premise is LOW (it never blocks) but it is not a clean pass.
+	const warn = findings.some(f => f.severity !== 'LOW' || f.outcome === 'could-not-verify');
 	return warn ? 'warn' : 'pass';
 }
 

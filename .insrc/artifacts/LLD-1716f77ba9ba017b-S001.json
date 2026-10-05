@@ -36,8 +36,8 @@
           "item": "fix-targets-defect",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers every bullet of the ISSUE's fix intent: record the author, route each review to the other party for design artifacts and code, make the gate reject a same-party review with the existing override, rewrite steering and tool descriptions in both directions, and keep work with no recorded author approvable.",
-          "evidence": "ISSUE-1716f77ba9ba017b body.fixIntent lists five bullets. Each maps to the design: sections 3.1 (authoredBy/reviewedBy), 3.2 and 3.3 (routing), 2.5 (same-party refusal, 'None of the new causes applies when overrideReview is given'), 3.4 (steering at src/prompts/steering-block.md:220, tool text at src/mcp/server.ts:595-613, comments at src/daemon/workflow-rpc.ts:133 and :335, all of which exist and state the one-directional rule today), and 2.5 ('An unknown author or an unknown reviewer never withholds approval by itself'). The design goes further than the ISSUE by requiring a review to exist for DEF/HLD/LLD/BUILD; it cites the user's statements c5/c6 for that. [files: .insrc/artifacts/ISSUE-1716f77ba9ba017b.json, src/prompts/steering-block.md, src/mcp/server.ts, src/daemon/workflow-rpc.ts]",
+          "premise": "The design covers every bullet of the ISSUE's fix intent: record the author, route each review to the other party for documents and code, make the gate reject a same-party review with the existing override, rewrite steering/guides/tool descriptions, and keep work with no recorded author approvable.",
+          "evidence": "docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/ISSUE.md lines 27-33 list five fix-intent bullets. Each maps to the design: 3.1 (party fields), 3.2+3.3 (routing, both tools), 2.5 (gate, override kept), 3.4 (steering, tool descriptions, guides follow the steering source), and the rule 'an unknown author or an unknown reviewer never withholds approval by itself'. The root-cause sites the ISSUE cites exist as described: src/mcp/review-step/phases/findings.ts:32 and verdicts.ts:34 stamp REVIEW_MODEL = 'client'; src/workflow/gates.ts:578 only refuses a blocking review. The design goes further than the ISSUE by requiring a review to exist for DEF/HLD/LLD/BUILD; that is backed by stakeholder citations c5/c6, and an unreviewed legacy artifact stays approvable through a review (unknown author routes to the daemon) or an override. [files: docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/ISSUE.md, src/workflow/gates.ts, src/mcp/review-step/phases/findings.ts, src/mcp/review-step/phases/verdicts.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -48,9 +48,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today approval refuses only a blocking review, an unreviewed artifact is approvable, and approveArtifactByJsonPath has exactly two callers (approveWorkflowTarget and the TUI approve service), so a check placed only in approveWorkflowTarget would be bypassed by the TUI.",
-          "evidence": "src/workflow/gates.ts:578 `if (review !== undefined && effectiveReviewVerdict(...) === 'block')` is the only refusal; with no review it falls through to the stamp. Non-test callers found by search: src/workflow/gates.ts:759 and src/cli/services/workflow.ts:158 only. The no-code-review BUILD withhold at gates.ts:748-756 is conditional on `effectiveEnforce`, as the design says. The CR record and the BUILD record share one flat store (src/workflow/code-review/gate.ts:72 and src/workflow/storage.ts:656 both resolve under ARTIFACTS_DIR by epic hash and Story), so the gate can find the CR from the BUILD json path alone. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/workflow/code-review/gate.ts, src/workflow/storage.ts]",
-          "action": "None.",
+          "premise": "For a stream request with no handler the daemon answers with a plain `{ id, error: 'unknown method: ...' }` line with no `stream` field and leaves the socket open, and the existing MCP stream helper ignores any line whose `stream` is not progress/delta/done/error.",
+          "evidence": "src/daemon/server.ts:186-203: handleStreamMessage falls back to a standard handler, else `this.send(socket, { id: request.id, error: `unknown method: ${request.method}` }); return;` with no socket end. src/mcp/daemon-stream.ts:149-163 acts only on the four stream kinds and falls through at `// Unknown stream kind — ignore (forward-compatible).` Note: runWorkflowStream has no timer of its own, so against an old daemon it would hang until the socket closes; the timeout the design mentions can only come from the new tool-side wait limit, which the design does add. [files: src/daemon/server.ts, src/mcp/daemon-stream.ts]",
+          "action": "None. Keep the wait-limit timer in the new helpers, since the existing helper has none.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -59,12 +59,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "For a stream request with no handler the daemon answers `{ id, error: 'unknown method: ...' }` with no `stream` field and leaves the socket open, and the existing stream helper ignores such a line, so the new helpers must treat it as a final failure.",
-          "evidence": "src/daemon/server.ts:201 `this.send(socket, { id: request.id, error: `unknown method: ${request.method}` }); return;` with no close. src/mcp/daemon-stream.ts:149-163 acts only on progress/delta/done/error and ends with '// Unknown stream kind — ignore (forward-compatible).' codeReview.run is a registered stream handler (src/daemon/index.ts:1869, `(params, send, signal)`), so a top-level `result` line is never a normal answer for it. One detail in the design is inexact: runWorkflowStream has no timer of its own, so today it would wait indefinitely (until the caller's abort signal or a socket close), not 'until the timer fires'. The conclusion is unaffected because the design puts the wait limit in the review tool. [files: src/daemon/server.ts, src/mcp/daemon-stream.ts, src/daemon/index.ts]",
-          "action": "Optional wording fix in 3.2: the existing helper has no timeout; the new helpers (or the tool) must supply one.",
+          "severity": "MED",
+          "premise": "In insrc_code_review_step's start phase, 'only a freshness check that is UNAVAILABLE returns an error and starts no review, as today'; the phase has four outcomes today.",
+          "evidence": "src/mcp/code-review-step/handler.ts has two more error exits that start no review. Lines 303-306: `const g = await deps.fetchGrounding(...); if (!g.ok) { return errorResult('grounding-unavailable', ...) }`. Lines 355-358 in beginDiffOnlyReview: `if (err instanceof DiffUnavailableError) { return errorResult('diff-unavailable', ...) }`. The four outcomes the design lists are otherwise accurate (confirm_wait at 291-298, decline at 229-232, wait timeout at 272-279, empty symbols at 312-313), and the stated daemon gap is real: src/daemon/code-review-rpc.ts:93 calls runCodeReview with only runId, modelLabel, signal and onProgress. The omission matters because the design moves diff grounding to the daemon, so it must say where each of these two errors now surfaces, and T17 tests neither. [files: src/mcp/code-review-step/handler.ts, src/daemon/code-review-rpc.ts]",
+          "action": "Amend 3.3 to list the two extra error outcomes: grounding-unavailable stays a tool-side error that asks no daemon; diff-unavailable becomes a daemon error frame (or stays tool-side if the tool still assembles the diff). Add both cases to T17.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.1",
@@ -72,9 +72,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The list of places that stamp the author and the reviewer is complete: every finalizeArtifact caller, every BUILD record writer, every writer of meta.review, and every runCodeReview caller is named.",
-          "evidence": "Search of non-test source: finalizeArtifact is called at src/mcp/workflow-step/phases/synthesize.ts:46 and src/daemon/workflow-rpc.ts:260 and :283 (first finalize and correction retry). persistBuildRecord is reached from src/mcp/build-step/phases/validate.ts:257, src/mcp/build-step/phases/implement.ts:155 (through persistStandaloneBuildRecord) and src/workflow/runners/build/completion-record.ts:85 (the approval-time writer). meta.review is written at src/workflow/review/run-artifact.ts:105, src/mcp/review-step/phases/findings.ts:81 and phases/verdicts.ts:85, the last two with `REVIEW_MODEL = 'client'`. runCodeReview is called at src/daemon/code-review-rpc.ts:93 and through deps.runReview at src/mcp/code-review-step/handler.ts:490. The legacy author inference also holds: singleModelAttribution (src/workflow/attribution.ts:50) keeps the label 'client' in each stamp's `model`. Note for the build: finalizeArtifact (orchestrator.ts:383) only dispatches to about ten per-workflow finalizers, so the new argument has to be carried into each of them in the same file. [files: src/workflow/orchestrator.ts, src/daemon/workflow-rpc.ts, src/mcp/workflow-step/phases/synthesize.ts, src/workflow/runners/build/standalone-record.ts, src/mcp/review-step/phases/verdicts.ts, src/mcp/review-step/phases/findings.ts, src/mcp/code-review-step/handler.ts, src/daemon/code-review-rpc.ts]",
-          "action": "None.",
+          "premise": "The caller and writer lists are complete: approveArtifactByJsonPath has two callers, reviewArtifactFile has two existing callers, finalizeArtifact has three, and the BUILD record has two build-step writers plus the approval-time writer.",
+          "evidence": "A search of non-test sources for each call found exactly: approveArtifactByJsonPath at src/workflow/gates.ts:759 and src/cli/services/workflow.ts:158; reviewArtifactFile at src/daemon/workflow-rpc.ts:346 and src/cli/services/workflow.ts:248; finalizeArtifact at src/mcp/workflow-step/phases/synthesize.ts:46 and src/daemon/workflow-rpc.ts:260 and :283; persistBuildRecord at src/mcp/build-step/phases/validate.ts:257 and src/workflow/runners/build/completion-record.ts:85, plus persistStandaloneBuildRecord at src/mcp/build-step/phases/implement.ts:155. The daemon workflow.approve handler (src/daemon/index.ts:651) goes through approveWorkflowTarget. No daemon path writes code: runEditSession is called only at src/mcp/build-step/phases/validate.ts:155 (the verdict session), so there is no daemon-authored build writer to stamp. The declared line numbers (gates.ts:562, 713, 759; orchestrator.ts:383; standalone-record.ts:270, 346; run-artifact.ts:68; runner.ts:158) all match. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/daemon/workflow-rpc.ts, src/mcp/workflow-step/phases/synthesize.ts, src/mcp/build-step/phases/validate.ts, src/mcp/build-step/phases/implement.ts, src/workflow/runners/build/completion-record.ts, src/workflow/orchestrator.ts]",
+          "action": "None. Note for the plan: authoredBy has to reach the meta built inside each per-workflow finalizer in orchestrator.ts (about ten sites that set `attribution: attribution ?? singleModelAttribution(model)`), not just the finalizeArtifact signature.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -83,12 +83,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "Section 3.5 lists all existing tests the change breaks: the tests that approve unreviewed fixtures.",
-          "evidence": "The count for approval tests is right (31 test files reference approveArtifactByJsonPath or approveWorkflowTarget). But the routing change in 3.3 breaks a second group that 3.5 and migration step 3 do not mention. 3.3 sends 'controller-authored or unknown' work to the daemon, and the existing review-tool fixtures carry no author: src/mcp/review-step/__tests__/review-step-findings.test.ts:41 writes `meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001' }`, and review-step.test.ts:48 writes `meta: { workflow: 'plan' }` and then asserts at :155 `review.model === 'client'`. Neither those two files nor src/mcp/code-review-step/__tests__/handler.test.ts and ux-handler.test.ts contain 'attribution', 'authoredBy' or a BUILD record, yet together they expect emit_claims / emit_findings / emit_judgements 38 times (27 in handler.test.ts, with 23 `phase: 'start'` calls). Under the design every one of those starts would ask the daemon instead of returning the controller prompt. [files: src/mcp/review-step/__tests__/review-step.test.ts, src/mcp/review-step/__tests__/review-step-findings.test.ts, src/mcp/code-review-step/__tests__/handler.test.ts, src/mcp/code-review-step/__tests__/ux-handler.test.ts]",
-          "action": "Add these four suites to 3.5 and to migration step 3: give their fixtures a daemon author (an explicit authoredBy on the artifact, and a BUILD record json with authoredBy 'daemon' for the code-review suites) so they keep exercising the controller loop, and have the plan list them from a search for `phase: 'start'` under src/mcp/review-step and src/mcp/code-review-step.",
+          "severity": "LOW",
+          "premise": "The daemon code-review request can take a `degraded` mode and then ground on the diff, stamp the record degraded and cap the verdict at warn, by changing src/daemon/code-review-rpc.ts and passing the existing runner options through.",
+          "evidence": "src/workflow/code-review/runner.ts:94-102 already has groundingMode and capVerdictAtWarn; line 192 folds with the cap, line 276 stamps `groundingMode: opts.groundingMode ?? 'full'`, and lines 307-311 reject a degraded record with a bare pass. But the options only stamp and cap: the grounding itself comes from `deps.assembleGrounding` (runner.ts:172), and the controller path gets diff grounding by injecting deps and re-keying `subject.changedFiles` to the diff-derived set (handler.ts:349-364, 463-471). The daemon handler passes no deps today (code-review-rpc.ts:93-99). The listed change site is therefore sufficient, provided the daemon does both extra steps. [files: src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/mcp/code-review-step/handler.ts]",
+          "action": "State in 3.3 that the daemon's degraded mode must inject diff grounding through the runner's deps (same base and ledger exclusions as handler.ts:349-352) and re-key the subject's changedFiles; passing groundingMode alone would stamp `degraded` over graph grounding.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "preserved-behaviour.1",
@@ -96,9 +96,9 @@
           "item": "preserved-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A BUILD record keeps an authoredBy it already carries when a later write omits it, because mergeWithPrior spreads the stored meta before the new meta.",
-          "evidence": "src/workflow/runners/build/standalone-record.ts:346-358: `const meta = { ...prior.meta, ...rec.meta, createdAt: prior.meta.createdAt, ... }`, with the comment 'a later write must not REMOVE meta the record already carried'. persistBuildRecord (line 270) is the single persist entry and calls mergeWithPrior at line 290, so the approval-time writer (completion-record.ts:85), which stamps nothing, cannot erase the field. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts]",
-          "action": "None.",
+          "premise": "A BUILD record keeps an authoredBy it already carries when a later write (the approval-time writer) omits it, and the gate's existing block-and-override behaviour is unchanged by the additions.",
+          "evidence": "src/workflow/runners/build/standalone-record.ts:350-358 builds the merged meta as `...prior.meta, ...rec.meta`, so a field the new write omits survives; completion-record.ts:58-63 writes only workflow, epicHash, storyId, createdAt, updatedAt and standalone. The existing gate (gates.ts:575-591) throws ReviewBlockedError on a blocking verdict without an override, and approveWorkflowTarget catches it into skipped[] (gates.ts:758-766), which is the path the design reuses. One detail: today `reviewOverride` is recorded only inside the blocking-verdict branch (gates.ts:578-590), so an override given for an artifact with no review records nothing. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/workflow/gates.ts]",
+          "action": "In the build, record `reviewOverride` for the new causes too (no review, same-party review), since the current code would not; add that assertion to T5/T7.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -108,9 +108,9 @@
           "item": "preserved-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The code-review tool's start phase has the four outcomes the design lists, the controller path marks a diff review `degraded` and caps it at warn, and the daemon's codeReview.run has none of these protections today.",
-          "evidence": "src/mcp/code-review-step/handler.ts: stale index on first call returns confirm_wait with a state token (:291-298); `proceed !== true` goes to beginDiffOnlyReview (:229-231); a wait past the deadline goes to beginDiffOnlyReview (:272-279); `g.grounding.symbols.length === 0` goes to beginDiffOnlyReview (:312-313); an unavailable freshness check returns an error (:268, :288). driveRunner passes `{ groundingMode: 'degraded', capVerdictAtWarn: true }` at :494. src/daemon/code-review-rpc.ts:93 calls runCodeReview with only `{ runId, modelLabel, signal, onProgress }`. The runner already accepts both options (src/workflow/code-review/runner.ts:97, :102), so the daemon request can pass them through as designed. [files: src/mcp/code-review-step/handler.ts, src/daemon/code-review-rpc.ts, src/workflow/code-review/runner.ts]",
-          "action": "None.",
+          "premise": "Older records stay readable: a controller-authored artifact written before this change is identifiable by the stored label 'client' in meta.attribution.outputs, and a controller review by meta.review.model 'client'.",
+          "evidence": "src/mcp/workflow-step/phases/synthesize.ts:46-52 calls finalizeArtifact with no model, so it defaults to 'client' (orchestrator.ts:394); each finalizer writes `attribution: attribution ?? singleModelAttribution(model)` (orchestrator.ts:451, 693, 866, ...), and attribution.ts:34-41, 50-52 keeps the raw label in `model`, giving one output with model 'client'. The daemon run passes a real per-step attribution (workflow-rpc.ts:260), never 'client'. ReviewReport.model is a required string (src/workflow/review/types.ts:156) and the controller phases stamp 'client' (findings.ts:71, verdicts.ts:73). The field references in the design are slightly off: OutputModelStamp.model is at types.ts:286 as cited, but ReviewReport.model is at review/types.ts:156, not :142. [files: src/workflow/attribution.ts, src/workflow/orchestrator.ts, src/mcp/workflow-step/phases/synthesize.ts, src/workflow/review/types.ts]",
+          "action": "Correct the citation to src/workflow/review/types.ts:156. No design change.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,9 +120,9 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each acceptance criterion has a test that would fail without the fix, and the fixtures the tests name can be built on existing seams.",
-          "evidence": "ac3: T5-T7 fail today because gates.ts:578 refuses only when a review exists and blocks, so an unreviewed DEF/HLD/LLD and a BUILD with enforcement off are approved. ac1/ac4: T9, T10, T14 and T11 fail today because src/mcp/review-step/phases/start.ts:53-105 always returns emit_findings or emit_claims and never contacts the daemon; the fake daemon T11 needs is supported by the existing injected `connect` seam (src/mcp/daemon-stream.ts:66-68, :197-199). T16 fails today because workflow-rpc.ts:342-351 calls reviewArtifactFile when `review === true`. ac2: T2-T4 fail today since no writer stamps a party. ac5: T13 fails against the current text at steering-block.md:220 and server.ts:608. The gap is not in the new tests but in the existing review-tool suites, reported under change-sites. [files: src/workflow/gates.ts, src/mcp/review-step/phases/start.ts, src/mcp/daemon-stream.ts, src/daemon/workflow-rpc.ts]",
-          "action": "None beyond the change-sites finding.",
+          "premise": "Each acceptance criterion has a test that fails without the fix, the fake-daemon seam the integration tests need exists, and the existing suites the design says will break really do.",
+          "evidence": "Seam: src/mcp/daemon-stream.ts:66-68 `RunWorkflowStreamDeps.connect` and :197-199 `UnaryRpcDeps.connect` inject the socket factory. The four review-tool suites named in 3.5 exist, and review-step-findings.test.ts has no authoredBy, attribution or model on its fixtures, so they would route to the daemon as the design says. A search for the two approve functions finds 31 test files, matching the design's count. Mapping: ac1 to T9/T10/T12/T14-T17, ac2 to T1-T4, ac3 to T5-T8/T18, ac4 to T11, ac5 to T13; each asserts behaviour absent today (no party fields, no routing, gates.ts:578 approves an unreviewed DEF). Gaps, neither leaving a criterion unproven: no test covers the grounding-unavailable and diff-unavailable exits, and none asserts the override reason is recorded for the new no-review cause. [files: src/mcp/daemon-stream.ts, src/mcp/review-step/__tests__/review-step-findings.test.ts, src/workflow/gates.ts]",
+          "action": "Extend T17 with the two error exits and T5/T7 with an assertion that `reviewOverride` is written when an unreviewed artifact is approved with a reason.",
           "fixability": "manual",
           "outcome": "holds"
         }
@@ -134,7 +134,7 @@
         "unverified": 0
       },
       "template": "design-issue",
-      "reviewedAt": "2026-10-05T08:40:20.632Z",
+      "reviewedAt": "2026-10-05T08:46:29.047Z",
       "model": "cli-claude:opus"
     }
   },

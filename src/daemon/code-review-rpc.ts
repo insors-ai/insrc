@@ -92,6 +92,8 @@ export async function codeReviewRunStart(
 		let stageIndex = 0;
 		const outcome = await runCodeReview(resolved.subject, provider, {
 			runId, modelLabel, signal,
+			// This request is the daemon's review.
+			reviewedBy: 'daemon',
 			onProgress: (f) => send({
 				id: 0, stream: 'progress',
 				data: { kind: 'stage', operation: 'codeReview.run', stageId: f.phase, stageLabel: [f.phase, f.dimension, f.detail].filter(Boolean).join(' · '), index: stageIndex++, total: null },

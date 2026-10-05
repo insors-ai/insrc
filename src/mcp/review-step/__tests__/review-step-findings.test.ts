@@ -112,6 +112,8 @@ test('T13 the findings phase stamps the review and does not edit the design', as
 
 		const stored = JSON.parse(readFileSync(fx.jsonPath, 'utf8'));
 		assert.equal(stored.meta.review.model, 'client');
+		// T4 (LLD-1716f77ba9ba017b-S001): the findings phase is the controller's review.
+		assert.equal(stored.meta.review.reviewedBy, 'controller');
 		assert.equal(stored.meta.review.template, 'design-spec');
 		assert.equal(stored.meta.review.findings.length, 8);
 		assert.deepEqual(stored.body, { note: 'untouched' });
@@ -184,6 +186,19 @@ test('T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt',
 			assert.ok((out['prompt'] as { system: string }).system.includes('LOAD-BEARING PREMISES'));
 		} finally { fx.cleanup(); }
 	}
+});
+
+test('T4 the findings phase stamps the controller on an HLD too', async () => {
+	_clearReviewStateStoreForTests();
+	const fx = fixture({ workflow: 'design.epic' });
+	try {
+		const state = (await start(fx))['state'] as string;
+		const out = parse(await handleReviewStep({ phase: 'findings', state, findings: answer(SPEC) }));
+		assert.equal(out['next'], 'done');
+		const review = JSON.parse(readFileSync(fx.jsonPath, 'utf8')).meta.review;
+		assert.equal(review.stage, 'design.epic');
+		assert.equal(review.reviewedBy, 'controller');
+	} finally { fx.cleanup(); }
 });
 
 test('T13 the registered tool accepts phase `findings` and its phase list names it', () => {

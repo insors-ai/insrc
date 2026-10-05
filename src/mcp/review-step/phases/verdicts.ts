@@ -71,6 +71,8 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 		counts:     tallyFindings(findings),
 		reviewedAt: new Date().toISOString(),
 		model:      REVIEW_MODEL,
+		// These phases are the controller's review.
+		reviewedBy: 'controller',
 	};
 
 	// Persist EXACTLY like reviewArtifactFile: apply the auto-fixes, stamp

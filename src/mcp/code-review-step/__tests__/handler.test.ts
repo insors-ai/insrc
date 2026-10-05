@@ -148,6 +148,8 @@ test('the opaque token resumes to next:done and persists a CR- record via runCod
 	assert.equal(json!.path.split('/').pop(), `CR-${EPIC}-${STORY}.json`);
 	const body = (JSON.parse(json!.content) as { body: { kind: string } }).body;
 	assert.equal(body.kind, 'code-review');
+	// T4 (LLD-1716f77ba9ba017b-S001): this tool's judgements are the controller's review.
+	assert.equal((JSON.parse(json!.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, 'controller');
 });
 
 // ---- ac3 parity: out-of-changedFiles finding is dropped ----
@@ -454,6 +456,9 @@ test('s10: the degraded judgements turn drives runReview with groundingMode:degr
 	const body = (JSON.parse(json.content) as { body: { groundingMode: string; verdict: string } }).body;
 	assert.equal(body.groundingMode, 'degraded', 'the persisted record is stamped degraded');
 	assert.equal(body.verdict, 'warn');
+	// T4 (LLD-1716f77ba9ba017b-S001): the degraded route is the controller's review too.
+	assert.equal(opts[0]!.reviewedBy, 'controller');
+	assert.equal((JSON.parse(json.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, 'controller');
 });
 
 // ISSUE-5f7a7cb9 S001/t7 (T48): the degraded path hands the assembler the Story's

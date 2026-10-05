@@ -264,6 +264,28 @@ test('runCodeReview: all four dimensions empty => a written PASS record (an empt
 	assert.equal(writes.length, 2);
 });
 
+// ---- T4 (LLD-1716f77ba9ba017b-S001): the reviewer party on the record ----
+
+for (const party of ['controller', 'daemon'] as const) {
+	test(`T4 runCodeReview given reviewedBy ${party} writes it on the record`, async () => {
+		const { deps, provider, writes } = makeDeps();
+		const out = await runCodeReview(subject(), provider, { ...runOpts().opts, reviewedBy: party }, deps);
+		assert.ok(out.ok);
+		assert.equal(out.artifact.meta.reviewedBy, party);
+		const json = writes.find(w => w.path.endsWith('.json'));
+		assert.ok(json !== undefined);
+		assert.equal((JSON.parse(json.content) as { meta: { reviewedBy?: string } }).meta.reviewedBy, party, 'and in the json that is written');
+	});
+}
+
+test('T4 runCodeReview given no reviewedBy writes none', async () => {
+	const { deps, provider, writes } = makeDeps();
+	const out = await runCodeReview(subject(), provider, runOpts().opts, deps);
+	assert.ok(out.ok);
+	assert.ok(!('reviewedBy' in out.artifact.meta));
+	assert.ok(writes.every(w => !w.content.includes('reviewedBy')));
+});
+
 // ---- DEFAULT_DEPS wires the shipped judges in fixed order ----
 
 test('DEFAULT_DEPS: wires the base four judges + conditional functional-coverage + diagram + ux, in fixed order + writeAtomic', () => {

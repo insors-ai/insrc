@@ -491,8 +491,8 @@ async function driveRunner(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { runId, modelLabel: 'client', groundingMode: 'degraded', capVerdictAtWarn: true }
-			: { runId, modelLabel: 'client' },
+			? { runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true }
+			: { runId, modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
 	if (!outcome.ok) {

@@ -153,6 +153,8 @@ test('review-step drives the full loop and stamps meta.review with model=client'
 		const review = persisted.meta.review;
 		assert.ok(review, 'meta.review stamped on the json');
 		assert.equal(review.model, 'client', 'review model is the controller, not the daemon provider');
+		// T4 (LLD-1716f77ba9ba017b-S001): the verdicts phase is the controller's review.
+		assert.equal(review.reviewedBy, 'controller');
 		assert.equal(review.verdict, 'block');
 		assert.deepEqual(review.counts, { high: 1, med: 0, low: 1 });
 		assert.equal(review.stage, 'plan');

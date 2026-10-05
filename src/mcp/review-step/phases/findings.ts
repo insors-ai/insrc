@@ -69,6 +69,8 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 		template:   template.id,
 		reviewedAt: new Date().toISOString(),
 		model:      REVIEW_MODEL,
+		// These phases are the controller's review.
+		reviewedBy: 'controller',
 	};
 
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[findings]: no artifact json at ${state.jsonPath}`);

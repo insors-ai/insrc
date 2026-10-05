@@ -102,7 +102,10 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 
 	// Persist: amended body + stamped review into the json; amended md with a
 	// rendered review section appended for human visibility.
-	const nextJson = { ...artifact, meta: { ...artifact.meta, review: report }, body: fixed.body };
+	// This function is the DAEMON's review, on both of its paths (the pipeline
+	// for a DEF and the one-session template review for a design).
+	const stamped: ReviewReport = { ...report, reviewedBy: 'daemon' };
+	const nextJson = { ...artifact, meta: { ...artifact.meta, review: stamped }, body: fixed.body };
 	writeAtomic(opts.jsonPath, JSON.stringify(nextJson, null, 2) + '\n');
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
 	writeAtomic(opts.mdPath, nextMd);
@@ -111,5 +114,5 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 		{ stage, verdict: report.verdict, applied: fixed.applied.length, pending: report.findings.length },
 		'review:run-artifact: reviewed + persisted',
 	);
-	return { report, applied: fixed.applied, skipped: fixed.skipped, pendingUser: pendingUserFindings(report) };
+	return { report: stamped, applied: fixed.applied, skipped: fixed.skipped, pendingUser: pendingUserFindings(report) };
 }

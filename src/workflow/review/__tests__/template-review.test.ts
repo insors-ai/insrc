@@ -299,6 +299,10 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and a
 
 		const stored = JSON.parse(readFileSync(d.json, 'utf8'));
 		assert.equal(stored.meta.review.template, 'design-issue');
+		// T4 (LLD-1716f77ba9ba017b-S001): reviewArtifactFile is the daemon's review,
+		// on its template path (this LLD) as on its pipeline path (a DEF, below).
+		assert.equal(stored.meta.review.reviewedBy, 'daemon');
+		assert.equal(res.report.reviewedBy, 'daemon', 'the returned report says so too');
 		assert.equal(stored.meta.review.counts.unverified, 1);
 		assert.deepEqual(stored.body, { note: 'untouched' });
 		const md = readFileSync(d.md, 'utf8');
@@ -331,4 +335,28 @@ test('a failed design review stamps nothing', async () => {
 			assert.equal(readFileSync(d.md, 'utf8'), beforeMd);
 		} finally { d.cleanup(); }
 	}
+});
+
+test('T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-def-review-'));
+	try {
+		const json = artifactJsonPath(repo, 'DEF-abcd');
+		mkdirSync(dirname(json), { recursive: true });
+		writeFileSync(json, JSON.stringify({ meta: { workflow: 'define', epicHash: 'abcd' }, body: { note: 'x' }, citations: [] }, null, 2) + '\n');
+		const md = join(repo, 'DEF.md');
+		writeFileSync(md, '# DEF\n\nThe definition.\n');
+		// The pipeline's extract step finds no premises, so no probe or verify call follows.
+		const sessions: string[] = [];
+		const provider = {
+			capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+			async completeStructured() { return { claims: [] }; },
+			async runReviewSession() { sessions.push('session'); throw new Error('a DEF is not reviewed in a session'); },
+		} as unknown as LLMProvider;
+		const res = await reviewArtifactFile({ mdPath: md, jsonPath: json, repo, provider, model: 'cli-claude:opus' });
+		assert.equal(res.report.stage, 'define');
+		assert.equal(res.report.template, undefined, 'the pipeline path, not a template review');
+		assert.deepEqual(sessions, []);
+		assert.equal(res.report.reviewedBy, 'daemon');
+		assert.equal(JSON.parse(readFileSync(json, 'utf8')).meta.review.reviewedBy, 'daemon');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

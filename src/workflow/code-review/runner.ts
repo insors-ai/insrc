@@ -53,6 +53,7 @@ import { judgeFunctionalCoverage } from './dimensions/functional-coverage.js';
 import { judgeDiagram } from './dimensions/diagram/index.js';
 import { judgeUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
+import type { Party } from '../review/party.js';
 
 const log = getLogger('code-review:runner');
 
@@ -100,6 +101,10 @@ export interface RunCodeReviewOpts {
 	 *  degraded review can never register a `pass` — it reasons over diff hunks
 	 *  rather than graph symbols, so a clean fold is not trustworthy as a pass. */
 	readonly capVerdictAtWarn?: boolean | undefined;
+	/** The party running this review, written to the record's `meta.reviewedBy`.
+	 *  The MCP tool passes `controller`, the daemon request passes `daemon`.
+	 *  When omitted the record carries no reviewer party. */
+	readonly reviewedBy?: Party | undefined;
 }
 
 /** Incremental progress frame streamed through `onProgress`. */
@@ -266,6 +271,7 @@ function buildArtifact(
 		schemaVersion: CODE_REVIEW_SCHEMA_VERSION,
 		epicHash:      subject.epicHash,
 		storyId:       subject.storyId,
+		...(opts.reviewedBy !== undefined ? { reviewedBy: opts.reviewedBy } : {}),
 	};
 	const body: CodeReviewBody = {
 		kind:          'code-review',

@@ -21,7 +21,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { PATHS } from '../../shared/paths.js';
 import { artifactJsonPath } from '../storage.js';
-import { severityForOutcome } from './review.js';
+import { severityForOutcome } from './verdict.js';
 import type { Finding, FindingOutcome, Severity } from './types.js';
 
 // ---------------------------------------------------------------------------

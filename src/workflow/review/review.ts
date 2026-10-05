@@ -20,12 +20,19 @@ import type { LLMProvider } from '../../shared/types.js';
 import { extractClaims } from './extract.js';
 import { gatherEvidence } from './probe.js';
 import { verifyClaim } from './verify.js';
-import type { Finding, FindingOutcome, ReviewReport, ReviewVerdict, Severity } from './types.js';
+import { isDesignStage } from './template.js';
+import { runTemplateReview } from './template-review.js';
+import type { DesignIntent } from './template.js';
+import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
+import { computeVerdict, DEFAULT_BLOCK_ON, severityForOutcome, tally } from './verdict.js';
+
+export { severityForOutcome };
 
 const log = getLogger('review');
 
-/** Phases surfaced through `onProgress`. */
-export type ReviewPhase = 'extract' | 'probe' | `verify:${string}` | 'done';
+/** Phases surfaced through `onProgress`. `template` is the one reviewer
+ *  session of a design review; the other three are the pipeline's stages. */
+export type ReviewPhase = 'extract' | 'probe' | `verify:${string}` | 'template' | 'done';
 
 export interface RunReviewOpts {
 	readonly repo: string;
@@ -42,9 +49,16 @@ export interface RunReviewOpts {
 	readonly now?: (() => string) | undefined;
 	readonly onProgress?: ((phase: ReviewPhase) => void) | undefined;
 	readonly signal?: AbortSignal | undefined;
+	/** Design stages only: which template applies. `reviewArtifactFile` resolves
+	 *  it from the artifact store; default `spec`. */
+	readonly intent?: DesignIntent | undefined;
+	/** Design stages only: the deadline for the WHOLE review, in ms. Default: the
+	 *  configured limit for the intent. Never more than the 10 minute hard cap. */
+	readonly deadlineMs?: number | undefined;
+	/** Design stages only: millisecond clock for the deadline (test seam). */
+	readonly nowMs?: (() => number) | undefined;
 }
 
-const DEFAULT_BLOCK_ON: readonly Severity[] = ['HIGH', 'MED'];
 
 /**
  * Run the full grounded review of an artifact and return a severity-rated
@@ -54,6 +68,10 @@ export async function runReview(
 	artifactMarkdown: string,
 	opts:             RunReviewOpts,
 ): Promise<ReviewReport> {
+	// A design document is reviewed against a template in ONE reviewer session;
+	// every other artifact keeps the pipeline below, untouched.
+	if (isDesignStage(opts.stage)) return runTemplateReview(artifactMarkdown, opts);
+
 	const { repo, stage, provider, model, signal } = opts;
 	const blockOn = opts.blockOn ?? DEFAULT_BLOCK_ON;
 	const emit = opts.onProgress ?? (() => { /* no-op */ });
@@ -112,43 +130,6 @@ export function computeReviewVerdict(
 	blockOn:  readonly Severity[] = DEFAULT_BLOCK_ON,
 ): ReviewVerdict {
 	return computeVerdict(findings, blockOn);
-}
-
-function tally(findings: readonly Finding[]): ReviewReport['counts'] {
-	let high = 0, med = 0, low = 0;
-	for (const f of findings) {
-		if (f.severity === 'HIGH') high++;
-		else if (f.severity === 'MED') med++;
-		else low++;
-	}
-	// The fourth count appears only when the review used a template, so the
-	// counts of a pipeline review are byte-identical to what they were.
-	if (!findings.some(f => f.outcome !== undefined)) return { high, med, low };
-	return { high, med, low, unverified: findings.filter(f => f.outcome === 'could-not-verify').length };
-}
-
-/**
- * The severity a template finding carries, derived from its outcome so that
- * every reader that gates on severity keeps working unchanged: a premise that
- * does not hold is HIGH or MED (as the reviewer judged how much it breaks) and
- * blocks; one that holds, or that could not be verified, is LOW and never does.
- */
-export function severityForOutcome(outcome: FindingOutcome, judged?: Severity): Severity {
-	if (outcome !== 'does-not-hold') return 'LOW';
-	return judged === 'HIGH' ? 'HIGH' : 'MED';
-}
-
-/**
- * `block` if any finding's severity is in `blockOn`; otherwise `warn` if
- * any finding is above LOW (i.e. a MED that `blockOn` chose not to block
- * on), otherwise `pass`.
- */
-function computeVerdict(findings: readonly Finding[], blockOn: readonly Severity[]): ReviewVerdict {
-	const block = findings.some(f => blockOn.includes(f.severity));
-	if (block) return 'block';
-	// An unverified premise is LOW (it never blocks) but it is not a clean pass.
-	const warn = findings.some(f => f.severity !== 'LOW' || f.outcome === 'could-not-verify');
-	return warn ? 'warn' : 'pass';
 }
 
 function throwIfAborted(signal: AbortSignal | undefined): void {

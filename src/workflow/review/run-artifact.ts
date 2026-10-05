@@ -23,6 +23,7 @@ import { applyAutoFixes, pendingUserFindings } from './apply.js';
 import type { AppliedFix, SkippedFix } from './apply.js';
 import { renderReviewReport } from './report.js';
 import { runReview } from './review.js';
+import { isDesignStage, resolveDesignReview } from './template.js';
 import type { Finding, ReviewReport, Severity } from './types.js';
 
 const log = getLogger('review');
@@ -72,8 +73,17 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	const rawMd = readFileSync(opts.mdPath, 'utf8');
 	const md = stripReviewSection(rawMd);
 
+	// A design document is reviewed against the template its intent selects; the
+	// intent and the review's deadline come from the artifact store. Template
+	// findings carry no edits, so the auto-fix + re-review steps below are no-ops
+	// for a design: it is reviewed once and never edited.
+	const design = isDesignStage(stage)
+		? resolveDesignReview(opts.repo, typeof artifact.meta['epicHash'] === 'string' ? artifact.meta['epicHash'] : undefined)
+		: undefined;
+
 	const base = {
 		repo: opts.repo, stage, provider: opts.provider, model: opts.model,
+		...(design !== undefined ? { intent: design.intent, deadlineMs: design.deadlineMs } : {}),
 		...(opts.blockOn !== undefined ? { blockOn: opts.blockOn } : {}),
 		...(opts.reviewedAt !== undefined ? { reviewedAt: opts.reviewedAt } : {}),
 		...(opts.onProgress !== undefined ? { onProgress: opts.onProgress } : {}),

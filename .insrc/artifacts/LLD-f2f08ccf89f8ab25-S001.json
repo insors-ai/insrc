@@ -206,6 +206,13 @@
         "choice": "Probe per CLI, fall back per CLI",
         "rationale": "User, 2026-10-05: \"yes, go with recommended\".",
         "resolvedAt": "2026-10-05T06:48:00.300Z"
+      },
+      "q60bd7bd0": {
+        "question": "Are the proposed time limits right: 4 minutes for an ISSUE design, 6 for a standalone feature design, 8 for a design under an Epic? The user fixed the hard cap at 10 minutes and asked for rational values by complexity; the three values are the author's proposal, and no reviewer session has been timed yet.",
+        "status": "resolved",
+        "choice": "Keep 4 / 6 / 8 as provisional, configurable defaults",
+        "rationale": "User, 2026-10-05: \"yes, go with recommended\".",
+        "resolvedAt": "2026-10-05T06:48:12.388Z"
       }
     }
   },

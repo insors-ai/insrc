@@ -278,6 +278,8 @@ The template is the same as in a1. Each check item starts a separate reviewer se
   - **resolved**: Proposed values as configurable defaults — User, 2026-10-05: "yes, go with recommended". _(2026-10-05T06:47:36.223Z)_
 - `qb7abe28c` — Can the claude and codex CLIs return a schema-checked final answer from a run that also uses tools, with tools limited to reading and to the insrc analyze tools? This has not been tried; the build confirms it with a live probe before the session is relied on.
   - **resolved**: Probe per CLI, fall back per CLI — User, 2026-10-05: "yes, go with recommended". _(2026-10-05T06:48:00.300Z)_
+- `q60bd7bd0` — Are the proposed time limits right: 4 minutes for an ISSUE design, 6 for a standalone feature design, 8 for a design under an Epic? The user fixed the hard cap at 10 minutes and asked for rational values by complexity; the three values are the author's proposal, and no reviewer session has been timed yet.
+  - **resolved**: Keep 4 / 6 / 8 as provisional, configurable defaults — User, 2026-10-05: "yes, go with recommended". _(2026-10-05T06:48:12.388Z)_
 
 ## Citations
 

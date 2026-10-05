@@ -204,6 +204,36 @@
             "default": 120000,
             "markdownDescription": "max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting",
             "scope": "machine"
+          },
+          "insrc.designReview.premises.issue": {
+            "type": "number",
+            "default": 8,
+            "markdownDescription": "most premises a design review examines when the design answers an ISSUE",
+            "scope": "machine"
+          },
+          "insrc.designReview.premises.spec": {
+            "type": "number",
+            "default": 16,
+            "markdownDescription": "most premises a design review examines when the design answers a SPEC",
+            "scope": "machine"
+          },
+          "insrc.designReview.timeLimitMs.issue": {
+            "type": "number",
+            "default": 240000,
+            "markdownDescription": "time limit (ms) for the whole review of a design that answers an ISSUE; capped at 10 minutes",
+            "scope": "machine"
+          },
+          "insrc.designReview.timeLimitMs.feature": {
+            "type": "number",
+            "default": 360000,
+            "markdownDescription": "time limit (ms) for the whole review of a standalone feature design; capped at 10 minutes",
+            "scope": "machine"
+          },
+          "insrc.designReview.timeLimitMs.epic": {
+            "type": "number",
+            "default": 480000,
+            "markdownDescription": "time limit (ms) for the whole review of a design under an Epic; capped at 10 minutes",
+            "scope": "machine"
           }
         }
       },

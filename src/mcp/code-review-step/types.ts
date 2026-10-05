@@ -102,6 +102,14 @@ export interface CodeReviewStepDone {
 	readonly counts:   CodeReviewStepCounts;
 	readonly path:     string;
 	readonly jsonPath: string;
+	/** Set when the tool sent the code to the daemon for review (code the
+	 *  controller wrote, or whose author is not known); absent when the
+	 *  controller reviewed it through this tool's own judgements phase. */
+	readonly reviewedBy?:    'daemon' | undefined;
+	/** How a daemon review was grounded; `degraded` means on the diff. */
+	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** The model the daemon reviewed with. */
+	readonly model?:         string | undefined;
 	/**
 	 * Present ONLY when findings were dropped as out of scope (ISSUE-11e4fa88): how
 	 * many, per dimension, and the size of the changed set they were tested

@@ -18,13 +18,10 @@
  * validate-then-write, no-pass-on-failure) lives in `runCodeReview`.
  */
 
-import { readFileSync } from 'node:fs';
-
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
-import { authorPartyOf, SamePartyReviewError } from '../workflow/review/party.js';
-import type { PartyOrUnknown } from '../workflow/review/party.js';
-import { artifactJsonPath, buildArtifactId } from '../workflow/storage.js';
+import { SamePartyReviewError } from '../workflow/review/party.js';
+import { buildAuthorParty } from '../workflow/code-review/author.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../workflow/code-review/grounding.js';
 import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
@@ -73,17 +70,6 @@ export interface CodeReviewRunDeps {
 	readonly assembleDiffGrounding?: typeof assembleDiffCodeReviewGrounding | undefined;
 	/** Where the record is written (the runner's `write`). */
 	readonly write?: ((absPath: string, content: string) => void) | undefined;
-}
-
-/** The party that wrote the code under review, read from the Story's BUILD
- *  record. `unknown` when there is no record or it says nothing. */
-export function buildAuthorParty(repoPath: string, epicHash: string, storyId: string): PartyOrUnknown {
-	try {
-		const rec = JSON.parse(readFileSync(artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId)), 'utf8')) as { meta?: unknown };
-		return authorPartyOf(rec.meta);
-	} catch {
-		return 'unknown';
-	}
 }
 
 export async function codeReviewRunStart(
@@ -240,3 +226,5 @@ function modelLabelFor(
 	const cli = effective === 'cli-claude' ? 'claude' : 'codex';
 	return cfg.shaperModelExplicit && cfg.shaperModel.length > 0 ? `${cli}:${cfg.shaperModel}` : cli;
 }
+
+export { buildAuthorParty };

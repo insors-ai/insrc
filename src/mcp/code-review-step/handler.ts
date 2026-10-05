@@ -25,7 +25,11 @@ import type { LLMProvider } from '../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../workflow/code-review/subject.js';
-import { fetchCodeReviewGrounding, fetchCodeReviewFreshness } from '../daemon-stream.js';
+import { codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness, ReviewStreamError } from '../daemon-stream.js';
+import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../daemon-stream.js';
+import { buildAuthorParty } from '../../workflow/code-review/author.js';
+import { SamePartyReviewError } from '../../workflow/review/party.js';
+import type { PartyOrUnknown } from '../../workflow/review/party.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../workflow/code-review/grounding.js';
 import { runCodeReview, type CodeReviewRunnerDeps } from '../../workflow/code-review/runner.js';
 import { codeReviewArtifactPaths, writeAtomic } from '../../workflow/storage.js';
@@ -81,6 +85,13 @@ export interface CodeReviewStepDeps {
 	readonly sleep:          (ms: number) => Promise<void>;
 	readonly now:            () => number;
 	readonly freshnessTimeoutMs: () => number;
+	/** The party that wrote the Story's code, from its BUILD record. Defaults to
+	 *  reading the record from the artifact store. */
+	readonly readBuildAuthor?: ((repo: string, epicHash: string, storyId: string) => PartyOrUnknown) | undefined;
+	/** Ask the daemon to review the Story's code (`codeReview.run`). */
+	readonly reviewByDaemon?: ((params: CodeReviewStreamParams, opts: ReviewStreamOpts) => Promise<CodeReviewStreamResult>) | undefined;
+	/** The invoking MCP client, so the daemon can fall back to that CLI. */
+	readonly client?: 'claude' | 'codex' | undefined;
 }
 
 /** The fixed poll interval for the block-and-poll (an internal constant, NOT a
@@ -101,7 +112,7 @@ function readFreshnessTimeoutMs(): number {
 	}
 }
 
-const DEFAULT_DEPS: CodeReviewStepDeps = {
+export const DEFAULT_DEPS: CodeReviewStepDeps = {
 	resolveSubject: resolveCodeReviewSubject,
 	fetchGrounding: fetchCodeReviewGrounding,
 	fetchFreshness: fetchCodeReviewFreshness,
@@ -314,6 +325,12 @@ async function handleStart(
 	}
 	const grounding = g.grounding;
 
+	// Fresh grounding with symbols: a full review. The author is read at this
+	// point (see beginDiffOnlyReview for the diff routes).
+	if (authorOf(repo, epicHash, storyId, deps) !== 'daemon') {
+		return await reviewByDaemon(subject, 'full', deps);
+	}
+
 	// 3. Save opaque state + hand the controller the four prompts + the schema.
 	const token = saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -340,6 +357,14 @@ async function beginDiffOnlyReview(
 	subject:  CodeReviewSubject,
 	deps:     CodeReviewStepDeps,
 ): Promise<CodeReviewStepOutput> {
+	// The author is read HERE, at the point a review is about to start, so it is
+	// read on every route into a diff review, including the resumed call. Code the
+	// daemon did not write is reviewed by the daemon, which grounds on the diff
+	// itself; the controller is not handed the judgements prompt.
+	if (authorOf(repo, epicHash, storyId, deps) !== 'daemon') {
+		return await reviewByDaemon(subject, 'degraded', deps);
+	}
+
 	let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
 	try {
@@ -447,6 +472,14 @@ async function handleJudgements(
 		return errorResult('bad-state', 'insrc_code_review_step: this state is awaiting a proceed/abort resume, not judgements.', false);
 	}
 	const grounding = payload.grounding;
+
+	// This phase stamps the CONTROLLER's review, so it does not stamp one on code
+	// the controller wrote. `start` already sends such code to the daemon; this
+	// holds the rule at the point of the stamp, whatever led here.
+	if (authorOf(payload.repo, payload.epicHash, payload.storyId, deps) === 'controller') {
+		releaseState(step.state);
+		return errorResult('same-party-review', new SamePartyReviewError('controller', `the code of Story ${payload.storyId}`).message, false);
+	}
 
 	// Validate the controller's judgements BEFORE driving the runner. A fault
 	// returns an error frame and writes nothing (ac5).
@@ -617,6 +650,64 @@ function fileOf(location: string): string {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function authorOf(repo: string, epicHash: string, storyId: string, deps: CodeReviewStepDeps): PartyOrUnknown {
+	return (deps.readBuildAuthor ?? buildAuthorParty)(repo, epicHash, storyId);
+}
+
+/** How long the tool waits for the daemon's code review. Daemon code reviews
+ *  have taken up to about two and a half minutes. */
+export const DAEMON_CODE_REVIEW_WAIT_MS = 10 * 60_000;
+
+/** The retryable causes: the same call can succeed once the cause is gone. */
+const RETRYABLE_DAEMON_FAILURES: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);
+
+/**
+ * Send the Story's code to the daemon for review and return its verdict.
+ *
+ * `mode` tells the daemon how to ground: `full` on the graph, or `degraded` on
+ * the diff (the record is then stamped `degraded` and its verdict capped at
+ * warn, as on the controller's own diff path). A daemon review that does not
+ * complete is an error; it is never replaced by a controller review.
+ */
+async function reviewByDaemon(
+	subject: CodeReviewSubject,
+	mode:    'full' | 'degraded',
+	deps:    CodeReviewStepDeps,
+): Promise<CodeReviewStepOutput> {
+	const { repoPath: repo, epicHash, storyId } = subject;
+	log.info({ repo, epicHash, storyId, mode }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
+	try {
+		const res = await (deps.reviewByDaemon ?? codeReviewStream)(
+			{ repo, epicHash, storyId, groundingMode: mode, ...(deps.client !== undefined ? { client: deps.client } : {}) },
+			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS },
+		);
+		const cra = codeReviewSubjectPathArgs(subject);
+		const paths = codeReviewArtifactPaths(repo, epicHash, storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
+		const model = res.artifact.meta.model;
+		return {
+			next:          'done',
+			verdict:       res.artifact.body.verdict,
+			counts:        res.artifact.body.counts,
+			path:          paths.md,
+			jsonPath:      paths.json,
+			reviewedBy:    'daemon',
+			groundingMode: res.artifact.body.groundingMode,
+			...(typeof model === 'string' ? { model } : {}),
+		};
+	} catch (err) {
+		const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
+		const cause = err instanceof Error ? err.message : String(err);
+		log.warn({ repo, epicHash, storyId, mode, failure, cause }, 'insrc_code_review_step: the daemon review did not complete; nothing stamped');
+		return errorResult(
+			`daemon-review-${failure}`,
+			`The daemon code review of Story ${storyId} did not complete: ${cause}. No review was recorded. ` +
+			`The daemon reviews this code because the daemon did not write it; the review is not replaced by a ` +
+			`controller review. Fix the cause and call insrc_code_review_step again, or approve with an override reason.`,
+			RETRYABLE_DAEMON_FAILURES.has(failure),
+		);
+	}
+}
 
 function errorResult(code: string, message: string, retryable: boolean): CodeReviewStepError {
 	return { next: 'error', error: { code, message, retryable } };

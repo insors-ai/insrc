@@ -47,7 +47,7 @@ import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
 import { handleReviewStep } from './review-step/handler.js';
-import { handleCodeReviewStep } from './code-review-step/handler.js';
+import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
 import { renderBundleAsMarkdown } from './bundle-md.js';
@@ -732,7 +732,13 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.optional(),
 			},
 		},
-		async (rawArgs, _extra) => handleCodeReviewStep(rawArgs),
+		async (rawArgs, _extra) => {
+			// The invoking client rides along so a daemon review (code this session
+			// wrote) can fall back to that CLI when no provider is configured.
+			const kind = detectClientProvider(server.server.getClientVersion()?.name);
+			const client = kind === 'cli-claude' ? 'claude' as const : kind === 'cli-codex' ? 'codex' as const : undefined;
+			return handleCodeReviewStep(rawArgs, client !== undefined ? { ...CODE_REVIEW_STEP_DEFAULT_DEPS, client } : CODE_REVIEW_STEP_DEFAULT_DEPS);
+		},
 	);
 
 	// -------------------------------------------------------------------

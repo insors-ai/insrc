@@ -201,16 +201,16 @@ test('T11 against an older daemon (a plain unknown-method line, socket kept open
 	const fx = fixture('design.story', 'controller');
 	try {
 		// The real stream helper, over a real socket, with a timer that never fires.
-		let armed = 0;
+		const armedMs: number[] = [];
 		const deps: ReviewStepDeps = {
 			reviewByDaemon: (params, opts) => reviewArtifactStream(params, opts, {
 				connect: () => createConnection(sock),
-				setTimer: () => { armed += 1; return 1; },
+				setTimer: (_fn, ms) => { armedMs.push(ms); return 1; },
 				clearTimer: () => { /* nothing to clear */ },
 			}),
 		};
 		const out = await start(fx, deps);
-		assert.equal(armed, 1, 'the wait limit was armed, and it never fired');
+		assert.deepEqual(armedMs, [11 * MIN], 'the 11 minute wait limit was armed, and it never fired');
 		assert.equal(out['next'], 'error');
 		const err = out['error'] as { code: string; message: string };
 		assert.equal(err.code, 'daemon-review-unknown-method');

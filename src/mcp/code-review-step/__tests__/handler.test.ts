@@ -92,6 +92,10 @@ function makeDeps(overrides: Partial<CodeReviewStepDeps> = {}): { deps: CodeRevi
 		sleep:          async () => {},
 		now:            () => 0,
 		freshnessTimeoutMs: () => 120000,
+		// The Story's BUILD record names the DAEMON as author, so this tool's own
+		// judgements phase (the controller's review) is the path under test. Code
+		// the controller wrote is sent to the daemon: see routing.test.ts.
+		readBuildAuthor: () => 'daemon',
 		...overrides,
 	};
 	return { deps, writes };

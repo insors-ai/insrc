@@ -63,6 +63,8 @@ test('trivial standalone build: admits, renders a scope-driven prompt, and persi
 		assert.equal(rec.meta.standalone, true);
 		assert.equal(rec.meta.sizeClass, 'trivial');
 		assert.equal(rec.meta.triageRationale, 'one-line mechanical edit');
+		// T3 (LLD-1716f77ba9ba017b-S001): the Trivial implement write is the controller's.
+		assert.equal(rec.meta.authoredBy, 'controller');
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

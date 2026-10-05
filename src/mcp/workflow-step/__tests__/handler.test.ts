@@ -95,6 +95,10 @@ test('stub workflow: start → plan → synthesize → done writes artifact', as
 		const contents = readFileSync(outPath, 'utf8');
 		assert.ok(contents.includes('# Stub demo'));
 		assert.ok(contents.includes('## Citations'));
+		// T2 (LLD-1716f77ba9ba017b-S001): this phase is the controller's, and says so.
+		const stored = JSON.parse(readFileSync(outPath.replace(/\.md$/, '.json'), 'utf8')) as { meta: { authoredBy?: string } };
+		assert.equal(stored.meta.authoredBy, 'controller');
+		assert.ok(!contents.includes('authoredBy'), 'the author is recorded in the json, not shown in the document');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

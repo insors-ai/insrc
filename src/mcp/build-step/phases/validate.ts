@@ -226,6 +226,8 @@ async function runValidateSession(
 				const rec = {
 					meta: {
 						workflow: 'build' as const, epicHash, storyId, createdAt: now, updatedAt: now,
+						// The build step is the controller's: the MCP client wrote the code.
+						authoredBy: 'controller' as const,
 						...(standaloneFlag === true ? { standalone: true } : {}),
 						...(declared?.sizeClass !== undefined ? { sizeClass: declared.sizeClass } : {}),
 						...(declared?.triageRationale !== undefined ? { triageRationale: declared.triageRationale } : {}),

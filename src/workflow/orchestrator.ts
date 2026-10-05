@@ -18,6 +18,7 @@
 import { getLogger } from '../shared/logger.js';
 import type { ArtifactModelAttribution, Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
 import { singleModelAttribution } from './attribution.js';
+import type { Party } from './review/party.js';
 import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
 import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
@@ -395,6 +396,35 @@ export async function finalizeArtifact(
 	/** Per-output model attribution (S004/sc5), captured per step by the daemon
 	 *  runner's RoleRouter. When present it is written verbatim to `meta.attribution`;
 	 *  when absent, a single-element attribution is synthesized from `model`. */
+	attribution?: ArtifactModelAttribution,
+	/** The party that authored the artifact: the MCP synthesize phase passes
+	 *  `controller`, the daemon workflow run passes `daemon`. Written to
+	 *  `meta.authoredBy`; when omitted the output is what it was before the
+	 *  field existed. */
+	authoredBy?: Party,
+): Promise<FinalizeResult> {
+	const result = await finalizeByWorkflow(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+	return authoredBy === undefined ? result : stampAuthor(result, authoredBy);
+}
+
+/** Write the author party into a finalized artifact's meta and re-serialize the
+ *  json. One place for every workflow: each finalizer builds its own meta, and
+ *  the rendered markdown never shows this field. */
+function stampAuthor(result: FinalizeResult, authoredBy: Party): FinalizeResult {
+	if (!result.ok) return result;
+	const artifact = result.finalized.artifact as { meta?: Record<string, unknown> } | null;
+	if (typeof artifact !== 'object' || artifact === null || typeof artifact.meta !== 'object' || artifact.meta === null) return result;
+	const stamped = { ...artifact, meta: { ...artifact.meta, authoredBy } };
+	return { ok: true, finalized: { ...result.finalized, artifact: stamped, renderedJson: JSON.stringify(stamped, null, 2) + '\n' } };
+}
+
+async function finalizeByWorkflow(
+	intent:       WorkflowIntent,
+	stepOutputs:  Readonly<Record<string, unknown>>,
+	runId:        string,
+	elapsedMs:    number,
+	llmResponse:  Record<string, unknown>,
+	model:        string,
 	attribution?: ArtifactModelAttribution,
 ): Promise<FinalizeResult> {
 	try {

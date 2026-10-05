@@ -156,6 +156,8 @@ function handleStandaloneImplement(
 			meta: {
 				workflow: 'build', standalone: true, sizeClass, epicHash, storyId,
 				createdAt: new Date().toISOString(),
+				// The build step is the controller's: the MCP client writes the code.
+				authoredBy: 'controller',
 				...(ctx.triageRationale !== undefined ? { triageRationale: ctx.triageRationale } : {}),
 			},
 			body: { focus: specFocus, producesLld: false },

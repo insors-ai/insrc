@@ -104,8 +104,11 @@ test('runWorkflowServerSide drives stub end-to-end + stamps per-output attributi
 		// No router was supplied, so attribution is synthesized from the run-wide
 		// label; the RETIRED scalar meta.model is no longer written.
 		const json = JSON.parse(readFileSync(out.path.replace(/\.md$/, '.json'), 'utf8')) as {
-			meta: { model?: string; workflow: string; attribution: { outputs: { runner: string; model: string }[] } };
+			meta: { model?: string; workflow: string; authoredBy?: string; attribution: { outputs: { runner: string; model: string }[] } };
 		};
+		// T2 (LLD-1716f77ba9ba017b-S001): a daemon run authors as the daemon. The
+		// first finalize and every correction retry share ONE finalize helper.
+		assert.equal(json.meta.authoredBy, 'daemon');
 		assert.equal(json.meta.model, undefined, 'scalar meta.model is retired (sc5)');
 		assert.equal(json.meta.attribution.outputs[0]!.runner, 'ollama');
 		assert.equal(json.meta.attribution.outputs[0]!.model, 'qwen3-test');   // NOT 'client'

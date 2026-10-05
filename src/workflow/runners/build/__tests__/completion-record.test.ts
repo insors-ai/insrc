@@ -60,6 +60,9 @@ test('create: no prior BUILD json + a changed set writes a plan-driven BUILD rec
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's2');
 		assert.equal((rec.body['changeLog'] as unknown[]).length, 2);
+		// T3 (LLD-1716f77ba9ba017b-S001): the approval-time writer does not know
+		// who wrote the code, so it stamps no author.
+		assert.ok(!('authoredBy' in rec.meta), 'no author on a record first written at approval');
 	});
 });
 

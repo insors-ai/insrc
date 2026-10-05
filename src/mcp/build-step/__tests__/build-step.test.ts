@@ -318,6 +318,15 @@ test('validate: persists a plan-driven BUILD ledger record (standalone key ABSEN
 		assert.equal(rec.meta['epicHash'], HASH);
 		assert.equal(rec.meta['storyId'], 's1');
 		assert.deepEqual(rec.body['tasks'], [{ id: 't1', passed: true }]);
+
+		// T3 (LLD-1716f77ba9ba017b-S001): the validate write is the controller's,
+		// and a later write that says nothing about the author keeps it — here the
+		// approval-time writer, which stamps no author of its own.
+		assert.equal(rec.meta['authoredBy'], 'controller');
+		await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => ['a.ts']);
+		const after = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
+		assert.equal(after.meta['authoredBy'], 'controller', 'kept across a write that omits it');
+		assert.equal((after.body['changeLog'] as unknown[]).length, 1, 'and that later write did happen');
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });

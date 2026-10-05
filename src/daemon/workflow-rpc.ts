@@ -250,6 +250,10 @@ export async function runWorkflowServerSide(
 	// The audit step output (sN) may be replaced by a fresh re-audit verdict
 	// during a correction round; finalize reads it, so keep a live copy.
 	let liveStepOutputs: Readonly<Record<string, unknown>> = stepOutputs;
+	// ONE finalize for this run, used by the first attempt and by every
+	// correction retry, so both stamp the same author: this run is the daemon's.
+	const finalizeAsDaemon = (json: Record<string, unknown>) =>
+		finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, json, opts.modelLabel, attributionNow(), 'daemon');
 	synthLoop:
 	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 		checkAbort();
@@ -257,7 +261,7 @@ export async function runWorkflowServerSide(
 		const artifactJson = await providerFor('synthesize', 'synthesize').completeStructured<Record<string, unknown>>(
 			msgs(synth.systemPrompt, synth.userTurn + feedback), synth.schema, sco('synthesize'),
 		);
-		const result = await finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, artifactJson, opts.modelLabel, attributionNow());
+		const result = await finalizeAsDaemon(artifactJson);
 		if (result.ok) { finalized = result.finalized; break; }
 		const failure = result.failure;
 
@@ -280,7 +284,7 @@ export async function runWorkflowServerSide(
 				);
 				const freshAudit = await reAuditBoundary(providerFor('checklist.verify', 're-audit'), corrected, findings, sco('re-audit'));
 				liveStepOutputs = { ...liveStepOutputs, [auditStepId]: freshAudit };
-				const r2 = await finalizeArtifact(intent, liveStepOutputs, runId, Date.now() - startedAtMs, corrected, opts.modelLabel, attributionNow());
+				const r2 = await finalizeAsDaemon(corrected);
 				if (r2.ok) { finalized = r2.finalized; break synthLoop; }
 				const f2 = r2.failure;
 				if (!f2.ok && f2.kind === 'boundary' && f2.correctable === true

@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "S001",
+    "createdAt": "2026-10-05T09:32:49.002Z",
+    "updatedAt": "2026-10-05T09:32:49.002Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      }
+    ],
+    "summary": "t1: added the optional author and reviewer party fields and the two readers (src/workflow/review/party.ts) that fall back to the stored model label. Nothing writes the fields yet.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-1716f77ba9ba017b-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/party.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/party.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/standalone-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-05T09:32:49.002Z"
+      }
+    ],
+    "commit": "1544816"
+  }
+}

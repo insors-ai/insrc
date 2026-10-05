@@ -111,6 +111,7 @@ export interface StandaloneBuildRecord {
 		readonly epicHash:   string;
 		readonly storyId:    string;
 		readonly createdAt:  string;
+		readonly authoredBy?: 'controller' | 'daemon' | undefined;
 	};
 	readonly body: {
 		readonly focus:       string;

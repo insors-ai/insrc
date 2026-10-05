@@ -49,6 +49,10 @@ export async function handleSynthesize(
 		state.runId,
 		elapsedMs,
 		input.artifact,
+		undefined,
+		undefined,
+		// This phase is the controller's: the MCP client authored the artifact.
+		'controller',
 	);
 	if (!result.ok) {
 		const failure = result.failure;

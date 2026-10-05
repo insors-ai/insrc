@@ -24,6 +24,15 @@ export type { RawFinding } from './verify.js';
 export { runReview, tallyFindings, computeReviewVerdict, severityForOutcome, DEFAULT_BLOCK_ON_SEVERITIES } from './review.js';
 export type { ReviewPhase, RunReviewOpts } from './review.js';
 export { renderReviewReport } from './report.js';
+export {
+	buildTemplateReviewPrompt, isDesignStage, readDesignReviewSettings, resolveDesignReview, reviewDeadlineMs,
+	reviewTemplateFor, validateTemplateAnswer,
+	DEFAULT_DESIGN_REVIEW_SETTINGS, HARD_REVIEW_DEADLINE_MS, TEMPLATE_ANSWER_SCHEMA,
+} from './template.js';
+export type {
+	DesignComplexity, DesignIntent, DesignReviewPlan, DesignReviewSettings, RawTemplateAnswer, ReviewCheckItem,
+	ReviewTemplate, TemplateAnswerResult,
+} from './template.js';
 export { applyAutoFixes, pendingUserFindings } from './apply.js';
 export type { AutoFixResult, AppliedFix, SkippedFix } from './apply.js';
 export { reviewArtifactFile } from './run-artifact.js';

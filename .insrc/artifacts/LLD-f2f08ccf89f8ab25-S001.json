@@ -199,6 +199,13 @@
         "choice": "Proposed values as configurable defaults",
         "rationale": "User, 2026-10-05: \"yes, go with recommended\".",
         "resolvedAt": "2026-10-05T06:47:36.223Z"
+      },
+      "qb7abe28c": {
+        "question": "Can the claude and codex CLIs return a schema-checked final answer from a run that also uses tools, with tools limited to reading and to the insrc analyze tools? This has not been tried; the build confirms it with a live probe before the session is relied on.",
+        "status": "resolved",
+        "choice": "Probe per CLI, fall back per CLI",
+        "rationale": "User, 2026-10-05: \"yes, go with recommended\".",
+        "resolvedAt": "2026-10-05T06:48:00.300Z"
       }
     }
   },

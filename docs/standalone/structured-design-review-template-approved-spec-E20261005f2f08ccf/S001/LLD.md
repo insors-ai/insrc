@@ -276,6 +276,8 @@ The template is the same as in a1. Each check item starts a separate reviewer se
 
 - `qfbb5069a` — Are the proposed check items and thresholds right? Proposed: 5 items and at most 8 premises for a design that answers an ISSUE; 8 items and at most 16 premises for a design that answers a SPEC. The spec left the numbers and items to this design, and they are the author's proposal, not yet confirmed by the user.
   - **resolved**: Proposed values as configurable defaults — User, 2026-10-05: "yes, go with recommended". _(2026-10-05T06:47:36.223Z)_
+- `qb7abe28c` — Can the claude and codex CLIs return a schema-checked final answer from a run that also uses tools, with tools limited to reading and to the insrc analyze tools? This has not been tried; the build confirms it with a live probe before the session is relied on.
+  - **resolved**: Probe per CLI, fall back per CLI — User, 2026-10-05: "yes, go with recommended". _(2026-10-05T06:48:00.300Z)_
 
 ## Citations
 

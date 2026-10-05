@@ -36,9 +36,9 @@
           "item": "fix-targets-defect",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers every bullet of the ISSUE's fix intent: record the author, route both ways for design and code, gate on a same-party review with the existing override, rewrite the steering/guides/descriptions, and keep older work approvable.",
-          "evidence": "ISSUE-1716f77ba9ba017b.json body.fixIntent lists five bullets. Each maps to the design: §3.1 party fields, §3.2/§3.3 routing, §2.5/§2.6 gate with override, §3.4 written rule, and 'an unknown author or reviewer never withholds approval by itself'. The ISSUE leaves 'what the gate does with older artifacts' to this stage. One consequence the design does not spell out: the status quo it describes (attribution model 'client', as on the ISSUE's own meta, plus meta.review.model 'client' from verdicts.ts:34 / findings.ts:32) reads as controller-authored and controller-reviewed, so every unapproved artifact reviewed the old way becomes a same-party withhold needing a re-review or an override. [files: .insrc/artifacts/ISSUE-1716f77ba9ba017b.json, src/mcp/review-step/phases/verdicts.ts, src/mcp/review-step/phases/findings.ts]",
-          "action": "State in the Migration section that already-reviewed, unapproved controller-authored artifacts will be withheld as same-party until the daemon reviews them or the user overrides.",
+          "premise": "The design covers every fix-intent bullet of ISSUE-1716f77b (record the author, route both directions for documents and code, gate rejects a same-party review with the existing override, rewrite steering + guides + tool descriptions, keep older work approvable), and the guides really do follow from the steering source.",
+          "evidence": "ISSUE.md fix intent has five bullets; each maps to a design section (3.1 party fields, 3.2/3.3 routing, 2.5 gate, 3.4 written rule, 4 edge case 'unknown party never withholds'). The guide claim is true: src/daemon/guide-sections.ts:9 says 'The canonical steering source (prompts/steering-block.md) is partitioned into' guide sections, and the review guide sits inside steering-block.md:216-241 ('A daemon self-review runs the SAME model that authored the artifact', line 220). The one-directional text the ISSUE cites exists at src/mcp/server.ts:593-600 and src/daemon/workflow-rpc.ts:133-134, 335-337, 398, all in files the design lists. Note: steering-block.md:211-213 also says no-review withholds BUILD only 'under codeReview.enforce (config, off / advisory by default)'; that sentence becomes false under the new gate and must be rewritten with the rest. [files: docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/ISSUE.md, src/prompts/steering-block.md, src/daemon/guide-sections.ts, src/mcp/server.ts, src/daemon/workflow-rpc.ts]",
+          "action": "None required. When rewriting the steering, also correct steering-block.md:211-213 (BUILD completion now always needs a code review).",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,8 +48,20 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today approval refuses only a blocking review: an unreviewed design artifact is approvable, and an unreviewed BUILD is withheld only under an enforcement setting that is off by default.",
-          "evidence": "gates.ts:578 throws ReviewBlockedError only when `review !== undefined && effectiveReviewVerdict(...) === 'block'`; an absent meta.review falls straight through to the approvedAt stamp. gates.ts:748-756 withholds a BUILD only when `effectiveEnforce && gate.status === 'no-review' && req.overrideReview === undefined && basename(jsonPath).startsWith('BUILD-')`. code-review/gate.ts:144-151 readEnforceFlag defaults to false. [files: src/workflow/gates.ts, src/workflow/code-review/gate.ts]",
+          "premise": "Today approval refuses only a blocking review: an unreviewed design artifact is approvable, and an unreviewed BUILD is withheld only under the enforcement setting.",
+          "evidence": "src/workflow/gates.ts:578 `if (review !== undefined && effectiveReviewVerdict(review, artifact.meta.reviewResolutions) === 'block')` is the only review check in approveArtifactByJsonPath, so an absent review passes. The BUILD no-review withhold at gates.ts:748-755 is conditioned on `effectiveEnforce && gate.status === 'no-review' && req.overrideReview === undefined && basename(jsonPath).startsWith('BUILD-')` and lives in approveWorkflowTarget only. [files: src/workflow/gates.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "For a stream request with no handler the daemon answers with a plain `{ id, error: 'unknown method: ...' }` line with no `stream` field and keeps the socket open, and the existing stream helper ignores such a line and would wait for the timer.",
+          "evidence": "src/daemon/server.ts:201 `this.send(socket, { id: request.id, error: `unknown method: ${request.method}` }); return;` with no socket.end(). src/mcp/daemon-stream.ts:149-163 acts only on frame.stream progress/delta/done/error and falls through at 'Unknown stream kind — ignore (forward-compatible)'. The `result`-without-`stream` case the design also handles is real: server.ts:190-199 falls back to a standard handler and sends `{ id, result }`. `codeReview.run` is a registered stream handler (src/daemon/index.ts:1869), so the second new helper has a real target. [files: src/daemon/server.ts, src/mcp/daemon-stream.ts, src/daemon/index.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -59,46 +71,22 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The controller loop of insrc_review_step stamps its review in the verdicts phase, so start.ts and verdicts.ts are the complete set of review-step files to change.",
-          "evidence": "For an HLD or LLD, start.ts:53-79 (`if (isDesignStage(stage))`) returns `next: 'emit_findings'`, and the review is stamped by src/mcp/review-step/phases/findings.ts:64-83 (`model: REVIEW_MODEL` = 'client', then `meta: { ...artifact.meta, review: report }`). handler.ts:60 dispatches `case 'findings': return handleFindings(step)`. verdicts.ts is reached only for non-design stages (DEF). findings.ts appears nowhere in the design, so for the two main gated kinds the controller stamp would carry no reviewedBy and the promised 'controller-loop phases refuse to stamp a review of controller-authored work' would not exist. The gate still reads 'controller' through the model-label fallback, so this is a gap rather than a wrong verdict. T4 and T12 as written would pass while exercising only verdicts.ts. [files: src/mcp/review-step/phases/start.ts, src/mcp/review-step/phases/findings.ts, src/mcp/review-step/handler.ts]",
-          "action": "Add src/mcp/review-step/phases/findings.ts to §3.3's call sites: stamp reviewedBy 'controller' and apply the same-party refusal there. Extend T4 and T12 to cover the findings phase for an LLD and an HLD.",
+          "severity": "LOW",
+          "premise": "approveArtifactByJsonPath is the one function every approval goes through (two callers), and a BUILD record's code-review record can be read beside it without a repo path.",
+          "evidence": "A search of src (tests excluded) finds exactly two calls: src/workflow/gates.ts:759 and src/cli/services/workflow.ts:158. No other code writes meta.approvedAt for workflow artifacts (the only other writer is the amendments store, src/workflow/amendments/store.ts:115, which is a different record). Both jsons live in the same folder: storage.ts:462-463 `join(repoPath, ARTIFACTS_DIR, `${artifactId}.json`)` for BUILD and storage.ts:656 `join(repoPath, ARTIFACTS_DIR, `${codeReviewArtifactId(epicHash, storyId)}.json`)` for CR, with id `CR-${epicHash}-${storyId}` (storage.ts:173-175). [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/workflow/storage.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.2",
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A BUILD record has exactly two build-step writers plus one approval-time writer, and mergeWithPrior keeps an authoredBy already on the record when a later write omits it.",
-          "evidence": "The callers of persistBuildRecord are validate.ts:257 (build-step validate), standalone-record.ts:309 via persistStandaloneBuildRecord called from implement.ts:155 (build-step implement, Trivial route), and completion-record.ts:85 (ensureBuildRecordOnCompletion, called from gates.ts:776 and :786). standalone-record.ts:350-358 builds meta as `...prior.meta, ...rec.meta`, so a field the new write omits survives. [files: src/workflow/runners/build/standalone-record.ts, src/mcp/build-step/phases/validate.ts, src/mcp/build-step/phases/implement.ts, src/workflow/runners/build/completion-record.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
           "severity": "MED",
-          "premise": "Putting the BUILD requirement in approveWorkflowTarget makes every approval of a BUILD require an other-party code review.",
-          "evidence": "approveArtifactByJsonPath has a second caller that never goes through approveWorkflowTarget: src/cli/services/workflow.ts:156-158, the TUI `approve(artifactPath, ...)`, which calls `approveArtifactByJsonPath(jsonPath, ...)` directly for any path. The design places the DEF/HLD/LLD checks in approveArtifactByJsonPath but the BUILD checks only in approveWorkflowTarget (§2.5 postcondition: 'for BUILD in approveWorkflowTarget'). A BUILD approved from the TUI would therefore be stamped with no code review and with a same-party one. [files: src/cli/services/workflow.ts, src/workflow/gates.ts]",
-          "action": "Either move the BUILD check to a helper both paths call, or route the TUI approve through approveWorkflowTarget; add src/cli/services/workflow.ts to the change sites and a test for a BUILD approved by that path.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.4",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "An MCP stream helper built like the existing workflow-run stream helper detects an older daemon's `unknown method` answer and reports it.",
-          "evidence": "For a stream request with no handler, daemon/server.ts:201 sends `{ id: request.id, error: 'unknown method: ...' }`: a unary-shaped line with no `stream` field, and the socket stays open. runWorkflowStream (mcp/daemon-stream.ts:149-163) acts only on `frame.stream` values progress, delta, done and error, and its comment at :163 says 'Unknown stream kind — ignore (forward-compatible)'. A helper copied from it would drop that line and wait until the tool's timer fires, so an older daemon would be reported as a timeout, not as 'update the daemon'. The same server path (server.ts:190-199) answers a stream request for a unary-only method with a `{ id, result }` line, which the pattern also ignores. [files: src/daemon/server.ts, src/mcp/daemon-stream.ts]",
-          "action": "Specify that the two new helpers treat a line with a top-level `error` and no `stream` field as a terminal failure, and have T11's fake daemon send exactly the server.ts:201 shape for the `unknown method` case.",
+          "premise": "The call-site lists in section 3 are complete for the party stamps.",
+          "evidence": "Three files that must change are named in the prose but missing from every call-site list. (1) src/mcp/workflow-step/phases/synthesize.ts:46-52 calls finalizeArtifact with five arguments; it must pass `controller`. (2) src/mcp/build-step/phases/validate.ts:257 `persistBuildRecord(repoPath, {` and (3) src/mcp/build-step/phases/implement.ts:155 `persistStandaloneBuildRecord(repoPath, {` are the 'two build-step writers' that must stamp `controller`; the list names only standalone-record.ts, which holds the type and the merge, not the stamps. Also: reviewArtifactFile is declared at run-artifact.ts:68, not :66. And the code-review tools cannot take the author from the subject they already hold: subject.ts:69-73 DEFAULT_DEPS has no readBuildRecord, so `subject.buildRecord` (subject.ts:140) is always null in production; the design does not say where `start` and `judgements` read the BUILD author from. [files: src/mcp/workflow-step/phases/synthesize.ts, src/mcp/build-step/phases/validate.ts, src/mcp/build-step/phases/implement.ts, src/workflow/review/run-artifact.ts, src/workflow/code-review/subject.ts]",
+          "action": "Add synthesize.ts, build-step/phases/validate.ts and build-step/phases/implement.ts to the 3.1 call sites; fix the :66 reference to :68; state in 3.3 that the code-review tools read authoredBy from the BUILD json directly (not from subject.buildRecord).",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -108,11 +96,23 @@
           "item": "preserved-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "finalizeArtifact has one MCP caller and two daemon workflow-run callers, takes `model` and `attribution` as trailing optional arguments, and an omitted authoredBy can leave its output unchanged (invariant c2).",
-          "evidence": "orchestrator.ts:383-399 declares `finalizeArtifact(intent, stepOutputs, runId, elapsedMs, llmResponse, model = 'client', attribution?)`. Its callers are mcp/workflow-step/phases/synthesize.ts:46 and daemon/workflow-rpc.ts:260 and :283, matching 'the MCP synthesize phase' and 'both daemon workflow-run calls'. An eighth optional parameter does not disturb them. Note the argument must be threaded through each per-workflow finalizer the switch at :401-412 dispatches to. For invariant c1, gates.ts:590 records reviewOverride only inside the blocking-review branch, so the new no-review and same-party branches must record the reason themselves, as must a BUILD overridden past a missing code review, which today records nothing. [files: src/workflow/orchestrator.ts, src/mcp/workflow-step/phases/synthesize.ts, src/daemon/workflow-rpc.ts, src/workflow/gates.ts]",
-          "action": "Name the per-workflow finalizers (finalizeDefine, finalizeDesignEpic, finalizeDesignStory) as stamp sites, and state that the new withhold branches write meta.reviewOverride.",
+          "premise": "A BUILD record keeps an authoredBy already stored when a later write (the approval-time writer) omits it, because mergeWithPrior spreads the stored meta before the new meta.",
+          "evidence": "src/workflow/runners/build/standalone-record.ts:346-358: `function mergeWithPrior(...)` builds meta as `...prior.meta, ...rec.meta,` with the comment 'a later write must not REMOVE meta the record already carried'. The approval-time writer is ensureBuildRecordOnCompletion → persistBuildRecord (completion-record.ts:85), which goes through the same merge (standalone-record.ts:290). This holds only while that writer omits the key; an explicit `authoredBy: undefined` would overwrite. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "None. Keep the key absent (not undefined) in the approval-time writer.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The backward-compat section lists every behaviour that changes for users (three), and stamping `daemon` in reviewArtifactFile is correct for all of its callers.",
+          "evidence": "reviewArtifactFile has two callers, and one is not the daemon: src/cli/services/workflow.ts:241-256 `reviewArtifact` runs it inside the TUI process, reached from the TUI `review` command (src/cli/command.ts:188). The TUI also authors through the daemon (command.ts:180 → runWorkflowStreaming → daemon workflow.run, which will stamp authoredBy `daemon`). So the TUI-only chain run → review → approve yields a `daemon` review on `daemon`-authored work, and approve (command.ts:223, WorkflowsPane.tsx:116 with no override) is withheld as same-party every time. The design places the same-party refusal only in the new daemon method workflow.review, so the TUI review still runs, spends a full review, and stamps a review the gate then rejects. This fourth change is not in the 'Three behaviours change for users' list, and no test covers it. [files: src/cli/services/workflow.ts, src/cli/command.ts, src/cli/panes/WorkflowsPane.tsx, src/workflow/review/run-artifact.ts]",
+          "action": "Decide and state the TUI behaviour: either make the TUI review service refuse daemon-authored work up front (same check as workflow.review) and list 'TUI-run artifacts need a controller review or an override' as a fourth behaviour change, or define which party a TUI-process review is. Add a test for the chosen behaviour.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
@@ -120,21 +120,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The gate tests for ac3 (T5, T7) would fail on today's code, and the stream helper has an injectable connect for T9 to T11's fake daemon.",
-          "evidence": "T5: gates.ts:576-591 approves any artifact whose meta.review is undefined, so 'a DEF, an HLD and an LLD with no review are withheld' fails today. T7: gates.ts:748-756 withholds a no-review BUILD only when effectiveEnforce is true, so the 'enforcement off' case fails today. The fixture seam exists: daemon-stream.ts:66-68 `RunWorkflowStreamDeps { connect?: () => Socket }`, with the same seam on UnaryRpcDeps at :197. Two gaps follow from the change-sites findings rather than from these tests: no listed test exercises the findings phase (ac1/ac2 for HLD and LLD), and none approves a BUILD through the TUI path. [files: src/workflow/gates.ts, src/mcp/daemon-stream.ts]",
-          "action": "Add the findings-phase cases to T4 and T12 and a TUI-path BUILD case to T7.",
+          "premise": "Each acceptance criterion maps to tests that would fail without the fix, and the label-based readers in T1 match the labels really stored today.",
+          "evidence": "ac1→T9/T10/T12/T14, ac2→T1-T4, ac3→T5-T8, ac4→T11, ac5→T13; each asserts behaviour absent today (no party field exists: a search for authoredBy/reviewedBy in the review, code-review and build-step sources returns nothing; start.ts:53-105 always returns emit_findings/emit_claims; gates.ts:578 approves an unreviewed artifact). T11's unknown-method case fails on the current helper, which ignores a line with no `stream` field (daemon-stream.ts:163). The stored labels match T1: this LLD's json has meta.attribution.outputs[0].model = \"client\" (finalizeArtifact default `model: string = 'client'`, orchestrator.ts:394, via singleModelAttribution), and the controller review stamps `REVIEW_MODEL = 'client'` (findings.ts:32, verdicts.ts:34), while daemon reviews stamp a provider label (workflow-rpc.ts:348 `model: opts.modelLabel`; cli/services/workflow.ts:253). Gap, reported under preserved-behaviour: no test covers a review started from the TUI. [files: src/mcp/review-step/phases/start.ts, src/mcp/review-step/phases/findings.ts, src/workflow/orchestrator.ts, src/workflow/gates.ts, src/mcp/daemon-stream.ts, .insrc/artifacts/LLD-1716f77ba9ba017b-S001.json]",
+          "action": "None for the listed criteria; add the TUI review test named under preserved-behaviour.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 3,
-        "low": 5,
+        "med": 2,
+        "low": 6,
         "unverified": 0
       },
       "template": "design-issue",
-      "reviewedAt": "2026-10-05T07:29:59.703Z",
+      "reviewedAt": "2026-10-05T08:24:13.255Z",
       "model": "cli-claude:opus"
     }
   },
@@ -210,11 +210,11 @@
           "parameters": [],
           "returns": {
             "type": "Promise<ReviewArtifactResult>",
-            "meaning": "Unchanged, except the review it stamps carries reviewedBy `daemon`. The controller loop's verdicts phase stamps reviewedBy `controller`."
+            "meaning": "Unchanged, except the review it stamps carries reviewedBy `daemon`. This holds for both of its paths: the extract, probe and verify pipeline (a DEF) and the one-session template review (an HLD or LLD). The controller stamps a review in two phases of insrc_review_step, and each stamps reviewedBy `controller`: `verdicts` for a DEF and `findings` for an HLD or LLD."
           },
           "errors": [],
           "preconditions": [
-            "Declared at src/workflow/review/run-artifact.ts:66."
+            "Declared at src/workflow/review/run-artifact.ts:68."
           ],
           "postconditions": []
         },
@@ -250,17 +250,19 @@
           "errors": [
             {
               "type": "ReviewBlockedError",
-              "condition": "Existing: the review's verdict blocks. New: a DEF, HLD or LLD has no review; or any artifact's review was done by the party that authored it, both parties known. None of these applies when overrideReview is given."
+              "condition": "Existing: the review's verdict blocks. New, for a DEF, HLD or LLD: it has no review. New, for a BUILD record: the Story has no code-review record. New, for any artifact: its review (for a BUILD record, its code review) was done by the party that authored it, both parties known. None of the new causes applies when overrideReview is given."
             }
           ],
           "preconditions": [
             "Declared at src/workflow/gates.ts:562."
           ],
           "postconditions": [
-            "The artifact kinds are the ArtifactKind union at src/workflow/path-scheme.ts:46. A review is required for DEF, HLD and LLD here and for BUILD in approveWorkflowTarget; every other kind (SPEC, PLAN, ISSUE, CR, EXT) needs none.",
+            "The artifact kinds are the ArtifactKind union at src/workflow/path-scheme.ts:46. A review is required for DEF, HLD and LLD, and a code review for BUILD; every other kind (SPEC, PLAN, ISSUE, CR, EXT) needs none.",
             "ISSUE, SPEC and PLAN artifacts need no review and are approved on the user's approval alone.",
             "An unknown author or an unknown reviewer never withholds approval by itself.",
-            "The override reason is recorded on the artifact, as today."
+            "The override reason is recorded on the artifact, as today.",
+            "All of these checks live HERE, because this is the one function every approval goes through. It has two callers: approveWorkflowTarget (src/workflow/gates.ts:759) and the TUI approve service (src/cli/services/workflow.ts:158), which calls it directly for any path. A check placed only in approveWorkflowTarget would be bypassed by the TUI.",
+            "For a BUILD record the Story's code-review record is read from the artifact store beside it (same folder, id from the same epic hash and Story), so no repo path argument is needed."
           ]
         },
         {
@@ -269,7 +271,7 @@
           "parameters": [],
           "returns": {
             "type": "Promise<WorkflowApproveResult>",
-            "meaning": "Unchanged shape. A BUILD record is withheld into skipped[] when the Story has no code review, whether or not the enforcement setting is on, and when the code review was done by the party that authored the build, both known. overrideReview approves past either."
+            "meaning": "Unchanged shape. It no longer decides the new BUILD rules itself: a BUILD record with no code review, or with a same-party one, is refused by approveArtifactByJsonPath and lands in skipped[] through the existing catch of ReviewBlockedError. Its existing check stays: a code review whose verdict blocks withholds completion under the enforcement setting."
           },
           "errors": [],
           "preconditions": [
@@ -285,19 +287,27 @@
       {
         "entity": "Party fields",
         "change": "field-add",
-        "details": "Optional `authoredBy` on artifact meta and BUILD record meta; optional `reviewedBy` on the design review stamp and the code-review record. Both take 'controller' or 'daemon'. Two small shared readers return the party: the explicit field when present; otherwise, for older design artifacts and reviews, the stored model label decides. For an artifact's author the label is the `model` of each entry in meta.attribution.outputs (src/workflow/types.ts:286): all 'client' reads as `controller`, none 'client' as `daemon`, a mixture or no entries as unknown. For a design review the label is meta.review.model (src/workflow/review/types.ts:142): 'client' reads as `controller`, any other label as `daemon`. An older BUILD record's author is unknown.",
+        "details": "Optional `authoredBy` on artifact meta and BUILD record meta; optional `reviewedBy` on the design review stamp and the code-review record. Both take 'controller' or 'daemon'. Two small shared readers return the party: the explicit field when present; otherwise, for older design artifacts and reviews, the stored model label decides. For an artifact's author the label is the `model` of each entry in meta.attribution.outputs (src/workflow/types.ts:286): all 'client' reads as `controller`, none 'client' as `daemon`, a mixture or no entries as unknown. For a design review the label is meta.review.model (src/workflow/review/types.ts:142): 'client' reads as `controller`, any other label as `daemon`. An older BUILD record's author is unknown. The reviewer party is stamped at these places: reviewArtifactFile (src/workflow/review/run-artifact.ts) writes `daemon`; the verdicts phase and the findings phase of insrc_review_step (src/mcp/review-step/phases/findings.ts and phases/verdicts.ts, which today stamp the model label 'client') write `controller`; runCodeReview writes the value it is given. The author party is stamped at these places: the MCP synthesize phase passes `controller` to finalizeArtifact (src/mcp/workflow-step/phases/synthesize.ts); the daemon workflow run passes `daemon` on its first finalize and on its correction retry (src/daemon/workflow-rpc.ts); the two build-step writers stamp `controller` on the BUILD record, the validate phase (src/mcp/build-step/phases/validate.ts) and the Trivial implement write (src/mcp/build-step/phases/implement.ts). standalone-record.ts holds the record type and the merge that keeps the field, not the stamps.",
         "callSites": [
           "src/workflow/types.ts",
           "src/workflow/orchestrator.ts",
           "src/workflow/runners/build/standalone-record.ts",
           "src/workflow/review/types.ts",
-          "src/workflow/code-review/types.ts"
+          "src/workflow/code-review/types.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/mcp/review-step/phases/verdicts.ts",
+          "src/mcp/review-step/phases/findings.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/mcp/workflow-step/phases/synthesize.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/build-step/phases/validate.ts",
+          "src/mcp/build-step/phases/implement.ts"
         ]
       },
       {
         "entity": "Daemon request to review an existing design artifact",
         "change": "new",
-        "details": "A new daemon stream method, workflow.review, takes an artifact path and runs reviewArtifactFile with the provider the role router resolves for the `review` role, as the TUI review service does. It refuses an artifact the daemon authored. The MCP server gets one helper to call it and one to call the existing codeReview.run, both built like the existing workflow-run stream helper.",
+        "details": "A new daemon stream method, workflow.review, takes an artifact path and runs reviewArtifactFile with the provider the role router resolves for the `review` role, as the TUI review service does. It refuses an artifact the daemon authored. The MCP server gets one helper to call it and one to call the existing codeReview.run, both built like the existing workflow-run stream helper. One difference from that helper is required. For a stream request it has no handler for, the daemon answers with a plain line, `{ id, error: 'unknown method: ...' }`, that has no `stream` field (src/daemon/server.ts:201), and it leaves the socket open. The existing helper acts only on lines whose `stream` is progress, delta, done or error and ignores every other line (src/mcp/daemon-stream.ts:163), so it would wait until the timer fires and report a timeout. The two new helpers treat any line with a top-level `error` and no `stream` field as a final failure, and a line with a top-level `result` and no `stream` field as a protocol error. For an HLD or LLD, reviewArtifactFile runs the one-session template review, which has its own deadline of at most 10 minutes; for a DEF it runs the extract, probe and verify pipeline.",
         "callSites": [
           "src/daemon/index.ts",
           "src/daemon/workflow-rpc.ts",
@@ -307,10 +317,11 @@
       {
         "entity": "Routing inside insrc_review_step and insrc_code_review_step",
         "change": "invariant-change",
-        "details": "On `start`, each tool reads the author party. Daemon-authored: today's controller loop, unchanged. Controller-authored or unknown: the tool asks the daemon to review, waits, and returns `done` with the verdict in the same turn. If the daemon is unreachable, fails, is too old to know the request, or exceeds the wait limit, the tool returns an error saying so; it never falls back to a controller review. The controller-loop phases refuse to stamp a review of controller-authored work.",
+        "details": "On `start`, each tool reads the author party BEFORE it chooses a path. Daemon-authored: today's controller loop, unchanged, which for insrc_review_step is start, claims, verdicts for a DEF and start, findings for an HLD or LLD. Controller-authored or unknown: the tool asks the daemon to review, waits, and returns `done` with the verdict in the same turn. If the daemon is unreachable, fails, is too old to know the request, or exceeds the wait limit, the tool returns an error saying so; it never falls back to a controller review. Every controller phase that stamps a review refuses controller-authored work and stamps nothing: `verdicts` and `findings` in insrc_review_step, and `judgements` in insrc_code_review_step. The code-review tool and the daemon code review read the build's author from the BUILD record's json in the artifact store, not from the review subject they already hold, which does not carry it.",
         "callSites": [
           "src/mcp/review-step/phases/start.ts",
           "src/mcp/review-step/phases/verdicts.ts",
+          "src/mcp/review-step/phases/findings.ts",
           "src/mcp/code-review-step/handler.ts",
           "src/daemon/code-review-rpc.ts"
         ]
@@ -331,14 +342,14 @@
       "errorCases": [
         {
           "scenario": "A review tool asks the daemon to review and the daemon is not running, closes the connection, fails part-way, or does not know the request because it is an older build.",
-          "detection": "The MCP stream helper sees a connection error, a close before the final frame, an error frame, or an `unknown method` answer.",
+          "detection": "The MCP stream helper sees a connection error, a close before the final frame, an error frame, or a plain answer line with a top-level `error` and no `stream` field, which is how an older daemon reports `unknown method`.",
           "response": "The tool returns an error naming the cause (and, for an older daemon, telling the user to update it). Nothing is stamped. No controller review is offered.",
           "userImpact": "The artifact has no review, so approval is withheld. The user starts or updates the daemon and retries, or overrides at approval with a reason.",
           "recoverable": true
         },
         {
           "scenario": "The daemon review takes longer than the tool's wait limit.",
-          "detection": "A timer in the review tool expires before the final frame arrives.",
+          "detection": "A timer in the review tool expires before the final frame arrives. The wait limit is 11 minutes for a design review (the review's own hard cap of 10 minutes plus a margin) and 10 minutes for a DEF review or a code review.",
           "response": "The tool aborts the request and returns a timeout error. Nothing is stamped.",
           "userImpact": "Same as a failed review: retry or override.",
           "recoverable": true
@@ -371,6 +382,10 @@
         {
           "input": "A batch approval covers reviewed and unreviewed artifacts.",
           "expected": "The unreviewed and same-party ones are listed in skipped[] with a reason; the rest are approved."
+        },
+        {
+          "input": "A BUILD record is approved from the TUI, which calls approveArtifactByJsonPath directly.",
+          "expected": "The same rules apply as through approveWorkflowTarget: withheld with no code review or a same-party one, approved with an override reason."
         }
       ],
       "invariantsToPreserve": [
@@ -408,7 +423,7 @@
             "T1 the two readers: explicit field wins; model label 'client' reads as controller and any other label as daemon; nothing stored reads as unknown",
             "T2 finalizeArtifact stamps the authoredBy it is given and writes the same output as before when given none",
             "T3 a BUILD record keeps its authoredBy across a later write that omits it",
-            "T4 each review path stamps its own party: controller loop, reviewArtifactFile, and runCodeReview with each value"
+            "T4 each review path stamps its own party: the controller's verdicts phase (a DEF) and its findings phase (an LLD and an HLD) write `controller`; reviewArtifactFile writes `daemon` on both its pipeline path and its template path; runCodeReview writes each value it is given"
           ],
           "fixturesNeeded": [
             "the existing finalizeArtifact test harness"
@@ -420,7 +435,7 @@
           "subjects": [
             "T5 a DEF, an HLD and an LLD with no review are withheld and approved with an override; an ISSUE, a SPEC and a PLAN with no review are approved",
             "T6 a same-party review withholds; an other-party non-blocking review approves; an unknown author or reviewer does not withhold",
-            "T7 a BUILD record is withheld with no code review (enforcement off and on) and with a same-party code review; an override approves",
+            "T7 a BUILD record is withheld with no code review (enforcement off and on) and with a same-party code review; an override approves; the same holds when it is approved through the TUI approve service",
             "T8 a batch approval lists withheld artifacts in skipped[] and approves the rest"
           ],
           "fixturesNeeded": [
@@ -433,8 +448,9 @@
           "subjects": [
             "T9 insrc_review_step: controller-authored or unknown-author artifact goes to the daemon and returns done with the verdict; daemon-authored runs the controller loop as before",
             "T10 insrc_code_review_step: the same two routes",
-            "T11 daemon unreachable, error frame, `unknown method` and timeout each return an error, stamp nothing and offer no controller loop",
-            "T12 the daemon refuses to review daemon-authored work, and the controller-loop phases refuse to stamp a review of controller-authored work"
+            "T11 daemon unreachable, error frame and timeout each return an error, stamp nothing and offer no controller loop; a fake daemon that answers `{ id, error: 'unknown method: workflow.review' }` with no stream field and keeps the socket open makes the tool fail at once with the update-the-daemon message, not after the wait limit",
+            "T12 the daemon refuses to review daemon-authored work; the controller's verdicts phase, its findings phase (for an LLD and for an HLD) and its judgements phase each refuse controller-authored work and stamp nothing",
+            "T14 insrc_review_step on a controller-authored LLD goes to the daemon before the template prompt is ever returned; on a daemon-authored LLD it returns emit_findings as today"
           ],
           "fixturesNeeded": [
             "a fake daemon over the stream helper's injected connect"
@@ -454,7 +470,8 @@
           "provingTests": [
             "T9",
             "T10",
-            "T12"
+            "T12",
+            "T14"
           ]
         },
         {
@@ -520,7 +537,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No stored data is rewritten; the new fields are optional and older records stay readable. Three behaviours change for users: (1) insrc_review_step and insrc_code_review_step on controller-authored work now return the daemon's verdict in one turn instead of handing the controller a review to do; (2) an unapproved DEF, HLD, LLD or BUILD with no review can no longer be approved without a review or an override reason; (3) the daemon and the MCP server must both be on the new build, otherwise the tools report a failed daemon review. Known limit: the daemon cannot run tests, so its code review reports test results as unverified.",
+      "backwardCompat": "No stored data is rewritten; the new fields are optional and older records stay readable. Three behaviours change for users: (1) insrc_review_step and insrc_code_review_step on controller-authored work now return the daemon's verdict in one turn instead of handing the controller a review to do; (2) an unapproved DEF, HLD, LLD or BUILD with no review can no longer be approved without a review or an override reason; (3) the daemon and the MCP server must both be on the new build, otherwise the tools report a failed daemon review. A BUILD record approved from the TUI is held to the same rules. Known limit: the daemon cannot run tests, so its code review reports test results as unverified.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -574,7 +591,8 @@
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "How long should a review tool wait for the daemon review? On 2026-10-04 a non-controller design review of a 40 KB design took 12 minutes for one pass and 27 minutes with its automatic second pass. A tool call may not be able to wait that long."
+      "Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.",
+      "Which party is a review run from the TUI? The TUI authors through the daemon (its `workflow` command starts a daemon workflow run, so the artifact is daemon-authored) and its `review` command runs reviewArtifactFile inside the TUI process, which this design stamps `daemon`. A TUI-only chain of run, review, approve would therefore always be withheld as a same-party review, after spending a full review. Either the TUI review refuses daemon-authored work up front, like the new daemon request, and TUI-only work is approved with an override reason; or a TUI-process review is defined as its own party. Raised by the other-party review of 2026-10-05; needs the user's decision."
     ]
   },
   "citations": [
@@ -630,6 +648,29 @@
       "id": "c10",
       "kind": "code",
       "ref": "src/mcp/code-review-step/handler.ts:490"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:158",
+      "quotedText": "const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:201",
+      "quotedText": "this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/mcp/daemon-stream.ts:163",
+      "quotedText": "// Unknown stream kind — ignore (forward-compatible)."
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD-f2f08ccf89f8ab25-S001"
     }
   ]
 }

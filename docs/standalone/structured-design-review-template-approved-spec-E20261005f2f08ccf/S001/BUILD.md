@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-05T07:36:55.038Z  ·  **Updated:** 2026-10-05T07:36:55.038Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-05T07:36:55.038Z  ·  **Updated:** 2026-10-05T07:56:26.234Z
 
-**Commit:** fd46275
+**Commit:** 8977da0
 
 ## Triage rationale
 
@@ -20,33 +20,38 @@ Built the structured design review template in seven plan tasks (commits 71bdb44
 
 ## Changes
 
-- `.insrc/artifacts/LLD-1716f77ba9ba017b-S001.json` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/S001/LLD.md` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/agent/providers/__tests__/cli-review-session.live.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/agent/providers/__tests__/cli-review-session.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/config/__tests__/config-catalog-contract.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/config/config-catalog.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/__tests__/schema-registry.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/__tests__/review-step-findings.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/handler.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/phases/claims.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/phases/findings.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/phases/start.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/review-step/types.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/mcp/server.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/prompts/steering-block.md` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/__tests__/outcome.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/__tests__/template-review.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/__tests__/template.test.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/apply.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/index.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/report.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/review.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/template-review.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/template.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/types.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `src/workflow/review/verdict.ts` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `vscode-plugin/assets/steering-block.md` — **insrc-build** (2026-10-05T07:36:55.038Z)
-- `vscode-plugin/package.json` — **insrc-build** (2026-10-05T07:36:55.038Z)
+- `.insrc/artifacts/CR-f2f08ccf89f8ab25-S001.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `.insrc/artifacts/ISSUE-b2e05b043846451c.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `.insrc/artifacts/LLD-1716f77ba9ba017b-S001.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `docs/standalone/standalone-feature-has-no-definition-artifact-E20261005b2e05b04/ISSUE.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `docs/standalone/structured-design-review-template-approved-spec-E20261005f2f08ccf/S001/CR.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/S001/LLD.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/agent/providers/__tests__/cli-review-session.live.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/agent/providers/__tests__/cli-review-session.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/config/__tests__/config-catalog-contract.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/config/config-catalog.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/__tests__/schema-registry.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/__tests__/review-step-findings.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/handler.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/phases/claims.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/phases/findings.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/phases/start.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/phases/verdicts.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/review-step/types.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/mcp/server.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/prompts/steering-block.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/__tests__/outcome.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/__tests__/template-review.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/__tests__/template.test.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/apply.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/index.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/report.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/review.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/template-review.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/template.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/types.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `src/workflow/review/verdict.ts` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `vscode-plugin/assets/steering-block.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `vscode-plugin/package.json` — **insrc-build** (2026-10-05T07:56:26.234Z)

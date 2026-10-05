@@ -222,6 +222,7 @@ test('T2 the daemon run finalizes through ONE call, so a correction retry cannot
 	const code = src.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
 	const calls = code.match(/\bfinalizeArtifact\(/g) ?? [];
 	assert.equal(calls.length, 1, 'exactly one finalizeArtifact call in the daemon run');
-	assert.match(code, /finalizeArtifact\([^)]*attributionNow\(\), 'daemon'\)/, 'and that call stamps the daemon');
+	const call = code.slice(code.indexOf('finalizeArtifact(intent'));
+	assert.ok(call.slice(0, call.indexOf(';')).endsWith("attributionNow(), 'daemon')"), 'and that call stamps the daemon');
 	assert.equal((code.match(/\bfinalizeAsDaemon\(/g) ?? []).length, 2, 'used by the first attempt and by the correction retry');
 });

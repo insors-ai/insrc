@@ -64,6 +64,9 @@ export interface BuildRecord {
 		readonly storyId:    string;
 		readonly createdAt:  string;
 		readonly updatedAt?: string | undefined;
+		/** The party that wrote the code. Stamped by the build-step writers;
+		 *  absent on older records, whose author is unknown. */
+		readonly authoredBy?: 'controller' | 'daemon' | undefined;
 		/** Written by the approval gate; preserved verbatim across an upsert. */
 		readonly approvedAt?:     string | undefined;
 		readonly rejectedAt?:     string | undefined;

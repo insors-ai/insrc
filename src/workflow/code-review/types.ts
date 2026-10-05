@@ -176,6 +176,8 @@ export interface CodeReviewMeta extends Omit<ArtifactMetaBase, 'workflow'> {
 	readonly workflow: 'code-review';
 	readonly epicHash: string;
 	readonly storyId:  string;
+	/** The party that ran this code review. Absent on older records. */
+	readonly reviewedBy?: 'controller' | 'daemon' | undefined;
 }
 
 /** The persisted code-review artifact — the same `{ meta, body }` shape as

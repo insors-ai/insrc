@@ -154,4 +154,8 @@ export interface ReviewReport {
 	readonly template?: string | undefined;
 	readonly reviewedAt: string;
 	readonly model: string;
+	/** The party that ran this review. Absent on reviews stamped before the
+	 *  field existed — read it through `reviewerPartyOf` in `party.ts`, which
+	 *  falls back to `model`. */
+	readonly reviewedBy?: 'controller' | 'daemon' | undefined;
 }

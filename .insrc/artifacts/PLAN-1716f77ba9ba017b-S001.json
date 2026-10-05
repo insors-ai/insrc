@@ -23,7 +23,9 @@
     "epicSlug": "two-sets-eyes-review-rule-only",
     "storyId": "S001",
     "lldRunId": "wf-1791143766097-bxkynw",
-    "lldEffectiveHash": "9c39702f35b748773317c7984b3e209ce1ffca2429fc8b14b08c88d06fad1318"
+    "lldEffectiveHash": "9c39702f35b748773317c7984b3e209ce1ffca2429fc8b14b08c88d06fad1318",
+    "approvedAt": "2026-10-05T09:30:16.382Z",
+    "rangeBase": "d73565da67331f7bd4b72d40cdd2f09396f2e393"
   },
   "body": {
     "summary": {

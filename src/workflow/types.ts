@@ -329,6 +329,11 @@ export interface ArtifactMetaBase {
 	 * `outputs[]` for a zero-output run). Read via `workflow/attribution.ts`.
 	 */
 	readonly attribution?: ArtifactModelAttribution;
+	/** The party that authored this artifact: the controller (the MCP client
+	 *  session) or the daemon. Absent on artifacts written before the field
+	 *  existed — read it through `authorPartyOf` in `workflow/review/party.ts`,
+	 *  which falls back to the attribution labels. */
+	readonly authoredBy?: 'controller' | 'daemon' | undefined;
 	/** Total wall-clock elapsed from start to synthesize. */
 	readonly elapsedMs:    number;
 	/** Repo watermark when the run started. */

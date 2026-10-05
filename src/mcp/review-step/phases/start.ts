@@ -124,13 +124,20 @@ export async function handleStart(
 /** Resolve the artifact's (md, json) pair. Given a `.md`/`.html` path the
  *  canonical json is found via `jsonPathForMd`; given a `.json` path its
  *  `.md` sibling is derived by extension swap. */
-/** How long the tool waits for the daemon's review. A design review (HLD / LLD)
- *  is one reviewer session with a hard limit of 10 minutes, so the tool waits one
- *  minute longer and never gives up on a review that is about to finish. Any
- *  other artifact goes through the older pipeline, which has no limit of its
- *  own; 10 minutes is the default (provisional — see the LLD's resolved question). */
+/** How long the tool waits for the daemon's review of a design (HLD / LLD).
+ *  That review is one reviewer session with a hard limit of 10 minutes, so the
+ *  tool waits one minute longer and never gives up on a review that is about to
+ *  finish. */
 export const DESIGN_REVIEW_WAIT_MS = 11 * 60_000;
-export const PIPELINE_REVIEW_WAIT_MS = 10 * 60_000;
+
+/** How long the tool waits for the daemon's review of any other artifact (a
+ *  DEF). That review goes through the older extract, probe and verify pipeline,
+ *  which has no time limit of its own and runs TWICE when the first pass applies
+ *  a fix. Measured on 2026-10-05 on a real DEF: 777 s (399 s for the first pass
+ *  over 19 premises, then 378 s for the re-review over 21). The 10 minutes this
+ *  started at was therefore too short; 30 minutes leaves room for a DEF about
+ *  twice that size. The pipeline itself is deliberately not changed here. */
+export const PIPELINE_REVIEW_WAIT_MS = 30 * 60_000;
 
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);

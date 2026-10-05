@@ -613,7 +613,8 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
 				'call phase=\'start\' and the tool routes it.\n\n' +
 				'When the daemon is the reviewer, phase=\'start\' itself asks the daemon, waits ' +
-				'(up to about 11 minutes) and returns { next: \'done\', verdict, counts, report, ' +
+				'(up to about 11 minutes for an HLD or LLD; up to 30 for a DEF, whose review ' +
+				'has measured about 13) and returns { next: \'done\', verdict, counts, report, ' +
 				'applied, pending, reviewedBy: \'daemon\' } — there is no further turn. If the ' +
 				'daemon is not running, is too old to know the request, fails, or passes the ' +
 				'wait limit, it returns next:\'error\' naming the cause and stamps nothing. It ' +

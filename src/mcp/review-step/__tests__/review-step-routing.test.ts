@@ -136,11 +136,13 @@ test('T9 an older artifact with no author field is routed by its attribution lab
 
 // --- T11: the wait limit, and a failed daemon review ----------------------------
 
-test('T11 the tool waits 11 minutes for a design (HLD, LLD) and 10 minutes for a DEF', async () => {
+test('T11 the tool waits 11 minutes for a design (HLD, LLD) and 30 minutes for a DEF', async () => {
 	_clearReviewStateStoreForTests();
 	assert.equal(DESIGN_REVIEW_WAIT_MS, 11 * MIN);
-	assert.equal(PIPELINE_REVIEW_WAIT_MS, 10 * MIN);
-	for (const [workflow, limit] of [['design.story', 11 * MIN], ['design.epic', 11 * MIN], ['define', 10 * MIN]] as const) {
+	// 30, not 10: a real DEF review measured 777 s (t12), so 10 minutes cut it off.
+	assert.equal(PIPELINE_REVIEW_WAIT_MS, 30 * MIN);
+	assert.ok(PIPELINE_REVIEW_WAIT_MS > 777_000 * 2, 'room for a DEF about twice the measured one');
+	for (const [workflow, limit] of [['design.story', 11 * MIN], ['design.epic', 11 * MIN], ['define', 30 * MIN]] as const) {
 		const fx = fixture(workflow, 'controller');
 		try {
 			const d = fakeDaemon();

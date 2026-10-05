@@ -232,7 +232,8 @@ and the tool routes by who authored the artifact:
 
 - **You authored it (or the author is not recorded):** the tool asks the daemon
   to review, waits, and returns `done` with the daemon's verdict in the same
-  call. This can take several minutes. If the daemon is not running, is too old
+  call. This can take several minutes (a DEF has measured about 13; the tool
+  waits up to 30). If the daemon is not running, is too old
   to know the request, fails, or passes the wait limit, the tool returns an
   error naming the cause. It does NOT fall back to a review by you: fix the
   cause and call again, or tell the user, who can approve with an override

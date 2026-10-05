@@ -333,22 +333,29 @@ State the rule in both directions in the steering and tool descriptions and rely
 
 - Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q939cb900` — Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.
+  - **resolved**: Keep 10 minutes for DEF too — Provisional, chosen by the controller on the pattern the user picked for the design-review limits on 2026-10-05 (ship a default, then time real runs): 10 minutes is the default wait limit, and the plan includes a task that times a real daemon DEF review and reports whether the default fits. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews. Not yet confirmed by the user. _(2026-10-05T09:23:24.440Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**1 do not hold · 0 could not be verified · 7 hold** · template `design-issue` · model `cli-claude:opus` · reviewed 2026-10-05T08:46:29.047Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| current-behaviour | MED | In insrc_code_review_step's start phase, 'only a freshness check that is UNAVAILABLE returns an error and starts no review, as today'; the phase has four outcomes today. | src/mcp/code-review-step/handler.ts has two more error exits that start no review. Lines 303-306: `const g = await deps.fetchGrounding(...); if (!g.ok) { return errorResult('grounding-unavailable', ...) }`. Lines 355-358 in beginDiffOnlyReview: `if (err instanceof DiffUnavailableError) { return errorResult('diff-unavailable', ...) }`. The four outcomes the design lists are otherwise accurate (confirm_wait at 291-298, decline at 229-232, wait timeout at 272-279, empty symbols at 312-313), and the stated daemon gap is real: src/daemon/code-review-rpc.ts:93 calls runCodeReview with only runId, modelLabel, signal and onProgress. The omission matters because the design moves diff grounding to the daemon, so it must say where each of these two errors now surfaces, and T17 tests neither. [files: src/mcp/code-review-step/handler.ts, src/daemon/code-review-rpc.ts] | Amend 3.3 to list the two extra error outcomes: grounding-unavailable stays a tool-side error that asks no daemon; diff-unavailable becomes a daemon error frame (or stays tool-side if the tool still assembles the diff). Add both cases to T17. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/workflow/gates.ts`
+- **[[c2]]** `code` `src/workflow/orchestrator.ts`
+- **[[c3]]** `code` `src/mcp/review-step/phases/start.ts`
+- **[[c4]]** `prior-artifact` `ISSUE-1716f77ba9ba017b`
+- **[[c5]]** `stakeholder` `user, 2026-10-04` — "review artifacts need to be submitted for approval"
+- **[[c6]]** `stakeholder` `user, 2026-10-04` — "these 3 don't need review steps, only user approval"
+- **[[c7]]** `code` `src/workflow/path-scheme.ts:46` — "export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE';"
+- **[[c8]]** `code` `src/daemon/index.ts:1869`
+- **[[c9]]** `code` `src/mcp/review-step/phases/start.ts:63`
+- **[[c10]]** `code` `src/mcp/code-review-step/handler.ts:490`
+- **[[c11]]** `code` `src/cli/services/workflow.ts:158` — "const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);"
+- **[[c12]]** `code` `src/daemon/server.ts:201` — "this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });"
+- **[[c13]]** `code` `src/mcp/daemon-stream.ts:163` — "// Unknown stream kind — ignore (forward-compatible)."
+- **[[c14]]** `prior-artifact` `LLD-f2f08ccf89f8ab25-S001`
+- **[[c15]]** `stakeholder` `user, 2026-10-05` — "1. yes. works as designed."
+- **[[c16]]** `code` `src/daemon/workflow-rpc.ts:346` — "const res = await reviewArtifactFile({"
+- **[[c17]]** `code` `src/mcp/code-review-step/handler.ts:312` — "if (g.grounding.symbols.length === 0) {"
+- **[[c18]]** `code` `src/mcp/workflow-step/__tests__/design-story-e2e.test.ts` — "approveArtifactByJsonPath(definePath);"
+- **[[c19]]** `code` `src/mcp/code-review-step/handler.ts` — "return errorResult('grounding-unavailable'"

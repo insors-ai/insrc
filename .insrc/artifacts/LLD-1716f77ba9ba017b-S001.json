@@ -142,6 +142,15 @@
     "reviewOverride": {
       "reason": "User decision, 2026-10-05: \"Fix this finding and approve with a recorded override\". Six other-party reviews were run with the design-issue checklist; each finding was fixed in the design as it was raised. The one finding in the stamped review (two more error exits in the code-review start phase) is answered in section 3.3 and test T17 by the revision made after that review; the revised text has not been re-reviewed.",
       "at": "2026-10-05T09:17:57.623Z"
+    },
+    "questionResolutions": {
+      "q939cb900": {
+        "question": "Is 10 minutes the right wait limit for a daemon DEF review? A daemon design review is now bounded (measured on 2026-10-05: 153 s and 166 s, hard cap 10 minutes) and daemon code reviews have taken up to about two and a half minutes, but a daemon review of a DEF still runs the older pipeline, which has no time bound and has not been timed.",
+        "status": "resolved",
+        "choice": "Keep 10 minutes for DEF too",
+        "rationale": "Provisional, chosen by the controller on the pattern the user picked for the design-review limits on 2026-10-05 (ship a default, then time real runs): 10 minutes is the default wait limit, and the plan includes a task that times a real daemon DEF review and reports whether the default fits. The DEF pipeline itself is not changed, per the user's instruction not to touch DEF reviews. Not yet confirmed by the user.",
+        "resolvedAt": "2026-10-05T09:23:24.440Z"
+      }
     }
   },
   "body": {

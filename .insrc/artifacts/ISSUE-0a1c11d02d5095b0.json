@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791268260568-69322m",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-06T06:31:28.548Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 27976,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "0a1c11d02d5095b0",
+    "epicSlug": "daemon-s-review-artifact-reviewartifactfile-must",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Stop the daemon review from automatically re-reviewing after it applies a fix",
+    "reproduction": "1. Ask the daemon to review an artifact that goes through the extract, probe and verify pipeline (a DEF). 2. Have the first pass produce at least one finding it can fix by itself. Observed on 2026-10-05, on a copy of DEF-9b72686c1746af2b: the first pass took 399 s over 19 premises and applied one fix; the review then ran the whole pipeline again on the amended document, 378 s over 21 premises, for 777 s in total. The stamped verdict is the second pass's. Expected: one pass. The result, including which fixes were applied, is presented to the user; any further review of the amended artifact is done by the other party, not by the daemon again.",
+    "rootCause": "reviewArtifactFile runs the review, applies the fixable findings, and then, when at least one fix was applied and the reReview option is not false, runs the review a second time on the amended document and stamps that second report. No caller sets the option, so the second pass always happens after a fix. That second pass is the daemon reviewing a document it has just edited, which is a review by the same party, and it roughly doubles the time. The controller's own review path does not do this: its verdicts phase applies the fixes and stamps the one report it has.",
+    "fixIntent": "The daemon review runs once. It applies the fixable findings as today, stamps that single report, and reports which fixes it applied so the user sees them. It never starts a second review of its own edits; a review of the amended artifact is a new review by the other party. The findings that were fixed must not be left looking unresolved in the stamped result. Cover it with a test whose first pass applies a fix and which asserts the review ran exactly once."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/run-artifact.ts",
+      "quotedText": "const report = (fixed.applied.length > 0 && opts.reReview !== false)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/review-step/phases/verdicts.ts",
+      "quotedText": "const fixed = applyAutoFixes(md, artifact.body, report);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/workflow-review-rpc.ts",
+      "quotedText": "applied:      res.applied.length,"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-06",
+      "quotedText": "should not tigger a review automatically, present to the user and then the other party review. no point of same (daemon) driven review"
+    }
+  ]
+}

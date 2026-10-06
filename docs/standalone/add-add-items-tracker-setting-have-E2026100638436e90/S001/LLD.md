@@ -470,3 +470,25 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 1 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:11:28.506Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| data-compatibility | MED | The backward-compatibility section states the stored-shape change correctly: 'The tracker meta gains two optional fields'. | src/workflow/tracker/refs.ts:24-37 has none of commentedOn, closedAt, comments or taskClosedAt. Section 3.4 says 'TrackerMeta (refs.ts:24-37) gains four optional fields' and migration step 2 adds 'the two optional tracker fields ... and the comments and taskClosedAt fields'. The Backward compat paragraph still says two. It also lists the new insrc_tracker requests but not the three new daemon requests workflow.reject, workflow.amendment.approve and workflow.amendment.reject. All four fields are optional and nothing stored is rewritten, so the build is not affected; the summary is out of date. [files: src/workflow/tracker/refs.ts] | Correct the Backward compat paragraph: four optional TrackerMeta fields plus the optional tracker field on BuildRecord.meta, and name the three new daemon requests. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | An upstream SPEC or ISSUE for work item 38436e90 exists on disk against which the design's decisions and acceptance criteria can be compared. | Globbed .insrc/artifacts/*38436e90* and docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/**: the only artifact is LLD-38436e90625a83a2-S001 (json + LLD.md). No SPEC or ISSUE record exists, so the stakeholder quotes c9-c43 cannot be checked against any source other than the design itself. The design says so ('The Story lists no acceptance criteria, so they are defined here'). [files: .insrc/artifacts/LLD-38436e90625a83a2-S001.json] | None for the build. If the decisions of 2026-10-06 are to be auditable, record them in a SPEC for this hash. |

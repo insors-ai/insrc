@@ -460,3 +460,26 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c39]]** `prior-artifact` `LLD-38436e90625a83a2-S001 tenth review of 2026-10-06 by the daemon: block, 2 MED premises did not hold (a fifth caller of the TUI approve; focus compared without trimming); this revision applies both`
 - **[[c40]]** `stakeholder` `user, 2026-10-06` — "we alrady resolved this, the daemon resolves repo from path and registered repos"
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 1 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:49:40.817Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| error-paths | MED | Every failure of the TUI's (and the panels') approve request is detectable: the design covers a failed connect and a daemon that is still working. | src/shared/ipc-client.ts:46-84 `rpc` registers only 'connect', 'data' and 'error' handlers; there is no 'close' or 'end' handler and no timer. src/mcp/daemon-stream.ts:204-238 unaryRpc is the same. If the daemon exits or restarts while an approve is in flight (now up to 5 minutes, and the daemon self-updates), the socket closes without a result line and the promise never settles. The design's only stated case is "The TUI's approve request fails to connect"; a connection dropped mid-request is not listed, and the TUI now has no in-process fallback. [files: src/shared/ipc-client.ts, src/mcp/daemon-stream.ts] | Add an error path for a connection closed before a result: reject in the shared rpc and unaryRpc on 'close' without a response, say the approval may already be stamped and the items are in the pending list, and add a test with a fake socket that closes early. |
+| tests | MED | Each acceptance criterion maps to a test that can be written as stated; in particular T34 (each client's wait for an approve request is longer than the 5 minute budget) is a well-defined assertion. | The acceptance table maps ac1-ac6 to T1-T35, but T34 contradicts the design's own finding. Section 3.4 says "None of the four sets a time limit on this request today, so nothing needs raising", which the code confirms (ipc-client.ts:46-84 and daemon-stream.ts:204-238 arm no timer; no timeout in the JetBrains daemon package). Yet migration step 4 says "Raise each client's wait for an approve request above the budget" and backward-compat item (7) says "the clients wait up to five and a half minutes". With no timer there is nothing for T34 to measure, and a builder following step 4 would add a five-and-a-half-minute limit that does not exist today. [files: src/shared/ipc-client.ts, src/mcp/daemon-stream.ts] | Pick one: either keep the clients unlimited, delete the 'raise' wording in step 4 and compat item (7), and restate T34 as 'no client arms a timer on workflow.approve'; or decide to add a limit and specify it per client. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | closedAt written into a BUILD record's meta.tracker stays there, so an approved BUILD is not closed twice and the pending list can trust it. | BuildRecord.meta (src/workflow/runners/build/standalone-record.ts:47-75) declares no `tracker` field, and its comment says stamps are carried "so an upsert can PRESERVE them" for the named fields approvedAt, rejectedAt, rejectReason and reviewOverride. I did not read mergeWithPrior or the completion-record writer, so I cannot say whether an unlisted meta key such as `tracker` survives a later upsert (a re-validate, or ensureBuildRecordOnCompletion at gates.ts:854). [files: src/workflow/runners/build/standalone-record.ts, src/workflow/gates.ts] | Check mergeWithPrior and the completion-record writer; if they rebuild meta from the declared fields, add `tracker` to BuildRecord.meta and to the preserved set, and add a test. |

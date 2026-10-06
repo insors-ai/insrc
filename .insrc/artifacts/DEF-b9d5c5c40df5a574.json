@@ -1,0 +1,676 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1791308718624-m82cgl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 140094,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked. It also teaches coding agents when a plain text search is enough and when a question needs the analyzer, so the analyzer is used for the questions only it can answer.",
+      "audience": "product"
+    },
+    "flavor": "enhancement",
+    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; a lookup that fails outright reads the same as one that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front by a guess from its wording, not from what it actually touches, and that size governs only how many steps are planned, not how a large result is dealt with. The answer is then written to one fixed layout per kind of source, which suits a structural overview and fits few other questions, and which itself limits how much may be reported. Alongside this, coding agents are told to use the analyzer first for every question about a codebase. Most such questions are plain text lookups, for which the analyzer is slower and no more informative, so agents disregard the instruction altogether, including for the relationship questions where a text lookup gives wrong or partial answers; and the workflow steps that ask for analysis-backed evidence accept evidence that was never produced by an analysis.",
+    "nonGoals": [
+      {
+        "text": "Reducing what an analysis costs in time or model usage.",
+        "rationale": "The project rule puts accuracy first and cost last; a complete answer may take longer and that is accepted."
+      },
+      {
+        "text": "Routing every codebase question through the analyzer.",
+        "rationale": "The stakeholder decided a simple text search stays a plain search; only questions about relationships or meaning need analysis."
+      },
+      {
+        "text": "Changing what the code index contains or how it is built.",
+        "rationale": "The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter."
+      },
+      {
+        "text": "Removing limits that protect a model's input from a single oversized item, without a replacement.",
+        "rationale": "A very large item must still be read in full by some means; the Epic requires that it be handled in full, not that the protection simply vanish."
+      },
+      {
+        "text": "Changing the limits of the general-purpose search tools for callers other than the analyzer.",
+        "rationale": "Other agents and tools call those primitives with their own expectations; the Epic concerns what the analyzer receives from them."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Every place the analyzer drops results can be found by reading its recipes, runtimes, prompts and the search primitives it calls.",
+        "confidence": "med",
+        "source": "c1"
+      },
+      {
+        "text": "The number of results a request will touch can be counted before the request is run in full.",
+        "confidence": "med",
+        "source": "c2"
+      },
+      {
+        "text": "A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings.",
+        "confidence": "med",
+        "source": "c4"
+      },
+      {
+        "text": "An agent can tell a text lookup from a relationship question from the wording of the question and a short stated test.",
+        "confidence": "med",
+        "source": "c7"
+      },
+      {
+        "text": "The low use of the analyzer by agents is caused mainly by the blanket instruction and the analyzer's poor fit for lookups, not by agents being unable to call it.",
+        "confidence": "med",
+        "source": "c6"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Accuracy is primary and cost is the least priority; a cheaper path is valid only when it preserves accuracy.",
+        "type": "stakeholder",
+        "source": "c3"
+      },
+      {
+        "id": "k2",
+        "text": "The analyzer has no token budget, no summarize-down and no truncation knobs; everything relevant is included.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k3",
+        "text": "No analyzer result may be reduced without the result saying so.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k4",
+        "text": "Calls that reach a model are made one after another, never in parallel.",
+        "type": "convention",
+        "source": "c3"
+      },
+      {
+        "id": "k5",
+        "text": "Schemas, catalogs and other structural reference go at the end of a prompt, not the middle.",
+        "type": "convention",
+        "source": "c3"
+      },
+      {
+        "id": "k6",
+        "text": "A simple text search remains a plain search; the analyzer is for questions that depend on relationships or meaning.",
+        "type": "stakeholder",
+        "source": "c7"
+      },
+      {
+        "id": "k7",
+        "text": "Every claim in an analysis is grounded in a real exploration output, with no invented paths.",
+        "type": "invariant",
+        "source": "c4"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Every analyzer lookup returns everything and says whether it is complete",
+        "userValue": "As someone relying on an analysis, I get every result a lookup found, and I am told plainly when a result is partial or the lookup failed, so I never act on an answer that silently left things out.",
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a lookup whose true number of results is larger than any limit the analyzer used to apply",
+            "when": "the analyzer performs that lookup",
+            "then": "every result is returned and none is dropped",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "any lookup the analyzer performs",
+            "when": "its result is produced",
+            "then": "the result states whether it is complete, and if it is not, how many results exist and why some are missing",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a lookup that cannot be carried out",
+            "when": "the analyzer reports on it",
+            "then": "it is reported as failed with the reason, and never as a lookup that found nothing",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a single item, such as a long document section, that is larger than what was previously kept",
+            "when": "the analyzer reads it",
+            "then": "its whole content is taken into account, not only its beginning",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the analyzer's own instructions and examples to the model that plans a lookup",
+            "when": "they are read",
+            "then": "none of them states or suggests a fixed number of results to ask for",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "No lookup drops results because of a fixed limit, in any kind of source the analyzer covers."
+          },
+          {
+            "statement": "Each lookup result carries a statement of completeness."
+          },
+          {
+            "statement": "A failed lookup is distinguishable from an empty one."
+          },
+          {
+            "statement": "A large single item is read in full."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "The analyzer sizes a request from what it actually touches",
+        "userValue": "As someone asking a question, the analyzer finds out how big my question really is before it answers, so a large question is recognised as large and is not treated like a small one.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a request",
+            "when": "the analyzer begins work on it",
+            "then": "it determines the size of the request from counts of what the request touches, before running the request in full",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "two requests with similar wording, one touching a small area and one touching a large area",
+            "when": "each is sized",
+            "then": "they are given different sizes that reflect what each touches",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a request that has been sized",
+            "when": "its answer is delivered",
+            "then": "the answer states the size that was determined and the counts it was determined from",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a request whose size cannot be determined",
+            "when": "the analyzer proceeds",
+            "then": "it says so and treats the request as the largest size, never as a small one",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Request size is measured, not guessed from wording."
+          },
+          {
+            "statement": "The measured size and its basis are reported with the answer."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Each request size has a defined way of being handled, in full",
+        "userValue": "As someone asking a large question, the analyzer works through all of it by a known method for its size and gives me one combined answer, so the size of my question never decides how much of it gets looked at.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "each size a request can have",
+            "when": "the analyzer's handling of that size is examined",
+            "then": "there is a stated way of handling it that covers the whole of the request",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a request whose results are too many to be reasoned over at once",
+            "when": "the analyzer handles it",
+            "then": "the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost",
+            "operationalizes": [
+              "k2",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a request handled in parts",
+            "when": "its answer is delivered",
+            "then": "the answer states how many parts there were and that all were processed, or names any part that was not and why",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a small request",
+            "when": "the analyzer handles it",
+            "then": "its results are returned whole without being divided",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a part that fails while a large request is being handled",
+            "when": "the answer is assembled",
+            "then": "the findings of the other parts are kept and the failed part is reported as not covered",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A handling method exists for every request size."
+          },
+          {
+            "statement": "Large result sets are processed completely, in parts, and combined."
+          },
+          {
+            "statement": "The answer reports how the request was handled."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "The form of an answer fits the question, for every kind of analyzer",
+        "userValue": "As someone reading an analysis, the answer is laid out for the question I asked, including when I asked for every occurrence of something, and no layout holds back findings.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a question that asks for every occurrence of something",
+            "when": "the analyzer answers it",
+            "then": "the answer is a complete list of the occurrences with where each is, and is not forced into an overview of a module",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "each kind of analyzer that exists, for code, documents, data, infrastructure, mixed sources, rule adherence and capability discovery",
+            "when": "its answer layout is examined",
+            "then": "the layout places no limit on how many findings may be reported",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an answer layout",
+            "when": "it describes the lookup results it may draw on",
+            "then": "every kind of lookup that analyzer can run is described",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a question whose kind does not match the layout that would be used",
+            "when": "the analyzer answers",
+            "then": "it uses a layout for that kind of question and does not require parts of a layout the question has nothing to fill",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "any answer",
+            "when": "it is delivered",
+            "then": "it states whether its findings are complete",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Structural reference in a prompt goes at its end.",
+            "type": "convention",
+            "source": "c3"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A question asking for every occurrence gets a complete enumeration as its answer."
+          },
+          {
+            "statement": "The answer layouts of all analyzer kinds are free of limits on findings."
+          },
+          {
+            "statement": "Each layout covers every lookup its analyzer can run."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Agents know when to search and when to analyze, and analysis evidence is real",
+        "userValue": "As someone working with a coding agent, the agent uses a plain search for a plain lookup and the analyzer for a question about relationships or meaning, and when a workflow step says its evidence came from analysis, it did.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1",
+          "s4"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the guidance an agent receives about exploring a codebase",
+            "when": "it is read",
+            "then": "it states that a question answered by whether or where text occurs is a plain search, that a question depending on relationships or meaning needs the analyzer, and gives a test and examples for telling them apart",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the same guidance and the reminder given on each turn",
+            "when": "they are read",
+            "then": "neither instructs the agent to use the analyzer first for every question",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a workflow step that requires evidence produced by analysis",
+            "when": "evidence is submitted with no analyzer run behind it",
+            "then": "the step does not accept it as analysis evidence and says what is missing",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a workflow step that requires evidence",
+            "when": "evidence from a plain text search is submitted for a claim a text search can establish",
+            "then": "it is accepted and recorded as text-search evidence",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a multi-step exchange with the analyzer or a workflow",
+            "when": "a step responds",
+            "then": "the response contains only what is new at that step and refers to earlier content rather than repeating it",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Agent guidance distinguishes a plain search from an analysis request."
+          },
+          {
+            "statement": "Analysis-backed evidence in a workflow step is verified against a real analyzer run."
+          },
+          {
+            "statement": "Text-search evidence is accepted as such."
+          },
+          {
+            "statement": "Step responses are not padded with repeated content."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261006b9d5c5c4:FR001",
+          "statement": "No lookup the analyzer performs drops results because of a fixed limit.",
+          "scope": "doc",
+          "rationale": "A fixed limit makes large questions silently wrong."
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR002",
+          "statement": "Every analyzer result states whether it is complete, and a lookup that failed is reported as failed, never as empty.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR003",
+          "statement": "The analyzer determines the size of a request from what the request actually touches before it runs the request in full.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR004",
+          "statement": "For each size of request the analyzer follows a defined way of handling it, and a result set too large to treat at once is processed in full, in parts, and combined.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR005",
+          "statement": "The form of an analyzer's answer fits the kind of question asked, including a question that asks for every occurrence of something, for each kind of source the analyzer covers.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR006",
+          "statement": "No answer layout limits how many findings may be reported.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR007",
+          "statement": "The guidance given to coding agents states when a plain text search is the right tool and when the analyzer is, with a test for telling them apart.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR008",
+          "statement": "A workflow step that requires analysis-backed evidence accepts it only when an analyzer run stands behind it, and accepts text-search evidence as text-search evidence.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR009",
+          "statement": "Each step of a multi-step analyzer or workflow exchange returns only what is new to the caller.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S001:FR001",
+          "statement": "No lookup drops results because of a fixed limit, in any kind of source the analyzer covers.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S001:FR002",
+          "statement": "Each lookup result carries a statement of completeness.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S001:FR003",
+          "statement": "A failed lookup is distinguishable from an empty one.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S001:FR004",
+          "statement": "A large single item is read in full.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S002:FR001",
+          "statement": "Request size is measured, not guessed from wording.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S002:FR002",
+          "statement": "The measured size and its basis are reported with the answer.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S003:FR001",
+          "statement": "A handling method exists for every request size.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S003:FR002",
+          "statement": "Large result sets are processed completely, in parts, and combined.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S003:FR003",
+          "statement": "The answer reports how the request was handled.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S004:FR001",
+          "statement": "A question asking for every occurrence gets a complete enumeration as its answer.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S004:FR002",
+          "statement": "The answer layouts of all analyzer kinds are free of limits on findings.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S004:FR003",
+          "statement": "Each layout covers every lookup its analyzer can run.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR001",
+          "statement": "Agent guidance distinguishes a plain search from an analysis request.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR002",
+          "statement": "Analysis-backed evidence in a workflow step is verified against a real analyzer run.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR003",
+          "statement": "Text-search evidence is accepted as such.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR004",
+          "statement": "Step responses are not padded with repeated content.",
+          "scope": "item",
+          "itemRef": "s5"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze run of 2026-10-06 over src/analyze: 37 named cap constants and the inline cuts on bodies",
+      "quotedText": "const DEFAULT_TOP_K = 30;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/classifier/scope-picker.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "CLAUDE.md",
+      "quotedText": "Accuracy is primary; cost is the least priority."
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "design/analyze-context-builder.md",
+      "quotedText": "The shaper has **no token budget, no summarize-down, no truncation knobs**."
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-06",
+      "quotedText": "Analyzer's text search is capped, why? this will result in inconsistencies/incorrect analysis. REMOVE ANY CAPS from insrc analyzer."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s1: tool-call counts from this project's session logs (670 shell search or read commands against 2 analyzer calls in one session; 274 analyzer calls across 843 sessions)"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-06",
+      "quotedText": "the agent needs to be able to differentiate between and analysis request and a simple search, a question like \"does this code use file IO\", doesn't need analysis and a simple grep is good enough, but something like \"check where this module is used\" need detailed analysis of the graph etc."
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-06",
+      "quotedText": "Analyzer should scope the size the of the request - Have plans for handling different sizes. - Check the analyzer output template, there are different types of analyzers that were developed."
+    }
+  ]
+}

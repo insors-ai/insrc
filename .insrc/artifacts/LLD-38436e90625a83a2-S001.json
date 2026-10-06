@@ -26,7 +26,204 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive capability with real design choices and several build tasks, built on parts that already exist (per-repo tracker config, three automatic pushes, an unwired issue-create function).",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each recorded user decision (c9-c28) is designed, and the epics flow (a non-goal after the c11 split) is not built.",
+          "evidence": "The design covers one flag (c10, 3.1), type set or inferred (c12-c14, 3.2), a daemon tool chosen by type (c15-c17, c25, 3.3), marker plus unique label (c18), repo from the registry (c19, c26), close on BUILD approval (c20), and the TUI calling the daemon (c27, 2.2). For the non-goal, the only callers of autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan are src/cli/services/workflow.ts:161-163, which the design removes, so nothing pushes epic items on approval afterwards.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'workflow.approve' handler returns before the bugfix follow-on when no repo is known, and the VS Code review panel sends only the artifact path.",
+          "evidence": "src/daemon/index.ts:667-669: `if (result.approved.length === 0 || repoPath.length === 0) { return result; }`. vscode-plugin/src/chat/docs-review-client.ts:119-121 sends `{ artifactPath: resolvePath(idOrPath) }`. One nuance the design omits: index.ts:645 falls back to `process.env['INSRC_REPO']`, so the early return is taken only when the daemon also has no INSRC_REPO.",
+          "action": "State the INSRC_REPO fallback in the design. The flow must still ignore it, as the design already says for the request's repo field.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The routed next step after an issue approval is computed and then dropped, and a small bugfix's build mints its hash from the focus text.",
+          "evidence": "advance.ts:62-64 returns `{ location, admission, nextCall }`. mount.ts:140-145 pushes only `kind, artifactPath, ok, note`. next-after-issue.ts:65 emits `standalone: { standalone: true, sizeClass: 'trivial', focus: scope }` with no epicHash. implement.ts:127 and validate.ts:99 use `ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(...))`. FollowOnOutcome (gates.ts:756-761) has no nextCall field. The 'bugfix-complete' kind is produced only at mount.ts:160/166, behind a BUILD meta.issueHash that nothing stamps.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The tool registry is filled only in the daemon, so tracker_github exists only there.",
+          "evidence": "src/mcp/server.ts:1242-1251, in runInsrcMcpStdio: `import('../daemon/tools/builtins/index.js') ... registerBuiltinTools();`, with the comment 'Mirrors what the main daemon does at boot'. A tool added to the built-ins is therefore also registered in every MCP server process. registry.ts:4-6 adds: 'The LLM tool-call path (agent/tools/executor.ts) and the controller task path ... both read from this registry', so a registered tool is reachable by tool id, not only by the approve handler. [files: src/mcp/server.ts, src/daemon/tools/builtins/index.ts, src/daemon/tools/registry.ts]",
+          "action": "Either register tracker_github in the daemon boot path only (outside registerBuiltinTools), or accept that it is registered in the MCP process and say so. Also state how it is kept off LLM tool surfaces so invariant c6 holds; the existing git_* / gh_* id naming is the convention to follow.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A caller-supplied hash is honoured on both bugfix routes, so putting the issue's hash in the emitted call gives the build and design that hash.",
+          "evidence": "Small route: implement.ts:127 takes `ctx.epicHash` first, and admitStandaloneBuild (admission.ts:244-248) admits a trivial build with any well-formed hash. Sized route: mcp/workflow-step/phases/start.ts:139-141 mints a hash only when `params['epicHash']` is absent. finalizeStandaloneLld (orchestrator.ts:2288-2331) already inherits slug and anchor from the definition artifact with the same hash ('DEF or ISSUE alike'). The longest-match repo lookup the design describes as new also already exists as repoContainingCwd (src/db/repos.ts:233-241), used by the 'repo.resolveForCwd' handler.",
+          "action": "Name repoContainingCwd as the reused matcher for artifact path to repo, instead of writing a second one.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing gh helpers cannot serve the tool (lookup merges 'failed' with 'not found'; typed create retries after any error), while patchTrackerMeta, TrackerMeta, idMarker and the Tool contract have the stated shapes.",
+          "evidence": "github.ts:219: `try { num = out('gh', args); } catch { return undefined; }`. github.ts:164-170 falls through to an untyped create after any catch. refs.ts:88 patchTrackerMeta merges into meta.tracker; TrackerMeta (refs.ts:24-37) has issueRef, storyRef and taskRefs but no commentedOn or closedAt. types.ts:151: `execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult>;`. conventions.ts:61 exports idMarker.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Changing the TUI service's two callers to await the new approve is the complete caller change.",
+          "evidence": "Both callers read the old shape: command.ts:224 `approved ${r.approval.workflow}...${r.tracker.status}` and WorkflowsPane.tsx:117 likewise. A review block reaches them today as a THROWN error: command.ts:226 `if (err instanceof Error && err.name === 'ReviewBlockedError')`, pinned by command.test.ts:232-241. The daemon instead returns a blocked artifact in `skipped[]` with `approved` empty (gates.ts:839-840). WorkflowsPane.doApprove is a synchronous `(item): void` with a try/catch that an un-awaited promise would escape. The design says only that the callers 'are changed to await it'. [files: src/cli/command.ts, src/cli/panes/WorkflowsPane.tsx, src/cli/__tests__/command.test.ts, src/cli/services/workflow.ts]",
+          "action": "Specify for both callers how approved[], skipped[] (review block, with the --override hint), followOn and tracker[] are rendered, that doApprove becomes async, and that the two command.test.ts fakes are rewritten to the daemon's result shape.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The two stated changes (hash in the emitted next call; nextCall carried through the approve result) give a small bugfix one hash from issue record to BUILD record.",
+          "evidence": "The emitted call is only the implement turn (next-after-issue.ts:60-66, `phase: 'implement'`). The validate turn is a separate call the model builds itself, and validate.ts:99 mints again: `ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(ctx.focus ?? ''))`. A validate call without standalone.epicHash writes a second BUILD record under the focus hash, while implement.ts:155 has already persisted one under the issue hash. Approving the focus-hash record then finds nothing to close. [files: src/mcp/build-step/phases/validate.ts, src/mcp/build-step/phases/implement.ts, src/workflow/bugfix/next-after-issue.ts]",
+          "action": "Cover the validate turn: have the implement response and steering require the same standalone.epicHash on validate, or have validate refuse or resolve a trivial standalone call that lacks it. Add this to T21.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The change-site inventory covers every place that documents the approval-time tracker behaviour.",
+          "evidence": "docs/workflow.md:138-144: 'Auto tracker. Approving an HLD or LLD automatically pushes ... Use `--no-tracker` on the approve command to opt out'. Lines 181-185: 'The tracker is opt-in. When `~/.insrc/github.json` is absent ... skipped (tracker disabled ...)'. The design reverses both (on by default, inferred from the remote; HLD and LLD no longer pushed on approval) but lists only the steering sources in 3.6; docs/workflow.md appears in no call-site list or migration step. Separately, the deleted bugfix symbols are also referenced in src/workflow/bugfix/__tests__/bugfix-mount.test.ts and src/workflow/__tests__/bugfix-orchestration.test.ts, not only the named bugfix-tracker.test.ts. [files: docs/workflow.md]",
+          "action": "Add docs/workflow.md (and the tracker section of docs/daemon.md if it has one) to the change sites, and name the two further test files in step 6.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A per-repo value at tracker.byRepo.<repoPath>.addItems survives the boot reconcile and can be written through config.write, like models.byRepo.",
+          "evidence": "reconcile.ts:285-287: 'preserve every un-catalogued key EXCEPT those explicitly on the retired list'; RETIRED_PATHS (config-catalog.ts:144-159) has no tracker path. 'config.write' (daemon/index.ts:1462-1469) accepts `path: string | string[]` and calls setConfigAtPath, whose array form takes literal segments (write-path.ts:40-41), so a repo path with dots and slashes nests correctly. ConfigOption (config-catalog.ts:30-41) has no label field, as the design says. PATHS.config (shared/paths.ts:9) has no env override.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing ~/.insrc/github.json settings keep their meaning under the new check.",
+          "evidence": "Three switches are honoured today that the design's check never reads. (1) A global `default` entry with `type: 'none'` disables the tracker: resolveGithubConfig, github.ts:204-210 with resolveEntry:234. The design reads type only from 'the repo's entry' and uses the default entry for label names only, so that user's repos with a GitHub remote start committing, pushing and creating issues. (2) `commitArtifacts` (github.ts:80, 'Default true') gates the commit at services/workflow.ts:98, `cfg.commitArtifacts === false`; the tool always commits and pushes. (3) `pushTasks` ('Opt-in (default false)', github.ts:77) gates task issues at tracker-auto.ts:255; the flow creates one issue per task of a standalone plan unconditionally. [files: src/workflow/config/github.ts, src/cli/services/workflow.ts, src/workflow/tracker-auto.ts]",
+          "action": "State for each of default.type 'none', commitArtifacts and pushTasks whether it is honoured or retired. If retired, say so under backward compatibility and add an edge case and test for a default entry of type 'none'.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveGithubConfig, the three epic push functions and the tracker.* workflows can be left untouched, with the push functions merely losing their only caller.",
+          "evidence": "A search for autoPush(EpicOnHld|StoryOnLld|TasksOnPlan) calls outside tests finds only src/cli/services/workflow.ts:161-163. approveWorkflowTarget's own comment (gates.ts:800-802) says it 'does NOT run the tracker (gh-push/commit) leg — that stays in the cli-services approve()'. The work item is standalone (no HLD), so no shared contract is redesigned; FollowOnOutcome and WorkflowApproveResult changes are additive apart from the unused 'bugfix-complete' kind.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The tracker flow cannot fail or undo an approval, because the stamp is complete before the handler reaches it.",
+          "evidence": "daemon/index.ts:652-657 awaits approveWorkflowTarget, which stamps through approveArtifactByJsonPath (gates.ts:837), before the follow-on at 670-676. The follow-on already uses the same pattern (mount.ts:92-94: a throw 'becomes an ok:false outcome ... NEVER propagates'). Running the flow after it, in a try/catch, keeps that property.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A blocking flow (30 s per git/gh call, about six calls per item, the whole batch inside one approve request) finishes within the timeouts of the clients that call 'workflow.approve'.",
+          "evidence": "The design states the daemon serves no other request while a call runs but gives no bound for a batch and names no client timeout. I confirmed the existing helpers are synchronous (github.ts `silent` / `out` through one exec seam). I did not read the timeout of unaryRpc (src/mcp/daemon-stream.ts:289), the VS Code client.rpc or the JetBrains DaemonGateway approve, so I cannot say whether a slow or failing run (up to roughly 3 minutes per item) outlives the caller and leaves an approval reported as an error while it actually succeeded.",
+          "action": "Record each approve client's timeout and state the worst-case flow duration against it, or cap the flow's total time per approve call and report the rest as pending.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "T18 (and T23) can be written against the code as designed: the handler's flow call, its try/catch, tracker:false and the no-repo path are testable.",
+          "evidence": "The 'workflow.approve' handler is an inline closure in the daemon's handler map (daemon/index.ts:643-677), closing over `db`. No test file imports daemon/index: the only matches for `daemon/index.js` under src are path strings in debug tests. Existing tests reach approval through approveWorkflowTarget, advanceApprovedBugfixes or the MCP dispatch with a faked RPC. The design puts all the new behaviour in the handler and extracts nothing, so T18's subjects have no importable unit. T23's shared helper is aimed at 'existing suites that approve an artifact', but those call approveWorkflowTarget, which by design never runs the flow. [files: src/daemon/index.ts, src/workflow/__tests__/approve-workflow-target.test.ts, src/mcp/__tests__/workflow-approve-dispatch.test.ts]",
+          "action": "Extract the post-approval sequence (follow-on, then flow, tracker:false, the no-repo path, the try/catch) into an exported function with injected registry and tool dependencies, in the way mount.ts was extracted for the follow-on. Point T18 at it, and narrow T23 to the suites that actually reach it.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 6,
+        "low": 9,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-06T09:21:22.684Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

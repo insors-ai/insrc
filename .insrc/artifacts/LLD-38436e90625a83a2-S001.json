@@ -26,7 +26,204 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive capability with real design choices and several build tasks, built on parts that already exist (per-repo tracker config, three automatic pushes, an unwired issue-create function).",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There is no upstream artifact with acceptance criteria for this Story, so the design's own ac1–ac6 are the only criteria and they cover the user decisions quoted in c9–c13.",
+          "evidence": "The only artifact on disk for this hash is .insrc/artifacts/LLD-38436e90625a83a2-S001.json (meta.standalone true, sizeClass feature); there is no DEF, ISSUE or SPEC for it. The quoted decisions (one flag default on, commit and push then create or update, backfill, either executor) each map to a section. One gap is left open by the design itself: an approval made from a plugin gets a directive that nobody carries out until the pending list is worked. [files: .insrc/artifacts/LLD-38436e90625a83a2-S001.json]",
+          "action": "Have the user answer the open question (plugin approvals) before approval, since c10 says an approval should push.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveGithubConfig has nine callers and returns 'none' for a repo with no github.json entry.",
+          "evidence": "Nine non-test call sites: cli/services/workflow.ts:97, bugfix/tracker.ts:423 and :447, runners/tracker/context.ts:41, :114, :144, tracker-auto.ts:87, questions.ts:474, tracker/sync.ts:36. config/github.ts:213 returns { type: 'none', source: 'default-config' } when no entry matches. [files: src/workflow/config/github.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today approveWorkflowTarget only stamps; the daemon's workflow.approve handler (src/daemon/index.ts:643) calls it; only the TUI approve pushes to GitHub by code (workflow.ts:156-166), and an approved issue record never reaches GitHub.",
+          "evidence": "gates.ts:804-872 returns { approved, skipped, codeReview } and its doc says 'Stamp-only: it does NOT run the tracker (gh-push/commit) leg'. daemon/index.ts:643-677 calls it, then advanceApprovedBugfixes. bugfix/mount.ts:25-28: 'The GH-issue create leg is NOT injected here' and the BUILD close is 'a correct no-op today'. cli/services/workflow.ts:156-169 runs the three autoPush functions and then commitApprovedArtifacts. [files: src/workflow/gates.ts, src/daemon/index.ts, src/workflow/bugfix/mount.ts, src/cli/services/workflow.ts]",
+          "action": "None. Note that the handler's bugfix close will also fire once a BUILD record carries issueHash; the BUILD directive's close would then be a second close of the same issue.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "For an HLD, an LLD under an epic and a PLAN under an epic, the directive can reuse the existing tracker.push workflow whenever the new setup check says ready, including a repo with no github.json entry and a GitHub remote.",
+          "evidence": "tracker.push resolves its target through the unchanged resolveGithubConfig: runners/tracker/context.ts:41 `requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ...)`, and :203-209 throws 'tracker is disabled via config (type: none ...)' when the result is 'none'. The design's own edge case says resolveGithubConfig 'still returns none' for a repo with no entry, so in the default setup the directive is ready but its step 2 refuses. Task issues are also only pushed when pushTasks is set (context.ts:69 `if (gh.pushTasks)`, default false at config/github.ts:77), so 'under an epic the tracker.push workflow does it' creates no task issues by default. [files: src/workflow/runners/tracker/context.ts, src/workflow/config/github.ts]",
+          "action": "Either give the epic kinds a directive that does not go through resolveGithubConfig (direct create by unique label, as for the other kinds), or mark the entry not ready when resolveGithubConfig returns 'none' and say so in the reason. State what happens to PLAN tasks when pushTasks is off.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The helpers the setup check and the tests reuse exist with the stated shape: gitOriginOwnerRepo, ghAuthOk, and one injectable exec that a recording fake can replace.",
+          "evidence": "tracker/github.ts:29 `_setTrackerExecForTests(fn?)`; :89-97 gitOriginOwnerRepo runs `git -C <repo> remote get-url origin` through the injectable exec and returns null on a throw; :111-118 ghAuthOk runs `gh auth status` through the same exec. ghAuthOk's one reason covers both 'not available' and 'not authenticated', so the separate 'gh is installed' check is genuinely new. [files: src/workflow/tracker/github.ts]",
+          "action": "Say how the 'gh is installed' check is made (it should go through the same injectable exec so tests can fake it).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The per-repo writers in both plugins are hard-wired to models.byRepo at the named lines, and config.write accepts a tracker.byRepo.<repoPath>.addItems segment path with a boolean value.",
+          "evidence": "vscode-plugin/src/panels/repo-config.ts:154 `deps.writeKeyPath(['models', 'byRepo', write.repoPath, ...write.segments], write.value)`; SettingsView.kt:720 `private fun base(repoPath: String): List<String> = listOf(\"models\", \"byRepo\", repoPath)`. webview-host.ts:321-335 forwards msg.value without a type check. daemon/index.ts:1457-1481 config.write takes a string[] path and writes any value with no catalog check. Both settings pages build groups from the catalog (SettingsView.kt:77, key-map.ts:52), so a new 'Tracker' group needs no page change. [files: vscode-plugin/src/panels/repo-config.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt, vscode-plugin/src/panels/webview-host.ts, src/daemon/index.ts]",
+          "action": "None. Note the VS Code per-repo section uses a picker over registered repos, not 'the open workspace folder'.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The inventory for the new MCP tool insrc_tracker_step (src/mcp/server.ts, src/daemon/index.ts, tracker-auto.ts, refs.ts) is complete.",
+          "evidence": "src/mcp/__tests__/schema-registry.test.ts:25-38 pins EXPECTED_TOOLS to the exact registered set and :44-52 pins EXPECTED_PHASES per multi-turn tool ('a second copy independent of server.ts's TOOL_SCHEMA_META'); both fail when a tool is added. The steering source also carries a 'Tool catalog (all registered insrc_* MCP tools)' table. Neither the test nor the catalog table is in the design's call sites or tests (T16 covers only the guides and descriptions). [files: src/mcp/__tests__/schema-registry.test.ts, src/prompts/steering-block.md]",
+          "action": "Add the schema-registry test (tool list and phase list) and the steering tool catalog table to the call sites and to the test list.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The pendingApproval block is built at synthesize.ts:109 and typed at types.ts:129, and the steering has tracker and bugfix guides with a byte-identical plugin copy.",
+          "evidence": "synthesize.ts:109-118 builds pendingApproval { artifactPath, epicHash?, guidance }; types.ts:129-133 types it. steering-block.md:296-304 is the tracker guide and :306-335 the bugfix guide. vscode-plugin/src/hosts/__tests__/activation.test.ts:49-51 already asserts the plugin copy byte-matches the source. [files: src/mcp/workflow-step/phases/synthesize.ts, src/mcp/workflow-step/types.ts, src/prompts/steering-block.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The record phase can write 'a comment added' and 'closed' to meta.tracker with the existing patch function, and a stored ref then stops a second directive.",
+          "evidence": "tracker/refs.ts:24-37 TrackerMeta has adapter, epicRef, storyRef, issueRef, storyRefs, taskRefs, milestoneRef, labelsCreated, epicStatus, storyStatus, pushedAt, lastSyncedAt. It has no field for a comment or for closed, and patchTrackerMeta (:88) takes Partial<TrackerMeta>. The design adds no field and says 'Data rewrite: no'. A standalone LLD whose directive was 'comment on the issue' ends with no ref of its own, so the pending list ('carries no tracker ref') lists it again and directs a second comment; a closed BUILD record has nothing that marks it closed. [files: src/workflow/tracker/refs.ts]",
+          "action": "Name the new TrackerMeta fields (for example commentedOn and closedAt), state which field per kind counts as 'tracked', and add them to section 3.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Committing and pushing the documents first and recording the ref last leaves the stored documents consistent.",
+          "evidence": "patchTrackerMeta rewrites the artifact json in place (refs.ts:89-96), and the design's step 3 runs it after step 1 has committed and pushed that same json. Every carried-out directive therefore leaves the artifact modified and uncommitted, and the ref never reaches the remote. The existing TUI flow orders it the other way for this reason: workflow.ts:164-165 'Commit + push AFTER the tracker push, so the checked-in MD carries the re-rendered **Tracker:** link'. The design also does not re-render the markdown. [files: src/workflow/tracker/refs.ts, src/cli/services/workflow.ts]",
+          "action": "State who commits the recorded ref (a second commit of the same paths after record, or record before the commit) and whether the markdown is re-rendered.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A repo whose github.json entry (or default entry) turns the tracker off keeps that choice under the new setup check.",
+          "evidence": "config/github.ts:53-59: `'none'` disables all tracker integration ... the tracker is opt-in', and resolveEntry returns none for `entry.type === 'none'` (:234). The new check reads only owner and repo from the entry, otherwise the git remote, and does not call resolveGithubConfig; the setting defaults to true. A repo with `\"type\": \"none\"` and a GitHub remote becomes ready and gets create directives. The design does not mention type 'none'. [files: src/workflow/config/github.ts]",
+          "action": "Make an explicit type 'none' (per-repo, and decide for default) a not-ready reason in the setup check, and add the case to T4 and the edge-case table.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.4",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A per-repo value stored under tracker.byRepo.<repoPath>.addItems survives the config reconcile on daemon boot and update.",
+          "evidence": "config/reconcile.ts:285-287: 'preserve every un-catalogued key EXCEPT those explicitly on the retired list'. models.byRepo uses the same un-catalogued dynamic-key pattern (config-catalog.ts:110, write-path.ts:10-13). [files: src/config/reconcile.ts, src/config/write-path.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "'The executor's commit or push fails: stop, do no tracker action' is safe for the backfill, where the documents are already committed.",
+          "evidence": "The existing helper treats this as a normal case, not a failure: tracker/github.ts:73-78 runs `git diff --cached --quiet` and returns 'nothing to commit (already up to date)' before it would commit. The directive instead has the executor run git add and git commit with the pathspec and stop on a non-zero exit; git commit exits non-zero when the listed paths have no changes. The backfill items are approved documents that are already committed (the working tree is clean and the recent commits are these docs), so each stops at step 1 and no GitHub item is created. The same happens on a retry after a push that succeeded. No test covers it. [files: src/workflow/tracker/github.ts]",
+          "action": "Have the directive say that 'nothing to commit' for the listed paths is not a failure and the executor continues to the push and step 2; add it to the error table and to T9.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Working out the tracker entry never delays the approval.",
+          "evidence": "The setup check reuses ghAuthOk, which runs `gh auth status` synchronously with no timeout: tracker/github.ts:38-40 `_exec(cmd, args, { stdio: 'ignore' })` via execFileSync. `gh auth status` contacts GitHub, so a slow or hanging network holds the daemon's workflow.approve response (and the daemon's event loop) for each approved artifact in a batch. The design removed the timeouts the rejected alternative a2 had and has no error row for a slow gh. [files: src/workflow/tracker/github.ts]",
+          "action": "Give the check's gh call a timeout that becomes ready false with a reason, and run the check once per approve call rather than once per artifact.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "T15's shared helper keeps gh out of the existing approval suites: a recording fake that throws for `git remote get-url` makes the setup check stop at 'no GitHub target' before any gh call.",
+          "evidence": "gitOriginOwnerRepo (tracker/github.ts:89-97) calls the injectable exec and returns null when it throws, and the design checks the target before gh. The suites that call approveWorkflowTarget on temp repos exist (approve-workflow-target, approve-build-completion, approve-codereview-gate, other-party-review-gate, bugfix-orchestration, build-record, build-start tests). [files: src/workflow/tracker/github.ts]",
+          "action": "None for T15. Add tests for the cases found above: an explicit type 'none' entry, 'nothing to commit' in step 1, the stored shape for comment and closed, and the schema-registry tool list.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 2,
+        "med": 5,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-06T08:08:08.076Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

@@ -380,3 +380,24 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c13]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 second review of 2026-10-06 by the daemon: block, 1 HIGH and 5 MED did not hold; the common-part findings were applied to the issues design in place, as the user decided, and this revision points at it`
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:33:03.276Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | 3.5: commitAndComment's commenting callers run in two processes — the session tool server's resolve_question phase and the daemon's review-comment handler (resolve-comment.ts) — so the daemon gets a direct commentOnItem and the tool server gets a sender. | The daemon handler never reaches commitAndComment. src/workflow/resolve-comment.ts:182 calls `record(repoPath, identity.kind, identity.epicHash, identity.storyId, qId, 'resolved', anchorSummary(c.anchor), c.body.trim(), { commit: false })`, and questions.ts:424 guards `if (opts?.commit !== false) { ... commitAndComment(...) }`. The handler then commits once itself (resolve-comment.ts:208-222, commitAndPushArtifacts only, no gh). So the only path that comments today is src/mcp/workflow-step/phases/resolve-question.ts:78. The design also leaves the plumbing unstated: commitAndComment is private (questions.ts:460) and is reached only through the synchronous recordResolution (questions.ts:383-393, opts is `{ commit?: boolean }`); resolve-comment.ts:44 exports `RecordResolutionFn = typeof recordResolution` as a test seam; and a daemon-request sender is asynchronous inside a synchronous function. [files: src/workflow/resolve-comment.ts, src/workflow/questions.ts, src/mcp/workflow-step/phases/resolve-question.ts] | Correct 3.5: only resolve_question comments today. Say whether the daemon review-comment batch should now comment (and if so, once per batch or once per comment) or stay silent. Give recordResolution's new signature (where commentOnItem is passed) and say how the synchronous function treats the asynchronous sender (fire and log, or recordResolution becomes async with its callers and the RecordResolutionFn seam listed). |
+| error-paths | MED | 3.5: keying the question comment as '<artifact id>:question:<question id>' and posting nothing when the key is already there loses no comment. | One question is recorded more than once by design of the existing flow. resolve-question.ts:67-71 records status 'deferred' for defer:true, and questions.ts:425-426 comments for every status (resolutionSummary :451-452 writes '... deferred for review'). The deferred-review phase (src/mcp/workflow-step/phases/review-deferred.ts:60-77, listDeferred questions.ts:498) then sends the same question id back through resolve_question, and recordResolution accepts it because it matches on body.openQuestions text only (questions.ts:395-397). Today both the 'deferred' note and the final 'resolved: <choice>' are posted. With the proposed key the second is suppressed, so the actual decision never reaches the tracker item. No error path or test (E30) covers this. [files: src/workflow/questions.ts, src/mcp/workflow-step/phases/resolve-question.ts, src/mcp/workflow-step/phases/review-deferred.ts] | Make the key distinguish resolutions of the same question, for example '<artifact id>:question:<question id>:<resolvedAt>' (resolvedAt is already stamped at questions.ts:408), in the same way the design keys carry approvedAt. Add the deferred-then-resolved case to E30. |
+
+#### Could not verify (does not block)
+
+_None._

@@ -393,3 +393,24 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c36]]** `stakeholder` `user, 2026-10-06` — "why this delegation? why can't it be registered as a normal tool in claude/codex? or any other coding agent?"
 - **[[c37]]** `code` `src/analyze/context/tool-surface.ts` — "READ_ONLY_TOOL_IDS"
 - **[[c38]]** `prior-artifact` `LLD-38436e90625a83a2-S001 ninth review of 2026-10-06 by the daemon: block, 3 MED premises did not hold; the user decided each and this revision applies the decisions`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:05:45.057Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The inventory of tests that depend on the TUI approve's synchronous, in-process shape is complete: four fakes (command.test.ts:50, :220-230, :232-241 and tui.test.ts:72). | A fifth consumer is missing, and it calls the REAL function. src/workflow/__tests__/other-party-review-gate.test.ts:20 `import { approve as tuiApprove } from '../../cli/services/workflow.js';` and test T7 at :254-272 ("the TUI approve service applies the same rules: it calls the same function") does `blocked(() => tuiApprove(p, false), /completion requires a code review; none was run/, ...)`, `const out = tuiApprove(p, false, 'approved from the TUI'); assert.equal(out.approval.path, p);` and `tuiApprove(def, false); assert.ok(isApproved(def));`. Once approve is an async daemon request these calls return a Promise, throw nothing synchronously, have no `approval` field and need a running daemon. The file is not in any call-site list, and the design itself notes the type check does not cover test files. Two comments in gates.ts also go stale: :801-802 "that stays in the cli-services approve() used by the TUI" and :833 "(the TUI calls it directly)". [files: src/workflow/__tests__/other-party-review-gate.test.ts, src/workflow/gates.ts] | Add other-party-review-gate.test.ts T7 to the 2.2 postconditions, the 3.4 call sites and T19: rewrite it to assert the TUI service forwards to the daemon request (or delete it, since the rule is then enforced only daemon-side), and update the two gates.ts comments. |
+| error-paths | MED | A validate call that arrives without a hash is reliably matched to the bugfix's BUILD record by comparing the record's stored focus with the call's focus for exact equality. | The stored focus is normalised but the validate side is not. implement.ts:119 `const focus = (ctx.focus ?? '').trim();`, :146 `let specFocus = focus.length > 0 ? focus : ...`, :163 `body: { focus: specFocus, producesLld: false }`: the record holds the TRIMMED focus. validate.ts:99 reads the raw `ctx.focus ?? ''`. The bugfix focus is `[title, reproduction, rootCause, fixIntent].join('\\n\\n')` (next-after-issue.ts:42-47), which ends in whitespace whenever fixIntent does. An exact comparison then finds no record, falls to the 'none: mint from the focus' branch and writes a second BUILD record under a different hash, which is the failure this rule exists to prevent; the approval's close then reports nothing to close. The design's error path lists only the one / none / several outcomes and does not detect this. [files: src/mcp/build-step/phases/implement.ts, src/mcp/build-step/phases/validate.ts, src/workflow/bugfix/next-after-issue.ts] | State that both sides are compared after the same normalisation implement applies (trim), and add a T21 case with a focus that has trailing whitespace. |
+
+#### Could not verify (does not block)
+
+_None._

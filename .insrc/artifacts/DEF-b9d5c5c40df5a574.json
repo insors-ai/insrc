@@ -816,6 +816,15 @@
     "reviewOverride": {
       "reason": "User decision of 2026-10-06 (option B): approve past the findings the daemon reviewer could not verify. Of 21 MED in the second review, 8 are unverifiable because the reviewer's evidence grep stops at 50 matches (src/workflow/review/probe.ts:27) and was consumed by docs/ and design/ before reaching src/analyze, and 7 because no probe was run at all for internal-consistency premises. The verifiable findings of both reviews were applied (cap inventory by file:line, six layouts not seven, scope picker inputs, citation anchors, constraint k2 narrowed, the reminder hook recorded as an open question); the remaining MED are 'exclusivity not proven' notes the reviewer itself marks non-blocking.",
       "at": "2026-10-06T18:25:49.488Z"
+    },
+    "questionResolutions": {
+      "qc698b1fc": {
+        "question": "The per-turn reminder that tells agents to use the analyzer first is a hook script on the user's machine (~/.claude/hooks/insrc-steering-reminder.sh) and no source for it was found in this repository. Where is it maintained and installed from, so that Story s5 can change it?",
+        "status": "resolved",
+        "choice": "Retire the hook, use the steering block",
+        "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
+        "resolvedAt": "2026-10-06T18:55:19.772Z"
+      }
     }
   },
   "body": {

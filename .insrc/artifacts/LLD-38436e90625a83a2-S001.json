@@ -26,7 +26,216 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive capability with real design choices and several build tasks, built on parts that already exist (per-repo tracker config, three automatic pushes, an unwired issue-create function).",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Putting one tracker step in approveWorkflowTarget and in the TUI approve service covers every way an approval is made (c8/c10: the daemon does it on in-chat approval too).",
+          "evidence": "approveArtifactByJsonPath has exactly two production callers: src/workflow/gates.ts:837 (inside approveWorkflowTarget) and src/cli/services/workflow.ts:158 (TUI approve). approveWorkflowTarget has one production caller, the daemon 'workflow.approve' handler (src/daemon/index.ts:652), and insrc_workflow_approve only forwards to that IPC (src/mcp/daemon-stream.ts:289, src/mcp/server.ts:1087 'Holds no approval logic'). [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/daemon/index.ts, src/mcp/daemon-stream.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today only the TUI approve service pushes (HLD, LLD under an epic, plan) and commits; approveWorkflowTarget pushes nothing and is already async and awaited by the daemon handler at src/daemon/index.ts:643.",
+          "evidence": "src/cli/services/workflow.ts:156-169 is a synchronous approve() with the three-way switch over autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan followed by commitApprovedArtifacts. gates.ts:800-807: 'Stamp-only: it does NOT run the tracker (gh-push/commit) leg', declared `export async function approveWorkflowTarget`. daemon/index.ts:643 `'workflow.approve': async (params) =>` and :652 `await approveWorkflowTarget({`. [files: src/cli/services/workflow.ts, src/workflow/gates.ts, src/daemon/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "createBugfixTrackerIssue is not reached from any approval today, and its default dependencies pass no labels.",
+          "evidence": "mount.ts:25-28: 'The GH-issue create leg is NOT injected here (no AdvanceTrackerDeps)'; advance.ts:63 returns before createTrackerIssue when opts.tracker is undefined, and the mount passes only seamOpts. bugfix/tracker.ts:432 `labels: opts?.labels ?? []`. [files: src/workflow/bugfix/mount.ts, src/workflow/bugfix/advance.ts, src/workflow/bugfix/tracker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "On a BUILD approval the refs to close 'are found from the BUILD record's epicHash and storyId, which name the ISSUE, LLD and PLAN artifacts'.",
+          "evidence": "This is not true for the small-bugfix route, the commonest issue flow. nextAfterIssue (src/workflow/bugfix/next-after-issue.ts:59-67) emits `standalone: { standalone: true, sizeClass: 'trivial', focus: scope }` with NO epicHash, and the build step then mints the identity from the focus text: src/mcp/build-step/phases/implement.ts:127 `const epicHash = ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(focus));` (same in validate.ts:99). So BUILD-<hash> is not ISSUE-<issueHash>. mount.ts:23-28 says the same: 'a bugfix BUILD artifact's meta does NOT carry issueHash today ... the build→issue linkage is a tracked follow-up'. Built as written, an approved small-bugfix ISSUE opens a GitHub issue that the BUILD approval reports as 'nothing on the tracker to close', and the backfill cannot tell that such an item is finished. (For a sized bugfix the hash does carry over only if the controller passes it; the emitted design.story nextCall at :73-86 also carries no epicHash.) [files: src/workflow/bugfix/next-after-issue.ts, src/mcp/build-step/phases/implement.ts, src/mcp/build-step/phases/validate.ts, src/workflow/bugfix/mount.ts]",
+          "action": "Design the build→issue linkage: have nextAfterIssue pass the issue hash as standalone.epicHash (and as params.epicHash for the sized route) or stamp meta.issueHash on the BUILD record, and state which one the tracker step and the backfill read. Add a test that follows the emitted nextCall end to end and asserts the issue is closed.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "commitAndPushArtifacts and ghFindIssueByLabels exist with the stated shapes: the first commits only the given paths and reports committed/pushed/reason; the second returns undefined for both 'not found' and 'lookup failed'.",
+          "evidence": "src/workflow/tracker/github.ts:63 `export function commitAndPushArtifacts(repoPath: string, paths: readonly string[], message: string): CommitArtifactsResult` does `git add -- ...present`, commit, push, returning { committed, pushed, reason? }. :215-221 `try { num = out('gh', args); } catch { return undefined; } return /^\\d+$/.test(num) ? buildRef(...) : undefined;`. TrackerMeta (tracker/refs.ts:24-37) already has issueRef, storyRef, taskRefs. [files: src/workflow/tracker/github.ts, src/workflow/tracker/refs.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The catalog row can carry a label: 'path tracker.addItems, type boolean, default true, label \"Add items to tracker\", in a Tracker group'.",
+          "evidence": "ConfigOption has no label field: src/config/config-catalog.ts:30-41 declares only path, type, default, desc, enumValues?, group. Every existing row supplies `desc` and `group`; both plugins render from those. [files: src/config/config-catalog.ts]",
+          "action": "Either put the wording in `desc` (and say the pages show desc), or add an optional `label` to ConfigOption and list the plugin renderers and the catalog contract tests that must learn it.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveGithubConfig has nine call sites, at the files and lines the design lists.",
+          "evidence": "Grep over src (tests excluded) gives exactly: tracker-auto.ts:87, bugfix/tracker.ts:423 and :447, runners/tracker/context.ts:41, :114, :144, tracker/sync.ts:36, questions.ts:474, cli/services/workflow.ts:97. Note for the build: it throws GithubConfigError today when type 'github' has no parseable remote (config/github.ts:262); gate(), resolveConfigOrNone and the others catch that, so returning 'none'/'no-target' instead is compatible. [files: src/workflow/config/github.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The TUI approve() is synchronous, typed at src/cli/services/index.ts:55, and has exactly two callers that use its result synchronously.",
+          "evidence": "cli/services/index.ts:55 `approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): ApproveOutcome;`. Callers: cli/command.ts:223 `const r = svc.workflow.approve(rest[0], true, override);` and cli/panes/WorkflowsPane.tsx:116 `const r = svc.workflow.approve(item.path);`. Both read only r.approval.workflow and r.tracker.status, which TrackerOutcome still has; neither reads r.commit. [files: src/cli/services/index.ts, src/cli/command.ts, src/cli/panes/WorkflowsPane.tsx]",
+          "action": "None. Note command.ts:226 catches ReviewBlockedError by name around the call; keep that catch around the await.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The tracker step can create the issue record's GitHub issue inside approveWorkflowTarget with createBugfixTrackerIssue unchanged ('Unchanged signature and result type').",
+          "evidence": "createBugfixTrackerIssue links the new issue to its parent from issue.meta.parentRef (bugfix/tracker.ts:176, :198-199 `if (parentRef === null || parentRef === undefined) return false;   // standalone`). parentRef is stamped by advanceBugfixAfterIssue → locateAndStampParent, which the daemon runs AFTER approveWorkflowTarget returns (daemon/index.ts:652 then :671). advance.ts:58-60 states the create 'Runs ONLY at this post-approval, post-stamp point'. With the step inside approveWorkflowTarget the create runs before the stamp, so a bugfix located under an epic or story is never linked as a sub-issue, and nothing later links it (a recorded ref makes the next run 'reused'). [files: src/workflow/bugfix/tracker.ts, src/workflow/bugfix/advance.ts, src/daemon/index.ts]",
+          "action": "State the order: either run the issue-record leg of the tracker step after the parent stamp (the advance must then run before or inside the step), or add a link-on-adopt pass that links an already-created issue once parentRef is stamped. Add a test for a located bugfix.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plugins' per-repo writers are hard-wired to models.byRepo at the cited places, and a catalog row reaches VS Code as 'insrc.' + path.",
+          "evidence": "vscode-plugin/src/panels/repo-config.ts:154 `deps.writeKeyPath(['models', 'byRepo', write.repoPath, ...write.segments], write.value)`; SettingsView.kt:720 `private fun base(repoPath: String): List<String> = listOf(\"models\", \"byRepo\", repoPath)`; key-map.ts:26-28 and :52-56 map every CONFIG_CATALOG row to NATIVE_KEY_PREFIX + path. One site the inventory omits: vscode-plugin/src/panels/types.ts:178-179 documents the write message's segments as 'the trailing path UNDER models.byRepo[repoPath]', so that message type needs a namespace too. [files: vscode-plugin/src/panels/repo-config.ts, vscode-plugin/src/panels/types.ts, vscode-plugin/src/config/key-map.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt]",
+          "action": "Add vscode-plugin/src/panels/types.ts to the call sites.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The per-repo value tracker.byRepo.<repoPath>.addItems and the marker tracker.migratedFromGithubJson can live in config.json beside the catalog row and be written through config.write.",
+          "evidence": "reconcile.ts:20-23: the output is 'a MERGE over existing, never a rebuild from catalog rows, so catalog-unenumerable keys ... survive blindly'; only RETIRED_PATHS are pruned (:355-361). config.write accepts a literal segment array and creates intermediates (daemon/index.ts:1457-1481, config/write-path.ts:40-75), with no catalog check. PATHS.config is a fixed constant with no override (shared/paths.ts:9), as the design says. [files: src/config/reconcile.ts, src/config/write-path.ts, src/daemon/index.ts, src/shared/paths.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The carry-over 'writes tracker.addItems = false when the default entry says type none and no value is set', so nobody who opted out is opted back in.",
+          "evidence": "The boot reconcile fills every absent catalog key with its default: reconcile.ts:339-341 `case 'fill': writeLeaf(config, owned, keys, cloneDefault(opt.default)); filled.push(opt.path);`, run at daemon/index.ts:204 (step 2b, before the DB opens). Once tracker.addItems is a catalog row with default true, the first boot of the new daemon writes `true` before anything else, so a carry-over that runs 'beside' the migrations and tests 'no value is set' never sees the global key absent. A user whose github.json default entry says type 'none' is then tracked for every repo without its own entry. The design does not state the order relative to reconcileConfigFile. [files: src/config/reconcile.ts, src/daemon/index.ts]",
+          "action": "Fix the rule so it does not depend on absence: run the carry-over before reconcileConfigFile, or decide on the marker alone (marker absent ⇒ write false for a 'none' default regardless of the filled true). Extend T25 to run it after a reconcile fill.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Adding a 30 second timeout to the gh and git calls makes a hung call a 'failed' outcome with the reason 'gh timed out', and no duplicate is possible.",
+          "evidence": "The timeout surfaces as a thrown error from _exec, and the existing wrappers swallow it. ghCreateIssueTyped (tracker/github.ts:164-171): `try { const r = parse(out('gh', [...base, '-f', `type=${issueType}`])); ... } catch { /* org may not have issue types — fall through untyped */ }` then `parse(out('gh', base))` — a timed-out typed POST (which may already have landed on GitHub) is followed by a second, untyped create in the same approval: a 60 second wait and a possible duplicate, before any label lookup can run. ghAuthOk (:111-118) turns a timeout into 'gh CLI not available or not authenticated', i.e. 'skipped: not signed in'. ghCreateLabel (:122-129) returns false, and bestEffort in tracker-auto.ts:345 logs and swallows. The design changes only the label lookup. [files: src/workflow/tracker/github.ts, src/workflow/tracker-auto.ts]",
+          "action": "List the wrappers that must distinguish a timeout: ghCreateIssueTyped must not fall through to the untyped create on a timeout (retry untyped only on the type-rejected error), and the sign-in check must report a timeout as 'failed', not 'not signed in'. Add those cases to T26.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today one check, ghAuthOk, reports 'gh missing' and 'gh not signed in' as one, and the shared gate in the push functions still runs it, so the step's own checks must come first.",
+          "evidence": "tracker/github.ts:111-118: `try { silent('gh', ['auth', 'status']); return { ok: true }; } catch { return { ok: false, reason: 'gh CLI not available or not authenticated (run `gh auth login`)' }; }`. tracker-auto.ts:93-94 gate(): `const auth = ghAuthOk(); if (!auth.ok) return { skip: ... }`. createBugfixTrackerIssue also throws on a gh create failure (bugfix/tracker.ts:139-140 'propagates'), which the design's try/catch in approveWorkflowTarget covers. [files: src/workflow/tracker/github.ts, src/workflow/tracker-auto.ts, src/workflow/bugfix/tracker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "T29: the existing approval suites run under a helper that installs a recording fake through _setTrackerExecForTests and 'assert the fake was never called', while the target check keeps temp repos away from gh.",
+          "evidence": "The seam exists (tracker/github.ts:29 `export function _setTrackerExecForTests(fn?: TrackerExec)`), but it is the ONE exec for git as well as gh: gitOriginOwnerRepo (:89-97) calls `out('git', ['-C', repoPath, 'remote', 'get-url', 'origin'])` through the same _exec. The design's own order (setting, then target) means that with the setting on, every approval in those suites asks for the git remote through the fake, so 'never called' fails; and a recording fake that returns a value instead of throwing must still yield no GitHub URL. The fake is only untouched if the helper sets the setting false, which the design does not say and which would leave T29 proving nothing about the target check. [files: src/workflow/tracker/github.ts]",
+          "action": "Reword T29 to 'no call whose command is gh', and say what the fake returns for `git remote get-url` (throw, or a non-GitHub URL). State which value the helper gives the setting reader.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The done response's pendingApproval block is built at src/mcp/workflow-step/phases/synthesize.ts:109 and typed at src/mcp/workflow-step/types.ts:129, so T16 has a concrete place to assert the tracker line.",
+          "evidence": "synthesize.ts:109-118 `pendingApproval: { artifactPath: paths.md, ...(epicHash), guidance: ... }`; types.ts:129-133 `readonly pendingApproval?: { readonly artifactPath: string; readonly epicHash?: string; readonly guidance: string; }`. Every acceptance criterion ac1 to ac6 has tests in the mapping table; ac3's close (T9, T28) depends on the linkage reported under current-behaviour. [files: src/mcp/workflow-step/phases/synthesize.ts, src/mcp/workflow-step/types.ts]",
+          "action": "None beyond the linkage fix: T9 should build its fixture by following nextAfterIssue's emitted call, not by hand-matching hashes.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 5,
+        "low": 10,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-06T07:37:20.766Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

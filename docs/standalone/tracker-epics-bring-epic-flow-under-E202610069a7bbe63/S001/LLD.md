@@ -386,3 +386,23 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:41:09.355Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The removal inventory names everything the deletions leave without a caller, and the label behaviour of the old code is fully carried over. | src/workflow/tracker/conventions.ts:49-50 `allTrackerLabels(...)` returns `[epicLabel, storyLabel, epicMembershipLabel(epicSlug), ...STATUS_LABELS]`; its only caller is tracker-auto.ts:129, which is deleted. The design cites allTrackerLabels only as the source of epic:<slug> and does not say the function becomes dead, nor that the first epic push also created `insrc:in-progress` and `insrc:blocked`, which the new flow's three labels do not include. Those two are still created by tracker setup (src/workflow/tracker/setup.ts:85 `SETUP_LABELS = ['insrc:epic', 'insrc:story', 'insrc:task', ...STATUS_LABELS]`), so a repo that never ran setup will no longer get them; sync's mapIssueStatus (conventions.ts:261-266) reads them. Nothing breaks, since humans apply these labels. [files: src/workflow/tracker/conventions.ts, src/workflow/tracker/setup.ts, src/workflow/tracker-auto.ts] | State in 3.1(c) that allTrackerLabels is deleted with its caller and that the two status labels are created only by tracker setup from now on (or have the Define entry pass them for creation). |
+
+#### Could not verify (does not block)
+
+_None._

@@ -476,3 +476,21 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:31:06.180Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

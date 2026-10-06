@@ -397,3 +397,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c37]]** `code` `src/analyze/context/tool-surface.ts` — "READ_ONLY_TOOL_IDS"
 - **[[c38]]** `prior-artifact` `LLD-38436e90625a83a2-S001 ninth review of 2026-10-06 by the daemon: block, 3 MED premises did not hold; the user decided each and this revision applies the decisions`
 - **[[c39]]** `prior-artifact` `LLD-38436e90625a83a2-S001 tenth review of 2026-10-06 by the daemon: block, 2 MED premises did not hold (a fifth caller of the TUI approve; focus compared without trimming); this revision applies both`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:10:49.851Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The TUI's approve request (path, override reason, approver, tracker flag) is enough for the daemon to return what the two TUI callers are to show, including what the bugfix follow-on did. | Two gaps. (1) The request has no approver: WorkflowApproveRequest is `{ repoPath; artifactPath?; epicHash?; overrideReview? }` (src/workflow/gates.ts:725-730), the handler reads only `repo, artifactPath, epicHash, overrideReview` (src/daemon/index.ts:644), and the TUI function `approve(artifactPath, withTracker, overrideReview)` has no approver to send. The rewritten T7 is told to assert a field nothing defines. (2) The request has no repo: the kept signature carries only a path, command.ts:223 passes only `rest[0]`, and the design keeps the follow-on skipped on the no-repo path. With no repo the handler returns before the follow-on (index.ts:667-669), so a TUI approval of an issue record never stamps the parent and never returns followOn or the next call, yet section 2.2 says both TUI callers show 'what the bugfix follow-on did'. The same empty repoPath also reaches enforceCodeReviewGate(req.repoPath, …) and ensureBuildRecordOnCompletion(req.repoPath, …) (gates.ts:821, :854) for a BUILD approved from the TUI. [files: src/workflow/gates.ts, src/daemon/index.ts, src/cli/services/workflow.ts, src/cli/command.ts] | Decide what the TUI sends. Either add the repo to the TUI service call (the Workflows pane has props.repoPath; the command context must supply one) and list it in T7 and T19, or have the after-approval function find the repo from the registry for the follow-on as well as for the flow. Drop 'the approver' from T7, or define the field on the request and the handler. |
+
+#### Could not verify (does not block)
+
+_None._

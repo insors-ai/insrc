@@ -388,3 +388,21 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T16:41:47.967Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

@@ -383,3 +383,25 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**3 do not hold · 0 could not be verified · 11 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:38:49.396Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The documentation inventory ('found by searching the repo for the three names and for what is deleted') covers every page that describes the deleted functions and the old behaviour. | Not listed, and still describing what this design deletes or changes: README.md:40 and site/index.html:69 `autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan create typed`; site/workflow.html:117 'Approving an HLD auto-creates the Epic issue ... approving a PLAN can push the Task issues', :153 naming `src/workflow/tracker-auto.ts` auto-push, :160 `autoPushTasksOnPlan` (the design lists only :181 of that file); site/tracker.html:81, :90, :106, :108, :125 (pushTasks, useMilestones, 'Manual — the tracker.* workflows'; the design lists only :62 and :131-141); docs/installation.md:145-155 and docs/index.html:217-223 (useMilestones and pushTasks config; the design lists only :21 and :125). [files: README.md, site/index.html, site/workflow.html, site/tracker.html, docs/installation.md, docs/index.html] | Add README.md, site/index.html, the other lines of site/workflow.html and site/tracker.html, and the config sections of docs/installation.md and docs/index.html to section 3.6 and to migration step 9. |
+| data-compatibility | MED | The stored-ref writes this design needs (adding one entry to the Define's storyRefs, clearing closedAt on reopen) fit the existing meta writer. | refs.ts:94 `const next: TrackerMeta = { adapter: 'github', ...prior, ...patch };` is a shallow merge that can only add or replace top-level keys. It cannot remove closedAt, and a patch of `storyRefs: { [storyId]: ref }` replaces the whole map; the old code avoids that by spreading the prior map itself (tracker-auto.ts:222 `{ storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } }`), and that code is deleted here. The issues design makes only two maps merge key by key ('patchTrackerMeta merges the two maps key by key': comments and taskClosedAt). Sections 3.2 and 3.3 say 'clears closedAt' and 'stored ... in the Define's storyRefs[storyId]' without saying how. [files: src/workflow/tracker/refs.ts, src/workflow/tracker-auto.ts] | State in section 3.2/3.3 that storyRefs and taskRefs are merged key by key like the other two maps (or that the flow spreads the prior map), and how closedAt is removed (a delete path in the writer; `closedAt: undefined` does not type-check under exactOptionalPropertyTypes). Add both to E9 and E14. |
+| boundaries | MED | The common tracker implementation is defined only in the issues design (section 3.1: 'DEFINED in the issues design ... not here'), and this design does not redefine it. | The issues design, section 3.3, still reads: 'when not found, first create the two labels it needs, the kind label and the unique label, with an idempotent label create ... and then create the item with both labels'. This design's section 3.1(c) says 'here the rule is stated generally and replaces that wording in the build: addOrUpdate idempotently creates EVERY label it is passed'. So addOrUpdate's label rule is stated two ways across the two documents, and the override lives in the design that says it does not define the common part. The same section also adds state(ref) and the comment key form '<artifact id>:question:<question id>:<resolvedAt>' to that implementation, where the issues design lists only link, design, review and amendment keys. [files: docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, .insrc/artifacts/LLD-38436e90625a83a2-S001.json] | The issues design is unapproved and awaiting its re-review anyway: revise its addOrUpdate wording in place to 'every label it is passed', and list state(ref) and the question key form there (or mark them there as added by this design), so the two documents agree before either is planned. |
+
+#### Could not verify (does not block)
+
+_None._

@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1791269694769-m51qfj`
 **HLD effective hash:** `38436e90625a...`
 
-A new setting, "Add items to tracker", is on by default for every repo and can be turned off per repo from the VS Code and JetBrains settings pages. When it is on and the gh tool is installed and signed in, the daemon itself adds or updates the GitHub item each time a workflow item is approved, whichever way the approval was made: an issue record becomes a GitHub issue, an epic, its stories and its tasks are pushed as today, and a standalone story gets its own issue. The approval result and the workflow's own messages say what was added or why nothing was, and the model in the session no longer runs gh. A one-off backfill adds the approved items that were never pushed.
+One setting, "Add items to tracker", turns tracker pushing on or off for a repo. It is on by default and is shown on the VS Code and JetBrains settings pages. When it is on and the gh tool is installed and signed in, the daemon itself adds or updates the GitHub item each time a workflow item is approved, whichever way the approval was made, and commits and pushes the documents that item refers to. An issue record becomes a GitHub issue, an epic, its stories and its tasks are pushed, a standalone story gets its own issue, and approving a build closes the issue and its tasks. The approval result and the workflow's own messages say what was done or why nothing was, and the model in the session no longer runs gh. A backfill adds the approved items that were never pushed, and closes the finished ones at once.
 
 ## Contents
 
@@ -20,7 +20,6 @@ A new setting, "Add items to tracker", is on by default for every repo and can b
 6. [Migration](#6-migration)
 7. [Alternatives considered](#7-alternatives-considered)
 8. [References](#8-references)
-9. [Open questions](#9-open-questions)
 
 ## 1. HLD context
 
@@ -41,7 +40,7 @@ approveWorkflowTarget(req: WorkflowApproveRequest, opts?: { enforce?: boolean; t
 - `req: WorkflowApproveRequest` — Unchanged: one artifact path or an epic hash, the repo path, and an optional override reason.
 - `opts.tracker: TrackerStepDeps` _(optional)_ — Test seam for the tracker step (the setting reader, the gh check and the gh calls). Defaults to the real ones.
 
-**Returns:** `Promise<WorkflowApproveResult>` — As today, plus a new optional field tracker[]: one outcome per approved artifact that is a tracker item, { path, item: 'issue' | 'epic' | 'story' | 'tasks' | 'completion', status: 'created' | 'updated' | 'already-exists' | 'closed' | 'skipped' | 'failed', ref?, reason? }.
+**Returns:** `Promise<WorkflowApproveResult>` — As today, plus a new optional field tracker[]: one TrackerOutcome per approved artifact that is a tracker item. TrackerOutcome is ONE new type used on every path: { path, item: 'issue' | 'epic' | 'story' | 'tasks' | 'completion', status: 'created' | 'updated' | 'already-exists' | 'closed' | 'skipped' | 'failed', ref?, reason?, docs?: { committed: boolean; pushed: boolean; reason?: string } }. The existing result types are mapped into it: AutoPushResult's four statuses map one to one; the issue-record function's 'reused' maps to 'already-exists'; its 'created' with reason 'ref-unrecorded' maps to 'failed' and carries the created ref.
 
 **Errors:**
 - `none new` when A tracker step that is skipped or fails never fails or undoes the approval; it is reported in tracker[] with its reason.
@@ -50,27 +49,29 @@ approveWorkflowTarget(req: WorkflowApproveRequest, opts?: { enforce?: boolean; t
 - Declared in src/workflow/gates.ts. Called by the daemon's 'workflow.approve' handler (src/daemon/index.ts:643), which serves insrc_workflow_approve and the plugins.
 
 **Postconditions:**
-- For each artifact it approves, it runs the tracker step once, AFTER the approval stamp is written, serially, never in parallel.
+- For each artifact it approves, it awaits the tracker step once, AFTER the approval stamp is written, one artifact after another, never in parallel.
 - An artifact that was withheld (in skipped[]) gets no tracker step.
-- The tracker step is the only place that decides what a given approval adds to the tracker; no caller chooses a push by itself.
+- The tracker step is the only place that decides what a given approval adds to, updates on, or closes on the tracker; no caller chooses a push by itself.
+- Its callers are unchanged in how they call it: the daemon's 'workflow.approve' handler already awaits it.
 
 ### 2.2 `approve`
 
 ```typescript
-approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): ApproveOutcome
+approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): Promise<ApproveOutcome>
 ```
 
 **Parameters:**
 - `withTracker: boolean` _(optional)_ — Unchanged meaning: false suppresses the tracker step for this call.
 
-**Returns:** `ApproveOutcome` — Unchanged shape. Its tracker result now comes from the shared tracker step, so the TUI adds the same items as every other path, including an issue record and a standalone story.
+**Returns:** `Promise<ApproveOutcome>` — CHANGED: it becomes asynchronous, because the tracker step awaits the issue-record functions, which are asynchronous. ApproveOutcome.tracker changes type from AutoPushResult to TrackerOutcome. ApproveOutcome.commit is removed: the commit and push of the documents is now part of the tracker step and is reported in TrackerOutcome.docs.
 
 **Preconditions:**
-- Declared in src/cli/services/workflow.ts:158. It calls approveArtifactByJsonPath directly today and then picks one of three pushes by workflow name.
+- Declared in src/cli/services/workflow.ts:156 and typed in the service interface at src/cli/services/index.ts:55. It is synchronous today and has two callers that use its result synchronously: src/cli/command.ts:223 and src/cli/panes/WorkflowsPane.tsx:116.
 
 **Postconditions:**
-- Its own switch over the three pushes is replaced by one call to the shared tracker step.
-- Its commit of the approved artifacts after the push stays as it is.
+- Its own switch over the three pushes and its own commitApprovedArtifacts call are replaced by one awaited call to the shared tracker step.
+- Both callers are changed to await it: the command in src/cli/command.ts and doApprove in src/cli/panes/WorkflowsPane.tsx, and the interface in src/cli/services/index.ts declares the Promise.
+- withTracker false still suppresses the tracker step, including its commit and push.
 
 ### 2.3 `autoPushStoryOnLld`
 
@@ -81,13 +82,13 @@ autoPushStoryOnLld(lldJsonPath: string): AutoPushResult
 **Parameters:**
 - `lldJsonPath: string` — The approved LLD's json path.
 
-**Returns:** `AutoPushResult` — Unchanged for a story under an epic. New for a standalone story: when the work item has an issue record with a tracker ref, the design is linked on that GitHub issue and the result is 'updated'; when it has none, one GitHub issue is created for the story from the LLD's title and summary, labelled as a story, and its ref is stored on the LLD's meta.tracker.storyRef.
+**Returns:** `AutoPushResult` — Unchanged, for a story under an epic. It is NOT given the standalone case: a standalone story is handled by the tracker step itself, so AutoPushResult keeps its four statuses.
 
 **Preconditions:**
-- Declared in src/workflow/tracker-auto.ts:165. Today it fails for a standalone story because it reads a parent Define that does not exist.
+- Declared in src/workflow/tracker-auto.ts:165. It reads the parent Define, so it cannot serve a standalone story; the tracker step does not call it for one.
 
 **Postconditions:**
-- A second approval of the same LLD creates nothing: the stored ref makes it 'already-exists'.
+- Called by the tracker step for an LLD that has a parent Define. A second approval of the same LLD creates nothing: the stored ref makes it 'already-exists'.
 
 ### 2.4 `createBugfixTrackerIssue`
 
@@ -98,14 +99,15 @@ createBugfixTrackerIssue(input: { repoPath: string; issueHash: string }, deps: T
 **Parameters:**
 - `input: { repoPath: string; issueHash: string }` — Unchanged.
 
-**Returns:** `Promise<TrackerIssueResult>` — Unchanged. It is now reached: the tracker step calls it when an issue record is approved.
+**Returns:** `Promise<TrackerIssueResult>` — Unchanged signature and result type. It is now reached: the tracker step awaits it when an issue record is approved, with labels supplied (see the tracker step), where today its default dependencies pass no labels.
 
 **Preconditions:**
 - Declared in src/workflow/bugfix/tracker.ts:142. Not reached from any approval today (src/workflow/bugfix/mount.ts).
 
 **Postconditions:**
 - Its existing rule holds: a ref already on the issue record's meta.tracker means the GitHub issue exists and none is created.
-- closeBugfixTrackerIssue is reached the same way when the work item's BUILD record is approved.
+- New, before any create: the tracker step looks the issue up on GitHub by the record's own label and adopts it when found, so an issue whose ref was lost is never created twice.
+- closeBugfixTrackerIssue is awaited by the tracker step when the work item's BUILD record is approved. It is no longer called from the bugfix follow-on in src/workflow/bugfix/mount.ts: the close has one owner.
 
 ### 2.5 `resolveGithubConfig`
 
@@ -116,50 +118,63 @@ resolveGithubConfig(repoPath: string, configPath?: string): ResolvedGithubConfig
 **Parameters:**
 - `repoPath: string` — Unchanged.
 
-**Returns:** `ResolvedGithubConfig` — Unchanged where github.json has an entry for the repo or a default entry. New: with NO entry at all, it no longer returns type 'none'; it resolves a GitHub target from the repo's git remote with the default labels, so a repo is tracked by default. It still returns 'none' when an entry says type 'none', or when the repo has no GitHub remote.
+**Returns:** `ResolvedGithubConfig` — UNCHANGED, including its implicit default of type 'none' when github.json has no entry. The first draft of this design changed that default; it is withdrawn, because this function has three other callers that would change behaviour with it: the TUI's commit of artifacts (src/cli/services/workflow.ts:97), the question-resolution comment (src/workflow/questions.ts:474) and the tracker sync (src/workflow/tracker/sync.ts:36). The default-on behaviour lives in the tracker step's own target lookup instead.
 
 **Preconditions:**
-- Declared in src/workflow/config/github.ts. Today the implicit default with no entry is 'none'.
+- Declared in src/workflow/config/github.ts. Its callers outside the tracker step are src/cli/services/workflow.ts:97, src/workflow/questions.ts:474 and src/workflow/tracker/sync.ts:36; none of them changes.
 
 **Postconditions:**
-- An explicit type 'none' in github.json keeps the tracker off for that repo whatever the new setting says.
 - The owner and repo still never come from the default entry, only from the repo's own entry or its git remote.
+- The tracker step reads this function for the target and the label names only. It does not read the entry's type, pushTasks or commitArtifacts to decide whether to push: the one setting decides.
 
 ## 3. Data model changes
 
 ### 3.1 `Setting tracker.addItems` — new
 
-A catalog row: path tracker.addItems, type boolean, default true, label "Add items to tracker", in a Tracker group. It is the default for every repo. A per-repo value is stored in the same config file under tracker.byRepo.<repoPath>.addItems, the same dynamic-key pattern as models.byRepo. One reader returns the value for a repo: the per-repo value when present, otherwise the catalog value, otherwise true. Both settings pages show the row; the value they show and write is the one for the open project, and they write it with the existing config.write request using the per-repo path. The VS Code plugin also declares the setting in its package.json, as it does for every other row.
+ONE flag turns tracker pushing on or off for a repo; nothing else does. A catalog row: path tracker.addItems, type boolean, default true, label "Add items to tracker", in a Tracker group; it is the value for any repo that has none of its own. A repo's own value is stored in the same config file under tracker.byRepo.<repoPath>.addItems, the dynamic-key pattern models.byRepo already uses. One reader returns the value for a repo: the repo's own value when present, otherwise the catalog value, otherwise true. The reader takes the config file's path as a parameter (defaulting to the real one) so a test can point it at a temp file. The flag replaces three older switches for the tracker step: an entry's type 'none', pushTasks and commitArtifacts in ~/.insrc/github.json are no longer read to decide whether to push. So that nobody who opted out is opted back in, a one-time step at daemon start writes tracker.byRepo.<repoPath>.addItems = false for every repo whose github.json entry says type 'none', and writes the catalog value false when the default entry says type 'none'. Settings pages. A catalog row reaches VS Code as a global key (vscode-plugin/src/config/key-map.ts maps every catalog path to 'insrc.' + path), which is the right place for the default. The per-repo value is shown and written in each plugin's per-repo section, whose writers are hard-wired to models.byRepo today: vscode-plugin/src/panels/repo-config.ts:154 and the base path in jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt:720. Both are extended to write tracker.byRepo.<repoPath>.addItems for the open project. Each page labels the two plainly: the default for all repos, and this repo's value. The VS Code plugin also declares the setting in its package.json.
 
 **Call sites:**
 - `src/config/config-catalog.ts`
 - `src/daemon/index.ts`
 - `vscode-plugin/package.json`
+- `vscode-plugin/src/config/key-map.ts`
+- `vscode-plugin/src/panels/repo-config.ts`
+- `vscode-plugin/src/panels/webview-host.ts`
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt`
 - `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt`
 
 ### 3.2 `Tracker step` — new
 
-One function in src/workflow/tracker-auto.ts that takes an approved artifact's json path and returns one outcome. It first checks, in this order: the setting for the repo is true; the gh tool is installed; gh is signed in; the repo resolves to a GitHub target. Any of these failing returns 'skipped' with a reason that names which one. Then it acts by the kind of artifact: an ISSUE creates a GitHub issue (createBugfixTrackerIssue); an HLD pushes the epic and its stories (autoPushEpicOnHld); an LLD pushes the story, or handles a standalone story as described under autoPushStoryOnLld; a PLAN pushes its tasks (autoPushTasksOnPlan), still subject to the existing pushTasks setting; a BUILD record closes the work item's GitHub issue when it has one. Every other kind (DEF, SPEC, CR, EXT) returns no outcome. Detection of the tool is separate from sign-in so the reason can say which is missing; today the one check, ghAuthOk, reports both as one.
+One asynchronous function in src/workflow/tracker-auto.ts that takes an approved artifact's json path and returns one TrackerOutcome, or none for a kind that is not tracked. CHECKS, in this order, each returning 'skipped' with its own reason: (1) the setting for the repo is true; (2) a GitHub target is found: the repo's entry in github.json when it names an owner and repo, otherwise the repo's git remote; (3) the gh tool is installed; (4) gh is signed in. The target is checked before gh so that a repo with no GitHub remote, which is every temp repo in the test suites, never runs gh. Finding the tool is separate from sign-in so the reason says which is missing; today's one check, ghAuthOk, reports both as one. BY KIND. An ISSUE record creates a GitHub issue (createBugfixTrackerIssue) carrying the label insrc:issue and a label unique to the record, insrc:issue-<first 8 of its hash>; before creating, the step looks that unique label up (ghFindIssueByLabels) and adopts the issue when it exists. An HLD pushes the epic and its stories (autoPushEpicOnHld). An LLD with a parent Define pushes the story (autoPushStoryOnLld). A standalone LLD: when the work item's issue record (the ISSUE artifact with the same hash) has a tracker ref, a comment linking the design is added to that GitHub issue and the outcome is 'updated'; otherwise one GitHub issue is created for the story from the LLD's title and summary, with the story label and a unique label insrc:story-<first 8 of the hash>-<story id>, and its ref is stored on the LLD's meta.tracker.storyRef. A PLAN pushes its tasks (autoPushTasksOnPlan) whenever the setting is on; pushTasks no longer gates it. A BUILD record closes what the Story opened: the GitHub issue of the work item's issue record (closeBugfixTrackerIssue), else the story issue on the LLD's meta.tracker.storyRef, and each task issue in the plan's meta.tracker.taskRefs; the refs are found from the BUILD record's epicHash and storyId, which name the ISSUE, LLD and PLAN artifacts. DEF, SPEC, CR and EXT give no outcome. DOCUMENTS. After the item is added or updated, the step commits and pushes the documents it refers to, with the existing commitAndPushArtifacts: the approved artifact's json and markdown, and the work item's definition alongside, as the TUI does today. It commits only those paths, on the current branch, and reports the result in TrackerOutcome.docs; a commit or push that fails does not change the item's status. This is the commit the TUI made in commitApprovedArtifacts; that function is removed. ONE CLOSE OWNER. The bugfix follow-on in src/workflow/bugfix/mount.ts no longer closes the issue: its completeBugfixTracker leg and the 'bugfix-complete' entry it put in followOn are removed, and the advance leg stays. TIME. Every gh and git call the step makes gets a timeout of 30 seconds; today they are blocking calls with none (src/workflow/tracker/github.ts:25). A call that passes it is a 'failed' outcome with the reason 'gh timed out'. The calls stay blocking, so the daemon serves no other request while one runs: an issue record is 2 to 3 calls, an epic about 10, typically 1 to 2 seconds each. The backfill yields to the event loop between items so other requests are served between them.
 
 **Call sites:**
 - `src/workflow/tracker-auto.ts`
 - `src/workflow/tracker/github.ts`
 - `src/workflow/bugfix/tracker.ts`
+- `src/workflow/bugfix/mount.ts`
+- `src/workflow/bugfix/advance.ts`
 - `src/workflow/gates.ts`
 - `src/cli/services/workflow.ts`
+- `src/cli/services/index.ts`
+- `src/cli/command.ts`
+- `src/cli/panes/WorkflowsPane.tsx`
+- `src/daemon/index.ts`
 
 ### 3.3 `What the workflow says about the tracker` — new
 
-Three places. (1) The result of insrc_workflow_approve carries tracker[] and its description says the daemon adds or updates the tracker item on approval and that the model must not run gh for it. (2) The done response of insrc_workflow_step, which already carries pendingApproval, gains one line saying what approving this artifact will do in the tracker: the target it will be added to, or why it will not be (setting off, gh missing, gh not signed in, no GitHub remote, or a kind that is not tracked). (3) The steering source: the tracker guide and the bugfix guide say that tracking happens in the daemon at approval, which items are tracked and when, that the setting and the gh tool control it, and that the model relays the tracker outcome and never pushes by hand; the tracker.push, tracker.sync and tracker.post workflows remain for an explicit re-push or sync.
+Three places. (1) The result of insrc_workflow_approve carries tracker[], and its description says the daemon adds or updates the tracker item and pushes its documents on approval, and that the model must not run gh or commit the artifacts for it. (2) The done response of insrc_workflow_step: its pendingApproval block, built in src/mcp/workflow-step/phases/synthesize.ts:109 and typed in src/mcp/workflow-step/types.ts:129, gains a tracker line saying what approving this artifact will do: the target it will be added to, or why it will not be (setting off, no GitHub target, gh missing, gh not signed in, or a kind that is not tracked). The line is worked out by the same checks as the tracker step, without changing anything. (3) The steering source src/prompts/steering-block.md and its plugin copy vscode-plugin/assets/steering-block.md: the tracker guide and the bugfix guide say that tracking happens in the daemon at approval, which items are tracked and when, that the one setting and the gh tool control it, that a build approval closes the issue and its tasks, and that the model relays the tracker outcome and never pushes by hand; the tracker.push, tracker.sync and tracker.post workflows remain for an explicit re-push or sync.
 
 **Call sites:**
 - `src/mcp/server.ts`
+- `src/mcp/workflow-step/phases/synthesize.ts`
+- `src/mcp/workflow-step/types.ts`
 - `src/prompts/steering-block.md`
+- `vscode-plugin/assets/steering-block.md`
 - `src/workflow/gates.ts`
 
 ### 3.4 `Backfill of items never pushed` — new
 
-A daemon request that takes a repo and a dry-run flag. It lists every approved artifact that is a tracker item and carries no tracker ref (approved issue records, approved HLDs, approved LLDs, approved plans), in an order that creates parents before children, and returns the list when the dry-run flag is set. Without the flag it runs the same tracker step on each, one at a time, and returns one outcome per item. An item whose BUILD record is already approved is created and then closed, so finished work does not show as open. Items not yet approved are not pushed; they are pushed when they are approved. It is safe to run twice: an item that already has a ref is reported as already there.
+A daemon stream request that takes a repo and a dry-run flag. It lists every approved artifact that is a tracker item and carries no tracker ref (approved issue records, approved HLDs, approved LLDs, approved plans), in an order that creates parents before children, and returns the list when the dry-run flag is set. Without the flag it runs the same tracker step on each, one at a time, yielding to the event loop between items and sending one progress frame per item, and ends with one outcome per item. An item whose BUILD record is already approved is created and then closed at once, so finished work does not show as open. Items not yet approved are not pushed; they are pushed when they are approved. It is safe to run twice: an item that already has a ref, or that is found on GitHub by its unique label, is reported as already there.
 
 **Call sites:**
 - `src/daemon/index.ts`
@@ -178,17 +193,25 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
   - Response: The outcome is 'skipped' with the reason 'gh is not signed in (run gh auth login)'. The approval stands.
   - User impact: The user is told to sign in; the item can be added later by the backfill.
 - **The repo has no GitHub remote and no target in the tracker config.** (recoverable)
-  - Detection: resolveGithubConfig returns type 'none', or raises its configuration error.
-  - Response: The outcome is 'skipped' with that reason. The approval stands.
+  - Detection: The step's target lookup finds no owner and repo in the repo's github.json entry and no GitHub remote.
+  - Response: The outcome is 'skipped' with that reason, before any gh call. The approval stands.
   - User impact: The user is told no GitHub target could be found for the repo.
 - **A gh call fails while creating or updating the item (network, permissions, rate limit, a label or issue type the organisation does not have).** (recoverable)
   - Detection: The gh call exits non-zero, or the push function returns status 'failed'.
   - Response: The outcome is 'failed' with gh's message. Nothing is retried in the same approval. The approval stands, and no tracker ref is written, so a later approval of the same artifact or the backfill tries again.
   - User impact: The approval result says the tracker step failed and why; the item is approved but not on the tracker.
+- **A gh or git call hangs (a stalled network, a credential prompt).** (recoverable)
+  - Detection: The call passes its 30 second timeout and is stopped.
+  - Response: The outcome is 'failed' with the reason 'gh timed out' (or 'git timed out' for the documents). Nothing is retried in the same approval; the approval stands.
+  - User impact: The approval returns after at most the timeout for that call; the daemon is not left frozen.
+- **The item was added but its documents could not be committed or pushed (not a git work tree, nothing to commit, push rejected or offline).** (recoverable)
+  - Detection: commitAndPushArtifacts returns committed false or pushed false with a reason.
+  - Response: The item's status is unchanged; TrackerOutcome.docs carries committed, pushed and the reason. A push that failed leaves the commit local.
+  - User impact: The result says the documents are not on the remote yet and why; links from the GitHub item resolve once they are pushed.
 - **The GitHub issue was created but the ref could not be written back to the artifact.** (recoverable)
-  - Detection: The write of meta.tracker throws after the create call returned a ref.
-  - Response: The outcome is 'failed' and names the created ref, so it can be linked by hand; the existing relink-by-label path for issue records recovers it.
-  - User impact: The user sees the ref and that it was not recorded; a second approval could otherwise create a duplicate.
+  - Detection: For an issue record, createBugfixTrackerIssue returns 'created' with the reason 'ref-unrecorded'; for a story, the write of meta.tracker throws after the create call returned a ref.
+  - Response: The outcome is 'failed' and names the created ref. No duplicate follows: the item carries its unique label, and the next approval or the backfill finds it by that label and adopts it, writing the ref then.
+  - User impact: The user sees the ref and that it was not recorded; the next run repairs it.
 - **The tracker step throws unexpectedly.** (recoverable)
   - Detection: approveWorkflowTarget wraps each artifact's tracker step in a try and catch.
   - Response: The outcome is 'failed' with the error's message. The approval of that artifact and of the rest of a batch continues.
@@ -203,26 +226,31 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
 | Input | Expected |
 | :--- | :--- |
 | The setting is false for the repo. | Every tracker step is 'skipped' with the reason that the setting is off; no gh call is made, not even the sign-in check. |
-| The setting is true by default and the repo's github.json entry says type 'none'. | Skipped: the explicit opt-out in the tracker config wins. |
-| A repo with no entry in github.json and a GitHub remote. | Tracked by default: the target is the git remote and the default labels are used. |
+| A repo whose github.json entry says type 'none', after the one-time step at daemon start. | Its setting was written as false, so every tracker step is skipped. Turning the setting on later tracks the repo, using its git remote: the one flag decides. |
+| A repo with no entry in github.json and a GitHub remote. | Tracked by default: the step's own lookup takes the target from the git remote and the default labels. resolveGithubConfig still returns 'none' for it, so the three other callers behave as before. |
 | An artifact whose item is already on the tracker is approved again. | 'already-exists' with its ref; nothing is created. |
 | An LLD under an epic whose HLD was never pushed. | 'skipped' with the existing reason that the epic is not on the tracker yet; the backfill creates the epic first and then the story. |
 | A standalone story whose work item has an issue record that is already on the tracker. | No second issue is created; the design is linked on the existing GitHub issue and the outcome is 'updated'. |
-| A plan is approved and the tracker config has pushTasks false. | 'skipped' for the tasks with that reason; the existing setting still decides whether tasks become issues. |
+| A plan is approved and the tracker config has pushTasks false. | The tasks are pushed: with the setting on, every item is tracked. pushTasks no longer decides. |
 | A batch approval of several artifacts under one epic. | One tracker outcome per approved artifact, run one after another in the order they were approved; withheld artifacts have none. |
 | A DEF, SPEC, CR or EXT artifact is approved. | No tracker outcome: these kinds are not tracker items. |
-| The backfill meets a finished work item (its BUILD record is approved). | Its GitHub issue is created and then closed, so it does not appear as open work. |
+| The backfill meets a finished work item (its BUILD record is approved). | Its GitHub issue is created and closed at once, with its tasks, so it does not appear as open work. |
 | The backfill is run with the dry-run flag. | It returns the list of items it would add, in order, and makes no gh call that changes anything. |
 | An issue record that is not yet approved. | Not pushed by the approval step or the backfill; it is pushed when it is approved. |
+| A BUILD record is approved for a Story whose issue, story or tasks were never pushed. | 'skipped' with the reason that there is nothing on the tracker to close; the backfill creates and closes it. |
+| The TUI approves with withTracker false. | No tracker step and no commit or push of the documents. |
+| The working tree holds other uncommitted files when an item is approved. | Only the approved artifact's files and its definition are added and committed; the other files are left as they are. |
 
 **Invariants to preserve**
 
-- An approval is never failed, undone or delayed past its stamp by the tracker: the stamp is written first and the tracker step only reports. [[c1]]
+- An approval is never failed or undone by the tracker: the stamp is written first and the tracker step only reports. The approval's response waits for the step, which is bounded by the timeout on each call. [[c1]]
 - The GitHub owner and repo never come from the default entry of the tracker config; only from the repo's own entry or its git remote. [[c2]]
 - A stored tracker ref means the item exists: no push function creates a second item for an artifact that already carries a ref. [[c2]]
 - The other-party review rule and the code-review gate decide whether an artifact is approved before any tracker step runs; a withheld artifact is never pushed. [[c1]]
 - gh is never run by a test and never by the model in the session; tracker functions take their gh calls as injected dependencies. [[c6]]
 - Every setting the plugins show comes from the config catalog and is written through config.write. [[c4]]
+- resolveGithubConfig and its three callers outside the tracker step behave exactly as before. [[c2]]
+- A work item's GitHub issue is closed by one piece of code only. [[c5]]
 
 ## 5. Test strategy
 
@@ -231,23 +259,23 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
 **Test levels**
 
 - **contract** — The Story lists no acceptance criteria, so they are defined here.
-  - Subjects: `ac1: a setting "Add items to tracker", default true, can be set per repo and is shown on the VS Code and JetBrains settings pages`, `ac2: with the setting on and gh installed and signed in, approving an item adds or updates it on the tracker on every approval path, done by the daemon`, `ac3: an approved issue record creates a GitHub issue; a standalone story gets one; epic, story and tasks are pushed as before`, `ac4: a tracker step that is skipped or fails never fails the approval and always says why`, `ac5: the approval result, the workflow step's done message and the steering say what the tracker did or will do, and tell the model not to run gh`, `ac6: a backfill adds the approved items that were never pushed, in parent-first order, safely repeatable, with a dry run`
+  - Subjects: `ac1: one setting "Add items to tracker", default true, turns tracker pushing on or off for a repo, and is shown on the VS Code and JetBrains settings pages`, `ac2: with the setting on and gh installed and signed in, approving an item adds or updates it on the tracker and pushes its documents, on every approval path, done by the daemon`, `ac3: an approved issue record creates a GitHub issue; a standalone story gets one; epic, story and tasks are pushed; approving a BUILD record closes the issue and its tasks`, `ac4: a tracker step that is skipped or fails never fails the approval and always says why`, `ac5: the approval result, the workflow step's done message and the steering say what the tracker did or will do, and tell the model not to run gh`, `ac6: a backfill adds the approved items that were never pushed, in parent-first order, safely repeatable, with a dry run`
 - **unit** — The setting and the checks that gate the tracker step.
-  - Subjects: `T1 the setting reader: per-repo value wins, then the catalog value, then true`, `T2 the catalog has the tracker.addItems row, boolean, default true; the row count in the catalog contract test is updated`, `T3 with the setting false the step is skipped and makes no gh call at all`, `T4 gh not installed, gh not signed in, and no GitHub target each give 'skipped' with their own reason`, `T5 resolveGithubConfig with no entry resolves the git remote; an entry with type 'none' still returns none; the default entry never supplies owner or repo`
+  - Subjects: `T1 the setting reader, pointed at a temp config file: the repo's own value wins, then the catalog value, then true`, `T2 the catalog has the tracker.addItems row, boolean, default true; the row count in the catalog contract test is updated`, `T3 with the setting false the step is skipped and makes no gh or git call at all`, `T4 the checks run in the order setting, target, gh installed, gh signed in, each 'skipped' with its own reason; a repo with no GitHub target never reaches a gh call`, `T5 the step's target lookup: the repo's github.json entry when it names owner and repo, otherwise the git remote; resolveGithubConfig itself is unchanged and still returns 'none' with no entry; pushTasks, commitArtifacts and type 'none' are not read by the step`, `T25 the one-time step at daemon start writes the setting false for each repo whose github.json entry says type 'none', and changes nothing on a second run`
   - Fixtures: `a temp config file and a temp github.json through INSRC_GITHUB_CONFIG`
 - **unit** — What the tracker step does for each kind of artifact, with gh faked.
-  - Subjects: `T6 an approved ISSUE creates one GitHub issue and stores its ref; approving again gives 'already-exists'`, `T7 an HLD, an LLD under an epic and a PLAN each call the existing push and return its result`, `T8 a standalone LLD with no issue record creates one story issue and stores the ref; with an issue record already on the tracker it links the design there and creates nothing`, `T9 an approved BUILD record closes the work item's GitHub issue; with no ref it does nothing`, `T10 a DEF, SPEC, CR and EXT give no outcome`, `T11 a gh failure gives 'failed' with the message and writes no ref; a failed write-back names the created ref`
+  - Subjects: `T6 an approved ISSUE creates one GitHub issue with the insrc:issue label and its unique label, and stores its ref; approving again gives 'already-exists'; 'reused' maps to 'already-exists'`, `T7 an HLD, an LLD under an epic and a PLAN each call the existing push and return its result as a TrackerOutcome; a PLAN pushes its tasks with pushTasks false`, `T8 a standalone LLD with no issue record creates one story issue with its unique label and stores the ref; with an issue record already on the tracker it comments there and creates nothing`, `T9 an approved BUILD record closes the work item's issue (or the story issue) and each task issue; with nothing on the tracker it is 'skipped'`, `T10 a DEF, SPEC, CR and EXT give no outcome`, `T11 a gh failure gives 'failed' with the message and writes no ref; 'created' with 'ref-unrecorded' gives 'failed' naming the ref; the next run finds the item by its unique label and adopts it without creating a second one`, `T26 a gh call and a git call that pass the timeout each give 'failed' with 'timed out', and the step returns`, `T27 after the item is added the step commits and pushes only the artifact's files and its definition, and reports docs; a failed push leaves the item's status unchanged; other uncommitted files are not committed`
   - Fixtures: `injected gh functions that record their calls`
 - **integration** — Every approval path runs the same step.
-  - Subjects: `T12 approveWorkflowTarget returns tracker[] with one outcome per approved tracker item, in order, and none for a withheld artifact`, `T13 a tracker step that throws or fails leaves the artifact approved and the rest of a batch approved`, `T14 the daemon's workflow.approve result carries tracker[] through to insrc_workflow_approve`, `T15 the TUI approve service produces the same outcome as approveWorkflowTarget for an ISSUE and for a standalone LLD, and withTracker false suppresses it`
-  - Fixtures: `the existing approval fixtures and the shared other-party review helper`
+  - Subjects: `T12 approveWorkflowTarget returns tracker[] with one outcome per approved tracker item, in order, and none for a withheld artifact`, `T13 a tracker step that throws or fails leaves the artifact approved and the rest of a batch approved`, `T14 the daemon's workflow.approve result carries tracker[] through to insrc_workflow_approve`, `T15 the TUI approve service, now asynchronous, produces the same outcome as approveWorkflowTarget for an ISSUE and for a standalone LLD; withTracker false suppresses the step and the commit; the command and the Workflows pane await it`, `T28 the bugfix follow-on no longer closes the issue: a completed bugfix BUILD is closed once, by the tracker step, and followOn has no 'bugfix-complete' entry`, `T29 the existing suites that call approveWorkflowTarget or the TUI approve service on temp repos make no gh call and read no real config: src/workflow/__tests__/approve-workflow-target.test.ts, approve-codereview-gate.test.ts, approve-build-completion.test.ts, approve-build-record-completion.test.ts, other-party-review-gate.test.ts, bugfix-orchestration.test.ts, src/mcp/build-step/__tests__/build-start.test.ts and build-step.test.ts, and src/workflow/runners/build/__tests__/build-record.test.ts each run with a recording gh fake and a temp config path, and assert the fake was never called`
+  - Fixtures: `the existing approval fixtures and the shared other-party review helper`, `one shared test helper that installs a recording gh fake (the existing injectable exec in src/workflow/tracker/github.ts) and a temp config path`
 - **unit** — What the workflow says.
-  - Subjects: `T16 the done response of insrc_workflow_step says what approval will do in the tracker, or why it will not, for each skip reason`, `T17 the steering tracker and bugfix guides and the insrc_workflow_approve description say the daemon tracks at approval, list what is tracked, and tell the model not to run gh; the plugin copy of the steering source is identical to the source`
+  - Subjects: `T16 the pendingApproval block of insrc_workflow_step's done response says what approval will do in the tracker, or why it will not, for each skip reason, and working it out makes no gh call that changes anything`, `T17 the steering tracker and bugfix guides and the insrc_workflow_approve description say the daemon tracks at approval, list what is tracked, and tell the model not to run gh; the plugin copy of the steering source is identical to the source`
 - **integration** — The backfill, with gh faked.
-  - Subjects: `T18 the dry run lists approved untracked items parent first and changes nothing`, `T19 a run creates each item once; a second run reports them as already there; an item whose BUILD record is approved is created and closed; unapproved items are not listed`, `T20 a failure part of the way through keeps the refs already written and a second run continues`
+  - Subjects: `T18 the dry run lists approved untracked items parent first and changes nothing`, `T19 a run creates each item once; a second run reports them as already there; an item whose BUILD record is approved is created and closed at once with its tasks; unapproved items are not listed; it yields between items`, `T20 a failure part of the way through keeps the refs already written and a second run continues`
   - Fixtures: `a temp repo with a mix of approved, unapproved, tracked and finished artifacts`
 - **unit** — The plugins.
-  - Subjects: `T21 the VS Code package.json declares the setting and the settings page writes the per-repo path for the open workspace folder`, `T22 the JetBrains settings page shows the row and writes the per-repo path for the open project`
+  - Subjects: `T21 VS Code: package.json declares the setting; the global key maps to the catalog row; the per-repo section writes tracker.byRepo.<repoPath>.addItems for the open workspace folder and shows the repo's value`, `T22 JetBrains: the settings page shows the default row, and its per-repo section writes tracker.byRepo.<repoPath>.addItems for the open project`
 - **live** — One real run against GitHub, after the build, done by hand and recorded in the build record.
   - Subjects: `T23 approving a real issue record in this repo creates a GitHub issue in insors-ai/insrc and stores its ref`, `T24 the backfill's dry run on this repo is shown to the user before the real run`
 
@@ -255,10 +283,10 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `T1`, `T2`, `T21`, `T22` |
-| `ac2` | `T3`, `T4`, `T5`, `T12`, `T14`, `T15` |
-| `ac3` | `T6`, `T7`, `T8`, `T9`, `T10`, `T23` |
-| `ac4` | `T4`, `T11`, `T13` |
+| `ac1` | `T1`, `T2`, `T25`, `T21`, `T22` |
+| `ac2` | `T3`, `T4`, `T5`, `T12`, `T14`, `T15`, `T27`, `T29` |
+| `ac3` | `T6`, `T7`, `T8`, `T9`, `T10`, `T28`, `T23` |
+| `ac4` | `T4`, `T11`, `T13`, `T26` |
 | `ac5` | `T16`, `T17` |
 | `ac6` | `T18`, `T19`, `T20`, `T24` |
 
@@ -266,22 +294,24 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
 
 **State before:** Only the TUI approve service pushes to GitHub, and only for an HLD, an LLD under an epic and a plan. The in-chat approval and the plugins go through approveWorkflowTarget, which pushes nothing. An approved issue record never creates a GitHub issue and a standalone story cannot be pushed. A repo is tracked only when ~/.insrc/github.json has an entry for it or a default entry. No setting turns tracking on or off, and the steering tells the model to push an epic itself without saying when.
 
-**State after:** A setting, on by default and adjustable per repo from both plugins, controls tracking. With it on and gh installed and signed in, one tracker step runs inside the approval on every path and handles issue records, epics, stories, standalone stories, tasks and completion. A repo with a GitHub remote is tracked without any entry in github.json. The approval result and the workflow's messages report the tracker outcome, the steering tells the model the daemon does it, and a backfill has added the approved items that were never pushed.
+**State after:** One setting, on by default and adjustable per repo from both plugins, turns tracker pushing on or off. With it on and gh installed and signed in, one tracker step runs inside the approval on every path: it adds or updates issue records, epics, stories, standalone stories and tasks, closes them when the build is approved, and commits and pushes their documents. A repo with a GitHub remote is tracked without any entry in github.json; resolveGithubConfig and its other callers are unchanged. The approval result and the workflow's messages report the outcome, the steering tells the model the daemon does it, and a backfill has added the approved items that were never pushed and closed the finished ones.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Add the tracker.addItems catalog row and its per-repo reader. Nothing reads it yet. — ↩ rollbackable
-2. Add the tracker step with its checks (setting, gh installed, gh signed in, target) and its handling of each artifact kind, including the standalone story and the issue record. Nothing calls it yet. — ↩ rollbackable
-3. Call the tracker step from approveWorkflowTarget and return tracker[]; replace the TUI approve service's own switch with the same call; carry tracker[] through the daemon request and insrc_workflow_approve. — ↩ rollbackable
-4. Make a repo with no github.json entry resolve to its git remote, so tracking is on by default. An explicit type 'none' still turns it off. — ↩ rollbackable
-5. Add the tracker line to the done response of insrc_workflow_step, and rewrite the tracker and bugfix guides in the steering source and the insrc_workflow_approve description; refresh the plugin copy of the steering source. — ↩ rollbackable
-6. Show the setting on the VS Code and JetBrains settings pages, reading and writing the per-repo value for the open project. — ↩ rollbackable
-7. Add the backfill request with its dry run. — ↩ rollbackable
-8. After the daemon is updated: run the backfill's dry run on this repo, show the list to the user, and on their go-ahead run it. Creating GitHub issues cannot be undone by reverting code; they can only be closed. — ✕ non-rollbackable _(needs: `the user's go-ahead on the dry-run list`)_
+1. Add the tracker.addItems catalog row, its per-repo reader, and the one-time step at daemon start that writes the setting false for repos whose github.json entry says type 'none'. Nothing else reads the setting yet. — ↩ rollbackable
+2. Add a timeout to the tracker's gh and git calls, and the shared test helper that installs a recording gh fake and a temp config path. — ↩ rollbackable
+3. Add the tracker step: its checks in the order setting, target, gh installed, gh signed in; its handling of each kind, with the unique labels and the look-up-before-create; the close on a BUILD record; and the commit and push of the documents. Nothing calls it yet. — ↩ rollbackable
+4. Call the tracker step from approveWorkflowTarget and return tracker[]; carry it through the daemon request and insrc_workflow_approve. In the same step, give the existing approval suites the shared helper so they make no gh call. — ↩ rollbackable
+5. Make the TUI approve service asynchronous and replace its switch and its commit with the tracker step; change its interface and its two callers to await it. — ↩ rollbackable
+6. Remove the close leg and its followOn entry from the bugfix follow-on, so the tracker step is the one owner of the close. — ↩ rollbackable
+7. Add the tracker line to the pendingApproval block of insrc_workflow_step, and rewrite the tracker and bugfix guides in the steering source and the insrc_workflow_approve description; refresh the plugin copy of the steering source. — ↩ rollbackable
+8. Show the setting on the VS Code and JetBrains settings pages: the default row from the catalog and the repo's own value in the per-repo section. — ↩ rollbackable
+9. Add the backfill stream request with its dry run. — ↩ rollbackable
+10. After the daemon is updated: run the backfill's dry run on this repo, show the list to the user, and on their go-ahead run it. Creating GitHub issues cannot be undone by reverting code; they can only be closed. — ✕ non-rollbackable _(needs: `the user's go-ahead on the dry-run list`)_
 
-**Backward compat:** approveWorkflowTarget gains an optional field in its result and an optional test seam; its existing fields and its decisions are unchanged. The TUI approve service keeps its signature and its withTracker switch. The three existing push functions keep their signatures. Artifacts already on the tracker keep their refs and are never pushed again. The one behaviour change that reaches existing users is step 4: a repo with a GitHub remote and no tracker config starts being tracked; setting tracker.addItems to false for the repo, or type 'none' in github.json, restores the old behaviour.
+**Backward compat:** approveWorkflowTarget gains an optional field in its result and an optional test seam; its existing fields and decisions are unchanged. resolveGithubConfig and the three push functions keep their signatures and behaviour. Artifacts already on the tracker keep their refs and are never pushed again. Four things change for existing users. (1) The TUI approve service becomes asynchronous and its result's tracker field changes type and its commit field goes; its interface and two callers change with it. (2) A repo with a GitHub remote and no tracker config starts being tracked, and an in-chat approval now commits and pushes the approved documents, as the TUI already did; turning the setting off for the repo restores the old behaviour. (3) pushTasks, commitArtifacts and type 'none' in github.json no longer decide whether the tracker step pushes; repos that had type 'none' are given the setting false once, so they stay off. (4) The bugfix follow-on no longer reports 'bugfix-complete' in followOn; the close is reported in tracker[].
 
 ## 7. Alternatives considered
 
@@ -289,7 +319,7 @@ A daemon request that takes a repo and a dry-run flag. It lists every approved a
 
 A catalog row gives the default; a per-repo key overrides it; approveWorkflowTarget runs one tracker function for every artifact it approves.
 
-Add a catalog row tracker.addItems (boolean, default true) and a per-repo override stored under tracker.byRepo.<repoPath>.addItems in the same config file, read by one resolver. Add one function that, given an approved artifact, decides what to add or update in the tracker (issue record, epic, story, standalone story, tasks) and returns an outcome. approveWorkflowTarget calls it for each approved artifact and returns the outcomes in a new tracker[] field; the TUI approve service calls the same function in place of its own switch. The plugins show the row from the catalog and write the per-repo key for the open project.
+Add a catalog row tracker.addItems (boolean, default true) and a per-repo value stored under tracker.byRepo.<repoPath>.addItems in the same config file, read by one reader. Add one asynchronous function that, given an approved artifact, decides what to add, update or close in the tracker (issue record, epic, story, standalone story, tasks, completion), pushes the documents it refers to, and returns an outcome. approveWorkflowTarget awaits it for each approved artifact and returns the outcomes in a new tracker[] field; the TUI approve service awaits the same function in place of its own switch and its own commit. The plugins show the default row from the catalog and write the per-repo value for the open project.
 
 ### 7.2 a2: Per-repo flag in the tracker config file, new IPC for the plugins
 
@@ -318,38 +348,6 @@ The setting is stored as in a1. The tracker function is called from the 'workflo
 - **[[c7]]** `code` `src/cli/services/workflow.ts` — "if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);"
 - **[[c8]]** `stakeholder` `user, 2026-10-06` — "1. daemon run it. 2. An issue record creates a GitHub issue when it is approved. 3. yes, backfill the issues/stories"
 - **[[c9]]** `stakeholder` `user, 2026-10-06` — "there should be a settings at the repo level, "Add items to tracker", If tracker utils are detected on the system, currently only "gh" and this flag == true then all items created should be logged to "
-
-## 9. Open questions
-
-- When a plan is approved, should its tasks become GitHub issues whenever "Add items to tracker" is on, or stay under the existing pushTasks setting (off unless the tracker config turns it on)? The design keeps pushTasks in charge.
-- The TUI commits and pushes the approved artifacts after it adds them to the tracker, so the links in the GitHub issue resolve. Should the daemon do the same on an in-chat approval? The design does not: it leaves committing to the session, so a link can be dead until the artifacts are pushed.
-- In the backfill, should finished work (its BUILD record already approved) be created on GitHub and closed at once, or left off the tracker? The design creates and closes it.
-
-<!-- insrc:review -->
-
-## Review
-
-### ⛔ Review `BLOCK` — design.story (design.story)
-
-**8 do not hold · 1 could not be verified · 7 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T07:00:35.957Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | HIGH | The TUI approve service keeps its signature, approve(artifactPath, withTracker?, overrideReview?): ApproveOutcome, while its switch is replaced by one call to the shared tracker step, which creates an issue through createBugfixTrackerIssue. | createBugfixTrackerIssue and closeBugfixTrackerIssue are async (src/workflow/bugfix/tracker.ts:142-145 'export async function createBugfixTrackerIssue(...): Promise<TrackerIssueResult>', 266-269), so a step that calls them returns a Promise. approve() is synchronous (src/cli/services/workflow.ts:156) and both callers use the result synchronously: src/cli/command.ts:223 'const r = svc.workflow.approve(rest[0], true, override);' then reads r.approval.workflow, and src/cli/panes/WorkflowsPane.tsx:116 'const r = svc.workflow.approve(item.path);' inside a non-async doApprove. The service interface at src/cli/services/index.ts:55 also declares the sync return. As written, T15 (the TUI produces the same outcome for an ISSUE) cannot be built without changing this signature. [files: src/workflow/bugfix/tracker.ts, src/cli/services/workflow.ts, src/cli/services/index.ts, src/cli/command.ts, src/cli/panes/WorkflowsPane.tsx] | Either make approve() async and add src/cli/services/index.ts, src/cli/command.ts and src/cli/panes/WorkflowsPane.tsx to the change sites, or give the tracker step a synchronous issue-record path and say so. The three existing push functions and every gh wrapper are sync, so the second is possible. |
-| new-versus-reuse | MED | When the GitHub issue is created but the ref cannot be written back, 'the existing relink-by-label path for issue records recovers it', and a stored ref is what prevents a second issue. | src/workflow/bugfix/tracker.ts:245-249: on the create side 'relink-by-label' falls into the same branch as 'skip' and returns { status: 'created', ref, reason: 'ref-unrecorded' }; nothing is re-linked. The module header (30-32) says ghFindIssueByLabels is consulted 'never on the normal create path'. The recovery exists only on close (302-314) and needs non-empty labels, but defaultTrackerCreateDeps and defaultTrackerCloseDeps both default 'labels: opts?.labels ?? []' (432, 453) and defaultPromptOnLostRef returns { action: 'skip' } (98). So with the real deps the issue is created with no label, the ref is lost, and the next approval or the backfill finds no ref and creates a duplicate. The result status is also 'created', not the 'failed' the design states. [files: src/workflow/bugfix/tracker.ts, src/workflow/tracker-auto.ts] | Design the recovery explicitly: create issue records with a deterministic label (for example one derived from the issue hash) and, before any create, look the issue up by that label (ghFindIssueByLabels) the way autoPushEpicOnHld adopts an epic at tracker-auto.ts:123. State how the step maps 'created' + 'ref-unrecorded' to its 'failed' outcome. |
-| new-versus-reuse | MED | autoPushStoryOnLld keeps returning AutoPushResult and the TUI's ApproveOutcome keeps its shape, while a standalone story linked on an existing issue returns 'updated' and a BUILD approval returns 'closed'. | src/workflow/tracker-auto.ts:59-63: AutoPushResult is a union of exactly 'created' \| 'already-exists' \| 'skipped' \| 'failed'; there is no 'updated' or 'closed'. src/cli/services/workflow.ts:80-84: ApproveOutcome.tracker is typed AutoPushResult. The bugfix functions return different unions again (bugfix/tracker.ts:58-69: 'created' \| 'reused' \| 'skipped' and 'closed' \| 'skipped'). The design's own tracker[] outcome type in 2.1 has the wider set, so 2.2 and 2.3 ('unchanged shape', 'the result is updated') contradict it. [files: src/workflow/tracker-auto.ts, src/cli/services/workflow.ts, src/workflow/bugfix/tracker.ts] | Name one outcome type for the tracker step, say that AutoPushResult is widened or that ApproveOutcome.tracker changes to the new type, and give the mapping from 'reused' to 'already-exists'. |
-| change-sites | MED | Making a repo with no github.json entry resolve to its git remote changes one thing only (the repo starts being tracked), and setting tracker.addItems to false restores the old behaviour. | resolveGithubConfig has callers the design does not list. src/cli/services/workflow.ts:97-98: commitApprovedArtifacts does 'const cfg = resolveGithubConfig(repoPath); if (cfg.type !== 'github' \|\| cfg.commitArtifacts === false) return undefined;' and otherwise runs commitAndPushArtifacts (git add, commit and push, tracker/github.ts:63-85). commitArtifacts defaults to true (config/github.ts:249). So after step 4 a TUI approval in any repo with a GitHub remote starts committing and pushing artifacts, and it does so whatever tracker.addItems says, because this path never reads the setting. src/workflow/questions.ts:474-476 likewise starts posting resolution comments, and src/workflow/tracker/sync.ts:36-37 stops skipping. [files: src/cli/services/workflow.ts, src/workflow/tracker/github.ts, src/workflow/config/github.ts, src/workflow/questions.ts, src/workflow/tracker/sync.ts] | List every resolveGithubConfig caller in the LLD and decide each one: gate the commit-and-push and the question comment on the new setting too, or keep the resolver's default and put the git-remote fallback only inside the tracker step. |
-| change-sites | MED | The listed call sites are the complete inventory for the plugin setting (3.1) and for the workflow messages (3.3). | Plugin side: a catalog row reaches VS Code as a GLOBAL native key. vscode-plugin/src/config/key-map.ts:52-56 maps every CONFIG_CATALOG option to 'insrc.' + path and the same path for the write, so tracker.addItems would be written globally, not 'for the open project'. The only per-repo writers are hard-wired to models: vscode-plugin/src/panels/repo-config.ts:154 'deps.writeKeyPath(['models', 'byRepo', write.repoPath, ...write.segments], write.value)' and jetbrains-plugin/.../settings/SettingsView.kt:720 'private fun base(repoPath: String): List<String> = listOf("models", "byRepo", repoPath)'. None of these files, nor any JetBrains main source, is in 3.1's call sites (only package.json and one Kotlin test file). Messages side: pendingApproval is built in src/mcp/workflow-step/phases/synthesize.ts:109 and typed in src/mcp/workflow-step/types.ts:129, neither of which is listed; the plugin steering copy is vscode-plugin/assets/steering-block.md, also not listed. [files: vscode-plugin/src/config/key-map.ts, vscode-plugin/src/panels/repo-config.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt, src/mcp/workflow-step/phases/synthesize.ts, src/mcp/workflow-step/types.ts, vscode-plugin/assets/steering-block.md] | Add the plugin source files (key-map.ts or repo-config.ts and webview-host.ts for VS Code; SettingsView.kt and its section for JetBrains), synthesize.ts, types.ts and the steering copy to the call sites. Say how the global catalog row and the per-repo value are kept apart on each settings page. |
-| boundaries | MED | The tracker step inside approveWorkflowTarget is the only place that closes a work item's GitHub issue on BUILD approval, and a BUILD record can find that issue. | A shipped seam from the bugfix epic already does this one level up. src/daemon/index.ts:670-676 calls advanceApprovedBugfixes after approveWorkflowTarget, and src/workflow/bugfix/mount.ts:156-166 runs completeBugfixTracker (which calls closeBugfixTrackerIssue, advance.ts:87) for a BUILD carrying meta.issueHash, reporting it as a 'bugfix-complete' followOn (gates.ts:756-761). The design adds a second close in the tracker step and does not say whether the mount's close leg is removed, so both would fire and the result would report the same close twice in two fields. The same file states the linkage is missing: mount.ts:23-25 'a bugfix BUILD artifact's meta does NOT carry issueHash today'. The design says a BUILD 'closes the work item's GitHub issue when it has one' without saying how the issue (or a story's storyRef) is found from the BUILD record. [files: src/daemon/index.ts, src/workflow/bugfix/mount.ts, src/workflow/bugfix/advance.ts, src/workflow/gates.ts] | Decide one owner for the close: remove the close leg from mount.ts (and its followOn kind) or leave it there and keep the tracker step out of BUILD approval. Specify the lookup from a BUILD record to its ref (issue record by hash, or the LLD's meta.tracker.storyRef). |
-| error-paths | MED | Running the tracker step inside the daemon's approval and backfill has zero downtime, and every failure of a gh call is detected. | Every gh and git call is a blocking execFileSync with no timeout: src/workflow/tracker/github.ts:25 'let _exec: TrackerExec = execFileSync as TrackerExec;', 33-40 pass only { encoding } or { stdio: 'ignore' }. Today these run in the TUI process; the design moves them into the daemon's single event loop (workflow.approve handler, src/daemon/index.ts:643). One epic push is roughly ten sequential gh calls (labels, create, milestone, comment, review comment: tracker-auto.ts:123-156), so every other IPC request (plugins, MCP, indexing) stalls for the whole push, and for the whole backfill across all items. A gh call that hangs (network stall, a credential prompt) never exits non-zero, so the design's detection ('the gh call exits non-zero') never fires and the daemon stays frozen. No error case covers a hang or a timeout. [files: src/workflow/tracker/github.ts, src/daemon/index.ts, src/workflow/tracker-auto.ts] | Add a timeout to the tracker exec calls and an error case for it ('failed: gh timed out'). For the backfill, yield between items or run it off the request path, and state the expected blocking time per approval. |
-| tests | MED | gh is never run by a test once the tracker step runs by default inside approveWorkflowTarget. | The existing approval suites call approveWorkflowTarget with no tracker seam and no config isolation: a search for _setTrackerExecForTests, INSRC_GITHUB_CONFIG and PATHS.config in src/workflow/__tests__/approve-*.test.ts, other-party-review-gate.test.ts and bugfix-orchestration.test.ts returns zero matches, and src/mcp/build-step/__tests__/build-start.test.ts:236-354 calls it the same way. The design makes opts.tracker 'default to the real ones' and orders the checks setting, gh installed, gh signed in, then target. So each of these existing calls would read the developer's real ~/.insrc/config.json (src/shared/paths.ts:4-9 fixes it to homedir with no override) and run the real 'gh auth status' before the temp repo's missing remote ends the step. The current gate checks config before auth (tracker-auto.ts:84-95), which would at least stop before gh. The test strategy lists only new tests and says nothing about these suites. [files: src/workflow/__tests__/approve-workflow-target.test.ts, src/workflow/__tests__/other-party-review-gate.test.ts, src/mcp/build-step/__tests__/build-start.test.ts, src/shared/paths.ts, src/workflow/tracker-auto.ts] | Check the target before the gh checks (as gate() does today), and either make the step default to off when no deps are injected under test or add the seam to the named existing suites; list them in the test strategy. Give the setting reader a config-path parameter so T1 and T3 can use a temp file. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| coverage-of-intent | Every upstream decision (c8: daemon runs it, issue record creates a GitHub issue on approval, backfill; c9: repo-level setting, gh detected, flag true means all items are logged) is designed, and nothing beyond it is built. | The only artifact on disk for this work item is .insrc/artifacts/LLD-38436e90625a83a2-S001.json (meta.standalone: true); there is no DEF, SPEC or ISSUE for 38436e90625a83a2, so the upstream is only the two stakeholder quotes in the design, and c9 is cut off mid-sentence ('...should be logged to "'). Against the quoted text the three c8 answers and the setting are designed. One gap is visible: c9 says 'all items created should be logged', but tasks stay off unless pushTasks is set (src/workflow/config/github.ts:77 'pushTasks?: boolean; // default false', tracker-auto.ts:255). The design raises this as an open question instead of deciding it. [files: .insrc/artifacts/LLD-38436e90625a83a2-S001.json, src/workflow/config/github.ts, src/workflow/tracker-auto.ts] | Get the user's answer to open question 1 (tasks under 'Add items to tracker' or under pushTasks) before approval, and record the full c9 text. |
+- **[[c10]]** `stakeholder` `user, 2026-10-06` — "Add items to tracker <- only one flag, tracker push on/off (default=on). Should the daemon do the same on an in-chat approval? <- yes, the tracker add/update should push referenced docs also. Issue/Ta"
+- **[[c11]]** `code` `src/workflow/tracker/github.ts` — "export function commitAndPushArtifacts(repoPath: string, paths: readonly string[], message: string): CommitArtifactsResult {"
+- **[[c12]]** `prior-artifact` `LLD-38436e90625a83a2-S001 review of 2026-10-06 by the daemon: block, 8 premises did not hold; this revision answers each`

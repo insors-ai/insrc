@@ -406,3 +406,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c38]]** `prior-artifact` `LLD-38436e90625a83a2-S001 ninth review of 2026-10-06 by the daemon: block, 3 MED premises did not hold; the user decided each and this revision applies the decisions`
 - **[[c39]]** `prior-artifact` `LLD-38436e90625a83a2-S001 tenth review of 2026-10-06 by the daemon: block, 2 MED premises did not hold (a fifth caller of the TUI approve; focus compared without trimming); this revision applies both`
 - **[[c40]]** `stakeholder` `user, 2026-10-06` — "we alrady resolved this, the daemon resolves repo from path and registered repos"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:36:59.517Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| coverage-of-intent | MED | After this design the TUI "holds no approval logic; every approval is decided by the daemon" (invariant [[c7]], and the summary's "keeps no approval, push or commit logic of its own"). | The design rewrites only the artifact `approve`. Two other approval-type decisions stay in the TUI process and are not mentioned: amendment approval, src/cli/panes/WorkflowsPane.tsx:119 `svc.workflow.approveAmendment(props.repoPath, item.id, APPROVER)` -> src/cli/services/workflow.ts:271-273 `approveAmendment(repoPath, amendmentId, approvedBy)`; and rejection, workflow.ts:171-173 `rejectArtifactByJsonPath(jsonPathForMd(artifactPath), reason)`, which stamps the artifact JSON directly. Neither makes a git or gh call, so nothing breaks, but the invariant as worded is not true after the build. [files: src/cli/panes/WorkflowsPane.tsx, src/cli/services/workflow.ts] | Narrow the invariant and the summary to artifact approval ("the TUI approves an artifact only through the daemon and makes no git or gh call"), and state that amendment approval and reject stay in the TUI for this work item; or add them to scope if the user's "no logic in TUI" was meant to cover them. |
+
+#### Could not verify (does not block)
+
+_None._

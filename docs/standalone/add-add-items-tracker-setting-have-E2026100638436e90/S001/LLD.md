@@ -475,3 +475,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:25:44.902Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| new-versus-reuse | MED | Everything the flow reuses survives the deletion of the bugfix module's tracker code; in particular the flow can still turn an issue record's meta.parentRef into the parent's tracker ref. | The design deletes 'createBugfixTrackerIssue and closeBugfixTrackerIssue with their default dependencies (src/workflow/bugfix/tracker.ts:142-188, 266-287)' and says the flow passes 'the parent's ref' when meta.parentRef is stamped. meta.parentRef is a WorkItemRef, not an issue ref: tracker.ts:198-201 `const parentRef = issue.meta.parentRef; ... deps.resolveParentIssueRef(repoPath, parentRef)`. The only resolver is the default dependency wired at tracker.ts:429 `resolveParentIssueRef: defaultResolveParentIssueRef` (helper at :390 onward, 'The identifier forms a WorkItemRef can resolve through'); grep finds no other definition in src. The design names no replacement and no owner for this step. The cited ranges also leave out the rest of the file that dies with them: linkToParent (:191-208), onLostRefAfterCreate (:212-251), onLostRefOnClose (:290-329), the config gate and disk helpers (:331-388), and the exports in bugfix/index.ts:19-22. [files: src/workflow/bugfix/tracker.ts, src/workflow/bugfix/index.ts, src/workflow/bugfix/mount.ts] | Say where WorkItemRef to tracker-ref resolution lives after the deletion (move defaultResolveParentIssueRef into the flow, or keep it and name it as reused), give it a test (T12 only says 'the parent's ref is passed'), and state that tracker.ts is deleted as a whole file or list what stays. |
+
+#### Could not verify (does not block)
+
+_None._

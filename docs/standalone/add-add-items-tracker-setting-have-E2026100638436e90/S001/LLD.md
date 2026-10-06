@@ -470,3 +470,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:44:56.130Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | Migration 'State before': only the TUI pushes to GitHub and commits the artifacts, by code in its own process. | Two other paths outside the TUI commit and push artifacts, and one posts a gh comment. src/workflow/questions.ts:460-474 `commitAndComment` calls `commitAndPushArtifacts(repoPath, [jsonPath, mdPath], summary)` and then `resolveGithubConfig(repoPath)` plus `ghComment` (import at :59). src/workflow/resolve-comment.ts:218 calls `commitAndPushArtifacts(repoPath, [jsonPath, mdPath], ...)` on every recorded review comment. Both go through the synchronous `execFileSync` exec (src/workflow/tracker/github.ts:25) and neither reads any setting. `commitAndPushArtifacts` also commits with `git commit -m message` and no paths (github.ts:80), so it takes whatever else is staged. [files: src/workflow/questions.ts, src/workflow/resolve-comment.ts, src/workflow/tracker/github.ts] | Correct the 'State before' text. State whether tracker.addItems gates these two paths or they are deliberately outside it; with the setting off they still run git push and, for question resolution, gh. The design only says the question comment is posted by the companion design, and does not mention the resolve-comment commit at all. |
+
+#### Could not verify (does not block)
+
+_None._

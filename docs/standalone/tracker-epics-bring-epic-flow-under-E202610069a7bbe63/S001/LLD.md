@@ -385,3 +385,23 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:55:33.748Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | Approval of a storyBoundary.addStory amendment is the moment the epic gains a story (section 3.2, AMENDMENT). | appendStoryToDefine (gates.ts:175-186) does preserve approvedAt as the design says, but its only caller is the extend finalize at src/workflow/orchestrator.ts:1325, which appends the story when the extend record is written and files the amendment as pending. The story is therefore in the Define's body.stories before the amendment is approved, and stays there whatever happens to the amendment. The designed behaviour (rewrite the epic body on amendment approval) still produces a correct body; only the stated reason is wrong. Two consequences the design does not spell out: any earlier body rewrite (another story's design or BUILD approval) already shows the new story line, and the close rule counts that story as not done from the extend onward. I did not read the code around orchestrator.ts:1325 beyond the call itself. [files: src/workflow/gates.ts, src/workflow/orchestrator.ts] | Reword the rationale: the story joins the Define at extend time; amendment approval is the first approvable event after it, so the body is rewritten there. Say what happens to the checklist line if the amendment is rejected. |
+
+#### Could not verify (does not block)
+
+_None._

@@ -19,10 +19,22 @@ a call from memory when the contract is one lookup away.
 
 ### Front-door decision tree (intent → surface)
 
-- **Question about the codebase** (structure, conventions, capabilities,
-  adherence, design decisions) → `insrc_analyze_step` (multi-turn, in-session,
-  preferred) or `insrc_analyze` (one-shot, Ollama). Do this BEFORE manual
-  `Read`/`Grep`/`Glob`.
+- **Finding things in the codebase — your own tools or the analyzer?** Ask:
+  *could a text match alone give a wrong or incomplete answer?*
+  - **No → use your own tools** (`Grep` / `Glob` / `Read`). The answer is
+    whether or where some text occurs: "does this code use file IO?", "where is
+    this config key read?", "which files mention X?", "show me this function".
+  - **Yes → use the analyzer**: `insrc_analyze_step` (multi-turn, in-session,
+    preferred) or `insrc_analyze` (one-shot, Ollama). The answer depends on
+    relationships or meaning that text matching can't see: "where is this
+    module used, and what depends on it?", "what breaks if I change this?",
+    "does the code follow this documented rule?", "does the codebase already do
+    X?", "how does X work?", "what are the conventions here?".
+  - A task often needs both: analyze to understand the area, then search and
+    read to work in it. Don't run the analyzer for a lookup, and don't answer a
+    relationship question from a text match alone.
+  - For "where is X used", also grep for the name and report any call site the
+    analyzer missed — its call graph can be incomplete.
 - **Draw / diagram / document / map the code** (a self-contained HTML doc from
   the graph) → `insrc_docgen`.
 - **Build / add / implement a feature** → do NOT hand-pick a stage and do NOT
@@ -67,8 +79,9 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 indexing. The multi-turn tools (`*_step`, `insrc_triage`) hand you a `next` /
 `guidance` / `prompt` / `schema` each turn — follow `next` verbatim and preserve
 the opaque `state` token between calls. Do NOT use analyze to edit files, run
-tests/builds, or answer non-context questions; when a returned bundle is empty
-or off-topic, fall back to `Read` / `Grep` / `Glob`.
+tests/builds, answer non-context questions, or do a plain text lookup (see the
+decision tree above); when a returned bundle is empty or off-topic, fall back
+to `Read` / `Grep` / `Glob`.
 
 `insrc_docgen` `docType` values (each single-sources from the code graph — no
 hallucinated paths): `type-structure` (classes/interfaces + inheritance in a

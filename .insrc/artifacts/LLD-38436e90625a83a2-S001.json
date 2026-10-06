@@ -26,221 +26,12 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive capability with real design choices and several build tasks, built on parts that already exist (per-repo tracker config, three automatic pushes, an unwired issue-create function).",
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers every upstream decision (the stakeholder decisions c9-c20, c25-c28, c31-c33).",
-          "evidence": "The only artifact on disk for this work item is .insrc/artifacts/LLD-38436e90625a83a2-S001.json (glob `.insrc/artifacts/*38436e90*` returns nothing else): there is no SPEC, ISSUE or DEF to compare against. The decisions exist only as quotes inside the design's own reference list, so I could check the design against its quotes (each quoted decision has a matching section) but not the quotes against a source.",
-          "action": "None required for the build; if an independent record of the 2026-10-06 decisions is wanted, persist them as a SPEC so later reviews can check coverage against it.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The non-goal (epics, their stories and tasks) is not built: removing the TUI's push leaves the three push functions with no caller and tracker.push as the only epic path.",
-          "evidence": "grep for autoPushEpicOnHld|autoPushStoryOnLld|autoPushTasksOnPlan over src/: the only non-test caller is src/cli/services/workflow.ts:161-163; definitions are at src/workflow/tracker-auto.ts:102, 165, 245. commitApprovedArtifacts is a private function of the same file (workflow.ts:90) called only at :166. [files: src/cli/services/workflow.ts, src/workflow/tracker-auto.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today the TUI approves in its own process, then pushes HLD/LLD/plan and commits (workflow.ts:156-166), and its two callers use the result synchronously, with a review block arriving as a thrown ReviewBlockedError.",
-          "evidence": "src/cli/services/workflow.ts:156-169: `export function approve(artifactPath: string, withTracker = true, overrideReview?: string): ApproveOutcome` calls approveArtifactByJsonPath, the three autoPush functions and commitApprovedArtifacts. Callers: src/cli/command.ts:223 `const r = svc.workflow.approve(rest[0], true, override);` with `err.name === 'ReviewBlockedError'` at :226, and src/cli/panes/WorkflowsPane.tsx:116 `const r = svc.workflow.approve(item.path);` inside the synchronous `doApprove`. No other caller in src/cli. [files: src/cli/services/workflow.ts, src/cli/command.ts, src/cli/panes/WorkflowsPane.tsx]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The daemon's workflow.approve handler is an inline block that returns before the follow-on when the request names no repo, and the VS Code review panel sends only the artifact path.",
-          "evidence": "src/daemon/index.ts:643-677: `if (result.approved.length === 0 || repoPath.length === 0) { return result; }` at :667-669, before `advanceApprovedBugfixes`. vscode-plugin/src/chat/docs-review-client.ts:119-121 sends `{ artifactPath: resolvePath(idOrPath) }` only. The registry containment match the design needs already exists for a cwd: `repoContainingCwd(repos, cwd)` over `listRepos(db)` at index.ts:635-636 ('most-specific on nesting'). [files: src/daemon/index.ts, vscode-plugin/src/chat/docs-review-client.ts]",
-          "action": "When building the repo lookup, reuse repoContainingCwd rather than writing a second containment matcher.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The bugfix's routed next call is computed and dropped, the build mints its hash from the focus text, and the old create/close code in the bugfix module is unconnected.",
-          "evidence": "src/workflow/bugfix/advance.ts:62-64 returns `{ location, admission, nextCall }`; src/workflow/bugfix/mount.ts:140-145 pushes only `{ kind: 'bugfix-advance', artifactPath, ok: true, note }`. src/mcp/build-step/phases/implement.ts:127 and validate.ts:99 both read `ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(...))`. mount.ts header: 'The GH-issue create leg is NOT injected here (no AdvanceTrackerDeps)'; the close leg at mount.ts:156-166 fires only for a BUILD with meta.issueHash. src/workflow/bugfix/next-after-issue.ts:59-87 emits neither standalone.epicHash nor params.epicHash. [files: src/workflow/bugfix/advance.ts, src/workflow/bugfix/mount.ts, src/workflow/bugfix/next-after-issue.ts, src/mcp/build-step/phases/implement.ts, src/mcp/build-step/phases/validate.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "In github.json handling today, type 'none' turns the tracker off, ghFindIssueByLabels cannot tell a failed lookup from not found, and ghCreateIssueTyped retries untyped after any error.",
-          "evidence": "src/workflow/config/github.ts:234-236 `if (entry.type === 'none') { return { type: 'none', source }; }` and :213 `return { type: 'none', source: 'default-config' };`; pushTasks at :77, commitArtifacts at :80. src/workflow/tracker/github.ts:219 `try { num = out('gh', args); } catch { return undefined; }` (same undefined as an empty result at :220). github.ts:165-170: `catch { /* org may not have issue types — fall through untyped */ }` then `parse(out('gh', base))`. [files: src/workflow/config/github.ts, src/workflow/tracker/github.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Registering tracker_github among the built-in tools makes it something 'a model can call by name like any other tool', in the daemon and in the session tool server (src/mcp/server.ts:1242-1251).",
-          "evidence": "The registration half is true: the Tool contract is `execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult>` (src/daemon/tools/types.ts:151), built-in ids are snake_case ('git_fetch', 'shell_exec'), and both src/daemon/index.ts:310-311 and src/mcp/server.ts:1242-1251 call registerBuiltinTools(). The model-callable half is not: the only production caller of executeTool is src/analyze/context/driver.ts:667 (the analyze shaper), and the tools that driver offers a model are the fixed allowlist READ_ONLY_TOOL_IDS in src/analyze/context/tool-surface.ts:69-153 (getReadOnlyTools projects only those ids). The session tool server exposes insrc_* tools, not the built-in registry. A writing tool that is merely registered is reachable by daemon code, not by any model. [files: src/analyze/context/driver.ts, src/analyze/context/tool-surface.ts, src/mcp/server.ts, src/daemon/tools/types.ts]",
-          "action": "Either drop the 'a model can call it by name' claim and state that the tool is called by daemon code (and by insrc_tracker_step), or name the surface that will expose it to a model. Do NOT add it to READ_ONLY_TOOL_IDS. Keep the in-tool check; reword T33's 'called directly' case as a direct execute() call.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A per-repo value under tracker.byRepo.<repoPath>.addItems can reuse the dynamic-key pattern of models.byRepo, and the plugins' per-repo writers are hard-wired to models.byRepo and must be extended.",
-          "evidence": "ConfigOption (src/config/config-catalog.ts:30-41) has path, type, default, desc, enumValues, group and no label. config.write (src/daemon/index.ts:1457-1481) accepts an array of literal segments and calls setConfigAtPath with no catalog check, so a repo path with dots and slashes is one key. vscode-plugin/src/panels/repo-config.ts:154 `deps.writeKeyPath(['models', 'byRepo', write.repoPath, ...write.segments], write.value)`; SettingsView.kt:720 `private fun base(repoPath: String): List<String> = listOf(\"models\", \"byRepo\", repoPath)`. [files: src/config/config-catalog.ts, src/daemon/index.ts, vscode-plugin/src/panels/repo-config.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The TUI tests that fake the old approve result are the ones at src/cli/__tests__/command.test.ts:232-241, and rewriting those covers the change of approve() to an asynchronous daemon result.",
-          "evidence": "Three more fakes return the old synchronous `{ approval: ... }` shape and are not in the design's inventory: src/cli/__tests__/command.test.ts:50 `approve: () => ({ approval: { workflow: 'design.epic', path: '', approvedAt: '' } })` (the shared default context), command.test.ts:223-229 (the --override test, which asserts `/approved plan \\(review overridden\\)/` from `r.approval.workflow`), and src/cli/__tests__/tui.test.ts:72 `approve: () => ({ approval: { workflow: 'define', path: '', approvedAt: '' } })` (the fake behind the rendered Workflows pane). tsc excludes __tests__, so these only fail when run. [files: src/cli/__tests__/command.test.ts, src/cli/__tests__/tui.test.ts]",
-          "action": "Add command.test.ts:50 and :220-230 and tui.test.ts:72 to the change sites of 2.2 and 3.4, and rewrite them to a Promise of the daemon's result shape.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each client that waits for an approve request can wait longer than the 5 minute budget once any limit under 5.5 minutes is raised.",
-          "evidence": "None of the clients I read has a wait limit to raise. unaryRpc (src/mcp/daemon-stream.ts:204-238) sets no timer; approveWorkflow at :285-290 uses it. src/cli/client.ts re-exports `rpc` from src/shared/ipc-client.ts, where a search for timeout finds nothing; the same search over vscode-plugin/src finds only the 3 s activation probe and unrelated CLI timers; a case-insensitive search for timeout in jetbrains-plugin/.../daemon finds nothing. I did not read the JetBrains socket code outside that package. [files: src/mcp/daemon-stream.ts, src/cli/client.ts, src/shared/ipc-client.ts]",
-          "action": "T34 should assert the absence of a limit (or a limit above the budget) per client; note in the design that today there is nothing to raise.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The inventory for deleting the old bugfix creator and closer (tracker.ts, advance.ts, mount.ts, types.ts, index.ts and three test files) is complete.",
-          "evidence": "grep for createBugfixTrackerIssue|closeBugfixTrackerIssue|completeBugfixTracker|bugfix-complete|AdvanceTrackerDeps outside docs/ finds them only in src/workflow/bugfix/{index.ts:16-20, advance.ts, tracker.ts, mount.ts, types.ts:61}, src/workflow/gates.ts:757 (the kind union), src/workflow/bugfix/__tests__/bugfix-mount.test.ts:121-128, src/workflow/__tests__/bugfix-tracker.test.ts and bugfix-orchestration.test.ts, plus frozen .insrc artifacts. No plugin code reads 'bugfix-complete'. [files: src/workflow/bugfix/index.ts, src/workflow/gates.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Putting the issue record's hash in the emitted next call works with the existing consumers: standalone.epicHash on the small route and params.epicHash on the sized route are honoured, not overwritten.",
-          "evidence": "Small route: src/mcp/build-step/phases/implement.ts:127 `const epicHash = ctx.epicHash ?? (...)` and admitStandaloneBuild admits a trivial build with any well-formed hash (src/workflow/runners/build/admission.ts:244-247). Sized route: augmentStandaloneParams (src/mcp/workflow-step/phases/start.ts:138-146) is 'Idempotent: an already-set epicHash / storyId is preserved'. I did not trace what a standalone design.story run does when an ISSUE artifact already exists under the same hash (its upstream reads and folder identity). [files: src/mcp/build-step/phases/implement.ts, src/mcp/workflow-step/phases/start.ts, src/workflow/runners/build/admission.ts]",
-          "action": "Add a test for the sized route that runs design.story start with standalone: true and the issue's hash while ISSUE-<hash> exists, to confirm it is still treated as standalone.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The new setting and per-repo values survive the daemon's config reconcile, and the two new TrackerMeta fields need no rewrite of stored records.",
-          "evidence": "src/config/reconcile.ts:21-23 'The output is a MERGE over `existing`, never a rebuild from catalog rows, so catalog-unenumerable keys ... survive blindly'; prune removes only RETIRED_PATHS (config-catalog.ts:144-159), none under tracker. A missing catalog key is filled with its default (reconcile.ts:339-341), so tracker.addItems: true is written on boot. patchTrackerMeta (src/workflow/tracker/refs.ts:88-98) merges `{ adapter: 'github', ...prior, ...patch }`, so optional commentedOn/closedAt are additive. [files: src/config/reconcile.ts, src/config/config-catalog.ts, src/workflow/tracker/refs.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "A validate call for 'a build of this kind' that arrives without the hash can detect that case and find 'the one build that was started for that task'.",
-          "evidence": "Neither the detection nor the lookup key is available as the design states them. The emitted bugfix build call is `standalone: { standalone: true, sizeClass: 'trivial', focus: scope }` with target '(standalone-bugfix)' (src/workflow/bugfix/next-after-issue.ts:59-67), and handleStandaloneValidate (src/mcp/build-step/phases/validate.ts:92-103) sees only ctx.sizeClass / ctx.focus / ctx.epicHash / ctx.storyId: an ordinary trivial build has the same shape, and for it minting from the focus is the correct identity. The records a started build leaves are the build-start stamp `{ epicHash, storyId, rangeBase, stampedAt }` (src/workflow/runners/build/range-base.ts:276) and the trivial BUILD record `meta { workflow, standalone, sizeClass, epicHash, storyId, ... } body { focus }` (implement.ts:155-164); every standalone build uses storyId 'S001' (implement.ts:131), so there is no task key other than body.focus, which the design does not name. [files: src/mcp/build-step/phases/validate.ts, src/mcp/build-step/phases/implement.ts, src/workflow/bugfix/next-after-issue.ts, src/workflow/runners/build/range-base.ts]",
-          "action": "State the rule concretely: how validate recognises a bugfix build (for example a marker stamped on the BUILD record at implement, or an explicit field on the standalone context) and what it matches on (for example unapproved BUILD records whose body.focus equals the call's focus). Say what an ordinary trivial validate without a hash does, so its current focus-hash behaviour is not broken. Add both to T21.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Once the TUI approves through the daemon, a review block arrives as an entry in skipped[] with nothing approved, not as a thrown error.",
-          "evidence": "src/workflow/gates.ts:836-844: `try { approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) }); } catch (err) { if (err instanceof ReviewBlockedError) { skipped.push({ path: jsonPath, reason: err.summary }); } else { throw err; } }`. A missing artifact still throws ArtifactMissingError (:856), which reaches the client as an rpc error; the design's 'TUI cannot reach the daemon' case covers connection failure only. [files: src/workflow/gates.ts]",
-          "action": "Have the two TUI callers keep a catch for an rpc error (missing artifact), separate from the skipped[] rendering.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion (ac1-ac6, defined in the design because the Story lists none) maps to tests, and the registered-tool test the design says must change exists with the stated shape.",
-          "evidence": "The acceptance mapping table gives every criterion at least three tests, and every id it cites (T1-T34) is defined in a test level. src/mcp/__tests__/schema-registry.test.ts has `EXPECTED_TOOLS` (:25), `EXPECTED_PHASES` (:44) and `PHASELESS_TOOLS` (:54), asserted against the live registry at :58 and :97, so adding insrc_tracker_step without updating them fails, as T28 expects. Two test gaps follow from findings above: T19/T20 do not name tui.test.ts, and T21's 'matches no started build' case has no defined matching key. [files: src/mcp/__tests__/schema-registry.test.ts]",
-          "action": "Fix the two gaps together with the change-sites and error-paths findings.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 3,
-        "low": 13,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-06T09:52:54.174Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
       "audience": "product",
-      "prose": "One setting, \"Add items to tracker\", on by default, turns tracker pushing on or off for a repo and is shown on the VS Code and JetBrains settings pages. When an issue record, a standalone story or its plan is approved, the daemon checks two things: the setting is on, and a supported tracker is set up for the project (today GitHub, named in the config or inferred from the project's remote, with the gh tool installed and signed in). If both hold, the daemon calls its tracker tool for that type, which commits and pushes the approved documents, creates or updates the item, and returns its reference; approving the build closes the item. Every approval surface goes through the daemon: the chat session, both plugin panels, and now the TUI, which keeps no approval, push or commit logic of its own. The approval result says what was done or why nothing was. Epics, their stories and their tasks are a separate work item; until it lands they are pushed only by the explicit tracker.push workflow."
+      "prose": "One setting, \"Add items to tracker\", on by default, turns tracker pushing on or off for a repo and is shown on the VS Code and JetBrains settings pages. When an issue record, a standalone story or its plan is approved, the daemon checks two things: the setting is on, and a supported tracker is set up for the project (today GitHub, named in the config or inferred from the project's remote, with the gh tool installed and signed in). If both hold, the daemon calls the tracker tool's implementation for that type, which commits and pushes the approved documents, creates or updates the item, and returns its reference; approving the build closes the item. The same tracker tool is a normal insrc tool that Claude, Codex or any other agent can call, to push one item, list what is pending, or run the backfill. Every approval surface goes through the daemon: the chat session, both plugin panels, and now the TUI, which keeps no approval, push or commit logic of its own. The approval result says what was done or why nothing was. Epics, their stories and their tasks are a separate work item; until it lands they are pushed only by the explicit tracker.push workflow."
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -310,7 +101,7 @@
           "postconditions": [
             "Its in-process approval, its switch over the three pushes and commitApprovedArtifacts are removed from the TUI. The TUI makes no git or gh call on approval.",
             "Both callers read the old result and are rewritten to show the daemon's answer: the approve command (src/cli/command.ts:223-226) and doApprove in the Workflows pane (src/cli/panes/WorkflowsPane.tsx:116-117) show what was approved, what was withheld and why, what the bugfix follow-on did, and each tracker outcome. A review block no longer arrives as a thrown ReviewBlockedError (command.ts:226) but as an entry in skipped[] with nothing approved; both callers render it with the same override hint as today. doApprove, a synchronous handler today, becomes asynchronous so its error handling still covers the request.",
-            "The service interface (src/cli/services/index.ts:55) declares the Promise, and the TUI tests that fake the old result (src/cli/__tests__/command.test.ts:232-241) are rewritten to the daemon's result shape.",
+            "The service interface (src/cli/services/index.ts:55) declares the Promise. Four TUI test fakes return the old synchronous result and are rewritten to a Promise of the daemon's result shape: the shared default context (src/cli/__tests__/command.test.ts:50), the --override test (command.test.ts:220-230, which reads the approval from the result), the review-block test (command.test.ts:232-241) and the fake behind the rendered Workflows pane (src/cli/__tests__/tui.test.ts:72). The type check does not cover test files, so these are found only by running them.",
             "The three push functions stay in src/workflow/tracker-auto.ts with no caller, for the epics work item to build on or replace. Until then an epic, its stories and its tasks are pushed only by the explicit tracker.push workflow, which is not changed."
           ]
         }
@@ -348,22 +139,22 @@
       {
         "entity": "Tracker tool, one per tracker type",
         "change": "new",
-        "details": "A tool encapsulates the whole flow for one tracker type. It is a real tool in the daemon's tool registry, with the other built-in tools (registerTool in src/daemon/tools/registry.ts; the Tool contract in src/daemon/tools/types.ts:151 is one asynchronous execute(input, deps) returning a ToolResult). It is registered the usual way, in the shared list of built-in tools, so it is in the daemon's registry and in the session tool server's registry (src/mcp/server.ts:1242-1251 registers the same built-ins), and a model can call it by name like any other tool. The rule is not that a model may never use it; the rule is that nobody, model or code, runs raw gh or git commands for this flow: everything goes through the tool. Because it can be called directly, the tool applies the check itself (the setting is on, a supported tracker is set up for the repo it is given, the tracker is usable) and does not rely on the flow having done so. The daemon picks the tool by the project's type through one naming rule, tracker_<type>; adding gitlab later means adding one tool. Today there is one, tracker_github. Its input names the request (ready, addOrUpdate, comment, close, commitRef) and carries the fields below; its ToolResult's data is the TrackerOutcome. A tool knows nothing about workflow artifacts: the daemon passes it everything. It is code: plain git and gh calls, each with a time limit, made through one exec that a test replaces. The calls do NOT block the daemon: the tool is asynchronous, as the registry's contract requires, and runs each command without holding the event loop, so plugins, indexing and other sessions are served while a push is slow. WHAT THE DAEMON PASSES per item: the project's repo path; the target (owner/repo); the action (add-or-update, or close); the item's identity key, unique and stable (for an issue record 'issue-<first 8 of its hash>'; for a standalone story 'story-<first 8 of the hash>-<story id>'; for a task that plus the task id); the title; the body, which the daemon renders and which carries the existing hidden identity marker (idMarker in src/workflow/tracker/conventions.ts:61) with the artifact's id; the labels (the kind label and the names the project uses); the parent's ref when the item sits under another; the exact list of documents to commit and push; two commit messages; and the item's known ref when it was added before. Commit messages: 'docs(workflow): approve <artifact id>: <title>' for the documents and 'docs(workflow): record tracker ref for <artifact id> (<ref>)' for the ref. WHAT THE TOOL ANSWERS. ready: is this tracker usable for the project (for github: gh installed, then gh signed in, the sign-in call limited to 10 seconds); the answer names what is missing. addOrUpdate: commit and push exactly the listed documents (git add and git commit both name the paths; nothing to commit for those paths is not a failure; the push is a plain push of the current branch, which also sends earlier unpushed commits on it); find the item, by its known ref or else by its unique label 'insrc:<identity key>'; when not found, first create the two labels it needs, the kind label and the unique label, with an idempotent label create, since a create naming a label that does not exist yet may be rejected, and then create the item with both labels; when found, update its body; return the outcome and the ref. A label create that fails is a 'failed' outcome with no item created. comment: add one comment to an existing item by its ref. close: close the item by its ref. commitRef: commit and push the same documents again after the daemon has written the ref into the artifact. THE LOOKUP HAS THREE ANSWERS: found, adopt it; not found (gh ran and returned nothing), create; lookup failed (gh exited with an error or passed its time limit), stop, create nothing, report 'failed'. Today's ghFindIssueByLabels returns the same empty answer for the last two (src/workflow/tracker/github.ts:215-221), so the tool has its own lookup. A create that passes its time limit is reported as failed and NOT retried in the same run, because it may have gone through; the next run's lookup finds it by its label. The existing ghCreateIssueTyped retries untyped after any error (github.ts:164-171), so the tool does not use it for this. WHAT THE TOOL RETURNS: a TrackerOutcome, { item, status: 'created' | 'updated' | 'already-exists' | 'closed' | 'skipped' | 'failed', ref?, reason?, docs?: { committed, pushed, reason? } }. TIME. Each gh and git call has a 30 second limit; one item is about eight calls, typically one to two seconds each.",
+        "details": "ONE tracker tool, with one implementation per tracker type. The tool is a normal insrc MCP tool, insrc_tracker, registered in src/mcp/server.ts with the other insrc_* tools, so Claude, Codex and any other agent that speaks MCP can call it; like every insrc tool it forwards to the daemon, where the implementation lives. It is NOT put in the daemon's internal list of built-in tools (src/daemon/tools): nothing in that list reaches a coding agent, and the only model that sees any of it is the daemon's analysis model, through a fixed read-only allowlist (src/analyze/context/tool-surface.ts:69-153) that a writing tool must not join. There are two ways in and one implementation. The daemon calls the implementation itself, in process, after every approval (the tracker flow, next entry). An agent calls insrc_tracker, whose requests are: status (is the tracker ready for this repo, and if not why), push (run the flow for one approved artifact, given its path), pending (list approved items not yet tracked), and backfill (run the flow over the pending items). Each is one daemon request; backfill is a stream request with one progress frame per item. The checks live inside the implementation (the setting is on, a supported tracker is set up for the repo, the tracker is usable), so a direct call by an agent is held to the same rules as an approval. The implementation for a type is a module the daemon selects by the project's type from one small map (type to implementation); adding gitlab later means adding one implementation and one map entry. Today there is one, for github. An implementation knows nothing about workflow artifacts: the flow passes it everything. It is code: plain git and gh calls, each with a time limit, made through one exec that a test replaces. The calls do NOT block the daemon: each command runs without holding the event loop, so plugins, indexing and other sessions are served while a push is slow. WHAT THE DAEMON PASSES per item: the project's repo path; the target (owner/repo); the action (add-or-update, or close); the item's identity key, unique and stable (for an issue record 'issue-<first 8 of its hash>'; for a standalone story 'story-<first 8 of the hash>-<story id>'; for a task that plus the task id); the title; the body, which the daemon renders and which carries the existing hidden identity marker (idMarker in src/workflow/tracker/conventions.ts:61) with the artifact's id; the labels (the kind label and the names the project uses); the parent's ref when the item sits under another; the exact list of documents to commit and push; two commit messages; and the item's known ref when it was added before. Commit messages: 'docs(workflow): approve <artifact id>: <title>' for the documents and 'docs(workflow): record tracker ref for <artifact id> (<ref>)' for the ref. WHAT AN IMPLEMENTATION ANSWERS. ready: is this tracker usable for the project (for github: gh installed, then gh signed in, the sign-in call limited to 10 seconds); the answer names what is missing. addOrUpdate: commit and push exactly the listed documents (git add and git commit both name the paths; nothing to commit for those paths is not a failure; the push is a plain push of the current branch, which also sends earlier unpushed commits on it); find the item, by its known ref or else by its unique label 'insrc:<identity key>'; when not found, first create the two labels it needs, the kind label and the unique label, with an idempotent label create, since a create naming a label that does not exist yet may be rejected, and then create the item with both labels; when found, update its body; return the outcome and the ref. A label create that fails is a 'failed' outcome with no item created. comment: add one comment to an existing item by its ref. close: close the item by its ref. commitRef: commit and push the same documents again after the daemon has written the ref into the artifact. THE LOOKUP HAS THREE ANSWERS: found, adopt it; not found (gh ran and returned nothing), create; lookup failed (gh exited with an error or passed its time limit), stop, create nothing, report 'failed'. Today's ghFindIssueByLabels returns the same empty answer for the last two (src/workflow/tracker/github.ts:215-221), so the tool has its own lookup. A create that passes its time limit is reported as failed and NOT retried in the same run, because it may have gone through; the next run's lookup finds it by its label. The existing ghCreateIssueTyped retries untyped after any error (github.ts:164-171), so the tool does not use it for this. WHAT THE TOOL RETURNS: a TrackerOutcome, { item, status: 'created' | 'updated' | 'already-exists' | 'closed' | 'skipped' | 'failed', ref?, reason?, docs?: { committed, pushed, reason? } }. TIME. Each gh and git call has a 30 second limit; one item is about eight calls, typically one to two seconds each.",
         "callSites": [
-          "src/daemon/tools/registry.ts",
-          "src/daemon/tools/types.ts",
-          "src/daemon/tools/builtins",
+          "src/mcp/server.ts",
+          "src/mcp/__tests__/schema-registry.test.ts",
           "src/daemon/index.ts",
+          "src/workflow/tracker-auto.ts",
           "src/workflow/tracker/github.ts",
           "src/workflow/tracker/conventions.ts",
-          "src/daemon/tools/builtins/index.ts",
-          "src/mcp/server.ts"
+          "src/prompts/steering-block.md",
+          "src/analyze/context/tool-surface.ts"
         ]
       },
       {
         "entity": "The tracker flow",
         "change": "new",
-        "details": "One asynchronous function, new in src/workflow/tracker-auto.ts, that takes the artifacts an approve call approved and returns one TrackerOutcome per tracker item. It runs only in the daemon. The steps that follow an approval are moved out of the 'workflow.approve' handler, which is an inline block in the daemon's startup file that no test can call (src/daemon/index.ts:643-677), into ONE exported function with its collaborators passed in (the repo registry, the tool, the bugfix follow-on), the way the follow-on itself was separated into src/workflow/bugfix/mount.ts. That function runs the follow-on, then awaits the flow, honours the request's tracker: false, covers the no-repo path, catches any error from the flow, and puts the outcomes in the result's tracker[] field; the handler only calls it. It must run on EVERY path out of that handler where something was approved. Today the handler returns early when the request names no repo (index.ts:667-669), before the follow-on; the VS Code review panel sends only the artifact's path (vscode-plugin/src/chat/docs-review-client.ts:119-121), so its approvals take that path. The flow runs there too, finding the repo itself from the registry; the follow-on stays skipped on that path, as today. The handler honours a tracker: false field in the request by not running the flow. The flow runs the check once, then for each artifact builds the fields above and calls the tool, one artifact after another. TIME BUDGET: the flow has 5 minutes in total per approve request, enough for a slow connection. When the budget runs out the remaining items are not attempted; each is reported 'skipped: time budget reached' and stays in the pending list. The approval itself is always reported as approved. Every client that waits for an approve request must wait longer than the budget: the session tool server's request (unaryRpc in src/mcp/daemon-stream.ts), the VS Code panel's client, the JetBrains gateway and the TUI's client are each read during the build and any limit under 5 and a half minutes is raised for this request, so an approval is never shown as failed while the daemon is still working. BY KIND, for this work item. An ISSUE record: addOrUpdate with the record's title and its rendered markdown; when the follow-on has stamped a parent on the record (meta.parentRef) the parent's ref is passed, which is why the flow runs after the follow-on. A standalone design (an LLD with no parent Define): when the work item's issue record (the ISSUE artifact with the same hash) has a ref, addOrUpdate is NOT used; the tool adds one comment on that issue linking the design; otherwise addOrUpdate creates a story issue from the design's title and summary. A standalone plan: one addOrUpdate per task, under the story's issue or the issue record's issue; with neither on the tracker it is 'skipped' with that reason. A BUILD record: close the work item's issue and each task issue, found on the ISSUE, LLD and PLAN artifacts that share the BUILD record's hash and story id; with none found it is 'skipped: nothing on the tracker to close'. A standalone design linked on its issue record's issue uses the tool's comment request. An HLD, an LLD under an epic and a plan under an epic are NOT handled by the flow: they belong to the epics work item. DEF, SPEC, CR and EXT have no outcome. RECORDING. After addOrUpdate returns a ref the flow writes it to the artifact's meta.tracker with the existing patchTrackerMeta (src/workflow/tracker/refs.ts:88), then calls the tool's commitRef. TrackerMeta (refs.ts:24-37) gains two optional fields: commentedOn, the ref of the issue a standalone design was linked on, and closedAt. What counts as tracked, so nothing is done twice: an issue record has issueRef; a standalone design has storyRef or commentedOn; a plan has taskRefs; a BUILD record has closedAt. ONE BUGFIX, ONE HASH. The close finds the issue by hash, but today a small bugfix's build has a different hash from its issue record: the routed next step is computed (advanceBugfixAfterIssue returns nextCall, src/workflow/bugfix/advance.ts:62-64) and then dropped (src/workflow/bugfix/mount.ts:140-145 keeps only kind, artifactPath, ok and note), so the build call is made by hand and the build step mints a hash from the focus text (src/mcp/build-step/phases/implement.ts:127, validate.ts:99). Two changes close this: nextAfterIssue (src/workflow/bugfix/next-after-issue.ts:52-78) puts the issue record's hash in the call it emits (standalone.epicHash on the small route, params.epicHash on the sized route), and the follow-on outcome carries that nextCall through the approve result to insrc_workflow_approve, where the steering tells the model to make exactly that call. The emitted call is only the build's first turn, implement; its second turn, validate, is composed separately and mints a hash again when none is given (validate.ts:99), which would write a second BUILD record under a different hash. So the implement response states the hash and says validate must repeat it, the steering says the same, and a validate call for a build of this kind that arrives without the hash does not invent one: it uses the hash of the one build that was started for that task, and refuses, naming what is missing, when it cannot find exactly one. Builds made before this keep their old hash; for them the close reports nothing to close. ONE CREATOR, ONE CLOSER. Code that creates a GitHub issue from an issue record, links it, records the ref and closes it already exists in the bugfix module and was never connected: createBugfixTrackerIssue and closeBugfixTrackerIssue with their default dependencies (src/workflow/bugfix/tracker.ts:142-188, 266-287), the hook that would call the create (the AdvanceTrackerDeps leg in src/workflow/bugfix/advance.ts:63-70 and its type in src/workflow/bugfix/types.ts:61), completeBugfixTracker (advance.ts:79-88) and the follow-on's close leg (src/workflow/bugfix/mount.ts:156-166), which fires only for a BUILD carrying meta.issueHash that nothing stamps. That code has no unique label, cannot tell a failed lookup from not found, and retries a create after any error. All of it is deleted, with its tests (src/workflow/__tests__/bugfix-tracker.test.ts, and the parts of src/workflow/bugfix/__tests__/bugfix-mount.test.ts and src/workflow/__tests__/bugfix-orchestration.test.ts that exercise it) and the 'bugfix-complete' followOn kind, so the tracker tool is the only code that creates or closes a work item's issue. The follow-on keeps what it does today: it locates and stamps the parent and routes to the next stage.",
+        "details": "One asynchronous function, new in src/workflow/tracker-auto.ts, that takes the artifacts an approve call approved and returns one TrackerOutcome per tracker item. It runs only in the daemon. The steps that follow an approval are moved out of the 'workflow.approve' handler, which is an inline block in the daemon's startup file that no test can call (src/daemon/index.ts:643-677), into ONE exported function with its collaborators passed in (the repo registry, the tracker implementation, the bugfix follow-on), the way the follow-on itself was separated into src/workflow/bugfix/mount.ts. That function runs the follow-on, then awaits the flow, honours the request's tracker: false, covers the no-repo path, catches any error from the flow, and puts the outcomes in the result's tracker[] field; the handler only calls it. It must run on EVERY path out of that handler where something was approved. Today the handler returns early when the request names no repo (index.ts:667-669), before the follow-on; the VS Code review panel sends only the artifact's path (vscode-plugin/src/chat/docs-review-client.ts:119-121), so its approvals take that path. The flow runs there too, finding the repo itself from the registry; the follow-on stays skipped on that path, as today. The handler honours a tracker: false field in the request by not running the flow. The flow runs the check once, then for each artifact builds the fields above and calls the tool, one artifact after another. TIME BUDGET: the flow has 5 minutes in total per approve request, enough for a slow connection. When the budget runs out the remaining items are not attempted; each is reported 'skipped: time budget reached' and stays in the pending list. The approval itself is always reported as approved. Every client that waits for an approve request must wait longer than the budget: the session tool server's request (unaryRpc in src/mcp/daemon-stream.ts), the VS Code panel's client, the JetBrains gateway and the TUI's client are each read during the build and any limit under 5 and a half minutes is raised for this request, so an approval is never shown as failed while the daemon is still working. BY KIND, for this work item. An ISSUE record: addOrUpdate with the record's title and its rendered markdown; when the follow-on has stamped a parent on the record (meta.parentRef) the parent's ref is passed, which is why the flow runs after the follow-on. A standalone design (an LLD with no parent Define): when the work item's issue record (the ISSUE artifact with the same hash) has a ref, addOrUpdate is NOT used; the tool adds one comment on that issue linking the design; otherwise addOrUpdate creates a story issue from the design's title and summary. A standalone plan: one addOrUpdate per task, under the story's issue or the issue record's issue; with neither on the tracker it is 'skipped' with that reason. A BUILD record: close the work item's issue and each task issue, found on the ISSUE, LLD and PLAN artifacts that share the BUILD record's hash and story id; with none found it is 'skipped: nothing on the tracker to close'. A standalone design linked on its issue record's issue uses the tool's comment request. An HLD, an LLD under an epic and a plan under an epic are NOT handled by the flow: they belong to the epics work item. DEF, SPEC, CR and EXT have no outcome. RECORDING. After addOrUpdate returns a ref the flow writes it to the artifact's meta.tracker with the existing patchTrackerMeta (src/workflow/tracker/refs.ts:88), then calls the tool's commitRef. TrackerMeta (refs.ts:24-37) gains two optional fields: commentedOn, the ref of the issue a standalone design was linked on, and closedAt. What counts as tracked, so nothing is done twice: an issue record has issueRef; a standalone design has storyRef or commentedOn; a plan has taskRefs; a BUILD record has closedAt. ONE BUGFIX, ONE HASH. The close finds the issue by hash, but today a small bugfix's build has a different hash from its issue record: the routed next step is computed (advanceBugfixAfterIssue returns nextCall, src/workflow/bugfix/advance.ts:62-64) and then dropped (src/workflow/bugfix/mount.ts:140-145 keeps only kind, artifactPath, ok and note), so the build call is made by hand and the build step mints a hash from the focus text (src/mcp/build-step/phases/implement.ts:127, validate.ts:99). Two changes close this: nextAfterIssue (src/workflow/bugfix/next-after-issue.ts:52-78) puts the issue record's hash in the call it emits (standalone.epicHash on the small route, params.epicHash on the sized route), and the follow-on outcome carries that nextCall through the approve result to insrc_workflow_approve, where the steering tells the model to make exactly that call. The emitted call is only the build's first turn, implement; its second turn, validate, is composed separately and mints a hash again when none is given (validate.ts:99), which would write a second BUILD record under a different hash. So the implement response states the hash and says validate must repeat it, and the steering says the same. For a validate call that still arrives without a hash the rule is exact, because a bugfix build and an ordinary small build look the same to the build step (both are a trivial standalone context with a focus, and every such build uses story S001), and for an ordinary one minting the hash from the focus is correct and must keep working. The implement turn already writes the BUILD record with the task's focus stored on it (src/mcp/build-step/phases/implement.ts:155-164). validate, given no hash, looks for BUILD records that are not yet approved and whose stored focus equals the call's focus exactly: with exactly one it uses that record's hash (the bugfix case, whose implement call was given the issue's hash); with none it mints the hash from the focus as today (the ordinary small build, unchanged); with more than one it refuses and names the matching records. Builds made before this keep their old hash; for them the close reports nothing to close. ONE CREATOR, ONE CLOSER. Code that creates a GitHub issue from an issue record, links it, records the ref and closes it already exists in the bugfix module and was never connected: createBugfixTrackerIssue and closeBugfixTrackerIssue with their default dependencies (src/workflow/bugfix/tracker.ts:142-188, 266-287), the hook that would call the create (the AdvanceTrackerDeps leg in src/workflow/bugfix/advance.ts:63-70 and its type in src/workflow/bugfix/types.ts:61), completeBugfixTracker (advance.ts:79-88) and the follow-on's close leg (src/workflow/bugfix/mount.ts:156-166), which fires only for a BUILD carrying meta.issueHash that nothing stamps. That code has no unique label, cannot tell a failed lookup from not found, and retries a create after any error. All of it is deleted, with its tests (src/workflow/__tests__/bugfix-tracker.test.ts, and the parts of src/workflow/bugfix/__tests__/bugfix-mount.test.ts and src/workflow/__tests__/bugfix-orchestration.test.ts that exercise it) and the 'bugfix-complete' followOn kind, so the tracker implementation is the only code that creates or closes a work item's issue. The follow-on keeps what it does today: it locates and stamps the parent and routes to the next stage.",
         "callSites": [
           "src/workflow/tracker-auto.ts",
           "src/daemon/index.ts",
@@ -389,13 +180,14 @@
           "src/cli/__tests__/command.test.ts",
           "src/workflow/bugfix/__tests__/bugfix-mount.test.ts",
           "src/workflow/__tests__/bugfix-orchestration.test.ts",
-          "src/workflow/__tests__/bugfix-tracker.test.ts"
+          "src/workflow/__tests__/bugfix-tracker.test.ts",
+          "src/cli/__tests__/tui.test.ts"
         ]
       },
       {
         "entity": "Pending list and backfill",
         "change": "new",
-        "details": "Two daemon requests and one new MCP tool, insrc_tracker_step, that sends them, with two phases. Phase 'pending' takes a repo and returns every approved artifact of the kinds this work item covers that is not tracked (by the rule above), parents before children, with what the flow would do for each, or the reason the check fails; an item whose BUILD record is approved is marked finished. It changes nothing; it is the backfill's dry run. Phase 'run' takes a repo and runs the flow on those items one at a time, as a stream request with one progress frame per item, yielding to the event loop between items; a finished item is created and closed at once. It is safe to run twice. A bugfix built before the one-hash change cannot be matched to its build; the list marks it 'completion unknown', and the run creates it and leaves it open. Adding a tool means the registered-tool tests (src/mcp/__tests__/schema-registry.test.ts: the expected tool list and the expected phases) and the steering's table of registered tools must list it.",
+        "details": "Two requests of the insrc_tracker tool (there is no separate tool for them). pending takes a repo and returns every approved artifact of the kinds this work item covers that is not tracked (by the rule above), parents before children, with what the flow would do for each, or the reason the check fails; an item whose BUILD record is approved is marked finished. It changes nothing; it is the backfill's dry run. backfill takes a repo and runs the flow on those items one at a time, as a stream request with one progress frame per item; a finished item is created and closed at once. It is safe to run twice. A bugfix built before the one-hash change cannot be matched to its build; the list marks it 'completion unknown', and the run creates it and leaves it open. Adding the tool means the registered-tool tests (src/mcp/__tests__/schema-registry.test.ts: the expected tool list, and the expected requests if it is registered as a multi-request tool) and the steering's table of registered tools must list it.",
         "callSites": [
           "src/mcp/server.ts",
           "src/daemon/index.ts",
@@ -407,7 +199,7 @@
       {
         "entity": "What the workflow says about the tracker",
         "change": "new",
-        "details": "The result of insrc_workflow_approve carries tracker[] and, for a bugfix, the next call. The tool's description and the steering source (src/prompts/steering-block.md, its tracker and bugfix guides and its tool table, and the plugin copy vscode-plugin/assets/steering-block.md) say: the daemon adds, updates and closes tracker items and pushes their documents when an item is approved; the model relays each outcome and its reason, never runs gh or commits the artifacts for this itself, and, after approving an issue record, makes exactly the next call the result gives. They also say what is covered now (issue records, standalone stories and their tasks, completion) and that an epic, its stories and its tasks are pushed only by the explicit tracker.push workflow until the epics work item lands. The done response of insrc_workflow_step, whose pendingApproval block is built in src/mcp/workflow-step/phases/synthesize.ts:109 and typed in src/mcp/workflow-step/types.ts:129, gains a line saying whether approving this artifact will add it to the tracker, or why not; working that out makes no call that changes anything. The workflow user guide is rewritten too: docs/workflow.md says today that approving an HLD or LLD pushes it automatically and that --no-tracker opts out (lines 138-144), and that the tracker is opt-in through github.json (lines 181-185); all three become wrong. Its tracker sections are rewritten to describe the setting, on by default; the tracker type, named or inferred from the remote; what is pushed on approval now; that commitArtifacts, pushTasks and type 'none' no longer decide anything for this flow; and that an epic is pushed only by the explicit tracker.push workflow for now. docs/daemon.md is checked for a tracker section and updated the same way if it has one.",
+        "details": "The result of insrc_workflow_approve carries tracker[] and, for a bugfix, the next call. The descriptions of insrc_workflow_approve and insrc_tracker and the steering source (src/prompts/steering-block.md, its tracker and bugfix guides and its tool table, and the plugin copy vscode-plugin/assets/steering-block.md) say: the daemon adds, updates and closes tracker items and pushes their documents when an item is approved; the model relays each outcome and its reason, never runs gh or commits the artifacts for this itself, and, after approving an issue record, makes exactly the next call the result gives. They also say what is covered now (issue records, standalone stories and their tasks, completion) and that an epic, its stories and its tasks are pushed only by the explicit tracker.push workflow until the epics work item lands. The done response of insrc_workflow_step, whose pendingApproval block is built in src/mcp/workflow-step/phases/synthesize.ts:109 and typed in src/mcp/workflow-step/types.ts:129, gains a line saying whether approving this artifact will add it to the tracker, or why not; working that out makes no call that changes anything. The workflow user guide is rewritten too: docs/workflow.md says today that approving an HLD or LLD pushes it automatically and that --no-tracker opts out (lines 138-144), and that the tracker is opt-in through github.json (lines 181-185); all three become wrong. Its tracker sections are rewritten to describe the setting, on by default; the tracker type, named or inferred from the remote; what is pushed on approval now; that commitArtifacts, pushTasks and type 'none' no longer decide anything for this flow; and that an epic is pushed only by the explicit tracker.push workflow for now. docs/daemon.md is checked for a tracker section and updated the same way if it has one.",
         "callSites": [
           "src/mcp/server.ts",
           "src/prompts/steering-block.md",
@@ -515,9 +307,9 @@
         },
         {
           "scenario": "A build's validate call arrives without the hash its implement call was given.",
-          "detection": "The build step finds no hash on the call and looks for the build started for that task.",
-          "response": "With exactly one such build it uses that build's hash; otherwise it refuses and names what is missing. It never mints a new hash for a build of this kind.",
-          "userImpact": "One BUILD record per bugfix, under the issue's hash.",
+          "detection": "The build step finds no hash on the call and looks for unapproved BUILD records whose stored focus equals the call's focus.",
+          "response": "Exactly one: it uses that record's hash. None: it mints the hash from the focus, as an ordinary small build always has. More than one: it refuses and names the matching records.",
+          "userImpact": "One BUILD record per bugfix, under the issue's hash; ordinary small builds are unchanged.",
           "recoverable": true
         }
       ],
@@ -599,8 +391,16 @@
           "expected": "Neither is read by this flow: the documents are pushed and the tasks tracked when the setting is on."
         },
         {
-          "input": "A model calls tracker_github directly for a repo whose setting is off.",
-          "expected": "The tool applies the check itself and answers 'skipped: the setting is off'; nothing is pushed."
+          "input": "An agent calls insrc_tracker push for an artifact in a repo whose setting is off.",
+          "expected": "The implementation applies the check itself and answers 'skipped: the setting is off'; nothing is pushed."
+        },
+        {
+          "input": "An agent calls insrc_tracker push for an artifact that is not approved.",
+          "expected": "Refused: only an approved artifact is pushed, the same rule the approval path follows."
+        },
+        {
+          "input": "An ordinary small build (not a bugfix) is validated with no hash on the call.",
+          "expected": "No unapproved BUILD record carries its focus under another hash, so the hash is minted from the focus exactly as today."
         }
       ],
       "invariantsToPreserve": [
@@ -621,7 +421,7 @@
           "source": "c3"
         },
         {
-          "text": "gh is never run by a test, and for this flow nobody, model or code, runs raw gh or git commands: everything goes through the tracker tool, which applies the setting and the tracker check itself.",
+          "text": "gh is never run by a test, and for this flow nobody, model or code, runs raw gh or git commands: everything goes through the tracker tool's implementation, which applies the setting and the tracker check itself.",
           "source": "c6"
         },
         {
@@ -629,11 +429,19 @@
           "source": "c4"
         },
         {
-          "text": "A work item's tracker issue is created by one piece of code and closed by one piece of code: the tracker tool.",
+          "text": "A work item's tracker issue is created by one piece of code and closed by one piece of code: the tracker implementation.",
           "source": "c5"
         },
         {
-          "text": "The daemon keeps serving other requests while the tracker tool waits on git or gh.",
+          "text": "The daemon keeps serving other requests while the tracker implementation waits on git or gh.",
+          "source": "c1"
+        },
+        {
+          "text": "The daemon's read-only tool allowlist for its analysis model gains no writing tool.",
+          "source": "c1"
+        },
+        {
+          "text": "An ordinary trivial build's hash is still minted from its focus.",
           "source": "c1"
         }
       ]
@@ -678,7 +486,7 @@
             "T9 a create that passes its time limit is 'failed' and is not retried in the same run; the next run finds the item by its label and adopts it",
             "T10 a known ref gives 'already-exists' with no create; update changes the body of a found item; close closes by ref; commitRef commits and pushes the same paths with the second message",
             "T11 a git failure in the first commit or push stops the tool before any gh call",
-            "T33 the tool is registered as tracker_github among the built-in tools with the registry's Tool contract; its result's data is a TrackerOutcome; an unknown request name is refused; comment adds one comment by ref; called directly for a repo whose setting is off, or with no supported tracker, it answers 'skipped' and makes no git or gh call; its calls do not block: another task runs while a faked call is pending"
+            "T33 the github implementation is selected by type from the one map and an unknown type has none; its answer is a TrackerOutcome; comment adds one comment by ref; called for a repo whose setting is off, or with no supported tracker, it answers 'skipped' and makes no git or gh call; its calls do not block: another task runs while a faked call is pending"
           ]
         },
         {
@@ -701,10 +509,10 @@
           "level": "integration",
           "purpose": "Every approval surface, and the bugfix chain.",
           "subjects": [
-            "T18 the after-approval function, called directly with a fake registry, tool and follow-on: it runs the follow-on then the flow and fills tracker[]; a request with only an artifact path runs the flow with the follow-on skipped; tracker: false runs no flow; a flow that throws leaves the approval result intact; when the 5 minute budget is used up the remaining items are 'skipped: time budget reached'. The daemon's handler does nothing but call it, and insrc_workflow_approve relays tracker[]",
-            "T19 the TUI approve service sends the daemon's approve request and returns its answer, with withTracker false sent as tracker: false; the approve command and the Workflows pane await it and show approved, withheld (with the override hint, from skipped[] and not from a thrown error), follow-on and tracker outcomes; it calls neither approveArtifactByJsonPath nor any push or commit function, and reports a daemon that is not running",
+            "T18 the after-approval function, called directly with a fake registry, tracker implementation and follow-on: it runs the follow-on then the flow and fills tracker[]; a request with only an artifact path runs the flow with the follow-on skipped; tracker: false runs no flow; a flow that throws leaves the approval result intact; when the 5 minute budget is used up the remaining items are 'skipped: time budget reached'. The daemon's handler does nothing but call it, and insrc_workflow_approve relays tracker[]",
+            "T19 the TUI approve service sends the daemon's approve request and returns its answer, with withTracker false sent as tracker: false; the approve command and the Workflows pane await it and show approved, withheld (with the override hint, from skipped[] and not from a thrown error), follow-on and tracker outcomes; it calls neither approveArtifactByJsonPath nor any push or commit function, and reports a daemon that is not running; the four TUI fakes (command.test.ts:50, :220-230, :232-241 and tui.test.ts:72) return a Promise of the daemon's result shape",
             "T20 approving an HLD, an LLD under an epic or a plan from the TUI approves it and makes no git or gh call",
-            "T21 after an issue record is approved, the result carries the next call with the issue's hash, on the small route and the sized route; the implement response states the hash; a validate call with it, and one without it, both land on the same BUILD record; a validate call that matches no started build, or more than one, is refused; approving that BUILD record closes the issue",
+            "T21 after an issue record is approved, the result carries the next call with the issue's hash, on the small route and the sized route; the implement response states the hash; validate with the hash, and validate without it when exactly one unapproved BUILD record carries the same focus, both land on that record; validate without a hash and with no such record mints from the focus as an ordinary small build does; validate with more than one such record is refused and names them; approving the bugfix's BUILD record closes the issue",
             "T22 the old creator and closer are gone: createBugfixTrackerIssue, closeBugfixTrackerIssue, completeBugfixTracker, the create hook in the advance and the follow-on's close leg no longer exist, followOn has no 'bugfix-complete' entry, and the follow-on still stamps the parent and routes",
             "T23 the suites that reach the tracker flow issue no command whose name is gh: they run under one shared helper that sets the setting reader to true and installs the recording fake, which throws for `git remote get-url` as a repo with no remote does. The suites that call approveWorkflowTarget directly never reach the flow, by design, and need no change",
             "T34 each client's wait for an approve request is longer than the flow's 5 minute budget: the session tool server, the VS Code panel's client, the JetBrains gateway and the TUI's client"
@@ -719,16 +527,17 @@
           "purpose": "The pending list and the backfill, with the tool faked.",
           "subjects": [
             "T24 the pending phase lists approved untracked items of the covered kinds parents first, marks finished ones and 'completion unknown' ones, leaves out unapproved ones and epic items, and changes nothing",
-            "T25 the run phase creates each item once, creates and closes a finished one, yields between items, and a second run reports them as already there; a failure part of the way through keeps what was recorded"
+            "T25 the run phase creates each item once, creates and closes a finished one, yields between items, and a second run reports them as already there; a failure part of the way through keeps what was recorded",
+            "T35 insrc_tracker: status reports ready or the reason; push runs the flow for one approved artifact and refuses an unapproved one; pending and backfill are its other two requests; each forwards to its daemon request"
           ]
         },
         {
           "level": "unit",
           "purpose": "What the workflow says, the tool's registration, and the plugins.",
           "subjects": [
-            "T26 the steering tracker and bugfix guides, its tool table, and the descriptions of insrc_workflow_approve and insrc_tracker_step say the daemon does the tracker work on approval, list what is covered, tell the model to relay outcomes, not to run raw gh, to make the next call an issue approval returns and to repeat the build's hash on validate; the plugin copy of the steering source is identical to the source; docs/workflow.md no longer says approval pushes an HLD or LLD, that --no-tracker opts out, or that the tracker is opt-in",
+            "T26 the steering tracker and bugfix guides, its tool table, and the descriptions of insrc_workflow_approve and insrc_tracker say the daemon does the tracker work on approval, list what is covered, tell the model to relay outcomes, not to run raw gh, to make the next call an issue approval returns and to repeat the build's hash on validate; the plugin copy of the steering source is identical to the source; docs/workflow.md no longer says approval pushes an HLD or LLD, that --no-tracker opts out, or that the tracker is opt-in",
             "T27 the pendingApproval block of insrc_workflow_step's done response says whether approval will add the item to the tracker, or why not",
-            "T28 the registered-tool tests list insrc_tracker_step with its pending and run phases",
+            "T28 the registered-tool tests list insrc_tracker (and its requests, if registered as a multi-request tool); the daemon's read-only tool allowlist is unchanged",
             "T29 VS Code: package.json declares the setting; the global key maps to the catalog row; the per-repo section writes tracker.byRepo.<repoPath>.addItems for the open workspace folder",
             "T30 JetBrains: the settings page shows the default row, and its per-repo section writes tracker.byRepo.<repoPath>.addItems for the open project"
           ]
@@ -803,7 +612,8 @@
           "provingTests": [
             "T24",
             "T25",
-            "T32"
+            "T32",
+            "T35"
           ]
         }
       ],
@@ -820,7 +630,7 @@
         },
         {
           "order": 2,
-          "action": "Add the tracker_github tool among the built-in tools: the check applied inside it, ready, addOrUpdate with the idempotent label create and the three-answer lookup, comment, close, commitRef, each call time-limited and none blocking the daemon; add the two optional tracker fields; add the shared test helper.",
+          "action": "Add the github tracker implementation and the type-to-implementation map: the check applied inside it, ready, addOrUpdate with the idempotent label create and the three-answer lookup, comment, close, commitRef, each call time-limited and none blocking the daemon; add the two optional tracker fields; add the shared test helper.",
           "rollbackable": true
         },
         {
@@ -840,12 +650,12 @@
         },
         {
           "order": 6,
-          "action": "Give a bugfix one hash: put the issue record's hash in the next call, carry the next call on the follow-on outcome through to insrc_workflow_approve, state the hash in the implement response and make validate reuse it or refuse. Delete the old issue create and close code in the bugfix module, its hook, the follow-on's close leg and the tests that exercise them.",
+          "action": "Give a bugfix one hash: put the issue record's hash in the next call, carry the next call on the follow-on outcome through to insrc_workflow_approve, state the hash in the implement response, and have validate with no hash use the one unapproved BUILD record with the same focus, mint as today when there is none, and refuse when there are several. Delete the old issue create and close code in the bugfix module, its hook, the follow-on's close leg and the tests that exercise them.",
           "rollbackable": true
         },
         {
           "order": 7,
-          "action": "Add the insrc_tracker_step tool with its pending and run phases and their daemon requests; update the registered-tool tests.",
+          "action": "Add the insrc_tracker MCP tool with its status, push, pending and backfill requests and their daemon requests; update the registered-tool tests.",
           "rollbackable": true
         },
         {
@@ -867,16 +677,16 @@
           ]
         }
       ],
-      "backwardCompat": "approveWorkflowTarget is unchanged; WorkflowApproveResult gains an optional tracker[] and FollowOnOutcome an optional nextCall and loses the 'bugfix-complete' kind, which nothing produced. The approve request gains an optional tracker field. resolveGithubConfig, the three epic push functions and the tracker workflows are unchanged. The tracker meta gains two optional fields; nothing stored is rewritten. One new MCP tool, one new daemon tool and two daemon requests are added. What changes for the user: (1) with the setting on (the default) and gh signed in, approving an issue record, a standalone design or plan commits and pushes those documents and creates a GitHub item, for any registered repo with a GitHub remote; three older switches in ~/.insrc/github.json no longer decide anything for this flow: type 'none' (in a repo's entry or the default entry) is read as no type named, and commitArtifacts and pushTasks are not read, so someone who relied on any of them turns the setting off instead, which the release notes and the setting's description say; (2) the TUI now needs the daemon running to approve, its approve is asynchronous and its result takes the daemon's shape; (3) the TUI no longer pushes an epic, its stories or its tasks, and no longer commits approved artifacts by itself: until the epics work item lands, an epic is pushed with the explicit tracker.push workflow; (4) the unused issue create and close functions of the bugfix module are deleted; (5) after an issue approval the bugfix's design, plan and build are filed under the issue's hash; builds made earlier keep their old hash. (6) a validate call for a bugfix build no longer mints its own hash; (7) the clients wait up to five and a half minutes for an approve request.",
+      "backwardCompat": "approveWorkflowTarget is unchanged; WorkflowApproveResult gains an optional tracker[] and FollowOnOutcome an optional nextCall and loses the 'bugfix-complete' kind, which nothing produced. The approve request gains an optional tracker field. resolveGithubConfig, the three epic push functions and the tracker workflows are unchanged. The tracker meta gains two optional fields; nothing stored is rewritten. One new MCP tool, insrc_tracker, and its four daemon requests are added; nothing is added to the daemon's internal tool list. What changes for the user: (1) with the setting on (the default) and gh signed in, approving an issue record, a standalone design or plan commits and pushes those documents and creates a GitHub item, for any registered repo with a GitHub remote; three older switches in ~/.insrc/github.json no longer decide anything for this flow: type 'none' (in a repo's entry or the default entry) is read as no type named, and commitArtifacts and pushTasks are not read, so someone who relied on any of them turns the setting off instead, which the release notes and the setting's description say; (2) the TUI now needs the daemon running to approve, its approve is asynchronous and its result takes the daemon's shape; (3) the TUI no longer pushes an epic, its stories or its tasks, and no longer commits approved artifacts by itself: until the epics work item lands, an epic is pushed with the explicit tracker.push workflow; (4) the unused issue create and close functions of the bugfix module are deleted; (5) after an issue approval the bugfix's design, plan and build are filed under the issue's hash; builds made earlier keep their old hash. (6) a validate call with no hash uses an unapproved BUILD record with the same focus when exactly one exists, and otherwise behaves as before; (7) the clients wait up to five and a half minutes for an approve request.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "A tracker tool per type, called by the daemon after approval",
+        "name": "One tracker tool with an implementation per type, called by the daemon after approval and by agents over MCP",
         "oneLineSummary": "The daemon checks the setting and the project's tracker, picks the tool for its type, and passes it everything; the tool encapsulates the flow.",
-        "approach": "Add the one setting and a check (setting on, a supported tracker set up, its type set or inferred from the remote, its repo found from the daemon's registry). Register one tool per tracker type in the daemon's tool registry; the github tool commits and pushes the listed documents, looks the item up by a unique label with a three-answer result, creates, updates, comments on or closes it, and returns the ref. One asynchronous flow function in the daemon builds the tool's inputs from an approved artifact and records the ref; the daemon's approve handler awaits it after the bugfix follow-on. Every surface approves through the daemon, including the TUI, which keeps no logic. This work item covers issue records, standalone stories, their tasks and completion.",
+        "approach": "Add the one setting and a check (setting on, a supported tracker set up, its type set or inferred from the remote, its repo found from the daemon's registry). Add one tracker tool, insrc_tracker, a normal insrc MCP tool any agent can call, with one implementation per tracker type living in the daemon; the github implementation commits and pushes the listed documents, looks the item up by a unique label with a three-answer result, creates, updates, comments on or closes it, and returns the ref. One asynchronous flow function in the daemon builds the tool's inputs from an approved artifact and records the ref; the daemon's approve handler awaits it after the bugfix follow-on. Every surface approves through the daemon, including the TUI, which keeps no logic. This work item covers issue records, standalone stories, their tasks and completion.",
         "pros": [
           "One place for the tracker flow, on every approval surface",
           "A new tracker type is one new tool",
@@ -1126,6 +936,23 @@
       "id": "c35",
       "kind": "prior-artifact",
       "ref": "LLD-38436e90625a83a2-S001 eighth review of 2026-10-06 by the daemon: block, 6 MED premises did not hold; the user decided each and this revision applies the decisions"
+    },
+    {
+      "id": "c36",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-06",
+      "quotedText": "why this delegation? why can't it be registered as a normal tool in claude/codex? or any other coding agent?"
+    },
+    {
+      "id": "c37",
+      "kind": "code",
+      "ref": "src/analyze/context/tool-surface.ts",
+      "quotedText": "READ_ONLY_TOOL_IDS"
+    },
+    {
+      "id": "c38",
+      "kind": "prior-artifact",
+      "ref": "LLD-38436e90625a83a2-S001 ninth review of 2026-10-06 by the daemon: block, 3 MED premises did not hold; the user decided each and this revision applies the decisions"
     }
   ]
 }

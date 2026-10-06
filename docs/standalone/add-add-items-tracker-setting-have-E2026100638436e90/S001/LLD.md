@@ -470,3 +470,25 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**3 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:18:23.972Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| coverage-of-intent | MED | Invariant c7: after this work item 'The TUI makes no git or gh call and decides nothing itself'. | Two TUI service functions the design leaves in place still run gh in the TUI's own process: sync (src/cli/services/workflow.ts:307-309) calls syncTracker, which calls ghAuthOk and ghGetIssueState (src/workflow/tracker/sync.ts:45-53); trackerSetup (workflow.ts:314-316) calls runTrackerSetup, which calls ghAuthOk, ghTokenScopes, ghCreateLabel, ghCreateOrgIssueType and ghCreateProject (src/workflow/tracker/setup.ts:112-268). The design's list of untouched commands ('review, findings, resolve, ack-stale, sync, run') names sync but not trackerSetup, and the invariant's first clause is stated without the 'on approval' limit that section 2.2 uses. [files: src/cli/services/workflow.ts, src/workflow/tracker/sync.ts, src/workflow/tracker/setup.ts] | Narrow the invariant to 'on approving or rejecting an artifact or an amendment the TUI makes no git or gh call', and name trackerSetup beside sync as an untouched command that still runs gh in process; or ask the user whether c27 means those two move to the daemon as well. |
+| error-paths | MED | The error path 'No supported tracker is set up for the project' agrees with the check in section 3.2 on what type 'none' means. | The error path's detection reads: 'The check finds no type set and no remote on a supported host, or the type is 'none' or one no tool is registered for', with response 'skipped'. Section 3.2 says: 'The value 'none', in a repo's entry or in the default entry, is read as 'no type named', so the type is then inferred from the remote', the edge-case table says a 'none' entry with a GitHub remote 'is tracked', and T4 tests that. Today's code is the meaning being retired (src/workflow/config/github.ts:234-236 `if (entry.type === 'none') { return { type: 'none', source }; }`). A builder who follows the error path keeps 'none' as an off switch and fails T4; one who follows 3.2 never produces that error for 'none'. [files: src/workflow/config/github.ts] | Remove 'the type is 'none' or' from that error path's detection, so it reads: no type named and no remote on a supported host, or a named type no tool is registered for. |
+| error-paths | MED | The design states one behaviour for an item whose ref is already on its record (a known ref passed to addOrUpdate). | Section 3.3, 'ADOPTING A KNOWN REF': 'that issue is the item: the implementation reads it, adds the unique label and the hidden id marker if it lacks them, updates the body, leaves the title alone and creates nothing' (T39 tests this). The edge-case table says: 'An item whose ref is on its record is approved again. 'already-exists' with the ref; its body is not changed and nothing is created', and T10 says 'a known ref gives 'already-exists' with no create'. The two disagree on whether the body is updated and on the status returned ('updated' or 'already-exists'). No existing code settles it: the new implementation has its own lookup and create, and the old path (tracker-auto.ts) is not reused. [files: src/workflow/tracker-auto.ts, src/workflow/tracker/github.ts] | State one rule, for example: a known ref whose body already equals the rendered body is 'already-exists' with no edit; otherwise the body is updated and the status is 'updated'. Then align the edge-case row, T10 and T39 with it. |
+
+#### Could not verify (does not block)
+
+_None._

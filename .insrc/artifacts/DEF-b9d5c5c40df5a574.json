@@ -19,460 +19,7 @@
     "schemaVersion": 1,
     "epicHash": "b9d5c5c40df5a574",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "c1",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "src/analyze contains 37 named cap/limit constants that bound how many results a lookup returns.",
-          "evidence": "The evidence neither confirms nor refutes the count of 37; the two probes together show 35 distinct numeric constants under src/analyze, and several of those are not result caps.\n\nBoth greps are repo-wide and truncated at 50, but matches are path-sorted and each list runs past src/analyze (into src/cli and src/daemon), so the src/analyze portion of each is complete for its pattern.\n\n- **Grep 1 (TOP_K / LIMIT / MAX / CAP names):** 26 matches under src/analyze.\n  - 20 are DEFAULT_/MAX_ pairs of LIMIT or TOP_K in ten explore recipes: capability-reuse-check.ts:58-59, config-trace.ts:42-43, db-tables-list.ts:36-37, doc-mention.ts:37-38, import-graph.ts:48-49, manifests-locate.ts:51-52, search-text.ts:39-40, symbol-locate.ts:37-38, test-locate.ts:44-45, usage-example.ts:37-38.\n  - 3 are in planner/schema.ts:42-44 (GOAL_MAX_LENGTH, REASONING_MAX_LENGTH, RATIONALE_MAX_LENGTH).\n  - 3 are in runtimes: data/discovery-objects.ts:56 (FILE_LIST_LIMIT), infra/_shared.ts:90 (DEFAULT_FILE_CAP), infra/discovery-families.ts:53 (SAMPLE_CAP_PER_FAMILY).\n- **Grep 2 (DEFAULT_ / MAX_ prefix):** 30 matches under src/analyze, 9 of them not in grep 1.\n  - concept-resolve.ts:64 (MAX_HITS) and :326 (MAX_DIR_DEPTH).\n  - convention-detect.ts:54 (MAX_REPR_SUBCLASSES) and :57 (MAX_BASE_CLASS_IDIOMS).\n  - data-model-trace.ts:47-49 (MAX_TARGETS, MAX_FIELDS, MAX_TOP_CALLERS).\n  - doc-mention.ts:39-40 (DEFAULT_PREVIEW_CHARS, MAX_PREVIEW_CHARS).\n- **Union:** 26 + 9 = 35, not 37.\n- **Not result caps:** at least 6 of the 35 bound something other than how many results a lookup returns — the three *_MAX_LENGTH string-length limits in planner/schema.ts:42-44, the two *_PREVIEW_CHARS sizes in doc-mention.ts:39-40, and MAX_DIR_DEPTH at concept-resolve.ts:326. That leaves about 29 on a strict reading.\n- **Possible undercount:** the probes only match SCREAMING_CASE names with a digit-leading literal, so caps named differently or assigned from an expression would not appear.\n\nThe premise's direction is confirmed: src/analyze holds a few dozen such caps, spread across the explore recipes and runtimes.",
-          "action": "Re-derive the count with a grep scoped to src/analyze and an explicit inclusion rule, then either correct \"37\" or list the constants by `file:line` so the number can be checked. State whether string-length and preview-size limits (planner/schema.ts:42-44, doc-mention.ts:39-40) and MAX_DIR_DEPTH (concept-resolve.ts:326) count as result caps. If downstream work iterates over this inventory, it should use the enumerated list rather than the bare number.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence supports 35 pattern-matched constants under src/analyze, about 29 of them result caps, but it cannot establish an exact figure: the probes are name-pattern based and the premise's inclusion rule is not stated. No count can be substituted mechanically without inventing a value, so a human needs to choose the inclusion rule. The miscount does not change the prescribed work as long as that work is driven by an enumerated list.",
-            "options": [
-              "Replace the bare count with an enumerated inventory (`file:line` per constant) from a grep scoped to src/analyze, and state the count as the length of that list.",
-              "Soften the premise to an approximate, evidence-backed figure (for example, \"roughly 30 named cap/limit constants across the explore recipes and runtimes\") and name the ten DEFAULT_/MAX_ LIMIT and TOP_K pairs as the core set.",
-              "Keep an exact count but state the inclusion rule explicitly (result-count caps only, excluding the string-length, preview-size and directory-depth limits) and recount against that rule.",
-              "Keep \"37\" only if the author can supply the two or more constants the probes missed (differently named or non-literal caps), with `file:line` for each."
-            ]
-          }
-        },
-        {
-          "claimId": "p2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The literal declaration `const DEFAULT_TOP_K = 30;` exists in src/analyze.",
-          "evidence": "The grep for the literal `const DEFAULT_TOP_K = 30;` matches src/analyze/explore/search-text.ts:39 verbatim, which is inside src/analyze. The constant is used at search-text.ts:68 and search-text.ts:105 (`limit: params.topK ?? DEFAULT_TOP_K`). The only other match is the DEF.md:187 citation itself. Note that DEFAULT_TOP_K is a per-file constant with different values in sibling files (config-trace.ts:42 = 40, import-graph.ts:48 = 15, manifests-locate.ts:51 = 200, test-locate.ts:44 = 20, usage-example.ts:37 = 12), so the value 30 is specific to search-text.ts; the premise only claims the literal exists in src/analyze, which holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "c1",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "Besides named constants, src/analyze applies inline cuts (slice/substring truncation) to item bodies such as document sections, keeping only their beginning.",
-          "evidence": "UNVERIFIABLE from the gathered evidence. The probes were not scoped to the premise's anchor (src/analyze) and two of the three were truncated at the 50-match cap before reaching any production file under src/analyze.\n\n1) grep /\\.slice\\(0,\\s*[A-Z0-9_]+\\)/ (50 matches, TRUNCATED): the only src/analyze hits are test files — src/analyze/__tests__/docs-retrieval.test.ts:35 (`.slice(0, 32)`, an id hash), :286 (`terms.slice(0, 6).join(' ')`, a fixture builder), and src/analyze/context/__tests__/classification-shaper.live.test.ts:181-276, code-shaper.live.test.ts:205-340, data-shaper.live.test.ts:269 (all `haystack.slice(0, 600|800|1200)` inside assertion failure messages). None of these cut an item body such as a document section in production code. The list is alphabetical and stops at src/analyze/context/__tests__/data-shaper.live.test.ts:269, so every non-test src/analyze file sorting after that point was never shown.\n\n2) grep /\\.(substring|substr)\\(0,/ (18 matches, complete): zero hits under src/analyze — all are jetbrains-plugin build reports, MarkerSection.kt:71/115 and vscode-plugin/src/chat/webview-marked.ts:10. So the \"substring\" half of the premise has no support in src/analyze.\n\n3) grep /truncat/ (50 matches, TRUNCATED): all shown hits are design/ and docs/ prose; none is in src/analyze. One (design/analyze-context-builder.md:167) states the shaper has \"no token budget, no summarize-down, no truncation knobs\", which is in tension with the premise but concerns the shaper's design intent, not the inline cuts the premise asserts.\n\nNo handed match shows a production src/analyze site that slices a document-section (or other item) body to its beginning, so the inventory claim is neither confirmed nor contradicted.",
-          "action": "Re-run the probes scoped to the anchor and excluding tests so the cap does not swallow the relevant files — e.g. ripgrep `\\.slice\\(0,` and `\\.substring\\(0,` restricted to src/analyze with `__tests__` excluded — then cite the concrete `file:line` sites that cut item bodies (document sections in particular) in the premise. If no such production site exists, drop or reword the premise, since any work built on removing/replacing those inline cuts would have no target. Also drop \"substring\" from the premise unless a scoped probe finds one: the complete substring/substr probe found none in src/analyze.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence cannot confirm or refute the premise because the probes were repo-wide and capped; no value supported by the evidence exists to write into the artifact, so no artifactEdits are safe. A human should pick how to re-ground the premise once a scoped probe has run.",
-            "options": [
-              "Re-probe scoped to src/analyze (tests excluded) and amend the premise to enumerate the exact file:line sites that inline-cut item bodies, so the inventory is concrete and checkable.",
-              "If the scoped probe finds slice-based cuts only, reword the premise to say 'slice truncation' and remove the 'substring' mention, which the complete substring/substr probe did not find anywhere in src/analyze.",
-              "If the scoped probe finds no production inline cuts on item bodies in src/analyze, remove the premise and re-scope any requirement or story that depends on it to the named constants only."
-            ]
-          }
-        },
-        {
-          "claimId": "p4",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The file src/analyze/classifier/scope-picker.ts exists and decides a request's size (scope) from the request's wording rather than from counts of what it touches.",
-          "evidence": "Existence half is confirmed: `read src/analyze/classifier/scope-picker.ts:1 → FOUND`, the file defines `pickScope` (scope-picker.ts:121, re-exported at src/analyze/classifier/index.ts:28) and is called from src/analyze/orchestrator/driver.ts:194; the artifact's own citation is at DEF.md:188. The behavioural half (\"decides size from the request's wording rather than from counts of what it touches\") is NOT addressed by the evidence: the only read is line 1 (a licence-header comment), and no match shows the decision inputs or the prompt body (`prompts/analyze/scope-picker.system.md`, scope-picker.ts:58). The one relevant hint cuts against a pure wording-only reading: scope-picker.ts:136 logs 'scope-picker: signal gather failed; running without workspace signals', which indicates the picker normally gathers workspace signals in addition to the request text. Whether those signals include counts of touched entities cannot be determined from what was gathered.",
-          "action": "Re-probe before relying on c2's behavioural claim: read the body of `pickScope` (src/analyze/classifier/scope-picker.ts:121-170), the signal-gather step around line 136, and `src/prompts/analyze/scope-picker.system.md` to establish what inputs drive the scope choice. Then either confirm the 'wording, not counts' statement or reword c2 to say the picker is an LLM call over the request text plus gathered workspace signals. The file citation itself is sound and needs no change.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchor resolves and points at the right concept, so the citation line in the artifact stays as-is. Only the behavioural characterisation is unverified, and scope-picker.ts:136 suggests workspace signals are also an input. No verbatim find/replace is safe because the evidence does not show what the signals contain, so the replacement wording cannot be derived from it.",
-            "options": [
-              "Read pickScope (scope-picker.ts:121-170) and the scope-picker system prompt; if signals carry no touch counts, keep c2 as written and record the confirming lines.",
-              "Reword c2 to the part the evidence supports: the file exists, exposes pickScope, and picks scope via an LLM call over the request plus gathered workspace signals (scope-picker.ts:136), without asserting 'not from counts'.",
-              "If the read shows the signals do include counts of touched entities, correct c2 and re-check any Story or constraint in the DEF that builds on the 'wording-only' assumption."
-            ]
-          }
-        },
-        {
-          "claimId": "p5",
-          "ref": "1. Problem",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The picked request size (scope) governs only how many plan steps are produced, and is not consulted when handling or dividing a large result set.",
-          "evidence": "The evidence partly supports the premise but does not establish the word \"only\". Supporting: `src/analyze/planner/validate.ts:59` declares `SCOPE_BAND: Readonly<Record<AnalyzeScope, { lo, hi }>>` and `validate.ts:68` has `focusedLowerBound(scope: AnalyzeScope)`, so scope does set a plan step-count band. No match shows scope being consulted in any result-set handling or partitioning path: the only literal scope comparison is `src/analyze/planner/render-catalog.ts:85` (`: scope === 'XL'`), which is in the planner, and the runtime hits (`src/analyze/runtimes/code/aggregate-report.ts:44`, `runtimes/data/aggregate-report.ts:32`) just copy `args.intent.scope as AnalyzeScope` into the report. Against \"only\": `render-catalog.ts:85` branches on scope while rendering the planner catalog, which is a second use beyond the step count. Limits: the `AnalyzeScope|RequestScope` grep was truncated at the 50-match cap, so the negative half (never consulted for large result sets) is not exhaustively shown; the `maxSteps|MAX_STEPS|stepBudget|stepsFor` probe returned 0 matches, so the step-count mechanism is only visible through `SCOPE_BAND`.",
-          "action": "Soften \"governs only how many plan steps are produced\" to name the uses the evidence shows: the plan step-count band (`SCOPE_BAND`, `src/analyze/planner/validate.ts:59`) and the planner catalog rendering branch (`src/analyze/planner/render-catalog.ts:85`), with scope otherwise passed through to the aggregate reports. Before relying on the negative claim, re-run the `AnalyzeScope` probe without the cap, or scoped to `src/analyze/runtimes` and `src/analyze/orchestrator`, to confirm no result-handling path reads scope. The prescribed change (make result-set handling scope-aware or otherwise complete) still holds either way.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The premise's core claim (scope is not used when dividing or handling large result sets) is consistent with the evidence, but \"only\" is contradicted by the planner catalog branch at render-catalog.ts:85, and the negative is not exhaustively proven because the grep was truncated. This is imprecision that does not change what gets built. No artifactEdits are given because the verbatim artifact text was not supplied, only a paraphrased premise.",
-            "options": [
-              "Reword to: the picked scope is consumed only at planning time (the step-count band in planner/validate.ts SCOPE_BAND and the catalog rendering in planner/render-catalog.ts) and is not consulted when handling or dividing a large result set.",
-              "Keep the wording but add a caveat that scope also selects the planner catalog rendering for XL (render-catalog.ts:85) and is echoed into the aggregate reports, neither of which affects result-set handling.",
-              "Re-run an uncapped AnalyzeScope / intent.scope probe over src/analyze/runtimes and src/analyze/orchestrator first, then state the negative claim with that evidence cited."
-            ]
-          }
-        },
-        {
-          "claimId": "p6",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "CLAUDE.md contains the sentence \"Accuracy is primary; cost is the least priority.\"",
-          "evidence": "The read of CLAUDE.md:11 FOUND the line beginning \"- **Accuracy is primary; cost is the least priority.** When choosing between an accurate-but-expensive path (more LLM calls, bigger context, slower pipeline) and a cheap-but-lossy one, choose accuracy.\" The grep for /Accuracy is primary; cost is the least priority/ returned 12 matches, including CLAUDE.md:11 (the anchored file) and the citing artifact itself at docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md:189 (\"[[c3]] `doc` `CLAUDE.md` — \\\"Accuracy is primary; cost is the least priority.\\\"\"). The quoted sentence appears verbatim in the anchored file, so the citation resolves to the correct file and the correct text.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p7",
-          "ref": "k4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "CLAUDE.md states that calls reaching an LLM provider must be serial (never Promise.all), supporting constraint k4 sourced to c3.",
-          "evidence": "The grep for /Never `Promise.all` anything that reaches an LLM provider/ matched CLAUDE.md:122 verbatim: \"- Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits.\" (the same line is mirrored at AGENTS.md:122). This is exactly the serial-provider rule the premise attributes to CLAUDE.md. The read of CLAUDE.md:117 returned FOUND with no body, but the line-122 grep match is sufficient on its own to confirm the citation.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p8",
-          "ref": "k5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "CLAUDE.md states that structural reference (schemas / catalogs / manifests) goes trailing in a prompt, not the middle, supporting constraint k5 and S004 lc1 sourced to c3.",
-          "evidence": "CLAUDE.md:141 reads: \"7. **Prompt structure: structural reference goes trailing.** Schemas / catalogs / manifests belong at the tail of the prompt, not the middle — recency-weighted attention (especially on the local `qwen3.6:35b-a3b` shaper) hallucinates against mid-prompt structural info.\" Both greps (/structural reference goes trailing/ and /Schemas / catalogs / manifests belong at the tail/) hit CLAUDE.md:141, matching the premise's wording (schemas / catalogs / manifests; trailing, not the middle). The same rule is mirrored at AGENTS.md:141 and echoed in plans/meta-workflow-framework.md:706, src/analyze/context/driver.ts:696 and src/workflow/review/extract.ts:13. The read of CLAUDE.md:137 returned rule 3 (dependency-closure scoping), which is just a nearby line in the same numbered list, not the cited rule; the premise anchors to CLAUDE.md without a line number, so nothing is mis-resolved. The evidence does not show the artifact's k5 / S004 lc1 / c3 linkage itself, only that the cited CLAUDE.md statement exists as described.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p9",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "design/analyze-context-builder.md contains the sentence \"The shaper has **no token budget, no summarize-down, no truncation knobs**.\"",
-          "evidence": "The grep for /no token budget, no summarize-down, no truncation knobs/ matched design/analyze-context-builder.md:167, which reads: \"The shaper has **no token budget, no summarize-down, no truncation knobs**. The project principle (accuracy primary, cost least) dictates: include everything relevant in the shaper's relevance window...\" This is the quoted sentence verbatim, including the bold markers and trailing period. The anchor file exists (design/analyze-context-builder.md:1 → \"# Analyze framework — Context Builder\"). The only other match is the DEF's own citation at docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md:190, which quotes the same sentence.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p10",
-          "ref": "k7",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "design/analyze-context-builder.md (c4) states that every claim in an analysis is grounded in a real exploration output with no invented/hallucinated paths, supporting constraint k7.",
-          "evidence": "The gathered evidence does not show the cited document stating the claim. The only read of the anchor is `design/analyze-context-builder.md:1`, which returns just the title `# Analyze framework — Context Builder`. The grep for /grounded in a real exploration output/ returned 2 matches, neither in the anchor: `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md:94` (the k7 row itself) and `site/analyze.html:61` (\"Every claim is grounded in a real exploration output — a module profile, a symbol locate, a class hierarchy, a doc-constraint enumeration\"). The grep for /hallucinated paths|invented paths|citation-grounded/ returned 50 matches (truncated at cap) with none under `design/`; the listed hits run alphabetically from AGENTS.md, CLAUDE.md and README.md straight into `docs/`, so a `design/` hit would have appeared before the cap. The substance of k7 is confirmed elsewhere: `site/analyze.html:61` (claims grounded in a real exploration output), `site/analyze.html:62` (\"File paths are drawn from the indexed graph — there are no hallucinated paths\") and `README.md:54` (\"every claim anchored to a real exploration output ... paths come from the graph, never hallucinated\"). So the invariant is real, but its attribution to design/analyze-context-builder.md (c4) is unverified from this evidence and probably points at the wrong source; the cited file may still express the idea in different wording that these probes did not match. The constraint itself is unchanged, so nothing built from k7 is affected.",
-          "action": "Re-anchor citation c4 for k7 to a source that verifiably carries the statement (`site/analyze.html:61-62`, optionally `README.md:54`), or read `design/analyze-context-builder.md` in full and cite the specific line that expresses the grounding invariant in its own wording. Do not change the k7 constraint text itself.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The k7 invariant is confirmed by site/analyze.html:61-62 and README.md:54, but the evidence shows no matching statement in design/analyze-context-builder.md (only its title line was read, and neither grep hit that file). The fix is a citation re-anchor, and it needs a human choice of source. No artifactEdits are offered because the c4 citation row's exact text was not in the evidence, so a verbatim unique find string cannot be derived safely.",
-            "options": [
-              "Re-point c4 to site/analyze.html:61-62, which states both halves of k7 verbatim (claims grounded in a real exploration output; no hallucinated paths).",
-              "Keep c4 on design/analyze-context-builder.md, but only after reading the full file and citing the specific line that expresses the grounding invariant in its own wording.",
-              "Add README.md:54 as a second supporting citation for k7 alongside a corrected c4.",
-              "Leave c4 as-is and record an accept-with-note that the design doc is cited as the general context-builder reference, not as the verbatim source of the k7 wording."
-            ]
-          }
-        },
-        {
-          "claimId": "p11",
-          "ref": "4. Assumptions",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The assumption that an oversized result set can be divided, reasoned over part by part and combined without loss is supported by c4 (design/analyze-context-builder.md), which only states the no-truncation invariant.",
-          "evidence": "The evidence does not show what c4 says, so the premise is unverifiable. The only read of the anchor is `design/analyze-context-builder.md:1`, which returns the title \"# Analyze framework — Context Builder\"; no line stating a no-truncation invariant was gathered. The grep for /chunk|partition|map-reduce|in parts|batch/ returned 50 matches (truncated at cap), and none is in `design/analyze-context-builder.md`. The path-ordered listing goes from `CLAUDE.md:242` straight to `design/analyze-framework-code.md:247`, so the anchor document appears to have no divide/partition/combine language at all. The partition-and-aggregate material that was found is in other documents: `design/analyze-framework.md:46` (XL pre-pass partitions the request, with a final cross-partition topology map) and `design/analyze-plan-builder.md:153` (partition pre-pass, then a cross-partition aggregator consuming each child's `report`). Those describe partitioning a request into child Plans, not dividing an oversized result set and recombining it without loss. Nothing gathered establishes that divide, reason per part and combine is lossless, and the absence of matches in the anchor is consistent with c4 not covering it.",
-          "action": "Re-ground the assumption in Section 4. First read the c4 passage in `design/analyze-context-builder.md` and cite its exact `path:line` so the no-truncation invariant is verifiable. Then stop presenting c4 as support for lossless divide-and-combine: either cite a source that actually establishes it, or mark it as an unproven assumption this epic must validate, with an acceptance check that the combined result covers every member of the oversized set.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The gathered evidence neither shows the c4 text nor any divide/combine language in the anchor document, so no evidence-derived find/replace is safe. The remedy is a choice about how the assumption is grounded, which needs a human OK.",
-            "options": [
-              "Keep c4 as the citation for the no-truncation invariant only, with an exact `design/analyze-context-builder.md:<line>` anchor, and restate lossless divide-and-combine as an explicit unproven assumption with its own acceptance check (every member of the oversized set is accounted for in the combined output).",
-              "Additionally cite the existing partition-and-aggregate precedent (`design/analyze-framework.md:46`, `design/analyze-plan-builder.md:153`) as the nearest design analogue, noting that it partitions requests into child Plans rather than result sets, so it is precedent and not proof.",
-              "Promote the assumption to a design decision or risk in the downstream HLD, specifying the combine step and how loss is detected, and remove it from Assumptions.",
-              "Leave the wording unchanged but add the verified c4 line citation and an explicit note that c4 does not cover combination, accepting the gap with a recorded note."
-            ]
-          }
-        },
-        {
-          "claimId": "p12",
-          "ref": "1. Problem",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "Every analyzer lookup (exploration recipe) stops at a fixed result limit unrelated to request size and does not report that results were dropped.",
-          "evidence": "UNVERIFIABLE from the gathered evidence. Both greps hit the 50-match cap ([TRUNCATED at cap]) and were consumed alphabetically by design/, docs/, jetbrains-plugin/, plans/, scripts/, site/ and src/agent/ before reaching any exploration recipe. The only src/analyze hits are test files and are unrelated to result limits: src/analyze/__tests__/docs-retrieval.test.ts:35 (`.slice(0, 32)` on a hash), :286 (`terms.slice(0, 6)` building a fixture body), and src/analyze/context/__tests__/classification-shaper.live.test.ts:181-276 / code-shaper.live.test.ts:205-252 (`haystack.slice(0, 600|800|1200)` in assertion messages). No recipe source under src/analyze was returned by either probe, so neither half of the premise is addressed: (a) that EVERY recipe stops at a fixed limit unrelated to request size, and (b) that none reports dropped results. The only adjacent signals are design docs, not code: design/analyze-framework-code.md:119 shows `code.xref.related-by-embedding` taking a caller-supplied `topK` param (which, if implemented so, would cut against \"fixed ... unrelated to request size\" for that recipe), and design/analyze-framework-code.md:311 / design/analyze-framework-infrastructure.md:394 describe a `truncated: true` warning on closure-overflow / cross-reference-overrun (which, if implemented, would cut against \"does not report that results were dropped\"). The truncation-reporting grep returned zero matches inside src/analyze, but because it was capped before reaching src/, that absence is not evidence of absence.",
-          "action": "Re-run both probes scoped to the anchor (src/analyze, excluding __tests__) so the cap is not consumed by docs/ and design/, then enumerate the exploration recipes and record, per recipe, its limit (constant vs caller-supplied param such as topK) and whether its output carries any dropped-results signal. If any recipe takes a caller-supplied limit or already stamps a truncation flag, narrow the universal \"Every analyzer lookup\" wording in section 1 to the verified subset; if the enumeration confirms it for all recipes, keep the wording and cite the per-recipe limits as grounding.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence neither confirms nor contradicts the universal claim, so no evidence-derived text edit is possible; any rewording would be invented. The premise is a closed-union ('every recipe') claim that needs a scoped per-recipe enumeration before the Problem statement can be kept or narrowed. The prescribed direction (make limits request-aware and report dropped results) is not shown to be wrong by anything gathered, so this is non-blocking imprecision risk rather than a statable build-breaking failure.",
-            "options": [
-              "Re-probe scoped to src/analyze (excluding __tests__) and, if every recipe is confirmed to use a fixed limit with no dropped-results signal, keep the wording and add the per-recipe limits as citations.",
-              "If the scoped re-probe finds recipes with a caller-supplied limit (e.g. the `topK` param documented for code.xref.related-by-embedding) or an existing `truncated` flag, reword section 1 from 'Every analyzer lookup' to the verified subset and list the exceptions.",
-              "Soften the premise now to 'analyzer lookups generally stop at a fixed result limit...' and defer the exact per-recipe inventory to the HLD/LLD, recording the universality as an open question."
-            ]
-          }
-        },
-        {
-          "claimId": "p13",
-          "ref": "1. Problem",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "A lookup that fails outright is surfaced in the analyzer output identically to a lookup that found nothing (errors are swallowed into empty results).",
-          "evidence": "Partially supported, not fully verifiable from the gathered evidence. Supporting: the bare-catch grep shows swallow sites inside the anchor `src/analyze` — `src/analyze/explore/module-profile.ts:168` (`catch { entries = []; }`, an error turned directly into an empty result), `module-profile.ts:180` (`catch { continue; }`), `module-profile.ts:271` (`catch { return 0; }`), `module-profile.ts:243` (`catch { /* file gone */ }`), `src/analyze/explore/concept-resolve.ts:338` and `:354` (`catch { continue; }`), `src/analyze/explore/manifests-locate.ts:247`, `src/analyze/runtimes/infra/_shared.ts:119`, `runtimes/infra/discovery-families.ts:183`, `runtimes/infra/inventory-helm.ts:157`, and `src/analyze/context/driver.ts:818`. Against the blanket wording: the stricter grep for catch-then-return-empty (`return []|{}|null|undefined`) returned 27 matches and NONE are under `src/analyze`; and the status grep shows the analyzer does have a distinct failure channel — `src/analyze/executor/walker.ts:379` (`status: 'failed'`) and `src/analyze/orchestrator/driver.ts:155, 240, 280, 312, 374` (`status: 'failed', error: failure`). So some failures ARE surfaced distinctly from empty results; the 'identical' claim holds only for the swallow sites inside individual explorations/runtimes. The catch bodies for most multi-line sites (concept-resolve.ts:338, manifests-locate.ts:247, _shared.ts:119, discovery-families.ts:183, inventory-helm.ts:157, context/driver.ts:818) were not read, and the bare-catch grep was truncated at its 50-match cap, so the evidence cannot show what those sites return or whether the list is complete.",
-          "action": "Narrow the premise to what the evidence supports: individual exploration/runtime lookups under `src/analyze/explore` and `src/analyze/runtimes` swallow errors in bare `catch` blocks (e.g. `module-profile.ts:168` `catch { entries = []; }`), so those failures are indistinguishable from empty results, while step-level and run-level failures are already reported as `status: 'failed'` (`executor/walker.ts:379`, `orchestrator/driver.ts`). Before the design relies on a full inventory, read the unread catch bodies (concept-resolve.ts:338, manifests-locate.ts:247, runtimes/infra/_shared.ts:119, discovery-families.ts:183, inventory-helm.ts:157, context/driver.ts:818) and re-run the bare-catch grep scoped to `src/analyze` without the match cap. The prescribed direction (distinguish failed from empty) still holds.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The problem statement is directionally right but over-generalised: the evidence shows both swallow sites inside explorations and an existing 'failed' status at walker/orchestrator level. Rewording needs a human OK, and no artifact markdown was supplied to derive a verbatim find/replace from, so only options are offered.",
-            "options": [
-              "Reword the premise to scope it: lookups inside individual explorations/runtimes (e.g. src/analyze/explore/module-profile.ts:168 `catch { entries = []; }`) swallow errors into empty results, whereas step- and run-level failures already surface as status 'failed' (src/analyze/executor/walker.ts:379, src/analyze/orchestrator/driver.ts).",
-              "Keep the wording but add an explicit inventory of the swallow sites it refers to, after reading the unread catch bodies and re-running the bare-catch grep scoped to src/analyze without the 50-match cap.",
-              "Keep the premise as-is and record a note that the existing walker/orchestrator 'failed' status does not cover the in-exploration swallow sites, so the gap the Epic targets is below that channel."
-            ]
-          }
-        },
-        {
-          "claimId": "p14",
-          "ref": "1. Problem",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The analyzer's answer is written to one fixed bundle layout per kind of source, and those layouts themselves bound how many findings may be reported (e.g. maxItems limits in bundle schemas).",
-          "evidence": "The evidence supports the premise only in part, and it does not support the specific example given.\n\n**Fixed layout — supported.** The analyzer's answer is emitted against a single schema, `ANALYZE_CONTEXT_BUNDLE_SCHEMA`, defined at `src/analyze/context/schema.ts:76`. It is used for the final emit at `src/analyze/context/driver.ts:760` and by the synthesizer at `src/analyze/context/synthesizer.ts:126`, `:185` and `:199`. Per-source synthesis prompts exist (`src/prompts/analyze/synthesize.capability.system.md`, `synthesize.infra.system.md`).\n\n**\"maxItems limits in bundle schemas\" — not shown.** The grep for `maxItems: <n>` returned 20 matches and none is in `src/analyze/context/schema.ts`. The only matches under `src/analyze` are `src/analyze/summariser/driver.ts:92` (6), `:98` (8) and `:103` (8), which is the summariser's schema, not the bundle schema. The other matches are in `src/workflow/*`, `src/daemon/tools/builtins/db/index.ts` and live tests, none of which is the analyzer bundle.\n\n**Where the evidence does show bounds on findings.** The synthesis prompts cap what is reported: `src/prompts/analyze/synthesize.capability.system.md:54` (\"name the top 1-2 + explicitly state the gap\") and `src/prompts/analyze/synthesize.infra.system.md:34` (\"Name the top 2-3 recurring `resourceKind` values\"). `plans/docs-module.md:146` also describes a \"no more than 5 sections\" cap for the code/data/infra system prompts.\n\nSo the claim that findings are bounded holds, but the evidence places the bound in the synthesis prompts and the summariser schema, not in the bundle schemas. The problem statement and the change it motivates are unaffected; only the cited mechanism is imprecise.",
-          "action": "Reword the example in \"1. Problem\" so it names where the bounds actually are: the \"top 1-2\" / \"top 2-3\" instructions in `src/prompts/analyze/synthesize.capability.system.md:54` and `synthesize.infra.system.md:34`, and the `maxItems` 6/8/8 limits in `src/analyze/summariser/driver.ts:92-103`. Alternatively, first read `src/analyze/context/schema.ts` to check whether it bounds findings in a form the grep could not match, and cite the exact line if it does. Downstream stories should not assume that removing `maxItems` from the bundle schema is the fix.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The grep found no `maxItems: <n>` in the bundle schema file (`src/analyze/context/schema.ts`). The bounds it did find are in the synthesis prompts and the summariser schema. The premise text I was given may be a paraphrase of the artifact, so I am not proposing a verbatim find/replace; the author should pick the wording.",
-            "options": [
-              "Replace the example with the prompt-level caps: \"(e.g. the 'top 1-2' / 'top 2-3' instructions in src/prompts/analyze/synthesize.capability.system.md:54 and synthesize.infra.system.md:34)\".",
-              "Replace the example with the summariser schema caps: \"(e.g. maxItems 6/8/8 in src/analyze/summariser/driver.ts:92-103)\", and say the bound is in the summariser, not the bundle schema.",
-              "Cite both the prompt caps and the summariser `maxItems` limits, and drop the claim that the bundle schemas themselves carry `maxItems`.",
-              "Keep the wording, but first read src/analyze/context/schema.ts and add an exact `path:line` for a bound there (for example a `maxItems` written in a form the grep missed); if none exists, use one of the options above."
-            ]
-          }
-        },
-        {
-          "claimId": "p15",
-          "ref": "s4/ac2",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The analyzer has exactly seven kinds with their own answer layouts: code, documents, data, infrastructure, mixed sources, rule adherence, and capability discovery.",
-          "evidence": "The evidence confirms six of the seven claimed layouts and does not show the seventh (\"mixed sources\").\n\n- **Six layout keys shown:** `src/analyze/context/driver.ts:1222` declares `synthesizeTarget: 'code' | 'docs' | 'adherence' | 'capability' | 'data' | 'infra'`. That is a closed six-member union with no `'mixed'` member.\n- **Derivation matches the six:** `driver.ts:1216` (\"code shaper + adherence-check -> 'adherence'\"), `driver.ts:1229`, and `src/mcp/analyze-step/synthesizer-key.ts:35-42` (`if (answerType === 'adherence-check') return 'adherence'`) confirm adherence and capability are derived layout keys alongside code, docs, data and infra.\n- **No \"mixed\" anywhere in the hits:** the target grep allowed for `'mixed'`, but none of the 50 returned matches contains it. The neighbouring unions use `'generic'` as the fifth member instead: `driver.ts:1273`, `src/analyze/context/index.ts:68` and `src/analyze/explore/types.ts:628` all read `'code' | 'docs' | 'data' | 'infra' | 'generic'`.\n- **Limits of the evidence:** all three greps were truncated at the 50-match cap, and no probe listed the synthesizer prompt files under `src/prompts`. A mixed-source layout defined elsewhere cannot be ruled out.\n\nOn this evidence, \"exactly seven\" is unverified and leans contradicted (six shown). It is not HIGH because the truncated evidence cannot prove the seventh layout is absent.",
-          "action": "Re-ground the count before approval. Read `src/analyze/context/driver.ts:1216-1235` and `src/mcp/analyze-step/synthesizer-key.ts` in full, and list the synthesizer prompt files under `src/prompts/analyze/`, to enumerate the real layout keys. If no mixed-source layout exists, correct s4/ac2 to the six kinds in the `driver.ts:1222` union (code, documents, data, infrastructure, rule adherence, capability discovery). If one exists, cite its `file:line` in the artifact.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The only closed union of answer-layout keys in the evidence (driver.ts:1222) has six members and no 'mixed'. The evidence is truncated, so the seventh layout can be neither confirmed nor ruled out. A human should choose between correcting the count and citing the missing anchor, so no verbatim artifact edit is emitted.",
-            "options": [
-              "Change s4/ac2 to \"exactly six kinds\" (code, documents, data, infrastructure, rule adherence, capability discovery), matching the synthesizeTarget union at src/analyze/context/driver.ts:1222, and drop \"mixed sources\".",
-              "Keep seven, but add a concrete file:line anchor for the mixed-source layout (synthesizer key or prompt file) once a targeted read of driver.ts / synthesizer-key.ts / src/prompts/analyze confirms it exists.",
-              "Drop the hard count: reword s4/ac2 to say the guidance covers every member of the synthesizeTarget union (single-sourced from driver.ts:1222), so the criterion cannot drift from the code."
-            ]
-          }
-        },
-        {
-          "claimId": "p16",
-          "ref": "s4/ac3",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "The existing answer-layout (synthesizer) prompts do not describe every kind of lookup (exploration recipe) their analyzer can run; the recipe set (documented as 20 recipes) is larger than what the layouts describe.",
-          "evidence": "Only the \"documented as 20 recipes\" half is confirmed: `20 exploration recipes` matches CLAUDE.md:22, CLAUDE.md:68, AGENTS.md:22 and AGENTS.md:68. The core claim — that the synthesizer (answer-layout) prompts under src/prompts do not describe every recipe the analyzer can run — is not addressed by any evidence. The two probes meant to enumerate the recipe set, /recipeId|RecipeId|RECIPES\\s*=/ and /explorationKind|ExplorationKind/, both returned 0 matches, so neither the actual recipe inventory in src/analyze nor the set of lookups named in the synthesizer prompts was gathered. No read of any src/analyze or src/prompts file was supplied. The gap between the recipe set and what the layouts describe is therefore unverifiable; the zero-match probes also suggest the premise's assumed identifier names do not exist in the tree, so the real recipe registry is under a different name.",
-          "action": "Re-ground s4/ac3 before approval: locate the real recipe registry in src/analyze (the probed identifiers recipeId/RecipeId/RECIPES/explorationKind do not exist), enumerate its members, and diff them against the lookups named in each synthesizer prompt under src/prompts. Then state in the artifact the actual recipe count and the specific recipes missing from each layout, with file:line anchors, rather than relying on the \"20 recipes\" figure from CLAUDE.md/AGENTS.md prose.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence confirms only the documented figure (20) and cannot confirm or refute the coverage gap, so no evidence-derived text edit is possible. The premise needs re-probing with the correct identifiers and then a human-approved rewording that names the real recipe set and the missing members.",
-            "options": [
-              "Re-run the probes with the registry's actual identifier names (find the recipe registry in src/analyze first), then rewrite s4/ac3 to list the concrete recipes absent from each synthesizer prompt with file:line anchors.",
-              "Keep the premise but make the acceptance check enumerate the recipe set from the code registry at build time, instead of asserting a fixed gap or the documented count of 20.",
-              "Reword s4/ac3 to cite the 20-recipe figure as a documentation claim only (CLAUDE.md:22, CLAUDE.md:68) and mark the layout-coverage gap as an open item to be established by the story's first task."
-            ]
-          }
-        },
-        {
-          "claimId": "p17",
-          "ref": "s1/ac5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The analyzer's instructions and examples to the planning (decomposer) model state or suggest a fixed number of results to request (e.g. a topK / limit value in prompts or examples).",
-          "evidence": "The topK grep returned 6 matches, all in the decomposer's system prompt, each a worked example carrying a fixed numeric result count: src/prompts/analyze/decompose.system.md:61 (`\"path\": \"<absolute path>\", \"topK\": 15`), :77 (`\"symbolName\": \"<name>\", ... \"topK\": 12`), :91 (`\"pattern\": \"<regex>\", ... \"topK\": 30`), :100 (`\"key\": \"<literal>\", \"topK\": 40`), :105 (`\"subject\": \"<name>\", \"topK\": 20`), :125 (`\"families\": [\"kubernetes\",\"terraform\"], \"topK\": 200`). This confirms the premise that the instructions/examples given to the planning (decomposer) model suggest a fixed number of results to request. The `limit` grep (50 matches, truncated at cap) hit only src/daemon/db and src/db tests and drivers plus src/daemon/tools/builtins/code/class-locate.ts:126 — none under src/prompts or src/analyze — so it neither supports nor contradicts the premise; the fixed-count suggestions shown by the evidence are the six topK examples in decompose.system.md.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p18",
-          "ref": "s5/ac2",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The steering guidance given to coding agents and the per-turn reminder hook both instruct the agent to call the analyzer FIRST for any codebase question before manual Read/Grep/Glob.",
-          "evidence": "The steering-guidance half is confirmed: grep /Do this BEFORE manual/ returned 6 matches, including CLAUDE.md:181, AGENTS.md:181, src/prompts/steering-block.md:24 and vscode-plugin/assets/steering-block.md:24 (\"preferred) or `insrc_analyze` (one-shot, Ollama). Do this BEFORE manual\"), plus two jetbrains-plugin build copies at steering-block.md:24. The per-turn reminder hook half is not confirmed: grep /call insrc_analyze_step BEFORE any Read\\/Grep\\/Glob/ returned 0 matches and grep /FIRST-tool rules/ returned 0 matches, so no hook source carrying that instruction was located in the tree. grep /CALL one of the two insrc analyze tools FIRST/ also returned 0 matches. The evidence neither shows nor contradicts a hook that issues the analyzer-first instruction; that half of the premise is unverifiable.",
-          "action": "Locate the per-turn reminder hook's actual source (the file that emits the UserPromptSubmit reminder text) and cite it as an anchor for s5/ac2, with its real wording. If the hook text is assembled from fragments, generated, or lives outside the repo tree (e.g. installed into the user's settings), state that and anchor to the generator/installer instead. The steering-block anchor (src/prompts/steering-block.md:24) can stand as is.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The steering half is grounded at src/prompts/steering-block.md:24 and its copies. The hook half has no grounded anchor: both literal probes for the hook wording returned 0 matches, so the hook's source file and exact wording are unknown from the evidence. No artifact edit can be derived without inventing a path, so a human or a follow-up probe must pick the anchor.",
-            "options": [
-              "Re-probe with looser patterns (e.g. 'UserPromptSubmit', 'insrc-enabled', 'before manual exploration') to find the hook's source, then add that file:line as an explicit anchor for s5/ac2.",
-              "If the hook text is built at runtime or installed outside the repo, reword the premise to anchor on the generator/installer that writes it rather than on the literal reminder string.",
-              "Narrow the premise to the steering guidance only (src/prompts/steering-block.md:24 and its mirrored copies) and move the hook claim to a separate premise with its own anchor."
-            ]
-          }
-        },
-        {
-          "claimId": "p19",
-          "ref": "s5/ac3",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Workflow steps that ask for analysis-backed evidence (e.g. context.assemble / scope.assess calling for insrc_analyze_step) accept submitted evidence without verifying that an analyzer run produced it.",
-          "evidence": "UNVERIFIABLE from the gathered evidence. All four probes hit the 50-match cap, and every returned match is in documentation, not in the anchored source trees (src/workflow, src/mcp, src/prompts). The /analyze-bundle/ matches are citation lines in docs/epics/**/DEF.md, HLD.md and LLD.md (e.g. add-bugfix-triage-category…/DEF.md:130, HLD.md:246-250). The /insrc_analyze_step/ matches are AGENTS.md:22/70/180/210/222, CLAUDE.md:22/70/180/210/222, README.md:61/96/171, docs/daemon.md and docs/epics/** prose. The /evidenceKind|sourceKind|kind: '…'/ matches are design/analyze-framework*.md and an unrelated resourceKind LLD under docs/standalone/. The /analyzeRunId|runId/ matches are design/*.md and docs/epics/** signatures such as finalizePlan(..., runId, ...), none of which shows an analyzer-run id being checked against submitted evidence. No line from a step runner, the workflow-step MCP handler, a citation validator or a context.assemble / scope.assess prompt was returned, so the evidence neither shows acceptance without verification nor shows a verification check. The docs matches do show 'analyze-bundle' citations recorded as free-text labels (e.g. `s1 structural-map — src/workflow/triage/types.ts:16`) with no run identifier, which is consistent with the premise but is not proof of what the code does.",
-          "action": "Re-run the probes scoped to the anchored source trees so the cap is not exhausted by docs/ and design/ (e.g. rg 'analyze-bundle' src/workflow src/mcp src/prompts; rg 'insrc_analyze_step' src/prompts src/workflow/runners). Then read the context.assemble / scope.assess runners and the citation validation path in the synthesizer or finalize step to confirm whether an 'analyze-bundle' citation is checked against a real analyzer run (run id or server-side state) or only shape-validated. Until that is done, treat s5/ac3's \"accepts without verifying\" as an unconfirmed assumption and do not build on it.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence does not reach the anchored source (every match is in docs/, design/ or the root markdown files, each probe truncated at 50), so no evidence-derived text correction to the artifact exists. The premise may well be true, but confirming it needs a source-scoped re-probe rather than an edit.",
-            "options": [
-              "Re-run the probes restricted to src/workflow, src/mcp and src/prompts (excluding docs/ and design/) and re-judge the premise against the step-runner and citation-validation code.",
-              "Add a path:line read of the context.assemble / scope.assess runner schemas and the synthesizer's citation check to the premise's probes, so the 'no verification' claim is grounded in the actual validation code.",
-              "Keep the premise but mark it in the artifact as an assumption to be confirmed at design time (a back-flow note), with ac3's test conditional on the confirmed current behaviour."
-            ]
-          }
-        },
-        {
-          "claimId": "p20",
-          "ref": "7. References",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The reference source kinds used by the artifact (analyze-bundle, code, doc, stakeholder, step-output) are all valid members of the workflow's citation-kind union, and no text-search evidence kind exists today.",
-          "evidence": "src/workflow/types.ts:443 declares the citation-kind union as `'step-output' | 'analyze-bundle' | 'doc' | 'code' | 'stakeholder' | 'convention' | 'prior-artifact'`. All five kinds the artifact uses (analyze-bundle, code, doc, stakeholder, step-output) are members. The same seven-member enum is repeated in the emit schemas at src/workflow/orchestrator.ts:351, 667, 851, 1019, 1519, 2049, 2538, src/workflow/runners/define/schemas.ts:190 and 290, and src/workflow/runners/issue/schemas.ts:35. None of them contains a text-search member. The grep for /text-search|'grep'/ returned 10 matches, none of which is a citation kind: two are the artifact's own requirement text (DEF.md:34 FR008, DEF.md:182 ac4), one is an unrelated LLD review row (docs/epics/vs-code-editor-dev-chat-ui-E20260926f9563bf5/S001/LLD.md:316), one is a git-log tool input (src/daemon/tools/builtins/git/log.ts:71), and six are `tool: 'grep'` chat test fixtures or labels in vscode-plugin/src/chat/__tests__/markers.test.ts:23, 62, 64 and stream-events.test.ts:30, 40, 101. So no text-search evidence kind exists today, as the premise states.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p21",
-          "ref": "FR009",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Multi-turn analyzer and workflow step responses currently repeat content the caller already has (e.g. re-sending prompts/schemas/prior outputs each turn) rather than only what is new.",
-          "evidence": "The evidence confirms the multi-turn envelopes exist under the anchor but does not show that they repeat content the caller already has. Emit sites: src/mcp/analyze-step/phases/start.ts:109 (emit_plan), plan.ts:155/206 and narrow.ts:204/249 (emit_narrow / emit_bundle); src/mcp/workflow-step/phases/start.ts:94 (emit_plan), plan.ts:72/97 and step.ts:74/99 (emit_step / emit_synthesize); typed at src/mcp/analyze-step/types.ts:77/93/108 and src/mcp/workflow-step/types.ts:89/98/109. plans/mcp-multi-turn-analyze.md:33-43 and :79-102 show each turn carries a `prompt` + `schema`, but those are described as DIFFERENT per turn ('<decomposer system prompt>' + ExplorationPlan schema at :33-35/:82, narrow prompt at :41/:93, '<synthesizer prompt>' + bundle-layers schema at :43/:102) — a new prompt per phase, not a re-send. The `prompt,\\s*schema|schema:` grep (truncated at the 50-match cap) returned no src/mcp line at all, and the `priorOutputs|previousSteps|stepOutputs` grep (also truncated) returned only docs/ matches — no src/mcp read shows a response body embedding prior step outputs, or the same prompt/schema being emitted on consecutive turns (e.g. the repeated emit_narrow at narrow.ts:204 or emit_step at step.ts:74). No `path:line` read of any response-construction body was gathered, so the 'repeat rather than only what is new' claim is neither confirmed nor contradicted.",
-          "action": "Ground FR009 before it drives a design: read the response-construction bodies at src/mcp/analyze-step/phases/narrow.ts:204-260, src/mcp/analyze-step/phases/plan.ts:155-215, src/mcp/workflow-step/phases/step.ts:74-110 and src/mcp/workflow-step/phases/plan.ts:72-105, and name exactly which fields are re-sent across turns (e.g. the same narrow/step schema on each looped emit, or prior step outputs inlined into the synthesize prompt). Cite those lines in the FR, or reword FR009 so the repetition is a thing to be measured rather than an asserted current fact.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The premise is a claim about current behaviour that the gathered probes do not reach: they locate the emit sites but not the payload contents, and both content greps were truncated with no src/mcp hits. No evidence-derived replacement text exists, so no artifact edit is safe; a human needs to choose how to ground or soften the claim.",
-            "options": [
-              "Keep FR009 as written and add citations after reading the looped emit sites (src/mcp/analyze-step/phases/narrow.ts:204, src/mcp/workflow-step/phases/step.ts:74) to name the specific fields that are re-sent each turn.",
-              "Narrow FR009 to the looped turns only (repeated emit_narrow / emit_step), where the same schema or prompt scaffold is the plausible repeat, and drop the unsupported 'prior outputs' example unless a read confirms it.",
-              "Reword FR009 from an asserted current fact to a requirement with a measurement step: first inventory per-turn response content, then return only what is new relative to earlier turns.",
-              "Leave FR009 unchanged and accept it with a note that the repetition is unverified and must be established during the design stage's context assembly."
-            ]
-          }
-        },
-        {
-          "claimId": "p22",
-          "ref": "3. Non-goals",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The general-purpose search primitives the analyzer calls have their own result limits and are also called by callers other than the analyzer, so their limits are shared and not analyzer-only.",
-          "evidence": "Partly confirmed, partly unverifiable. Confirmed: the general-purpose primitives carry their own result limits, outside the analyzer — src/daemon/tools/builtins/search/grep.ts:29 `DEFAULT_LIMIT = 200` (clamped at :67), search/glob.ts:22 `DEFAULT_LIMIT = 500` (:49), search/list-dir.ts:27 `DEFAULT_LIMIT = 500`, search/recent.ts:29 `DEFAULT_LIMIT = 200`, src/db/entities.ts:636 `opts.limit ?? 50`, src/config/search.ts:50 `opts.limit ?? 10`. Non-analyzer callers also exist for vector search: src/daemon/index.ts:1037 and :1193 call `searchEntities(..., limit ?? 10, ...)` from daemon handlers. Not shown: that the analyzer actually calls these primitives. The probe for the call link (`search_(text|code|semantic|graph)|searchText|searchCode|semanticSearch`) returned 0 matches, so no evidence line ties any src/analyze file to grep.ts, glob.ts, entities.ts or searchEntities. The analyzer hits are only its own recipe-level limits (capability-reuse-check.ts:58 `DEFAULT_LIMIT = 5`, db-tables-list.ts:36 `= 40`, doc-mention.ts:37 `= 15`, symbol-locate.ts:37 `= 50`); doc-mention.ts:102 passes `maxResults: params.limit ?? DEFAULT_LIMIT` to an unidentified callee, which hints at a primitive call but does not name it. Nothing contradicts the premise.",
-          "action": "Ground the analyzer→primitive link before relying on this non-goal: name the specific primitives the analyzer recipes call (e.g. the callee receiving `maxResults` at src/analyze/explore/doc-mention.ts:102, and whichever of searchEntities / grep / src/db/entities.ts the recipes import), and cite at least one non-analyzer call site for each (e.g. src/daemon/index.ts:1037, :1193 for searchEntities). Re-run the probe with the real symbol names, since the current pattern matches nothing. The non-goal itself (leave shared primitive limits alone) stays valid either way, so this does not block.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The 'own limits' half is verified and the 'other callers' half is verified for searchEntities only; the 'analyzer calls them' half has no evidence because the probe pattern matched nothing. The fix is to name the primitives and cite them, which needs a human to pick the wording; no verbatim artifact text was supplied, so no safe find/replace can be derived.",
-            "options": [
-              "Keep the non-goal as written and add explicit citations: the primitives' limits (src/daemon/tools/builtins/search/grep.ts:29, glob.ts:22, src/db/entities.ts:636) and the non-analyzer callers (src/daemon/index.ts:1037, :1193), plus the analyzer import/call sites once confirmed.",
-              "Narrow the non-goal to the primitives the evidence does show as shared (searchEntities, called from src/daemon/index.ts:1037 and :1193) and drop the blanket claim about every primitive the analyzer calls.",
-              "Reword to a scope statement that does not depend on the caller claim: 'limits defined outside src/analyze (e.g. src/daemon/tools/builtins/search/*, src/db/entities.ts) are out of scope; only the recipe-level limits in src/analyze/explore/* are in scope'."
-            ]
-          }
-        },
-        {
-          "claimId": "p23",
-          "ref": "c6",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "Session-log tool-call counts show 670 shell search/read commands against 2 analyzer calls in one session, and 274 analyzer calls across 843 sessions; this comes from a step output over session logs, not from the source tree.",
-          "evidence": "Unverifiable from the gathered evidence. The only probe run was a source-tree grep for /insrc_analyze(_step)?/ (50 matches, truncated at cap), and every hit is documentation or design prose: AGENTS.md:22/70/180/209, CLAUDE.md:22/180/209, README.md:34/61/96, docs/daemon.md:483-493, and LLD/HLD/PLAN files under docs/epics/. None of these is a session log or a tool-call tally, so nothing addresses the figures 670 shell search/read commands, 2 analyzer calls in one session, or 274 analyzer calls across 843 sessions. The premise itself says the numbers come from a step output over session logs (anchor: s1 step-output), not from the source tree, so a source-tree probe cannot confirm or contradict them. Nothing in the evidence contradicts the premise either; the matches only confirm that the insrc_analyze / insrc_analyze_step tools exist and are documented as the preferred first step (CLAUDE.md:180-181, docs/daemon.md:493).",
-          "action": "Do not treat the counts as source-verified. Either attach the reproducible tally to the artifact (the command or script run over the session logs, the log location, and the date range that produced 670 / 2 / 274 / 843), or accept the premise with a note that it is grounded only in the s1 step output. The counts are motivation for the epic, not a build target, so the prescribed work does not depend on their exact values.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The figures are empirical measurements over session logs outside the source tree, so no evidence-derived text edit is possible: the probe returned nothing that supports or corrects any of the four numbers. Resolving this needs a human decision on how to ground or qualify the claim.",
-            "options": [
-              "Accept with a note: record that c6 is grounded only in the s1 step output over session logs and was not re-verifiable by source-tree probes.",
-              "Add provenance to the artifact: the exact command or script, the session-log path, and the date range that produced the 670 / 2 / 274 / 843 counts, so the tally can be re-run.",
-              "Soften the premise to a qualitative statement (shell search/read commands far outnumber analyzer calls in the sampled session logs) and move the exact figures to a cited appendix."
-            ]
-          }
-        },
-        {
-          "claimId": "p24",
-          "ref": "6. Stories",
-          "kind": "ordering",
-          "severity": "MED",
-          "premise": "Story dependencies are acyclic and reference only existing stories: s2 depends on s1; s3 on s1 and s2; s4 on s1; s5 on s1 and s4; s1 depends on nothing.",
-          "evidence": "The only gathered evidence is a single grep match: `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md:3:# Epic: make-insrc-analysis-complete-used-right`. This confirms the DEF artifact exists and carries that epic title, but it does not show section 6 (Stories), any of the story ids s1–s5, or their `depends` lists. No line handed to me addresses whether s2→s1, s3→s1,s2, s4→s1, s5→s1,s4, or s1→(none) hold, so the acyclicity and existing-reference claims are neither confirmed nor contradicted. The premise is UNVERIFIABLE from this evidence.",
-          "action": "Re-run the probe against the Stories section of docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md (e.g. grep for the s1–s5 story headings and their depends fields, or read the section 6 line range) and confirm that each depends list matches the premise, references only s1–s5, and forms no cycle. No artifact edit is indicated by the current evidence.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence neither confirms nor contradicts the dependency ordering, so there is no evidence-derived text correction to make. The gap is in the probe (it matched only the epic title line), not demonstrably in the artifact.",
-            "options": [
-              "Re-probe the DEF's Stories section with anchors that hit the s1–s5 story entries and their depends lists, then re-judge this premise.",
-              "Have a human read section 6 of the DEF and confirm the stated dependency graph (s1 root; s2→s1; s3→s1,s2; s4→s1; s5→s1,s4) is acyclic and references only existing stories.",
-              "Accept with a note that the ordering premise was not verified by the deterministic probe."
-            ]
-          }
-        },
-        {
-          "claimId": "p25",
-          "ref": "5. Constraints",
-          "kind": "cross-artifact",
-          "severity": "MED",
-          "premise": "Every constraint id operationalized by an acceptance criterion (k1–k7) is defined in the constraints table, and every reference cited in the body ([[c1]]–[[c7]]) resolves to an entry in References; [[c8]] is listed in References but cited by no assumption, constraint or story.",
-          "evidence": "The only gathered evidence is a single grep match for the artifact marker: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md:1 (`<!-- insrc:artifact DEF-b9d5c5c40df5a574 -->`). This confirms the DEF artifact exists at that path, but no lines from the constraints table (k1–k7), the acceptance criteria, the body citations ([[c1]]–[[c7]]) or the References section ([[c8]]) were returned. The evidence therefore does not address whether every k-id is defined, whether every cited c-ref resolves, or whether [[c8]] is uncited. The premise is UNVERIFIABLE from the evidence handed over.",
-          "action": "Re-run the probe with anchors that hit the content: grep DEF.md for each of `k1`..`k7` (constraints table rows and acceptance-criteria references) and `[[c1]]`..`[[c8]]` (body citations and References entries), then re-judge. If [[c8]] is confirmed as listed in References but cited nowhere, either cite it where it grounds an assumption/constraint/story or drop it from References.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence contains only the artifact marker line, so no text correction can be derived from it; any edit to the k/c ids or the References list would be invented. The cross-reference check needs a probe that reads the constraints table, acceptance criteria and References section.",
-            "options": [
-              "Re-probe DEF.md for k1–k7 and [[c1]]–[[c8]] occurrences and re-judge this premise against those lines",
-              "If the re-probe confirms [[c8]] is uncited, cite it from the assumption, constraint or story it grounds",
-              "If the re-probe confirms [[c8]] is uncited and grounds nothing, remove it from References",
-              "Accept with a note that the id cross-reference was not verified by the deterministic probe"
-            ]
-          }
-        },
-        {
-          "claimId": "p26",
-          "ref": "2. Functional requirements",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The Epic declares nine epic-level functional requirements (FR001–FR009) and sixteen story-level ones distributed 4/2/3/3/4 across S001–S005, each story-level FR tracing to an epic-level FR.",
-          "evidence": "The grep for /E20261006b9d5c5c4:(S\\d{3}:)?FR\\d{3}/ returned 25 matches, all in docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, which equals 9 + 16. Epic-level: DEF.md:27–35 hold FR001–FR009, nine contiguous ids with no gaps. Story-level: S001 has FR001–FR004 at DEF.md:39–42 (4); S002 has FR001–FR002 at DEF.md:46–47 (2); S003 has FR001–FR003 at DEF.md:51–53 (3); S004 has FR001–FR003 at DEF.md:57–59 (3); S005 has FR001–FR004 at DEF.md:63–66 (4). That is 16 story-level FRs in the stated 4/2/3/3/4 distribution. All four anchors resolve: FR001 at :27, FR009 at :35, S001:FR001 at :39, S005:FR004 at :66. The tracing clause is not shown as explicit trace markers in the matched lines, but each story-level FR restates an epic-level one by content (e.g. S001:FR001 at :39 ↔ FR001 at :27; S002:FR001 at :46 ↔ FR003 at :29; S003:FR002 at :52 ↔ FR004 at :30; S004:FR002 at :58 ↔ FR006 at :32; S005:FR004 at :66 ↔ FR009 at :35), so nothing in the evidence contradicts it.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p27",
-          "ref": "k2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Constraint k2 (no token budget, no summarize-down, no truncation; everything relevant included) is a documented invariant of the analyze framework that the current fixed result caps in src/analyze contradict.",
-          "evidence": "Both halves of the premise are confirmed by the gathered evidence. (1) Documented invariant: design/analyze-context-builder.md:167 reads \"The shaper has **no token budget, no summarize-down, no truncation knobs**. The project principle (accuracy primary, cost least) dictates: include everything relevant in the shaper's relevance window\". DEF.md:190 quotes this verbatim as [[c4]], and DEF.md:89 derives k2 from it. (2) Fixed caps in src/analyze: six explore recipes each declare a fixed constant and cut on it — config-trace.ts:42 (`DEFAULT_TOP_K = 40`, used as `limit` at :104), import-graph.ts:48 (15, `.slice(0, topK ?? DEFAULT_TOP_K)` at :165 and :169), manifests-locate.ts:51 (200, `break` at :121), search-text.ts:39 (30, `limit` at :105), test-locate.ts:44 (20, `break` at :150 and :152), usage-example.ts:37 (12, :154). These cuts limit what reaches the shaper, so \"everything relevant\" is not included. One wording nuance, not outcome-changing: the source sentence scopes the invariant to \"the shaper\", while k2 at DEF.md:89 says \"The analyzer\"; the caps sit in the explore recipes upstream of the shaper, so the contradiction is with the include-everything-relevant principle rather than with a shaper knob. The caps are also defaults overridable via `params.topK`, not hard-coded limits.",
-          "action": "none — verified sound. Optional cleanup: k2 (DEF.md:89) could say the invariant is stated for the shaper and extended to the lookups feeding it, to match the wording at design/analyze-context-builder.md:167.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p28",
-          "ref": "s1, s4",
-          "kind": "cross-artifact",
-          "severity": "MED",
-          "premise": "Stories S001 and S004 both declare `Extends: [[c1]]` and S002 declares `Extends: [[c2]]`; c1 is an analyze-bundle over src/analyze and c2 is the scope-picker source file, so the extended surfaces exist in the analyze module.",
-          "evidence": "Partially verified. Confirmed: DEF.md:188 of this epic reads \"- **[[c2]]** `code` `src/analyze/classifier/scope-picker.ts`\", so c2 is the scope-picker source file as the premise says. That file exists (read src/analyze/classifier/scope-picker.ts:1 → FOUND; further matches at :56, :58, :83, :103, :136, :168, :290) and is re-exported from src/analyze/classifier/index.ts:33 and :37. The src/analyze module exists and is populated (src/analyze/orchestrator/driver.ts:190/208/212/228, src/analyze/context/boot-validator.ts:120, src/analyze/context/driver.ts:893). Not addressed by the evidence: the only probe was a grep for /scope-picker/, which returned no line showing S001 or S004 declaring `Extends: [[c1]]`, no line showing S002 declaring `Extends: [[c2]]`, and no line defining c1 as an analyze-bundle over src/analyze. The single DEF.md hit is the c2 citation line only. The story-to-citation mapping and c1's kind and scope are therefore unverifiable from what was gathered.",
-          "action": "Re-run the probe against the DEF itself: grep docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md for `Extends:` and for `[[c1]]`, then confirm that S001 and S004 cite c1, S002 cites c2, and c1 is an analyze-bundle scoped to src/analyze. No change to the artifact is indicated by the current evidence: the extended surfaces (src/analyze and src/analyze/classifier/scope-picker.ts) do exist, so the prescribed work is not at risk on that count.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms the c2 half and the existence of both surfaces, and contradicts nothing. The unverified remainder (the Extends declarations and c1's definition) is artifact-internal text the scope-picker grep never sampled, so no evidence-derived edit can be proposed.",
-            "options": [
-              "Re-probe DEF.md for `Extends:` and `[[c1]]` and re-judge this premise with those lines in evidence",
-              "Accept with a note: both surfaces are verified to exist and c2 is verified; the story-to-citation mapping was not probed",
-              "If the re-probe shows a story's Extends pointing at a different citation, correct that story's Extends line in the DEF to match"
-            ]
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 19,
-        "low": 9
-      },
-      "reviewedAt": "2026-10-06T17:47:44.822Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
@@ -480,7 +27,7 @@
       "audience": "product"
     },
     "flavor": "enhancement",
-    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; a lookup that fails outright reads the same as one that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front by a guess from its wording, not from what it actually touches, and that size governs only how many steps are planned, not how a large result is dealt with. The answer is then written to one fixed layout per kind of source, which suits a structural overview and fits few other questions, and which itself limits how much may be reported. Alongside this, coding agents are told to use the analyzer first for every question about a codebase. Most such questions are plain text lookups, for which the analyzer is slower and no more informative, so agents disregard the instruction altogether, including for the relationship questions where a text lookup gives wrong or partial answers; and the workflow steps that ask for analysis-backed evidence accept evidence that was never produced by an analysis.",
+    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported. Alongside this, coding agents are told, in the guidance they are given and in a reminder on every turn, to use the analyzer first for every question about a codebase. Most such questions are plain text lookups, for which the analyzer is slower and no more informative, so agents disregard the instruction altogether, including for the relationship questions where a text lookup gives wrong or partial answers; and the workflow steps that ask for analysis-backed evidence accept evidence that was never produced by an analysis.",
     "nonGoals": [
       {
         "text": "Reducing what an analysis costs in time or model usage.",
@@ -510,14 +57,14 @@
         "source": "c1"
       },
       {
-        "text": "The number of results a request will touch can be counted before the request is run in full.",
+        "text": "The number of results a request will touch can be counted before the request is run in full; today only the size of the whole repository is counted.",
         "confidence": "med",
         "source": "c2"
       },
       {
-        "text": "A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings.",
+        "text": "A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings, building on the way the framework already runs a large plan as child plans whose results an aggregator combines.",
         "confidence": "med",
-        "source": "c4"
+        "source": "c10"
       },
       {
         "text": "An agent can tell a text lookup from a relationship question from the wording of the question and a short stated test.",
@@ -571,7 +118,7 @@
         "id": "k7",
         "text": "Every claim in an analysis is grounded in a real exploration output, with no invented paths.",
         "type": "invariant",
-        "source": "c4"
+        "source": "c9"
       }
     ],
     "stories": [
@@ -656,12 +203,13 @@
           "s1"
         ],
         "existingCapabilityRefs": [
-          "c2"
+          "c2",
+          "c11"
         ],
         "acceptanceCriteria": [
           {
             "id": "ac1",
-            "given": "a request",
+            "given": "a request, however it reaches the analyzer, including through the tools coding agents use",
             "when": "the analyzer begins work on it",
             "then": "it determines the size of the request from counts of what the request touches, before running the request in full",
             "operationalizes": [
@@ -786,7 +334,8 @@
           "s1"
         ],
         "existingCapabilityRefs": [
-          "c1"
+          "c12",
+          "c13"
         ],
         "acceptanceCriteria": [
           {
@@ -801,7 +350,7 @@
           },
           {
             "id": "ac2",
-            "given": "each kind of analyzer that exists, for code, documents, data, infrastructure, mixed sources, rule adherence and capability discovery",
+            "given": "each answer layout the analyzer has, for code, documents, rule adherence, capability discovery, data and infrastructure, and the older per-source layouts it falls back to",
             "when": "its answer layout is examined",
             "then": "the layout places no limit on how many findings may be reported",
             "operationalizes": [
@@ -878,7 +427,7 @@
           },
           {
             "id": "ac2",
-            "given": "the same guidance and the reminder given on each turn",
+            "given": "the same guidance and the reminder given on each turn, wherever that reminder is maintained",
             "when": "they are read",
             "then": "neither instructs the agent to use the analyzer first for every question",
             "operationalizes": [
@@ -927,10 +476,15 @@
           {
             "statement": "Step responses are not padded with repeated content."
           }
+        ],
+        "existingCapabilityRefs": [
+          "c14"
         ]
       }
     ],
-    "openQuestions": [],
+    "openQuestions": [
+      "The per-turn reminder that tells agents to use the analyzer first is a hook script on the user's machine (~/.claude/hooks/insrc-steering-reminder.sh) and no source for it was found in this repository. Where is it maintained and installed from, so that Story s5 can change it?"
+    ],
     "functionalDefinition": {
       "requirements": [
         {
@@ -1082,13 +636,14 @@
     {
       "id": "c1",
       "kind": "analyze-bundle",
-      "ref": "s1 analyze run of 2026-10-06 over src/analyze: 37 named cap constants and the inline cuts on bodies",
+      "ref": "Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file.",
       "quotedText": "const DEFAULT_TOP_K = 30;"
     },
     {
       "id": "c2",
       "kind": "code",
-      "ref": "src/analyze/classifier/scope-picker.ts"
+      "ref": "src/analyze/classifier/scope-picker.ts",
+      "quotedText": "readonly totalEntityCount: number;"
     },
     {
       "id": "c3",
@@ -1111,7 +666,7 @@
     {
       "id": "c6",
       "kind": "step-output",
-      "ref": "s1: tool-call counts from this project's session logs (670 shell search or read commands against 2 analyzer calls in one session; 274 analyzer calls across 843 sessions)"
+      "ref": "Tool-call counts from Claude Code's session logs for this project (the .jsonl files under ~/.claude/projects/-Users-subhagho-work-projects-insors-insrc/, counted on 2026-10-06 by tallying tool_use entries by name): in the session of that day, 882 shell commands of which 670 were grep, find, sed -n or cat, against 2 insrc_analyze_step calls; across all 843 session files, 12,931 shell commands and 1,032 Grep calls against 228 insrc_analyze_step and 46 insrc_analyze calls. Measured from logs outside the repository; not reproducible from the source tree."
     },
     {
       "id": "c7",
@@ -1124,6 +679,48 @@
       "kind": "stakeholder",
       "ref": "user, 2026-10-06",
       "quotedText": "Analyzer should scope the size the of the request - Have plans for handling different sizes. - Check the analyzer output template, there are different types of analyzers that were developed."
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "site/analyze.html",
+      "quotedText": "Every claim is grounded in a real exploration output"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "design/analyze-plan-builder.md",
+      "quotedText": "its terminal aggregator's output becomes the value materialized at"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/mcp/analyze-step/phases/start.ts",
+      "quotedText": "const scope  = input.scope  ?? 'M';"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/analyze/context/driver.ts",
+      "quotedText": "const synthesizeTarget: 'code' | 'docs' | 'adherence' | 'capability' | 'data' | 'infra' ="
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/prompts/analyze/synthesize.code.system.md",
+      "quotedText": "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/prompts/steering-block.md",
+      "quotedText": "Do this BEFORE manual"
+    },
+    {
+      "id": "c15",
+      "kind": "convention",
+      "ref": "~/.claude/hooks/insrc-steering-reminder.sh, the per-turn reminder: a hook script installed on the user's machine; no copy of it was found in this repository's source",
+      "quotedText": "inject a reminder so the model"
     }
   ]
 }

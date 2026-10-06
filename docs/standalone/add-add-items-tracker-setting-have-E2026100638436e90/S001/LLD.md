@@ -474,3 +474,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:49:51.318Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| error-paths | Every party that waits on an approve request waits longer than the 5 minute tracker budget, so an approval is never shown as failed while the daemon is still working. | Verified for the four socket clients the design names and for the daemon server (no timer in any). Not verifiable from the repo: the outermost waiter on the chat path is the coding agent's own MCP client calling insrc_workflow_approve, whose per-tool-call time limit is set by Claude Code / Codex, not by this code. A search for `tool_timeout_sec\|MCP_TOOL_TIMEOUT\|MCP_TIMEOUT` across the repo found nothing, so the installer and docs do not raise or state it. The existing review tools already hold one MCP call for 10-30 minutes, which suggests it works under Claude Code, but nothing here shows the same for Codex. [files: src/mcp/daemon-stream.ts, src/mcp/server.ts] | State in section 3.4 that the agent's MCP tool-call limit is a fifth waiter, and either confirm each supported agent's limit exceeds 5.5 minutes or document the setting the user must raise; the steering text for a timed-out approve should say the approval may already be recorded and to check the pending list. |

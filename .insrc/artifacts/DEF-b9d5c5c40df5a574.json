@@ -811,6 +811,11 @@
       "reviewedAt": "2026-10-06T18:11:35.661Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-06T18:25:49.488Z",
+    "reviewOverride": {
+      "reason": "User decision of 2026-10-06 (option B): approve past the findings the daemon reviewer could not verify. Of 21 MED in the second review, 8 are unverifiable because the reviewer's evidence grep stops at 50 matches (src/workflow/review/probe.ts:27) and was consumed by docs/ and design/ before reaching src/analyze, and 7 because no probe was run at all for internal-consistency premises. The verifiable findings of both reviews were applied (cap inventory by file:line, six layouts not seven, scope picker inputs, citation anchors, constraint k2 narrowed, the reminder hook recorded as an open question); the remaining MED are 'exclusivity not proven' notes the reviewer itself marks non-blocking.",
+      "at": "2026-10-06T18:25:49.488Z"
     }
   },
   "body": {

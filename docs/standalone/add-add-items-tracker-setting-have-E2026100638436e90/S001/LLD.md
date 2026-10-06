@@ -475,3 +475,25 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 1 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:15:49.941Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| error-paths | MED | A client time limit above 5 and a half minutes is enough that an approval is never shown as failed while the daemon is still working, because the flow has a 5 minute budget. | By the design's own numbers the budget does not bound the request. The budget is checked only 'Before each item', an item in progress is not cut off ('nothing is cut off mid-item beyond the 30 second limit of the call in progress'), and 'one item is about eight calls' each with 'a 30 second limit'. An item started just inside the budget can therefore run about 4 more minutes, for roughly 9 minutes in the flow alone. The approval gates, the BUILD-record step and the bugfix follow-on (src/daemon/index.ts:652-675) and the 10 second sign-in check also run in the same request outside the budget. No client arms a timer today (src/shared/ipc-client.ts:46-84, src/mcp/daemon-stream.ts:204-238), so nothing breaks now, but the stated safe limit is wrong and T34 would lock it in. [files: src/shared/ipc-client.ts, src/mcp/daemon-stream.ts, src/daemon/index.ts] | Either check the budget before every git/gh call so an item stops at the budget plus one 30 second call, or restate the bound as budget + one item's worst case + the pre-flow steps, and use that figure wherever 5 and a half minutes appears (section 3.4 and T34). |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | Decision c27 ('no logic in TUI, should always call the daemon') is satisfied by moving only approve, reject and the two amendment decisions, while tracker setup, sync, review, resolve and ack-stale stay in the TUI's process. | The code matches what the design admits: src/cli/services/workflow.ts:307-316 still runs `syncTracker(repoPath, epicHash)` and `runTrackerSetup(repoPath, opts)` in process, and :190, :241 and :259 run resolveReviewFinding, reviewArtifactFile and ackStaleArtifact in process. Whether the user's c27 was meant to cover only approval decisions cannot be settled from the repo; the quote itself is unqualified, and tracker setup is 'not part of either design'. [files: src/cli/services/workflow.ts] | Confirm with the user that tracker setup (gh in the TUI process) and the in-process review/resolve/ack-stale commands are intentionally outside c27, and record that as a decision reference. |

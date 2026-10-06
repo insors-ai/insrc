@@ -470,3 +470,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T12:56:18.097Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | HIGH | ghEnsureMilestone and ghAttachMilestone can be deleted in this work item (section 3.3, migration step 2) while 'the three epic push functions ... are unchanged' (Backward compat). | Both helpers are still imported and called by the push functions this design leaves in place: src/workflow/tracker-auto.ts:40-41 imports `ghAttachMilestone` and `ghEnsureMilestone`; :140 `if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(...); ghAttachMilestone(...); })` in autoPushEpicOnHld; :214 `ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug)` in autoPushStoryOnLld. The companion design removes those functions, not this one, and this one is built first. Deleting the helpers at step 2 leaves tracker-auto.ts importing names that no longer exist, so the build fails to compile, or the push functions must be edited, which contradicts 'unchanged'. [files: src/workflow/tracker/github.ts, src/workflow/tracker-auto.ts] | Move the deletion of the two milestone helpers to the companion design, alongside the removal of the three push functions; or state here that the two milestone calls and imports in tracker-auto.ts are removed in step 2 and drop the claim that the push functions are unchanged. |
+
+#### Could not verify (does not block)
+
+_None._

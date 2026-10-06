@@ -87,7 +87,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 | ID | Type | Text | Source |
 | :--- | :--- | :--- | :--- |
 | `k1` | stakeholder | Accuracy is primary and cost is the least priority; a cheaper path is valid only when it preserves accuracy. | [[c3]] |
-| `k2` | invariant | The analyzer has no token budget, no summarize-down and no truncation knobs; everything relevant is included. | [[c4]] |
+| `k2` | invariant | The context builder's shaper has no token budget, no summarize-down and no truncation knobs, and includes everything relevant; this Epic holds every analyzer lookup and answer layout to the same rule. | [[c4]] |
 | `k3` | stakeholder | No analyzer result may be reduced without the result saying so. | [[c5]] |
 | `k4` | convention | Calls that reach a model are made one after another, never in parallel. | [[c3]] |
 | `k5` | convention | Schemas, catalogs and other structural reference go at the end of a prompt, not the middle. | [[c3]] |

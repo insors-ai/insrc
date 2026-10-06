@@ -458,3 +458,25 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c39]]** `prior-artifact` `LLD-38436e90625a83a2-S001 tenth review of 2026-10-06 by the daemon: block, 2 MED premises did not hold (a fifth caller of the TUI approve; focus compared without trimming); this revision applies both`
 - **[[c40]]** `stakeholder` `user, 2026-10-06` — "we alrady resolved this, the daemon resolves repo from path and registered repos"
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 1 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:45:09.384Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | The TUI approve command accepts a relative path today (`insrc workflow approve docs/...`) and resolves it against its working directory (gates.ts:973-990). | jsonPathForMd finds the repo root with repoRootFromDocsPath (gates.ts:1014-1021), which searches for `/docs/epics/` or `/docs/standalone/` WITH a leading slash. A bare `docs/standalone/.../LLD.md` has no such segment, so it returns undefined and jsonPathForMd throws 'Path is not under docs/epics\|standalone/' (gates.ts:992-996). Only `./docs/...` resolves today. The path in docs/workflow.md:133 (`docs/defines/DEF-<h16>.md`) is the old layout and fails the same way. The design's new behaviour (make the path absolute in the TUI before sending) is unaffected and fixes this case. [files: src/workflow/gates.ts, docs/workflow.md] | Correct the sentence in 3.4: a bare `docs/...` path is refused today; the TUI service will resolve any typed relative path with path.resolve against its working directory, which is new behaviour, not 'exactly as it resolves today'. Keep T19's relative-path case. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| change-sites | Each client's wait for an approve request can be found and raised above the 5 minute budget at the listed sites (src/mcp/daemon-stream.ts, src/cli/client.ts, the VS Code panel client, DaemonGateway.kt). | The session tool server's unaryRpc (src/mcp/daemon-stream.ts:204-238) sets no timer at all, and the TUI's rpc is a re-export from src/shared/ipc-client.ts (src/cli/client.ts:6), which also has no timeout, so neither needs raising; the TUI's real site is shared/ipc-client.ts, not cli/client.ts. I searched vscode-plugin/src and the JetBrains daemon package for timeout settings on the request path and found none, but did not locate and read the two plugins' socket clients, so their limits are unconfirmed. [files: src/mcp/daemon-stream.ts, src/cli/client.ts, src/shared/ipc-client.ts] | During the build read the VS Code daemon client behind docs-review-client.ts and the JetBrains rpc.call implementation; name src/shared/ipc-client.ts in the call sites in place of, or beside, src/cli/client.ts. |

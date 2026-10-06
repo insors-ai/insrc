@@ -400,3 +400,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c38]]** `prior-artifact` `LLD-38436e90625a83a2-S001 ninth review of 2026-10-06 by the daemon: block, 3 MED premises did not hold; the user decided each and this revision applies the decisions`
 - **[[c39]]** `prior-artifact` `LLD-38436e90625a83a2-S001 tenth review of 2026-10-06 by the daemon: block, 2 MED premises did not hold (a fifth caller of the TUI approve; focus compared without trimming); this revision applies both`
 - **[[c40]]** `stakeholder` `user, 2026-10-06` — "we alrady resolved this, the daemon resolves repo from path and registered repos"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T10:31:43.387Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| coverage-of-intent | MED | A TUI approve request can carry only the artifact path, and the daemon will find the registered repo from that path (c26, c40), for every path the TUI accepts. | src/cli/command.ts:223 passes the typed argument verbatim: `svc.workflow.approve(rest[0], true, override)`; the usage is `workflow approve <path>`, the tests use the relative 'docs/plans/PLAN-x.md', and docs/workflow.md:133 shows `insrc workflow approve docs/defines/DEF-<h16>.md`. Today a relative path is resolved in the TUI's own process, against its working directory (jsonPathForMd, gates.ts:973-990, returns a `.json` path unchanged). Registry containment is a prefix match on absolute paths (repoContainingCwd, src/db/repos.ts:233-241: `cwd === r.path \|\| cwd.startsWith(r.path + sep)`), so a relative path sent to the daemon matches no repo and is refused, or is read against the daemon's working directory. The design's T7 asserts the request carries 'the path and the override reason, and nothing else'. The command context does have the selected repo (`ctx.repoPath`, command.ts:23), but the design never says the TUI makes the path absolute. I did not run the TUI to confirm which relative forms users rely on. [files: src/cli/command.ts, src/db/repos.ts, src/workflow/gates.ts] | State that the TUI approve service (or the approve command) resolves a relative path to an absolute one against the selected repo before sending, add that to T19, and say what the daemon answers for a relative path from any client. |
+
+#### Could not verify (does not block)
+
+_None._

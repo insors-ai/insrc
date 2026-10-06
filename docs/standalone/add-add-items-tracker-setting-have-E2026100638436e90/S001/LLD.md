@@ -470,3 +470,23 @@ The flow also handles an HLD, an LLD under an epic and a plan under an epic, rep
 - **[[c41]]** `stakeholder` `user, 2026-10-06` — "add both to this work item."
 - **[[c42]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001, the epic tracker design, and its second daemon review of 2026-10-06, which showed that the common part defined here needed a comment-key map, a per-task close record, type and link inputs, a reopen action, the review comment and a changed amendment-approve answer`
 - **[[c43]]** `stakeholder` `user, 2026-10-06` — "it's A. Revise it in place, first (my recommendation)."
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T13:23:29.491Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | Every user decision quoted in the references (c9-c20, c25-c28, c31-c33, c36, c40, c41, c43) is designed, and the quotes are what the user actually decided. | Globbed .insrc/artifacts/*38436e90*: the only artifact under this hash is LLD-38436e90625a83a2-S001.json. There is no ISSUE, DEF or SPEC upstream, so the stakeholder quotes exist only inside the design itself and cannot be checked against a source. Reading the design against its own quotes, each one has a counterpart (one setting default on; type named or inferred; daemon-side flow; tool per type; marker plus unique label; 5 minute budget; close on BUILD approval; backfill; reject and amendment decisions moved). [files: .insrc/artifacts/LLD-38436e90625a83a2-S001.json] | No design change. The approver should confirm the quoted decisions are theirs, since no upstream record exists to check them against. |

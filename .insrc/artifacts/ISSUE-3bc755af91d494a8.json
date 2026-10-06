@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791268109080-h5pf2s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-06T06:28:55.595Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 26514,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "3bc755af91d494a8",
+    "epicSlug": "completing-story-accepts-any-existing-code",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Completing a Story accepts a code review that is older than the build it completes",
+    "reproduction": "Found by reading the gate, raised by the daemon's code review of ISSUE-1716f77b on 2026-10-05; not yet seen in a real run. To trigger it: 1. Build a Story and run its code review, so a code-review record exists for it. 2. Change the Story's code again: rebuild it, or build a later task of the same plan. 3. Approve the Story's BUILD record without running a new code review. Observed (by reading the code): the approval succeeds, because a code-review record for the Story exists and names the other party as reviewer. Expected: completion requires a code review of the build being completed; a review that predates the latest build work does not satisfy it.",
+    "rootCause": "The gate check for a BUILD record, otherPartyReviewGap in approveArtifactByJsonPath, reads the code-review record that sits beside the BUILD record and tests two things only: that the record can be read, and that its reviewer party differs from the build's author party. It never compares the review with the build: not the review's creation time against the BUILD record's last update, and not the files the review covered against the build's change log. Before ISSUE-1716f77b a missing code review withheld completion only when enforcement was on; the rule is now unconditional, so the fact that any old record satisfies it matters more.",
+    "fixIntent": "The completion rule should be satisfied only by a code review of the build being completed. A review that is older than the latest build work on the Story, or that did not cover it, should withhold approval with a reason that says the review is out of date, and an override reason should still approve past it. Cover it with a test that reviews a Story, changes the build afterwards, and asserts approval is withheld until a new review exists."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts",
+      "quotedText": "reviewer = reviewerPartyOf(cr.meta);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts",
+      "quotedText": "summary: 'completion requires a code review; none was run',"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "CR-1716f77ba9ba017b-S001"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-1716f77ba9ba017b-S001"
+    }
+  ]
+}

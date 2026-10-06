@@ -386,3 +386,25 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**3 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:10:06.376Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The branch in epicKeyFor at start.ts:123 'only picks a trace key for the three names' and can be deleted. | src/mcp/workflow-step/phases/start.ts:121-127: `if (workflow === 'design.epic' \|\| workflow === 'design.story' \|\| workflow === 'plan' \|\| workflow === 'build' \|\| workflow === 'tracker.push' \|\| workflow === 'tracker.sync' \|\| workflow === 'tracker.post') { const h = params['epicHash']; assertEpicHash(...); return h; }`. Line 123 holds three alternatives of a condition shared with design.epic, design.story, plan and build. Deleting the branch as written would send those four to `deriveSlug(focus)` and drop their epicHash check. [files: src/mcp/workflow-step/phases/start.ts] | Reword section 3.6: remove the three names from the condition at start.ts:121-123 and keep the branch for design.epic, design.story, plan and build. |
+| change-sites | MED | The backfill request's contract supports what migration step 10 and test E25 require: running the backfill for one of the two already-pushed epics. | The issues design's section 3.6 says: 'backfill takes a repo and runs the flow on those items one at a time'. This design's section 3.7 extends the same list to epic kinds ('approved and not tracked') and adds no epic parameter. E25 says 'run the backfill for one of them'; step 10 says 'run the backfill on the user's go-ahead' and is marked non-rollbackable. This repo has 31 Define records under .insrc/artifacts, and only two carry an epicRef (DEF-185807ba9a6b35d3 and DEF-6d6cfaf9a9b14bd4). A repo-wide backfill as specified would therefore create epic, story and task issues for every other approved epic, and close the finished ones, not adopt one epic. [files: docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, .insrc/artifacts/DEF-185807ba9a6b35d3.json, .insrc/artifacts/DEF-6d6cfaf9a9b14bd4.json] | Give pending and backfill an optional epic hash (or item) scope in section 3.7 and in the issues design's request, and state it in E23, E24 and E25. Otherwise state plainly that step 10 creates items for every approved epic in the repo, and change E25 to match. |
+| tests | MED | Every behaviour a test subject asserts is designed; in particular E17's review comment 'for DEF, HLD, LLD and plan in both flows' has a matching entry for each kind. | Section 3.2's Define entry lists the title, body, three labels, item type, where the ref is stored and re-approval. It names no review comment, while the HLD, story design and plan entries each do. The issues design's rule reads: 'When the approved design or plan carries a review, the flow adds one comment', which does not name a Define. The old code never posted a Define's review: postReviewComment is called only with the HLD, LLD and plan paths (src/workflow/tracker-auto.ts:156, :231, :284). E17 nonetheless asserts a review comment for DEF. Section 3.4's seeding also marks a 'review key' as posted on any record with a ref and pushedAt, which includes the two pushed Defines. [files: docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, src/workflow/tracker-auto.ts] | Decide whether a Define's review is commented on the epic item. If yes, add it to the Define entry in section 3.2 with its key. If no, remove DEF from E17 and say the seeding applies to HLD, LLD and plan records only. |
+
+#### Could not verify (does not block)
+
+_None._

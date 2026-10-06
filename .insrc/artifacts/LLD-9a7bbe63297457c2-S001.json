@@ -26,7 +26,216 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive story that extends an already approved design (LLD-38436e90625a83a2-S001) to the epic kinds; reuses its setting, check, tool and flow; real design choices and several build tasks.",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of the seven user decisions cited in c9 has a designed entry, and nothing the decisions drop (milestones, label-pair adoption, the three tracker workflows) is still built.",
+          "evidence": "Mapped each decision to the design and checked the code side it rests on. Epic on Define approval and story on LLD approval: section 3.2. Close and reopen: section 3.3. Amendment comment and body rewrite: section 3.2, with renderTrackerAmendmentSummary present at src/workflow/tracker/conventions.ts:243. Workflows retired with sync as a tool request: sections 3.6 and 3.7. Adoption by recorded ref only: section 3.4, which drops the ghFindIssueByLabels call at src/workflow/tracker-auto.ts:122-123. Milestones dropped: ghEnsureMilestone and ghAttachMilestone are called only from tracker-auto.ts:140 and :214, so deleting them with the push functions leaves no caller. The decisions themselves are known only from the design's own citation; there is no separate upstream record to read.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three push functions are synchronous, are called in production only by the TUI approve, adopt an epic by the label pair, and post design and review comments while recording only refs and pushedAt.",
+          "evidence": "src/workflow/tracker-auto.ts:102, :165 and :245 declare the three functions. The only non-test callers are src/cli/services/workflow.ts:161-163. Label-pair adoption is at tracker-auto.ts:122-123, comments at :155-156, :230-231 and :284, and the meta patch at :148 writes `{ epicRef, pushedAt, labelsCreated? }` only. Three line references in section 3.2 have drifted: the epic title is built at :133-134 (cited :131-133), the story title at :201-202 (cited :194-196), and the task title and body at :300-305 (cited :284-290). The behaviour described is correct.",
+          "action": "Optionally correct the three drifted line references.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "renderEpicBody never reads story refs today; only updateEpicTaskList writes the linked form; its callers are autoPushEpicOnHld and the tracker.push context.",
+          "evidence": "src/workflow/tracker/conventions.ts:98 has the signature `(define, epicSlug, repo?, workflowId?)`, and :114-117 push `- [ ] ${s.id}: ${s.title}${size}` for every story. updateEpicTaskList at :154-169 writes `- [ ] #${num} — ${storyId}: ${storyTitle}`. Callers are tracker-auto.ts:138 and src/workflow/runners/tracker/context.ts:47; tests are in src/workflow/tracker/__tests__/tracker.test.ts:97-116 and :196-201.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "recordResolution commits and then posts a gh comment gated only on resolveGithubConfig; the only caller that comments is resolve_question; the daemon's review-comment handler passes commit: false and commits once itself.",
+          "evidence": "src/workflow/questions.ts:424-427 calls commitAndComment unless `opts?.commit === false`. commitAndComment at :460-480 calls `resolveGithubConfig(repoPath)` then `ghComment(cfg.owner, cfg.repo, trackerRef, summary)` at :474-476. trackerRef comes from epicRef at :317 and :329 and storyRef at :340; resolvedAt is stamped at :408. The only direct caller is src/mcp/workflow-step/phases/resolve-question.ts:78, inside an async handler. src/workflow/resolve-comment.ts:182 passes `{ commit: false }` and commits once at :208-222. RecordResolutionFn is `typeof recordResolution` at :44, so adding an optional result field keeps the seam's call shape.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "syncTracker is synchronous, gated on resolveGithubConfig plus ghAuthOk, writes only epicStatus, storyStatus and lastSyncedAt, and is called in process by the TUI.",
+          "evidence": "src/workflow/tracker/sync.ts:24 is `export function syncTracker(repoPath, epicHash): SyncResult`. The gate is at :36-46, and :56 patches `{ epicStatus, storyStatus, lastSyncedAt }`. Callers are src/cli/services/workflow.ts:308, the service type at src/cli/services/index.ts:66 (a non-Promise SyncResult), and src/cli/command.ts:244, which is not awaited. Today's skip reason is 'Epic not pushed yet (no epicRef in meta.tracker)'; the design's 'the epic is not tracked' is a wording change, not the current text.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.5",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An extend adds the story to the Define without clearing its approval and files the amendment as pending; rejecting the amendment does not remove the story.",
+          "evidence": "src/workflow/gates.ts:172-186: appendStoryToDefine spreads the existing define and replaces only body.stories; its doc comment says it 'PRESERVES `meta.approvedAt`'. src/workflow/orchestrator.ts:1325 calls it, and :1328-1344 propose a 'storyBoundary.addStory' amendment with `status: 'pending'`. rejectAmendment at src/workflow/amendments/store.ts:122-143 only changes the amendment record's status and never touches the Define.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every part of the common flow this design relies on by name is defined in the issues design (LLD-38436e90625a83a2-S001) with the stated shape, and none of it already exists in code.",
+          "evidence": "The issues design's section 3.3 defines linkUnder, itemType, the implementation's own create returning ref and numeric id, adoption of a known ref, reopen(ref), state(ref) ('this design does not call it, and the companion design's sync request does'), creation of every passed label including a third epic:<slug>, and the sync request. Its section 3.4 defines the 5 minute budget, the comments map with all five key forms including the question key, taskClosedAt, and patchTrackerMeta's key-by-key merge and remove list. Its section 3.5 defines the `{ record, tracker }` answer. In code none of this exists: TrackerMeta at src/workflow/tracker/refs.ts:24-37 has none of the new fields, patchTrackerMeta at :94 is a shallow merge, src/daemon/index.ts has no 'workflow.amendment.approve' or tracker handler, and no insrc_tracker tool is registered. Reference c1 calls the issues design 'approved', but its record (.insrc/artifacts/LLD-38436e90625a83a2-S001.json) currently has no approvedAt (review verdict 'warn', reviewed 2026-10-06T13:49:51Z). Section 3.1 and migration step 1 already say it must be approved again.",
+          "action": "Reword reference c1 so it does not say the issues design is approved now.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing gh helpers have the shapes the design says make them unsuitable: ghLinkSubIssue is synchronous, ghCreateIssueTyped retries untyped after any error, and there is no reopen helper.",
+          "evidence": "src/workflow/tracker/github.ts:177-179 is `export function ghLinkSubIssue(owner, repo, parentRef, childId: number): void`. At :164-169 the typed create sits in `try { ... } catch { /* org may not have issue types — fall through untyped */ }`. ghGetIssueState at :204 is synchronous and returns `{ state, labels }`. The file has ghCloseIssue at :199 and no reopen function. epicMembershipLabel at src/workflow/tracker/conventions.ts:38-45 bounds a label to 50 characters with a 6-character hash, as cited.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The removal inventory for the three workflow names and the deleted functions covers every source site.",
+          "evidence": "A repo-wide search for the three names, the two chain action kinds and tracker-auto found 29 files outside approved design history. Every source file is in the design's list: types.ts:82-84, orchestrator.ts:179-181, :297-299, :439-441 and :2648 onward, synthesizer.ts:171-173, storage.ts:818, artifacts/tracker.ts, runners/tracker/index.ts and context.ts, workflow/index.ts:19 and :34, mcp/server.ts:420-460, start.ts:123, chain.ts:76-77, :294-308 and :374-375, the five named tests, steering-block.md:297, and the listed docs and site pages. linkDocsToIssues is called only at orchestrator.ts:2856. Two unlisted mentions do not need a code change: a comment at jetbrains-plugin/.../workflow/WorkflowChainReader.kt:42 and one mention in docs/artifact-document-template-review.md.",
+          "action": "Optionally add the two unlisted mentions to the inventory so the build's search comes back clean.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The branch in epicKeyFor at start.ts:123 'only picks a trace key for the three names' and can be deleted.",
+          "evidence": "src/mcp/workflow-step/phases/start.ts:121-127: `if (workflow === 'design.epic' || workflow === 'design.story' || workflow === 'plan' || workflow === 'build' || workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') { const h = params['epicHash']; assertEpicHash(...); return h; }`. Line 123 holds three alternatives of a condition shared with design.epic, design.story, plan and build. Deleting the branch as written would send those four to `deriveSlug(focus)` and drop their epicHash check. [files: src/mcp/workflow-step/phases/start.ts]",
+          "action": "Reword section 3.6: remove the three names from the condition at start.ts:121-123 and keep the branch for design.epic, design.story, plan and build.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three entry points named for the retired-name answer are the complete set that accepts a workflow name.",
+          "evidence": "src/mcp/server.ts:472 and :871 are both `workflow: z.enum(WORKFLOW_NAMES)`. src/daemon/workflow-rpc.ts:664 is in parseParams, which prepareWorkflowRun calls at :402; src/daemon/workflow-run-registry.ts:95-96 uses prepareWorkflowRun for 'workflow.run.start', so the async start shares the check. The TUI's `workflow run <workflow>` (src/cli/command.ts:173-180) forwards the raw name to the daemon. WORKFLOW_NAMES has no other consumer apart from a brainstorm registration test.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The backfill request's contract supports what migration step 10 and test E25 require: running the backfill for one of the two already-pushed epics.",
+          "evidence": "The issues design's section 3.6 says: 'backfill takes a repo and runs the flow on those items one at a time'. This design's section 3.7 extends the same list to epic kinds ('approved and not tracked') and adds no epic parameter. E25 says 'run the backfill for one of them'; step 10 says 'run the backfill on the user's go-ahead' and is marked non-rollbackable. This repo has 31 Define records under .insrc/artifacts, and only two carry an epicRef (DEF-185807ba9a6b35d3 and DEF-6d6cfaf9a9b14bd4). A repo-wide backfill as specified would therefore create epic, story and task issues for every other approved epic, and close the finished ones, not adopt one epic. [files: docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, .insrc/artifacts/DEF-185807ba9a6b35d3.json, .insrc/artifacts/DEF-6d6cfaf9a9b14bd4.json]",
+          "action": "Give pending and backfill an optional epic hash (or item) scope in section 3.7 and in the issues design's request, and state it in E23, E24 and E25. Otherwise state plainly that step 10 creates items for every approved epic in the repo, and change E25 to match.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Records written by the old push carry a ref and pushedAt and no comments map, the Define holds the story refs, and every existing TrackerMeta field keeps its meaning, so the seeding rule and the body rewrite work on the two pushed epics.",
+          "evidence": ".insrc/artifacts/DEF-185807ba9a6b35d3.json:14-25 has tracker `{ adapter, epicRef: 'insors-ai/insrc#1', pushedAt, storyRefs: { s1..s5 } }`. HLD-185807ba9a6b35d3.json and HLD-6d6cfaf9a9b14bd4.json have epicRef and pushedAt; the LLDs of both epics have storyRef and pushedAt; their PLAN records have taskRefs and pushedAt. A search of .insrc/artifacts for a `\"comments\"` key found no tracker comments map. The design adds only optional fields to TrackerMeta (src/workflow/tracker/refs.ts:24-37). The seeding rule covers design and review keys only; any amendment approved earlier on these two epics has no key and would be commented by the backfill. Neither epic has BUILD records, so the close rule leaves both open.",
+          "action": "State whether amendments approved before this change are commented by the backfill or seeded as done.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The amendment-approve request and its callers belong to the issues design and are only extended here, and resolve.ts and setup.ts are left alone without losing anything the deleted code did.",
+          "evidence": "The issues design's section 3.5 owns 'workflow.amendment.approve' with the `{ record, tracker }` answer and says the companion design adds the entry. The cited callers match the code: src/cli/services/workflow.ts:271-272, src/cli/services/index.ts:63 and src/cli/panes/WorkflowsPane.tsx:119. approveAmendment at src/workflow/amendments/store.ts:101-119 is `(repoPath, amendmentId, approvedBy): AmendmentRecord`, unchanged. All 11 amendment types in src/workflow/amendments/types.ts (sharedContract.*, storyBoundary.*, nonFunctional.retarget, rollout.*) change an HLD, so no amendment route exists for a standalone design. The status labels the deleted allTrackerLabels created (conventions.ts:49-50) are still created by setup at src/workflow/tracker/setup.ts:85, so sync's mapIssueStatus keeps working.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A call for a retired workflow would be rejected by the input schema before any handler ran unless the schema keeps accepting the three names, so the retired list is needed for the error to be reachable.",
+          "evidence": "src/workflow/types.ts:73-87: `WORKFLOW_NAMES = [...] as const` and `WorkflowName = typeof WORKFLOW_NAMES[number]`. src/mcp/server.ts:472 and :871 use `z.enum(WORKFLOW_NAMES)` directly, so removing the names alone makes the call an invalid argument. src/daemon/workflow-rpc.ts:664-665 throws `workflow.run: unknown workflow '...'` for a name outside the list, so the daemon side also needs the retired check before that line. The design covers both, and E19 tests through the registered schema.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Every behaviour a test subject asserts is designed; in particular E17's review comment 'for DEF, HLD, LLD and plan in both flows' has a matching entry for each kind.",
+          "evidence": "Section 3.2's Define entry lists the title, body, three labels, item type, where the ref is stored and re-approval. It names no review comment, while the HLD, story design and plan entries each do. The issues design's rule reads: 'When the approved design or plan carries a review, the flow adds one comment', which does not name a Define. The old code never posted a Define's review: postReviewComment is called only with the HLD, LLD and plan paths (src/workflow/tracker-auto.ts:156, :231, :284). E17 nonetheless asserts a review comment for DEF. Section 3.4's seeding also marks a 'review key' as posted on any record with a ref and pushedAt, which includes the two pushed Defines. [files: docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, src/workflow/tracker-auto.ts]",
+          "action": "Decide whether a Define's review is commented on the epic item. If yes, add it to the Define entry in section 3.2 with its key. If no, remove DEF from E17 and say the seeding applies to HLD, LLD and plan records only.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 3,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-06T14:10:06.376Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

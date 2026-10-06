@@ -386,3 +386,23 @@ Write an epic flow as its own module with its own entry point called from the af
 - **[[c14]]** `code` `src/workflow/questions.ts` — "ghComment(cfg.owner, cfg.repo, trackerRef, summary);"
 - **[[c15]]** `prior-artifact` `LLD-9a7bbe63297457c2-S001 third review of 2026-10-06 by the daemon: block, 5 MED did not hold (a stale sentence; the third label; the question-resolution comment; no state read; old comments repeated by the backfill); this revision applies all five`
 - **[[c16]]** `code` `src/workflow/resolve-comment.ts` — "{ commit: false }"
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-06T14:35:44.898Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | The line numbers section 3.2 gives for the old titles and bodies point at that code: epic title at tracker-auto.ts:131-133, story title at :194-196, task title and body at :284-290. | The epic title is built at tracker-auto.ts:133-134 (:131 closes the label loop). Lines :194-196 are the adopt-from-storyRefs guard (`const adopted = defineTracker?.storyRefs?.[storyId];`); the story title is at :201-202. Line :284 is `postReviewComment(cfg, storyRef, planJsonPath);` and :287-291 is the label loop; the task title and body are at :300-305. Also command.ts: the sync call is at :244, :245 is the line that prints it. The behaviour described is right in each case; only the pointers are off, and the function names make the intended code unambiguous. [files: src/workflow/tracker-auto.ts, src/cli/command.ts] | Correct the three citations in 3.2 to :133-134, :201-202 and :300-305 (and command.ts:244 in 2.2). No design change. |
+
+#### Could not verify (does not block)
+
+_None._

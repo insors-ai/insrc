@@ -26,7 +26,204 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive capability with real design choices and several build tasks, built on parts that already exist (per-repo tracker config, three automatic pushes, an unwired issue-create function).",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The upstream asks (c8-c13: one repo-level flag default on, gh detected, issue record pushed on approval, documents pushed with the tracker action, backfill, either executor) each have a designed element, and no stated non-goal is built.",
+          "evidence": "The LLD is standalone (.insrc/artifacts/LLD-38436e90625a83a2-S001.json meta: workflow 'design.story', standalone true); no DEF/ISSUE/SPEC artifact for hash 38436e90 exists in the repo, so the only upstream is the quoted user statements. Each maps to a section: flag -> 3.1, gh/target check -> 3.2, commit+push then create/update -> 3.3, backfill -> 3.4 'pending', executor -> 3.5. The user quotes c9 and c10 are truncated in the references, so only the visible part was compared.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "\"ONE flag turns tracker pushing on or off for a repo\" (3.1) while \"The TUI approve service keeps what it does today, unchanged\" (3.5).",
+          "evidence": "The TUI approve() (src/cli/services/workflow.ts:156-166) calls autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan, whose gate() (src/workflow/tracker-auto.ts:84-96) decides only on resolveGithubConfig(repoPath) and ghAuthOk(). Nothing on that path reads tracker.addItems. So with the setting false and a github.json entry for the repo, a TUI approval still creates the epic/story/task issues and commits; with the setting true and no github.json entry it still pushes nothing. The flag does not govern that path, and the design's open questions do not list this. [files: src/cli/services/workflow.ts, src/workflow/tracker-auto.ts]",
+          "action": "Either make gate() in tracker-auto.ts consult the setting reader first (skip when false), or state plainly in the design and the setting's desc that the flag does not govern TUI approvals and record it as an open question.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "approveWorkflowTarget is stamp-only today, is declared in src/workflow/gates.ts and is called by the daemon's 'workflow.approve' handler at src/daemon/index.ts:643, whose result reaches insrc_workflow_approve unchanged.",
+          "evidence": "gates.ts:804 `export async function approveWorkflowTarget(req, opts?: { readonly enforce?: boolean }): Promise<WorkflowApproveResult>`, doc comment 'Stamp-only: it does NOT run the tracker (gh-push/commit) leg'; it returns `{ approved, skipped, codeReview }`. daemon/index.ts:643 `'workflow.approve': async (params) => {` awaits it and returns `result` or `{ ...result, followOn }`, so an added field passes through. mcp/server.ts:1111 returns `JSON.stringify(result, null, 2)`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveGithubConfig returns 'none' for a repo with no github.json entry, has nine callers, the tracker.push workflow refuses on 'none' (context.ts:41, :203-209) and creates task issues only when pushTasks is set (context.ts:69).",
+          "evidence": "config/github.ts:213 `return { type: 'none', source: 'default-config' };`. Non-test call sites: cli/services/workflow.ts:97, bugfix/tracker.ts:423 and :447, tracker/sync.ts:36, questions.ts:474, runners/tracker/context.ts:41, :114, :144, tracker-auto.ts:87 = nine. context.ts:203-209 requireGithubAdapter throws 'tracker is disabled via config (type: none ...)'; context.ts:69 `if (gh.pushTasks) {`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sign-in check runs with no time limit today (src/workflow/tracker/github.ts:38-40), and a 10 second limit can be applied through the existing injectable exec.",
+          "evidence": "github.ts:38-40 `function silent(cmd, args) { _exec(cmd, args, { stdio: 'ignore' }); }` and ghAuthOk (github.ts:111-118) calls `silent('gh', ['auth', 'status'])` with no timeout. `TrackerExec = (cmd, args, opts?: ExecFileSyncOptions)` so a `timeout` option fits the seam `_setTrackerExecForTests`. Note: `_exec` is module-private, so the timed call must be a new export in github.ts (the design lists that file), and execFileSync is synchronous, so the daemon's event loop is blocked for up to the limit during an approve call.",
+          "action": "State in the design that the timed check is a new exported function in tracker/github.ts, and that ghAuthOk's single reason ('gh CLI not available or not authenticated') is split into the two reasons the design names.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "patchTrackerMeta exists with the stated shape, and TrackerMeta has no field for a comment or for closing, so commentedOn and closedAt are new optional fields.",
+          "evidence": "tracker/refs.ts:88 `export function patchTrackerMeta(jsonPath: string, patch: Readonly<Partial<TrackerMeta>>): TrackerMeta` merges `{ adapter: 'github', ...prior, ...patch }`. TrackerMeta (refs.ts:24-37) has adapter, epicRef, storyRef, issueRef, storyRefs, taskRefs, milestoneRef, labelsCreated, epicStatus, storyStatus, pushedAt, lastSyncedAt: no commentedOn, no closedAt.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A repo's own value can be stored under tracker.byRepo.<repoPath>.addItems using the dynamic-key pattern models.byRepo uses, written through config.write, and survives the boot-time config reconcile; the config path has no override.",
+          "evidence": "daemon/index.ts:1457-1481 config.write accepts `path: string | string[]` and calls setConfigAtPath with literal segments, with no catalog check on the path. config/write-path.ts header: 'models.byRepo.<repoPath>.* — absolute repo paths'. config/reconcile.ts:20-23: 'The output is a MERGE over `existing` ... catalog-unenumerable keys ... survive blindly'; pruning removes only declared RETIRED_PATHS. shared/paths.ts:9 `config: join(INSRC_DIR, 'config.json')` with no env override. ConfigOption (config-catalog.ts:30-41) has path, type, default, desc, enumValues, group and no label.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The record phase writing the ref to \"the artifact's meta.tracker\" is a complete inventory of where a ref must land (3.4: HLD has epicRef; LLD has storyRef).",
+          "evidence": "The Define is the epic-level aggregate that existing code reads, and the design never writes it. tracker-auto.ts:148-150 writes epicRef to BOTH the HLD and the Define; :222 writes `storyRefs` on the Define. Readers of the Define only: chain.ts:208-209 `if (meta.tracker === undefined || typeof meta.tracker.epicRef !== 'string') return { pushed: false };`; sync.ts:25-29 reads the Define and returns 'Epic not pushed yet (no epicRef in meta.tracker)'; tracker-auto.ts:187-190 (TUI LLD approve) 'Epic not pushed yet; approve the HLD (with tracker) first'; context.ts:58-63 builds tracker.push's `existingRefs` from `epic.meta.tracker` and context.ts:115-120 / :151-153 throw 'has no tracker refs'. An epic created by a directive and recorded only on the HLD is therefore reported as not pushed by the chain report and sync, and a later tracker.push sees no existing epicRef and is told to create the epic again. [files: src/workflow/tracker-auto.ts, src/workflow/tracker/sync.ts, src/workflow/chain.ts, src/workflow/runners/tracker/context.ts]",
+          "action": "Have the record phase also patch the Define aggregate: epicRef on an HLD record, storyRefs[storyId] on an epic LLD record (as autoPushEpicOnHld / autoPushStoryOnLld do), add the Define json and md to the step-4 path list, and add a test that chain / syncTracker see a directive-recorded epic.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The setup check and the setting reader can key on the request's repo path: \"req ... the repo path\" is always the repo of the approved artifact.",
+          "evidence": "For a single-artifact approval the repo is optional. mcp/server.ts:1100-1106: `const repo = await resolveRepoPath(args.repo); ... repo: repo ?? ''`. daemon/index.ts:645-647: `const repoPath = (p.repo ... : process.env['INSRC_REPO']) ?? ''; // repo is only needed to locate the epic's artifacts dir for a batch`. With repoPath '' the per-repo setting lookup finds nothing (falls to true), no github.json entry matches, and gitOriginOwnerRepo runs `git -C '' remote get-url origin` (github.ts:92), which git resolves against the daemon process's own working directory, not the artifact's repo. The existing push code avoids this by reading `meta.repoPath` off the artifact (tracker-auto.ts:107-110). The design does not say which path the check uses. I did not run the daemon to confirm its working directory. [files: src/mcp/server.ts, src/daemon/index.ts, src/workflow/tracker/github.ts]",
+          "action": "Specify that the setup check takes the repo from the approved artifact's meta.repoPath (falling back to req.repoPath), and that an empty or missing repo path gives ready false with a reason, before any git or gh call. Add that case to T3.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The per-repo writers are hard-wired to models.byRepo at vscode-plugin/src/panels/repo-config.ts:154 and SettingsView.kt:720, and the pendingApproval block is built at synthesize.ts:109 and typed at types.ts:129.",
+          "evidence": "repo-config.ts:154 `await deps.writeKeyPath(['models', 'byRepo', write.repoPath, ...write.segments], write.value);`. SettingsView.kt:720 `private fun base(repoPath: String): List<String> = listOf(\"models\", \"byRepo\", repoPath)`. synthesize.ts:109 `pendingApproval: {` with artifactPath, epicHash, guidance; types.ts:129 `readonly pendingApproval?: {`. vscode key-map.ts:52 maps every CONFIG_CATALOG row to `insrc.<path>`, so the new row becomes a global key. The steering source has a checked-in VS Code copy (vscode-plugin/assets/steering-block.md); JetBrains copies it at build (build.gradle.kts:131). Note the VS Code per-repo form renders only text inputs for tier fields (repo-config.ts:93-108), so a boolean control is new rendering, not only a new write prefix.",
+          "action": "Mention that the VS Code per-repo form needs a new boolean field kind and read path, not just a second write prefix.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "\"What counts as 'tracked' ... an HLD has epicRef; an LLD has storyRef or commentedOn\" is enough that a second approval or the backfill never creates an item that is already on GitHub.",
+          "evidence": "Older records can hold a story's ref only on the Define. tracker.push creates an issue for every story of the epic (context.ts:49 `const stories = epic.body.stories.map(...)`) and records `storyRefs` on the Define (orchestrator.ts:2847-2848), then linkDocsToIssues patches each LLD json (link.ts:43-46); when the LLD does not exist yet, relinkDoc's patchTrackerMeta throws and is swallowed (link.ts:49-55 'doc→issue linkage skipped'). An LLD written and approved later has no storyRef although its story issue exists. The existing code handles exactly this: tracker-auto.ts:193-197 'Duplicate guard: adopt from the Epic's storyRefs map if present'. The design's test looks only at the LLD, and its fallback lookup is by a new unique label `insrc:story-<hash8>-<storyId>` that issues created by the existing code never carry (they get `[cfg.storyLabel, epicMembershipLabel(epicSlug)]`, tracker-auto.ts:206; epics get `[cfg.epicLabel, membership]`, :138). So the directive, and the backfill for every such story, creates a second issue. The same applies to an HLD approved after its Define already holds epicRef. [files: src/workflow/tracker/link.ts, src/workflow/orchestrator.ts, src/workflow/tracker-auto.ts, src/workflow/runners/tracker/context.ts]",
+          "action": "Define 'tracked' for an HLD as HLD.epicRef OR Define.epicRef, and for an epic LLD as LLD.storyRef OR Define.storyRefs[storyId]; in that case the entry is 'adopt and record', not create. Also have the directive's lookup fall back to the existing label pair (epic/story label + epicMembershipLabel) before creating. Add both cases to T8/T14.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "\"Working out the tracker entry never fails or delays the approval\": an error becomes ready false, per artifact, after the stamp is written.",
+          "evidence": "The stamp is written inside approveOne at gates.ts:837 `approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });`, so an entry computed after it cannot undo it, and skipped artifacts return early (gates.ts:827-828, :840). Two limits to state: the setup check runs once per call, outside the per-artifact try/catch, so it needs its own catch; and the approval response is delayed by up to the 10 second limit, which the design does say in its error table but which contradicts the invariant's word 'delayed'.",
+          "action": "Say that the once-per-call setup check has its own catch (a throw gives ready false for every entry), and reword the invariant to 'never failed or undone; delayed by at most the sign-in limit'.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A failed unique-label lookup is detectable by the executor (\"The gh command for the lookup exits non-zero\") as distinct from 'no such issue'.",
+          "evidence": "The directive is carried out by a model running gh itself, so the code offers no check. The existing wrapper ghFindIssueByLabels (tracker/github.ts:215) returns `string | undefined`; I did not read its body to see whether it turns a gh failure into undefined, and the design does not give the exact gh command or how the executor tells an empty result from an error. No test can cover this, since tests never run gh (T15).",
+          "action": "Put the exact lookup command and the rule for 'empty result' versus 'non-zero exit' in the directive's fixed wording, and assert that wording in T9.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1-ac6 maps to a test, and the test seams and contract tests the plan relies on exist (INSRC_GITHUB_CONFIG, the injectable exec, the catalog row-count test, the registered-tool lists).",
+          "evidence": "The acceptance table maps all six criteria (ac1: T1,T2,T18,T19 ... ac6: T14,T21). config/github.ts:141-145 githubConfigPath honours `INSRC_GITHUB_CONFIG`; tracker/github.ts:29 `_setTrackerExecForTests`; config/__tests__/config-catalog-contract.test.ts:88-89 `assert.equal(FROM_CONFIG.length, 36)` (must become 37); mcp/__tests__/schema-registry.test.ts:29 and :49 hold the expected tool list and `insrc_code_review_step: ['start', 'judgements']` phase map. Suites that call approveWorkflowTarget on temp repos exist in src/workflow/__tests__ (approve-workflow-target, approve-build-completion, approve-build-record-completion, other-party-review-gate, bugfix-orchestration, approve-codereview-gate) and in src/mcp/build-step/__tests__/build-start.test.ts and src/workflow/runners/build/__tests__/build-record.test.ts.",
+          "action": "List those eight suites by name in T15 so none is missed when they are put on the shared helper.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac3's \"never creates an item twice\" is proven by T5-T8, T13, T22.",
+          "evidence": "T8 covers only 'an artifact that is already tracked by its kind's field (issueRef, epicRef, storyRef or commentedOn, taskRefs, closedAt)'. No test covers an item that is on GitHub with its ref held elsewhere: a story whose ref is only in the Define's storyRefs (the case tracker-auto.ts:193-197 guards against and link.ts:49-55 can leave behind), or an issue created by the existing code that carries the old labels and not the new unique label. T22 is a tool-registration test and proves nothing about duplicates. [files: src/workflow/tracker-auto.ts, src/workflow/tracker/link.ts]",
+          "action": "Add tests: an LLD with no storyRef whose Define has storyRefs[storyId] gets no create directive; an HLD whose Define has epicRef gets none; the pending list does not list either. Drop T22 from the ac3 row.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 2,
+        "med": 3,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-06T08:12:16.494Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

@@ -20,7 +20,192 @@
     "schemaVersion": 1,
     "epicHash": "b9d5c5c40df5a574",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "S001 ac4 (a single large item is read in full, whole content taken into account) and the non-goal 'no removing input-protecting limits without a replacement' are both met by the phase that removes the cuts (Phase A / s1).",
+          "evidence": "DEF S001 ac4: 'its whole content is taken into account, not only its beginning'. HLD 5.1 gives s1 'reading a single large item in full' and removal of the content cuts, but HLD 5.3 gives s3 'a single large item into sections', and the risk table says 'until Phase D lands, a result too large to place in one prompt is reported as not covered'. Today synthesizer.ts:228 places every output whole into one prompt ('JSON.stringify(r.output, null, 2)'). So between Phase A and Phase D the cut is removed with no replacement and ac4 is answered by 'not covered'. The 'too large for one prompt' threshold and the notCovered field belong to sc4/s3, and the measure to sc3/s2; nothing in s1's contracts (sc1, sc2) can carry or decide it. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, src/analyze/context/synthesizer.ts]",
+          "action": "Either move sectioned reading of a single item into s1 (with its own threshold and a place in sc2 to report it), or state that s1's ac4 is only met when s3 lands and re-scope s1's acceptance in the Define; name which contract field carries the interim 'not covered' in Phase A.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: the general search tool keeps its limits, the graph is not repaired, and no agent steering is built.",
+          "evidence": "HLD adds only 'an unlimited mode that only the analyzer's recipes use'; grep.ts keeps DEFAULT_LIMIT=200 / MAX_LIMIT=5000 for the search_grep tool (line 131 schema maximum). runGrepSearch callers are search-text.ts:100, config-trace.ts:100, the tool itself (grep.ts:153) and workflow/review/probe.ts:62, which passes its own limit and is unaffected by an additive mode. Graph repair is deferred to ISSUE-12f70133491114c9 with a basisNote; steering is not mentioned as built. [files: src/daemon/tools/builtins/search/grep.ts, src/workflow/review/probe.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The agent-tool path assumes size M when the caller passes none.",
+          "evidence": "start.ts:49 'const scope  = input.scope  ?? 'M';' and line 54 'focused:  true'. [files: src/mcp/analyze-step/phases/start.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "On the orchestrator path the size is a guess from the wording plus repository-wide counts (pickScope).",
+          "evidence": "scope-picker.ts gathers 'registeredRepos / scopeEntityCount / totalEntityCount' and asks a model for 'scope (one of XS|S|M|L|XL)'; orchestrator/driver.ts:194 calls pickScope only when targetHint is set and no scopeHint. Without a targetHint the full classifier (driver.ts:234 classify()) picks the scope instead; the HLD names only pickScope. [files: src/analyze/classifier/scope-picker.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "State in s2 that the full classifier's scope decision is replaced as well, not only pickScope.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Lookups today swallow errors into empty results and express partiality through a mix of truncated flags, totals and not-found notes; a 'failed' and an 'unsupported' output already exist.",
+          "evidence": "search-text.ts:110 'search.text: grep failed; returning empty output'; config-trace.ts:110 same; db-connections-list.ts:47 'pool acquisition failed; treating as no-connections'. types.ts has 'truncated: boolean' at 456/551/671, 'totalCallers' at 301 and eleven 'notFoundNote' fields. executor.ts:156-170 builds { type: 'failed', requested, errorCode, message } and { type: 'unsupported', ... }. [files: src/analyze/explore/search-text.ts, src/analyze/explore/config-trace.ts, src/analyze/explore/db-connections-list.ts, src/analyze/explore/types.ts, src/analyze/explore/executor.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The framework's existing aggregation step can combine per-part findings inside the exploration pipeline (decomposer, executePlan, synthesizer) while a model-written answer stays the seven-layer bundle.",
+          "evidence": "The aggregator belongs to the other pipeline: it is a plan-tree task runtime ('Terminal aggregator for code-target plans', aggregate-report.ts) run by executor/walker.ts. runAggregator takes 'upstreamOutputs: ReadonlyMap<string, unknown>' of plan tasks plus a per-target prompt and returns 'AggregateReport { summary, findings, metadata }' (aggregator.ts:114-123), not an AnalyzeContextBundle. tryExplorationPipeline (context/driver.ts:1083-1260) goes decompose -> executePlan -> synthesize with no aggregation step. renderUpstreamSection also stringifies every upstream output whole into one prompt (aggregator.ts:175), so combining many parts can itself exceed one pass. [files: src/analyze/runtimes/shared/aggregator.ts, src/analyze/runtimes/code/aggregate-report.ts, src/analyze/context/driver.ts, src/analyze/executor/walker.ts]",
+          "action": "Say what is actually reused (the provider role and prompt pattern, or nothing) and design a combine step for the exploration pipeline: its input (cited per-part findings), its output shape (seven-layer bundle), its own size rule, and what happens when the combine call fails.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "insrc_analyze_step can hand the caller one part at a time 'through the narrow turn it already has'.",
+          "evidence": "The narrow turn is bound to one exploration: narrow.ts:78 rejects when 'input.explorationId !== state.narrow.explorationId', line 89 requires 'getNarrowRunner(state.narrow.explorationType)' (only doc.decision.trace, doc.constraint.enumerate, capability.reuse-check are registered, executor.ts:306), line 132 writes the result into the exploration cache, and line 171 resumes stepPlan. It runs before synthesis and always ends in emit_bundle (plan.ts:205). A synthesis part has no exploration id, no runner, and must not be cached as an exploration output. [files: src/mcp/analyze-step/phases/narrow.ts, src/mcp/analyze-step/phases/plan.ts, src/analyze/explore/executor.ts]",
+          "action": "Design a distinct part turn (state stage, input shape, schema, how per-part outputs accumulate, how the final combine is emitted) or state exactly how the narrow phase contract is extended; also state how a direct enumeration answer is returned from the plan phase, which today can only return emit_bundle, emit_narrow or error.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The eight listed question kinds exist today and 'enumeration' is new.",
+          "evidence": "types.ts:68-76 AnswerType = structural-map | adherence-check | decision-trace | capability-discovery | how-does-it-work | prose-retrieval | data-inventory | infra-inventory; decomposer.ts:119 uses the same enum; decompose.system.md:276 'MUST be one of the eight enum values'. No 'enumeration' anywhere in src/analyze. [files: src/analyze/explore/types.ts, src/analyze/context/decomposer.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "On the orchestrator path the scope can come from the measure of completed deterministic lookups in place of pickScope.",
+          "evidence": "The branch that calls pickScope builds the intent with 'focused: false' (orchestrator/driver.ts:219), and the exploration pipeline exits for such an intent: 'if (intent.focused !== true) return null;' (context/driver.ts:1102), falling to the legacy shaper tool loop. So on exactly the path where pickScope runs, executePlan never runs and there are no deterministic lookups to measure; under the HLD's own rule every such request is 'unmeasurable' and becomes XL. Separately, the scope is consumed before any lookup: it is fixed at classify (driver.ts:216-222), then passed to shaper.buildRunBundle({ intent }) (line 271) and runRecursivePlanner (line 294); the lookups run inside buildRunBundle. [files: src/analyze/orchestrator/driver.ts, src/analyze/context/driver.ts]",
+          "action": "Redesign orchestrator sizing in s2: either define a measuring pass that runs for unfocused intents before the bundle and planner (which lookups, from what plan), or keep a separate sizing source for that path and say so. State the new stage order in runAnalyze and what the decomposer receives as scope before the measure exists.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The inventory of fixed-default and layout-selection sites is complete (start.ts for the default, context/driver.ts for the layout key).",
+          "evidence": "Three more fixed defaults exist: the one-shot insrc_analyze tool, mcp/server.ts:1294 'scope:     args.scope ?? 'M','; daemon/workflow-rpc.ts:552 'scope:     'M','; explore/freeform-probe.ts:100 'scope:    'M','. Layout selection is implemented twice: context/driver.ts:1222 (synthesizeTarget) and mcp/analyze-step/synthesizer-key.ts:37 refineSynthesizerKey, used by plan.ts:118. The HLD names only start.ts (c11) and context/driver.ts (c12). [files: src/mcp/server.ts, src/daemon/workflow-rpc.ts, src/analyze/explore/freeform-probe.ts, src/mcp/analyze-step/synthesizer-key.ts]",
+          "action": "List all four default sites and both selection sites in s2 and s4, and say whether the one-shot tool and the workflow RPC are measured the same way.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The Define's c1 inventory (16 result limits, 8 content cuts), which s1 relies on, covers every place results or content are dropped.",
+          "evidence": "The listed constants do exist (e.g. search-text.ts:39-40, symbol-locate.ts:37-38, concept-resolve.ts:64). Not listed: grep.ts:107 '.slice(0, 500)' on each hit line, grep.ts:102 'if (stat.size > 2 * 1024 * 1024) { continue; }', silent skip of unreadable files (grep.ts:111) and per-file 'argv.push('-m', String(opts.limit))' (line 178); doc-mention.ts:39-40 DEFAULT_PREVIEW_CHARS=300 / MAX_PREVIEW_CHARS=1_500; capability-reuse-check.ts:303 'exports.slice(0, 5)' and 348-350 'slice(0, 8)'; db-table-describe.ts:175/181 'slice(0, 8)' / 'slice(0, 5)'; docs-retrieval.ts:290 '.slice(0, maxResults)'; family-summarise.ts:162 '.slice(0, 20)'; the maxSources parameter of doc.decision.trace / doc.constraint.enumerate (executor.ts:315, 337); decompose.system.md:249 'bound the fan-out to ≤5 connections'. An unlimited grep mode that only lifts the hit limit would still report complete while skipping large files and cutting lines. [files: src/daemon/tools/builtins/search/grep.ts, src/analyze/explore/doc-mention.ts, src/analyze/explore/capability-reuse-check.ts, src/analyze/explore/db-table-describe.ts, src/analyze/docs-retrieval.ts, src/analyze/runtimes/docs/family-summarise.ts, src/prompts/analyze/decompose.system.md]",
+          "action": "Extend the inventory in s1 with these sites, and specify the unlimited grep mode fully: hit limit, per-file -m, line cut, 2 MB skip and skipped-file reporting, in both the ripgrep and the Node fallback path.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Cached lookup outputs written before the change are treated as absent, and the cache's stored shape change is handled.",
+          "evidence": "The HLD states the rule (section 6 Durability, Phase A backward compat). It is not what the code does today and needs new code: the key is 'repoId || lastIndexedAt || paramHash' with no shape version, and getCachedExploration returns 'row.output' unchecked (exploration-cache.ts:116-119). Note also that the param hash folds in limit parameters, so a plan that still passes an ignored limit gets a separate row; that is harmless. [files: src/db/exploration-cache.ts]",
+          "action": "In the s1 LLD, name the mechanism (a version in the key or a completeness check on read in getCachedExploration) and add a test that an old-shape row is a miss.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The HLD's Story boundaries refer to the Define's Stories and keep its ownership and dependency edges.",
+          "evidence": "The Define's Story ids are 'E20261006b9d5c5c4:S001' to ':S004' (16 occurrences, matching the folder anchor E20261006b9d5c5c4). The HLD's section 5 headings are 'Story E20261007b9d5c5c4:S001' to ':S004', a different date anchor, so the four boundaries name Stories that do not exist upstream. The edges themselves match the Define (s2 on s1; s3 on s1 and s2; s4 on s1) and no contract is owned twice. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md]",
+          "action": "Regenerate the HLD's Story ids from the Define's anchor (E20261006) before any design.story run resolves a Story by id.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A lookup that cannot run is always the existing failed output with its reason, and a failure is never stored or shown as an empty or complete result.",
+          "evidence": "The failed output exists with a reason (executor.ts:220-225: type 'failed', errorCode, message) and thrown errors are never cached. One trap for s1: the cache write is unconditional on a returned value ('output = await runner(exp, ctx); if (cacheable) { await putCachedExploration(...) }', lines 208-213, and 543-546 in stepPlan), so a recipe that returns a failed output instead of throwing would cache the failure until the next re-index. The comment at line 108 ('unsupported + failed are never cached') holds only for the throw path. The HLD states handling for a failed part and an unmeasurable request, but not for a failure of the combine call itself. [files: src/analyze/explore/executor.ts]",
+          "action": "In s1, require recipes to throw (or make the executor skip caching type 'failed'); in s3, state what the answer is when the combine call fails.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 6,
+        "low": 7,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-07T05:09:15.049Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

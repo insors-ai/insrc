@@ -252,7 +252,7 @@
             "A lookup that had gathered something before it failed throws LookupFailedError (new) carrying it; the conversion copies it to the failed output's new `partial` field",
             "The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned",
             "stepPlan's branch for a lookup that pauses for a model call awaits the lookup's prepare with no conversion today (src/analyze/explore/executor.ts:482-502), and the step tool calls stepPlan outside its try blocks (src/mcp/analyze-step/phases/plan.ts:111, phases/narrow.ts:174), so a throw there aborts the whole step call. That await is wrapped in the same conversion as the other branch: a throw becomes the failed output for that lookup, with LookupFailedError's findings copied to `partial`, and the plan goes on to the next lookup",
-            "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). No finalize validates the agent's answer today, so a malformed answer surfaces as a plain TypeError that the catch cannot tell from any other failure. The narrow phase therefore validates the agent's answer against the lookup's schema before it calls finalize, and returns the retryable 'narrow-finalize' error when that fails, which the agent can correct. Any throw from finalize itself then becomes the failed output for that lookup and the run goes on",
+            "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). No finalize validates the agent's answer today, so a malformed answer surfaces as a plain TypeError that the catch cannot tell from any other failure. The narrow phase therefore validates the agent's answer against the lookup's schema before it calls finalize, and returns the retryable 'narrow-finalize' error when that fails, which the agent can correct. The phase cannot reach the schema today: the runner's entry exposes only prepare and finalize (executor.ts:303-306), the schema is on the prepare result and is sent to the client (:299), the step state does not carry it (phases/narrow.ts:199-204), and the three schemas are private constants of their lookup files. The runner's entry (NarrowRunnerEntry) gains a `schema` member holding the lookup's answer schema, which the phase reads; the step state does not grow, so a state minted before the change still works. One answer is exempt from validation: no answer at all (null or absent) to capability.reuse-check, which its finalize accepts on purpose today and turns into its placeholder result (executor.ts:359-363). That stays, and the placeholder's record is not established, with the reason that the model returned no verdicts. Any throw from finalize itself then becomes the failed output for that lookup and the run goes on",
             "The three lookups that pause for a model call (doc.constraint.enumerate, doc.decision.trace, capability.reuse-check) gather their completeness facts in prepare, where the cut and the limit are applied, but build their output in finalize on a later turn from a prepared value carried in the step state (for example { subject, retrievedSectionCount, validEntityIds }, doc-constraint-enumerate.ts:150-154). Each prepared value gains a `completenessFacts` field holding what prepare knows (the limit reached, the sections cut with their kept and full lengths), and finalize builds the record from it. A step state minted before the change has no such field: finalize then builds a record with notEstablished set and the note that the facts were not carried, so an in-flight run finishes and says so",
             "A failed output is never written to the lookup cache, at any of the four conversion sites; the cache's own contract is that only successful outputs are stored (src/db/exploration-cache.ts:124-125). executePlan already stores inside the try, before the catch (executor.ts:212-229). The two new sites must keep to it: the conversion around prepare in stepPlan sits so that the store at executor.ts:505 is not reached for a failed output, and the narrow phase, which today stores whatever finalize produced (src/mcp/analyze-step/phases/narrow.ts:128-138), skips the store when the output is the failed one"
           ]
@@ -340,7 +340,7 @@
         },
         {
           "name": "runAggregator",
-          "signature": "function runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>   // signature unchanged\n\ninterface TemplateExecuteResult { readonly outputs: ReadonlyMap<string, unknown>; readonly completeness: Completeness }\ninterface TaskExecutionRecord { /* as today */ readonly completeness?: Completeness | undefined }\ninterface RunAnalyzeOk { /* as today */ readonly report: AnswerReport }",
+          "signature": "function runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>   // signature unchanged\n\ninterface TemplateExecuteResult { readonly outputs: ReadonlyMap<string, unknown>; readonly completeness: Completeness }\ninterface TaskExecutionRecord { /* as today */ readonly completeness?: Completeness | undefined }\ninterface RunAnalyzeOk { /* as today */ readonly report?: AnswerReport | undefined }   // absent only on a run record stored before the change",
           "parameters": [
             {
               "name": "args",
@@ -357,8 +357,8 @@
           "preconditions": [],
           "postconditions": [
             "Each of the twenty-six plan-task runtime files returns a completeness record for what it produced; the plan walk copies it to the task's record. A planner-kind task has no runtime and its record carries none: its child plan's tasks stand in for it",
-            "The run record stores the report; a record written before the change is replayed with a report that says completeness was not recorded",
-            "The final report's text starts with the completeness line, written by code"
+            "The final report's text starts with the completeness line, written by code",
+            "The run's result and the run record carry the report as an optional field, as the bundle does. It is absent in one case only: a run record stored before the change, which the resume path returns whole (src/analyze/orchestrator/driver.ts:123-140). The report's shape gains no 'not recorded' state, and no report is invented for such a record; renderCompletenessLine is given only a real report. Where a run's result is turned into text, an absent report gives the line 'Completeness was not recorded for this run.' Every run made after the change has a report. Stories s2, s3 and s5, which read sc2, therefore see one shape, and an absent report always means 'made before this Story'"
           ]
         }
       ]
@@ -593,6 +593,26 @@
           "src/analyze/runtimes/infra/inventory-ci.ts",
           "src/analyze/runtimes/infra/inventory-terraform.ts"
         ]
+      },
+      {
+        "entity": "The catch clauses of the plan-task runtimes",
+        "change": "invariant-change",
+        "details": "The rule for the lookups' catch clauses applies to the runtimes as well. A search for a catch clause's opening finds fifteen in eleven runtime files: code/structure-module-tree.ts:121; data/schema-table.ts:81; infra/_shared.ts:119; infra/discovery-families.ts:183; infra/inventory-ci.ts:135; infra/inventory-docker.ts:138, :144; infra/inventory-helm.ts:110, :157; infra/inventory-kubernetes.ts:85; infra/inventory-terraform.ts:154, :173; shared/adherence.ts:229; shared/aggregator.ts:100, :214. The daemon's review counted eighteen; the build's first act on this entry is to list them again and settle the count. Several are known to swallow: the shared file walk skips a directory it cannot read (_shared.ts:119, used by all five inventories); the terraform inventory continues after a failed read (:154) and a failed parse (:173); the helm inventory returns an empty list (:110, :157); discovery-families returns false (:183); the module tree skips a failed import lookup (structure-module-tree.ts:121); the adherence check carries on after a failed model call (shared/adherence.ts:229). Each clause is classified as for the lookups. A file or directory that could not be read or parsed is an expected condition for an inventory of a whole repository: the clause keeps going and records the item under skipped with the reason, so the task's record is not complete. A clause that hides the failure of the task's whole work (the adherence check's model call, the aggregator's) rethrows, so the walk records the task as failed. Current behaviour that changes: a runtime that dropped files returned a result that looked whole.",
+        "callSites": [
+          "src/analyze/runtimes/code/structure-module-tree.ts",
+          "src/analyze/runtimes/data/schema-table.ts",
+          "src/analyze/runtimes/infra/_shared.ts",
+          "src/analyze/runtimes/infra/discovery-families.ts",
+          "src/analyze/runtimes/infra/inventory-ci.ts",
+          "src/analyze/runtimes/infra/inventory-docker.ts",
+          "src/analyze/runtimes/infra/inventory-helm.ts",
+          "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+          "src/analyze/runtimes/infra/inventory-terraform.ts",
+          "src/analyze/runtimes/shared/adherence.ts",
+          "src/analyze/runtimes/shared/aggregator.ts",
+          "src/analyze/explore/executor.ts",
+          "src/mcp/analyze-step/phases/narrow.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -819,7 +839,9 @@
             "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them gives a record that is not established",
             "data-model.trace with more targets than its limit and a target with more fields than its limit reports both limits, each with its scope; discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder",
             "a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)",
-            "no plan-task output of the five infra inventories has a `truncated` field; a walk that stops at its cap is in the record as a limit"
+            "no plan-task output of the five infra inventories has a `truncated` field; a walk that stops at its cap is in the record as a limit",
+            "each class of runtime catch clause has a test: an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip); an adherence check whose model call fails is recorded by the walk as a failed task",
+            "the narrow phase validates an agent's answer against the schema on the runner's entry; no answer at all to capability.reuse-check is accepted and gives a record that is not established"
           ],
           "fixturesNeeded": [
             "stand-in stores and drivers for the lookups",
@@ -855,7 +877,7 @@
           "purpose": "The plan tree's result, with the classifier, context builder, planner, walk and aggregator stood in.",
           "subjects": [
             "a run with one failed task and one limited task returns a report that names both, and its final report's text starts with the completeness line",
-            "the run record stores the report, and a record written without one is replayed with the not-recorded line",
+            "the run record stores the report, and a run record written without one is returned with no report, none is invented for it, and its text form carries the not-recorded line",
             "a run with a nested plan: the report names an incomplete task of the child plan by its path, the planner-kind task itself is not a source, and the aggregate-report task is not a source"
           ]
         },
@@ -898,7 +920,8 @@
             "unit: buildCompleteness computes complete and rejects contradictory facts",
             "unit: buildCompleteness accepts several reached limits with their scopes",
             "unit: data-model.trace and discovery-families report every limit they reach",
-            "unit: the infra inventories report a stopped walk in the record and have no `truncated` field"
+            "unit: the infra inventories report a stopped walk in the record and have no `truncated` field",
+            "unit: an inventory that skipped an unreadable directory or an unparsable file is not complete and names them"
           ]
         },
         {
@@ -909,7 +932,8 @@
             "unit: the free-form lookup at its turn limit is a failed output with partial findings",
             "unit: stepPlan with a lookup whose prepare throws records the failed output and goes on",
             "unit: the search tool on an unreadable root fails with the real cause",
-            "unit: a failed output is never stored in the lookup cache"
+            "unit: a failed output is never stored in the lookup cache",
+            "unit: each class of runtime catch clause has a test"
           ]
         },
         {
@@ -1167,6 +1191,11 @@
       "id": "c12",
       "kind": "code",
       "ref": "A direct read on 2026-10-07 of the calls into the three bundle builders, the step tool's cache lookup, the lookup cache's store sites and the infra inventories' outputs. Files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts, src/analyze/classifier/driver.ts, src/mcp/server.ts, src/daemon/workflow-rpc.ts, src/mcp/analyze-step/cache-lookup.ts, src/mcp/analyze-step/phases/narrow.ts, src/db/exploration-cache.ts, src/analyze/runtimes/infra/inventory-kubernetes.ts, src/analyze/runtimes/infra/inventory-helm.ts, src/analyze/runtimes/infra/inventory-docker.ts, src/analyze/runtimes/infra/inventory-ci.ts, src/analyze/runtimes/infra/inventory-terraform.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "A direct read on 2026-10-07 of the plan-task runtimes' catch clauses, the narrow runner's entry and the run-level resume. Files: src/analyze/runtimes/code/structure-module-tree.ts, src/analyze/runtimes/data/schema-table.ts, src/analyze/runtimes/infra/_shared.ts, src/analyze/runtimes/infra/discovery-families.ts, src/analyze/runtimes/infra/inventory-ci.ts, src/analyze/runtimes/infra/inventory-docker.ts, src/analyze/runtimes/infra/inventory-helm.ts, src/analyze/runtimes/infra/inventory-kubernetes.ts, src/analyze/runtimes/infra/inventory-terraform.ts, src/analyze/runtimes/shared/adherence.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/explore/executor.ts, src/analyze/orchestrator/driver.ts"
     }
   ]
 }

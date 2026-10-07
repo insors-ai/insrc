@@ -975,7 +975,10 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
  *  directly; run and task inputs hold it on the intent. */
 function scopeRefOf(inputs: RunShaperArgs['inputs']): AnalyzeScopeRef {
 	if ('scopeRef' in inputs) return (inputs as ClassificationShapeInput).scopeRef;
-	return (inputs as RunShapeInput | TaskShapeInput).intent.scopeRef;
+	if ('intent' in inputs) return (inputs as RunShapeInput | TaskShapeInput).intent.scopeRef;
+	// Inputs that carry neither are a caller's mistake: say so, with
+	// the code for it, where a bare property access used to throw.
+	throw new ShaperInvalidInputError('inputs carry neither a scope nor an intent');
 }
 
 /**
@@ -1081,7 +1084,7 @@ export type PipelineOutcome =
 		readonly cause:   PipelineCause;
 		readonly message: string;
 		/** For the two prompt-missing causes. */
-		readonly promptPath?: string;
+		readonly promptPath?: string | undefined;
 	};
 
 /**
@@ -1151,12 +1154,7 @@ export function settlePipelineOutcome(
 }
 
 function didNotProceed(cause: PipelineCause, message: string, promptPath?: string): PipelineOutcome {
-	return {
-		kind: 'did-not-proceed',
-		cause,
-		message,
-		...(promptPath !== undefined ? { promptPath } : {}),
-	};
+	return { kind: 'did-not-proceed', cause, message, promptPath };
 }
 
 /**

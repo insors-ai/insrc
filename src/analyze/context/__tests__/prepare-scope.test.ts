@@ -13,7 +13,7 @@ import type { LoadedConnections } from '../../../daemon/db/config.js';
 import type { AnalyzeScopeRef, AnalyzeTarget, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider, RegisteredRepo } from '../../../shared/types.js';
 import { TARGET_TO_KINDS } from '../../classifier/validate.js';
-import { prepareScope, _buildToolDepsForTest } from '../driver.js';
+import { prepareScope, ShaperInvalidInputError, _buildToolDepsForTest } from '../driver.js';
 import { ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
 import type { ScopeDeps } from '../scope.js';
 import type { ClassificationShapeInput, RunShapeInput, TaskShapeInput } from '../types.js';
@@ -148,4 +148,10 @@ test("tool loop's path for classification and task modes is the resolved lookupP
 			assert.notEqual(toolDeps.repoPath, process.cwd(), `${mode} ${c.ref.kind}: not the working directory`);
 		}
 	}
+});
+
+test('inputs that carry neither a scope nor an intent fail as invalid input, not as a bare TypeError', async () => {
+	const err = await rejection(() => prepareScope('run', {} as never, deps()));
+	assert.ok(err instanceof ShaperInvalidInputError, `got ${err.name}: ${err.message}`);
+	assert.match(err.message, /neither a scope nor an intent/);
 });

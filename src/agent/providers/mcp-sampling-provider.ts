@@ -186,8 +186,11 @@ export class McpSamplingProvider implements LLMProvider {
 			// A programming error inside the callback (a bad property
 			// access while building the request, say) is a bug here, not
 			// a failed model call: let it surface as what it is.
-			if (err instanceof TypeError || err instanceof RangeError
-			 || err instanceof ReferenceError || err instanceof SyntaxError) throw err;
+			// A transport failure can arrive AS a TypeError (undici raises
+			// `TypeError: fetch failed` / `terminated`): that one is a
+			// failed call. Any other is a bug.
+			const transport = err instanceof TypeError && /fetch failed|terminated|network|socket/i.test(err.message);
+			if (!transport && (err instanceof TypeError || err instanceof RangeError || err instanceof ReferenceError)) throw err;
 			throw new ModelCallFailedError(err instanceof Error ? err.message : String(err));
 		}
 	}

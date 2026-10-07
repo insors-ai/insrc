@@ -392,6 +392,17 @@ test('a programming error inside the sampling callback surfaces as itself, not a
 	);
 });
 
+test('a transport failure that arrives as a TypeError is still a failed model call', async () => {
+	// undici raises `TypeError: fetch failed` / `terminated` for a broken connection.
+	for (const message of ['fetch failed', 'terminated']) {
+		const p = new McpSamplingProvider({ sampler: async () => { throw new TypeError(message); } });
+		await assert.rejects(
+			() => p.complete([{ role: 'user', content: 'hi' }]),
+			(err: unknown) => err instanceof ModelCallFailedError && err.detail === message,
+		);
+	}
+});
+
 test('fromSdkResult raises a shape error, not a failed call, for non-text content', () => {
 	assert.throws(
 		() => fromSdkResult({ role: 'assistant', model: 'm', content: { type: 'image', data: '', mimeType: 'image/png' } } as never),

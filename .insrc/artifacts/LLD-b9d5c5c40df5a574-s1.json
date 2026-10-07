@@ -307,7 +307,8 @@
             "'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run",
             "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)",
             "The error can arise only in run mode, where the lookup pipeline runs; the classification and task bundles are written by the tool loop and never raise it. Six calls reach the three bundle builders. Three are the daemon's request handlers (src/daemon/analyze-rpc.ts:270 classification, :283 run, :311 task), which go through one wrapper that maps an error to the response: the run handler's response carries the code with { reason, results, report } as its data, and the other two cannot receive it. The fourth is the daemon's plan-tree entry (analyze-rpc.ts:431) and the fifth the plan tree's own run-context step (src/analyze/orchestrator/driver.ts:291): each maps the error through its mapping function, so the run fails with 'answer-step-failed' and the data. The sixth is the classifier (src/analyze/classifier/driver.ts:132), which builds a classification bundle and cannot receive it. Two callers sit above the run handler: the one-shot agent tool (src/mcp/server.ts:1331-1340), which today prints the code and message and drops the data, and now also prints the completeness line and the failed step's reason from it; and the daemon's workflow runner (src/daemon/workflow-rpc.ts:226-229), which fails its step with the cause and the report",
-            "A fourth cause arises after the lookups ran: 'answer-prompt-missing', returned when the answer-writing step cannot load its prompt file, which it loads inside the step, after the plan was executed (src/analyze/context/driver.ts:1282, :1340, :1359-1364; synthesizer.ts:125). Its outcome carries `found` like the other three. It keeps its own error and code, since a missing prompt file is a fault of the installation and should be named as one: ShaperPromptMissingError gains an optional `found`, the cause table sets it for this cause, and both mapping functions put { results, report } in the error's data beside the existing code. The same error raised before any lookup ran (a missing planning prompt) has no `found`"
+            "A fourth cause arises after the lookups ran: 'answer-prompt-missing', returned when the answer-writing step cannot load its prompt file, which it loads inside the step, after the plan was executed (src/analyze/context/driver.ts:1282, :1340, :1359-1364; synthesizer.ts:125). Its outcome carries `found` like the other three. It keeps its own error and code, since a missing prompt file is a fault of the installation and should be named as one: ShaperPromptMissingError gains an optional `found`, the cause table sets it for this cause, and both mapping functions put { results, report } in the error's data beside the existing code. The same error raised before any lookup ran (a missing planning prompt) has no `found`",
+            "The step tool meets the same missing prompt on its own path: after its lookups ran, its plan phase and its narrow phase each prepare the answer-writing turn (src/mcp/analyze-step/phases/plan.ts:178, phases/narrow.ts:225) outside any try, and that preparation loads the prompt file and throws SynthesizerPromptMissingError when it is missing (src/analyze/context/synthesizer.ts:189, :319, :326). The throw leaves the phase with no state returned, so the executed results are lost. Both calls catch that error and return a non-retryable error naming the missing prompt, whose data holds the executed results and the report derived from them"
           ]
         },
         {
@@ -521,7 +522,7 @@
       {
         "entity": "The step tool's path through a lookup that pauses for a model call",
         "change": "invariant-change",
-        "details": "Change sites for the three points above that the earlier lists did not name: the unguarded prepare in stepPlan; the step tool's two calls of stepPlan and its finalize handling; the prepared values of the three such lookups; the 'bundle' outcome and the cause table's signature; and the search tool's catch. Current behaviour that changes: a prepare that throws aborts the step call, and the search tool calls every failure a bad regex.",
+        "details": "Change sites for the three points above that the earlier lists did not name: the unguarded prepare in stepPlan; the step tool's two calls of stepPlan and its finalize handling; the prepared values of the three such lookups; the 'bundle' outcome and the cause table's signature; and the search tool's catch. Current behaviour that changes: a prepare that throws aborts the step call, and the search tool calls every failure a bad regex. Also here: the two calls that prepare the answer-writing turn, which gain the catch for a missing prompt.",
         "callSites": [
           "src/analyze/explore/executor.ts",
           "src/mcp/analyze-step/phases/plan.ts",
@@ -530,7 +531,8 @@
           "src/analyze/explore/doc-decision-trace.ts",
           "src/analyze/explore/capability-reuse-check.ts",
           "src/analyze/context/driver.ts",
-          "src/daemon/tools/builtins/search/grep.ts"
+          "src/daemon/tools/builtins/search/grep.ts",
+          "src/analyze/context/synthesizer.ts"
         ]
       },
       {
@@ -612,7 +614,7 @@
       {
         "contractId": "sc1",
         "role": "implements",
-        "howDetails": "Implements the record and its builder, puts it on every lookup output and plan-task result, and adds the failed output's optional partial findings. One refinement of the sketch: `basis` gains the value 'model-directed' for the free-form lookup, whose answer rests on a search a model chose and so cannot be established complete; the HLD describes that case in words without giving it a value."
+        "howDetails": "Implements the record and its builder, puts it on every lookup output and plan-task result, and adds the failed output's optional partial findings. Three refinements of the sketch, each recorded as a back-flow in the open questions because Stories s2, s3, s4 and s5 read this contract. `limited` is a list of reached limits, each with a scope, where the sketch shows one. partlyRead's totalChars may be null, with a totalNote saying why, where the sketch shows a number: an item's full length cannot be established when its file changed after it was indexed. And `basis` gains the value 'model-directed' for the free-form lookup, whose answer rests on a search a model chose and so cannot be established complete; the HLD describes that case in words without giving it a value."
       },
       {
         "contractId": "sc2",
@@ -863,7 +865,8 @@
             "the pipeline's three causes after the lookups ran carry the executed results and the report, and the cause table turns each into ShaperAnswerStepFailedError with its reason",
             "both classifyShaperError functions map it to 'answer-step-failed' with the reason, the results and the report in data, and a failed planning call is still 'shaper-llm-unavailable'",
             "the daemon's error payload, the one-shot agent tool's message and the daemon's workflow runner's step failure each carry the report and the reason",
-            "a missing answer prompt, found after the lookups ran, gives the prompt-missing error with the results and the report, and both mapping functions keep its code and put them in its data; a missing planning prompt carries none"
+            "a missing answer prompt, found after the lookups ran, gives the prompt-missing error with the results and the report, and both mapping functions keep its code and put them in its data; a missing planning prompt carries none",
+            "on the step tool's path, a missing answer prompt after the lookups ran returns a non-retryable error whose data holds the executed results and the derived report, from the plan phase and from the narrow phase"
           ]
         },
         {
@@ -969,7 +972,8 @@
             "unit: the three causes after the lookups ran carry the results and the report",
             "unit: both mapping functions return 'answer-step-failed' with the data",
             "unit: the daemon's payload, the one-shot tool and the workflow runner carry the report",
-            "unit: a missing answer prompt found after the lookups ran carries the results and the report"
+            "unit: a missing answer prompt found after the lookups ran carries the results and the report",
+            "unit: the step tool's plan and narrow phases report a missing answer prompt with the results and the report"
           ]
         }
       ]
@@ -1120,7 +1124,8 @@
       "Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.",
       "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.",
       "Back-flow to the HLD: the completeness record's `limited` is a list of reached limits, each with a scope, where the HLD's sketch of sc1 shows a single limit; several results reach more than one.",
-      "Back-flow to the Define and the HLD, for Story s4 (stakeholder direction, 2026-10-07): the index is a pointer, and the analyzer should read an item from its file where the item matters to the answer, not rely on the stored body. The indexer's own cut of a stored body to 8,192 characters (src/indexer/parser/artifact.ts:92, :298-300) is a ninth place an item's content is cut; the Define lists eight and Story s4 removes them. This Story only reports that cut, with the item's real length. Story s4's design should read the item from the file at its pointer at each of the nine sites."
+      "Back-flow to the Define and the HLD, for Story s4 (stakeholder direction, 2026-10-07): the index is a pointer, and the analyzer should read an item from its file where the item matters to the answer, not rely on the stored body. The indexer's own cut of a stored body to 8,192 characters (src/indexer/parser/artifact.ts:92, :298-300) is a ninth place an item's content is cut; the Define lists eight and Story s4 removes them. This Story only reports that cut, with the item's real length. Story s4's design should read the item from the file at its pointer at each of the nine sites.",
+      "Back-flow to the HLD: in the completeness record, partlyRead's totalChars is `number | null` with an optional totalNote, where the HLD's sketch of sc1 shows a number. A consuming Story must read a nullable length. The builder also takes a `notEstablished` input for a result that cannot know whether it is complete; it sets complete to false and adds no field to the record."
     ]
   },
   "citations": [

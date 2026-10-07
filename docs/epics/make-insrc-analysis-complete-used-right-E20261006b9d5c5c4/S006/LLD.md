@@ -461,3 +461,25 @@ The target-hint branch, scope resolution and the pairing table are handled as in
 ## 10. Open questions
 
 - The HLD's code 'no-plan-for-request' has no case that occurs today: an empty plan, an uncovered answer type and an unparseable plan are all replaced by the free-form lookup (src/analyze/context/driver.ts:1136, :1171). This design raises it from a check that stands behind that replacement. Keep the code with that check, or drop it from the contract?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**3 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T08:13:35.261Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| new-versus-reuse | MED | The existing ShaperSchemaUnrecoverable and ShaperPromptMissingError can carry the 'bundle-invalid', 'answer-invalid' and prompt-missing causes with a message that states the cause, with no change to those classes. | driver.ts:147-152: `constructor(retries: number, lastErrors: readonly string[]) { super(`Shaper completeStructured exhausted ${retries} retries: ` + lastErrors.join('; '))`. For a bundle that fails validation no structured call was retried, so the message would read 'Shaper completeStructured exhausted N retries: ...', which is not the cause. driver.ts:157-160: ShaperPromptMissingError takes a path and prefixes 'Shaper prompt file missing:', but PipelineOutcome carries only `message: string`, and SynthesizerPromptMissingError (synthesizer.ts:72-76) and DecomposerPromptMissingError expose the path only inside their message. The design lists both classes as '(existing)' and names no change to them. [files: src/analyze/context/driver.ts, src/analyze/context/synthesizer.ts] | State how each reused class is constructed for these causes: either add a constructor form (or a subclass) whose message says 'bundle failed validation' / 'answer-writing output invalid', or carry the prompt path as data on the cause. Add a test assertion on the message text, since ac3 is about the failure naming the actual cause. |
+| change-sites | MED | The tool loop's path for the free-form lookup (driver.ts:564) is moved to the ResolvedScope along with the other readers, so nothing else in the context builder reads the scope's value and a file, symbol or connection scope is served. | driver.ts:557-570 `runShaperToolLoop` is exported and takes only `args.inputs`; its one caller is explore/freeform-probe.ts:116, which builds its own intent at :93-110: `scopeRef: { kind: 'workspace', value: ctx.repoPath }`, `focus: params.purpose`. The runner context (explore/types.ts:761) carries only `repoPath`. So the free-form lookup never sees the request's scope: for a file, symbol or connection request that falls to the free-form lookup (every generic request, and any plan that is replaced) the loop is told the scope is the whole repo and the named file, entity or connection is lost. The design lists neither freeform-probe.ts nor the RunShaperToolLoopArgs signature as a change site, and deleting inferRepoPath leaves runShaperToolLoop with no stated source for a ResolvedScope. [files: src/analyze/explore/freeform-probe.ts, src/analyze/context/driver.ts, src/analyze/explore/types.ts] | Add freeform-probe.ts and runShaperToolLoop/RunShaperToolLoopArgs to the change sites: say how the resolved scope reaches the free-form lookup (through the executor's runner context or its params) and what scope the synthetic intent carries for a file, symbol and connection. Add a test that a file-scope request replaced by the free-form lookup still names the file. |
+| tests | MED | The existing tests that the classify-mapping change breaks are all named: the pattern test at orchestrator.test.ts:83-88 is replaced and the 'unrecognised error' test at :90 still holds. | orchestrator.test.ts:72, inside the test at :68-80 that the design does not mention: `[new ClassifierValidationExhausted([], []), 'classifier-validation-exhausted'],`. After the change the mapping returns the inner failure's code; here the error is built with an array as its failure, so the code read is undefined and the assertion fails. The :83-88 and :90-93 tests are as the design describes. [files: src/analyze/orchestrator/__tests__/orchestrator.test.ts] | Add orchestrator.test.ts:68-80 to the tests changed: drop or rewrite the ClassifierValidationExhausted row (constructed with a real ValidationFailure and expecting its inner code). |
+
+#### Could not verify (does not block)
+
+_None._

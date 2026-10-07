@@ -521,3 +521,24 @@ The target-hint branch, scope resolution and the pairing table are handled as in
 ## 10. Open questions
 
 - The HLD's code 'no-plan-for-request' has no case that occurs today: an empty plan, an uncovered answer type and an unparseable plan are all replaced by the free-form lookup (src/analyze/context/driver.ts:1136, :1171). This design raises it from a check that stands behind that replacement. Keep the code with that check, or drop it from the contract?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T08:50:25.028Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| error-paths | MED | With the optional 'call' argument, the model-failed message 'names no provider beyond what the underlying message says', so a failure of a provider that is not Ollama is not reported as Ollama (section 2.2, and the unit test that the message 'does not contain Ollama'). | The only errors the pipeline maps to the two model-failed causes are DecomposerLlmUnavailableError and SynthesizerLlmUnavailableError (driver.ts:1124, :1246), and both constructors put Ollama in the message themselves: decomposer.ts:57 `super(`Local Ollama unavailable for decomposer: ${cause}`)`, synthesizer.ts:60 `super(`Local Ollama unavailable for synthesizer: ${cause}`)`. The cause's message is that error's message, so the result reads 'The model call for planning failed: Local Ollama unavailable for decomposer: ...' for every provider. Section 3.4 changes only the two prompt-missing classes and ShaperLlmUnavailableError; these two constructors are not in any change site, and the stated test fails as written when the stand-in throws the class the pipeline catches. [files: src/analyze/context/decomposer.ts, src/analyze/context/synthesizer.ts, src/analyze/context/driver.ts] | Add the two constructors to section 3.4 and the migration steps: either drop the 'Local Ollama' prefix from DecomposerLlmUnavailableError and SynthesizerLlmUnavailableError, or give each a readonly field holding the underlying message and have the pipeline put that field, not err.message, in the cause. State which, and make the unit test throw those classes. |
+| error-paths | MED | A failed model call is told apart from an invalid answer 'by the error's class', so 'planner-model-failed' and 'answer-model-failed' are returned whenever a model call failed, including a failed claude or codex call (section 2.2 says such a call 'would be reported as Ollama'). | The class is decided by a list of Ollama and socket strings: decomposer.ts:351-370 and synthesizer.ts:332-351 return the LlmUnavailable class only when the message includes one of 'Ollama is not running', 'Model not found', 'ECONNREFUSED', 'ECONNRESET', 'fetch failed', 'socket hang up', 'EPIPE', 'other side closed', 'Did not receive done or success response in stream'; anything else becomes DecomposerSchemaUnrecoverable or SynthesizerSchemaUnrecoverable. The CLI provider's failures match none of them: cli-provider.ts:264 'claude --print failed: ...', :449 'claude exited with N. stderr=...', :474 'codex emitted error event', :477 'codex exited with N'. So with a claude or codex provider a failed answer-writing call lands in the catch-all at driver.ts:1254-1258 and, under this design, is reported as 'answer-invalid' with a message that says the output was invalid; a failed planning call is replaced by the free-form lookup with no cause recorded. That is the wrong cause for ac3, in the opposite direction from the one the Story fixes. [files: src/analyze/context/decomposer.ts, src/analyze/context/synthesizer.ts, src/agent/providers/cli-provider.ts, src/analyze/context/driver.ts] | Decide in the design how a failed call is recognised for a provider that is not Ollama: extend the classification in decomposer.ts and synthesizer.ts (for example a process-exit or error-envelope failure from the CLI provider is a model failure, and only a shape or parse failure after retries is 'answer-invalid'), list those two classifyError functions as change sites, and add a unit test with a stand-in error carrying a CLI failure message for both the planning and the answer-writing call. |
+
+#### Could not verify (does not block)
+
+_None._

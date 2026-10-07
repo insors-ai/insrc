@@ -32,7 +32,7 @@
   },
   "body": {
     "summary": {
-      "prose": "An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked.",
+      "prose": "An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic first makes every result and answer say honestly whether it is complete, then makes the analyzer measure how large a question really is and handle each size by a method that covers all of it, and only then removes the limits, so that at no point is a limit taken away before the analyzer can handle what it lets through. It also gives answers a shape that fits what was asked.",
       "audience": "product"
     },
     "flavor": "enhancement",
@@ -65,6 +65,10 @@
       {
         "text": "Repairing the code graph's missing cross-file import and call edges.",
         "rationale": "Tracked separately as ISSUE-12f70133491114c9, to be taken up after this Epic; until then a relationship lookup can be incomplete for reasons this Epic does not address, and its results must say only what this Epic can establish about completeness."
+      },
+      {
+        "text": "Removing a limit before the analyzer can state completeness, measure a request and handle a large result.",
+        "rationale": "The stakeholder chose an order in which no limit is taken away until what it lets through can be handled; the stories depend on one another accordingly."
       }
     ],
     "assumptions": [
@@ -131,34 +135,24 @@
     "stories": [
       {
         "id": "s1",
-        "title": "Every analyzer lookup returns everything and says whether it is complete",
-        "userValue": "As someone relying on an analysis, I get every result a lookup found, and I am told plainly when a result is partial or the lookup failed, so I never act on an answer that silently left things out.",
+        "title": "Every result and every answer says whether it is complete",
         "sizeEstimate": "L",
         "existingCapabilityRefs": [
           "c1"
         ],
+        "userValue": "As someone relying on an analysis, I am told plainly when a result was cut, when a lookup failed and when the analyzer could not produce an answer, so I never act on something that silently left things out.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
-            "given": "a lookup whose true number of results is larger than any limit the analyzer used to apply",
-            "when": "the analyzer performs that lookup",
-            "then": "every result is returned and none is dropped",
+            "given": "any lookup or analysis step the analyzer performs, on either path a request can take through the analyzer",
+            "when": "its result is produced",
+            "then": "the result states whether it is complete, and if it is not, how many results exist, how many were returned and why some are missing",
             "operationalizes": [
-              "k2",
               "k3"
             ]
           },
           {
             "id": "ac2",
-            "given": "any lookup the analyzer performs",
-            "when": "its result is produced",
-            "then": "the result states whether it is complete, and if it is not, how many results exist and why some are missing",
-            "operationalizes": [
-              "k3"
-            ]
-          },
-          {
-            "id": "ac3",
             "given": "a lookup that cannot be carried out",
             "when": "the analyzer reports on it",
             "then": "it is reported as failed with the reason, and never as a lookup that found nothing",
@@ -168,44 +162,64 @@
             ]
           },
           {
-            "id": "ac5",
-            "given": "the analyzer's own instructions and examples to the model that plans a lookup",
-            "when": "they are read",
-            "then": "none of them states or suggests a fixed number of results to ask for",
+            "id": "ac3",
+            "given": "a single item, such as a long document section, of which only part was read",
+            "when": "its result is produced",
+            "then": "the result names the item and says how much of it was read",
             "operationalizes": [
-              "k2"
+              "k3"
             ]
           },
           {
             "id": "ac4",
-            "given": "a single item, such as a long document section, that is too large to be read at once",
-            "when": "the analyzer reads it",
-            "then": "no fixed cut is applied, and if only part of it was read the result names the item and says how much was read",
+            "given": "files that a text lookup did not read, because of their size, their kind or an error",
+            "when": "its result is produced",
+            "then": "the result says which were left out and why, or by what rule",
             "operationalizes": [
-              "k2",
               "k3"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "any answer, on either path a request can take through the analyzer",
+            "when": "it is delivered",
+            "then": "it states whether its findings are complete and names every result that was cut, partly read or failed",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "the step that writes the answer fails",
+            "when": "the request ends",
+            "then": "the failure is reported with what the lookups found, and the request is not passed silently to another way of answering",
+            "operationalizes": [
+              "k3",
+              "k7"
             ]
           }
         ],
         "functionalRequirements": [
           {
-            "statement": "No lookup drops results because of a fixed limit, in any kind of source the analyzer covers."
-          },
-          {
-            "statement": "Each lookup result carries a statement of completeness."
+            "statement": "Each lookup or analysis-step result carries a statement of completeness."
           },
           {
             "statement": "A failed lookup is distinguishable from an empty one."
           },
           {
-            "statement": "No fixed cut is applied to an item's content, and a partly read item is reported."
+            "statement": "A partly read item and a file left out of a text lookup are reported."
+          },
+          {
+            "statement": "Every answer states whether its findings are complete."
+          },
+          {
+            "statement": "A failure to write the answer is reported, not hidden."
           }
         ]
       },
       {
         "id": "s2",
         "title": "The analyzer sizes a request from what it actually touches",
-        "userValue": "As someone asking a question, the analyzer finds out how big my question really is before it answers, so a large question is recognised as large and is not treated like a small one.",
         "sizeEstimate": "M",
         "dependsOn": [
           "s1"
@@ -214,12 +228,13 @@
           "c2",
           "c11"
         ],
+        "userValue": "As someone asking a question, the analyzer finds out how big my question really is before it answers, so a large question is recognised as large and is not treated like a small one.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
             "given": "a request, however it reaches the analyzer, including through the tools coding agents use",
             "when": "the analyzer begins work on it",
-            "then": "it determines the size of the request from counts of what the request touches, before running the request in full",
+            "then": "it determines the size of the request from counts of what the request touches, and no size is taken from the wording alone or assumed",
             "operationalizes": [
               "k1"
             ]
@@ -252,11 +267,20 @@
               "k1",
               "k3"
             ]
+          },
+          {
+            "id": "ac5",
+            "given": "a caller that states a size for its request",
+            "when": "the request is sized",
+            "then": "the stated size is kept as a hint and the measured size is used",
+            "operationalizes": [
+              "k1"
+            ]
           }
         ],
         "functionalRequirements": [
           {
-            "statement": "Request size is measured, not guessed from wording."
+            "statement": "Request size is measured, not guessed from wording or assumed."
           },
           {
             "statement": "The measured size and its basis are reported with the answer."
@@ -266,16 +290,16 @@
       {
         "id": "s3",
         "title": "Each request size has a defined way of being handled, in full",
-        "userValue": "As someone asking a large question, the analyzer works through all of it by a known method for its size and gives me one combined answer, so the size of my question never decides how much of it gets looked at.",
         "sizeEstimate": "L",
         "dependsOn": [
           "s1",
           "s2"
         ],
+        "userValue": "As someone asking a large question, the analyzer works through all of it by a known method for its size and gives me one combined answer, so the size of my question never decides how much of it gets looked at.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
-            "given": "each size a request can have",
+            "given": "each size a request can have, on either path a request can take through the analyzer",
             "when": "the analyzer's handling of that size is examined",
             "then": "there is a stated way of handling it that covers the whole of the request",
             "operationalizes": [
@@ -322,7 +346,7 @@
           },
           {
             "id": "ac6",
-            "given": "a single item, such as a long document section, that is larger than what was previously kept",
+            "given": "a single item, such as a long document section, that is too large to be read at once",
             "when": "the analyzer reads it",
             "then": "its whole content is taken into account, not only its beginning",
             "operationalizes": [
@@ -332,23 +356,99 @@
         ],
         "functionalRequirements": [
           {
-            "statement": "A handling method exists for every request size."
+            "statement": "A handling method exists for every request size on both paths."
           },
           {
             "statement": "Large result sets are processed completely, in parts, and combined."
           },
           {
-            "statement": "The answer reports how the request was handled."
+            "statement": "A single item too large to read at once is read in full, in sections."
           },
           {
-            "statement": "A single item too large to read at once is read in full, in sections."
+            "statement": "The answer reports how the request was handled."
           }
         ]
       },
       {
         "id": "s4",
+        "title": "No lookup drops results",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1",
+          "s3"
+        ],
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "userValue": "As someone relying on an analysis, I get every result a lookup found, whatever the size of my question, because nothing in the analyzer stops at a fixed number.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer",
+            "when": "the analyzer performs it",
+            "then": "every result is returned and none is dropped",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content",
+            "when": "the analyzer reads it",
+            "then": "no fixed cut is applied to it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a text lookup over files of any size and lines of any length",
+            "when": "it runs",
+            "then": "no file is left out for its size, no matching line is shortened, and no part of the search's output is discarded",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the analyzer's own instructions and examples to the model that plans a lookup",
+            "when": "they are read",
+            "then": "none of them states or suggests a fixed number of results to ask for",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a result set that became larger because a limit was removed",
+            "when": "the analyzer answers",
+            "then": "it is handled by the method for its size, and the answer is complete",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers."
+          },
+          {
+            "statement": "No fixed cut is applied to an item's content."
+          },
+          {
+            "statement": "A text lookup discards no file, line or output for its size."
+          },
+          {
+            "statement": "The planning instructions suggest no fixed number of results."
+          }
+        ]
+      },
+      {
+        "id": "s5",
         "title": "The form of an answer fits the question, for every kind of analyzer",
-        "userValue": "As someone reading an analysis, the answer is laid out for the question I asked, including when I asked for every occurrence of something, and no layout holds back findings.",
         "sizeEstimate": "L",
         "dependsOn": [
           "s1"
@@ -357,6 +457,7 @@
           "c12",
           "c13"
         ],
+        "userValue": "As someone reading an analysis, the answer is laid out for the question I asked, including when I asked for every occurrence of something, and no layout holds back findings.",
         "acceptanceCriteria": [
           {
             "id": "ac1",
@@ -395,15 +496,6 @@
             "operationalizes": [
               "k7"
             ]
-          },
-          {
-            "id": "ac5",
-            "given": "any answer",
-            "when": "it is delivered",
-            "then": "it states whether its findings are complete",
-            "operationalizes": [
-              "k3"
-            ]
           }
         ],
         "localConstraints": [
@@ -432,24 +524,24 @@
       "requirements": [
         {
           "id": "E20261006b9d5c5c4:FR001",
-          "statement": "No lookup the analyzer performs drops results because of a fixed limit.",
-          "scope": "doc",
-          "rationale": "A fixed limit makes large questions silently wrong."
+          "statement": "Every analyzer result states whether it is complete, a lookup that failed is reported as failed and never as empty, and every answer states whether its findings are complete.",
+          "scope": "doc"
         },
         {
           "id": "E20261006b9d5c5c4:FR002",
-          "statement": "Every analyzer result states whether it is complete, and a lookup that failed is reported as failed, never as empty.",
+          "statement": "The analyzer determines the size of a request from what the request actually touches, on both paths a request can take.",
           "scope": "doc"
         },
         {
           "id": "E20261006b9d5c5c4:FR003",
-          "statement": "The analyzer determines the size of a request from what the request actually touches before it runs the request in full.",
+          "statement": "For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined.",
           "scope": "doc"
         },
         {
           "id": "E20261006b9d5c5c4:FR004",
-          "statement": "For each size of request the analyzer follows a defined way of handling it, and a result set too large to treat at once is processed in full, in parts, and combined.",
-          "scope": "doc"
+          "statement": "No lookup or analysis step drops results because of a fixed limit, and no limit is removed before the analyzer can handle what it lets through.",
+          "scope": "doc",
+          "rationale": "A fixed limit makes large questions silently wrong; removing one without handling makes them fail."
         },
         {
           "id": "E20261006b9d5c5c4:FR005",
@@ -463,31 +555,37 @@
         },
         {
           "id": "E20261006b9d5c5c4:S001:FR001",
-          "statement": "No lookup drops results because of a fixed limit, in any kind of source the analyzer covers.",
+          "statement": "Each lookup or analysis-step result carries a statement of completeness.",
           "scope": "item",
           "itemRef": "s1"
         },
         {
           "id": "E20261006b9d5c5c4:S001:FR002",
-          "statement": "Each lookup result carries a statement of completeness.",
-          "scope": "item",
-          "itemRef": "s1"
-        },
-        {
-          "id": "E20261006b9d5c5c4:S001:FR003",
           "statement": "A failed lookup is distinguishable from an empty one.",
           "scope": "item",
           "itemRef": "s1"
         },
         {
+          "id": "E20261006b9d5c5c4:S001:FR003",
+          "statement": "A partly read item and a file left out of a text lookup are reported.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
           "id": "E20261006b9d5c5c4:S001:FR004",
-          "statement": "No fixed cut is applied to an item's content, and a partly read item is reported.",
+          "statement": "Every answer states whether its findings are complete.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S001:FR005",
+          "statement": "A failure to write the answer is reported, not hidden.",
           "scope": "item",
           "itemRef": "s1"
         },
         {
           "id": "E20261006b9d5c5c4:S002:FR001",
-          "statement": "Request size is measured, not guessed from wording.",
+          "statement": "Request size is measured, not guessed from wording or assumed.",
           "scope": "item",
           "itemRef": "s2"
         },
@@ -499,7 +597,7 @@
         },
         {
           "id": "E20261006b9d5c5c4:S003:FR001",
-          "statement": "A handling method exists for every request size.",
+          "statement": "A handling method exists for every request size on both paths.",
           "scope": "item",
           "itemRef": "s3"
         },
@@ -511,33 +609,57 @@
         },
         {
           "id": "E20261006b9d5c5c4:S003:FR003",
+          "statement": "A single item too large to read at once is read in full, in sections.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S003:FR004",
           "statement": "The answer reports how the request was handled.",
           "scope": "item",
           "itemRef": "s3"
         },
         {
           "id": "E20261006b9d5c5c4:S004:FR001",
-          "statement": "A question asking for every occurrence gets a complete enumeration as its answer.",
+          "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers.",
           "scope": "item",
           "itemRef": "s4"
         },
         {
           "id": "E20261006b9d5c5c4:S004:FR002",
-          "statement": "The answer layouts of all analyzer kinds are free of limits on findings.",
+          "statement": "No fixed cut is applied to an item's content.",
           "scope": "item",
           "itemRef": "s4"
         },
         {
           "id": "E20261006b9d5c5c4:S004:FR003",
-          "statement": "Each layout covers every lookup its analyzer can run.",
+          "statement": "A text lookup discards no file, line or output for its size.",
           "scope": "item",
           "itemRef": "s4"
         },
         {
-          "id": "E20261006b9d5c5c4:S003:FR004",
-          "statement": "A single item too large to read at once is read in full, in sections.",
+          "id": "E20261006b9d5c5c4:S004:FR004",
+          "statement": "The planning instructions suggest no fixed number of results.",
           "scope": "item",
-          "itemRef": "s3"
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR001",
+          "statement": "A question asking for every occurrence gets a complete enumeration as its answer.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR002",
+          "statement": "The answer layouts of all analyzer kinds are free of limits on findings.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S005:FR003",
+          "statement": "Each layout covers every lookup its analyzer can run.",
+          "scope": "item",
+          "itemRef": "s5"
         }
       ]
     }
@@ -546,7 +668,7 @@
     {
       "id": "c1",
       "kind": "analyze-bundle",
-      "ref": "Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178).",
+      "ref": "Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178). Also in the shared grep primitive: the search's output is kept only up to 4 MB and the rest discarded without a signal (the ripgrep call at src/daemon/tools/builtins/search/grep.ts:181, through src/daemon/tools/shell-helper.ts:86-89), and the ripgrep path cuts a matching line at 500 characters too (:193); the two search backends leave out different files by rule (ripgrep honours .gitignore and skips hidden and binary files; the fallback skips dot-names and a fixed list of directories, :95). On the plan-tree path the same kinds of limit sit in the plan-task runtimes (runtimes/data/discovery-objects.ts:56, runtimes/infra/_shared.ts:90, runtimes/infra/discovery-families.ts:53, runtimes/docs/family-summarise.ts:162 and the three adherence checks).",
       "quotedText": "const DEFAULT_TOP_K = 30;"
     },
     {
@@ -635,6 +757,17 @@
       "id": "c18",
       "kind": "stakeholder",
       "ref": "user, 2026-10-07: reading one large item in full moves from Story s1 to Story s3; Story s1 removes the fixed cut and reports a partly read item"
+    },
+    {
+      "id": "c19",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-07",
+      "quotedText": "A. Both paths in this epic"
+    },
+    {
+      "id": "c20",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts"
     }
   ]
 }

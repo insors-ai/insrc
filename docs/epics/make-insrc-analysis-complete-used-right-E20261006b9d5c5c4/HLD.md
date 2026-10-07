@@ -4,7 +4,7 @@
 
 ## Summary
 
-Every analyzer lookup returns all of its results together with one common record saying whether they are complete and what they rest on. The analyzer then measures the results it actually got, and that measurement, not a guess from the wording, decides how the answer is produced: at once when the results are small enough to reason over together, or part by part and then combined when they are not. The answer's layout is chosen by the kind of question as well as the kind of source, a question asking for every occurrence is listed directly from the results, and every answer opens with a short report of its size, how it was handled and whether it is complete.
+The work is ordered so that no limit is removed before the analyzer can handle what it lets through. First every lookup result, every analysis step and every answer says honestly whether it is complete, on both paths a request can take. Then the analyzer measures what a request actually touches, and that measurement decides how the answer is produced: at once when the results are small enough to reason over together, or part by part and then combined when they are not. Only then are the limits taken out. Finally the answer's layout is chosen by the kind of question as well as the kind of source, and a question asking for every occurrence is listed directly from the results.
 
 ## Contents
 
@@ -24,48 +24,54 @@ Every analyzer lookup returns all of its results together with one common record
 
 ## 2. Framework summary
 
-Three records carry the design, and both paths into the analyzer use them. A completeness record on every lookup result replaces today's mix of truncated flags, totals and free-text notes: it says whether the result is complete, how many items exist and were returned, why any are missing, and what the result rests on (text on disk, the stored graph, the document index, a live data source). No recipe, planning prompt or layout keeps a limit, and a lookup that cannot run is always the existing failed output with its reason, never an empty result. A request measure says what a request touches and maps it to the existing five sizes. It has two sources, because the size is needed at two different moments. A request that plans lookups up front (the lookup pipeline and the agent tools) is measured from what those lookups returned: items, files, characters. A request that plans no lookups up front (an unfocused request on the orchestrator path, where the size is needed before planning) is measured from the area it names: the files and entities stored in the graph under the path or repo the request points at, where today the whole repository is counted even when the request names one module. Both replace the wording-and-repository guess and the fixed default; a request that cannot be measured is treated as the largest size and says so. An answer report heads every answer: the measure and size, how the request was handled and in how many parts, and one overall completeness statement derived from the lookups' records.
+Three records carry the design, and both paths into the analyzer use them: the lookup pipeline that serves focused requests and the agent tools, and the plan tree that serves unfocused requests. A completeness record on every lookup result and every plan-task result replaces today's mix of truncated flags, totals, free-text notes and log lines: it says whether the result is complete, how many items exist and were returned, why any are missing, what was skipped or only partly read, and what the result rests on (text on disk, the stored graph, the document index, a live data source). A lookup that cannot run is always the existing failed output with its reason, never an empty result, and a failure to write the answer is reported with what was found, not passed silently to another way of answering. An answer report heads every answer on both paths: one overall completeness statement derived from those records, the measured size, and how the request was handled.
 
-Handling is a stated table from size to method. Up to the size a model can reason over together, the answer is written in one pass, exactly as today. Above it, the results are divided into parts along file and directory boundaries, each part is reasoned over in turn, and a combine step written for this pipeline joins the per-part findings into one answer; a failed part is kept out of the combined answer and named in the report. A single item too large for one pass is read in consecutive sections under the same rule; until that handling exists, such an item is read as far as one pass allows and its result says how much of it was read. Layouts are selected by question kind and source kind together; a new question kind, enumeration, is rendered directly from lookup results with no model in the path, and the six existing layouts and the older per-source layouts lose their limits and describe every lookup they may draw on.
+A request measure says what a request touches and maps it to the existing five sizes. It has two sources, because the size is needed at two different moments. A request that plans lookups up front is measured from what those lookups returned. A request that plans none up front (an unfocused request on the plan-tree path, where the size is needed before planning) is measured from the area it names: the files and entities the graph store holds under the path or repo it points at. No size is taken from the wording or assumed; a request that cannot be measured is treated as the largest size and says so.
+
+Handling is a stated table from size to method, on both paths. Up to the size a model can reason over together, the answer is written in one pass, as today. Above it, the results are divided into parts along file and directory boundaries, each part is reasoned over in turn, and a combine step joins the per-part results into one answer; a failed part is kept out and named in the report. A single item too large for one pass is read in consecutive sections under the same rule. Once that handling exists the limits are removed: no lookup, plan-task runtime, planning prompt or text search keeps a limit on how many results it returns or how much of an item it reads. Last, layouts are selected by question kind and source kind together; a new question kind, enumeration, is rendered directly from lookup results with no model in the path, and the layouts lose their limits and describe every lookup they may draw on.
 
 ## 3. Architecture shape
 
-The change sits inside the existing analyze framework and adds no new subsystem. There are two paths and they differ in when the size is needed.
+The change sits inside the existing analyze framework and adds no new subsystem. There are two paths, and every Story covers both.
 
-THE LOOKUP PIPELINE (decomposer, executePlan, synthesizer; entered by tryExplorationPipeline for a focused request and by the agent tools). The order becomes: plan the lookups; run them in full; build the request measure from their outputs; choose the handling method from the measure; then either write the answer once or divide the outputs into parts, write a per-part result for each in turn, and combine them; finally render with the layout chosen for the question kind and source kind, headed by the answer report. The combine step is new to this pipeline. The plan tree's aggregator (src/analyze/runtimes/shared/aggregator.ts) is not reused: it is a plan-task runtime that takes plan-task outputs and returns a findings report, not the seven-layer bundle, and it places every input whole into one prompt. What is reused from it is the pattern and the provider role. The combine step takes the cited per-part results, returns the seven-layer bundle, applies the same size rule to its own input (combining in stages when the per-part results together are too large for one pass), and when it fails the per-part results are returned as they are with the failure named in the report.
+THE LOOKUP PIPELINE (decomposer, executePlan, synthesizer; entered by tryExplorationPipeline for a focused request, src/analyze/context/driver.ts:1083, and by the agent tools). The order becomes: plan the lookups; run them; build the request measure from their outputs; choose the handling method from the measure; then either write the answer once or divide the outputs into parts, write a per-part result for each in turn, and combine them; finally render with the layout for the question kind and source kind, headed by the answer report. Today a failure of the answer-writing call is logged and the request falls through to the older tool loop with no report (src/analyze/context/driver.ts:1254-1258); that fall-through is removed and the failure is returned with the lookup results and the report.
 
-THE ORCHESTRATOR PATH (runAnalyze, src/analyze/orchestrator/driver.ts:80). Today the size is fixed at classification, before the bundle is built and the planner runs (:194-222, :271, :294), and an unfocused request never reaches the lookup pipeline (src/analyze/context/driver.ts:1102). So this path gets a measuring pass of its own, placed where pickScope is called today: it counts the files and entities the graph store holds under the path or repo the request names, and the size comes from that count. The model call that picks a size is removed from this path. The per-size bands keep governing only how many tasks a plan may have. A focused request on this path that does reach the lookup pipeline is measured again from its lookup results, and that second measure governs how its answer is produced.
+THE PLAN TREE (runAnalyze, src/analyze/orchestrator/driver.ts:80; its only caller is the daemon's analysis request, src/daemon/analyze-rpc.ts:526). Plan tasks are run by per-source runtimes and a terminal aggregator combines them (src/analyze/runtimes/shared/aggregator.ts). Its runtimes return task results, a different type from lookup outputs, so the completeness record is carried on the task result as well, and the answer report names an incomplete or failed source by either a lookup id or a task id. The aggregator places every task output whole into one prompt (:160-178); it gets the same size rule as the lookup pipeline's combine step, combining in stages when its inputs are too large for one pass. The final report (typed unknown today, src/analyze/orchestrator/types.ts:230) gains the answer report.
 
-THE AGENT TOOLS. insrc_analyze_step measures after its plan phase and no longer assumes a size. Four places assume size M today and all take the measure: the step tool's start phase (src/mcp/analyze-step/phases/start.ts:49), the one-shot insrc_analyze tool (src/mcp/server.ts:1294), the workflow request that runs an analysis (src/daemon/workflow-rpc.ts:552) and the free-form probe (src/analyze/explore/freeform-probe.ts:100). A size passed by a caller is kept as a hint and the measure decides. The step tool's narrow turn cannot carry parts, because it is bound to one lookup: it checks the lookup's id, needs a registered runner for it, and stores its result in the lookup cache (src/mcp/analyze-step/phases/narrow.ts:78-171). So the step tool gains a distinct part turn with its own stage: after the plan phase a partitioned request returns the first part to write; each part turn returns the next; the last returns the combine; per-part results are kept in the run's state, not in the lookup cache. An enumeration answer needs no model turn, so the plan phase can also return the finished answer directly.
+SIZING. On the plan tree the size is fixed at classification, before the bundle is built and the planner runs, in two branches: with a target hint the scope picker's model call chooses it (driver.ts:172-222), and without one the classifier's model call returns it as a required field (driver.ts:234; src/analyze/classifier/schema.ts:42-46). A measuring pass is placed after both branches and its result is the size: it counts the files and entities the graph store holds under the path or repo the request names (the store returns a repo's entities with their file paths, src/db/entities.ts:779; today's picker counts the whole repo even for a module or file request, src/analyze/classifier/scope-picker.ts:206-211). The scope picker's model call is removed and the classifier no longer returns a size. A size given on a slash command or by a caller is kept as a hint. The per-size bands keep governing only how many tasks a plan may have. In the lookup pipeline and the agent tools the measure is taken from the lookup results after the plan phase; four places assume size M today and all take the measure (src/mcp/analyze-step/phases/start.ts:49, src/mcp/server.ts:1294, src/daemon/workflow-rpc.ts:552, src/analyze/explore/freeform-probe.ts:100).
+
+THE COMBINE STEP of the lookup pipeline is new. The plan tree's aggregator is not reused for it, because it takes plan-task outputs and returns a findings report, not the seven-layer bundle; the pattern and the provider role are. The combine step takes the cited per-part results, returns the seven-layer bundle, applies the size rule to its own input, and when it fails the per-part results are returned as they are with the failure named in the report.
+
+THE STEP TOOL'S PART TURN. insrc_analyze_step's narrow turn cannot carry parts: it is bound to one lookup, checks that lookup's id, needs a registered runner for it and stores its result in the lookup cache (src/mcp/analyze-step/phases/narrow.ts:78-171). So the step tool gains a distinct part turn with its own stage: after the plan phase a partitioned request returns the first part to write; each part turn returns the next; the last returns the combine; per-part results are kept in the run's state. An enumeration answer needs no model turn, so the plan phase can also return the finished answer.
 
 LAYOUT SELECTION is implemented twice today and both change together: in the context driver (src/analyze/context/driver.ts:1222) and for the step tool (refineSynthesizerKey, src/mcp/analyze-step/synthesizer-key.ts:37).
 
-LOOKUPS keep their runner table and cache; each returns the completeness record and takes no limit parameter. The shared grep primitive gains a complete mode that only the analyzer's two text lookups use, so the search tool exposed to other callers keeps its own limits. Lookups that read the stored graph mark their results as resting on the graph, because the graph's own completeness is a separate defect (ISSUE-12f70133491114c9) outside this Epic.
+THE TEXT SEARCH. The shared grep primitive (src/daemon/tools/builtins/search/grep.ts) has two backends and four callers; only the analyzer's two text lookups (search-text.ts:100, config-trace.ts:100) use the new complete mode, so the search tool exposed to other callers and the review probe keep their limits. Lookups that read the stored graph mark their results as resting on the graph, because the graph's own completeness is a separate defect (ISSUE-12f70133491114c9) outside this Epic.
 
 ## 4. Shared contracts
 
 ### 4.1 sc1: Completeness record
 
 **Owner Story:** `s1`
-**Consumed by:** `s2`, `s3`, `s4`
+**Consumed by:** `s2`, `s3`, `s4`, `s5`
 
-**Purpose:** The one statement every lookup result carries about whether it is complete, replacing truncated flags, totals and not-found notes; also the rule that a lookup which cannot run is the failed output, never an empty result.
+**Purpose:** The one statement every lookup result and every plan-task result carries about whether it is complete; also the rule that a lookup which cannot run is the failed output, never an empty result.
 
 **Interface sketch (type-level):**
 
 ```
 interface Completeness {
-  readonly complete: boolean;
-  readonly total: number | null;        // items that exist; null when it cannot be counted
+  readonly complete: boolean;            // false whenever limited, skipped or partlyRead is non-empty
+  readonly total: number | null;         // items that exist; null when it cannot be counted
   readonly returned: number;
-  readonly reason?: string | undefined; // required when complete is false
+  readonly limited?: { readonly limit: number; readonly reason: string } | undefined; // a limit was reached
+  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;
+  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;
   readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem';
-  readonly basisNote?: string | undefined; // e.g. the graph's own coverage is not established
-  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;       // e.g. a file that could not be read
-  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined; // an item too large for one pass
+  readonly basisNote?: string | undefined; // what the basis excludes by rule, or that its own coverage is not established
 }
 interface WithCompleteness { readonly completeness: Completeness }
-// every ExplorationOutput except 'failed' and 'unsupported' extends WithCompleteness; complete is false whenever skipped or partlyRead is non-empty
+// every ExplorationOutput except 'failed' and 'unsupported', and every plan-task result, extends WithCompleteness
 ```
 
 **Assumptions cited:** [[c1]]
@@ -73,26 +79,28 @@ interface WithCompleteness { readonly completeness: Completeness }
 ### 4.2 sc2: Answer report
 
 **Owner Story:** `s1`
-**Consumed by:** `s2`, `s3`, `s4`
+**Consumed by:** `s2`, `s3`, `s4`, `s5`
 
-**Purpose:** The header every answer carries: overall completeness derived from the lookups, the measured size and its counts, and how the request was handled. Owned by the first Story so that sizing, handling and layout can each fill and render their part.
+**Purpose:** The header every answer carries on both paths: overall completeness derived from the results, then the measured size and how the request was handled once those exist. Owned by the first Story so that sizing, handling and layout each fill and render their part.
 
 **Interface sketch (type-level):**
 
 ```
+interface SourceNote { readonly sourceId: string; readonly sourceKind: 'lookup' | 'plan-task'; readonly reason: string }
 interface AnswerReport {
-  readonly completeness: { readonly complete: boolean; readonly incomplete: readonly { readonly explorationId: string; readonly reason: string }[]; readonly failed: readonly { readonly explorationId: string; readonly reason: string }[] };
-  readonly measure?: RequestMeasure | undefined;     // filled by sizing
-  readonly handling?: HandlingReport | undefined;    // filled by handling
+  readonly completeness: { readonly complete: boolean; readonly incomplete: readonly SourceNote[]; readonly failed: readonly SourceNote[] };
+  readonly answerFailure?: string | undefined;        // the step that writes the answer failed
+  readonly measure?: RequestMeasure | undefined;      // filled by sizing
+  readonly handling?: HandlingReport | undefined;     // filled by handling
 }
 ```
 
 ### 4.3 sc3: Request measure
 
 **Owner Story:** `s2`
-**Consumed by:** `s3`
+**Consumed by:** `s3`, `s4`
 
-**Purpose:** What a request actually touched, taken from its completed lookups, and the size it maps to.
+**Purpose:** What a request actually touched, from its lookup results or from the area it names, and the size it maps to.
 
 **Interface sketch (type-level):**
 
@@ -104,6 +112,7 @@ interface RequestMeasure {
   readonly characters: number | null;    // null for a named-area measure
   readonly size: 'XS' | 'S' | 'M' | 'L' | 'XL';
   readonly determined: boolean;          // false: could not be measured, size is 'XL'
+  readonly sizeHint?: 'XS' | 'S' | 'M' | 'L' | 'XL' | undefined; // what a caller asked for
   readonly note?: string | undefined;
 }
 ```
@@ -113,6 +122,7 @@ interface RequestMeasure {
 ### 4.4 sc4: Handling report
 
 **Owner Story:** `s3`
+**Consumed by:** `s4`
 
 **Purpose:** How a request was handled: at once or in parts, how many parts, and which parts were not covered.
 
@@ -131,7 +141,7 @@ interface HandlingReport {
 
 ### 4.5 sc5: Question kind and layout selection
 
-**Owner Story:** `s4`
+**Owner Story:** `s5`
 
 **Purpose:** The kinds of question an answer can be laid out for, including enumeration, and the rule that a layout is chosen by question kind and source kind together.
 
@@ -149,79 +159,93 @@ interface LayoutChoice { readonly key: LayoutKey; readonly rendered: 'by-model' 
 
 **Owns:** `sc1`, `sc2`
 
-Removing every limit on how many results a lookup returns: the sixteen sites the Define lists, and those found since: the maxSources parameter of the two document lookups (src/analyze/explore/executor.ts:315, :337), the result cut in document retrieval (src/analyze/docs-retrieval.ts:290), the cuts inside capability reuse-check (src/analyze/explore/capability-reuse-check.ts:303, :348-350), table describe (src/analyze/explore/db-table-describe.ts:175, :181) and the document family summary (src/analyze/runtimes/docs/family-summarise.ts:162), the preview-length limits of doc.mention (src/analyze/explore/doc-mention.ts:39-40), and the limit parameters, their examples and the fan-out bound in the planning prompt (src/prompts/analyze/decompose.system.md). The complete mode of the shared grep primitive, specified in full for both its ripgrep and its fallback path (src/daemon/tools/builtins/search/grep.ts): no limit on hits, no per-file match limit (:178), no cut of a matching line (:107), no skipping of a file for its size (:102), and every file that cannot be read reported in the result's skipped list where today it is skipped silently (:111); the search tool's own limits are left alone. Returning the completeness record from each lookup, with the basis each rests on. Turning every swallowed error into the failed output. For the content of one item, removing the fixed cuts (the eight sites the Define lists): an item is read in full when it fits in one pass, and when it does not, it is read as far as one pass allows and listed in partlyRead with how much was read, so nothing is cut without the result saying so; reading such an item in full is Story s3. Deriving the answer report's overall completeness from the lookups' records. The lookup cache's stored shape changes with the outputs.
+With every limit still in place: returning the completeness record from each lookup and each plan-task runtime, saying when a limit was reached (limited), what was skipped and what was only partly read, and the basis each rests on. For the text search, reporting what it leaves out today: files over its size limit, files it could not read, lines it shortened, output it discarded, and the files each backend excludes by rule. Turning every swallowed error into the failed output. Deriving the answer report's overall completeness from those records and writing the completeness line at the head of every answer on both paths, in the layouts as they are today. Reporting a failure of the answer-writing step with the lookup results, and removing the silent fall-through to the older tool loop. The lookup cache's stored shape changes with the outputs.
 
 ### 5.2 Story E20261007b9d5c5c4:S002
 
 **Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
-The two measuring sources and the mapping from counts to the five sizes. From lookup results: taking the measure from completed lookups in the lookup pipeline and the agent tools, at all four places that assume size M today (src/mcp/analyze-step/phases/start.ts:49, src/mcp/server.ts:1294, src/daemon/workflow-rpc.ts:552, src/analyze/explore/freeform-probe.ts:100). From the named area: on the orchestrator path, a measuring pass placed where the scope picker is called today (src/analyze/orchestrator/driver.ts:194), counting the files and entities the graph store holds under the path or repo the request names (the store already returns a repo's entities with their file paths, src/db/entities.ts:779; today's picker counts the whole repo for a module or file request, src/analyze/classifier/scope-picker.ts:206-211), and removing the model call that picks a size. What the decomposer and planner receive as size at each moment. A size passed by a caller kept as a hint. The unmeasurable case. Filling the measure into the answer report.
+The two measuring sources and the mapping from counts to the five sizes. From lookup results, at all four places that assume a size today. From the named area, on the plan tree: the measuring pass after both classification branches, removal of the scope picker's model call, removal of the size from the classifier's output, and what the decomposer and planner receive as size at each moment. A size given by a caller or a slash command kept as a hint. The unmeasurable case. Filling the measure into the answer report and showing it in the answer.
 
 ### 5.3 Story E20261007b9d5c5c4:S003
 
 **Owns:** `sc4`
 **Depends on:** `sc1`, `sc2`, `sc3`
 
-The table from size to handling method and the size above which results are handled in parts. How lookup outputs are divided along directory and file boundaries, and one large item into consecutive sections, so that a single item is read in full. Writing a per-part result for each part serially. The combine step of the lookup pipeline: its input (cited per-part results), its output (the seven-layer bundle), its own size rule (combining in stages), and its failure case (per-part results returned as they are, the failure named). Keeping a failed part out of the combined answer. The step tool's part turn: its stage, its input and output, how per-part results are kept in the run's state and how the combine is returned. Filling the handling report.
+The table from size to handling method and the size above which results are handled in parts. How outputs are divided along directory and file boundaries, and one large item into consecutive sections, so that a single item is read in full. In the lookup pipeline: writing a per-part result for each part serially and the new combine step (its input, its output, its own size rule, its failure case). On the plan tree: the same size rule on the aggregator's input, combining in stages. Keeping a failed part out of the combined answer. The step tool's part turn. Filling the handling report and showing it in the answer. The limits are still in place, so this is exercised by results that are large within them and by tests that lower the threshold.
 
 ### 5.4 Story E20261007b9d5c5c4:S004
+
+**Depends on:** `sc1`, `sc2`, `sc3`, `sc4`
+
+Removing every limit on how many results a lookup or plan-task runtime returns: the sixteen sites the Define lists and those found since, in the lookups (the maxSources parameter of the two document lookups, the result cut in document retrieval, the cuts inside capability reuse-check, table describe and the document family summary, the preview limits of doc.mention) and in the plan-task runtimes (the file-list and file caps of data and infrastructure discovery and their sample caps). Removing the fixed cuts on an item's content (the eight sites the Define lists, including the three adherence checks). The complete mode of the text search for both backends: no limit on hits, no per-file match limit, no cut of a matching line, no skipping of a file for its size, no discarding of output (the search's output is read as a stream, not kept up to a fixed size), a stated rule for a search that runs out of time (reported as failed, never as complete), and the files each backend excludes by rule stated in the result. Removing the limit parameters, their examples and the fan-out bound from the planning prompt. What was reported as limited in Story s1 now does not occur; the larger results are handled by Story s3's method.
+
+### 5.5 Story E20261007b9d5c5c4:S005
 
 **Owns:** `sc5`
 **Depends on:** `sc1`, `sc2`
 
-Adding the enumeration question kind to the planner's choices and rendering it directly from lookup results, including returning it from the step tool's plan phase with no model turn. Choosing a layout by question kind and source kind at both places a layout is selected today (src/analyze/context/driver.ts:1222 and src/mcp/analyze-step/synthesizer-key.ts:37). Removing the limits from the six layouts and the older per-source layouts and from the summariser's output schema. Making each layout describe every lookup it may draw on, with that reference at the end of the prompt. Rendering the answer report at the head of every answer, including whatever measure and handling fields are present, and the skipped and partly-read lists.
+Adding the enumeration question kind to the planner's choices and rendering it directly from lookup results, including returning it from the step tool's plan phase with no model turn. Choosing a layout by question kind and source kind at both places a layout is selected today. Removing the limits from the six layouts and the older per-source layouts and from the summariser's output schema. Making each layout describe every lookup it may draw on, with that reference at the end of the prompt. Laying out the answer report, which Stories s1 to s3 already write, in the form each layout uses.
 
 ## 6. Non-functional targets
 
-- **Performance:** A request small enough for one pass makes the same model calls as today, and one fewer on the orchestrator path, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. Lookups run in full before sizing, so a complete text search over a large repository is the cost of sizing.
+- **Performance:** A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.
 - **Security:** No change: lookups stay inside the repository's dependency closure and the existing scope checks on paths remain.
-- **Observability:** Every answer states its measured size, its handling method and part count, and its completeness; each lookup result states its own. A failed lookup or part carries its reason.
+- **Observability:** Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.
 - **Durability:** Cached lookup outputs written before this change lack the completeness record and are treated as absent, not as complete.
 
 ## 7. Rollout
 
-**Phase A — complete lookups and the completeness record**
+**Phase A — say when a result is incomplete**
 
 **Stories:** `s1`
 
-Everything else reads the completeness record and the answer report, and nothing downstream can be trusted while lookups still drop results.
+Everything else reads the completeness record and the answer report, and it is safe to ship alone: no limit moves, results simply stop looking complete when they are not.
 
-**Backward compat:** Lookup outputs change shape: the truncated flags, totalCallers and not-found notes are replaced by the completeness record, so every reader of those outputs (the six layouts, the agent-tool phases, the exploration cache) is updated in the same phase; cached outputs without the record are treated as absent. The limit parameters disappear from the planner's catalog; a plan that still passes one has it ignored. The search tool exposed to other callers keeps its limits. An item too large for one pass is still read only in part, as today, but the result now says so. Answers gain a completeness line and are otherwise laid out as before.
+**Backward compat:** Lookup and plan-task outputs change shape: the truncated flags, totalCallers, not-found notes and truncation log lines are replaced by the completeness record, so every reader of those outputs is updated in the same phase; cached outputs without the record are treated as absent. Every limit keeps its present value. Answers gain a completeness line. A request whose answer-writing step fails now returns that failure where it used to be answered by the older tool loop.
 
-**Phase B — answer layouts by question kind**
-
-**Stories:** `s4`
-
-Depends only on Phase A, removes the last place results are held back, and gives the direct enumeration answer; it can be built alongside Phase C.
-
-**Backward compat:** The seven-layer bundle stays the shape of a model-written answer, so callers that read its layers keep working. The enumeration answer is a new shape that only a request classified as enumeration receives. Layout limits are removed, so answers to large questions get longer.
-
-**Phase C — measured sizing**
+**Phase B — measured sizing**
 
 **Stories:** `s2`
 
-Needs complete lookups to measure from; must land before handling by size.
+Needs the answer report to state its result; must land before handling by size.
 
-**Backward compat:** The five size names are unchanged. A request's size can differ from what the scope picker or the fixed default gave, which changes how many tasks the orchestrator plans. A caller that passes a size explicitly has it recorded as a hint and the measured size is used.
+**Backward compat:** The five size names are unchanged. A request's size can differ from what the scope picker, the classifier or the fixed default gave, which changes how many tasks the plan tree plans. The classifier's output loses its size field. A size passed by a caller is kept as a hint and the measured size is used.
 
-**Phase D — handling by size**
+**Phase C — handling by size**
 
 **Stories:** `s3`
 
-Needs both the completeness record and the measure.
+Needs the completeness record and the measure; must exist before any limit is removed.
 
-**Backward compat:** A request small enough for one pass behaves as before. A larger one takes longer and, through the agent tool, takes more turns, one per part.
+**Backward compat:** A request small enough for one pass behaves as before. A larger one takes longer and, through the step tool, takes more turns, one per part.
 
-**Ordering rationale:** s1 owns the two records every other Story reads, so it is first. s4 depends only on s1 and s2 only on s1, so Phases B and C are independent of each other and are ordered B then C only so that the layouts are free of limits before larger answers start flowing through them. s3 consumes s2's measure and comes last. This follows the Epic's dependency edges (s2 on s1; s3 on s1 and s2; s4 on s1) and the contract ownership (sc1 and sc2 at s1, sc3 at s2, sc4 at s3, sc5 at s4).
+**Phase D — remove the limits**
+
+**Stories:** `s4`
+
+Only now can a result of any size be handled in full.
+
+**Backward compat:** Results get larger: a lookup that returned its first thirty hits returns all of them. The limit parameters disappear from the planner's catalog; a plan that still passes one has it ignored. The search tool exposed to other callers and the review's evidence search keep their limits.
+
+**Phase E — answer layouts by question kind**
+
+**Stories:** `s5`
+
+Depends only on Phase A and could be built earlier; it is placed last so that layouts lose their limits once complete results are flowing.
+
+**Backward compat:** The seven-layer bundle stays the shape of a model-written answer. The enumeration answer is a new shape that only a request classified as enumeration receives. Layout limits are removed, so answers to large questions get longer.
+
+**Ordering rationale:** The order is the stakeholder's: say when a result is incomplete, then measure, then handle by size, then remove the limits, then fit the layouts, so that no limit is removed before the analyzer can handle what it lets through. It follows the Epic's dependency edges (s2 on s1; s3 on s1 and s2; s4 on s1 and s3; s5 on s1) and the contract ownership (sc1 and sc2 at s1, sc3 at s2, sc4 at s3, sc5 at s5; s4 owns no contract and consumes four).
 
 **Risky bits**
 
 | Area | Why | Mitigation |
 | :--- | :--- | :--- |
-| Unlimited lookups on a large repository | A text search or a caller list with no limit can return a very large result, and today every output is placed whole into one model prompt. | Phase A removes the limits on how many results come back and states completeness. For the content of one item it reads as far as one pass allows and lists the item as partly read with the amounts, never cutting silently. A set of results too large to place in one prompt is reported in the answer report with its count until Phase D lands; Phase D then handles both in parts. |
-| Combining parts without losing or duplicating findings | The combine step is a model call; it could drop a part's finding or merge two that differ. | Each part's findings are kept as cited records, the combination is checked against them (every part's findings accounted for), and the handling report names any part not covered. Enumerations bypass the model entirely. |
-| Completeness that rests on the stored graph | The graph is known to miss cross-file import and call edges (ISSUE-12f70133491114c9), so a caller list can be complete with respect to the graph and still wrong. | The completeness record carries what a result rests on, and graph-based results carry a note that the graph's own coverage is not established; the layouts print that note. The note is removed when that issue is fixed. |
+| Combining parts without losing or duplicating findings | The combine step and the aggregator are model calls; either could drop a part's finding or merge two that differ. | Each part's findings are kept as cited records, the combination is checked against them (every part's findings accounted for), and the handling report names any part not covered. Enumerations bypass the model entirely. |
+| A text search with no limits on a large repository | With no hit limit, no size skip and its output read in full, a broad pattern can return a very large result and take a long time. | Phase D lands after handling by size, so a large result is divided, not placed whole in one prompt. A search that runs out of time is reported as failed, never as complete. |
+| Completeness that rests on the stored graph | The graph is known to miss cross-file import and call edges (ISSUE-12f70133491114c9), so a caller list can be complete with respect to the graph and still wrong. | The completeness record carries what a result rests on, and graph-based results carry a note that the graph's own coverage is not established; the answer prints that note. The note is removed when that issue is fixed. |
 
 ## 8. Alternatives considered
 
@@ -244,6 +268,7 @@ The size then selects how the answer is produced, by a stated table: a result se
 - A large request takes more model calls, one per part plus the combination, run serially
 - The threshold between 'at once' and 'in parts' must be chosen and justified
 - Results that read the stored graph can only claim completeness with respect to the graph, which is known to be incomplete until ISSUE-12f70133491114c9 is fixed
+- Covering both paths and removing the limits only after handling exists makes the work five phases
 
 **Cost estimate:** L
 
@@ -314,28 +339,10 @@ Sizing uses the totals. Nothing is partitioned: a request beyond the raised ceil
 - **[[c20]]** `code` `src/analyze/runtimes/shared/aggregator.ts`
 - **[[c21]]** `stakeholder` `user, 2026-10-07` — "A, should be able to get the entity count from LMDB right?"
 - **[[c22]]** `prior-artifact` `HLD-b9d5c5c40df5a574 first review of 2026-10-07 by the daemon: block, 1 HIGH and 6 MED did not hold; the user decided the two that needed a decision (size an unfocused request from the area it names; reading one large item in full moves to Story s3) and this revision applies all but the story-id rendering, which is a defect in the renderer`
-
-<!-- insrc:review -->
-
-## Review
-
-### ⛔ Review `BLOCK` — design.epic (design.epic)
-
-**6 do not hold · 0 could not be verified · 10 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T05:20:21.813Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| change-sites | HIGH | The grep primitive's complete mode is specified in full for the ripgrep path: removing the per-file match limit (:178), the hit limit, the 500-character line cut and the size skip leaves nothing that drops hits silently. | grep.ts:181 runs ripgrep with `runShell(argv, { timeoutMs: 30_000, maxBytes: 4 * 1024 * 1024 })`. shell-helper.ts:86-89 drops output past that size without any signal: `stdoutBytes += chunk.length; if (stdoutBytes <= maxBytes) { stdout += chunk.toString('utf8'); }`, and ripgrep still exits 0, so tryRipgrepRaw returns the hits it parsed. With the hit limit removed, `truncated: hits.length >= opts.limit` can no longer fire, so a search whose output passes 4 MB would be reported complete with hits missing. The HLD and the Define's c1 list :102, :107, :111 and :178 only. Also unlisted: the ripgrep path's own line cut `text: (match[3] ?? '').slice(0, 500)` at :193 (the HLD cites only the fallback's :107), and the files neither backend reads by rule (ripgrep honours .gitignore and skips hidden and binary files; the fallback skips dot-names and IGNORE_DIRS at :95), which differ between the two backends. A 30 s timeout is safe by accident: SIGKILL gives code null, tryRipgrepRaw returns null and the Node walk runs. The claim that only two analyzer lookups call the primitive is true: search-text.ts:100 and config-trace.ts:100; the third caller is workflow/review/probe.ts:62. [files: src/daemon/tools/builtins/search/grep.ts, src/daemon/tools/shell-helper.ts] | Add to Story s1's complete-mode specification: no output byte cap on the ripgrep call (stream the output, or detect `stdoutBytes > maxBytes` and return incomplete with a reason), the :193 line cut, an explicit rule for the timeout, and a statement of which files each backend excludes by rule and how the completeness record says so (basisNote or skipped). Add :181 and :193 to the Define's c1. |
-| coverage-of-intent | MED | Removing the scope picker's model call and measuring 'where pickScope is called today' removes every wording-based size guess on the orchestrator path (DEF S002 ac1: 'however it reaches the analyzer'). | pickScope runs only inside `if (args.targetHint !== undefined)` and only when `args.scopeHint` is undefined (driver.ts:172-199). The other branch calls `classify({ input: { userPrompt, scopeRef } })` (driver.ts:234), and the classifier's schema makes the model return the size: `required: ['target', 'scope', 'focused', 'scopeRef', 'reasoning']`, `scope: { type: 'string', enum: [...SCOPE_BUCKET_ENUM] }` (schema.ts:42-46). The HLD never mentions this branch, so a request with no target hint is still sized from its wording. The 'one fewer model call' claim in section 6 is also true only for the targetHint branch. [files: src/analyze/orchestrator/driver.ts, src/analyze/classifier/schema.ts] | State that the named-area measuring pass runs after both branches (targetHint and full classifier) and overrides the classifier's `scope`, or drop `scope` from the classifier schema. Say what the slash-command `scopeHint` becomes (hint only, as for the agent tools). |
-| coverage-of-intent | MED | Handling a too-large result set in parts and heading every answer with the answer report (DEF S003 ac2, S004 ac5) is designed for every path, including an unfocused request on the orchestrator path. | The HLD designs partition-and-combine only for the lookup pipeline and says of the orchestrator path that 'the per-size bands keep governing only how many tasks a plan may have'. An unfocused request ends in the plan tree's aggregator, which renders every upstream output whole into one prompt (`blocks.push(`### ${id}\\n` + '```json\\n' + stableStringify(out) ...)`, aggregator.ts:160-178) and returns `{ summary, findings, metadata }`; runAnalyze returns it as `finalReport: rootPlan.finalReport` typed `unknown` (driver.ts:388, types.ts:230). Nothing in the HLD says how that path handles a result set too large for one prompt once Story s1 removes the runtime limits (for example the 5,000-file cap in runtimes/infra/_shared.ts:90), or where its answer report goes. [files: src/analyze/orchestrator/driver.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/orchestrator/types.ts] | Either state the handling method and the answer-report slot for the plan-tree path (aggregator input sizing, a report field on the final report), or state explicitly that the unfocused orchestrator path is out of this Epic and record it as an open gap against S003 ac2 and S004 ac5. |
-| change-sites | MED | The completeness record, declared on ExplorationOutput, reaches every site whose limit Story s1 removes. | sc1 says 'every ExplorationOutput except failed and unsupported extends WithCompleteness', and the answer report lists incomplete and failed entries by `explorationId`. Several of the sites the Define's c1 lists are plan-task runtimes, not explorations: discovery-objects.ts:70 is `async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult>` with `const FILE_LIST_LIMIT = 200;` (:56) and only a log line on truncation (:132-135). The same holds for runtimes/infra/_shared.ts:90, runtimes/infra/discovery-families.ts, runtimes/docs/family-summarise.ts:162 and the three runtimes/*/adherence-check.ts body cuts at 1,200 characters. None of these outputs is a member of the ExplorationOutput union (types.ts:697-719), so the contract gives them no place to state completeness or a partly read item, and no id the answer report can name. [files: src/analyze/runtimes/data/discovery-objects.ts, src/analyze/explore/types.ts] | Extend sc1 to plan-task runtime outputs (a WithCompleteness on the template result, and an answer-report entry keyed by task id as well as exploration id), or state where each runtime's completeness is carried. |
-| boundaries | MED | Rendering the completeness statement in an answer belongs to one Story. | The Define gives it to Story s4: 'ac5: Given any answer, when it is delivered, then it states whether its findings are complete' (DEF.md line 155), and the HLD's s4 boundary owns 'Rendering the answer report at the head of every answer'. Phase A (Story s1 only) nevertheless says 'Answers gain a completeness line' and that s1 updates 'the six layouts' to read the new record. So s1 is given a rendering change in the layout prompts that s4 owns, and s4 then rewrites the same prompts. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md] | Say which Story writes the completeness line. Either s1 only changes what the layouts read (the record in place of truncated flags and notes) and the line appears with s4, or move S004 ac5 to s1 in the Define. |
-| error-paths | MED | Between Phase A and Phase D, a result set too large for one prompt is detected and 'reported in the answer report with its count'. | Story s1 has nothing to detect it with: the measure is sc3 (Story s2, Phase C) and 'the size above which results are handled in parts' is Story s3 (Phase D). Today the synthesizer puts every output whole into one message with no size check (`JSON.stringify(r.output, null, 2)` for each result, synthesizer.ts:222-231). If the model call then fails, the pipeline hides it: driver.ts:1254-1258 logs 'exploration pipeline: synthesizer failed; falling through' and returns null, so the request drops to the legacy path and no answer report is produced. With limits removed in Phase A and layouts unlimited in Phase B, this is the state the system ships in for three phases. [files: src/analyze/context/synthesizer.ts, src/analyze/context/driver.ts] | Give Story s1 the detection: a stated size above which the pipeline does not call the model in one pass, what it returns instead (the lookup results with the report), and a rule that a synthesizer failure is reported and not dropped to the legacy path. Or reorder so measuring and handling land before the limits come out. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c23]]** `code` `src/daemon/tools/shell-helper.ts` — "if (stdoutBytes <= maxBytes) {"
+- **[[c24]]** `code` `src/analyze/classifier/schema.ts` — "required:   ['target', 'scope', 'focused', 'scopeRef', 'reasoning'],"
+- **[[c25]]** `code` `src/analyze/orchestrator/types.ts`
+- **[[c26]]** `code` `src/analyze/runtimes/data/discovery-objects.ts` — "const FILE_LIST_LIMIT = 200;"
+- **[[c27]]** `stakeholder` `user, 2026-10-07` — "A. Both paths in this epic"
+- **[[c28]]** `stakeholder` `user, 2026-10-07: 'go with A' to the order: say when a result is incomplete, measure, handle by size, remove the limits, fit the layouts`
+- **[[c29]]** `prior-artifact` `HLD-b9d5c5c40df5a574 second review of 2026-10-07 by the daemon: block, 1 HIGH and 5 MED did not hold; the user decided the two that needed a decision and this revision applies all six`

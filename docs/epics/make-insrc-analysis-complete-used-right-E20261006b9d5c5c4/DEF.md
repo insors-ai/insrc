@@ -6,7 +6,7 @@
 
 **Flavor:** enhancement
 
-An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked.
+An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic first makes every result and answer say honestly whether it is complete, then makes the analyzer measure how large a question really is and handle each size by a method that covers all of it, and only then removes the limits, so that at no point is a limit taken away before the analyzer can handle what it lets through. It also gives answers a shape that fits what was asked.
 
 ## Contents
 
@@ -24,37 +24,45 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 ## 2. Functional requirements
 
-- **E20261006b9d5c5c4:FR001** — No lookup the analyzer performs drops results because of a fixed limit. _(A fixed limit makes large questions silently wrong.)_
-- **E20261006b9d5c5c4:FR002** — Every analyzer result states whether it is complete, and a lookup that failed is reported as failed, never as empty.
-- **E20261006b9d5c5c4:FR003** — The analyzer determines the size of a request from what the request actually touches before it runs the request in full.
-- **E20261006b9d5c5c4:FR004** — For each size of request the analyzer follows a defined way of handling it, and a result set too large to treat at once is processed in full, in parts, and combined.
+- **E20261006b9d5c5c4:FR001** — Every analyzer result states whether it is complete, a lookup that failed is reported as failed and never as empty, and every answer states whether its findings are complete.
+- **E20261006b9d5c5c4:FR002** — The analyzer determines the size of a request from what the request actually touches, on both paths a request can take.
+- **E20261006b9d5c5c4:FR003** — For each size of request the analyzer follows a defined way of handling it, and a result set or a single item too large to treat at once is processed in full, in parts, and combined.
+- **E20261006b9d5c5c4:FR004** — No lookup or analysis step drops results because of a fixed limit, and no limit is removed before the analyzer can handle what it lets through. _(A fixed limit makes large questions silently wrong; removing one without handling makes them fail.)_
 - **E20261006b9d5c5c4:FR005** — The form of an analyzer's answer fits the kind of question asked, including a question that asks for every occurrence of something, for each kind of source the analyzer covers.
 - **E20261006b9d5c5c4:FR006** — No answer layout limits how many findings may be reported.
 
 **s1:**
 
-- **E20261006b9d5c5c4:S001:FR001** — No lookup drops results because of a fixed limit, in any kind of source the analyzer covers.
-- **E20261006b9d5c5c4:S001:FR002** — Each lookup result carries a statement of completeness.
-- **E20261006b9d5c5c4:S001:FR003** — A failed lookup is distinguishable from an empty one.
-- **E20261006b9d5c5c4:S001:FR004** — No fixed cut is applied to an item's content, and a partly read item is reported.
+- **E20261006b9d5c5c4:S001:FR001** — Each lookup or analysis-step result carries a statement of completeness.
+- **E20261006b9d5c5c4:S001:FR002** — A failed lookup is distinguishable from an empty one.
+- **E20261006b9d5c5c4:S001:FR003** — A partly read item and a file left out of a text lookup are reported.
+- **E20261006b9d5c5c4:S001:FR004** — Every answer states whether its findings are complete.
+- **E20261006b9d5c5c4:S001:FR005** — A failure to write the answer is reported, not hidden.
 
 **s2:**
 
-- **E20261006b9d5c5c4:S002:FR001** — Request size is measured, not guessed from wording.
+- **E20261006b9d5c5c4:S002:FR001** — Request size is measured, not guessed from wording or assumed.
 - **E20261006b9d5c5c4:S002:FR002** — The measured size and its basis are reported with the answer.
 
 **s3:**
 
-- **E20261006b9d5c5c4:S003:FR001** — A handling method exists for every request size.
+- **E20261006b9d5c5c4:S003:FR001** — A handling method exists for every request size on both paths.
 - **E20261006b9d5c5c4:S003:FR002** — Large result sets are processed completely, in parts, and combined.
-- **E20261006b9d5c5c4:S003:FR003** — The answer reports how the request was handled.
-- **E20261006b9d5c5c4:S003:FR004** — A single item too large to read at once is read in full, in sections.
+- **E20261006b9d5c5c4:S003:FR003** — A single item too large to read at once is read in full, in sections.
+- **E20261006b9d5c5c4:S003:FR004** — The answer reports how the request was handled.
 
 **s4:**
 
-- **E20261006b9d5c5c4:S004:FR001** — A question asking for every occurrence gets a complete enumeration as its answer.
-- **E20261006b9d5c5c4:S004:FR002** — The answer layouts of all analyzer kinds are free of limits on findings.
-- **E20261006b9d5c5c4:S004:FR003** — Each layout covers every lookup its analyzer can run.
+- **E20261006b9d5c5c4:S004:FR001** — No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers.
+- **E20261006b9d5c5c4:S004:FR002** — No fixed cut is applied to an item's content.
+- **E20261006b9d5c5c4:S004:FR003** — A text lookup discards no file, line or output for its size.
+- **E20261006b9d5c5c4:S004:FR004** — The planning instructions suggest no fixed number of results.
+
+**s5:**
+
+- **E20261006b9d5c5c4:S005:FR001** — A question asking for every occurrence gets a complete enumeration as its answer.
+- **E20261006b9d5c5c4:S005:FR002** — The answer layouts of all analyzer kinds are free of limits on findings.
+- **E20261006b9d5c5c4:S005:FR003** — Each layout covers every lookup its analyzer can run.
 
 ## 3. Non-goals
 
@@ -65,6 +73,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **Changing the limits of the general-purpose search tools for callers other than the analyzer.** — Other agents and tools call those primitives with their own expectations; the Epic concerns what the analyzer receives from them.
 - **Guidance to coding agents on when to use their own search tools and when to use the analyzer.** — The stakeholder decided this is steering text only and it was applied by hand on 2026-10-07 (commit 83a1cc0); nothing about it is built or enforced in this Epic.
 - **Repairing the code graph's missing cross-file import and call edges.** — Tracked separately as ISSUE-12f70133491114c9, to be taken up after this Epic; until then a relationship lookup can be incomplete for reasons this Epic does not address, and its results must say only what this Epic can establish about completeness.
+- **Removing a limit before the analyzer can state completeness, measure a request and handle a large result.** — The stakeholder chose an order in which no limit is taken away until what it lets through can be handled; the stories depend on one another accordingly.
 
 ## 4. Assumptions
 
@@ -86,21 +95,22 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 ## 6. Stories
 
-### 6.1 E20261006b9d5c5c4:S001 — Every analyzer lookup returns everything and says whether it is complete
+### 6.1 E20261006b9d5c5c4:S001 — Every result and every answer says whether it is complete
 
 **User value:** `size: L`
 
-As someone relying on an analysis, I get every result a lookup found, and I am told plainly when a result is partial or the lookup failed, so I never act on an answer that silently left things out.
+As someone relying on an analysis, I am told plainly when a result was cut, when a lookup failed and when the analyzer could not produce an answer, so I never act on something that silently left things out.
 
 **Extends:** [[c1]]
 
 **Acceptance criteria:**
 
-- **ac1:** Given a lookup whose true number of results is larger than any limit the analyzer used to apply, when the analyzer performs that lookup, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
-- **ac2:** Given any lookup the analyzer performs, when its result is produced, then the result states whether it is complete, and if it is not, how many results exist and why some are missing. _(operationalizes `k3`)_
-- **ac3:** Given a lookup that cannot be carried out, when the analyzer reports on it, then it is reported as failed with the reason, and never as a lookup that found nothing. _(operationalizes `k3`, `k7`)_
-- **ac5:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
-- **ac4:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then no fixed cut is applied, and if only part of it was read the result names the item and says how much was read. _(operationalizes `k2`, `k3`)_
+- **ac1:** Given any lookup or analysis step the analyzer performs, on either path a request can take through the analyzer, when its result is produced, then the result states whether it is complete, and if it is not, how many results exist, how many were returned and why some are missing. _(operationalizes `k3`)_
+- **ac2:** Given a lookup that cannot be carried out, when the analyzer reports on it, then it is reported as failed with the reason, and never as a lookup that found nothing. _(operationalizes `k3`, `k7`)_
+- **ac3:** Given a single item, such as a long document section, of which only part was read, when its result is produced, then the result names the item and says how much of it was read. _(operationalizes `k3`)_
+- **ac4:** Given files that a text lookup did not read, because of their size, their kind or an error, when its result is produced, then the result says which were left out and why, or by what rule. _(operationalizes `k3`)_
+- **ac5:** Given any answer, on either path a request can take through the analyzer, when it is delivered, then it states whether its findings are complete and names every result that was cut, partly read or failed. _(operationalizes `k3`)_
+- **ac6:** Given the step that writes the answer fails, when the request ends, then the failure is reported with what the lookups found, and the request is not passed silently to another way of answering. _(operationalizes `k3`, `k7`)_
 
 ### 6.2 E20261006b9d5c5c4:S002 — The analyzer sizes a request from what it actually touches
 
@@ -114,10 +124,11 @@ As someone asking a question, the analyzer finds out how big my question really 
 
 **Acceptance criteria:**
 
-- **ac1:** Given a request, however it reaches the analyzer, including through the tools coding agents use, when the analyzer begins work on it, then it determines the size of the request from counts of what the request touches, before running the request in full. _(operationalizes `k1`)_
+- **ac1:** Given a request, however it reaches the analyzer, including through the tools coding agents use, when the analyzer begins work on it, then it determines the size of the request from counts of what the request touches, and no size is taken from the wording alone or assumed. _(operationalizes `k1`)_
 - **ac2:** Given two requests with similar wording, one touching a small area and one touching a large area, when each is sized, then they are given different sizes that reflect what each touches. _(operationalizes `k1`)_
 - **ac3:** Given a request that has been sized, when its answer is delivered, then the answer states the size that was determined and the counts it was determined from. _(operationalizes `k3`, `k7`)_
 - **ac4:** Given a request whose size cannot be determined, when the analyzer proceeds, then it says so and treats the request as the largest size, never as a small one. _(operationalizes `k1`, `k3`)_
+- **ac5:** Given a caller that states a size for its request, when the request is sized, then the stated size is kept as a hint and the measured size is used. _(operationalizes `k1`)_
 
 ### 6.3 E20261006b9d5c5c4:S003 — Each request size has a defined way of being handled, in full
 
@@ -129,14 +140,32 @@ As someone asking a large question, the analyzer works through all of it by a kn
 
 **Acceptance criteria:**
 
-- **ac1:** Given each size a request can have, when the analyzer's handling of that size is examined, then there is a stated way of handling it that covers the whole of the request. _(operationalizes `k2`)_
+- **ac1:** Given each size a request can have, on either path a request can take through the analyzer, when the analyzer's handling of that size is examined, then there is a stated way of handling it that covers the whole of the request. _(operationalizes `k2`)_
 - **ac2:** Given a request whose results are too many to be reasoned over at once, when the analyzer handles it, then the results are divided into parts, every part is reasoned over, and the findings are combined into one answer with none lost. _(operationalizes `k2`, `k4`)_
 - **ac3:** Given a request handled in parts, when its answer is delivered, then the answer states how many parts there were and that all were processed, or names any part that was not and why. _(operationalizes `k3`)_
 - **ac4:** Given a small request, when the analyzer handles it, then its results are returned whole without being divided. _(operationalizes `k1`)_
 - **ac5:** Given a part that fails while a large request is being handled, when the answer is assembled, then the findings of the other parts are kept and the failed part is reported as not covered. _(operationalizes `k3`, `k7`)_
-- **ac6:** Given a single item, such as a long document section, that is larger than what was previously kept, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
+- **ac6:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
 
-### 6.4 E20261006b9d5c5c4:S004 — The form of an answer fits the question, for every kind of analyzer
+### 6.4 E20261006b9d5c5c4:S004 — No lookup drops results
+
+**User value:** `size: L`
+
+As someone relying on an analysis, I get every result a lookup found, whatever the size of my question, because nothing in the analyzer stops at a fixed number.
+
+**Depends on:** `s1`, `s3`
+
+**Extends:** [[c1]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, when the analyzer performs it, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
+- **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, when the analyzer reads it, then no fixed cut is applied to it. _(operationalizes `k2`)_
+- **ac3:** Given a text lookup over files of any size and lines of any length, when it runs, then no file is left out for its size, no matching line is shortened, and no part of the search's output is discarded. _(operationalizes `k2`, `k3`)_
+- **ac4:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
+- **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size, and the answer is complete. _(operationalizes `k1`, `k2`)_
+
+### 6.5 E20261006b9d5c5c4:S005 — The form of an answer fits the question, for every kind of analyzer
 
 **User value:** `size: L`
 
@@ -152,7 +181,6 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 - **ac2:** Given each answer layout the analyzer has, for code, documents, rule adherence, capability discovery, data and infrastructure, and the older per-source layouts it falls back to, when its answer layout is examined, then the layout places no limit on how many findings may be reported. _(operationalizes `k2`, `k3`)_
 - **ac3:** Given an answer layout, when it describes the lookup results it may draw on, then every kind of lookup that analyzer can run is described. _(operationalizes `k7`)_
 - **ac4:** Given a question whose kind does not match the layout that would be used, when the analyzer answers, then it uses a layout for that kind of question and does not require parts of a layout the question has nothing to fill. _(operationalizes `k7`)_
-- **ac5:** Given any answer, when it is delivered, then it states whether its findings are complete. _(operationalizes `k3`)_
 
 **Local constraints:**
 
@@ -160,7 +188,7 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 
 ## 7. References
 
-- **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178).` — "const DEFAULT_TOP_K = 30;"
+- **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178). Also in the shared grep primitive: the search's output is kept only up to 4 MB and the rest discarded without a signal (the ripgrep call at src/daemon/tools/builtins/search/grep.ts:181, through src/daemon/tools/shell-helper.ts:86-89), and the ripgrep path cuts a matching line at 500 characters too (:193); the two search backends leave out different files by rule (ripgrep honours .gitignore and skips hidden and binary files; the fallback skips dot-names and a fixed list of directories, :95). On the plan-tree path the same kinds of limit sit in the plan-task runtimes (runtimes/data/discovery-objects.ts:56, runtimes/infra/_shared.ts:90, runtimes/infra/discovery-families.ts:53, runtimes/docs/family-summarise.ts:162 and the three adherence checks).` — "const DEFAULT_TOP_K = 30;"
 - **[[c2]]** `code` `src/analyze/classifier/scope-picker.ts` — "readonly totalEntityCount: number;"
 - **[[c3]]** `doc` `CLAUDE.md` — "Accuracy is primary; cost is the least priority."
 - **[[c4]]** `doc` `design/analyze-context-builder.md` — "The shaper has **no token budget, no summarize-down, no truncation knobs**."
@@ -176,3 +204,5 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 - **[[c16]]** `stakeholder` `user, 2026-10-07` — "the agent should be given proper steering for when to use it's own tools and when to use analyze. this doesn't need to be coded, just steering should be eoungh"
 - **[[c17]]** `prior-artifact` `ISSUE-12f70133491114c9, filed 2026-10-07: the code graph loses cross-file import and call edges`
 - **[[c18]]** `stakeholder` `user, 2026-10-07: reading one large item in full moves from Story s1 to Story s3; Story s1 removes the fixed cut and reports a partly read item`
+- **[[c19]]** `stakeholder` `user, 2026-10-07` — "A. Both paths in this epic"
+- **[[c20]]** `stakeholder` `user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts`

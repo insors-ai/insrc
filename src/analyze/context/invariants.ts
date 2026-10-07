@@ -42,6 +42,27 @@ import type { ClassifiedIntent } from './types.js';
 
 const log = getLogger('analyze:context:invariants');
 
+/** A scope's value does not resolve: a symbol with no entity (or
+ *  several) of that name, a connection registered in no repo (or in
+ *  several), a value in the wrong form. */
+export class ScopeRefUnresolvedError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'ScopeRefUnresolvedError';
+	}
+}
+
+/** A kind of scope that does not go with a kind of source. */
+export class ScopeKindTargetMismatchError extends Error {
+	constructor(kind: string, target: string, allowed: readonly string[]) {
+		super(
+			`scopeRef.kind='${kind}' is incompatible with target='${target}'. ` +
+				`Allowed kinds for this target: ${allowed.join(', ')}.`,
+		);
+		this.name = 'ScopeKindTargetMismatchError';
+	}
+}
+
 export class ScopeNotIndexedError extends Error {
 	readonly scopePath:    string;
 	readonly registeredAs: string | undefined;

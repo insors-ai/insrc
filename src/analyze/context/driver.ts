@@ -130,9 +130,22 @@ export interface RunShaperArgs {
 	readonly provider?: LLMProvider | undefined;
 }
 
+/** The call of the lookup pipeline whose model failed. */
+export type ShaperModelCall = 'planning' | 'answer writing';
+
 export class ShaperLlmUnavailableError extends Error {
-	constructor(cause: string) {
-		super(`Local Ollama unavailable for shaper invocation: ${cause}`);
+	/**
+	 * `call` names the pipeline call that failed. With it the message
+	 * is provider-neutral (the planning + answer-writing providers are
+	 * role-routed and need not be Ollama); without it the message is
+	 * the tool loop's, where the provider is the local one.
+	 */
+	constructor(cause: string, call?: ShaperModelCall) {
+		super(
+			call !== undefined
+				? `The model call for ${call} failed: ${cause}`
+				: `Local Ollama unavailable for shaper invocation: ${cause}`,
+		);
 		this.name = 'ShaperLlmUnavailableError';
 	}
 }
@@ -158,6 +171,46 @@ export class ShaperPromptMissingError extends Error {
 	constructor(promptPath: string) {
 		super(`Shaper prompt file missing: ${promptPath}`);
 		this.name = 'ShaperPromptMissingError';
+	}
+}
+
+/** Run-mode inputs the pipeline cannot serve: an unknown kind of
+ *  source, or inputs that carry no intent. A caller's mistake. */
+export class ShaperInvalidInputError extends Error {
+	constructor(detail: string) {
+		super(`Shaper inputs are invalid: ${detail}`);
+		this.name = 'ShaperInvalidInputError';
+	}
+}
+
+/** The plan about to be executed has no lookups. */
+export class ShaperNoPlanError extends Error {
+	constructor(detail: string) {
+		super(`No plan could be made for this request: ${detail}`);
+		this.name = 'ShaperNoPlanError';
+	}
+}
+
+/** Where an answer was found invalid: the answer-writing step's own
+ *  output, or the assembled bundle's validation. */
+export type ShaperAnswerStage = 'answer writing' | 'bundle validation';
+
+/**
+ * The answer could not be produced in the required shape. Distinct
+ * from ShaperSchemaUnrecoverable, whose message reports exhausted
+ * structured-output retries -- which is not what happened here.
+ */
+export class ShaperAnswerInvalidError extends Error {
+	readonly stage: ShaperAnswerStage;
+
+	constructor(stage: ShaperAnswerStage, detail: string) {
+		super(
+			stage === 'bundle validation'
+				? `The bundle failed validation: ${detail}`
+				: `The answer-writing output was invalid: ${detail}`,
+		);
+		this.name = 'ShaperAnswerInvalidError';
+		this.stage = stage;
 	}
 }
 

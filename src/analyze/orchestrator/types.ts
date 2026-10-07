@@ -275,6 +275,8 @@ export type RunErrorCode =
 	| 'shaper-tool-loop-exhausted'
 	| 'shaper-schema-unrecoverable'
 	| 'shaper-prompt-missing'
+	| 'no-plan-for-request'
+	| 'answer-step-failed'
 	// planner
 	| 'plan-builder-llm-unavailable'
 	| 'plan-builder-schema-unrecoverable'
@@ -283,6 +285,8 @@ export type RunErrorCode =
 	| 'max-plan-depth-exceeded'
 	// executor
 	| 'executor-aggregator-failed'
+	// a record left in progress with no live run behind it
+	| 'run-abandoned'
 	// cancellation
 	| 'aborted'
 	// catch-all

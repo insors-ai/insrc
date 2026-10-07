@@ -53,6 +53,7 @@ import type {
 	AnalyzeRunEvent,
 	RunAnalyzeArgs,
 	RunAnalyzeResult,
+	RunErrorCode,
 	RunRecord,
 } from '../analyze/index.js';
 import type { IpcStreamMessage, ProgressEvent, StageProgressEvent } from '../shared/types.js';
@@ -64,12 +65,19 @@ import {
 } from '../analyze/classifier/driver.js';
 import type { ClassifyInput, ClassifyOpts } from '../analyze/classifier/types.js';
 import {
+	ShaperAnswerInvalidError,
+	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
+	ShaperNoPlanError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
 } from '../analyze/context/driver.js';
-import { ScopeNotIndexedError } from '../analyze/context/invariants.js';
+import {
+	ScopeKindTargetMismatchError,
+	ScopeNotIndexedError,
+	ScopeRefUnresolvedError,
+} from '../analyze/context/invariants.js';
 import {
 	MaxPlanDepthExceededError,
 	PlanBuilderExhausted,
@@ -136,6 +144,9 @@ export type AnalyzeRpcErrorCode =
 	| 'shaper-tool-loop-exhausted'
 	| 'shaper-schema-unrecoverable'
 	| 'shaper-prompt-missing'
+	| 'no-plan-for-request'
+	| 'answer-step-failed'
+	| 'run-abandoned'
 	| 'classifier-llm-unavailable'
 	| 'classifier-schema-unrecoverable'
 	| 'classifier-prompt-missing'
@@ -902,9 +913,40 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 	if (err instanceof ShaperPromptMissingError) {
 		return { code: 'shaper-prompt-missing', message: err.message };
 	}
+	if (err instanceof ShaperInvalidInputError) {
+		return { code: 'invalid-input', message: err.message };
+	}
+	if (err instanceof ShaperNoPlanError) {
+		return { code: 'no-plan-for-request', message: err.message };
+	}
+	if (err instanceof ScopeRefUnresolvedError) {
+		return { code: 'scope-ref-unresolved', message: err.message };
+	}
+	if (err instanceof ScopeKindTargetMismatchError) {
+		return { code: 'scope-ref-kind-target-mismatch', message: err.message };
+	}
+	// An invalid answer keeps the existing schema code until the
+	// answer-step failure (with the lookup results) replaces it.
+	if (err instanceof ShaperAnswerInvalidError) {
+		return { code: 'shaper-schema-unrecoverable', message: err.message };
+	}
 	const message = err instanceof Error ? err.message : String(err);
 	return { code: 'internal-error', message };
 }
+
+/**
+ * The codes this side adds for a request that cannot proceed must
+ * exist in the orchestrator's list too -- the two lists are one
+ * contract. A member missing from either union fails the build here.
+ */
+export const CAUSE_CODES_IN_BOTH_LISTS = [
+	'no-plan-for-request',
+	'answer-step-failed',
+	'run-abandoned',
+] as const satisfies ReadonlyArray<AnalyzeRpcErrorCode & RunErrorCode>;
+
+/** Test hook: the daemon's shaper-error mapping. */
+export const _classifyShaperErrorForTest = classifyShaperError;
 
 function invalidParams(err: unknown): AnalyzeRpcErr {
 	const message = err instanceof Error ? err.message : String(err);

@@ -38,12 +38,19 @@ import {
 } from '../classifier/driver.js';
 import { shaperFor } from '../context/index.js';
 import {
+	ShaperAnswerInvalidError,
+	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
+	ShaperNoPlanError,
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
 } from '../context/driver.js';
-import { ScopeNotIndexedError } from '../context/invariants.js';
+import {
+	ScopeKindTargetMismatchError,
+	ScopeNotIndexedError,
+	ScopeRefUnresolvedError,
+} from '../context/invariants.js';
 import type { ShaperTraceEvent } from '../context/types.js';
 import {
 	getTemplatesForTarget,
@@ -437,6 +444,13 @@ function classifyShaperError(err: unknown): RunFailure {
 	if (err instanceof ShaperToolLoopExhausted) return wrap('shaper-tool-loop-exhausted', err);
 	if (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);
 	if (err instanceof ShaperPromptMissingError) return wrap('shaper-prompt-missing', err);
+	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);
+	if (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);
+	if (err instanceof ScopeRefUnresolvedError) return wrap('scope-ref-unresolved', err);
+	if (err instanceof ScopeKindTargetMismatchError) return wrap('scope-ref-kind-target-mismatch', err);
+	// An invalid answer keeps the existing schema code until the
+	// answer-step failure (with the lookup results) replaces it.
+	if (err instanceof ShaperAnswerInvalidError) return wrap('shaper-schema-unrecoverable', err);
 	return wrap('internal-error', err);
 }
 

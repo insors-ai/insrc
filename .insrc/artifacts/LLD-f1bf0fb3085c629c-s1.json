@@ -1,0 +1,840 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791382104075-4akr8i",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-07T14:14:48.861Z",
+    "epicCreatedAt": "2026-10-07T12:59:03.938Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 384783,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f1bf0fb3085c629c",
+    "epicSlug": "insrc-build-step-validate-s-verdict",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791382104075-4akr8i",
+    "hldEffectiveHash": "fb672e7482d64d4d82cd10511ecdbd15edcb68c788956d761824d5c7919ee6a5",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design addresses all three root causes the ISSUE names: (1) the edit session refuses shell commands, (2) the prompt asks for the repo-wide sweep, which overruns the time cap, (3) runSubprocess SIGKILLs only the direct child. It also keeps the fix intent's limit that other sessions are not widened.",
+          "evidence": "ISSUE-f1bf0fb3085c629c rootCause lists exactly (1) runEditSession with `--permission-mode acceptEdits`, (2) the TEST_CMD sweep in the validate prompt, and (3) `child.kill('SIGKILL')` in runSubprocess. The LLD covers each one. For (1), the daemon runs the checks itself and the judge moves to the read-only runReviewSession. For (2), the validate prompts are rewritten without the sweep, and the task's test files run with their own time limits. For (3), every child gets its own process group, the group is killed on timeout, and the group is swept on 'exit'. runEditSession, complete and completeStructured keep their arguments, so no other session is widened. [files: .insrc/artifacts/ISSUE-f1bf0fb3085c629c.json, src/agent/providers/cli-provider.ts, src/mcp/build-step/phases/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today validate calls provider.runEditSession(prompt, { cwd: repoPath }) with no timeoutMs. It parses the verdict from free text, and passed is whatever the session reports.",
+          "evidence": "validate.ts:155 `const response = await provider.runEditSession(prompt, { cwd: repoPath });`, then validate.ts:157 `parseVerdict(response.text)` and validate.ts:165 `const passed = (verdict as { passed?: unknown }).passed === true;`. The ValidateProvider interface at :33-35 exposes only runEditSession. [files: src/mcp/build-step/phases/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "runSubprocess/spawnOnce spawn the CLI as an ordinary child (not detached), SIGKILL only that child on timeout, resolve on 'close' and report -9 on timeout. runReviewSession maps the -9 exit to ReviewSessionTimeoutError.",
+          "evidence": "cli-provider.ts:594 spawns with `{ stdio: ['pipe','pipe','pipe'], cwd }` and no detached option. :598 `child.kill('SIGKILL')`. :605-607 `child.on('close', ...) exitCode: timedOut ? -9 : ...`. runClaude throws `claude exited with ${out.exitCode}` (:449), and runReviewSession (:366) does `if (/exited with -9\\b/.test(msg)) throw new ReviewSessionTimeoutError(...)`. The validate prompt asks for TEST_CMD (render.ts:29, validate-task.md:22, standalone render.ts:214). [files: src/agent/providers/cli-provider.ts, src/mcp/build-step/render.ts, src/prompts/build/validate-task.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The only test callers of the ValidateProvider seam (_setBuildValidateProviderForTests with a runEditSession fake) are build-step.test.ts and build-start.test.ts, so the list of change sites is complete.",
+          "evidence": "A grep for `_setBuildValidateProviderForTests|runEditSession` across src/ finds validate.ts, build-start.test.ts (:121-122, :381, :451), about 17 sites in build-step.test.ts (:244 through :1215), and one direct CliProvider.runEditSession call in cli-review-session.test.ts:205, which stays unchanged. There are no other production callers. One caveat for the build: every existing fake returns only `{ taskId, passed }`. Under the new shape check (a boolean passed, an array checks and a string reason), each fake must also return `checks` and `reason`, or it will hit unparseable-verdict. [files: src/mcp/build-step/__tests__/build-step.test.ts, src/mcp/build-step/__tests__/build-start.test.ts]",
+          "action": "When the fakes are migrated, make them return the full judge schema ({ taskId, passed, checks: [], scopeRespected, reason }), not just { taskId, passed }.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveTaskTestFiles relies on plan test names that start with a '<base>.test.ts:' prefix, and existing plans use that convention.",
+          "evidence": "PLAN-2ff0dfdadb1c8d1c-s1.json has test names such as `\"notice.test.ts: 'makeNotice sorts and de-duplicates ...'\"` and `\"load.test.ts: '...'\"`. 45 PLAN artifacts contain a `name` with a `.test.ts` token. The design says outright that names without the leading prefix are unresolved and fail the verdict. [files: .insrc/artifacts/PLAN-2ff0dfdadb1c8d1c-s1.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reviewer session that the validate judge will use is read-only: --tools Read,Grep,Glob, --allowedTools adds only the two insrc analyze tools, no permission mode, and codex runs under --sandbox read-only. runEditSession keeps its acceptEdits / --full-auto arguments.",
+          "evidence": "cli-provider.ts:100-108 claudeReviewSessionArgs returns `['--print','--output-format','json','--json-schema',..., '--tools', 'Read,Grep,Glob', '--allowedTools', [...read, 'mcp__insrc__insrc_analyze','mcp__insrc__insrc_analyze_step'], ...modelArgs]`. :112-113 codex uses `'--sandbox','read-only'`. runEditSession at :320 uses `['--print','--output-format','json','--permission-mode','acceptEdits', ...]` and at :327 `['exec','--json','--full-auto', ...]`. These match invariants c1/c4. [files: src/agent/providers/cli-provider.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion (ac1–ac5) maps to a test that would fail without the fix. That includes the process-group tests, which reach the non-exported runSubprocess through a CliProvider with a fake bin.",
+          "evidence": "runSubprocess and spawnOnce are module-private (cli-provider.ts:570, :585, no export). CliProviderOpts.binPath (:120-121) lets a test point the provider at a fake bin script, which is the design's stated fixture ('A fake bin script that starts a long-running grandchild'). Against today's code, the grandchild-gone and exit-0-with-background-holder tests would fail: the group is not killed, and 'close' waits for the pipes until the timer fires and reports -9. The ac1/ac5 build-step tests assert overwritten testsPassed/typecheckClean and passed:false on a failing typecheck, which today's code cannot produce. The verdict-session-failed test is listed in the test levels but not in the acceptance mapping. That is acceptable because it is not an acceptance criterion. [files: src/agent/providers/cli-provider.ts, src/mcp/build-step/phases/validate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-07T14:20:49.903Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-07T14:23:02.745Z",
+    "rangeBase": "9a593f968ea58995889fc3099d986b2bc6d99b98"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build validate stops asking a model to run the tests. The daemon itself runs the typecheck and the Task's own test files, each in its own process group with a time limit, and records their exit codes as facts. A read-only reviewer session then judges the acceptance checks and scope against that evidence, and the verdict passes only when the model's judgement and the daemon's exit codes both say so. Every CLI subprocess is also started in its own process group, so a session or command that times out is stopped together with everything it launched.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Let build validate's verdict session run its tests reliably"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "runValidateSession",
+          "signature": "async function runValidateSession(repoPath: string, prompt: string, ident: { readonly epicHash: string; readonly storyId: string; readonly taskId: string; readonly standalone?: { readonly sizeClass?: string; readonly triageRationale?: string } | undefined }, summary?: string, checks?: ValidationCheckPlan): Promise<BuildStepDone | BuildStepError>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The reviewed repository; working directory of every check and of the judge session.",
+              "optional": false
+            },
+            {
+              "name": "prompt",
+              "type": "string",
+              "purpose": "The rendered validate prompt; the check results are appended as an evidence section before the session runs.",
+              "optional": false
+            },
+            {
+              "name": "ident",
+              "type": "{ epicHash; storyId; taskId; standalone? }",
+              "purpose": "The BUILD ledger identity, unchanged.",
+              "optional": false
+            },
+            {
+              "name": "summary",
+              "type": "string",
+              "purpose": "The implementer's narrative, unchanged.",
+              "optional": true
+            },
+            {
+              "name": "checks",
+              "type": "ValidationCheckPlan",
+              "purpose": "The typecheck and the resolved test files to run; the plan-driven and standalone branches each build one.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<BuildStepDone | BuildStepError>",
+            "meaning": "done with the verdict: the six existing fields { taskId, passed, testsPassed, typecheckClean, scopeRespected, reason } plus the additive checks[] and evidence { typecheck, tests }. testsPassed and typecheckClean are set from the daemon's own check results, and passed is true only when the judge's passed and both check results are true. error only for an unusable judge response."
+          },
+          "errors": [
+            {
+              "type": "BuildStepError('unparseable-verdict')",
+              "condition": "The judge's returned object fails runValidateSession's own check against the verdict schema (for example `passed` missing or not a boolean, `checks` not an array), or runReviewSession throws because the CLI returned no structured output or unparseable JSON. runReviewSession itself does not validate the shape, so validate does."
+            },
+            {
+              "type": "BuildStepError('verdict-session-timeout')",
+              "condition": "runReviewSession throws ReviewSessionTimeoutError; no verdict is recorded."
+            },
+            {
+              "type": "BuildStepError('verdict-session-failed')",
+              "condition": "runReviewSession throws any other error (a non-transient CLI failure such as an unknown option or a rate limit); the message carries the CLI error. Never an unhandled rejection."
+            }
+          ],
+          "preconditions": [
+            "repoPath is the registered, reviewed repository (not the daemon's install)."
+          ],
+          "postconditions": [
+            "The typecheck and every resolved test file were run by the daemon before the judge session started.",
+            "verdict.testsPassed and verdict.typecheckClean equal the daemon's check results, whatever the session said.",
+            "passed === (judge passed && testsPassed && typecheckClean).",
+            "No process started by a check or by the session is alive when the call returns.",
+            "Every error thrown by runReviewSession is caught and mapped to one of the three named BuildStepErrors.",
+            "The checks run through the check-runner override when one is installed (_setBuildValidateCheckRunnerForTests), else through runValidationChecks."
+          ]
+        },
+        {
+          "name": "ValidateProvider",
+          "signature": "interface ValidateProvider { runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> }",
+          "parameters": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "purpose": "Validate prompt with the check evidence.",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "The judge's verdict schema: { taskId, passed, checks[], scopeRespected, reason }. The judge does not report testsPassed or typecheckClean; the daemon adds both from its own check results, so the returned verdict keeps all six existing fields plus checks[] and evidence.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "ReviewSessionOpts",
+              "purpose": "{ cwd: repoPath, deadlineMs }.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "The judge's structured verdict."
+          },
+          "errors": [
+            {
+              "type": "ReviewSessionTimeoutError",
+              "condition": "The deadline passes."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The validate judge runs with read-only tools only (CliProvider.runReviewSession: Read, Grep, Glob and the insrc analyze tools); it can neither edit files nor run shell commands."
+          ]
+        },
+        {
+          "name": "runSubprocess",
+          "signature": "async function runSubprocess(command: string, args: readonly string[], stdin: string, timeoutMs: number, cwd?: string): Promise<SubprocessResult>",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "string",
+              "purpose": "The CLI binary, unchanged.",
+              "optional": false
+            },
+            {
+              "name": "args",
+              "type": "readonly string[]",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "stdin",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "timeoutMs",
+              "type": "number",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "cwd",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<SubprocessResult>",
+            "meaning": "Unchanged shape; exitCode -9 still means the timeout fired."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The child runs as the leader of its own process group.",
+            "On timeout the whole group is sent SIGKILL, not only the direct child, and the result reports exitCode -9.",
+            "On the child's 'exit' event (not 'close'), any process still in its group is sent SIGKILL, ignoring ESRCH. Node fires 'close' only after every stdio pipe closes, and a leftover background process holds those pipes open, so sweeping on 'exit' is what lets 'close' then fire and resolve with the child's real exit code instead of waiting for the timer."
+          ]
+        },
+        {
+          "name": "runValidationChecks",
+          "signature": "async function runValidationChecks(repoPath: string, plan: ValidationCheckPlan, deps?: CheckRunnerDeps): Promise<ValidationCheckResults>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Working directory of every command.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "ValidationCheckPlan",
+              "purpose": "The typecheck command, the test files and any test names that did not resolve to a file.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "CheckRunnerDeps",
+              "purpose": "Test seam for spawning commands.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<ValidationCheckResults>",
+            "meaning": "{ typecheck: CheckResult; tests: CheckResult } where CheckResult is { ok, command, exitCode, timedOut, durationMs, outputTail, note? }; tests.ok is false when any named test is unresolved."
+          },
+          "errors": [],
+          "preconditions": [
+            "Commands run serially, never in parallel."
+          ],
+          "postconditions": [
+            "Each command runs in its own process group under its own time limit and is stopped with its whole group on timeout.",
+            "Like runSubprocess, the group is swept on each command's 'exit' event so a background process it left behind cannot hold its pipes open and turn a finished command into a timeout.",
+            "The test runner is invoked with --test-force-exit, so a test file whose process would otherwise stay alive after its tests finish still exits.",
+            "Never throws; a spawn failure is a failed CheckResult."
+          ]
+        },
+        {
+          "name": "_setBuildValidateCheckRunnerForTests",
+          "signature": "function _setBuildValidateCheckRunnerForTests(runner: ((repoPath: string, plan: ValidationCheckPlan) => Promise<ValidationCheckResults>) | undefined): void",
+          "parameters": [
+            {
+              "name": "runner",
+              "type": "((repoPath: string, plan: ValidationCheckPlan) => Promise<ValidationCheckResults>) | undefined",
+              "purpose": "A fake check runner for tests; undefined restores runValidationChecks.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Installs or clears the override."
+          },
+          "errors": [],
+          "preconditions": [
+            "Test-only seam, exported from src/mcp/build-step/phases/validate.ts beside _setBuildValidateProviderForTests."
+          ],
+          "postconditions": [
+            "While set, runValidateSession calls this runner instead of runValidationChecks, so no test spawns a real typecheck or test runner.",
+            "The plan it receives is the one validate built, so tests can assert which test files and typecheck were chosen."
+          ]
+        },
+        {
+          "name": "resolveTaskTestFiles",
+          "signature": "function resolveTaskTestFiles(repoPath: string, testNames: readonly string[]): { readonly files: readonly string[]; readonly unresolved: readonly string[] }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repository whose tracked files are searched.",
+              "optional": false
+            },
+            {
+              "name": "testNames",
+              "type": "readonly string[]",
+              "purpose": "PlanTask.tests[].name values ('notice.test.ts: ...') or test names from a standalone LLD's test strategy.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ files; unresolved }",
+            "meaning": "Repo-relative test files named by the inputs, sorted and de-duplicated, and the names that could not be mapped to a file."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only a LEADING '<base>.test.ts:' prefix names a test file (the convention plans use, e.g. \"notice.test.ts: 'makeNotice sorts ...'\"); the file is every tracked file with that base name under a __tests__ directory.",
+            "A '*.test.ts' token anywhere else in a name (e.g. '(mirrors chain.test.ts ...)') is NOT treated as the file under test.",
+            "A name with no leading prefix, or whose prefix matches no tracked file, is listed in unresolved, which fails the verdict with a note naming it. Plans written before the prefix convention therefore fail validate with that note until the plan names its test files or the user records an override."
+          ]
+        },
+        {
+          "name": "renderValidatePrompt",
+          "signature": "function renderValidatePrompt(repoPath: string, ref: ResolvedTask): string",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "ref",
+              "type": "ResolvedTask",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The judge prompt: inspect the change, judge each acceptance check and scope against the repository and the daemon's check evidence. It no longer tells the session to run any command."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The prompt contains no instruction to run the repo-wide sweep or any shell command."
+          ]
+        },
+        {
+          "name": "renderStandaloneValidatePrompt",
+          "signature": "function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): string",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "StandaloneValidateSpec",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Same judge-only prompt for a standalone build."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Same as renderValidatePrompt."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ValidationCheckPlan / ValidationCheckResults",
+        "change": "new",
+        "details": "ValidationCheckPlan { typecheck: string[] (argv); testFiles: string[]; unresolvedTests: string[]; typecheckTimeoutMs; testTimeoutMs }. ValidationCheckResults { typecheck: CheckResult; tests: CheckResult }. Plan-driven: testFiles from resolveTaskTestFiles(ref.task.tests names). Small standalone: from the LLD's test strategy names. Trivial standalone (no LLD): the *.test.ts files the build commit touched, possibly none, in which case tests is ok with note 'no tests named'.",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts"
+        ]
+      },
+      {
+        "entity": "ValidateProvider",
+        "change": "field-modify",
+        "details": "runEditSession(prompt, { cwd, timeoutMs }) is replaced by runReviewSession<T>(prompt, schema, { cwd, deadlineMs }); resolveValidateProvider still returns a CliProvider, which already implements runReviewSession. Every test that installs a validate provider through _setBuildValidateProviderForTests (build-step.test.ts and build-start.test.ts, whose validate() helper fakes runEditSession at :122, :381 and :451) switches to a fake runReviewSession and also installs a passing check runner through _setBuildValidateCheckRunnerForTests, so no test spawns a real typecheck or test runner in its fixture repo.",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts",
+          "src/mcp/build-step/__tests__/build-step.test.ts",
+          "src/mcp/build-step/__tests__/build-start.test.ts"
+        ]
+      },
+      {
+        "entity": "Build verdict (testsPassed / typecheckClean)",
+        "change": "invariant-change",
+        "details": "The returned verdict keeps its six existing fields { taskId, passed, testsPassed, typecheckClean, scopeRespected, reason } and gains two additive fields: checks[] (the judge's per-acceptance-check results { check, satisfied, evidence }, as the prompts already ask for) and evidence: { typecheck: CheckResult; tests: CheckResult } (the daemon's commands, exit codes, timedOut flags and output tails). testsPassed and typecheckClean now come from evidence, and passed = judge passed && testsPassed && typecheckClean. The BUILD record still persists only tasks[].passed, which follows the combined passed.",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The typecheck or the test runner exceeds its time limit.",
+          "detection": "runValidationChecks' timer fires before the child exits; the child's process group is sent SIGKILL and the result is recorded timedOut: true.",
+          "response": "That CheckResult is ok: false with a note naming the limit; the judge still runs on the evidence, and passed is false.",
+          "userImpact": "A real verdict ('tests timed out after N s') instead of an error, and no test process left running.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A named test does not resolve to any tracked test file.",
+          "detection": "resolveTaskTestFiles finds no leading '<base>.test.ts:' prefix in the name, or no tracked file under a __tests__ directory with that base name.",
+          "response": "The name is listed in unresolvedTests; tests.ok is false with a note listing each unresolved name; the resolved files still run.",
+          "userImpact": "The verdict fails and says which planned test is missing, rather than passing on fewer tests than planned.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A check command cannot be spawned (npx missing, cwd gone).",
+          "detection": "The child emits 'error' before 'close', or exits -1.",
+          "response": "CheckResult ok: false with the spawn error in outputTail; runValidationChecks never throws.",
+          "userImpact": "Validate fails with the environment error visible in the verdict.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The judge session passes its deadline.",
+          "detection": "runReviewSession throws ReviewSessionTimeoutError (it maps the subprocess's -9 exit to that error).",
+          "response": "runValidateSession returns BuildStepError('verdict-session-timeout'); no BUILD record is written; the session's process group has already been killed by runSubprocess.",
+          "userImpact": "A clear timeout error naming the deadline, no orphaned processes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The judge returns no object matching the verdict schema.",
+          "detection": "runValidateSession checks the returned object itself (boolean passed, array checks, string reason); runReviewSession throws for missing structured output or unparseable JSON.",
+          "response": "BuildStepError('unparseable-verdict') naming the field that failed or the CLI error.",
+          "userImpact": "Unchanged from today's behaviour for a malformed verdict.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A process in a CLI child's group is still running after the child exits normally.",
+          "detection": "The child's 'exit' event fires; runSubprocess and runValidationChecks then signal the negative pid without waiting for 'close'.",
+          "response": "The group is sent SIGKILL (ESRCH ignored); the inherited pipes close, 'close' fires, and the call resolves with the child's real exit code.",
+          "userImpact": "No background process outlives any CLI call.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The judge session fails for a reason other than a timeout (unknown CLI option, rate limit, auth).",
+          "detection": "runReviewSession throws an Error that is not a ReviewSessionTimeoutError.",
+          "response": "BuildStepError('verdict-session-failed') with the CLI message; no BUILD record is written.",
+          "userImpact": "A named error instead of an unhandled rejection.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A plan task whose tests all name one file, e.g. three cases in 'graph.test.ts'.",
+          "expected": "One test file runs once; the three names map to it."
+        },
+        {
+          "input": "A test base name that exists under two __tests__ directories (e.g. driver-unit.test.ts in analyze/context and analyze/planner).",
+          "expected": "Both files run; running more of the named file's tests is safe and keeps accuracy."
+        },
+        {
+          "input": "A trivial standalone build with no LLD whose commit touched no test file.",
+          "expected": "Only the typecheck runs; tests is ok with note 'no tests named for a trivial build'; the judge still judges scope."
+        },
+        {
+          "input": "A small standalone build whose LLD test strategy names no '*.test.ts' file.",
+          "expected": "tests is ok: false with note 'the LLD names no test file'; the verdict fails."
+        },
+        {
+          "input": "A test file whose process stays alive after its tests pass (the ISSUE-b544025d logger worker).",
+          "expected": "--test-force-exit ends it when the tests finish; the run is not counted as a timeout."
+        },
+        {
+          "input": "The judge session says passed: true but the daemon's typecheck failed.",
+          "expected": "passed is false; typecheckClean is false; the reason records the daemon's result."
+        },
+        {
+          "input": "The judge says testsPassed: false but every daemon check passed.",
+          "expected": "verdict.testsPassed is overwritten to true; passed follows the judge's own passed field and the checks."
+        },
+        {
+          "input": "A plan test name such as \"WorkflowChainReaderTest... (mirrors chain.test.ts hldEffectiveHash)\" whose only '*.test.ts' token is not a leading prefix.",
+          "expected": "The name is unresolved; chain.test.ts is not run; the verdict fails with a note naming the test."
+        },
+        {
+          "input": "A CLI child that exits 0 but leaves a background process holding its stdout.",
+          "expected": "The exit-time sweep kills the background process; the call resolves with exit code 0, not -9."
+        },
+        {
+          "input": "A command the claude CLI's own Bash tool starts in a new session or process group (setsid), outside the CLI's group.",
+          "expected": "Group teardown cannot reach it. Validate no longer gives its session a shell, so validate cannot leave one; for other sessions the live test shows whether the CLI keeps its Bash children in its group, and this limit is stated rather than assumed."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "runEditSession keeps its arguments ['--print','--output-format','json','--permission-mode','acceptEdits', ...modelArgs] for claude and ['exec','--json','--full-auto', ...] for codex; complete and completeStructured keep theirs.",
+          "source": "c4"
+        },
+        {
+          "text": "The reviewer session stays read-only: --tools Read,Grep,Glob plus the two insrc analyze tools, no permission mode.",
+          "source": "c1"
+        },
+        {
+          "text": "A timed-out CLI call still reports exitCode -9, which runReviewSession maps to ReviewSessionTimeoutError.",
+          "source": "c2"
+        },
+        {
+          "text": "The verdict's six existing fields { taskId, passed, testsPassed, typecheckClean, scopeRespected, reason } are preserved; checks[] and evidence { typecheck, tests } are additive. The BUILD record persist path (fail-open, keyed by epicHash/storyId/taskId, tasks[].passed only) is unchanged; only how testsPassed, typecheckClean and passed are decided changes.",
+          "source": "c1"
+        },
+        {
+          "text": "The implement prompt keeps citing the repo-wide sweep as the implementer's definition of done; only the validate prompts change.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run via npx tsx --test (the convention of src/agent/providers/__tests__/cli-review-session.test.ts and src/mcp/build-step/__tests__/build-step.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove test-name resolution and the check plan for each build route without spawning anything.",
+          "subjects": [
+            "validation-checks.test.ts: 'resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved'",
+            "validation-checks.test.ts: 'a base name under two __tests__ directories resolves to both files'",
+            "validation-checks.test.ts: 'the plan-driven, small and trivial routes each build the expected check plan'",
+            "validation-checks.test.ts: 'a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run'"
+          ],
+          "fixturesNeeded": [
+            "A temporary git repository with tracked __tests__ files, including two files sharing a base name"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the daemon-side check runner against real child processes: exit codes, timeouts, process-group teardown and force-exit.",
+          "subjects": [
+            "validation-checks.test.ts: 'a passing and a failing command give ok true and ok false with their exit codes and output tails'",
+            "validation-checks.test.ts: 'a command past its limit is reported timedOut and its whole process group, grandchild included, is gone'",
+            "validation-checks.test.ts: 'a test file that keeps its process alive after its tests pass still finishes under --test-force-exit'",
+            "validation-checks.test.ts: 'an unresolved test name makes tests fail with a note naming it'",
+            "cli-subprocess.test.ts: 'a timed-out CLI child is killed with its process group, so a grandchild it started is gone'",
+            "cli-subprocess.test.ts: 'a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone'"
+          ],
+          "fixturesNeeded": [
+            "A fake bin script that starts a long-running grandchild (sleep) and records its pid",
+            "A tiny test file whose process stays alive after its test passes (an un-unref'd timer)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove validate's verdict logic over a fake judge and fake check results.",
+          "subjects": [
+            "build-step.test.ts: 'validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results'",
+            "build-step.test.ts: 'a judge passed:true with a failing typecheck gives passed:false'",
+            "build-step.test.ts: 'a judge timeout returns verdict-session-timeout and writes no BUILD record'",
+            "build-step.test.ts: 'the validate judge is called through runReviewSession with the repo as cwd and a verdict schema'",
+            "render.test.ts: 'the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it'",
+            "build-step.test.ts: 'a judge object without a boolean passed gives unparseable-verdict'",
+            "build-step.test.ts: 'a non-timeout judge error gives verdict-session-failed and writes no BUILD record'"
+          ],
+          "fixturesNeeded": [
+            "The existing fixture repo with _setBuildValidateProviderForTests (a fake runReviewSession provider) and _setBuildValidateCheckRunnerForTests (a fake check runner returning chosen results)"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin that other CLI sessions keep their arguments.",
+          "subjects": [
+            "cli-review-session.test.ts: 'one-shot calls and the edit session build the same arguments as before' (existing, must stay green)",
+            "cli-review-session.test.ts: reviewer no-edit args assertion at :79 (existing, must stay green)"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Show on a real claude CLI that process-group teardown reaches a command its own Bash tool backgrounds. Gated INSRC_LIVE_TESTS=1, like the other CliProvider live suites.",
+          "subjects": [
+            "cli-subprocess.live.test.ts: 'a command a real claude session backgrounds through its Bash tool is gone once the timed-out session is killed'"
+          ],
+          "fixturesNeeded": [
+            "A temporary repo and a prompt asking claude to background a long sleep and write its pid to a file"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "build-step.test.ts: 'validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results'",
+            "build-step.test.ts: 'the validate judge is called through runReviewSession with the repo as cwd and a verdict schema'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "validation-checks.test.ts: 'a command past its limit is reported timedOut and its whole process group, grandchild included, is gone'",
+            "validation-checks.test.ts: 'a test file that keeps its process alive after its tests pass still finishes under --test-force-exit'",
+            "render.test.ts: 'the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "cli-subprocess.test.ts: 'a timed-out CLI child is killed with its process group, so a grandchild it started is gone'",
+            "cli-subprocess.test.ts: 'a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone'",
+            "cli-subprocess.live.test.ts: 'a command a real claude session backgrounds through its Bash tool is gone once the timed-out session is killed'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "cli-review-session.test.ts: 'one-shot calls and the edit session build the same arguments as before'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "build-step.test.ts: 'a judge passed:true with a failing typecheck gives passed:false'",
+            "validation-checks.test.ts: 'an unresolved test name makes tests fail with a note naming it'",
+            "build-step.test.ts: 'a judge object without a boolean passed gives unparseable-verdict'",
+            "validation-checks.test.ts: 'a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Validate runs one CliProvider.runEditSession call (claude --permission-mode acceptEdits, or codex --full-auto) in the repo and asks that session to run the task's tests, the repo-wide sweep and the typecheck itself; testsPassed, typecheckClean and passed are whatever the session reports (validate.ts:155, render.ts:28-29, validate-task.md). Every CLI child is spawned as an ordinary child and only it is SIGKILLed on timeout (cli-provider.ts:598), so commands it launched survive.",
+      "stateAfter": "Validate first runs the typecheck and the task's own test files as daemon-owned commands (own process group, per-command limit, --test-force-exit), then asks a read-only reviewer session (CliProvider.runReviewSession) to judge acceptance checks and scope against that evidence. testsPassed and typecheckClean are the daemon's exit-code facts and passed requires both plus the judge's pass. Every CLI child runs in its own process group, which is killed on timeout and swept after exit.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Start every CLI child as its own process-group leader; on timeout signal the group; on the child's 'exit' event signal any process still in the group (before 'close'). No caller-visible change in results.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the daemon-side check runner and test-file resolution beside the build-step validate phase, unused at first.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite the two validate prompts as judge-only (evidence section, no instruction to run commands); leave the implement prompts unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Switch validate to run the checks, then call runReviewSession with the verdict schema, and overwrite testsPassed / typecheckClean and combine passed; replace the ValidateProvider seam and update the validate tests' fakes. Update the validate fakes in build-step.test.ts and build-start.test.ts to runReviewSession with a passing check runner.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The insrc_build_step validate input and output shapes are unchanged: every existing verdict field still comes back, with checks[] and evidence added, and the same BUILD record is written. Behaviour changes for callers: a validate that used to fail on a refused command now runs the checks; a task whose planned test names match no file now fails with that reason. runEditSession, complete, completeStructured and runReviewSession keep their arguments. The repo-local .claude/settings.local.json allowlist added as a workaround is no longer needed and can be removed by the user. Plans written before the '<base>.test.ts:' naming convention fail validate with a note naming the unmapped tests until revised or overridden.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Dedicated verdict session with a per-call command allowlist",
+        "oneLineSummary": "Add a CliProvider verdict-session call that grants only reads plus the exact shell commands validate names, bound validate to the task's test files and the typecheck, and stop the whole process group on timeout.",
+        "approach": "CliProvider gains runVerdictSession(prompt, { cwd, allowedCommands, timeoutMs }): for claude it passes --tools Read,Grep,Glob,Bash and --allowedTools with Read/Grep/Glob plus one Bash(<prefix>:*) entry per allowed command prefix, and no edit permission mode, so the session can read and run exactly those commands and nothing else; codex keeps its sandboxed exec. validate.ts calls runVerdictSession instead of runEditSession and passes the commands it renders (the typecheck, the test runner over the task's named test files, and read-only git inspection). The validate prompt names the task's own test files and the typecheck as the required checks and no longer asks for the repo-wide sweep. runSubprocess spawns every CLI child in its own process group and, on timeout, signals the group, then also signals it after a normal exit, so no command a session launched outlives the call. runEditSession, complete, completeStructured and runReviewSession keep their arguments.",
+        "pros": [
+          "Grants exactly the commands validate needs, per call, with no per-repo settings file",
+          "The validator loses edit permission it never needed, which makes it stricter, not wider",
+          "Process-group teardown fixes orphans for every CLI call through one spawn path",
+          "Small, contained surface: one new provider method, one renderer change, one spawn change"
+        ],
+        "cons": [
+          "Relies on claude's --allowedTools prefix matching; a command spelled differently by the session is still refused",
+          "The verdict still depends on the model running the commands; a lazy session can skip them"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "A sound, cheaper design that fixes all three causes, but the verdict's test and typecheck results stay model-reported and the time budget is only as good as the session's choices."
+      },
+      {
+        "id": "a2",
+        "name": "Widen runEditSession with an optional command allowlist",
+        "oneLineSummary": "Keep validate on runEditSession but let callers pass allowedCommands, added as --allowedTools on top of acceptEdits.",
+        "approach": "EditSessionOpts gains allowedCommands?: readonly string[]; when present, runEditSession appends --allowedTools Bash(<prefix>:*) entries to its existing acceptEdits arguments. validate passes its commands; other callers pass nothing and keep today's arguments. The validate prompt drops the repo-wide sweep as in a1, and runSubprocess gets the same process-group teardown.",
+        "pros": [
+          "Smallest code change; no new provider method",
+          "Existing edit-session callers are untouched when they pass no allowlist"
+        ],
+        "cons": [
+          "The validation gate keeps file-edit permission, so a verdict session can change the code it is judging",
+          "Mixes two different session kinds (editing implementer vs read-only judge) behind one method and one test pin"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheapest real fix but leaves the validator able to edit the code under judgement."
+      },
+      {
+        "id": "a3",
+        "name": "Bypass permissions for the validate session",
+        "oneLineSummary": "Run the validate session with a bypass-permissions mode so every command is allowed.",
+        "approach": "validate calls a variant of runEditSession that passes --permission-mode bypassPermissions (and codex --full-auto as today). The prompt drops the sweep and runSubprocess kills the process group, as in a1.",
+        "pros": [
+          "Trivial to implement",
+          "Never blocks on a command spelling"
+        ],
+        "cons": [
+          "Widens the session to arbitrary shell commands, including destructive ones, which the issue rules out",
+          "Removes the one guard that stops an unattended session from touching anything outside the repo"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates the no-widening constraint outright."
+      },
+      {
+        "id": "a4",
+        "name": "Daemon runs the checks; the session only judges",
+        "oneLineSummary": "The daemon itself runs the typecheck and the task's test files under a process-group timeout and hands the results to a read-only judging session.",
+        "approach": "Before the session, validate.ts runs the typecheck and the test runner over the task's named test files as daemon-owned subprocesses (own process group, bounded timeout), captures their exit codes and output tails, and renders them into the prompt as evidence; the verdict session is the existing read-only reviewer session (Read/Grep/Glob only) that judges acceptance checks and scope against that evidence. testsPassed and typecheckClean come from the daemon's exit codes, not from the model.",
+        "pros": [
+          "Test and typecheck results are deterministic facts, not model self-reports",
+          "No shell permission is granted to any model session at all",
+          "Time budget is enforced by the daemon per command"
+        ],
+        "cons": [
+          "Needs a mapping from a task's test names ('notice.test.ts: ...') to files, and a rule for standalone builds whose tests come from an LLD",
+          "Larger change: a new daemon-side command runner, result capture and a reshaped prompt",
+          "Commits validate to one fixed test runner per repo"
+        ],
+        "costEstimate": "L"
+      }
+    ],
+    "chosenAlternative": "a4",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "design.story/s1 symbol.locate: validate verdict session and CLI sessions (src/mcp/build-step/phases/validate.ts, src/agent/providers/cli-provider.ts)",
+      "quotedText": "calls provider.runEditSession(prompt, { cwd: repoPath }) at :155 with no timeoutMs"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:598 (spawnOnce)",
+      "quotedText": "const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutMs);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/build-step/render.ts:28-29",
+      "quotedText": "const TEST_CMD      = `npx tsx --test 'src/**/__tests__/*.test.ts'`;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/providers/__tests__/cli-review-session.test.ts:209",
+      "quotedText": "assert.deepEqual(edit, ['--print', '--output-format', 'json', '--permission-mode', 'acceptEdits', '--model', 'opus']);"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-f1bf0fb3085c629c (approved 2026-10-07)",
+      "quotedText": "Make the validate verdict session able to run exactly the checks it is asked to judge without depending on per-repo permission setup and without widening what other CLI sessions may do"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "CLAUDE.md project principles",
+      "quotedText": "Accuracy is primary; cost is the least priority."
+    }
+  ]
+}

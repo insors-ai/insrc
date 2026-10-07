@@ -435,3 +435,24 @@ Sizing uses the totals. Nothing is partitioned: a request beyond the raised ceil
 - **[[c60]]** `prior-artifact` `HLD-b9d5c5c40df5a574 eleventh review of 2026-10-07 by the daemon: block, 3 MED did not hold, none HIGH. All three are applied in this revision.`
 - **[[c61]]** `code` `src/analyze/runtimes/docs/discovery-inventory.ts` — "import { readScopeRef, resolveRepoPath } from '../code/_shared.js';"
 - **[[c62]]** `prior-artifact` `HLD-b9d5c5c40df5a574 twelfth review of 2026-10-07 by the daemon: block, 2 MED did not hold, none HIGH. Both are applied in this revision.`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.epic (design.epic)
+
+**2 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T06:59:37.019Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | TARGET_TO_KINDS is the one statement of which kind of scope goes with which kind of source, so correcting it (and the symbol form in the prompt) is the whole change. | The classifier's prompt states the same table a second time as a hard rule: src/prompts/analyze/classify.system.md:30-38 ('Scope-kind / target compatibility (HARD RULE)' ... '`target=code` → kinds: `repo \| module \| file \| symbol \| workspace`', '`target=data` → kinds: `connection \| workspace`', '`target=infra` → kinds: `manifest-dir \| workspace`'). The design brings the prompt in line only for the symbol value's form (:44). After the table is corrected the model is still told that data on a repo or manifest directory, code on a manifest directory and infra on a repo are invalid, so it keeps steering those requests to generic. The table's comment (validate.ts:42-45) and the pinned matrix tests (classifier/__tests__/validate.test.ts:112 'infra+repo -> scope-ref-kind-target-mismatch') repeat it too. [files: src/prompts/analyze/classify.system.md, src/analyze/classifier/validate.ts] | Add classify.system.md:30-40 to Story s6's change sites: the prompt's pairing list is rewritten to the corrected rows (or generated from the table), together with the validator's comment and the matrix test. |
+| change-sites | MED | The plan tasks that read a scope without checking its kind are the three docs tasks named; with those and the four family checks, every plan task goes through the shared check and resolution. | The shared adherence runtime also takes the scope's value as a repo path with no check: src/analyze/runtimes/shared/adherence.ts:202 `const repoPath = executeArgs.intent.scopeRef.value;` (then `hydrateExcerpts(subject, repoPath, ...)`) and :344 `const repoPath = args.intent.scopeRef.value;` (then `assembleLiveProjectContext(db, repoPath, ...)`). It is used by three families: runtimes/code/adherence-check.ts, runtimes/data/adherence-check.ts, runtimes/infra/adherence-check.ts. Once Story s7 lets a code task receive a module, file or symbol ('<file>#<name>') and a data task a connection id, these tasks would pass that value as a repo path. The design's inventory names only docs/constraint-enumerate.ts:45, decision-trace.ts:46 and family-summarise.ts:97-98. [files: src/analyze/runtimes/shared/adherence.ts, src/analyze/runtimes/code/adherence-check.ts, src/analyze/runtimes/data/adherence-check.ts, src/analyze/runtimes/infra/adherence-check.ts] | Add shared/adherence.ts:202 and :344 (the code, data and infra adherence-check tasks) to Story s7's inventory: they resolve the repo through the same family check and resolution as the other tasks. |
+
+#### Could not verify (does not block)
+
+_None._

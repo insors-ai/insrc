@@ -433,3 +433,24 @@ Sizing uses the totals. Nothing is partitioned: a request beyond the raised ceil
 - **[[c58]]** `code` `vscode-plugin/package.json` — ""insrc.models.shaper.maxToolTurns": {"
 - **[[c59]]** `code` `src/analyze/explore/executor.ts`
 - **[[c60]]** `prior-artifact` `HLD-b9d5c5c40df5a574 eleventh review of 2026-10-07 by the daemon: block, 3 MED did not hold, none HIGH. All three are applied in this revision.`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.epic (design.epic)
+
+**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T06:55:05.725Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | The bundle schema reaches a model only through stripMetaFromSchema in the synthesizer, so taking 'report' out there keeps it out of every model-facing schema. | There is a second model-facing site the design does not list. src/analyze/context/driver.ts:758-760, in runFinalStructuredEmit: 'const raw = await provider.completeStructured<AnalyzeContextBundle>( finalMessages, ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>, {' — the full schema, not stripped (even 'meta' is still in it). That function is the final emit of the shared tool loop: called at :309 for the classification and task modes and at :578 inside runShaperToolLoop, which the free-form lookup uses (explore/freeform-probe.ts:116). The design cites only synthesizer.ts:126, :184-186, :198-203, :274. Once 'report' is a declared optional field of ANALYZE_CONTEXT_BUNDLE_SCHEMA, the tool loop's model is handed a schema that allows it and a model-written report passes validateBundleWithErrors (:334), against the design's rule that 'the report is always derived from the completeness records and never written by a model'. [files: src/analyze/context/driver.ts, src/analyze/context/synthesizer.ts, src/analyze/explore/freeform-probe.ts] | Add src/analyze/context/driver.ts:760 to Story s1's change sites: give the tool loop's final emit a schema without 'report' (and state what happens to a report a model emits there), for all three users of the loop. |
+| change-sites | MED | The plan-task families with a scope check are code, infra and data, so widening those three to their rows of the corrected table covers every task. | A docs family exists (src/analyze/runtimes/docs/index.ts) and its task uses the code family's check: src/analyze/runtimes/docs/discovery-inventory.ts:39 'import { readScopeRef, resolveRepoPath } from '../code/_shared.js';' and :69 'const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);'. That resolver accepts only repo and manifest-dir today (code/_shared.ts:60-67 'Supported in this revision: repo, manifest-dir.'), which already disagrees with the validator's docs row ['repo','module','file','workspace'] (validate.ts:51) — a disagreement the design does not list. The corrected table gives docs 'repo, module, file, workspace' and code 'repo, module, file, symbol, manifest directory, workspace'. If Story s7 widens the shared code resolver to exactly the code row, the docs task accepts symbol and manifest-dir, which the docs row excludes; the design names only 'each family (code, infra, data)' in section 3 and in Story s7's boundary. [files: src/analyze/runtimes/docs/discovery-inventory.ts, src/analyze/runtimes/code/_shared.ts, src/analyze/classifier/validate.ts] | Name the docs family in Story s7: give it its own scope check for the docs row (or make the shared resolver take the family's row as an argument) and list today's docs/workspace disagreement with the others. State that the generic family has no scope check. |
+
+#### Could not verify (does not block)
+
+_None._

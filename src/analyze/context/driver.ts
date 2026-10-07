@@ -267,72 +267,46 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		await ensureNonEmptyClosure((inputs as RunShapeInput).intent);
 	}
 
-	// (4.6) Exploration-based context build (plans/exploration-based-
-	// context-build.md Phase 1). If the intent qualifies (V1: code
-	// target + run mode + focused intent), run the new pipeline:
-	// decompose -> execute explorations -> synthesize bundle. On
-	// success, skip the legacy tool loop entirely + jump to meta
-	// stamping. On failure (decomposer LLM down, unsupported
-	// answer-type, exploration-only fallback disabled), fall through
-	// to the legacy tool loop below -- no regression risk.
-	const explorationBundle = await tryExplorationPipeline({
+	// (4.6) The lookup pipeline: plan lookups -> execute them -> write
+	// the answer. Every run-mode request goes through it. It returns a
+	// bundle, or the one cause for which it did not proceed, or
+	// 'not-applicable' for a mode it does not serve.
+	const outcome = await tryExplorationPipeline({
 		invocationMode,
 		shaperId,
 		inputs,
 		runId,
 	});
-	if (explorationBundle !== null) {
-		const bundle: AnalyzeContextBundle = {
-			...explorationBundle.raw,
-			meta: {
-				mode:          invocationMode,
-				shaper:        shaperId,
-				toolCalls:     explorationBundle.explorationCount,
-				modelId:       cfg.shaperModel,
-				emptyLayers:   deriveEmptyLayers(explorationBundle.raw),
-				schemaVersion: SCHEMA_VERSION,
-				...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+	// A cause the pipeline names becomes its own typed error here, in
+	// one place; an invalid bundle is one more cause. Only a mode the
+	// pipeline does not serve (classification, task) continues to the
+	// tool loop below. A run-mode request never does: its fallback is
+	// the pipeline's own freeform.probe, which drives the same loop.
+	const pipelineBundle = settlePipelineOutcome(outcome, (raw, explorationCount) => ({
+		...raw,
+		meta: {
+			mode:          invocationMode,
+			shaper:        shaperId,
+			toolCalls:     explorationCount,
+			modelId:       cfg.shaperModel,
+			emptyLayers:   deriveEmptyLayers(raw),
+			schemaVersion: SCHEMA_VERSION,
+			...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+		},
+	}));
+	if (pipelineBundle !== null) {
+		writeBundle(runId, cacheKey, pipelineBundle.bundle);
+		log.info(
+			{
+				runId,
+				mode:              invocationMode,
+				shaperId,
+				pipeline:          'exploration',
+				explorationCount:  pipelineBundle.explorationCount,
 			},
-		};
-		const v = validateBundleWithErrors(bundle);
-		if (!v.ok) {
-			log.warn(
-				{ runId, errors: v.errors },
-				'exploration-based bundle failed validation; falling through to legacy shaper',
-			);
-			// Fall through to legacy path below.
-		} else {
-			writeBundle(runId, cacheKey, bundle);
-			log.info(
-				{
-					runId,
-					mode:              invocationMode,
-					shaperId,
-					pipeline:          'exploration',
-					explorationCount:  explorationBundle.explorationCount,
-				},
-				'shaper invocation complete (exploration pipeline)',
-			);
-			return bundle;
-		}
-	}
-
-	// (4.7) Retire the legacy tool loop from the shaper's happy path
-	// for run mode (docs/plans/exploration-based-context-build.md Phase 6).
-	// The exploration pipeline emits a `freeform.probe` fallback plan
-	// for any run-mode intent that no deterministic recipe covered,
-	// which reuses the same tool-loop primitive `runShaperToolLoop`
-	// exposes -- so a run-mode null here means the pipeline itself
-	// short-circuited (decomposer LLM down, synthesizer LLM down).
-	// Falling through to re-run the same LLM tool loop would only
-	// fail again with a less-specific error. Surface the honest
-	// LLM-unavailable state instead.
-	if (invocationMode === 'run') {
-		throw new ShaperLlmUnavailableError(
-			`Run-mode exploration pipeline returned no bundle. ` +
-			`See prior log lines for the specific failure (decomposer / ` +
-			`synthesizer / freeform.probe tool loop).`,
+			'shaper invocation complete (exploration pipeline)',
 		);
+		return pipelineBundle.bundle;
 	}
 
 	// (4) Build the LLM message list. Classification + task modes
@@ -1091,9 +1065,116 @@ export async function resolveRepoLastIndexedAt(scopePath: string): Promise<numbe
 // Exploration-based pipeline (docs/plans/exploration-based-context-build.md)
 // ---------------------------------------------------------------------------
 
-interface ExplorationPipelineResult {
-	readonly raw:              Omit<AnalyzeContextBundle, 'meta'>;
-	readonly explorationCount: number;
+/**
+ * Every way the pipeline declines to proceed. The list is the whole
+ * contract: `errorForPipelineCause` has one case per member, so a new
+ * way of not proceeding cannot fall into a default error.
+ *
+ * The last two are INTERIM: they name the two gates the pipeline
+ * still has (a request with no focus, and four kinds of scope). Each
+ * is deleted with its gate.
+ */
+export const PIPELINE_CAUSES = [
+	'invalid-input',           // unknown kind of source, or inputs with no intent
+	'planner-prompt-missing',
+	'planner-model-failed',
+	'answer-prompt-missing',
+	'answer-model-failed',
+	'answer-invalid',          // the answer-writing step failed for any other reason
+	'empty-plan',              // the plan that would be executed has no lookups
+	'bundle-invalid',          // the pipeline's bundle fails validation (set by settlePipelineOutcome)
+	'unfocused-not-served',    // interim
+	'scope-kind-not-served',   // interim
+] as const;
+export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
+
+export type PipelineOutcome =
+	| { readonly kind: 'bundle'; readonly raw: Omit<AnalyzeContextBundle, 'meta'>; readonly explorationCount: number }
+	/** Not run mode: the caller continues to its tool loop. */
+	| { readonly kind: 'not-applicable' }
+	| {
+		readonly kind:    'did-not-proceed';
+		readonly cause:   PipelineCause;
+		readonly message: string;
+		/** For the two prompt-missing causes. */
+		readonly promptPath?: string;
+	};
+
+/**
+ * The pipeline's four steps. Production uses the real ones; a test
+ * passes stand-ins so the pipeline can be driven without a model, a
+ * store or a prompt file.
+ */
+export interface PipelineSteps {
+	readonly decompose:            typeof decompose;
+	readonly executePlan:          typeof executePlan;
+	readonly synthesize:           typeof synthesize;
+	readonly fallbackFreeformPlan: (intent: ClassifiedIntent, shaperId: ShaperId) => ExplorationPlan;
+	/** The repo's last-indexed time, part of the lookup cache key. */
+	readonly lastIndexedAt:        (scopePath: string) => Promise<number | undefined>;
+}
+
+/** The ONE table from a cause to its typed error. */
+export function errorForPipelineCause(
+	cause:      PipelineCause,
+	message:    string,
+	promptPath?: string,
+): Error {
+	switch (cause) {
+		case 'invalid-input':
+			return new ShaperInvalidInputError(message);
+		case 'planner-prompt-missing':
+		case 'answer-prompt-missing':
+			return new ShaperPromptMissingError(promptPath ?? message);
+		case 'planner-model-failed':
+			return new ShaperLlmUnavailableError(message, 'planning');
+		case 'answer-model-failed':
+			return new ShaperLlmUnavailableError(message, 'answer writing');
+		case 'answer-invalid':
+			return new ShaperAnswerInvalidError('answer writing', message);
+		case 'bundle-invalid':
+			return new ShaperAnswerInvalidError('bundle validation', message);
+		case 'empty-plan':
+		case 'unfocused-not-served':
+		case 'scope-kind-not-served':
+			return new ShaperNoPlanError(message);
+		default: {
+			const unreachable: never = cause;
+			throw new Error(`errorForPipelineCause: unhandled cause ${String(unreachable)}`);
+		}
+	}
+}
+
+/**
+ * Turn a pipeline outcome into what runShaper does with it:
+ *   - 'bundle'          -> stamp meta, validate, return it; an invalid
+ *                          bundle is the 'bundle-invalid' cause.
+ *   - 'did-not-proceed' -> throw the cause's typed error.
+ *   - 'not-applicable'  -> null: the caller continues to its tool loop.
+ */
+export function settlePipelineOutcome(
+	outcome: PipelineOutcome,
+	stamp:   (raw: Omit<AnalyzeContextBundle, 'meta'>, explorationCount: number) => AnalyzeContextBundle,
+): { bundle: AnalyzeContextBundle; explorationCount: number } | null {
+	if (outcome.kind === 'not-applicable') return null;
+	if (outcome.kind === 'did-not-proceed') {
+		throw errorForPipelineCause(outcome.cause, outcome.message, outcome.promptPath);
+	}
+	const bundle = stamp(outcome.raw, outcome.explorationCount);
+	const v = validateBundleWithErrors(bundle);
+	if (!v.ok) {
+		throw errorForPipelineCause('bundle-invalid', v.errors.join('; '));
+	}
+	return { bundle, explorationCount: outcome.explorationCount };
+}
+
+function didNotProceed(cause: PipelineCause, message: string, promptPath?: string): PipelineOutcome {
+	return {
+		kind: 'did-not-proceed',
+		cause,
+		message,
+		...(promptPath !== undefined ? { promptPath } : {}),
+	};
 }
 
 /**
@@ -1118,13 +1199,16 @@ interface ExplorationPipelineResult {
  * Later phases relax this: Phase 3 adds adherence-check for code,
  * Phase 5 adds data + infra, etc.
  */
-async function tryExplorationPipeline(args: {
-	invocationMode: ShaperMode;
-	shaperId:       ShaperId;
-	inputs:         RunShaperArgs['inputs'];
-	runId:          string;
-}): Promise<ExplorationPipelineResult | null> {
-	if (args.invocationMode !== 'run') return null;
+async function tryExplorationPipeline(
+	args: {
+		invocationMode: ShaperMode;
+		shaperId:       ShaperId;
+		inputs:         RunShaperArgs['inputs'];
+		runId:          string;
+	},
+	steps: PipelineSteps = REAL_PIPELINE_STEPS,
+): Promise<PipelineOutcome> {
+	if (args.invocationMode !== 'run') return { kind: 'not-applicable' };
 	// Every run-mode shaper flows through the exploration pipeline
 	// (docs/plans/exploration-based-context-build.md Phase 6). Recipe-less
 	// shapers (generic) or recipe-less intents land in the
@@ -1134,10 +1218,19 @@ async function tryExplorationPipeline(args: {
 	 && args.shaperId       !== 'docs'
 	 && args.shaperId       !== 'data'
 	 && args.shaperId       !== 'infra'
-	 && args.shaperId       !== 'generic') return null;
-	if (!('intent' in args.inputs))     return null;
+	 && args.shaperId       !== 'generic') {
+		return didNotProceed('invalid-input', `unknown kind of source '${String(args.shaperId)}'`);
+	}
+	if (!('intent' in args.inputs)) {
+		return didNotProceed('invalid-input', 'run-mode inputs carry no intent');
+	}
 	const intent = (args.inputs as RunShapeInput).intent;
-	if (intent.focused !== true) return null;
+	if (intent.focused !== true) {
+		return didNotProceed(
+			'unfocused-not-served',
+			'the lookup pipeline does not yet serve a request that asks no specific question',
+		);
+	}
 
 	// V1..V5 requires a directory-shaped scope so concept.resolve /
 	// doc retrieval / manifests walk / pool acquisition all have a
@@ -1145,7 +1238,10 @@ async function tryExplorationPipeline(args: {
 	// a filesystem path.
 	const scopeKind = intent.scopeRef.kind;
 	if (scopeKind !== 'repo' && scopeKind !== 'module' && scopeKind !== 'workspace') {
-		return null;
+		return didNotProceed(
+			'scope-kind-not-served',
+			`the lookup pipeline does not yet serve a scope of kind '${scopeKind}'`,
+		);
 	}
 
 	// (a) Decompose. LLM unavailable / prompt missing -> fall through
@@ -1157,21 +1253,27 @@ async function tryExplorationPipeline(args: {
 	let plan: ExplorationPlan;
 	let usedFallback = false;
 	try {
-		plan = await decompose({ intent, runId: args.runId });
+		plan = await steps.decompose({ intent, runId: args.runId });
 	} catch (err) {
-		if (err instanceof DecomposerLlmUnavailableError
-		 || err instanceof DecomposerPromptMissingError) {
+		if (err instanceof DecomposerLlmUnavailableError) {
 			log.info(
-				{ runId: args.runId, err: (err as Error).message },
-				'exploration pipeline: decomposer unavailable; falling through',
+				{ runId: args.runId, err: err.message },
+				'exploration pipeline: the planning call failed',
 			);
-			return null;
+			return didNotProceed('planner-model-failed', err.detail);
+		}
+		if (err instanceof DecomposerPromptMissingError) {
+			log.info(
+				{ runId: args.runId, err: err.message },
+				'exploration pipeline: the planning prompt is missing',
+			);
+			return didNotProceed('planner-prompt-missing', err.message, err.path);
 		}
 		log.warn(
 			{ runId: args.runId, err: (err as Error).message },
 			'exploration pipeline: decomposer failed; using freeform.probe fallback',
 		);
-		plan = fallbackFreeformPlan(intent, args.shaperId);
+		plan = steps.fallbackFreeformPlan(intent, args.shaperId);
 		usedFallback = true;
 	}
 
@@ -1206,15 +1308,22 @@ async function tryExplorationPipeline(args: {
 			},
 			'exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback',
 		);
-		plan = fallbackFreeformPlan(intent, args.shaperId);
+		plan = steps.fallbackFreeformPlan(intent, args.shaperId);
 		usedFallback = true;
+	}
+
+	// The replacement above always yields one lookup today. This check
+	// stands behind it so that a later change to the replacement cannot
+	// turn an empty plan into a silent nothing.
+	if (plan.explorations.length === 0) {
+		return didNotProceed('empty-plan', `the plan for this request has no lookups (answer type '${plan.answerType}')`);
 	}
 
 	// (b) Execute the plan.
 	const repoPath = resolveRepoPath(intent.scopeRef);
-	const lastIndexedMs = await resolveRepoLastIndexedAt(inferScopePath(args.inputs));
+	const lastIndexedMs = await steps.lastIndexedAt(inferScopePath(args.inputs));
 	const lastIndexedBigInt = BigInt(lastIndexedMs ?? 0);
-	const executed = await executePlan({
+	const executed = await steps.executePlan({
 		runId:            args.runId,
 		repoPath,
 		closureRepos:     [repoPath],
@@ -1241,6 +1350,7 @@ async function tryExplorationPipeline(args: {
 			'exploration pipeline: freeform.probe short-circuit',
 		);
 		return {
+			kind:             'bundle',
 			raw:              freeformOnly.rawBundle,
 			explorationCount: freeformOnly.toolCallCount,
 		};
@@ -1270,32 +1380,48 @@ async function tryExplorationPipeline(args: {
 							? 'capability'
 							: 'code';
 	try {
-		const raw = await synthesize({
+		const raw = await steps.synthesize({
 			runId:    args.runId,
 			intent,
 			executed,
 			target:   synthesizeTarget,
 		});
 		return {
+			kind:             'bundle',
 			raw,
 			explorationCount: executed.results.length,
 		};
 	} catch (err) {
-		if (err instanceof SynthesizerLlmUnavailableError
-		 || err instanceof SynthesizerPromptMissingError) {
+		if (err instanceof SynthesizerLlmUnavailableError) {
 			log.info(
-				{ runId: args.runId, err: (err as Error).message },
-				'exploration pipeline: synthesizer unavailable; falling through',
+				{ runId: args.runId, err: err.message },
+				'exploration pipeline: the answer-writing call failed',
 			);
-			return null;
+			return didNotProceed('answer-model-failed', err.detail);
 		}
-		log.warn(
-			{ runId: args.runId, err: (err as Error).message },
-			'exploration pipeline: synthesizer failed; falling through',
-		);
-		return null;
+		if (err instanceof SynthesizerPromptMissingError) {
+			log.info(
+				{ runId: args.runId, err: err.message },
+				'exploration pipeline: the answer-writing prompt is missing',
+			);
+			return didNotProceed('answer-prompt-missing', err.message, err.path);
+		}
+		// Anything else the answer-writing step raises (for example its
+		// output never took the required shape) is its own cause -- not
+		// a failed model call.
+		const message = err instanceof Error ? err.message : String(err);
+		log.warn({ runId: args.runId, err: message }, 'exploration pipeline: the answer-writing step failed');
+		return didNotProceed('answer-invalid', message);
 	}
 }
+
+const REAL_PIPELINE_STEPS: PipelineSteps = {
+	decompose,
+	executePlan,
+	synthesize,
+	fallbackFreeformPlan,
+	lastIndexedAt: resolveRepoLastIndexedAt,
+};
 
 /**
  * Emit a freeform.probe-only plan for intents that don't map to any
@@ -1390,4 +1516,5 @@ export const _resolveRepoLastIndexedAtForTest = resolveRepoLastIndexedAt;
 export const _inferScopePathForTest = inferScopePath;
 export const _renderUpstreamSectionForTest = renderUpstreamSection;
 export const _fallbackFreeformPlanForTest = fallbackFreeformPlan;
+export const _runExplorationPipelineForTest = tryExplorationPipeline;
 export const _extractSoleFreeformResultForTest = extractSoleFreeformResult;

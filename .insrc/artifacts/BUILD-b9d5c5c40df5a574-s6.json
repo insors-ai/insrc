@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s6",
     "createdAt": "2026-10-07T09:26:37.335Z",
-    "updatedAt": "2026-10-07T10:02:51.575Z",
+    "updatedAt": "2026-10-07T10:06:42.828Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -40,263 +40,302 @@
       {
         "id": "t8",
         "passed": false
+      },
+      {
+        "id": "t9",
+        "passed": false
       }
     ],
-    "summary": "The planning call's user turn is built from the resolved scope: the directory the lookups run in, plus one line naming the file, entity or connection for a narrower scope. The step tool's start phase makes the pairing test and resolves the scope before minting state, and its plan and narrow phases resolve it again from the intent in the token, whose shape is unchanged.",
+    "summary": "The lookup executor now carries the request's resolved scope to each runner. The free-form lookup builds its intent with the request's own scope and passes it to the tool loop, which runs its tools in the scope's lookup directory, so a file, symbol or connection request that falls to the free-form lookup keeps what it named.",
     "changeLog": [
       {
         "target": {
           "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/agent/providers/mcp-sampling-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/agent/providers/model-call-error.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/__tests__/validate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/scope-picker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/decompose-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/invariants.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure-callers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/prepare-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/resolve-repo-indexed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-errors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/decomposer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/model-failure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/context/synthesizer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/executor-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T10:06:42.828Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T10:06:42.828Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T10:06:42.828Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/freeform-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T10:06:42.828Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/aggregator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/analyze-step-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/phases/narrow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/phases/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/analyze-step/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/mcp/sampling-bridge.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       },
       {
         "target": {
           "file": "src/prompts/analyze/classify.system.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T10:02:51.575Z"
+        "timestamp": "2026-10-07T10:06:42.828Z"
       }
     ],
-    "commit": "a157a7ac"
+    "commit": "5b31a289"
   }
 }

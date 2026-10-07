@@ -22,6 +22,7 @@ import {
 	DecomposerSchemaUnrecoverable,
 } from '../decomposer.js';
 import { isModelCallFailure, modelCallFailureDetail } from '../model-failure.js';
+import type { ResolvedScope } from '../scope.js';
 import {
 	synthesize,
 	SynthesizerLlmUnavailableError,
@@ -67,6 +68,8 @@ const INTENT: ClassifiedIntent = {
 	scopeRef:  { kind: 'workspace', value: '/tmp/probe-repo' },
 	reasoning: 'test',
 };
+
+const SCOPE: ResolvedScope = { kind: 'workspace', value: '/tmp/probe-repo', repoPath: null, lookupPath: '/tmp/probe-repo' };
 
 const EXECUTED: ExecutedPlan = {
 	plan:        { answerType: 'how-does-it-work', synthesisHint: 't', explorations: [] },
@@ -122,7 +125,7 @@ test('modelCallFailureDetail returns the failure\'s own words', () => {
 
 test('planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure', async () => {
 	for (const text of CLI_CALL_FAILURES) {
-		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', provider: failingProvider(new Error(text)) }));
+		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error(text)) }));
 		assert.ok(planning instanceof DecomposerLlmUnavailableError, `planning: ${text} -> ${(planning as Error).name}`);
 		assert.ok(!(planning instanceof DecomposerSchemaUnrecoverable));
 
@@ -137,7 +140,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 
 test('planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure', async () => {
 	const failure = new ModelCallFailedError('client declined the sampling request');
-	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', provider: failingProvider(failure) }));
+	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(failure) }));
 	assert.ok(planning instanceof DecomposerLlmUnavailableError);
 	const answer = await caught(() => synthesize({
 		intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(failure),
@@ -147,7 +150,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 
 test('a shape failure stays a schema error for both calls', async () => {
 	for (const text of SHAPE_FAILURES) {
-		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', provider: failingProvider(new Error(text)) }));
+		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error(text)) }));
 		assert.ok(planning instanceof DecomposerSchemaUnrecoverable, `planning: ${text} -> ${(planning as Error).name}`);
 		const answer = await caught(() => synthesize({
 			intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code',
@@ -159,7 +162,7 @@ test('a shape failure stays a schema error for both calls', async () => {
 
 test('model-unavailable messages are provider-neutral and carry the underlying message in a field', async () => {
 	const cli = 'claude exited with 1. stderr=overloaded';
-	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', provider: failingProvider(new Error(cli)) })) as DecomposerLlmUnavailableError;
+	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error(cli)) })) as DecomposerLlmUnavailableError;
 	assert.equal(planning.message, `The model call for planning failed: ${cli}`);
 	assert.equal(planning.detail, cli);
 	assert.ok(!planning.message.includes('Ollama'));
@@ -174,7 +177,7 @@ test('model-unavailable messages are provider-neutral and carry the underlying m
 	// A typed sampling failure: the detail is the client's own words,
 	// without the typed error's prefix.
 	const sampled = await caught(() => decompose({
-		intent: INTENT, runId: 'r', provider: failingProvider(new ModelCallFailedError('client declined')),
+		intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new ModelCallFailedError('client declined')),
 	})) as DecomposerLlmUnavailableError;
 	assert.equal(sampled.detail, 'client declined');
 	assert.equal(sampled.message, 'The model call for planning failed: client declined');
@@ -182,7 +185,7 @@ test('model-unavailable messages are provider-neutral and carry the underlying m
 	// A failure that DID come from Ollama still says so, through the
 	// underlying message -- the prefix no longer asserts it.
 	const local = await caught(() => decompose({
-		intent: INTENT, runId: 'r', provider: failingProvider(new Error('Ollama is not running at http://localhost:11434')),
+		intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error('Ollama is not running at http://localhost:11434')),
 	})) as DecomposerLlmUnavailableError;
 	assert.match(local.message, /^The model call for planning failed: Ollama is not running/);
 });

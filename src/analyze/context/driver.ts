@@ -1226,7 +1226,7 @@ async function tryExplorationPipeline(
 	let plan: ExplorationPlan;
 	let usedFallback = false;
 	try {
-		plan = await steps.decompose({ intent, runId: args.runId });
+		plan = await steps.decompose({ intent, runId: args.runId, scope: args.scope });
 	} catch (err) {
 		if (err instanceof DecomposerLlmUnavailableError) {
 			log.info(

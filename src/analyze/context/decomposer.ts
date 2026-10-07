@@ -37,6 +37,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { ResolvedScope } from './scope.js';
 
 import type {
 	AnswerType,
@@ -156,6 +157,8 @@ export const DECOMPOSE_SCHEMA: StructuredSchema = {
 export interface DecomposeArgs {
 	readonly intent:   ClassifiedIntent;
 	readonly runId:    string;
+	/** The intent's scope, already resolved (resolveScope). */
+	readonly scope:    ResolvedScope;
 	readonly provider?: LLMProvider;
 }
 
@@ -168,7 +171,7 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 	const promptContent = loadPromptFile();
 	const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg);
 
-	const messages = buildMessages(promptContent, args.intent);
+	const messages = buildMessages(promptContent, args.intent, args.scope);
 
 	let raw: {
 		answerType:    AnswerType;
@@ -242,9 +245,9 @@ export interface DecomposePrepared {
  * would have sent -- prompt is loaded verbatim from disk; user turn is
  * composed the same way `buildMessages` composes it.
  */
-export function prepareDecompose(intent: ClassifiedIntent): DecomposePrepared {
+export function prepareDecompose(intent: ClassifiedIntent, scope: ResolvedScope): DecomposePrepared {
 	const promptContent = loadPromptFile();
-	const messages = buildMessages(promptContent, intent);
+	const messages = buildMessages(promptContent, intent, scope);
 	return {
 		systemPrompt: messages[0]!.content as string,
 		userTurn:     messages[1]!.content as string,
@@ -304,7 +307,26 @@ function validatePlanTopology(explorations: readonly Exploration[]): void {
 // Message composition
 // ---------------------------------------------------------------------------
 
-function buildMessages(promptContent: string, intent: ClassifiedIntent): LLMMessage[] {
+/**
+ * One line naming what a scope narrower than a directory points at,
+ * so the planning call plans lookups on it. A directory scope (repo,
+ * module, manifest directory, workspace) needs none: the 'Repo path'
+ * line already is that directory.
+ */
+function scopeLine(scope: ResolvedScope): string {
+	switch (scope.kind) {
+		case 'file':
+			return `Scope: the file ${scope.filePath ?? scope.value}\n`;
+		case 'symbol':
+			return `Scope: the entity '${scope.entityName ?? ''}' in the file ${scope.filePath ?? scope.value}\n`;
+		case 'connection':
+			return `Scope: the data connection '${scope.connectionId ?? scope.value}'\n`;
+		default:
+			return '';
+	}
+}
+
+function buildMessages(promptContent: string, intent: ClassifiedIntent, scope: ResolvedScope): LLMMessage[] {
 	const focusLine = intent.focused && intent.focus !== undefined
 		? `focus: "${intent.focus}"`
 		: 'focus: (unfocused -- broad understanding request)';
@@ -315,7 +337,10 @@ function buildMessages(promptContent: string, intent: ClassifiedIntent): LLMMess
 		JSON.stringify(intent, null, 2) +
 		'\n```\n' +
 		`\n` +
-		`Repo path: ${intent.scopeRef.value}\n` +
+		// The directory the lookups run in -- for a directory scope, the
+		// scope's own directory, exactly as the raw value used to print.
+		`Repo path: ${scope.lookupPath}\n` +
+		scopeLine(scope) +
 		`\n` +
 		`Classify the answer type. Emit the ExplorationPlan JSON now. ` +
 		`First char \`{\`, no markdown fence, no prose. Every array present ` +

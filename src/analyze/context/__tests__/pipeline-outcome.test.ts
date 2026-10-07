@@ -170,7 +170,7 @@ test('focused request on a repo: stand-in arguments and bundle equal the recorde
 	// as both path and closure, its last-indexed time and the plan; the
 	// answer-writing call gets the run id, the intent, exactly what the
 	// lookups returned, and the 'code' key.
-	assert.deepEqual(calls.decompose, [{ intent: INTENT, runId: 'r1' }]);
+	assert.deepEqual(calls.decompose, [{ intent: INTENT, runId: 'r1', scope: dirScope(INTENT) }]);
 	assert.deepEqual(calls.executePlan, [{
 		runId: 'r1', repoPath: REPO, closureRepos: [REPO],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,

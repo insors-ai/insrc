@@ -410,7 +410,7 @@
       {
         "entity": "Content cut inside a lookup or a runtime, and data-driver listings",
         "change": "field-add",
-        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, and module.profile's 4,096 (module-profile.ts:222, :284). The summariser's 8,192-character cut is not among them: see the open question. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.",
+        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, and module.profile's 4,096 (module-profile.ts:222, :284). The summariser's 8,192-character cut is applied at index time and has its own entry below. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.",
         "callSites": [
           "src/analyze/explore/doc-constraint-enumerate.ts",
           "src/analyze/explore/doc-decision-trace.ts",
@@ -525,6 +525,22 @@
           "src/analyze/explore/capability-reuse-check.ts",
           "src/analyze/context/driver.ts",
           "src/daemon/tools/builtins/search/grep.ts"
+        ]
+      },
+      {
+        "entity": "The stored document summary (DocSummary) and the summariser's cut",
+        "change": "field-add",
+        "details": "The summariser gives the model the first 8,192 characters of a document's body (src/analyze/summariser/driver.ts:318). It runs at index time, called only by the indexer (src/indexer/index.ts:641, :685), and the stored summary (src/shared/analyze-types.ts:185-223, kept in the docSummary store, src/db/doc-summaries.ts) records nothing about the cut. DocSummary gains two optional fields, `bodyReadChars` and `bodyTotalChars`, written by the summariser with every summary it stores, including the placeholder it stores when summarising fails. The fields are optional so that a row stored before the change still decodes. Rows already stored are filled without a model call: the summariser's unchanged check (driver.ts:188-196: same content hash, same model, no error) finds the row unchanged and, when the row has no lengths, writes them and returns, since the same body gives the same cut. The next summarise sweep the indexer runs therefore fills every stored row. Two plan tasks turn stored summaries into a result and read the fields into their completeness record: docs family-summarise and docs discovery-inventory. For each summary whose read length is smaller than its full length they add a partlyRead entry naming the document's file with the two lengths. A summary with no lengths (not yet filled) is listed under skipped with the reason that how much of the document was read is not recorded; a document with no summary yet, and one whose summary is the failure placeholder (errorCode set), are listed under skipped with that reason. The cut keeps its value. The docs tools exposed to agents and the project-context text built for the classifier (src/daemon/tools/builtins/docs/index.ts, src/analyze/context/live-project-context.ts) read the same rows and are not results of the analyzer; they are unchanged and ignore the new fields. Current behaviour that could break: the unchanged check returns without writing; it now writes once per row that lacks lengths.",
+        "schemaDiff": "DocSummary: + bodyReadChars?: number; + bodyTotalChars?: number",
+        "callSites": [
+          "src/analyze/summariser/driver.ts",
+          "src/shared/analyze-types.ts",
+          "src/db/doc-summaries.ts",
+          "src/indexer/index.ts",
+          "src/analyze/runtimes/docs/family-summarise.ts",
+          "src/analyze/runtimes/docs/discovery-inventory.ts",
+          "src/daemon/tools/builtins/docs/index.ts",
+          "src/analyze/context/live-project-context.ts"
         ]
       }
     ],
@@ -796,6 +812,20 @@
           "fixturesNeeded": [
             "this repository indexed, with the model reachable"
           ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The summariser's cut, from index time to a plan task's record.",
+          "subjects": [
+            "the summariser stores the read and full lengths with a summary of a body longer than the cut, of a shorter body, and with the failure placeholder",
+            "an unchanged row without lengths is given them with no model call (the stand-in provider is not called), and an unchanged row that has them is not written again",
+            "a row stored without the fields decodes",
+            "docs family-summarise and docs discovery-inventory report a cut document under partlyRead with its file and both lengths, and a summary without lengths, a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)"
+          ],
+          "fixturesNeeded": [
+            "a stand-in summariser provider that counts its calls",
+            "a temporary docSummary store holding a row written without the new fields"
+          ]
         }
       ],
       "acceptanceMapping": [
@@ -822,7 +852,8 @@
           "criterionId": "ac3",
           "provingTests": [
             "unit: each lookup that cuts content reports partlyRead with the kept and full lengths",
-            "unit: the lookups that pause for a model call build their record from the facts prepare carried"
+            "unit: the lookups that pause for a model call build their record from the facts prepare carried",
+            "unit: the summariser stores the read and full lengths, and the two docs plan tasks report a cut document under partlyRead"
           ]
         },
         {
@@ -928,9 +959,17 @@
           "order": 10,
           "action": "Update the daemon guide's error-code table and the description of the bundle for the report and the 'answer-step-failed' code.",
           "rollbackable": true
+        },
+        {
+          "order": 11,
+          "action": "Add the two optional length fields to the stored document summary and write them with every summary; in the unchanged check, fill a row that lacks them without a model call; read them into the completeness record in the two docs plan tasks. No stored row is rewritten by a migration: rows are filled by the next summarise sweep.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 5"
+          ]
         }
       ],
-      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change.",
+      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change. The stored document summary gains two optional fields; a row written before the change decodes as before and is filled by the next summarise sweep, and until then the docs plan tasks report that how much of that document was read is not recorded.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -991,8 +1030,7 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.",
-      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.",
-      "The document summariser cuts a document's body to 8,192 characters before summarising it (src/analyze/summariser/driver.ts:318). It runs at index time, called only by the indexer (src/indexer/index.ts:641, :685); nothing stores that a summary was built from a cut body, so no lookup or plan task that later reads the summary can report it. Reporting it needs the kept and full lengths stored with each summary at index time and read by the docs plan tasks, and summaries stored before the change would carry no lengths until the document is summarised again. Whether that belongs in this Story is undecided."
+      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value."
     ]
   },
   "citations": [
@@ -1040,6 +1078,11 @@
       "id": "c9",
       "kind": "code",
       "ref": "A text search of src on 2026-10-07 for the fields this Story removes and the symbols it changes (truncated, totalCallers, exhaustedNote, ShaperToolLoopExhausted, runGrepSearch, the lookup cache, TaskExecutionRecord). Files: src/prompts/analyze/synthesize.adherence.system.md, src/prompts/analyze/synthesize.data.system.md, src/prompts/analyze/synthesize.capability.system.md, src/prompts/analyze/synthesize.code.system.md, src/analyze/executor/cache.ts, src/analyze/executor/walker.ts, src/analyze/explore/usage-example.ts, src/mcp/analyze-step/phases/narrow.ts, src/db/entities.ts, src/workflow/review/probe.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "A direct read on 2026-10-07 of the document summariser, the stored summary and its readers. Files: src/analyze/summariser/driver.ts, src/shared/analyze-types.ts, src/db/doc-summaries.ts, src/indexer/index.ts, src/analyze/runtimes/docs/family-summarise.ts, src/analyze/runtimes/docs/discovery-inventory.ts, src/daemon/tools/builtins/docs/index.ts, src/analyze/context/live-project-context.ts"
     }
   ]
 }

@@ -1478,4 +1478,6 @@ export const _buildToolDepsForTest = buildToolDeps;
 export const _renderUpstreamSectionForTest = renderUpstreamSection;
 export const _fallbackFreeformPlanForTest = fallbackFreeformPlan;
 export const _runExplorationPipelineForTest = tryExplorationPipeline;
+/** The pipeline's real steps, for a test that replaces just one. */
+export const _realPipelineStepsForTest: PipelineSteps = REAL_PIPELINE_STEPS;
 export const _extractSoleFreeformResultForTest = extractSoleFreeformResult;

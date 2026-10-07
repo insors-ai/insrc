@@ -506,3 +506,23 @@ The target-hint branch, scope resolution and the pairing table are handled as in
 ## 10. Open questions
 
 - The HLD's code 'no-plan-for-request' has no case that occurs today: an empty plan, an uncovered answer type and an unparseable plan are all replaced by the free-form lookup (src/analyze/context/driver.ts:1136, :1171). This design raises it from a check that stands behind that replacement. Keep the code with that check, or drop it from the contract?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T08:38:05.998Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| error-paths | MED | For the two model-failed causes, runShaper throws ShaperLlmUnavailableError 'with a message that says the planning call failed and carries the underlying message', so the failure names the actual cause. | driver.ts:133-136: `constructor(cause: string) { super(`Local Ollama unavailable for shaper invocation: ${cause}`);` — the class hard-prefixes every message with 'Local Ollama unavailable'. The planning call's provider is role-routed, not always Ollama: decomposer.ts:159 `args.provider ?? resolveRoleProvider('analyze.decompose', cfg)`. A failed claude/codex CLI planning or answer-writing call would therefore be reported as local Ollama being unavailable. The LLD's message test covers only 'bundle-invalid', 'answer-invalid' and the prompt-missing causes, so nothing would catch it. [files: src/analyze/context/driver.ts, src/analyze/context/decomposer.ts] | Either change ShaperLlmUnavailableError's constructor text to a provider-neutral form that names the failed call (planning / answer writing), or add a stage argument as ShaperAnswerInvalidError has; add both model-failed causes to the message test (must name the call, must not say 'Ollama' unless the provider was Ollama). |
+
+#### Could not verify (does not block)
+
+_None._

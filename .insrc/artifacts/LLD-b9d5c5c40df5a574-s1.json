@@ -224,8 +224,9 @@
           "postconditions": [
             "The Node backend records a file it skips for its size or because it cannot be read, where today the read error is caught and dropped (unchanged for a missing ripgrep binary, which is an ordinary condition and not recorded)",
             "Both backends record a matching line they shorten",
-            "excludedByRule states the backend's rule: for ripgrep, files matched by ignore files and hidden and binary files; for the Node backend, the directories it never walks",
-            "A directory below the root that cannot be read is recorded as skipped; a ripgrep run that started and failed is recorded as backendFallback; output past the shell helper's size cap is recorded as outputDiscarded, from the helper's new stdoutTruncated flag"
+            "excludedByRule states the backend's rule: for ripgrep, files matched by ignore files and hidden and binary files; for the Node backend, in full: the directories on its ignore list, every entry whose name starts with a dot, files and directories alike (grep.ts:95), and every entry that is not a regular file or a directory, such as a symbolic link (:98)",
+            "A directory below the root that cannot be read is recorded as skipped; a ripgrep run that started and failed is recorded as backendFallback; output past the shell helper's size cap is recorded as outputDiscarded, from the helper's new stdoutTruncated flag",
+            "The search tool built on this function (searchGrepTool.execute, grep.ts:151-164) is its fourth caller. Its catch labels every thrown error 'bad regex'. It keeps that label for an empty pattern or an invalid regex and reports any other error, which now includes an unreadable root, as a failure labelled 'search-failed' with the error's own message. For an unreadable root the tool today returns '_No matches._' with success true; it now fails, which is the intended change. The review probe catches and skips a root it cannot search (src/workflow/review/probe.ts:61-72) and is unaffected"
           ]
         },
         {
@@ -248,7 +249,10 @@
           "postconditions": [
             "A lookup signals 'could not run' by throwing; none returns an empty result for it",
             "A lookup that had gathered something before it failed throws LookupFailedError (new) carrying it; the conversion copies it to the failed output's new `partial` field",
-            "The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned"
+            "The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned",
+            "stepPlan's branch for a lookup that pauses for a model call awaits the lookup's prepare with no conversion today (src/analyze/explore/executor.ts:482-502), and the step tool calls stepPlan outside its try blocks (src/mcp/analyze-step/phases/plan.ts:111, phases/narrow.ts:174), so a throw there aborts the whole step call. That await is wrapped in the same conversion as the other branch: a throw becomes the failed output for that lookup, with LookupFailedError's findings copied to `partial`, and the plan goes on to the next lookup",
+            "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). That stays for the one case it was written for, the agent's answer failing the lookup's schema, which the agent can correct. Any other throw from finalize becomes the failed output for that lookup and the run goes on",
+            "The three lookups that pause for a model call (doc.constraint.enumerate, doc.decision.trace, capability.reuse-check) gather their completeness facts in prepare, where the cut and the limit are applied, but build their output in finalize on a later turn from a prepared value carried in the step state (for example { subject, retrievedSectionCount, validEntityIds }, doc-constraint-enumerate.ts:150-154). Each prepared value gains a `completenessFacts` field holding what prepare knows (the limit reached, the sections cut with their kept and full lengths), and finalize builds the record from it. A step state minted before the change has no such field: finalize then builds a record with notEstablished set and the note that the facts were not carried, so an in-flight run finishes and says so"
           ]
         },
         {
@@ -291,14 +295,15 @@
           ],
           "returns": {
             "type": "Error",
-            "meaning": "The three rows Story s6 marked interim change: 'answer-model-failed', 'answer-invalid' and 'bundle-invalid' each give ShaperAnswerStepFailedError with its reason, carrying the lookup results and a report whose answerFailure is set. The pipeline's 'did-not-proceed' outcome carries `found` for those causes. The other rows are unchanged."
+            "meaning": "The three rows Story s6 marked interim change: 'answer-model-failed', 'answer-invalid' and 'bundle-invalid' each give ShaperAnswerStepFailedError with its reason, carrying the lookup results and a report whose answerFailure is set. The pipeline's 'did-not-proceed' outcome carries `found` for the first two. 'bundle-invalid' is raised later, in settlePipelineOutcome, from a 'bundle' outcome that today holds only the raw bundle and a count (src/analyze/context/driver.ts:1079, :1148-1151): the 'bundle' outcome gains `found` as well, set at both places it is returned (the free-form answer returned as the bundle, :1309-1313, and the written answer, :1346), so settlePipelineOutcome has the results to pass. The other rows are unchanged."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
             "Both classifyShaperError functions map ShaperAnswerStepFailedError to the declared code 'answer-step-failed', with data { reason, results, report }",
             "The daemon's context requests, the one-shot agent tool and the daemon's workflow runner pass that data on: the daemon's error payload carries it, the one-shot tool prints the completeness line and the failed step's reason, and the workflow runner fails its step with the cause and the report",
-            "'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run"
+            "'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run",
+            "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)"
           ]
         },
         {
@@ -405,7 +410,7 @@
       {
         "entity": "Content cut inside a lookup or a runtime, and data-driver listings",
         "change": "field-add",
-        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, module.profile's 4,096 and the summariser's 8,192. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.",
+        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, and module.profile's 4,096 (module-profile.ts:222, :284). The summariser's 8,192-character cut is not among them: see the open question. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.",
         "callSites": [
           "src/analyze/explore/doc-constraint-enumerate.ts",
           "src/analyze/explore/doc-decision-trace.ts",
@@ -505,6 +510,21 @@
           "src/daemon/workflow-rpc.ts",
           "src/analyze/classifier/driver.ts",
           "src/analyze/planner/driver.ts"
+        ]
+      },
+      {
+        "entity": "The step tool's path through a lookup that pauses for a model call",
+        "change": "invariant-change",
+        "details": "Change sites for the three points above that the earlier lists did not name: the unguarded prepare in stepPlan; the step tool's two calls of stepPlan and its finalize handling; the prepared values of the three such lookups; the 'bundle' outcome and the cause table's signature; and the search tool's catch. Current behaviour that changes: a prepare that throws aborts the step call, and the search tool calls every failure a bad regex.",
+        "callSites": [
+          "src/analyze/explore/executor.ts",
+          "src/mcp/analyze-step/phases/plan.ts",
+          "src/mcp/analyze-step/phases/narrow.ts",
+          "src/analyze/explore/doc-constraint-enumerate.ts",
+          "src/analyze/explore/doc-decision-trace.ts",
+          "src/analyze/explore/capability-reuse-check.ts",
+          "src/analyze/context/driver.ts",
+          "src/daemon/tools/builtins/search/grep.ts"
         ]
       }
     ],
@@ -652,7 +672,7 @@
         },
         {
           "input": "A bundle with no report (a classification or task bundle, which this Story does not give one)",
-          "expected": "The two functions that turn a bundle into text write 'Completeness was not recorded for this answer.'"
+          "expected": "renderBundleAsMarkdown, whose text an agent or a person reads, writes 'Completeness was not recorded for this answer.' assembleMarkdown and flattenBundle, whose text goes into a model's prompt, write nothing, so the line never enters the classifier's, the planner's or a workflow step's prompt."
         }
       ],
       "invariantsToPreserve": [
@@ -661,7 +681,7 @@
           "source": "c1"
         },
         {
-          "text": "The lookup executor converts an error a lookup throws into the failed output, at the two places it does so; that conversion stays the single place a lookup failure becomes one.",
+          "text": "The lookup executor converts an error a lookup throws into the failed output. Today it does so at two places (executePlan, and stepPlan's branch for lookups that need no model call); this Story adds the two that are missing on the step tool's path, and those four are the only places a lookup failure becomes one.",
           "source": "c1"
         },
         {
@@ -707,7 +727,9 @@
             "search.text and config.trace turn the search's omissions into skipped, partlyRead and limited, and a search that throws becomes the failed output (mutation: restore the catch that returns an empty result)",
             "the search tool's hits and limits are unchanged for its other callers",
             "on the real primitive, not a stand-in: a search whose root cannot be read throws, and an unreadable directory below the root is listed as skipped (mutation: restore the catch that returns)",
-            "a ripgrep run that exits with another code or is killed at its timeout is recorded as backendFallback, and output past the cap sets outputDiscarded through the shell helper's flag"
+            "a ripgrep run that exits with another code or is killed at its timeout is recorded as backendFallback, and output past the cap sets outputDiscarded through the shell helper's flag",
+            "the search tool on an unreadable root fails with 'search-failed' and the real message, and still says 'bad regex' for an invalid regex",
+            "the Node backend's rule text names dot-named entries and non-regular files, checked against a fixture holding a dot-named file and a symbolic link that match the pattern"
           ],
           "fixturesNeeded": [
             "a temporary directory with a file over the size limit, an unreadable file and a file with a line longer than 500 characters",
@@ -724,7 +746,9 @@
             "each of the catch clauses is covered by a test of its class: an expected condition returns a result whose record says so; anything else reaches the executor as a failed output",
             "the free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered, and a free-form answer's record has basis 'model-directed' and is not complete",
             "the table-listing lookup and the object-listing plan task read the data driver's cut flag into limited",
-            "a table test over every registered plan-task runtime: each returns a completeness record; the plan walk copies it to the task record, and a runtime that returns none is recorded as failed"
+            "a table test over every registered plan-task runtime: each returns a completeness record; the plan walk copies it to the task record, and a runtime that returns none is recorded as failed",
+            "stepPlan with a lookup whose prepare throws records the failed output for it and goes on to the next lookup (mutation: remove the conversion); a finalize that throws anything but a schema failure does the same, and a schema failure stays retryable",
+            "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them gives a record that is not established"
           ],
           "fixturesNeeded": [
             "stand-in stores and drivers for the lookups",
@@ -739,7 +763,9 @@
             "a report in a model's answer is discarded and the bundle carries the derived one; a bundle an agent writes with a report is rejected by the step tool as 'bundle-schema'",
             "runShaper's run-mode bundle carries the report derived from the executed lookups, through the pipeline's stand-in steps",
             "renderBundleAsMarkdown, assembleMarkdown and flattenBundle write the completeness line first; for a bundle with no report the first writes the not-recorded line and the other two write nothing",
-            "a lookup output and a bundle cached before the change are not returned: the lookup cache's key includes its version and the bundle cache's key the schema version"
+            "a lookup output and a bundle cached before the change are not returned: the lookup cache's key includes its version and the bundle cache's key the schema version",
+            "the step tool's bundle phase, given a state holding one failed and one limited lookup, attaches the report it derives from that state and returns markdown whose first line names both",
+            "a request answered by the free-form lookup alone returns a bundle whose report has one source, with basis 'model-directed' and not complete"
           ]
         },
         {
@@ -787,13 +813,16 @@
           "provingTests": [
             "unit: a text search that throws becomes the failed output",
             "unit: each catch clause is covered by a test of its class",
-            "unit: the free-form lookup at its turn limit is a failed output with partial findings"
+            "unit: the free-form lookup at its turn limit is a failed output with partial findings",
+            "unit: stepPlan with a lookup whose prepare throws records the failed output and goes on",
+            "unit: the search tool on an unreadable root fails with the real cause"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "unit: each lookup that cuts content reports partlyRead with the kept and full lengths"
+            "unit: each lookup that cuts content reports partlyRead with the kept and full lengths",
+            "unit: the lookups that pause for a model call build their record from the facts prepare carried"
           ]
         },
         {
@@ -801,7 +830,8 @@
           "provingTests": [
             "unit: the Node search backend reports skipped and unreadable files and shortened lines",
             "unit: the ripgrep backend reports its omissions and what it excludes by rule",
-            "unit: search.text and config.trace turn the search's omissions into the record"
+            "unit: search.text and config.trace turn the search's omissions into the record",
+            "unit: the Node backend's rule text names dot-named entries and non-regular files"
           ]
         },
         {
@@ -811,7 +841,9 @@
             "unit: runShaper's run-mode bundle carries the derived report",
             "unit: the three functions that turn a bundle into text write the completeness line first",
             "integration: a plan-tree run with a failed and a limited task returns a report naming both",
-            "live: a focused request whose text search reaches its limit says so in its first line"
+            "live: a focused request whose text search reaches its limit says so in its first line",
+            "unit: the step tool's bundle phase derives the report from its state and heads its markdown with the line",
+            "unit: a sole free-form answer's bundle carries the one-source report"
           ]
         },
         {
@@ -869,7 +901,7 @@
         },
         {
           "order": 7,
-          "action": "Write the completeness line at the head of the text form of a bundle in both rendering functions, with the not-recorded line for a bundle that has no report.",
+          "action": "Write the completeness line at the head of the text form of a bundle in the three rendering functions when the bundle has a report. For a bundle with none, only the function whose text an agent or a person reads writes the not-recorded line; the two whose text goes into a model's prompt write nothing.",
           "rollbackable": true,
           "prerequisiteFlags": [
             "step 6"
@@ -959,7 +991,8 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.",
-      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value."
+      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.",
+      "The document summariser cuts a document's body to 8,192 characters before summarising it (src/analyze/summariser/driver.ts:318). It runs at index time, called only by the indexer (src/indexer/index.ts:641, :685); nothing stores that a summary was built from a cut body, so no lookup or plan task that later reads the summary can report it. Reporting it needs the kept and full lengths stored with each summary at index time and read by the docs plan tasks, and summaries stored before the change would carry no lengths until the document is summarised again. Whether that belongs in this Story is undecided."
     ]
   },
   "citations": [

@@ -39,6 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from '../context/model-failure.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
 import { CONTRACT_FOOTER_MD } from '../contract.js';
 import { shaperFor } from '../context/index.js';
@@ -284,27 +285,12 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification (matches the shaper driver's surface)
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
 	if (!(err instanceof Error)) return new Error(String(err));
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new ClassifierLlmUnavailableError(msg);
-	}
+	if (isModelCallFailure(err)) return new ClassifierLlmUnavailableError(modelCallFailureDetail(err));
 	// Anything else is a schema / unexpected error -- surface
 	// verbatim with the unrecoverable marker.
-	return new ClassifierSchemaUnrecoverable([msg]);
+	return new ClassifierSchemaUnrecoverable([err.message]);
 }
 
 // ---------------------------------------------------------------------------

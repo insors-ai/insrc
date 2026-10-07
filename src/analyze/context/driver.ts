@@ -58,6 +58,7 @@ import { executeTool } from '../../daemon/tools/executor.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import type {
 	ContentBlock,
@@ -893,29 +894,13 @@ function classifyOllamaError(err: unknown): Error {
 	if (!(err instanceof Error)) {
 		return new Error(String(err));
 	}
-	const msg = err.message;
 	// By the time an error reaches the driver, the provider's transient-
-	// retry budget is gone -- so ANY connection-level error here means
-	// Ollama is effectively unavailable to us, not "might recover next
-	// turn". The provider wraps clean ECONNREFUSED / 404 into the
-	// human-readable "Ollama is not running" / "Model not found"; raw
-	// network errors (fetch failed, ECONNRESET, socket hang up) also
-	// indicate the daemon is unreachable after retries.
-	const unavailablePatterns = [
-		'Ollama is not running',
-		'Model not found',
-		'ECONNREFUSED',
-		'ECONNRESET',
-		'fetch failed',
-		'socket hang up',
-		'EPIPE',
-		'other side closed',
-		'Did not receive done or success response in stream',
-	];
-	for (const pat of unavailablePatterns) {
-		if (msg.includes(pat)) {
-			return new ShaperLlmUnavailableError(msg);
-		}
+	// retry budget is gone -- so a failed call here means the model is
+	// effectively unavailable to us, not "might recover next turn".
+	// What counts as a failed call is decided in one place, for every
+	// provider (model-failure.ts).
+	if (isModelCallFailure(err)) {
+		return new ShaperLlmUnavailableError(modelCallFailureDetail(err));
 	}
 	return err;
 }

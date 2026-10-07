@@ -42,6 +42,7 @@ import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { listRepos } from '../../db/repos.js';
 import { listEntitiesForRepo } from '../../db/entities.js';
 import { getLogger } from '../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from '../context/model-failure.js';
 import type {
 	LLMMessage,
 	LLMProvider,
@@ -296,26 +297,14 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
 	if (!(err instanceof Error)) return new Error(String(err));
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new ScopePickerLlmUnavailableError(msg);
-	}
-	return new ScopePickerSchemaUnrecoverable([msg]);
+	if (isModelCallFailure(err)) return new ScopePickerLlmUnavailableError(modelCallFailureDetail(err));
+	return new ScopePickerSchemaUnrecoverable([err.message]);
 }
+
+/** Test hook. */
+export const _classifyErrorForTest = classifyError;
 
 // ---------------------------------------------------------------------------
 // Boot validator hook

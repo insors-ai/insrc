@@ -34,6 +34,7 @@ import {
 } from '../../db/doc-summaries.js';
 import { entityU64ForId } from '../../db/entities.js';
 import { getLogger } from '../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from '../context/model-failure.js';
 import type {
 	DocFamily,
 	DocStatus,
@@ -355,29 +356,18 @@ function sha256(s: string): string {
 	return createHash('sha256').update(s, 'utf8').digest('hex');
 }
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyErrorCode(err: unknown): string {
 	if (!(err instanceof Error)) return 'unknown';
+	if (isModelCallFailure(err)) return 'llm-unavailable';
 	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return 'llm-unavailable';
-	}
 	if (msg.includes('response-truncated')) return 'response-truncated';
 	if (msg.includes('validation failed'))  return 'schema-unrecoverable';
 	if (msg.includes('was not valid JSON')) return 'schema-unrecoverable';
 	return 'other';
 }
+
+/** Test hook. */
+export const _classifyErrorCodeForTest = classifyErrorCode;
 
 // ---------------------------------------------------------------------------
 // Prompt loading + provider construction

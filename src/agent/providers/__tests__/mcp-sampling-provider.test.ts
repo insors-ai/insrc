@@ -29,6 +29,8 @@ import {
 	type SamplingResponse,
 } from '../mcp-sampling-provider.js';
 import type { StructuredSchema } from '../../../shared/types.js';
+import { fromSdkResult } from '../../../mcp/sampling-bridge.js';
+import { ModelCallFailedError, ModelResponseShapeError } from '../model-call-error.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -291,4 +293,87 @@ test('mapStopReason maps MCP names to LLMResponse names', () => {
 	// stopSequence collapses to end_turn (no counterpart in the union)
 	assert.equal(_mapStopReasonForTest('stopSequence'), 'end_turn');
 	assert.equal(_mapStopReasonForTest(undefined),      'end_turn');
+});
+
+// ---------------------------------------------------------------------------
+// A failed sampling request vs. a response in an unusable shape
+// ---------------------------------------------------------------------------
+
+test('sampling provider raises ModelCallFailedError when the sampler rejects; non-text content is a shape failure', async () => {
+	// (1) complete(): the request itself is rejected, in the client's own words.
+	const rejecting: SamplingCallback = async () => { throw new Error('User rejected sampling request'); };
+	const p = new McpSamplingProvider({ sampler: rejecting });
+	await assert.rejects(
+		() => p.complete([{ role: 'user', content: 'hi' }]),
+		(err: unknown) => {
+			assert.ok(err instanceof ModelCallFailedError, `got ${(err as Error).name}`);
+			assert.equal(err.detail, 'User rejected sampling request');
+			return true;
+		},
+	);
+
+	// (2) completeStructured(): every attempt is rejected. The retry
+	// helper would otherwise report "validation failed after N attempts".
+	let calls = 0;
+	const alwaysRejecting: SamplingCallback = async () => { calls += 1; throw new Error('request timed out'); };
+	const p2 = new McpSamplingProvider({ sampler: alwaysRejecting });
+	await assert.rejects(
+		() => p2.completeStructured(
+			[{ role: 'user', content: 'hi' }], SIMPLE_SCHEMA, { maxAttempts: 2 },
+		),
+		(err: unknown) => {
+			assert.ok(err instanceof ModelCallFailedError, `got ${(err as Error).name}: ${(err as Error).message}`);
+			assert.equal(err.detail, 'request timed out');
+			return true;
+		},
+	);
+	assert.equal(calls, 2, 'a rejected request is still retried up to maxAttempts');
+
+	// (3) A response that arrived but is not text: a failure of shape.
+	const nonText: SamplingCallback = async () => {
+		throw new ModelResponseShapeError('mcp sampling: response content was not text (type=image)');
+	};
+	const p3 = new McpSamplingProvider({ sampler: nonText });
+	await assert.rejects(
+		() => p3.complete([{ role: 'user', content: 'hi' }]),
+		(err: unknown) => {
+			assert.ok(err instanceof ModelResponseShapeError, `got ${(err as Error).name}`);
+			assert.ok(!(err instanceof ModelCallFailedError));
+			return true;
+		},
+	);
+	await assert.rejects(
+		() => p3.completeStructured([{ role: 'user', content: 'hi' }], SIMPLE_SCHEMA, { maxAttempts: 2 }),
+		(err: unknown) => {
+			assert.ok(!(err instanceof ModelCallFailedError), 'a shape failure is not a failed call');
+			return true;
+		},
+	);
+});
+
+test('completeStructured: a rejected request followed by a wrong-shaped answer is NOT a failed call', async () => {
+	// Attempt 1 rejects; attempt 2 arrives but fails validation. The
+	// last attempt decides: the model answered.
+	let n = 0;
+	const sampler: SamplingCallback = async () => {
+		n += 1;
+		if (n === 1) throw new Error('transient');
+		return { role: 'assistant', content: '{"nope":1}', stopReason: 'endTurn' };
+	};
+	const p = new McpSamplingProvider({ sampler });
+	await assert.rejects(
+		() => p.completeStructured([{ role: 'user', content: 'hi' }], SIMPLE_SCHEMA, { maxAttempts: 2 }),
+		(err: unknown) => {
+			assert.ok(!(err instanceof ModelCallFailedError), `got ${(err as Error).name}`);
+			assert.match((err as Error).message, /validation failed after 2 attempts/);
+			return true;
+		},
+	);
+});
+
+test('fromSdkResult raises a shape error, not a failed call, for non-text content', () => {
+	assert.throws(
+		() => fromSdkResult({ role: 'assistant', model: 'm', content: { type: 'image', data: '', mimeType: 'image/png' } } as never),
+		(err: unknown) => err instanceof ModelResponseShapeError && !(err instanceof ModelCallFailedError),
+	);
 });

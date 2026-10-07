@@ -26,6 +26,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
@@ -53,9 +54,15 @@ const DECOMPOSE_PROMPT_REL = 'prompts/analyze/decompose.system.md';
 // ---------------------------------------------------------------------------
 
 export class DecomposerLlmUnavailableError extends Error {
+	/** The underlying failure's own message, without this error's prefix. */
+	readonly detail: string;
+
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for decomposer: ${cause}`);
+		// Provider-neutral: the planning provider is role-routed and
+		// need not be Ollama.
+		super(`The model call for planning failed: ${cause}`);
 		this.name = 'DecomposerLlmUnavailableError';
+		this.detail = cause;
 	}
 }
 
@@ -67,9 +74,12 @@ export class DecomposerSchemaUnrecoverable extends Error {
 }
 
 export class DecomposerPromptMissingError extends Error {
+	readonly path: string;
+
 	constructor(path: string) {
 		super(`Decomposer prompt file missing: ${path}`);
 		this.name = 'DecomposerPromptMissingError';
+		this.path = path;
 	}
 }
 
@@ -348,25 +358,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
+	if (isModelCallFailure(err)) return new DecomposerLlmUnavailableError(modelCallFailureDetail(err));
 	if (!(err instanceof Error)) return new DecomposerSchemaUnrecoverable([String(err)]);
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new DecomposerLlmUnavailableError(msg);
-	}
-	return new DecomposerSchemaUnrecoverable([msg]);
+	return new DecomposerSchemaUnrecoverable([err.message]);
 }
 
 // ---------------------------------------------------------------------------

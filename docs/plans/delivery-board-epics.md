@@ -34,12 +34,13 @@ and makes JetBrains a rendering-only pass instead of a second implementation.
   `rejectedAt` (`:126-128`). `PENDING_KINDS` (`:39`) excludes BUILD, so
   `workflow.pending` cannot answer completion questions.
 - **Viewer.** `workflow.artifactContent` (`src/daemon/index.ts:698`) serves an
-  artifact's rendered `.md` and is path-guarded under `docs/`. Markdown mirrors
-  exist for most kinds, but in the 7 October recount only 40 of 80 BUILD records
-  had one in `docs/epics/`. So FR-06's "open the supporting artifact through the
-  existing artifact-viewing capability" is not fully covered for BUILD/CR evidence.
-- **Refresh.** The daemon's socket server has no push or subscription channel,
-  so manual refresh (the PRD's first-increment choice) is the only option without
+  artifact's rendered `.md` and is path-guarded under `docs/`. It finds a record's
+  JSON through the `insrc:artifact` marker in its markdown. Every BUILD record has
+  a markdown copy, but in the 7 October recount only 11 of 80 BUILD.md files carry
+  the marker (all 149 CR.md files do). So FR-06's "open the supporting artifact through the
+  existing artifact-viewing capability" is not covered for most BUILD evidence.
+- **Refresh.** The daemon's socket server only answers requests (a single
+  response or a request-scoped stream); it sends nothing unsolicited, so manual refresh (the PRD's first-increment choice) is the only option without
   new daemon work.
 - **IDE surfaces.** Both plugins live in this repo (`vscode-plugin/`,
   `jetbrains-plugin/`), and both already call `workflow.pending` and open
@@ -65,8 +66,8 @@ Expected stories:
 
 - [ ] **S1 — Work-item identity and hierarchy.** Epic → story → task, standalone
       stories and issues, and issue → fix-story links (including several fix
-      stories per issue). Canonical lowercase story IDs; source IDs kept;
-      any other collision flagged rather than merged. One card per work item,
+      stories per issue). Story IDs compared by number (`s1`, `S1` and `S001` are
+      the same story); source IDs kept; any other collision flagged rather than merged. One card per work item,
       whatever artifact kinds it has. *AC-01, AC-08, AC-12, AC-13.*
 - [ ] **S2 — Route-aware stage derivation.** The six stages with the
       first-match-wins precedence, both "Ready" columns, the trivial route, and
@@ -99,8 +100,8 @@ Constraints carried into the Define:
 - IPC payload types are mirrored in both plugins and the `insrc-ide` fork, so
   the HLD must pin the response shape before E2 starts.
 - Test fixtures should include the real conflict shapes from the 7 October
-  recount: 29 approved BUILDs with failed tasks, 74 CRs without a BUILD,
-  the `S001`/`s001` pair in epic `dfc0371b…`, 53 overrides, and 39 LLDs
+  recount: 29 approved BUILDs with failed tasks, 73 CRs without a BUILD,
+  the `S001`/`s001` pair in epic `dfc0371b…`, 31 review overrides, and 39 LLDs
   without a PLAN.
 
 ## E2 — Delivery board, VS Code
@@ -166,11 +167,14 @@ assumes:
 | First host | VS Code; it has the active viewer work and both plugins share E1 | E2 framing |
 | Placement | Dedicated editor tab; check against a sidebar entry in E2 S1 | E2 S1 |
 | Refresh | Manual only; the daemon has no push channel | — |
-| Canonical joins | Lowercase story IDs; anything else flagged (E1 S1) | E1 S1 |
-| Attention policy | A pending artifact stops counting once a downstream gate on the same item is approved | E1 S3 |
+| Canonical joins | Story IDs compared by number (`s1` = `S001`); anything else flagged (E1 S1) | Decided in DEF-2ff0dfda |
+| Attention policy | A pending artifact stops counting once a downstream gate on the same item is approved | Confirmed 2026-10-07 |
 | Completion wording | Keep "Complete"; test it in E2's usability session | E2 S2 |
 
 ## How to start
+
+E1's Define (`DEF-2ff0dfda`) was approved on 2026-10-07; the next stage is `design.epic`.
+
 
 1. Commit the revised PRD (Draft 0.3) so the Define can cite it by path.
 2. Confirm the attention-policy row above; it is the only decision that changes

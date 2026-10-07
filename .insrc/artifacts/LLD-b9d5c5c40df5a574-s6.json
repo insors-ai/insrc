@@ -24,7 +24,204 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion of DEF Story s6 (ac1 to ac4) and every element of the HLD's s6 boundary and contract sc6 has a design, and nothing owned by another Story is built.",
+          "evidence": "DEF.md:215-218 lists ac1 (unfocused request gets a context), ac2 (request with a stated kind of source proceeds), ac3 (failure names the actual cause), ac4 (file or symbol scope produces a context or a clear refusal). HLD.md:220 lists the s6 boundary: unfocused planning, the four unserved scope kinds, per-cause errors, the three mapping functions, symbol value form, one resolution function, corrected pairing table on both classification branches, connection check. HLD.md:165-175 (sc6) names the three codes. The LLD's sections 2.1-2.7 and 3.1-3.11 cover each; the acceptance mapping in section 6 names tests for ac1-ac4. The two deviations (planning call instead of a fixed survey plan; 'no-plan-for-request' only behind the free-form replacement) are declared in c10 and the open questions.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "tryExplorationPipeline returns null at exactly eight places (driver.ts:1089, :1099, :1100, :1102, :1110, :1130, :1252, :1258), and every run-mode null ends in the single ShaperLlmUnavailableError throw; a bundle that fails validation falls through to that same throw.",
+          "evidence": "src/analyze/context/driver.ts: :1089 `if (args.invocationMode !== 'run') return null;`, :1095-1099 unknown shaperId, :1100 no intent, :1102 `if (intent.focused !== true) return null;`, :1109-1110 scope kind not repo/module/workspace, :1130 decomposer unavailable or prompt missing, :1252 and :1258 synthesizer catches. Other planning failures go to fallbackFreeformPlan (:1136, :1171). :243-249 logs 'exploration-based bundle failed validation; falling through' and :276-281 throws `ShaperLlmUnavailableError('Run-mode exploration pipeline returned no bundle...')`. Constructor prefixes at :133-136, :147-152, :157-160 read as the design quotes them. [files: src/analyze/context/driver.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The branch with a stated kind of source always builds an unfocused intent and calls no validator; the validator is called from one place only; no caller supplies the connection check; the plan tree maps a validation failure to 'classifier-validation-exhausted' and other errors to 'internal-error', while the daemon's classify mapping already returns the inner code and defers to the context mapping.",
+          "evidence": "src/analyze/orchestrator/driver.ts:216-222 builds `{ target: args.targetHint, scope: pickedScope, focused: false, scopeRef: initialScopeRef, reasoning: 'target hinted via slash command (classifier skipped)...' }` with no validation. validateIntentSemantics has one call site, src/analyze/classifier/driver.ts:160, passing `args.connectionExists`; the two callers of the classifier (orchestrator/driver.ts:234-237 and daemon/analyze-rpc.ts:322) pass only input and opts. orchestrator/driver.ts:414-426 returns 'classifier-validation-exhausted' and falls to 'internal-error'. daemon/analyze-rpc.ts:344-355 returns `err.lastFailure.code` and :371 returns classifyShaperError(err). [files: src/analyze/orchestrator/driver.ts, src/analyze/classifier/driver.ts, src/daemon/analyze-rpc.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'invalid-input', 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch' and 'shaper-prompt-missing' already exist in both code lists, and the three new codes are in neither.",
+          "evidence": "src/daemon/analyze-rpc.ts:132-154 (read in full) has 'shaper-prompt-missing' :138, 'scope-ref-unresolved' :142, 'scope-ref-kind-target-mismatch' :143, 'invalid-input' :152, and none of 'no-plan-for-request', 'answer-step-failed', 'run-abandoned'; it also has no 'aborted', as the HLD says. src/analyze/orchestrator/types.ts has the four reused codes at :269, :270, :271, :277. I did not read the whole RunErrorCode union, only the matching lines. [files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The readers resolveScope depends on exist with the stated shape: a registry lister, entities by file, entities by repo, and a per-repo connections loader that throws on a file it cannot parse.",
+          "evidence": "src/db/repos.ts:213 `listRepos(_db): Promise<RegisteredRepo[]>`; src/db/entities.ts:779 `listEntitiesForRepo(_db, repo): Promise<Entity[]>` and :795 `findEntitiesByFile(_db, file): Promise<Entity[]>`; src/daemon/db/config.ts:74-137 `loadConnections(repoPath): Promise<LoadedConnections>` returns an empty list when the file is missing (:82-84) and throws on invalid JSON (:92), wrong shape (:95) or a duplicate id (:105). Connections are stored per repo (connectionsPath, :50-52), so searching each registered repo's file is the only way to map an id to its repo. [files: src/db/repos.ts, src/db/entities.ts, src/daemon/db/config.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The recipes the new no-focus section of the planning prompt gives are served by lookups that exist and accept those inputs, and the pipeline accepts the answer types they use.",
+          "evidence": "src/analyze/explore/module-profile.ts:111-130 stats the path and produces a file-shaped profile when it is a file, so module.profile on a file works. src/analyze/explore/db-tables-list.ts:51-53 requires connectionId and :81 acquires the pool from ctx.repoPath, so it works once lookupPath is the connection's repo. decompose.system.md:248-249 and :258 already hold the db.connections.list / db.tables.list and manifests.locate recipes. driver.ts:1150-1153 accepts structural-map for code, data-inventory for data and infra-inventory for infra, and :1160-1161 accepts a plan whose only lookup is freeform.probe. Every existing recipe substitutes the focus (decompose.system.md:171, :181, :219), as the design says. [files: src/analyze/explore/module-profile.ts, src/analyze/explore/db-tables-list.ts, src/prompts/analyze/decompose.system.md, src/analyze/context/driver.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The inventory of places in the context builder that read a scope's value, and of the callers of the functions whose signatures change, is complete.",
+          "evidence": "A search of src (tests excluded) for scopeRef.value, inferScopePath, inferRepoPath and resolveRepoPath finds, inside the context builder: driver.ts:190 (freshness, every mode), :924 inside buildToolDeps reached from :291 and :564, :945-948, :993-998, :1176-1177, decomposer.ts:308, and invariants.ts:89-97. The remaining hits are plan-task runtimes (Story s7), the classifier's scope picker and validator, and prompts. prepareDecompose from the context builder has one caller (mcp/analyze-step/phases/start.ts:91; the other hits are the workflow's own function of the same name), decompose has one (driver.ts:1122), runShaperToolLoop has one (explore/freeform-probe.ts:116), and stepPlan has two (analyze-step/phases/plan.ts:108, narrow.ts:171). [files: src/analyze/context/driver.ts, src/analyze/context/decomposer.ts, src/analyze/context/invariants.ts, src/mcp/analyze-step/phases/start.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Moving the indexed check (ensureNonEmptyClosure) to the resolved scope leaves no existing caller or test unaccounted for.",
+          "evidence": "The design says ensureNonEmptyClosure is 'now given the resolved scope' and lists invariants.ts as a call site of ResolvedScope, but never states the new signature and names only resolve-repo-indexed.test.ts as an existing test to rewrite. src/analyze/context/__tests__/invariants.test.ts calls `ensureNonEmptyClosure(intent)` with a ClassifiedIntent at eight places (:95, :107, :119, :127, :140, :160, :179, :191), including the two behaviours the design keeps ('pristine registry -> skipped silently', :93-97, and 'connection-kind scope is skipped silently', :103-109). tsc does not compile test files, so these break only when run. [files: src/analyze/context/invariants.ts, src/analyze/context/__tests__/invariants.test.ts]",
+          "action": "State ensureNonEmptyClosure's new signature in section 2, and add invariants.test.ts to the tests rewritten in section 6 and to migration step 5, keeping its pristine-registry and connection cases and adding the symbol exception.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both classifyShaperError functions map the same five error classes today, and the existing classify-mapping tests are as the design describes them.",
+          "evidence": "orchestrator/driver.ts:428-441 and daemon/analyze-rpc.ts:882-907 each map ScopeNotIndexedError, ShaperLlmUnavailableError, ShaperToolLoopExhausted, ShaperSchemaUnrecoverable and ShaperPromptMissingError, then 'internal-error'. orchestrator.test.ts:72 builds `new ClassifierValidationExhausted([], [])` and expects 'classifier-validation-exhausted', though the constructor takes one ValidationFailure (classifier/driver.ts:84); :82-87 tests the two message patterns; :89-93 expects 'internal-error' for `new Error('totally unknown')`, which still holds through the context mapping. [files: src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts, src/analyze/orchestrator/__tests__/orchestrator.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The step tool never calls runShaper: its start phase builds a workspace intent and calls prepareDecompose, its state token holds the intent and no resolved scope, and its plan and narrow phases take their paths from the token.",
+          "evidence": "src/mcp/analyze-step/phases/start.ts:51-58 builds `scopeRef: { kind: 'workspace', value: repoPath }`, :91 calls `prepareDecompose(intent)`, and :93-101 writes a state of version, runId, repoPath, repoIndexedAt, intent, synthesizerKey, stage. handleStart is already async (:36). plan.ts:108-114 calls stepPlan with `repoPath: state.repoPath, closureRepos: [state.repoPath]`; narrow.ts:171 calls stepPlan too. ExplorationRunnerContext (explore/types.ts:759-773) carries repoPath and closureRepos and no scope. [files: src/mcp/analyze-step/phases/start.ts, src/mcp/analyze-step/phases/plan.ts, src/analyze/explore/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored shape changes: the step tool's token keeps its shape, and a focused request on a repo, module or workspace keeps the same bundle cache key and lookup path.",
+          "evidence": "The token shape (start.ts:93-101) is left alone because plan and narrow re-resolve from `state.intent`. The bundle cache key is `computeCacheKey(promptContent, inputs)` over the per-source prompt named by promptPath (driver.ts:174-183), not over the planning or answer-writing prompts this Story edits, so a focused request's key does not move; a hinted request's intent changes (focused, focus), which gives it a new key and no stale hit. The lookup path for directory kinds today is the scope's own value (driver.ts:978-979, :1176-1182), which the design keeps as lookupPath. I did not check whether any caller outside this repository sends a symbol value in another form. [files: src/analyze/context/driver.ts, src/mcp/analyze-step/phases/start.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plan tasks that read a scope's value or refuse a scope kind are left to Story s7, and the corrected table matches what the code tasks accept for a manifest directory.",
+          "evidence": "The direct readers outside the context builder are plan-task runtimes: runtimes/shared/adherence.ts:202 and :344, docs/decision-trace.ts:46, docs/constraint-enumerate.ts:45, docs/family-summarise.ts:98, and the data connection task; the HLD assigns these to s7 and the LLD does not change them. runtimes/code/_shared.ts:58-68 accepts only 'repo' and 'manifest-dir', while validate.ts:48 allows code with repo, module, file, symbol, workspace and not manifest-dir, so the design's statement that the validator refuses a pairing the code tasks accept is true. The six other copies of the model-failure text list are in planner/driver.ts, runtimes/shared/aggregator.ts, classifier/driver.ts, classifier/scope-picker.ts, summariser/driver.ts and context/driver.ts, as the open question says. [files: src/analyze/runtimes/code/_shared.ts, src/analyze/classifier/validate.ts, src/analyze/runtimes/shared/adherence.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "With isModelCallFailure, a failed planning or answer-writing call is recognised as a model failure 'whichever provider serves it'; the providers are Ollama and the claude or codex CLI.",
+          "evidence": "There is a third provider on a route the design itself names. src/mcp/server.ts:1327-1332 runs the one-shot agent tool's context build inside `runWithSamplerContext(makeSamplerFromMcpServer(server.server), [], () => buildRun(rpcParams))` when the client supports sampling, and src/analyze/context/shaper-provider.ts:291-300 then returns `new McpSamplingProvider({ sampler: ambient.sampler, ... })` ahead of any Ollama or CLI choice ('routing through McpSamplingProvider (ambient context)'). Its failures carry none of the listed texts: for example sampling-bridge.ts:144 'mcp sampling: response content was not text', and a rejected or timed-out sampling request raises the client's own error text. The CLI texts the design cites are correct (cli-provider.ts:264, :449, :474, :477), and the Ollama lists are as quoted (decomposer.ts:351-370, synthesizer.ts:332-351). So with a sampling client a failed planning call is still silently replaced by the free-form lookup and a failed answer-writing call is still reported as 'answer-invalid'. [files: src/mcp/server.ts, src/analyze/context/shaper-provider.ts, src/agent/providers/mcp-sampling-provider.ts, src/mcp/sampling-bridge.ts]",
+          "action": "Extend section 3.11 to the sampling provider: either have isModelCallFailure recognise a failure of the sampling request itself (best by a typed error raised in McpSamplingProvider or the bridge, not by text), or state that this provider is out of scope and reword 'whichever provider serves it' in sections 2.2 and 5. Add a unit case with a stand-in sampler that rejects.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing ShaperSchemaUnrecoverable cannot carry the 'bundle-invalid' and 'answer-invalid' causes truthfully, and the two model-unavailable errors and ShaperLlmUnavailableError name Ollama whatever the provider, so the new class and the message changes are needed.",
+          "evidence": "driver.ts:147-152: `Shaper completeStructured exhausted ${retries} retries: ...`. driver.ts:135: `Local Ollama unavailable for shaper invocation: ${cause}`. decomposer.ts:57: `Local Ollama unavailable for decomposer: ${cause}`; synthesizer.ts:60: `Local Ollama unavailable for synthesizer: ${cause}`. decomposer.ts:159 and synthesizer.ts:116 choose the provider with resolveRoleProvider, so it need not be Ollama. The prompt-missing errors hold the path only in their message (decomposer.ts:69-74, synthesizer.ts:72-77); note synthesizer.ts:309 also builds one with a sentence, not a path, for an unregistered key. [files: src/analyze/context/driver.ts, src/analyze/context/decomposer.ts, src/analyze/context/synthesizer.ts]",
+          "action": "None required. When adding the path field, decide what it holds for the unregistered-key case at synthesizer.ts:309.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to tests, and the existing tests the design says it changes exist and assert what it says.",
+          "evidence": "Section 6 maps ac1-ac4 to named unit, integration and live tests. The existing cases are as described: freeform-fallback.test.ts:65-66 'falls back to reasoning when focus is unset'; classifier validate.test.ts:112-115 'infra+repo -> scope-ref-kind-target-mismatch'; resolve-repo-indexed.test.ts:78-93 tests _inferScopePathForTest for classification, repo, file and connection inputs; orchestrator.test.ts:68-93 as quoted under change-sites. The six answer-writing prompts print the focus at the lines given (synthesize.code:90, data:30, infra:25, docs:53, capability:44, adherence:49), so the search-based prompt test has its targets. The one missing existing test file, invariants.test.ts, is reported under change-sites. [files: src/analyze/context/__tests__/freeform-fallback.test.ts, src/analyze/classifier/__tests__/validate.test.ts, src/analyze/context/__tests__/resolve-repo-indexed.test.ts]",
+          "action": "None beyond the invariants.test.ts addition.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-07T08:54:26.455Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

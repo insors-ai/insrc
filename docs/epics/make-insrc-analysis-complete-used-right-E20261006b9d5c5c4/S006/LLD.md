@@ -533,3 +533,24 @@ The target-hint branch, scope resolution and the pairing table are handled as in
 
 - The HLD's code 'no-plan-for-request' has no case that occurs today: an empty plan, an uncovered answer type and an unparseable plan are all replaced by the free-form lookup (src/analyze/context/driver.ts:1136, :1171). This design raises it from a check that stands behind that replacement. Keep the code with that check, or drop it from the contract?
 - The list of texts that marks a failed model call is copied in six places outside this Story's boundary (src/analyze/planner/driver.ts, runtimes/shared/aggregator.ts, classifier/driver.ts, classifier/scope-picker.ts, summariser/driver.ts and the tool loop's classifyOllamaError in context/driver.ts), and none recognises a failed claude or codex call, so each reports such a failure as a schema failure. This design moves only the planning call and the answer-writing call to the shared function. Move the other six to it in this Story as well, or leave them for the Story that owns each?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T08:54:26.455Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | Moving the indexed check (ensureNonEmptyClosure) to the resolved scope leaves no existing caller or test unaccounted for. | The design says ensureNonEmptyClosure is 'now given the resolved scope' and lists invariants.ts as a call site of ResolvedScope, but never states the new signature and names only resolve-repo-indexed.test.ts as an existing test to rewrite. src/analyze/context/__tests__/invariants.test.ts calls `ensureNonEmptyClosure(intent)` with a ClassifiedIntent at eight places (:95, :107, :119, :127, :140, :160, :179, :191), including the two behaviours the design keeps ('pristine registry -> skipped silently', :93-97, and 'connection-kind scope is skipped silently', :103-109). tsc does not compile test files, so these break only when run. [files: src/analyze/context/invariants.ts, src/analyze/context/__tests__/invariants.test.ts] | State ensureNonEmptyClosure's new signature in section 2, and add invariants.test.ts to the tests rewritten in section 6 and to migration step 5, keeping its pristine-registry and connection cases and adding the symbol exception. |
+| error-paths | MED | With isModelCallFailure, a failed planning or answer-writing call is recognised as a model failure 'whichever provider serves it'; the providers are Ollama and the claude or codex CLI. | There is a third provider on a route the design itself names. src/mcp/server.ts:1327-1332 runs the one-shot agent tool's context build inside `runWithSamplerContext(makeSamplerFromMcpServer(server.server), [], () => buildRun(rpcParams))` when the client supports sampling, and src/analyze/context/shaper-provider.ts:291-300 then returns `new McpSamplingProvider({ sampler: ambient.sampler, ... })` ahead of any Ollama or CLI choice ('routing through McpSamplingProvider (ambient context)'). Its failures carry none of the listed texts: for example sampling-bridge.ts:144 'mcp sampling: response content was not text', and a rejected or timed-out sampling request raises the client's own error text. The CLI texts the design cites are correct (cli-provider.ts:264, :449, :474, :477), and the Ollama lists are as quoted (decomposer.ts:351-370, synthesizer.ts:332-351). So with a sampling client a failed planning call is still silently replaced by the free-form lookup and a failed answer-writing call is still reported as 'answer-invalid'. [files: src/mcp/server.ts, src/analyze/context/shaper-provider.ts, src/agent/providers/mcp-sampling-provider.ts, src/mcp/sampling-bridge.ts] | Extend section 3.11 to the sampling provider: either have isModelCallFailure recognise a failure of the sampling request itself (best by a typed error raised in McpSamplingProvider or the bridge, not by text), or state that this provider is out of scope and reword 'whichever provider serves it' in sections 2.2 and 5. Add a unit case with a stand-in sampler that rejects. |
+
+#### Could not verify (does not block)
+
+_None._

@@ -24,216 +24,7 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of the Define's four acceptance criteria for Story 6 (ac1 unfocused request gets a context, ac2 stated-kind-of-source request proceeds, ac3 failure names the actual cause, ac4 file/symbol request never reports the model unavailable) has a design element and a row in the acceptance mapping.",
-          "evidence": "DEF.md:215-218 states ac1-ac4 for S006 in those terms. The LLD removes the gates at src/analyze/context/driver.ts:1102 and :1109-1110 (ac1, ac4), sets focus/focused on the target-hint branch (ac2), and replaces the single throw at driver.ts:276-281 with a cause table (ac3). Section 6's acceptance mapping lists tests for all four. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, src/analyze/context/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The HLD's sc6 contract (three new codes declared in both code lists, RunFailure and RunStage unchanged, 'shaper-llm-unavailable' kept for a failed model call) is implemented as the HLD states, and the Story 6 boundary in the HLD is covered.",
-          "evidence": "HLD.md:160-176 lists 'no-plan-for-request', 'answer-step-failed', 'run-abandoned' for RunErrorCode and AnalyzeRpcErrorCode; a search of src finds none of the three today. HLD.md:220 lists the same scope the LLD designs (gates, causes, resolveScope, pairing table, connection check, classify mapping). One disclosed difference: the HLD says the pipeline plans 'a broad survey ... from the lookups that exist'; the LLD sends the unfocused intent to the existing planning call instead (stated in reference c10, alternative a3 rejected). [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md]",
-          "action": "None required; the user may want to confirm the disclosed difference from the HLD's 'broad survey' wording when approving.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The pipeline returns null in eight places (driver.ts:1089, :1099, :1100, :1102, :1110, :1130, :1252, :1258), a bundle that fails validation falls through, and every one ends in the single 'model unavailable' throw.",
-          "evidence": "driver.ts:1089 `if (args.invocationMode !== 'run') return null;`, :1095-1099 shaperId test, :1100 no intent, :1102 `if (intent.focused !== true) return null;`, :1109-1110 scope-kind gate, :1130, :1252, :1258 `return null`. driver.ts:243-249 logs 'exploration-based bundle failed validation; falling through' and :276-281 throws `ShaperLlmUnavailableError('Run-mode exploration pipeline returned no bundle...')`. [files: src/analyze/context/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The planning call already has a branch for an unfocused intent, and the free-form replacement's purpose today is the classifier's reasoning text when there is no focus.",
-          "evidence": "decomposer.ts:298-300: `: 'focus: (unfocused -- broad understanding request)'`. driver.ts:1289-1291: `purpose: intent.focus ?? intent.reasoning`. orchestrator/driver.ts:221 sets reasoning to `target hinted via slash command (classifier skipped); ...`. [files: src/analyze/context/decomposer.ts, src/analyze/context/driver.ts, src/analyze/orchestrator/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The target-hint branch always builds an unfocused intent and calls no validator; neither caller of the classifier supplies the connection check; the plan tree maps the validator's failure to 'classifier-validation-exhausted' and other errors to 'internal-error', while the daemon's mapping already returns the inner code.",
-          "evidence": "orchestrator/driver.ts:216-222 `focused: false` with no call to validateIntentSemantics. Callers: orchestrator/driver.ts:234 `classify({ input: {...}, opts: { runId } })` and daemon/analyze-rpc.ts:322 `runClassifier({ input, opts })`, neither passes connectionExists. orchestrator/driver.ts:417 `wrap('classifier-validation-exhausted', err)` and :425 `wrap('internal-error', err)`. analyze-rpc.ts:344-345 `const code = err.lastFailure.code as AnalyzeRpcErrorCode` and :371 `return classifyShaperError(err)`. [files: src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts, src/analyze/classifier/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The existing ShaperSchemaUnrecoverable and ShaperPromptMissingError can carry the 'bundle-invalid', 'answer-invalid' and prompt-missing causes with a message that states the cause, with no change to those classes.",
-          "evidence": "driver.ts:147-152: `constructor(retries: number, lastErrors: readonly string[]) { super(`Shaper completeStructured exhausted ${retries} retries: ` + lastErrors.join('; '))`. For a bundle that fails validation no structured call was retried, so the message would read 'Shaper completeStructured exhausted N retries: ...', which is not the cause. driver.ts:157-160: ShaperPromptMissingError takes a path and prefixes 'Shaper prompt file missing:', but PipelineOutcome carries only `message: string`, and SynthesizerPromptMissingError (synthesizer.ts:72-76) and DecomposerPromptMissingError expose the path only inside their message. The design lists both classes as '(existing)' and names no change to them. [files: src/analyze/context/driver.ts, src/analyze/context/synthesizer.ts]",
-          "action": "State how each reused class is constructed for these causes: either add a constructor form (or a subclass) whose message says 'bundle failed validation' / 'answer-writing output invalid', or carry the prompt path as data on the cause. Add a test assertion on the message text, since ac3 is about the failure naming the actual cause.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The readers resolveScope depends on exist with a usable shape, and the four codes called 'reused' already exist in both code lists.",
-          "evidence": "db/entities.ts:795 `findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]>`; daemon/db/config.ts:74 `loadConnections(repoPath: string): Promise<LoadedConnections>`; listRepos imported at context/driver.ts:59. orchestrator/types.ts:269-277 and analyze-rpc.ts:137-152 both contain 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch', 'invalid-input', 'shaper-schema-unrecoverable', 'shaper-prompt-missing'. [files: src/db/entities.ts, src/daemon/db/config.ts, src/analyze/orchestrator/types.ts, src/daemon/analyze-rpc.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The tool loop's path for the free-form lookup (driver.ts:564) is moved to the ResolvedScope along with the other readers, so nothing else in the context builder reads the scope's value and a file, symbol or connection scope is served.",
-          "evidence": "driver.ts:557-570 `runShaperToolLoop` is exported and takes only `args.inputs`; its one caller is explore/freeform-probe.ts:116, which builds its own intent at :93-110: `scopeRef: { kind: 'workspace', value: ctx.repoPath }`, `focus: params.purpose`. The runner context (explore/types.ts:761) carries only `repoPath`. So the free-form lookup never sees the request's scope: for a file, symbol or connection request that falls to the free-form lookup (every generic request, and any plan that is replaced) the loop is told the scope is the whole repo and the named file, entity or connection is lost. The design lists neither freeform-probe.ts nor the RunShaperToolLoopArgs signature as a change site, and deleting inferRepoPath leaves runShaperToolLoop with no stated source for a ResolvedScope. [files: src/analyze/explore/freeform-probe.ts, src/analyze/context/driver.ts, src/analyze/explore/types.ts]",
-          "action": "Add freeform-probe.ts and runShaperToolLoop/RunShaperToolLoopArgs to the change sites: say how the resolved scope reaches the free-form lookup (through the executor's runner context or its params) and what scope the synthetic intent carries for a file, symbol and connection. Add a test that a file-scope request replaced by the free-form lookup still names the file.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The other listed readers of the scope's value in the context builder are complete: driver.ts:190, :945-948, :1176-1177, decomposer.ts:308 and the indexed check, and ensureNonEmptyClosure has one caller.",
-          "evidence": "A search of src/analyze/context for scopeRef outside tests finds only decomposer.ts:308, invariants.ts:89/:172, driver.ts:944-948, :992-998, :1108, :1176 and the type at types.ts:154. ensureNonEmptyClosure is called only at driver.ts:213. Note: decomposer.ts:305 also prints the whole intent as JSON, so the raw value still appears in the planning prompt beside the resolved repo path. [files: src/analyze/context/driver.ts, src/analyze/context/decomposer.ts, src/analyze/context/invariants.ts]",
-          "action": "None required; consider saying whether the JSON dump of the intent in the planning prompt keeps the raw scope value.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "buildMessages in the decomposer has two callers, decompose and prepareDecompose, and prepareDecompose is called only by the step tool's start phase with a workspace scope it builds itself.",
-          "evidence": "decomposer.ts:161 and :237 call buildMessages. mcp/analyze-step/phases/start.ts:91 `const prepared = prepareDecompose(intent);` with the intent built at :51-58 (`scopeRef: { kind: 'workspace', value: repoPath }`). The other prepareDecompose hits (workflow/orchestrator.ts:170, daemon/workflow-rpc.ts:207) are a different function in the workflow module. handleStart is already async and already calls resolveRepoLastIndexedAt at :61. [files: src/analyze/context/decomposer.ts, src/mcp/analyze-step/phases/start.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No caller in this repository builds a symbol scope in another form, and the code additions do not change any stored shape.",
-          "evidence": "A search of src outside tests for `kind: 'symbol'` returns no match, so no producer of a symbol scope value exists to break. validate.ts:163-166 confirms the form is undefined today ('typically encode \"<file>:<symbol>\" or similar'). The three codes are added to string unions (orchestrator/types.ts, analyze-rpc.ts); RunFailure stays code/message/data. [files: src/analyze/classifier/validate.ts, src/analyze/orchestrator/types.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design corrects the pairing table without redesigning the plan tasks' own scope checks, which Story s7 owns; its claim that the code plan tasks accept a manifest directory the validator refuses is true.",
-          "evidence": "runtimes/code/_shared.ts:58-62 accepts `case 'repo': case 'manifest-dir': return scopeRef.value;` while validate.ts:48 has `code: ['repo', 'module', 'file', 'symbol', 'workspace']`. The LLD changes validate.ts, the classifier prompt and the context builder only; the task-side resolveRepoPath functions in runtimes/ are left to s7, as HLD.md:226 and the LLD's adjacent-scope list state. [files: src/analyze/runtimes/code/_shared.ts, src/analyze/classifier/validate.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A connections file that cannot be parsed is detectable because loadConnections throws for it, while a missing file is not an error.",
-          "evidence": "daemon/db/config.ts:82-84 returns `{ file: { connections: [] }, resolved: [], warnings: [] }` on ENOENT; :92 `throw new Error(`db-connections.json: invalid JSON (...)`)`, :95, :105 and :110 throw for shape, duplicate id and unknown kind. [files: src/daemon/db/config.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The validator's inner failure can be read from the error on the plan tree, so the two message-pattern tests can be removed.",
-          "evidence": "classifier/driver.ts:81-91: `class ClassifierValidationExhausted extends Error { readonly lastFailure: ValidationFailure; ... }`, with `lastFailure.code` typed as string (validate.ts:65-68), which the daemon already casts at analyze-rpc.ts:345. The patterns being removed are at orchestrator/driver.ts:421-424. [files: src/analyze/classifier/driver.ts, src/analyze/orchestrator/driver.ts]",
-          "action": "None; the plan-tree side needs the same cast to RunErrorCode the daemon uses.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The existing tests that the classify-mapping change breaks are all named: the pattern test at orchestrator.test.ts:83-88 is replaced and the 'unrecognised error' test at :90 still holds.",
-          "evidence": "orchestrator.test.ts:72, inside the test at :68-80 that the design does not mention: `[new ClassifierValidationExhausted([], []), 'classifier-validation-exhausted'],`. After the change the mapping returns the inner failure's code; here the error is built with an array as its failure, so the code read is undefined and the assertion fails. The :83-88 and :90-93 tests are as the design describes. [files: src/analyze/orchestrator/__tests__/orchestrator.test.ts]",
-          "action": "Add orchestrator.test.ts:68-80 to the tests changed: drop or rewrite the ClassifierValidationExhausted row (constructed with a real ValidationFailure and expecting its inner code).",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The other existing tests the design says it changes are what it says they are: freeform-fallback.test.ts:66 asserts the reasoning text, and resolve-repo-indexed.test.ts:79-93 tests inferScopePath through the test export.",
-          "evidence": "freeform-fallback.test.ts:65-68: `'fallbackFreeformPlan falls back to reasoning when focus is unset'` asserting `purpose, 'r'`. resolve-repo-indexed.test.ts:79, :83, :87, :93 call `_inferScopePathForTest`, exported at driver.ts:1352. The pipeline function is not exported today (driver.ts:1083 `async function tryExplorationPipeline`), consistent with the design's statement that it has no test seam. [files: src/analyze/context/__tests__/freeform-fallback.test.ts, src/analyze/context/__tests__/resolve-repo-indexed.test.ts, src/analyze/context/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 3,
-        "low": 13,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-07T08:13:35.261Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
@@ -352,7 +143,7 @@
       "api": [
         {
           "name": "tryExplorationPipeline",
-          "signature": "function tryExplorationPipeline(args: { invocationMode: ShaperMode; shaperId: ShaperId; inputs: RunShaperArgs['inputs']; runId: string; scope: ResolvedScope }): Promise<PipelineOutcome>\n\ntype PipelineOutcome =\n  | { readonly kind: 'bundle'; readonly raw: Omit<AnalyzeContextBundle, 'meta'>; readonly explorationCount: number }\n  | { readonly kind: 'not-applicable' }                       // not run mode: the caller continues to its tool loop, as today\n  | { readonly kind: 'did-not-proceed'; readonly cause: PipelineCause; readonly message: string };\n\ntype PipelineCause =\n  | 'invalid-input'          // unknown kind of source, or inputs with no intent\n  | 'planner-prompt-missing' | 'planner-model-failed'\n  | 'answer-prompt-missing'  | 'answer-model-failed'\n  | 'answer-invalid'         // the answer-writing step failed for any other reason (its output did not have the required shape)\n  | 'empty-plan'             // the plan that would be executed has no lookups\n  | 'bundle-invalid';        // the pipeline produced a bundle that fails validation (set by runShaper)",
+          "signature": "function tryExplorationPipeline(args: { invocationMode: ShaperMode; shaperId: ShaperId; inputs: RunShaperArgs['inputs']; runId: string; scope: ResolvedScope }): Promise<PipelineOutcome>\n\ntype PipelineOutcome =\n  | { readonly kind: 'bundle'; readonly raw: Omit<AnalyzeContextBundle, 'meta'>; readonly explorationCount: number }\n  | { readonly kind: 'not-applicable' }                       // not run mode: the caller continues to its tool loop, as today\n  | { readonly kind: 'did-not-proceed'; readonly cause: PipelineCause; readonly message: string; readonly promptPath?: string };   // promptPath for the two prompt-missing causes\n\ntype PipelineCause =\n  | 'invalid-input'          // unknown kind of source, or inputs with no intent\n  | 'planner-prompt-missing' | 'planner-model-failed'\n  | 'answer-prompt-missing'  | 'answer-model-failed'\n  | 'answer-invalid'         // the answer-writing step failed for any other reason (its output did not have the required shape)\n  | 'empty-plan'             // the plan that would be executed has no lookups\n  | 'bundle-invalid';        // the pipeline produced a bundle that fails validation (set by runShaper)",
           "parameters": [
             {
               "name": "args.scope",
@@ -407,7 +198,7 @@
             },
             {
               "type": "ShaperPromptMissingError (existing) -> 'shaper-prompt-missing'",
-              "condition": "cause 'planner-prompt-missing' or 'answer-prompt-missing'; the message names which prompt file"
+              "condition": "cause 'planner-prompt-missing' or 'answer-prompt-missing'. ShaperPromptMissingError takes a path (:157-160), so the cause carries promptPath; the planning call's and the answer-writing call's prompt-missing errors, which hold the path only inside their message today (decomposer.ts, synthesizer.ts:72-76), gain a readonly path field that the pipeline reads"
             },
             {
               "type": "ShaperLlmUnavailableError (existing) -> 'shaper-llm-unavailable'",
@@ -418,12 +209,12 @@
               "condition": "cause 'empty-plan'"
             },
             {
-              "type": "ShaperSchemaUnrecoverable (existing) -> 'shaper-schema-unrecoverable'",
-              "condition": "cause 'bundle-invalid', with the validation errors in the message. Story s1 later replaces this row too."
+              "type": "ShaperAnswerInvalidError (new) -> the existing code 'shaper-schema-unrecoverable'",
+              "condition": "cause 'bundle-invalid': constructed with the stage 'bundle validation' and the validation errors, so the message reads that the bundle failed validation. The existing ShaperSchemaUnrecoverable is not used, because its constructor writes 'Shaper completeStructured exhausted N retries' (src/analyze/context/driver.ts:147-152), which is not what happened. Story s1 later replaces this row."
             },
             {
-              "type": "ShaperSchemaUnrecoverable (existing) -> 'shaper-schema-unrecoverable'",
-              "condition": "cause 'answer-invalid', with the answer-writing step's error in the message. Story s1 later replaces this row with its own error carrying the lookup results."
+              "type": "ShaperAnswerInvalidError (new) -> the existing code 'shaper-schema-unrecoverable'",
+              "condition": "cause 'answer-invalid': constructed with the stage 'answer writing' and the answer-writing step's error message. Story s1 later replaces this row with its own error carrying the lookup results."
             },
             {
               "type": "ScopeRefUnresolvedError (new) -> 'scope-ref-unresolved'",
@@ -469,7 +260,7 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "Nothing else in the context builder reads scopeRef.value. The readers today, all moved to the ResolvedScope: the cache freshness read for every mode (src/analyze/context/driver.ts:190, through inferScopePath, including classification inputs that carry a scopeRef and no intent); the tool loop's path for the classification and task modes (:291) and for the free-form lookup (:564), both through inferRepoPath (:945-948); the pipeline's lookup path and its freshness read (:1175-1177); the planning prompt (decomposer.ts:308); and the indexed check (invariants.ts)",
+            "Nothing else in the context builder reads scopeRef.value. The readers today, all moved to the ResolvedScope: the cache freshness read for every mode (src/analyze/context/driver.ts:190, through inferScopePath, including classification inputs that carry a scopeRef and no intent); the tool loop's path for the classification and task modes (:291) and for the free-form lookup (:564, reached from src/analyze/explore/freeform-probe.ts:116 with an intent that lookup builds itself), both through inferRepoPath (:945-948); the pipeline's lookup path and its freshness read (:1175-1177); the planning prompt (decomposer.ts:308); and the indexed check (invariants.ts)",
             "For a path inside no registered repo, repoPath is null and lookupPath is the scope's own directory, which is today's behaviour; the code source's indexed check then fails as 'scope-not-indexed' as it does today",
             "For a connection, lookupPath is the connection's repo, where today the tool loop is given the daemon's working directory",
             "The scope is resolved for classification mode too, so a symbol or connection that does not resolve fails there with 'scope-ref-unresolved', where today it runs on with a wrong path"
@@ -550,7 +341,7 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "The two message-pattern tests are removed; the inner code is read from the error. The existing test of those patterns (src/analyze/orchestrator/__tests__/orchestrator.test.ts:83-88) is replaced by one that passes a ClassifierValidationExhausted with each inner code; the test that an unrecognised error gives 'internal-error' (:90) still holds, through the context mapping"
+            "The two message-pattern tests are removed; the inner code is read from the error. The existing test of those patterns (src/analyze/orchestrator/__tests__/orchestrator.test.ts:83-88) is replaced by one that passes a ClassifierValidationExhausted with each inner code, and the row of the table test above it that expects 'classifier-validation-exhausted' from an error built with an empty failure (:68-80, row at :72) is rewritten with a real ValidationFailure and its inner code; the test that an unrecognised error gives 'internal-error' (:90) still holds, through the context mapping"
           ]
         },
         {
@@ -566,7 +357,7 @@
           ],
           "returns": {
             "type": "RunFailure | AnalyzeRpcErrorPayload",
-            "meaning": "Both gain the same three cases: ShaperInvalidInputError -> 'invalid-input', ShaperNoPlanError -> 'no-plan-for-request', ScopeRefUnresolvedError -> 'scope-ref-unresolved'."
+            "meaning": "Both gain the same four cases: ShaperInvalidInputError -> 'invalid-input', ShaperNoPlanError -> 'no-plan-for-request', ScopeRefUnresolvedError -> 'scope-ref-unresolved', ShaperAnswerInvalidError -> the existing code 'shaper-schema-unrecoverable'."
           },
           "errors": [],
           "preconditions": [],
@@ -608,11 +399,13 @@
       {
         "entity": "Typed errors of the context builder",
         "change": "new",
-        "details": "ShaperInvalidInputError, ShaperNoPlanError and ScopeRefUnresolvedError, declared beside the existing ShaperLlmUnavailableError and ShaperPromptMissingError.",
+        "details": "ShaperInvalidInputError, ShaperNoPlanError, ScopeRefUnresolvedError and ShaperAnswerInvalidError (a stage, 'bundle validation' or 'answer writing', and the detail; its message states which), declared beside the existing ShaperLlmUnavailableError and ShaperPromptMissingError. DecomposerPromptMissingError and SynthesizerPromptMissingError gain a readonly path field.",
         "callSites": [
           "src/analyze/context/driver.ts",
           "src/analyze/orchestrator/driver.ts",
-          "src/daemon/analyze-rpc.ts"
+          "src/daemon/analyze-rpc.ts",
+          "src/analyze/context/decomposer.ts",
+          "src/analyze/context/synthesizer.ts"
         ]
       },
       {
@@ -640,6 +433,19 @@
         "callSites": [
           "src/analyze/context/decomposer.ts",
           "src/mcp/analyze-step/phases/start.ts"
+        ]
+      },
+      {
+        "entity": "The lookup executor's runner context and the free-form lookup",
+        "change": "field-add",
+        "details": "The free-form lookup never sees the request's scope today: runShaperToolLoop takes only inputs (src/analyze/context/driver.ts:557-570), its one caller builds its own intent with a workspace scope on the runner context's repo path (src/analyze/explore/freeform-probe.ts:93-110, :116), and the runner context carries only repoPath (src/analyze/explore/types.ts:761). So a file, symbol or connection request that falls to the free-form lookup loses the thing it named. The runner context gains the ResolvedScope; executePlan's arguments carry it, and so do stepPlan's, for the step tool. The free-form lookup builds its intent with the request's own scope (kind and value) and passes the ResolvedScope to runShaperToolLoop, whose arguments gain it and which takes the loop's path from lookupPath. The size 'M' written there is left for Story s2.",
+        "callSites": [
+          "src/analyze/explore/freeform-probe.ts",
+          "src/analyze/explore/types.ts",
+          "src/analyze/explore/executor.ts",
+          "src/analyze/context/driver.ts",
+          "src/mcp/analyze-step/phases/plan.ts",
+          "src/mcp/analyze-step/phases/narrow.ts"
         ]
       }
     ],
@@ -850,7 +656,9 @@
             "pipeline returns 'not-applicable' for classification and task modes",
             "an unfocused intent that falls to the free-form lookup gets the stated broad-survey purpose and not the classifier's reasoning text (the existing case in freeform-fallback.test.ts:66, which asserts the reasoning text, is changed with it)",
             "the table from cause to error: one case per member of PipelineCause, each asserting the error class and that only the two model-failed causes give ShaperLlmUnavailableError",
-            "runShaper throws ShaperSchemaUnrecoverable, not ShaperLlmUnavailableError, when the pipeline's bundle fails validation"
+            "runShaper throws ShaperSchemaUnrecoverable, not ShaperLlmUnavailableError, when the pipeline's bundle fails validation",
+            "the message of each error states its cause: 'bundle failed validation' for 'bundle-invalid', 'answer-writing output invalid' for 'answer-invalid', and the prompt file's path for the two prompt-missing causes; none contains 'exhausted' or 'retries'",
+            "a file-scope request whose plan is replaced by the free-form lookup: the intent the free-form lookup builds has kind 'file' and the file's path, and the loop's path is the resolved repo (today the intent is a workspace scope on the repo)"
           ],
           "fixturesNeeded": [
             "stand-ins for the planning call, the lookup executor and the answer-writing call",
@@ -894,7 +702,9 @@
             "the plan tree's and the daemon's classifyShaperError each map ShaperInvalidInputError, ShaperNoPlanError and ScopeRefUnresolvedError to their codes",
             "one test iterates a single list of error classes through both functions and asserts the same code from each",
             "the plan tree's classifyClassifierError returns the inner code of ClassifierValidationExhausted for both inner codes, and passes ScopeNotIndexedError and ShaperLlmUnavailableError to the context mapping (today: 'classifier-validation-exhausted' and 'internal-error')",
-            "the three new codes are members of both RunErrorCode and AnalyzeRpcErrorCode (a compile-time assignment in a source file, since tsc skips tests)"
+            "the three new codes are members of both RunErrorCode and AnalyzeRpcErrorCode (a compile-time assignment in a source file, since tsc skips tests)",
+            "both classifyShaperError functions map ShaperAnswerInvalidError to 'shaper-schema-unrecoverable'",
+            "the existing table test's ClassifierValidationExhausted row (orchestrator.test.ts:72) rewritten with a real ValidationFailure, expecting its inner code"
           ]
         },
         {
@@ -943,7 +753,8 @@
             "unit: runShaper throws ShaperSchemaUnrecoverable when the bundle fails validation",
             "unit: both classifyShaperError functions agree over one list of error classes",
             "unit: the plan tree's classifyClassifierError returns the inner code and passes context errors on",
-            "live: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped"
+            "live: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped",
+            "unit: the message of each error states its cause and none says retries were exhausted"
           ]
         },
         {
@@ -951,7 +762,8 @@
           "provingTests": [
             "unit: pipeline returns 'bundle' for a file and a symbol scope with the resolved repo as lookup path",
             "unit: resolveScope for a symbol (no '#', no entity, two entities) fails with ScopeRefUnresolvedError, never ShaperLlmUnavailableError",
-            "live: a file scope and a symbol scope return a bundle"
+            "live: a file scope and a symbol scope return a bundle",
+            "unit: a file-scope request replaced by the free-form lookup still names the file"
           ]
         }
       ]
@@ -982,7 +794,7 @@
         },
         {
           "order": 5,
-          "action": "Resolve the scope once at the head of runShaper for every mode and move every reader of the scope's value in the context builder to it: the cache freshness read, the tool loop's path at both of its call sites, the pipeline's lookup path and freshness read, the planning prompt's user turn (decompose and prepareDecompose, with the step tool's start phase resolving the scope it builds), and the indexed check. Delete resolveRepoPath, inferRepoPath and inferScopePath with the test export, and rewrite the existing test of inferScopePath against resolveScope. Remove the gate on the kind of scope.",
+          "action": "Resolve the scope once at the head of runShaper for every mode and move every reader of the scope's value in the context builder to it: the cache freshness read, the tool loop's path at both of its call sites, the pipeline's lookup path and freshness read, the planning prompt's user turn (decompose and prepareDecompose, with the step tool's start phase resolving the scope it builds), the indexed check, and the free-form lookup, which gets the resolved scope through the lookup executor's runner context. Delete resolveRepoPath, inferRepoPath and inferScopePath with the test export, and rewrite the existing test of inferScopePath against resolveScope. Remove the gate on the kind of scope.",
           "rollbackable": true
         },
         {
@@ -1122,6 +934,11 @@
       "id": "c11",
       "kind": "prior-artifact",
       "ref": "First daemon review of this LLD, 2026-10-07: block, 4 MED did not hold. All four are applied in this revision: the free-form purpose is the classifier's reasoning text today, not undefined; prepareDecompose and the step tool's start phase are change sites; resolveRepoPath, inferRepoPath and inferScopePath have callers in every mode; the answer-writing step's catch-all needed its own cause."
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "Second daemon review of this LLD, 2026-10-07: block, 3 MED did not hold. All three are applied in this revision: a new error class for an invalid answer or bundle, because the existing class's message says retries were exhausted; the free-form lookup given the request's scope through the runner context; the existing table-test row for ClassifierValidationExhausted."
     }
   ]
 }

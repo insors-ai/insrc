@@ -24,216 +24,7 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of the Story's four acceptance criteria (DEF S006 ac1-ac4) and each clause of the HLD's s6 boundary has a designed element, and the three codes declared match contract sc6.",
-          "evidence": "DEF.md:215-218 gives ac1 (unfocused request gets context), ac2 (stated-kind-of-source request proceeds), ac3 (failure names the actual cause), ac4 (file or symbol never reports model unavailable). The design covers them in 2.1 (gates removed), 2.5 (target-hint branch carries the prompt as focus and is validated), 2.2 (cause-to-error table) and 2.3 (resolveScope for file and symbol). HLD.md:171-173 lists exactly 'no-plan-for-request', 'answer-step-failed', 'run-abandoned', as section 3.1 declares. HLD.md:220 also asks for the connection check from both callers of the classifier, the connection-to-repo mapping, the corrected pairing table with prompt copy and matrix test; all are in 2.3, 2.4 and migration steps 3 and 7. The one deviation (planning call instead of a separate survey plan) is recorded in reference c10.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The pipeline returns null at eight places (driver.ts:1089, :1099, :1100, :1102, :1110, :1130, :1252, :1258), and every one of them, plus a bundle that fails validation, ends in the single run-mode throw of ShaperLlmUnavailableError.",
-          "evidence": "src/analyze/context/driver.ts: `if (args.invocationMode !== 'run') return null;` at 1089; the shaperId test ends `return null` at 1099; `if (!('intent' in args.inputs)) return null;` at 1100; `if (intent.focused !== true) return null;` at 1102; the scope-kind gate returns null at 1110; the decomposer catch at 1130; the synthesizer catches at 1252 and 1258. In runShaper, a failed validateBundleWithErrors only logs ('falling through to legacy shaper', 244-249) and line 276-281 then throws `ShaperLlmUnavailableError('Run-mode exploration pipeline returned no bundle...')`. executePlan at 1179 is outside any try, so executor errors are not caught, as the design says.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The target-hint branch always builds an unfocused intent and calls no validator, and neither caller of the classifier supplies the connection check.",
-          "evidence": "src/analyze/orchestrator/driver.ts:216-222 builds `intent = { target: args.targetHint, scope: pickedScope, focused: false, scopeRef: initialScopeRef, reasoning: 'target hinted via slash command (classifier skipped); ...' }` with no call to validateIntentSemantics. The two classifier callers are driver.ts:234 `classify({ input: {...}, opts: { runId } })` and src/daemon/analyze-rpc.ts:322 `runClassifier({ input, opts })`; neither passes connectionExists, so validate.ts:121-126 returns null for every connection scope. validateIntentSemantics is called from one place only, src/analyze/classifier/driver.ts:160.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "On the plan tree a validator failure is recorded as 'classifier-validation-exhausted' and a context-build failure as 'internal-error', while the daemon's classify mapping already returns the inner code.",
-          "evidence": "src/analyze/orchestrator/driver.ts:417 `if (err instanceof ClassifierValidationExhausted) return wrap('classifier-validation-exhausted', err);`, followed by two message-pattern tests (422-423) and `return wrap('internal-error', err);` at 425. src/daemon/analyze-rpc.ts:344-345 `if (err instanceof ClassifierValidationExhausted) { const code = err.lastFailure.code as AnalyzeRpcErrorCode;`. ClassifierValidationExhausted carries `readonly lastFailure: ValidationFailure` (src/analyze/classifier/driver.ts:81-92), so the inner code is readable. The instanceof test at 417 precedes the pattern tests, so removing them loses no case.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ShaperLlmUnavailableError's constructor always says Ollama, although the planning call's provider is chosen by role; and the two prompt-missing errors hold their path only in the message.",
-          "evidence": "driver.ts:133-136 `super(`Local Ollama unavailable for shaper invocation: ${cause}`)`. decomposer.ts:159 `const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg);`. decomposer.ts:69-74 and synthesizer.ts:72-77 both take `path: string` and only interpolate it into the message, with no field. ShaperPromptMissingError takes `promptPath: string` (driver.ts:157-160). The class is constructed at driver.ts:277 and :864 with one argument, so an optional second argument keeps those unchanged.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The codes called existing ('invalid-input', 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch', 'shaper-prompt-missing', 'shaper-schema-unrecoverable', 'scope-not-indexed') are in both unions, and the three called new are in neither.",
-          "evidence": "src/analyze/orchestrator/types.ts:269-277 and src/daemon/analyze-rpc.ts:134-152 each list all six reused codes. A search of src for 'no-plan-for-request', 'answer-step-failed' and 'run-abandoned' finds no occurrence. RunErrorCode and AnalyzeRpcErrorCode are referenced only in src (no extension or plugin copy in this repository), and no exhaustive Record over either union exists that adding members would break.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The four readers ScopeDeps wraps exist with usable shapes, and a missing connections file is not an error while an unparseable one throws.",
-          "evidence": "src/db/repos.ts:213 `listRepos(_db: DbClient): Promise<RegisteredRepo[]>`; src/db/entities.ts:795 `findEntitiesByFile(_db, file)` compares an absolute path; entities.ts:779 `listEntitiesForRepo(_db, repo)`; src/daemon/db/config.ts:74 `loadConnections(repoPath): Promise<LoadedConnections>` returns `{ file: { connections: [] }, resolved: [], warnings: [] }` on ENOENT (81-84) and throws `db-connections.json: invalid JSON` on a parse failure (92). The three db readers take a leading `_db` argument that the ScopeDeps signatures omit, so the default deps must be small wrappers. listEntitiesForRepo and findEntitiesByFile both scan the whole entity range, so the symbol path costs two full scans.",
-          "action": "When implementing, write the default ScopeDeps as wrappers that pass the db handle; no design change needed.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every lookup the new no-focus recipes name exists and accepts what the recipe gives it (a file for module.profile, a name for symbol.locate, a connection id for db.tables.list).",
-          "evidence": "decomposer.ts:91-112 lists module.profile, import.graph, convention.detect, symbol.locate, usage.example, class.hierarchy, db.connections.list, db.tables.list, manifests.locate and freeform.probe. src/analyze/explore/module-profile.ts:123 `if (stat.isFile()) { const profile = await profileFile(path, entities);`. symbol-locate.ts:59 requires `params.names`; usage-example.ts:68 and class-hierarchy.ts:62 accept `symbolName or entityId`; db-tables-list.ts:53 requires `connectionId`. The pipeline accepts a plan whose answer type is uncovered if it contains freeform.probe (driver.ts:1160-1161), so the docs and generic recipe is not replaced. One consequence worth knowing: module.profile reads entities with `listEntitiesForRepo(db, ctx.repoPath)` (module-profile.ts:121), which returns [] when the path is not a registered repo root (entities.ts:781-782), so for a module scope, whose lookupPath stays the module directory, the profile has no entities. That is today's behaviour for a focused module request too.",
-          "action": "None for this design; the hollow module-scope profile is an existing limitation the design deliberately preserves.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The inventory of readers of a scope's value in the context builder, and of callers of the functions whose signatures change (prepareDecompose, decompose, executePlan, stepPlan, runShaperToolLoop, the two error mappings), is complete.",
-          "evidence": "A search of src/analyze/context and src/analyze/explore for scopeRef readers finds only driver.ts:945, :948, :993, :997-998, :1108, :1176, decomposer.ts:308, invariants.ts:89/:172 and freeform-probe.ts:103, all named in 2.3 and 3.8. inferRepoPath's one use is buildToolDeps (driver.ts:924), reached from :291 and :564. Callers: the analyzer's prepareDecompose only at src/mcp/analyze-step/phases/start.ts:91 (the hit in workflow-step is a different function, src/workflow/orchestrator.ts:170); decompose only at driver.ts:1122; the lookup executePlan only at driver.ts:1179; stepPlan at plan.ts:108 and narrow.ts:171; runShaperToolLoop only at freeform-probe.ts:116. Shaper errors are mapped in exactly two places, orchestrator/driver.ts:428 and analyze-rpc.ts:882. `_inferScopePathForTest` is exported at driver.ts:1352.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Removing the unfocused gate needs a prompt change only in the planning prompt; the answer-writing call is unchanged and can serve an intent with no focus.",
-          "evidence": "The design lists decompose.system.md as the only prompt change for an unfocused intent (3.9) on the ground that every recipe substitutes the focus, so 'with no focus the model has nothing to substitute'. The answer-writing prompts have the same dependency and are in no change-site list: synthesize.code.system.md:90, synthesize.data.system.md:30, synthesize.infra.system.md:25 and synthesize.docs.system.md:53 each instruct the focus layer to contain `Intent focus: <intent.focus>`, and synthesize.docs.system.md:50 draws the system line's subject 'from `intent.focus`'. None of them mentions an unfocused intent, and synthesizer.ts contains no handling of focus at all. Today these prompts are never reached without a focus because of the gate at driver.ts:1102. After the change, the code, data and infra recipes (structural-map, data-inventory, infra-inventory) go through synthesize with no focus. The bundle schema only requires focus to be a string (schema.ts:92), so this would not fail validation, but the model is told to print a value that does not exist, and no test in section 6 covers what the answer-writing step is given for an unfocused intent. [files: src/prompts/analyze/synthesize.code.system.md, src/prompts/analyze/synthesize.data.system.md, src/prompts/analyze/synthesize.infra.system.md, src/prompts/analyze/synthesize.docs.system.md, src/analyze/context/synthesizer.ts]",
-          "action": "Add the answer-writing prompts for code, data and infra to the change sites: state what the focus layer and system line say when the intent has no focus (for example the named scope and 'broad survey'), and add a unit test that reads each prompt for that rule. If this is meant to be left to Story s5's layout work, say so explicitly and state what the layer contains in the meantime.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No stored shape changes: the step tool's state token holds the intent and no resolved scope, so re-resolving from the token keeps old tokens working; and no caller builds a symbol scope in another form.",
-          "evidence": "src/mcp/analyze-step/phases/start.ts:93-101 builds the state as `{ version, runId, repoPath, repoIndexedAt, intent, synthesizerKey, stage }`; plan.ts:108-114 passes `repoPath: state.repoPath` to stepPlan. The intent's scope is `{ kind: 'workspace', value: repoPath }` (start.ts:56), for which resolveScope's lookupPath is the scope's own directory, the same value as state.repoPath. A search of non-test src for `kind: 'symbol'` finds no builder. The default branch of resolveRepoPath (driver.ts:978-979) returns ref.value for repo, module, manifest-dir and workspace, so keeping lookupPath as the scope's own directory leaves the lookup cache key and the 'Repo path' line (decomposer.ts:308) unchanged for requests that work today.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design leaves the plan-task runtimes' own scope readers and the raising of 'answer-step-failed' and 'run-abandoned' to Stories s7 and s1, and its claim that the code plan tasks already accept a manifest directory is true.",
-          "evidence": "src/analyze/runtimes/code/_shared.ts:58-68 accepts `case 'repo': case 'manifest-dir':` and throws for the rest, while validate.ts:48 refuses code with manifest-dir, so the corrected table matches what the tasks accept. The direct readers in the runtimes (runtimes/docs/decision-trace.ts:46, constraint-enumerate.ts:45, family-summarise.ts:98, runtimes/shared/adherence.ts:202 and :344, data/_shared.ts:25) are not in any change-site list of this design; the HLD assigns them to s7 (HLD.md s7 boundary). The design only declares the two foreign codes (3.1) and leaves the size 'M' in freeform-probe.ts:100 to s2.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Requests with a ready-made intent are never checked against the pairing table today, so the new check at the head of runShaper (and its twin in the step tool's start phase) is needed once the scope-kind gate is removed.",
-          "evidence": "src/daemon/analyze-rpc.ts:419-423 calls `shaper.buildRunBundle({ intent: parsed.intent }, ...)` directly; parseIntent (analyze-rpc.ts:1099 onward) checks target and scopeRef.kind each against its own list but not the pairing. src/mcp/server.ts:1292-1299 builds its own intent and never calls the validator. The step tool's start phase calls prepareDecompose (start.ts:91) and its later phases call stepPlan, never runShaper, so a check inside runShaper would not cover it. isKindCompatibleWithTarget is exported (validate.ts:94).",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A registry or store read failure during scope resolution is handled consistently with today: non-symbol, non-connection scopes proceed, and the existing skips are preserved.",
-          "evidence": "resolveRepoLastIndexedAt swallows a listRepos failure and returns undefined (driver.ts:1024-1033); ensureNonEmptyClosure skips on a registry read failure (invariants.ts:104-118) and on an empty registry (125-131), throws ScopeNotIndexedError with registeredAs undefined when no repo contains the path (142-148) and when the repo has zero entities (152-158). The design keeps each of these for the other kinds and states the symbol exceptions explicitly. ensureNonEmptyClosure has one caller, driver.ts:213, run mode with the code shaper only, as the invariant says.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing tests the design says it rewrites exist with the content it describes.",
-          "evidence": "src/analyze/orchestrator/__tests__/orchestrator.test.ts:72 `[new ClassifierValidationExhausted([], []), 'classifier-validation-exhausted']`; :82-87 tests the two message patterns; :89-93 expects 'internal-error' for an unknown error. src/analyze/context/__tests__/freeform-fallback.test.ts:65-68 'falls back to reasoning when focus is unset' asserts purpose 'r'. resolve-repo-indexed.test.ts:78-94 holds the four inferScopePath cases. src/analyze/classifier/__tests__/validate.test.ts:112-115 'infra+repo -> scope-ref-kind-target-mismatch', which the corrected table flips. The row at :72 would read `lastFailure.code` as undefined once the mapping returns the inner code, so its rewrite is required, as stated.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion maps to at least one test that would fail if the behaviour were absent.",
-          "evidence": "The acceptance mapping gives ac1 the pipeline unit test with a stated mutation (restore the focused gate) plus the live run-context check; ac2 the integration tests on the target-hint branch, which orchestrator.test.ts already stands in the classifier, context builder and planner for; ac3 one case per PipelineCause plus the two-sided mapping comparison; ac4 the resolveScope symbol cases and the file and symbol pipeline tests. The planner's focused bound that ac2's backward-compat note relies on is real: planner/driver.ts:249 passes `focused: intent.focused` and planner/validate.ts:305 uses `focusedLowerBound` when it is true. The gap is the one reported under change-sites: nothing tests what the answer-writing step receives for an unfocused intent, and the only test of the real planner's output for the new recipes is live-gated.",
-          "action": "Add the answer-writing prompt test named under change-sites.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 15,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-07T08:45:44.419Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
@@ -676,6 +467,19 @@
           "src/prompts/analyze/decompose.system.md",
           "src/analyze/context/decomposer.ts"
         ]
+      },
+      {
+        "entity": "The answer-writing prompts (src/prompts/analyze/synthesize.*.system.md)",
+        "change": "field-add",
+        "details": "Six answer-writing prompts tell the model to write a line 'Intent focus: <intent.focus>' in the focus layer: synthesize.code.system.md:90, synthesize.data.system.md:30, synthesize.infra.system.md:25, synthesize.docs.system.md:53, synthesize.capability.system.md:44 and synthesize.adherence.system.md:49; the docs, capability and adherence prompts also take the subject of the system line from the focus. None says what to write when there is no focus, and the answer-writing code does not handle the focus at all, because the gate keeps an unfocused intent from reaching them today. After the gate is removed the recipes for code, data and infra reach the code, data and infra prompts with no focus (the docs and generic recipes are a single free-form lookup, whose answer does not go through the answer-writing step; capability and adherence answers are only planned for a request with a focus). One rule is added to each of the six, so that none is left telling a model to print a value that does not exist: when the intent has no focus, the focus layer's line reads 'Intent focus: none (broad survey of <scope kind> <scope value>)' and a system line that takes its subject from the focus takes the named scope instead. The older per-source prompts (code, data, infra, docs, generic .system.md) already say 'intent.focus if focused' and are not changed. This is one rule in each prompt; the layouts themselves are Story s5's.",
+        "callSites": [
+          "src/prompts/analyze/synthesize.code.system.md",
+          "src/prompts/analyze/synthesize.data.system.md",
+          "src/prompts/analyze/synthesize.infra.system.md",
+          "src/prompts/analyze/synthesize.docs.system.md",
+          "src/prompts/analyze/synthesize.capability.system.md",
+          "src/prompts/analyze/synthesize.adherence.system.md"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -915,7 +719,8 @@
             "a file-scope request whose plan is replaced by the free-form lookup: the intent the free-form lookup builds has kind 'file' and the file's path, and the loop's path is the resolved repo (today the intent is a workspace scope on the repo)",
             "runShaper in run mode refuses a code request on a connection scope with ScopeKindTargetMismatchError before resolving the scope, and accepts every pairing in the corrected table",
             "the planning prompt has the section for an intent with no focus, with a recipe for each of the five kinds of source, each naming only lookups that exist in the catalog and no limit parameter (the test reads the prompt file and the lookup registry)",
-            "the planning call's user turn for an unfocused intent names that section"
+            "the planning call's user turn for an unfocused intent names that section",
+            "every prompt under src/prompts/analyze that tells the model to write 'Intent focus: <intent.focus>' also states the rule for an intent with no focus (the test finds the prompts by searching for that line, so a prompt added later is covered)"
           ],
           "fixturesNeeded": [
             "stand-ins for the planning call, the lookup executor, the answer-writing call and the free-form replacement",
@@ -986,7 +791,8 @@
             "the daemon's run-context request for an unfocused code request on this repository returns a bundle (the check of 2026-10-07 that failed at once)",
             "the same for a file scope and for a symbol scope in the new form",
             "an unfocused request with the model stopped fails with 'shaper-llm-unavailable', and a request whose scope does not resolve fails with 'scope-ref-unresolved' while the model is running",
-            "the real planning call for an unfocused code request on a module returns the recipe's lookups on that module's path, and for an unfocused docs request returns a single free-form lookup"
+            "the real planning call for an unfocused code request on a module returns the recipe's lookups on that module's path, and for an unfocused docs request returns a single free-form lookup",
+            "the bundle returned for an unfocused code request has a focus layer that says there is no focus and names the scope, and does not contain the text 'undefined' or '<intent.focus>'"
           ],
           "fixturesNeeded": [
             "a running daemon with this repository indexed"
@@ -1001,7 +807,8 @@
             "unit: an unfocused intent that falls to the free-form lookup gets the stated broad-survey purpose",
             "live: the run-context request for an unfocused code request returns a bundle",
             "unit: the planning prompt has a recipe for an intent with no focus for each kind of source",
-            "live: the real planning call, given an unfocused code request on a module of this repository, returns a plan whose lookups are those of the recipe and name the module's path; this is the only test of what the real planner emits, and it is gated by INSRC_LIVE_TESTS"
+            "live: the real planning call, given an unfocused code request on a module of this repository, returns a plan whose lookups are those of the recipe and name the module's path; this is the only test of what the real planner emits, and it is gated by INSRC_LIVE_TESTS",
+            "unit: every answer-writing prompt that prints the intent's focus states what to write when there is none"
           ]
         },
         {
@@ -1065,7 +872,7 @@
         },
         {
           "order": 6,
-          "action": "Add the section for an intent with no focus to the planning prompt, with the test that reads the prompt for it; then remove the gate on an unfocused intent, and change the free-form replacement's purpose for an intent with no focus from the classifier's reasoning text to a stated broad-survey purpose.",
+          "action": "Add the section for an intent with no focus to the planning prompt, with the test that reads the prompt for it; add the rule for an intent with no focus to the six answer-writing prompts, with its test; then remove the gate on an unfocused intent, and change the free-form replacement's purpose for an intent with no focus from the classifier's reasoning text to a stated broad-survey purpose.",
           "rollbackable": true
         },
         {
@@ -1231,6 +1038,17 @@
       "id": "c17",
       "kind": "prior-artifact",
       "ref": "Sixth daemon review of this LLD, 2026-10-07: block, 1 MED did not hold, 15 hold. Applied in this revision: the model-failed message names the call that failed and no longer says Ollama for a provider that is not Ollama."
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "Seventh daemon review of this LLD, 2026-10-07: block, 1 MED did not hold, 15 hold. Applied in this revision: the six answer-writing prompts that print the intent's focus gain a rule for an intent with none."
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/prompts/analyze/synthesize.code.system.md",
+      "quotedText": "- `Intent focus: <intent.focus>`"
     }
   ]
 }

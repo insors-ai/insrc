@@ -20,7 +20,216 @@
     "schemaVersion": 1,
     "epicHash": "b9d5c5c40df5a574",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every Define acceptance criterion (s1 ac1-6, s2 ac1-5, s3 ac1-6, s4 ac1-5, s5 ac1-4, s6 ac1-4, s7 ac1-4) has a designed home in the HLD, the Story dependencies match the Define, and no non-goal is built.",
+          "evidence": "Read DEF.md sections 2, 3 and 6 against HLD sections 3-5 and 7. Each criterion maps: s1 ac6 to the typed answer-step failure; s2 ac4/ac5 to `determined:false` => XL and `sizeHint`; s3 ac5/ac6 to `notCovered` and section reading; s6 ac4 to 'scope-not-supported'; s7 ac3/ac4 to the uncaught-error handler and unchanged replay. The Define's dependency edges (s1 on s6; s7 on s6; s2 on s1,s7; s3 on s1,s2,s7; s4 on s1,s3,s7; s5 on s1) equal the HLD's ordering rationale. Non-goals are respected: grep.ts has four callers (grep.ts:153 tool, search-text.ts:100, config-trace.ts:100, workflow/review/probe.ts:62) and only the two analyzer lookups get the complete mode; the graph defect stays outside as ISSUE-12f70133491114c9.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "With the limits removed (FR004, s4 ac1) and failures never reported as empty (s1 ac2), no analyzer path still drops results or reports a failure as an empty answer.",
+          "evidence": "The HLD never designs the `freeform.probe` path; it names freeform-probe.ts only as a place that assumes size M. That path is the pipeline's fallback for any request no recipe covers (driver.ts:1136, :1171 `plan = fallbackFreeformPlan(intent, args.shaperId)`), and it is a model tool loop with its own cap. On exhaustion it returns an empty answer, not a failed output: freeform-probe.ts:126-141 `if (err instanceof ShaperToolLoopExhausted) { ... rawBundle: emptyRawBundle(), toolCallCount: 0, exhaustedNote: 'Tool loop exhausted its maxTurns cap...'`. When it is the sole lookup the answer bypasses the answer-writing step entirely (driver.ts:1194-1208 'freeform.probe short-circuit'), so the measure/partition/combine order in section 3 does not apply to it. Its tool loop also uses the general search tools, which the HLD says keep their limits. Neither the Define's c1 inventory nor the HLD's s1/s4 lists cover the max-turns cap or this empty result. [files: src/analyze/explore/freeform-probe.ts, src/analyze/context/driver.ts]",
+          "action": "State what happens to the freeform.probe path: exhaustion becomes the failed output (s1), its completeness record says what the tool loop could not establish, and either its cap and its limited search tools are in s4's inventory or the answer report marks such an answer as not established complete. Say how a sole-freeform answer gets the answer report.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An unfocused request gets no context and then fails with a 'model unavailable' error though no model was called; a request started with a stated kind of source is always marked unfocused; a failed answer-writing call also returns nothing and discards the lookups; runShaper returns a bundle only.",
+          "evidence": "src/analyze/context/driver.ts:1102 `if (intent.focused !== true) return null;`; :276-281 `if (invocationMode === 'run') { throw new ShaperLlmUnavailableError('Run-mode exploration pipeline returned no bundle. ...` ; :1245-1258 both catch branches of `synthesize` `return null`; :168 `export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle>`. src/analyze/orchestrator/driver.ts:216-222 builds the target-hinted intent with `focused: false`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The pipeline's other rule for returning nothing (driver.ts:1109-1111) concerns a request that names a single file or symbol, and the data plan tasks accept only a repo or a workspace.",
+          "evidence": "driver.ts:1108-1111: `if (scopeKind !== 'repo' && scopeKind !== 'module' && scopeKind !== 'workspace') { return null; }`. Of the seven scope kinds (classifier/schema.ts:28-36) that rejects four, not two: `file`, `symbol`, `connection` and `manifest-dir`. The HLD's sizing section designs a measure for a data connection (live table count) and for a manifest directory (graph entities), but the first step of the plan tree returns nothing for both, and Story s6's text covers only file and symbol. Separately, data/_shared.ts:30-34 accepts `case 'workspace': case 'repo': case 'manifest-dir': return sr.value;`, so 'repo or workspace is the only form the data plan tasks accept' is also incomplete, and a `connection` scope throws there ('Data runtimes require workspace, repo, or manifest-dir scope'). [files: src/analyze/context/driver.ts, src/analyze/runtimes/data/_shared.ts, src/analyze/classifier/schema.ts]",
+          "action": "In s6, decide for `connection` and `manifest-dir` as well as file and symbol: served, or 'scope-not-supported'. If a connection-scoped request stays unsupported, drop or defer its live-count sizing branch in s2 (it would size a request that cannot run); correct the statement about what the data plan tasks accept and say how a manifest-dir data request is measured.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "On the plan tree, stops the run catches are recorded with stage, failed status and code; the plan walk has no handler and the daemon's handler for an uncaught error does not write the record; a completed run is replayed from its record.",
+          "evidence": "src/analyze/orchestrator/driver.ts:153-159, :240-241, :280-281, :312-313, :372-379 each `patch(record, { stage, status: 'failed', error: failure })` then `writeRunRecord(record)`. :337 `const execResult = await runExecutor({` sits outside any try. src/daemon/analyze-rpc.ts:527-543 catches, logs 'uncaught orchestrator error' and sends a result frame with a hard-coded `stage: 'classify'` and no writeRunRecord. Replay: driver.ts:112-129 returns the stored record when `status === 'ok' && stage === 'done'` with intent and finalReport present. `runAnalyze(` has one caller, analyze-rpc.ts:526, and no source file outside the daemon sends 'analyze.run.start'.",
+          "action": "None. Note for s7: the daemon's uncaught-error frame reports stage 'classify' regardless of where the run was.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RunFailure {code, message, data?}, RunErrorCode (already holding 'scope-not-indexed' and 'shaper-llm-unavailable') and RunStage (classify, plan, execute, done) exist as stated, so three codes can be added without changing the failure type or the stages.",
+          "evidence": "src/analyze/orchestrator/types.ts:30-34 `export type RunStage = | 'classify' | 'plan' | 'execute' | 'done';`; :250-254 `export interface RunFailure { readonly code: RunErrorCode; readonly message: string; readonly data?: Readonly<Record<string, unknown>>; }`; :263-289 the code union with `'scope-not-indexed'` (:273) and `'shaper-llm-unavailable'` (:274). None of 'no-plan-for-request', 'scope-not-supported', 'answer-step-failed' exists anywhere in src. The daemon has a parallel list (analyze-rpc.ts:135) and a second classifyShaperError (analyze-rpc.ts:882-907), which section 5.6 assigns to s6 as 'the daemon's mapping'.",
+          "action": "None. The s6 LLD should name analyze-rpc.ts:882 explicitly: section 3 calls orchestrator/driver.ts:428 'the one function that maps these errors', and there are two.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The plan tree's aggregator places every task output whole into one prompt and returns a findings report, not the seven-layer bundle, so the lookup pipeline's combine step is genuinely new.",
+          "evidence": "src/analyze/runtimes/shared/aggregator.ts:160-178 `renderUpstreamSection` pushes `'### ' + id + ... stableStringify(out)` for every upstream output with no size check, into one user message (:144-152). It returns `{ summary, findings, metadata }` (:114-123), an AggregateReport. `synthesize(` is called from one place only (context/driver.ts:1235) and nothing in src combines per-part bundles.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "runShaper is reached only by the three context builders, which are called from six places, plus the one-shot agent tool through the daemon's run-context request; these are all the readers of the new answer-step failure.",
+          "evidence": "The six builder call sites are right (analyze-rpc.ts:259, :272, :300, :420; orchestrator/driver.ts:271; classifier/driver.ts:120; context/index.ts:95, :115, :140). But the run-context request function `buildRun` (analyze-rpc.ts:262) has a caller the HLD omits: src/daemon/workflow-rpc.ts:226-229 `const res = await buildRun({ runId, intent: classifiedIntent(intent) }); if (!res.ok) { throw new Error(`workflow.run: analyze grounding failed for step '${pause.runner}': ${res.error.message}`); }`. That is the daemon workflow runner's grounding step; it keeps only the message and would discard the lookup results and report the new failure carries. The HLD cites the same file (:552) only as a place that assumes size M. The other two readers are as stated: mcp/server.ts:1331-1341 calls `buildRun` and renders `result.error.code -- result.error.message`, and daemon/index.ts:1724 is the IPC registration. [files: src/daemon/workflow-rpc.ts, src/daemon/analyze-rpc.ts, src/mcp/server.ts]",
+          "action": "Add workflow-rpc.ts:226 to s1's list of readers of the answer-step failure and say what the workflow runner does with it (fail the step with the cause and what was found). Note that the one-shot tool and analyze-rpc.ts:893 currently pass no `data`, so both need the change.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Four places assume size M, layout selection is implemented in exactly two places, and the step tool's narrow turn is bound to one lookup so a separate part turn is needed.",
+          "evidence": "Size M: mcp/analyze-step/phases/start.ts:49 `const scope  = input.scope  ?? 'M';`, mcp/server.ts:1294 `scope: args.scope ?? 'M'`, daemon/workflow-rpc.ts:552 `scope: 'M'`, analyze/explore/freeform-probe.ts:100 `scope: 'M'`; the only other is the scope picker's fallback (orchestrator/driver.ts:207), which goes with the picker. Layout: context/driver.ts:1222-1233 and mcp/analyze-step/synthesizer-key.ts:37 `refineSynthesizerKey`, called at phases/plan.ts:118. Narrow turn: phases/narrow.ts:78 checks `input.explorationId !== state.narrow.explorationId`, :89 `getNarrowRunner(state.narrow.explorationType)`, :132 `putCachedExploration(...)`, :171 resumes `stepPlan`.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The size is fixed in two classification branches, governs plan depth through maxPlanDepth (2 for XS to 6 for XL), and the planner model writes a size for every child plan.",
+          "evidence": "orchestrator/driver.ts:183-215 (scopeHint or `pickScope`, fallback 'M') and :234 `intent = await classify(...)`; classifier/schema.ts:42 `required: ['target', 'scope', 'focused', 'scopeRef', 'reasoning']`. daemon/analyze-rpc.ts:411-412 `const rootScope = parsed.rootScope ?? parsed.intent.scope; const cap = cfg.maxPlanDepth[rootScope];`; config/analyze.ts:209-215 `XS: 2, S: 3, M: 4, L: 5, XL: 6`. planner/recursive.ts:181-193 requires `typeof obj['scope'] === 'string'` on `childIntent`. Note: recursive.ts:96-101 and :138 thread `rootScope` unchanged through every level, so the depth cap follows the root's size, and a child's measured size changes only that child's task bands.",
+          "action": "In the s2 LLD state that a child plan's measured size does not change the depth cap (it is keyed on rootScope), and that CLASSIFIED_INTENT_SCHEMA still validates `scope` as required once the classifier stops returning it (the intent type keeps the field; only the model-facing schema loses it).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The bundle is validated with unknown fields rejected, so the report becomes one declared optional field; raising SCHEMA_VERSION invalidates cached bundles because the version is in the cache key.",
+          "evidence": "The stated facts are true: schema.ts:89 `additionalProperties: false`, :40 `export const SCHEMA_VERSION = 1;`, and driver.ts:397 `h.update(String(SCHEMA_VERSION));` in the cache key. What the design misses is that this same schema object is the model's output schema. synthesizer.ts:126 passes `stripMetaFromSchema(ANALYZE_CONTEXT_BUNDLE_SCHEMA ...)` to `completeStructured`, :184-186 hands it to the step tool's agent, :198-203 validates the agent's bundle against it, and driver.ts:760 uses it for the tool loop's final emit. Only `meta` is stripped. A `report` property declared on the bundle schema is therefore offered to every model that writes an answer, and a model- or agent-written report would pass validation. The report must be derived from the completeness records, never authored. [files: src/analyze/context/schema.ts, src/analyze/context/synthesizer.ts, src/analyze/context/driver.ts]",
+          "action": "State that `report` is removed from the model-facing schema the same way `meta` is (extend stripMetaFromSchema or keep a separate stored-bundle schema), and that the step tool's bundle phase rejects or overwrites a `report` the agent supplies.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The lookup cache has no version: its key is repo, last-indexed time and a hash of the lookup's parameters, and a hit returns the stored output as it is, so a version must be added to the key.",
+          "evidence": "src/db/exploration-cache.ts:14 `Key: <repoId u32 BE>|<repoLastIndexedAt ms u64 BE>|<paramHash>`; :86-97 `encodeCacheKey` builds a 20-byte key from exactly those three; :118-119 `const row = unpackr.unpack(buf) as CacheRow; return row.output;`. One function, `hashExplorationParams` (:61-69), takes the hash, so dropping limit parameters before hashing has a single site. The step tool writes through the same function (phases/narrow.ts:132).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The named-area and data-source measures have the sources stated: the graph store returns a repo's entities with file paths, today's picker counts the whole repo for a module or file request, and the data driver's table listing is optional.",
+          "evidence": "src/db/entities.ts:779 `export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]>`. classifier/scope-picker.ts:206-211: for `repo | module | file` it finds the repo by `scopeRef.value.startsWith(r.path)` and sets `scopeEntityCount = ents.length` for the whole repo; :227 prints 'Scope ref does not target a single indexed repo (workspace / connection / manifest-dir)'. src/shared/db-driver.ts:672 `listTables?(opts?: { readonly schema?: string; readonly limit?: number }): Promise<TableListing>;` is optional. Stored run records: only codes are added, so older records parse unchanged.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Contract ownership and the shared error path are divided without one Story redesigning another's contract: s6 owns the raise site, the return-nothing rule and the error mapping; s1 only adds its case; sc1/sc2 at s1, sc3 at s2, sc4 at s3, sc5 at s5.",
+          "evidence": "Sections 4 and 5 agree with each other and with the Define's dependency edges (s1 depends on s6 in DEF 6.1). The three sites s6 owns are real and distinct: context/driver.ts:276-281 (raise), :1102 and :1109-1111 (return nothing), orchestrator/driver.ts:428-441 (mapping). The one forward reference is declared: sc2 (owned by s1) carries optional `measure` and `handling` fields whose types sc3 and sc4 define later in s2 and s3. The Story ids in section 5 render as E20261007... while the Define uses E20261006...; the HLD's own reference c36 records this as a renderer defect.",
+          "action": "None for the design. s1's LLD must declare placeholder types for `measure` and `handling` that s2 and s3 then fill, so s1 compiles on its own.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A run record still marked in progress with no live run behind it is treated as abandoned when it is read: the condition is detectable.",
+          "evidence": "Nothing in the code records which runs are live, and the HLD does not say how 'no live run behind it' is decided. Searched src for a registry of running analyses (activeRuns, liveRuns, inFlightRuns, runRegistry, a Map of AbortControllers): no matches. The readers are plain: persistence.ts:35-44 `readRunRecord` parses the file; analyze-rpc.ts:745-760 `runStatus` returns the record as stored; persistence.ts:93-101 `purgeRun` refuses on `status === 'in-progress'`; and the resume check (orchestrator/driver.ts:112-119) replays only `status === 'ok'`. The record holds `createdAt`/`updatedAt` but no process id or daemon start marker. [files: src/analyze/orchestrator/persistence.ts, src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "State the detection rule in the HLD (for example: the daemon keeps the set of run ids it is executing, and a record in progress whose id is not in that set, or whose daemon start marker differs, is abandoned), which readers apply it (runStatus, purgeRun, the resume check) and whether the record is rewritten as failed or only reported as abandoned.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A failure of the answer-writing step can be turned into a typed error that carries the lookup results, raised at the site s6 owns and mapped by the existing mapping function.",
+          "evidence": "The lookup results are in hand where the failure occurs: context/driver.ts:1179 `const executed = await executePlan({...})` precedes the `synthesize` try at :1234-1259, whose catch has `executed` in scope and today returns null. The raise site (:276-281) and both mappings (orchestrator/driver.ts:428-441; analyze-rpc.ts:882-907) switch on error class, so one more class is one more case; RunFailure and AnalyzeRpcErrorPayload both already carry `data` (used for 'scope-not-indexed'). The step tool's failure stays 'bundle-schema', retryable (phases/bundle.ts:77-83).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 5,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-07T06:15:50.608Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

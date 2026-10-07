@@ -28,6 +28,7 @@ Every layer is a **single JSON string**. Empty layers = `""`.
 
 - **`focus`** — one paragraph:
     - `Intent focus: <intent.focus>`
+    - When the intent has no focus (`focused` is false), write that line as `Intent focus: none (broad survey of <scopeRef.kind> <scopeRef.value>)`; a `system` line that takes its subject from the focus takes `<scopeRef.value>` instead; and a line that draws on a lookup the plan did not run is written as `not run`. Never print a placeholder or the word `undefined`.
     - `Answer type: data-inventory`
     - `Scope bucket: <intent.scope>`
     - `Connections registered: <db.connections.list.connections.length>`

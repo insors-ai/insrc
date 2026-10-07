@@ -1056,9 +1056,6 @@ export async function resolveRepoLastIndexedAt(scopePath: string): Promise<numbe
  * Every way the pipeline declines to proceed. The list is the whole
  * contract: `errorForPipelineCause` has one case per member, so a new
  * way of not proceeding cannot fall into a default error.
- *
- * The last one is INTERIM: it names the gate the pipeline still has
- * (a request with no focus) and is deleted with it.
  */
 export const PIPELINE_CAUSES = [
 	'invalid-input',           // unknown kind of source, or inputs with no intent
@@ -1069,7 +1066,6 @@ export const PIPELINE_CAUSES = [
 	'answer-invalid',          // the answer-writing step failed for any other reason
 	'empty-plan',              // the plan that would be executed has no lookups
 	'bundle-invalid',          // the pipeline's bundle fails validation (set by settlePipelineOutcome)
-	'unfocused-not-served',    // interim
 ] as const;
 export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
 
@@ -1120,7 +1116,6 @@ export function errorForPipelineCause(
 		case 'bundle-invalid':
 			return new ShaperAnswerInvalidError('bundle validation', message);
 		case 'empty-plan':
-		case 'unfocused-not-served':
 			return new ShaperNoPlanError(message);
 		default: {
 			const unreachable: never = cause;
@@ -1162,26 +1157,16 @@ function didNotProceed(cause: PipelineCause, message: string, promptPath?: strin
 }
 
 /**
- * Try the exploration-based pipeline. Returns the composed bundle
- * (minus meta) on success. Returns null when the pipeline should
- * be skipped -- either the intent doesn't qualify for V1 (only
- * run-mode + code target + focused=true) OR the decomposer /
- * synthesizer LLM was unavailable / their prompts are missing.
+ * The lookup pipeline: plan lookups, execute them, write the answer.
  *
- * On null return, the caller falls through to the legacy shaper
- * tool loop. On non-null return, the caller uses the bundle
- * directly + skips the tool loop entirely.
+ * Returns one of three outcomes:
+ *   - 'bundle'          the composed bundle (minus meta);
+ *   - 'not-applicable'  for a mode it does not serve (classification,
+ *                       task) -- the caller continues to its tool loop;
+ *   - 'did-not-proceed' with the one cause for which it stopped.
  *
- * V1 qualification (docs/plans/exploration-based-context-build.md
- * Section 8 Phase 1):
- *   - invocationMode === 'run'
- *   - shaperId === 'code'
- *   - inputs.intent.focused === true
- *   - inputs.intent.scopeRef.value must be a directory path
- *     (not a connection / manifest-dir / etc.)
- *
- * Later phases relax this: Phase 3 adds adherence-check for code,
- * Phase 5 adds data + infra, etc.
+ * Every run-mode request is served: any kind of source, any of the
+ * seven kinds of scope, with or without a focus.
  */
 async function tryExplorationPipeline(
 	args: {
@@ -1211,12 +1196,6 @@ async function tryExplorationPipeline(
 		return didNotProceed('invalid-input', 'run-mode inputs carry no intent');
 	}
 	const intent = (args.inputs as RunShapeInput).intent;
-	if (intent.focused !== true) {
-		return didNotProceed(
-			'unfocused-not-served',
-			'the lookup pipeline does not yet serve a request that asks no specific question',
-		);
-	}
 
 	// (a) Decompose. LLM unavailable / prompt missing -> fall through
 	// (there is no LLM to run anyway). Schema-unrecoverable OR an
@@ -1415,6 +1394,11 @@ function fallbackFreeformPlan(
 		shaperId === 'code'  || shaperId === 'docs'
 	 || shaperId === 'data'  || shaperId === 'infra'
 	 || shaperId === 'generic' ? shaperId : 'generic';
+	// An intent with no focus has no question to hand the loop. The
+	// classifier's reasoning is a note about how it classified, not a
+	// question, so the loop is given a stated purpose instead.
+	const purpose = intent.focus
+		?? `Broad survey of the ${intent.scopeRef.kind} ${intent.scopeRef.value}`;
 	return {
 		answerType:    inferAnswerTypeForFallback(shaperId),
 		synthesisHint:
@@ -1427,9 +1411,9 @@ function fallbackFreeformPlan(
 				type:    'freeform.probe',
 				purpose:
 					`Answer the intent via the ${fallbackShaperId} shaper's ` +
-					`legacy tool loop: ${intent.focus ?? intent.reasoning}`,
+					`legacy tool loop: ${purpose}`,
 				params: {
-					purpose:  intent.focus ?? intent.reasoning,
+					purpose,
 					shaperId: fallbackShaperId,
 				},
 			},

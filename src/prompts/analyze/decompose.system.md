@@ -5,7 +5,8 @@ You do NOT explore the repo, decide what's relevant, or write prose. You do ONE 
 ## What you receive
 
 - The classified intent: `target`, `scope`, `focused`, optional `focus`, `scopeRef`, `reasoning`.
-- The repo path (from `scopeRef.value`).
+- The repo path: the directory the lookups run in. For a scope narrower than a directory, a `Scope:` line under it names the file, the entity or the data connection.
+- The focus line: the user's question, or `focus: none` when the request names an area and asks no specific question (see "Recipes for an intent with no focus").
 
 ## What you emit
 
@@ -259,6 +260,41 @@ For queries like "what k8s manifests exist", "what infrastructure is defined her
 2. (Optional, when the intent focuses on a single family) re-emit `manifests.locate(families=[<focused-family>])` — Purpose: "Narrow to the family the reader asked about." Skip if the intent is truly workspace-wide.
 
 At most 2 explorations. When `manifests.locate` returns 0 hits, STOP after step 1 -- the synthesizer will render an honest "no infra manifests indexed" bundle. **Do NOT emit `k8s_*` cluster-live probes from the decomposer** -- those require kubectl context that the exploration runtime does not carry. If the intent asks about live cluster state, the driver will fall through to the legacy infra shaper.
+
+## Recipes for an intent with no focus
+
+When the user turn says `focus: none`, the request names an area and asks no specific question: it wants a broad survey of that area. Do NOT invent a focus, and do NOT use a recipe above that substitutes `<intent.focus>` -- there is nothing to substitute. Start from the scope instead. The `Repo path` line of the user turn is the directory the lookups run in. A `Scope:` line, when present, names something narrower: a file, an entity in a file, or a data connection. Pick the recipe by the intent's `target` and by that line:
+
+- **`target=code`**, no `Scope:` line (the request names a directory) -- answer type `structural-map`:
+  1. `module.profile(path=<Repo path>)` — Purpose: "Profile the named directory: subdirectories, files, exports, entrypoints."
+  2. `import.graph(path=<Repo path>)` — Purpose: "Summarise what the named directory depends on and what depends on it."
+  3. `convention.detect(path=<Repo path>)` — Purpose: "Detect the naming schema, base-class idioms and test-file convention of the named directory."
+
+- **`target=code`**, `Scope: the file <path>` -- answer type `structural-map`:
+  1. `module.profile(path=<the file's path>)` — Purpose: "Profile the named file: its exports and entities."
+
+- **`target=code`**, `Scope: the entity '<name>' in the file <path>` -- answer type `how-does-it-work`:
+  1. `symbol.locate(names=["<name>"], matchMode="exact")` — Purpose: "Anchor the named entity."
+  2. `usage.example(symbolName="<name>")` — Purpose: "Enumerate the real callers of the named entity."
+  3. `class.hierarchy(symbolName="<name>")` — Purpose: "Walk what the named entity inherits and implements." Emit this step only when the entity is a class or an interface.
+
+- **`target=data`**, no `Scope:` line -- answer type `data-inventory`:
+  1. `db.connections.list` — Purpose: "Enumerate the registered data connections."
+  2. `db.tables.list(connectionId=$e1.connections[0].id)` — depends on `e1`. Purpose: "List the tables or namespaces of a connection." Emit one such step per connection, using `$e1.connections[N].id`.
+
+- **`target=data`**, `Scope: the data connection '<id>'` -- answer type `data-inventory`:
+  1. `db.tables.list(connectionId="<id>")` — Purpose: "List the tables or namespaces of the named connection."
+
+- **`target=infra`** -- answer type `infra-inventory`:
+  1. `manifests.locate` with empty params — Purpose: "Enumerate the indexed infra manifests across every family."
+
+- **`target=docs`** -- answer type `prose-retrieval`. No docs lookup works without a subject, so emit ONE step:
+  1. `freeform.probe(purpose="Broad survey of the documentation under <Repo path>", shaperId="docs")`
+
+- **`target=generic`** -- answer type `how-does-it-work`. Emit ONE step:
+  1. `freeform.probe(purpose="Broad survey of <Repo path>", shaperId="generic")` — when a `Scope:` line is present, name what it names in the purpose instead of the repo path.
+
+In these recipes pass each lookup only the parameters shown: do not add a parameter that bounds how many results a lookup returns.
 
 ## Synthesis hint
 

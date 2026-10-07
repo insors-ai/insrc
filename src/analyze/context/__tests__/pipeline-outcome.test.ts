@@ -262,10 +262,33 @@ test("pipeline returns 'not-applicable' for classification and task modes", asyn
 	}
 });
 
-test('the gate on a request with no focus still stands, naming its own cause', async () => {
-	const unfocused = await run({}, { ...INTENT, focused: false, focus: undefined } as unknown as ClassifiedIntent);
-	assert.equal(cause(unfocused.outcome), 'unfocused-not-served');
-	assert.equal(unfocused.calls.decompose.length, 0);
+test('pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace', async () => {
+	for (const kind of ['repo', 'module', 'workspace'] as const) {
+		const value = kind === 'module' ? `${REPO}/src/billing` : REPO;
+		const unfocused = { ...INTENT, focused: false, focus: undefined, scopeRef: { kind, value } } as unknown as ClassifiedIntent;
+		const { outcome, calls } = await run({}, unfocused);
+		assert.deepEqual(outcome, { kind: 'bundle', raw: RAW, explorationCount: 1 }, kind);
+		// The planning call was made, and it received the unfocused intent as it is.
+		assert.equal(calls.decompose.length, 1, kind);
+		const planned = calls.decompose[0] as { intent: ClassifiedIntent };
+		assert.equal(planned.intent, unfocused, kind);
+		assert.equal(planned.intent.focused, false, kind);
+		assert.equal(planned.intent.focus, undefined, kind);
+		// ... its plan was executed where the scope resolved to, and an answer written.
+		assert.equal((calls.executePlan[0] as { repoPath: string }).repoPath, value, kind);
+		assert.equal(calls.synthesize.length, 1, kind);
+	}
+});
+
+test('an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose', async () => {
+	const unfocused = { ...INTENT, focused: false, focus: undefined, reasoning: 'classifier note' } as unknown as ClassifiedIntent;
+	const emptyPlan: ExplorationPlan = { ...PLAN, explorations: [] } as unknown as ExplorationPlan;
+	const { outcome, calls } = await run({ decompose: async () => emptyPlan }, unfocused);
+	assert.equal(outcome.kind, 'bundle');
+	const executed = calls.executePlan[0] as { plan: ExplorationPlan };
+	const step = executed.plan.explorations[0]!;
+	assert.equal(step.type, 'freeform.probe');
+	assert.equal((step.params as { purpose: string }).purpose, `Broad survey of the repo ${REPO}`);
 });
 
 // ---------------------------------------------------------------------------
@@ -357,7 +380,6 @@ test('cause-to-error table: one case per cause, ShaperLlmUnavailableError only f
 		'answer-invalid':         ShaperAnswerInvalidError,
 		'empty-plan':             ShaperNoPlanError,
 		'bundle-invalid':         ShaperAnswerInvalidError,
-		'unfocused-not-served':   ShaperNoPlanError,
 	};
 	// Every member of the cause list has a row here and a case in the table.
 	assert.deepEqual([...PIPELINE_CAUSES].sort(), Object.keys(expected).sort());

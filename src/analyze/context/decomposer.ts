@@ -326,10 +326,14 @@ function scopeLine(scope: ResolvedScope): string {
 	}
 }
 
+/** The planning prompt's section for an intent with no focus. The user
+ *  turn names it; a test holds the name and the prompt's heading equal. */
+export const NO_FOCUS_SECTION = 'Recipes for an intent with no focus';
+
 function buildMessages(promptContent: string, intent: ClassifiedIntent, scope: ResolvedScope): LLMMessage[] {
 	const focusLine = intent.focused && intent.focus !== undefined
 		? `focus: "${intent.focus}"`
-		: 'focus: (unfocused -- broad understanding request)';
+		: `focus: none (a broad survey of the scope -- follow "${NO_FOCUS_SECTION}")`;
 
 	const userContent =
 		`Classified intent:\n` +

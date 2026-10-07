@@ -32,11 +32,11 @@
   },
   "body": {
     "summary": {
-      "prose": "An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked. It also teaches coding agents when a plain text search is enough and when a question needs the analyzer, so the analyzer is used for the questions only it can answer.",
+      "prose": "An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked.",
       "audience": "product"
     },
     "flavor": "enhancement",
-    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported. Alongside this, coding agents are told, in the guidance they are given and in a reminder on every turn, to use the analyzer first for every question about a codebase. Most such questions are plain text lookups, for which the analyzer is slower and no more informative, so agents disregard the instruction altogether, including for the relationship questions where a text lookup gives wrong or partial answers.",
+    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported.",
     "nonGoals": [
       {
         "text": "Reducing what an analysis costs in time or model usage.",
@@ -59,8 +59,12 @@
         "rationale": "Other agents and tools call those primitives with their own expectations; the Epic concerns what the analyzer receives from them."
       },
       {
-        "text": "Checking in code that evidence submitted to a workflow step came from an analyzer run, or changing what multi-step exchanges send back.",
-        "rationale": "The stakeholder decided that steering the agent is enough; nothing about when to use the analyzer is to be enforced in code."
+        "text": "Guidance to coding agents on when to use their own search tools and when to use the analyzer.",
+        "rationale": "The stakeholder decided this is steering text only and it was applied by hand on 2026-10-07 (commit 83a1cc0); nothing about it is built or enforced in this Epic."
+      },
+      {
+        "text": "Repairing the code graph's missing cross-file import and call edges.",
+        "rationale": "Tracked separately as ISSUE-12f70133491114c9, to be taken up after this Epic; until then a relationship lookup can be incomplete for reasons this Epic does not address, and its results must say only what this Epic can establish about completeness."
       }
     ],
     "assumptions": [
@@ -78,16 +82,6 @@
         "text": "A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings, building on the way the framework already runs a large plan as child plans whose results an aggregator combines.",
         "confidence": "med",
         "source": "c10"
-      },
-      {
-        "text": "An agent can tell a text lookup from a relationship question from the wording of the question and a short stated test.",
-        "confidence": "med",
-        "source": "c7"
-      },
-      {
-        "text": "Guidance text alone is enough to change which tool an agent reaches for; the blanket 'analyzer first' instruction is what agents have been disregarding.",
-        "confidence": "med",
-        "source": "c6"
       }
     ],
     "constraints": [
@@ -418,61 +412,6 @@
             "statement": "Each layout covers every lookup its analyzer can run."
           }
         ]
-      },
-      {
-        "id": "s5",
-        "title": "Agents are steered on when to use their own search tools and when to use the analyzer",
-        "userValue": "As someone working with a coding agent, the agent uses its own search tools for a plain lookup and the analyzer for a question about relationships or meaning, because the guidance it is given tells it how to tell the two apart.",
-        "sizeEstimate": "S",
-        "dependsOn": [],
-        "acceptanceCriteria": [
-          {
-            "id": "ac1",
-            "given": "the guidance an agent receives about exploring a codebase",
-            "when": "it is read",
-            "then": "it states that a question answered by whether or where text occurs is a plain search, that a question depending on relationships or meaning needs the analyzer, and gives a test and examples for telling them apart",
-            "operationalizes": [
-              "k6"
-            ]
-          },
-          {
-            "id": "ac2",
-            "given": "the same guidance",
-            "when": "they are read",
-            "then": "neither instructs the agent to use the analyzer first for every question",
-            "operationalizes": [
-              "k6"
-            ]
-          },
-          {
-            "id": "ac3",
-            "given": "the change this Story makes",
-            "when": "it is examined",
-            "then": "it consists of guidance text only, and no tool or workflow step behaves differently",
-            "operationalizes": [
-              "k6"
-            ]
-          }
-        ],
-        "functionalRequirements": [
-          {
-            "statement": "Agent guidance distinguishes a plain search from an analysis request."
-          },
-          {
-            "statement": "The distinction is delivered as guidance text alone."
-          }
-        ],
-        "existingCapabilityRefs": [
-          "c14"
-        ],
-        "localConstraints": [
-          {
-            "id": "lc1",
-            "text": "The search-versus-analysis distinction is delivered by steering text only; it is not enforced or checked in code.",
-            "type": "stakeholder",
-            "source": "c16"
-          }
-        ]
       }
     ],
     "openQuestions": [
@@ -509,11 +448,6 @@
         {
           "id": "E20261006b9d5c5c4:FR006",
           "statement": "No answer layout limits how many findings may be reported.",
-          "scope": "doc"
-        },
-        {
-          "id": "E20261006b9d5c5c4:FR007",
-          "statement": "The guidance given to coding agents states when the agent's own search tools are the right choice and when the analyzer is, with a test for telling them apart.",
           "scope": "doc"
         },
         {
@@ -587,18 +521,6 @@
           "statement": "Each layout covers every lookup its analyzer can run.",
           "scope": "item",
           "itemRef": "s4"
-        },
-        {
-          "id": "E20261006b9d5c5c4:S005:FR001",
-          "statement": "Agent guidance distinguishes a plain search from an analysis request.",
-          "scope": "item",
-          "itemRef": "s5"
-        },
-        {
-          "id": "E20261006b9d5c5c4:S005:FR002",
-          "statement": "The distinction is delivered as guidance text alone.",
-          "scope": "item",
-          "itemRef": "s5"
         }
       ]
     }
@@ -698,6 +620,11 @@
       "kind": "stakeholder",
       "ref": "user, 2026-10-07",
       "quotedText": "the agent should be given proper steering for when to use it's own tools and when to use analyze. this doesn't need to be coded, just steering should be eoungh"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-12f70133491114c9, filed 2026-10-07: the code graph loses cross-file import and call edges"
     }
   ]
 }

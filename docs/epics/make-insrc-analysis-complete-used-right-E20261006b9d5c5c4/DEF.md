@@ -6,7 +6,7 @@
 
 **Flavor:** enhancement
 
-An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked. It also teaches coding agents when a plain text search is enough and when a question needs the analyzer, so the analyzer is used for the questions only it can answer.
+An analysis that silently leaves results out cannot be trusted, and today the analyzer does exactly that: every lookup it makes stops at a fixed number of results and reports as if it had seen everything. This Epic makes an analysis complete whatever the size of the question, makes it say so, and gives its answers a shape that fits what was asked.
 
 ## Contents
 
@@ -21,7 +21,7 @@ An analysis that silently leaves results out cannot be trusted, and today the an
 
 ## 1. Problem
 
-The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported. Alongside this, coding agents are told, in the guidance they are given and in a reminder on every turn, to use the analyzer first for every question about a codebase. Most such questions are plain text lookups, for which the analyzer is slower and no more informative, so agents disregard the instruction altogether, including for the relationship questions where a text lookup gives wrong or partial answers.
+The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported.
 
 ## 2. Functional requirements
 
@@ -31,7 +31,6 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:FR004** — For each size of request the analyzer follows a defined way of handling it, and a result set too large to treat at once is processed in full, in parts, and combined.
 - **E20261006b9d5c5c4:FR005** — The form of an analyzer's answer fits the kind of question asked, including a question that asks for every occurrence of something, for each kind of source the analyzer covers.
 - **E20261006b9d5c5c4:FR006** — No answer layout limits how many findings may be reported.
-- **E20261006b9d5c5c4:FR007** — The guidance given to coding agents states when the agent's own search tools are the right choice and when the analyzer is, with a test for telling them apart.
 
 **s1:**
 
@@ -57,11 +56,6 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S004:FR002** — The answer layouts of all analyzer kinds are free of limits on findings.
 - **E20261006b9d5c5c4:S004:FR003** — Each layout covers every lookup its analyzer can run.
 
-**s5:**
-
-- **E20261006b9d5c5c4:S005:FR001** — Agent guidance distinguishes a plain search from an analysis request.
-- **E20261006b9d5c5c4:S005:FR002** — The distinction is delivered as guidance text alone.
-
 ## 3. Non-goals
 
 - **Reducing what an analysis costs in time or model usage.** — The project rule puts accuracy first and cost last; a complete answer may take longer and that is accepted.
@@ -69,15 +63,14 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **Changing what the code index contains or how it is built.** — The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter.
 - **Removing limits that protect a model's input from a single oversized item, without a replacement.** — A very large item must still be read in full by some means; the Epic requires that it be handled in full, not that the protection simply vanish.
 - **Changing the limits of the general-purpose search tools for callers other than the analyzer.** — Other agents and tools call those primitives with their own expectations; the Epic concerns what the analyzer receives from them.
-- **Checking in code that evidence submitted to a workflow step came from an analyzer run, or changing what multi-step exchanges send back.** — The stakeholder decided that steering the agent is enough; nothing about when to use the analyzer is to be enforced in code.
+- **Guidance to coding agents on when to use their own search tools and when to use the analyzer.** — The stakeholder decided this is steering text only and it was applied by hand on 2026-10-07 (commit 83a1cc0); nothing about it is built or enforced in this Epic.
+- **Repairing the code graph's missing cross-file import and call edges.** — Tracked separately as ISSUE-12f70133491114c9, to be taken up after this Epic; until then a relationship lookup can be incomplete for reasons this Epic does not address, and its results must say only what this Epic can establish about completeness.
 
 ## 4. Assumptions
 
 - `med` Every place the analyzer drops results can be found by reading its recipes, runtimes, prompts and the search primitives it calls. [[c1]]
 - `med` The number of results a request will touch can be counted before the request is run in full; today only the size of the whole repository is counted. [[c2]]
 - `med` A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings, building on the way the framework already runs a large plan as child plans whose results an aggregator combines. [[c10]]
-- `med` An agent can tell a text lookup from a relationship question from the wording of the question and a short stated test. [[c7]]
-- `med` Guidance text alone is enough to change which tool an agent reaches for; the blanket 'analyzer first' instruction is what agents have been disregarding. [[c6]]
 
 ## 5. Constraints
 
@@ -164,24 +157,6 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 
 - `lc1` (convention) Structural reference in a prompt goes at its end. [[c3]]
 
-### 6.5 E20261006b9d5c5c4:S005 — Agents are steered on when to use their own search tools and when to use the analyzer
-
-**User value:** `size: S`
-
-As someone working with a coding agent, the agent uses its own search tools for a plain lookup and the analyzer for a question about relationships or meaning, because the guidance it is given tells it how to tell the two apart.
-
-**Extends:** [[c14]]
-
-**Acceptance criteria:**
-
-- **ac1:** Given the guidance an agent receives about exploring a codebase, when it is read, then it states that a question answered by whether or where text occurs is a plain search, that a question depending on relationships or meaning needs the analyzer, and gives a test and examples for telling them apart. _(operationalizes `k6`)_
-- **ac2:** Given the same guidance, when they are read, then neither instructs the agent to use the analyzer first for every question. _(operationalizes `k6`)_
-- **ac3:** Given the change this Story makes, when it is examined, then it consists of guidance text only, and no tool or workflow step behaves differently. _(operationalizes `k6`)_
-
-**Local constraints:**
-
-- `lc1` (stakeholder) The search-versus-analysis distinction is delivered by steering text only; it is not enforced or checked in code. [[c16]]
-
 ## 7. References
 
 - **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file.` — "const DEFAULT_TOP_K = 30;"
@@ -200,6 +175,7 @@ As someone working with a coding agent, the agent uses its own search tools for 
 - **[[c14]]** `code` `src/prompts/steering-block.md` — "Do this BEFORE manual"
 - **[[c15]]** `convention` `~/.claude/hooks/insrc-steering-reminder.sh, the per-turn reminder: a hook script installed on the user's machine; no copy of it was found in this repository's source` — "inject a reminder so the model"
 - **[[c16]]** `stakeholder` `user, 2026-10-07` — "the agent should be given proper steering for when to use it's own tools and when to use analyze. this doesn't need to be coded, just steering should be eoungh"
+- **[[c17]]** `prior-artifact` `ISSUE-12f70133491114c9, filed 2026-10-07: the code graph loses cross-file import and call edges`
 
 ## 8. Open questions
 

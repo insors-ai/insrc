@@ -114,6 +114,8 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 As someone relying on an analysis, I am told plainly when a result was cut, when a lookup failed and when the analyzer could not produce an answer, so I never act on something that silently left things out.
 
+**Depends on:** `s6`
+
 **Extends:** [[c1]]
 
 **Acceptance criteria:**

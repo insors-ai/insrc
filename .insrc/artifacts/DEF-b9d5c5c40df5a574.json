@@ -220,6 +220,9 @@
           {
             "statement": "A failure to write the answer is reported, not hidden."
           }
+        ],
+        "dependsOn": [
+          "s6"
         ]
       },
       {

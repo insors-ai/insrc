@@ -535,7 +535,7 @@ GitHub Issues is the only tracker the framework integrates with.
 GitHub has no native Epic / Story concept — everything is an
 Issue — so the framework imposes the hierarchy artificially on
 top of Issues via label + task-list conventions. See
-`plans/workflow-implementation.md` §6.F.1 for the full mapping;
+`docs/plans/workflow-implementation.md` §6.F.1 for the full mapping;
 the summary:
 
 - **Epic** → issue labeled `insrc:epic` + `epic:<slug>`. Its body
@@ -573,7 +573,7 @@ abstraction at that point — the artificial hierarchy for GitHub
 wouldn't generalise cleanly anyway.
 
 Configuration lives at `~/.insrc/github.json` — one entry per
-repo, plus a default. See `plans/workflow-implementation.md`
+repo, plus a default. See `docs/plans/workflow-implementation.md`
 §6.F for the structure.
 
 Push direction is opt-in per Epic: after `define` approval, the

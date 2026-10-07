@@ -2,7 +2,7 @@
  * data_schema-drift -- diff a connection's expected schema (Prisma)
  * against the live RDBMS shape and report column-level drift.
  *
- * Phase 3.2 of plans/analyzers/data-analyzer.md. Implementation
+ * Phase 3.2 of docs/plans/analyzers/data-analyzer.md. Implementation
  * scope:
  *
  *   - **Expected shape source: Prisma only** for v1. Reads
@@ -116,7 +116,7 @@ export const dataSchemaDriftTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
-		// Cross-agent depth check (Phase 4 of plans/analyzers/data-analyzer.md).
+		// Cross-agent depth check (Phase 4 of docs/plans/analyzers/data-analyzer.md).
 		// Same envelope as data_lineage; the cap is strict at depth>=1.
 		const depth = readCrossAgentDepth(input);
 		if (exceedsCrossAgentDepth(depth)) {

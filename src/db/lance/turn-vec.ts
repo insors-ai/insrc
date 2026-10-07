@@ -1,7 +1,7 @@
 /**
  * `turn_vec` LanceDB table -- conversation-turn embeddings.
  *
- * Phase 3.3 of plans/storage-migration-lmdb-lance.md.
+ * Phase 3.3 of docs/plans/storage-migration-lmdb-lance.md.
  *
  * Schema (post Phase 0.2 dim downshift):
  *   id:        string          -- formatted as `${sessionId}:${idx}`

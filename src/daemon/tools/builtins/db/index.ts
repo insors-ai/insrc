@@ -392,7 +392,7 @@ const sqlSampleTool: Tool = {
 };
 
 // ---------------------------------------------------------------------------
-// db:sql:aggregate (Phase 0.1 of plans/analyzers/data-analyzer-skills.md)
+// db:sql:aggregate (Phase 0.1 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 //
 // Family-5 quality / distribution / dependency skills will hallucinate
@@ -579,7 +579,7 @@ const sqlAggregateTool: Tool = {
 };
 
 // ---------------------------------------------------------------------------
-// db:sql:distinct + db:file:distinct (Phase 0.3 of plans/analyzers/data-analyzer-skills.md)
+// db:sql:distinct + db:file:distinct (Phase 0.3 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 //
 // Top-N distinct values for one column plus its overall distinct

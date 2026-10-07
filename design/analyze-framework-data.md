@@ -606,7 +606,7 @@ Data analysis can be more expensive than code (every cardinality query against a
 
 ## Lineage from the legacy data-analyzer
 
-The legacy `design/analyzers/data-analyzer.html` + `plans/analyzers/data-analyzer.md` + `plans/analyzers/data-analyzer-skills.md` were deleted in the cleanup but their architectural decisions are heavily lifted here:
+The legacy `design/analyzers/data-analyzer.html` + `docs/plans/analyzers/data-analyzer.md` + `docs/plans/analyzers/data-analyzer-skills.md` were deleted in the cleanup but their architectural decisions are heavily lifted here:
 
 | Legacy concept | Survives in this design as |
 |---|---|
@@ -633,4 +633,4 @@ What's intentionally **not** lifted:
 - `design/analyze-framework.md` — overall framework
 - `design/analyze-context-builder.md` — the `data-shaper`
 - `design/analyze-plan-builder.md` — what produces the task list
-- `plans/tools.md` — `db_*` + `data_*` tools the framework uses
+- `docs/plans/tools.md` — `db_*` + `data_*` tools the framework uses

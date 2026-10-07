@@ -1,7 +1,7 @@
 /**
  * Binary key encoders/decoders for the LMDB graph storage layer.
  *
- * Per the design doc (plans/graph-storage-lmdb.md, "Key encoding"):
+ * Per the design doc (docs/plans/graph-storage-lmdb.md, "Key encoding"):
  * all composite keys are concatenations of fixed-width binary fields,
  * with `\0` as the segment delimiter for variable-length string parts.
  * Big-endian u64 / u32 ensures LMDB's lexicographic ordering matches

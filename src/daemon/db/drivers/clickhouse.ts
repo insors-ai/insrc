@@ -131,7 +131,7 @@ class ClickHouseDriver implements RdbmsDriver {
 		throw new Error(
 			'data-driver: aggregate() not yet implemented for clickhouse driver -- ' +
 			'ClickHouse needs a per-dialect aggregate compiler (quantile/stddevSamp/varSamp). ' +
-			'Tracked in plans/analyzers/data-analyzer-skills.md Phase 0.1.',
+			'Tracked in docs/plans/analyzers/data-analyzer-skills.md Phase 0.1.',
 		);
 	}
 
@@ -146,7 +146,7 @@ class ClickHouseDriver implements RdbmsDriver {
 		throw new Error(
 			'data-driver: distinct() not yet implemented for clickhouse driver -- ' +
 			'pairs with the aggregate() follow-up (Phase 0.1). ' +
-			'Tracked in plans/analyzers/data-analyzer-skills.md Phase 0.3.',
+			'Tracked in docs/plans/analyzers/data-analyzer-skills.md Phase 0.3.',
 		);
 	}
 

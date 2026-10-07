@@ -6,7 +6,7 @@
 /**
  * config.trace exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 4. Given a config
+ * docs/plans/exploration-based-context-build.md Phase 4. Given a config
  * key (string literal), enumerate its occurrences across the repo
  * with a per-hit role: `definition` (declared in a config file),
  * `usage` (read via getter/env access), `default` (fallback value

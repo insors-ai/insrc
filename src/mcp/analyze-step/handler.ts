@@ -9,7 +9,7 @@
  * `StepOutput` into an MCP tool-response envelope (JSON in a text
  * content block).
  *
- * See plans/mcp-multi-turn-analyze.md for the full protocol.
+ * See docs/plans/mcp-multi-turn-analyze.md for the full protocol.
  */
 
 import { appendFileSync } from 'node:fs';

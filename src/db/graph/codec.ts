@@ -2,7 +2,7 @@
  * Typed msgpack encoders / decoders for every record stored in the
  * LMDB graph layer.
  *
- * Phase 1.3 of plans/storage-migration-lmdb-lance.md. This module
+ * Phase 1.3 of docs/plans/storage-migration-lmdb-lance.md. This module
  * defines the *wire format* for each LMDB sub-DB's value (the *key*
  * codec is in `keys.ts`).
  *
@@ -73,7 +73,7 @@ export type RepoStatus = 'pending' | 'indexing' | 'ready' | 'error';
  * are allocated monotonically by `addRepo()`; shared-modules rows
  * are pre-allocated at fixed reserved IDs at the top of u32 space
  * by the v2 -> v3 schema migration. See
- * plans/repo-registry-strict-contract.md.
+ * docs/plans/repo-registry-strict-contract.md.
  */
 export type RepoKind = 'workspace' | 'shared-modules';
 

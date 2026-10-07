@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Phase 1. Unit tests for the docs-retrieval
+ * docs/plans/docs-module.md Phase 1. Unit tests for the docs-retrieval
  * primitive. Exercises the ranking + dedup + path-hint logic
  * against a seeded LMDB fixture; the vector pass silently drops
  * out when Ollama is unavailable so these tests exercise the

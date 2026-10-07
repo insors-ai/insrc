@@ -109,7 +109,7 @@ describe('SqliteDriver (via pool)', () => {
 	});
 
 	// -------------------------------------------------------------------------
-	// aggregate() -- Phase 0.1 of plans/analyzers/data-analyzer-skills.md
+	// aggregate() -- Phase 0.1 of docs/plans/analyzers/data-analyzer-skills.md
 	// -------------------------------------------------------------------------
 
 	it('aggregate count / sum / avg / min / max returns flat numeric record', async () => {

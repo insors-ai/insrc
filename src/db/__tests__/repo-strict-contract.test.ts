@@ -1,6 +1,6 @@
 /**
  * Phase 5.2 + 5.3 tests for the repo-registry strict-contract design
- * (plans/repo-registry-strict-contract.md).
+ * (docs/plans/repo-registry-strict-contract.md).
  *
  * Two slices in one file because both verify the same invariant from
  * complementary angles:

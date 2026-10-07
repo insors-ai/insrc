@@ -6,7 +6,7 @@
 /**
  * import.graph exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 1. Given a module
+ * docs/plans/exploration-based-context-build.md Phase 1. Given a module
  * (directory) or a file, summarise its IMPORTS graph:
  *   - topImporters: top-K files (outside `target`) that import from
  *     any file inside `target`. Ranked by edge count.

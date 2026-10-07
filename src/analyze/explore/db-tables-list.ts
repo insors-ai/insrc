@@ -6,7 +6,7 @@
 /**
  * db.tables.list exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 5. Given a
+ * docs/plans/exploration-based-context-build.md Phase 5. Given a
  * connectionId, enumerate the tables (rdbms) / namespaces (kv) /
  * file targets (file). Wraps the same primitives that back
  * `db_sql_list_tables` + `db_kv_list_namespaces`.

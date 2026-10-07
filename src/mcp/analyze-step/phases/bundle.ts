@@ -18,7 +18,7 @@
  *
  * Phase A does NOT write to the one-shot bundle cache. Phase B may
  * add a step-specific cache path so repeat runs skip the whole
- * loop; see plans/mcp-multi-turn-analyze.md for the rationale.
+ * loop; see docs/plans/mcp-multi-turn-analyze.md for the rationale.
  */
 
 import {

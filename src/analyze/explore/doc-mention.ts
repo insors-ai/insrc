@@ -6,7 +6,7 @@
 /**
  * doc.mention exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 2. Given a subject,
+ * docs/plans/exploration-based-context-build.md Phase 2. Given a subject,
  * find doc sections that mention it via hybrid retrieval (vector +
  * keyword). Repo-scoped by ExplorationRunnerContext.repoPath. No
  * LLM: this is pure retrieval with typed output.

@@ -6,7 +6,7 @@
 /**
  * capability.reuse-check exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 3. Given a natural-
+ * docs/plans/exploration-based-context-build.md Phase 3. Given a natural-
  * language capability query, find modules in the repo that already
  * plausibly deliver that capability. The synthesizer uses this to
  * surface "the codebase already does X" evidence before the planner

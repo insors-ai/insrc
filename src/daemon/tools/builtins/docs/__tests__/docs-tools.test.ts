@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Phase 7. Tests for the docs_* tool surface:
+ * docs/plans/docs-module.md Phase 7. Tests for the docs_* tool surface:
  *   - docs_retrieve         -- hybrid retrieval wrapper
  *   - docs_project_context  -- LiveProjectContext markdown wrapper
  *   - docs_summary_get      -- single summary fetch

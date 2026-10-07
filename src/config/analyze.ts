@@ -20,7 +20,7 @@
  * is reset only via `_resetAnalyzeConfigCacheForTests()`.
  *
  * See: design/analyze-context-builder.md "Configuration"
- *      plans/analyze-context-builder.md Phase 3
+ *      docs/plans/analyze-context-builder.md Phase 3
  */
 
 import { existsSync, readFileSync } from 'node:fs';

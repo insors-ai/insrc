@@ -6,7 +6,7 @@
 /**
  * Runtime: infra.adherence.check
  *
- * plans/docs-module.md Phase 4. Infra-side adherence check. Thin
+ * docs/plans/docs-module.md Phase 4. Infra-side adherence check. Thin
  * wrapper around the shared adherence runner. Hydrates excerpts
  * from indexed IaC config entities (Kubernetes YAML, Dockerfile,
  * Terraform, docker-compose, GitHub Actions, Helm, Ansible).

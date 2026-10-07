@@ -9,7 +9,7 @@
  * Thin wrapper around the shared runner at
  * `analyze/explore/doc-constraint-enumerate.ts`. Same primitive
  * powers the shaper-level exploration + this template runtime.
- * See plans/exploration-based-context-build.md Section 4.2.
+ * See docs/plans/exploration-based-context-build.md Section 4.2.
  */
 
 import { getDb } from '../../../db/client.js';

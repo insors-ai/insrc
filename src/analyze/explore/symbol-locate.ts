@@ -6,7 +6,7 @@
 /**
  * symbol.locate exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 1. Given one or
+ * docs/plans/exploration-based-context-build.md Phase 1. Given one or
  * more symbol names, look up every entity that matches -- exact or
  * substring, configurable. Repo-scoped by
  * ExplorationRunnerContext.repoPath.

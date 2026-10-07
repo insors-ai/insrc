@@ -27,7 +27,7 @@
  * analyze/contract.ts -- editing it affects shaper + planner both.
  *
  * See: design/analyze-context-builder.md "The bundle"
- *      plans/analyze-context-builder.md Phase 1
+ *      docs/plans/analyze-context-builder.md Phase 1
  */
 
 import { CONTRACT_FOOTER_MD } from '../contract.js';

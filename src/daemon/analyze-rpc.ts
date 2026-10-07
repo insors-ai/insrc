@@ -39,7 +39,7 @@
  * eventual caller of these handlers.
  *
  * See: design/analyze-framework.md "Surfaces" (Daemon RPC)
- *      plans/analyze-context-builder.md Phase 7
+ *      docs/plans/analyze-context-builder.md Phase 7
  */
 
 import {

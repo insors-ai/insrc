@@ -21,7 +21,7 @@
  *     `meta.candidates`; no-match stays unresolved.
  *
  * Architectural notes (post-rewrite, per
- * plans/analyzers/code-analyzer.md F7 + the validation perf trip):
+ * docs/plans/analyzers/code-analyzer.md F7 + the validation perf trip):
  *
  *  - Every read is repo-scoped (`WHERE e.repo = ?`). Multi-repo
  *    workspaces no longer pay for the union of all repos' edges per

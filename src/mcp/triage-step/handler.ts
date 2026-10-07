@@ -10,7 +10,7 @@
  * Loop: start → emit_classification → classify → done. The server is
  * deterministic (build the prompt, validate the emitted result, map size →
  * route, pre-fill the next call); the CONTROLLER does the sizing, grounded on
- * its own `insrc_analyze_step` passes. See `plans/feature-triage-router.md`.
+ * its own `insrc_analyze_step` passes. See `docs/plans/feature-triage-router.md`.
  */
 
 import { getLogger } from '../../shared/logger.js';

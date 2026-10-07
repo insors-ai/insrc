@@ -11,7 +11,7 @@
  * `docSummary` sub-DB. Downstream shapers + adherence checks
  * consult these summaries as a pre-baked project context.
  *
- * plans/docs-module.md Section 8. Skip-if-unchanged via contentHash;
+ * docs/plans/docs-module.md Section 8. Skip-if-unchanged via contentHash;
  * failure modes produce a placeholder row (status='unknown',
  * errorCode set) so we don't infinitely retry a doc that
  * consistently breaks the schema.

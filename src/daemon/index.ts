@@ -303,7 +303,7 @@ async function main(): Promise<void> {
 	writePid();
 	const startedAt = Date.now();
 
-	// 6b. Register the unified tool set (plans/tools.md stage 5). Covers
+	// 6b. Register the unified tool set (docs/plans/tools.md stage 5). Covers
 	//     git:*, gh:*, file:*, shell:*, web:*, cloud:*, ... and registers
 	//     legacy LLM-name aliases (Read, Bash, Grep, graph_search, ...)
 	//     onto the canonical unified ids in one pass.
@@ -1711,7 +1711,7 @@ async function main(): Promise<void> {
 
 		// ----- analyze.context.* IPCs (analyze framework Context Builder) -----
 		// design/analyze-context-builder.md "Public API"
-		// plans/analyze-context-builder.md Phase 7
+		// docs/plans/analyze-context-builder.md Phase 7
 		// Each handler returns a tagged union AnalyzeRpcResponse so typed
 		// shaper errors (ScopeNotIndexedError, ShaperLlmUnavailable, ...)
 		// surface with stable error codes instead of generic string errors.
@@ -1932,7 +1932,7 @@ async function main(): Promise<void> {
 	// 8c. Periodic LMDB reader-table re-check. Defensive sweep every
 	//     5 minutes for slots left over from a daemon process that
 	//     died between boots without graceful shutdown. Cheap (a
-	//     lock-file scan); see plans/storage-migration-lmdb-lance.md
+	//     lock-file scan); see docs/plans/storage-migration-lmdb-lance.md
 	//     Phase 5.5.
 	const READER_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 	const readerCheckTimer = setInterval(() => {

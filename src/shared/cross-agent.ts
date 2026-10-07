@@ -1,6 +1,6 @@
 /**
  * Cross-agent integration primitives
- * (plans/analyzers/code-analyzer.md Phase 3).
+ * (docs/plans/analyzers/code-analyzer.md Phase 3).
  *
  * Sibling analyzer families (code-analyzer, data-analyzer,
  * deployment-analyzer) call into each other via `<family>:*` tools.

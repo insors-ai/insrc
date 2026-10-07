@@ -1,6 +1,6 @@
 /**
  * Repo registry CRUD on the LMDB graph store. Phase 2.1 of
- * plans/storage-migration-lmdb-lance.md.
+ * docs/plans/storage-migration-lmdb-lance.md.
  *
  * Surface preserved verbatim: callers (`daemon/index.ts`,
  * `indexer/index.ts`, RPC handlers) keep using `addRepo / removeRepo /

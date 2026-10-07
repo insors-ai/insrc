@@ -29,7 +29,7 @@ export type BuildStepPhase = 'implement' | 'validate';
 /** Standalone build context — a triage-routed Small (LLD → build) or Trivial
  *  (build only) feature. Present ⇒ the implement phase bypasses task/tracker
  *  resolution and sources its spec from the standalone LLD (Small) or the
- *  `focus` scope statement (Trivial). See `plans/feature-triage-router.md`. */
+ *  `focus` scope statement (Trivial). See `docs/plans/feature-triage-router.md`. */
 export interface BuildStandaloneContext {
 	readonly standalone: true;
 	/** The standalone story identity (self-minted hash + `S001`). Required for

@@ -14,7 +14,7 @@
  * synthesizer prompt builder (`designStorySynthesizer`). Keeping it in one
  * place is load-bearing — a drift between the two produced the dogfood bug
  * where the steps ran standalone but synthesize still demanded an HLD.
- * See `plans/feature-triage-router.md`.
+ * See `docs/plans/feature-triage-router.md`.
  */
 
 import type { DefineConstraint, DefineFlavor, DefineStory } from '../../artifacts/define.js';

@@ -10,7 +10,7 @@
  * `analyze/explore/doc-decision-trace.ts`. Same primitive powers
  * the shaper-level exploration (`doc.decision.trace`) and this
  * template runtime -- guaranteed identical output for the same
- * params. See plans/exploration-based-context-build.md Section 4.2.
+ * params. See docs/plans/exploration-based-context-build.md Section 4.2.
  */
 
 import { getDb } from '../../../db/client.js';

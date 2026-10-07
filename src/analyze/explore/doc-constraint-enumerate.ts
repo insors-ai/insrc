@@ -6,7 +6,7 @@
 /**
  * doc.constraint.enumerate exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 2. Enumerate
+ * docs/plans/exploration-based-context-build.md Phase 2. Enumerate
  * constraints stated in doc sections about a subject. Retriever +
  * narrow LLM call with tight output schema; preserves MUST /
  * SHALL / HARD RULE language verbatim.

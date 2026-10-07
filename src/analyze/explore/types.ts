@@ -7,7 +7,7 @@
  * Exploration types -- the vocabulary the decomposer emits and the
  * executor dispatches on.
  *
- * plans/exploration-based-context-build.md. An `Exploration` is a
+ * docs/plans/exploration-based-context-build.md. An `Exploration` is a
  * typed unit with a purpose, a technique (`type`), params, and an
  * expected output schema. The decomposer picks from a fixed catalog;
  * the executor runs each one; the synthesizer composes the bundle
@@ -26,7 +26,7 @@
 
 /**
  * Every exploration type the framework knows about. Grouped by
- * category for readability. See plans/exploration-based-context-build.md
+ * category for readability. See docs/plans/exploration-based-context-build.md
  * Section 4 for the design intent per type.
  */
 export type ExplorationType =
@@ -60,7 +60,7 @@ export type ExplorationType =
 
 /**
  * Which answer-type recipes the decomposer picks from.
- * plans/exploration-based-context-build.md Section 5.1 lists the
+ * docs/plans/exploration-based-context-build.md Section 5.1 lists the
  * per-type exploration ordering. V1 only implements
  * 'structural-map'; the other tags exist so the decomposer's
  * output schema is stable across phases.

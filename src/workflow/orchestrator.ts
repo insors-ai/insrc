@@ -2099,7 +2099,7 @@ async function finalizeDesignStory(
 
 	// Standalone LLD (triage-routed non-Epic feature) — no parent Epic/HLD to
 	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
-	// and stamp the triage provenance instead. See `plans/feature-triage-router.md`.
+	// and stamp the triage provenance instead. See `docs/plans/feature-triage-router.md`.
 	if (intent.params['standalone'] === true) {
 		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
 	}
@@ -2275,7 +2275,7 @@ async function finalizeDesignStory(
  *  the `hld*` meta fields carry self-consistent sentinels (inert — the
  *  `requireApprovedLld` gate skips staleness for a standalone LLD), and the
  *  triage provenance (`standalone` / `sizeClass` / `triageRationale`) is
- *  stamped. See `plans/feature-triage-router.md`. */
+ *  stamped. See `docs/plans/feature-triage-router.md`. */
 async function finalizeStandaloneLld(
 	intent:    WorkflowIntent,
 	runId:     string,

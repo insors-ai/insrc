@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 5. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 5. Unit tests for
  * the Phase 5 explorations' param validation + graceful-empty
  * paths. LMDB / DriverPool integration lives in a separate live
  * test; here we only exercise the fast-fail branches.

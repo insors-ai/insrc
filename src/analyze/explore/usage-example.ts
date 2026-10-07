@@ -6,7 +6,7 @@
 /**
  * usage.example exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 3. Given a symbol
+ * docs/plans/exploration-based-context-build.md Phase 3. Given a symbol
  * (by name OR entityId), enumerate the callers that invoke it. The
  * synthesizer uses this to cite real code sites in adherence /
  * capability / how-does-it-work bundles.

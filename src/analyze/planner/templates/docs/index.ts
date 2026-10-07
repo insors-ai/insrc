@@ -6,14 +6,14 @@
 /**
  * Docs-target template catalog.
  *
- * plans/docs-module.md Phase 3. Templates for the docs target:
+ * docs/plans/docs-module.md Phase 3. Templates for the docs target:
  *   - docs.discovery.inventory  -- discovery, family + count inventory
  *   - docs.family.summarise     -- per-family rollup
  *   - docs.decision.trace       -- trace decisions around a topic
  *   - docs.constraint.enumerate -- list every constraint on a subject
  *   - docs.subrun.deep-dive     -- planner-kind (child plan spawn); may
  *                                  target 'code' | 'data' | 'infra' |
- *                                  'docs' per plans/docs-module.md
+ *                                  'docs' per docs/plans/docs-module.md
  *                                  Section 6.5
  *   - docs.aggregate.report     -- terminal aggregator
  */
@@ -151,7 +151,7 @@ export const docsConstraintEnumerate: AnalyzeTaskTemplate = {
 // ---------------------------------------------------------------------------
 
 /**
- * plans/docs-module.md Section 6.5: docs plans MAY spawn code /
+ * docs/plans/docs-module.md Section 6.5: docs plans MAY spawn code /
  * data / infra / docs child plans. `childIntent.target` accepts
  * any AnalyzeTarget. `upstreamContext` carries a compact rollup
  * from the parent's docs bundle so the child's shaper can surface

@@ -6,7 +6,7 @@
 /**
  * Decomposer driver.
  *
- * plans/exploration-based-context-build.md Section 5. Takes the
+ * docs/plans/exploration-based-context-build.md Section 5. Takes the
  * classified intent + repo path and asks the shaper model to emit
  * a structured `ExplorationPlan` from the fixed catalog. Tiny
  * LLM call, tight schema, ~30s.
@@ -207,7 +207,7 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 }
 
 // ---------------------------------------------------------------------------
-// Multi-turn MCP prepare / finalize split (plans/mcp-multi-turn-analyze.md)
+// Multi-turn MCP prepare / finalize split (docs/plans/mcp-multi-turn-analyze.md)
 //
 // prepareDecompose returns the exact prompt + user turn + JSON Schema the
 // outer client's LLM needs to emit an ExplorationPlan directly. The

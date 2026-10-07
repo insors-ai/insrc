@@ -1,7 +1,7 @@
 /**
  * `session_vec` LanceDB table -- conversation-session embeddings.
  *
- * Phase 3.3 of plans/storage-migration-lmdb-lance.md.
+ * Phase 3.3 of docs/plans/storage-migration-lmdb-lance.md.
  *
  * Schema (post Phase 0.2 dim downshift):
  *   id:         string         -- session id (matches LMDB conversation_session.id)

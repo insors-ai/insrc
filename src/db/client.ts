@@ -15,7 +15,7 @@
  * (indexer, RPC handlers, tools) don't need a coordinated signature
  * sweep at the same time as the substrate move.
  *
- * Phase 6.1 of plans/storage-migration-lmdb-lance.md gutted this file:
+ * Phase 6.1 of docs/plans/storage-migration-lmdb-lance.md gutted this file:
  * the legacy `DbClients { duck: GraphClient }` shape, the DuckDB
  * schema bootstrap in `initDb`, and the matching `closeDb` cache
  * reset are gone. `getDb`/`initDb`/`closeDb` survive as no-ops so the

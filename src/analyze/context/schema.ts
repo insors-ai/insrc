@@ -26,7 +26,7 @@
  *   sha256(promptContentHash + schemaVersion + invocationInputsHash)
  *
  * See: design/analyze-context-builder.md "The bundle"
- *      plans/analyze-context-builder.md Phase 1
+ *      docs/plans/analyze-context-builder.md Phase 1
  */
 
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';

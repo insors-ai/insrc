@@ -87,7 +87,7 @@ export const dataAggregateReport: AnalyzeTaskTemplate = {
 	isAggregator: true,
 };
 
-/** plans/docs-module.md Phase 4. Data-side adherence check. */
+/** docs/plans/docs-module.md Phase 4. Data-side adherence check. */
 export const dataAdherenceCheck: AnalyzeTaskTemplate = {
 	id:          'data.adherence.check',
 	target:      'data',
@@ -119,7 +119,7 @@ export const dataAdherenceCheck: AnalyzeTaskTemplate = {
 			constraintIds:     {
 				type:  'array',
 				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (plans/docs-module.md Phase 7).',
+				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (docs/plans/docs-module.md Phase 7).',
 			},
 			maxSourceExcerpts: { type: 'integer', minimum: 1, maximum: 30 },
 		},

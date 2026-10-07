@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Section 8. LMDB-backed docSummary CRUD.
+ * docs/plans/docs-module.md Section 8. LMDB-backed docSummary CRUD.
  *
  * Verifies:
  *   - writeDocSummary + getDocSummary round-trip

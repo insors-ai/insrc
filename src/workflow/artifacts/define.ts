@@ -6,7 +6,7 @@
 /**
  * DefineArtifact — Phase B.
  *
- * Shape mirrors `plans/workflow-define.md` §8. Two flavors:
+ * Shape mirrors `docs/plans/workflow-define.md` §8. Two flavors:
  *   - `enhancement`: extending existing capability. Stories carry
  *     `existingCapabilityRefs` pointing at analyze bundles from s1.
  *   - `new-capability`: brand-new work aligning with project stack.

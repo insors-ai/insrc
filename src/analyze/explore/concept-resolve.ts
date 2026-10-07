@@ -6,7 +6,7 @@
 /**
  * concept.resolve exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 1. Given a
+ * docs/plans/exploration-based-context-build.md Phase 1. Given a
  * natural-language query (typically `intent.focus`), rank
  * directories, files, and entities in the repo by how well they
  * match the query TOKENS. Deterministic + explainable + cheap --

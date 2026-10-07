@@ -137,7 +137,7 @@ CliProvider suites) and skip cleanly when unset.
 3. **Dependency-closure scoping** — graph searches span only the transitive `DEPENDS_ON` closure of the active repo.
 4. **Graph + vector** — structural queries use the LMDB graph layer's typed JS API (`findCallers / findCallees / outNeighbors / inNeighbors / transitiveClosure / unreachable`); semantic queries use LanceDB ANN. No Cypher / GQL / SQL exposed for graph traversal.
 5. **No raw file dumps** — context is always structured entity summaries + relations from the graph.
-6. **Repo registry is the contract** — workspace registry membership is established exclusively via the `repo.add` IPC. The storage layer never auto-allocates registry rows; an `Entity` whose `repo` path isn't registered fails the upsert with `UnregisteredRepoError`. See [`plans/repo-registry-strict-contract.md`](plans/repo-registry-strict-contract.md).
+6. **Repo registry is the contract** — workspace registry membership is established exclusively via the `repo.add` IPC. The storage layer never auto-allocates registry rows; an `Entity` whose `repo` path isn't registered fails the upsert with `UnregisteredRepoError`. See [`docs/plans/repo-registry-strict-contract.md`](docs/plans/repo-registry-strict-contract.md).
 7. **Prompt structure: structural reference goes trailing.** Schemas / catalogs / manifests belong at the tail of the prompt, not the middle — recency-weighted attention (especially on the local `qwen3.6:35b-a3b` shaper) hallucinates against mid-prompt structural info.
 
 ## Design documents
@@ -146,11 +146,11 @@ CliProvider suites) and skip cleanly when unset.
 - [`design/analyze-framework.md`](design/analyze-framework.md) — analyze framework overall
 - [`design/analyze-context-builder.md`](design/analyze-context-builder.md) — context builder
 - [`design/analyze-plan-builder.md`](design/analyze-plan-builder.md) — plan builder
-- [`plans/storage-migration-lmdb-lance.md`](plans/storage-migration-lmdb-lance.md) — storage substrate
-- [`plans/graph-storage-lmdb.md`](plans/graph-storage-lmdb.md) — graph layer
-- [`plans/repo-registry-strict-contract.md`](plans/repo-registry-strict-contract.md) — repo registry contract
-- [`plans/tools.md`](plans/tools.md) — tool registry + ~110 built-ins
-- [`plans/meta-workflow-framework.md`](plans/meta-workflow-framework.md) — workflow framework
+- [`docs/plans/storage-migration-lmdb-lance.md`](docs/plans/storage-migration-lmdb-lance.md) — storage substrate
+- [`docs/plans/graph-storage-lmdb.md`](docs/plans/graph-storage-lmdb.md) — graph layer
+- [`docs/plans/repo-registry-strict-contract.md`](docs/plans/repo-registry-strict-contract.md) — repo registry contract
+- [`docs/plans/tools.md`](docs/plans/tools.md) — tool registry + ~110 built-ins
+- [`docs/plans/meta-workflow-framework.md`](docs/plans/meta-workflow-framework.md) — workflow framework
 - [`docs/workflow.md`](docs/workflow.md) — workflow user guide
 - [`docs/daemon.md`](docs/daemon.md) — daemon usage guide
 

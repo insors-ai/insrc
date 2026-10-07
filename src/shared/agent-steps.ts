@@ -131,7 +131,7 @@ export const AGENT_STEP_CATALOG: readonly AgentDefinition[] = [
 		// Data Analyzer family. Same step shape + tier policy as the Code
 		// Analyzer -- cloud reasons (plan + review), local tool-loops and
 		// composes (analyzer + synthesise). See
-		// plans/analyzers/data-analyzer.md "LLM routing" section.
+		// docs/plans/analyzers/data-analyzer.md "LLM routing" section.
 		agent: 'data-analyzer',
 		steps: [
 			{ step: 'plan',       defaultTier: 'cloud', description: 'Decompose the request into DataAnalysisTask[]' },

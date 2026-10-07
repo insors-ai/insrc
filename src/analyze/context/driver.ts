@@ -43,7 +43,7 @@
  *                                     in P5 catches this too)
  *
  * See: design/analyze-context-builder.md "Architecture", "Failure modes"
- *      plans/analyze-context-builder.md Phase 3
+ *      docs/plans/analyze-context-builder.md Phase 3
  */
 
 import { createHash } from 'node:crypto';
@@ -264,7 +264,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	}
 
 	// (4.7) Retire the legacy tool loop from the shaper's happy path
-	// for run mode (plans/exploration-based-context-build.md Phase 6).
+	// for run mode (docs/plans/exploration-based-context-build.md Phase 6).
 	// The exploration pipeline emits a `freeform.probe` fallback plan
 	// for any run-mode intent that no deterministic recipe covered,
 	// which reuses the same tool-loop primitive `runShaperToolLoop`
@@ -537,7 +537,7 @@ export interface RunShaperToolLoopArgs {
 }
 
 /**
- * plans/exploration-based-context-build.md Phase 6. Run the target's
+ * docs/plans/exploration-based-context-build.md Phase 6. Run the target's
  * legacy tool loop bounded by `cfg.shaper.maxToolTurns` + the final
  * structured emit; return the raw bundle content.
  *
@@ -926,7 +926,7 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 		sessionId,
 		repoPath,
 		// V1 shaper closure = the scope's containing repo only.
-		// plans/docs-module.md Section 6.3 pins the docs retriever to
+		// docs/plans/docs-module.md Section 6.3 pins the docs retriever to
 		// this policy; graph_search + docs_* tools use this to bound
 		// their queries. A future revision may widen to the transitive
 		// DEPENDS_ON closure, but doing so at the shaper boundary is
@@ -1050,7 +1050,7 @@ export async function resolveRepoLastIndexedAt(scopePath: string): Promise<numbe
 }
 
 // ---------------------------------------------------------------------------
-// Exploration-based pipeline (plans/exploration-based-context-build.md)
+// Exploration-based pipeline (docs/plans/exploration-based-context-build.md)
 // ---------------------------------------------------------------------------
 
 interface ExplorationPipelineResult {
@@ -1069,7 +1069,7 @@ interface ExplorationPipelineResult {
  * tool loop. On non-null return, the caller uses the bundle
  * directly + skips the tool loop entirely.
  *
- * V1 qualification (plans/exploration-based-context-build.md
+ * V1 qualification (docs/plans/exploration-based-context-build.md
  * Section 8 Phase 1):
  *   - invocationMode === 'run'
  *   - shaperId === 'code'
@@ -1088,7 +1088,7 @@ async function tryExplorationPipeline(args: {
 }): Promise<ExplorationPipelineResult | null> {
 	if (args.invocationMode !== 'run') return null;
 	// Every run-mode shaper flows through the exploration pipeline
-	// (plans/exploration-based-context-build.md Phase 6). Recipe-less
+	// (docs/plans/exploration-based-context-build.md Phase 6). Recipe-less
 	// shapers (generic) or recipe-less intents land in the
 	// freeform.probe fallback below rather than dropping to the
 	// retired legacy tool-loop tail.
@@ -1261,7 +1261,7 @@ async function tryExplorationPipeline(args: {
 
 /**
  * Emit a freeform.probe-only plan for intents that don't map to any
- * deterministic recipe (plans/exploration-based-context-build.md
+ * deterministic recipe (docs/plans/exploration-based-context-build.md
  * Phase 6). The plan's `answerType` is stamped as the intent's
  * target-natural default so downstream logs stay readable; the
  * runner reads only `params.purpose` + `params.shaperId`.

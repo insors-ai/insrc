@@ -6,7 +6,7 @@
 /**
  * Live project context assembler.
  *
- * plans/docs-module.md Section 8.4. Rolls up the per-doc summaries
+ * docs/plans/docs-module.md Section 8.4. Rolls up the per-doc summaries
  * persisted by the summariser into a compact `LiveProjectContext`
  * view: family breakdown, top subjects, all recorded decisions +
  * constraints, recent activity.

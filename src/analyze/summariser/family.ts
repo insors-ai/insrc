@@ -6,7 +6,7 @@
 /**
  * Path-based `DocFamily` inference.
  *
- * plans/docs-module.md Section 6.1. First pattern that matches wins;
+ * docs/plans/docs-module.md Section 6.1. First pattern that matches wins;
  * order is: design > plans > docs > adr > rfc > spec > changelog >
  * readme > other. The LLM in the summariser prompt can override
  * this in the emitted `family` field when the prose contradicts

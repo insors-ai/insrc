@@ -6,7 +6,7 @@
 /**
  * Synthesizer driver.
  *
- * plans/exploration-based-context-build.md Section 6. Takes an
+ * docs/plans/exploration-based-context-build.md Section 6. Takes an
  * `ExecutedPlan` (exploration outputs) + the classified intent
  * + the synthesis hint, and asks the shaper model to compose the
  * 7-layer `AnalyzeContextBundle`.
@@ -154,7 +154,7 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 }
 
 // ---------------------------------------------------------------------------
-// Multi-turn MCP prepare / finalize split (plans/mcp-multi-turn-analyze.md)
+// Multi-turn MCP prepare / finalize split (docs/plans/mcp-multi-turn-analyze.md)
 //
 // Same as decomposer's split: prepareSynthesize returns everything the
 // outer client's LLM needs to emit the bundle directly (verbatim prompt

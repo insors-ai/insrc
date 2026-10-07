@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Section 8.4. assembleLiveProjectContext
+ * docs/plans/docs-module.md Section 8.4. assembleLiveProjectContext
  * rollup: family breakdown, top subjects, decisions, constraints,
  * recent activity, placeholder count.
  */

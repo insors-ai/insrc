@@ -166,7 +166,7 @@ export const codeAggregateReport: AnalyzeTaskTemplate = {
 };
 
 /**
- * plans/docs-module.md Phase 4. Cross-cutting adherence check.
+ * docs/plans/docs-module.md Phase 4. Cross-cutting adherence check.
  * Given a code subject + a set of doc-derived constraints,
  * evaluate implementation adherence. Preserves BOTH doc position
  * and code position on contradictions -- reader decides.
@@ -214,7 +214,7 @@ export const codeAdherenceCheck: AnalyzeTaskTemplate = {
 			constraintIds: {
 				type:  'array',
 				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set. Cheaper than a docs.constraint.enumerate subtask when the constraints are already summarised by the post-indexing summariser (plans/docs-module.md Phase 7). Priority-3 sourcing: used when constraintsSource + constraints are both absent.',
+				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set. Cheaper than a docs.constraint.enumerate subtask when the constraints are already summarised by the post-indexing summariser (docs/plans/docs-module.md Phase 7). Priority-3 sourcing: used when constraintsSource + constraints are both absent.',
 			},
 			maxSourceExcerpts: {
 				type:    'integer',

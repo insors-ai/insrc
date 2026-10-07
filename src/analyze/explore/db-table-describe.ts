@@ -6,7 +6,7 @@
 /**
  * db.table.describe exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 5. Describe one
+ * docs/plans/exploration-based-context-build.md Phase 5. Describe one
  * table (rdbms) / namespace (kv) / file target (file). Wraps the
  * same primitives that back `db_sql_describe` +
  * `db_kv_describe_namespace`. Deterministic. No LLM.

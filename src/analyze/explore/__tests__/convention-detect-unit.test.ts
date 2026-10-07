@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 4. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 4. Unit tests for
  * the pure helpers behind convention.detect -- name classification,
  * test-file convention detection, and the dominance rule that turns
  * a bucket count into a `NamingCase` label.

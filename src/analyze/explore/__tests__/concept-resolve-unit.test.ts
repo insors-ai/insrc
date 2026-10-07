@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 1. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 1. Unit tests for
  * concept.resolve's tokenisation + scoring internals. These tests
  * do NOT require an LMDB fixture -- they exercise the pure helper
  * functions directly.

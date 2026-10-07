@@ -8,7 +8,7 @@
  *
  * Drives the real Ollama against the seeded-manifests + empty-repo
  * fixtures and asserts each row of the infra edge-case matrix (I1-I4
- * in plans/analyze-context-builder.md):
+ * in docs/plans/analyze-context-builder.md):
  *
  *   I1 -- k8s + tf + GHA: all three families surface
  *   I2 -- k8s-only manifests: no false TF / GHA positives

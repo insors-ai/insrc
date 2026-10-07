@@ -6,7 +6,7 @@
 /**
  * Explorations -- barrel.
  *
- * plans/exploration-based-context-build.md Phase 1. Public surface:
+ * docs/plans/exploration-based-context-build.md Phase 1. Public surface:
  *   - executePlan(args): runs an ExplorationPlan end-to-end
  *   - Per-type runners for callers that want to fire a single
  *     exploration directly (mostly tests)

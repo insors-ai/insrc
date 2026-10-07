@@ -7,7 +7,7 @@
  * Triage router types — the classification-first workflow entry.
  *
  * A request is sized FIRST, and the size decides where the workflow starts.
- * See `plans/feature-triage-router.md` for the taxonomy and rationale.
+ * See `docs/plans/feature-triage-router.md` for the taxonomy and rationale.
  */
 
 import type { WorkflowName } from '../types.js';

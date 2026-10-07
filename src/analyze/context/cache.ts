@@ -32,7 +32,7 @@
  * nukes ~/.insrc/analyze/<runId>/context/ or the entire <runId> root.
  *
  * See: design/analyze-context-builder.md "Caching"
- *      plans/analyze-context-builder.md Phase 4
+ *      docs/plans/analyze-context-builder.md Phase 4
  */
 
 import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';

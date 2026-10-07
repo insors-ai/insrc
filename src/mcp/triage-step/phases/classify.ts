@@ -8,7 +8,7 @@
  * map its size class to a workflow entry (`routeForSizeClass`), and hand back
  * the exact next call — pre-filled with the standalone params so a small feature
  * enters as a standalone LLD (or straight to build) rather than climbing the
- * full Epic ladder. See `plans/feature-triage-router.md`.
+ * full Epic ladder. See `docs/plans/feature-triage-router.md`.
  */
 
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';

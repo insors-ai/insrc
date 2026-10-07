@@ -8,9 +8,9 @@ step outputs that produced it.
 
 This doc covers the concepts, install, and a walkthrough. For the
 implementation plan see
-[`plans/workflow-implementation.md`](../plans/workflow-implementation.md);
+[`docs/plans/workflow-implementation.md`](plans/workflow-implementation.md);
 for the architecture see
-[`plans/meta-workflow-framework.md`](../plans/meta-workflow-framework.md).
+[`docs/plans/meta-workflow-framework.md`](plans/meta-workflow-framework.md).
 
 ## Concepts
 
@@ -445,7 +445,7 @@ user sees. We do not own the GitHub connection.
 Yes. For `define`, use `insrc_workflow_step ... focus=... params={ "reopen": "<slug>" }`
 (future work — currently: reject the artifact and re-run). For
 HLD, a back-flow-vs-amendment decision applies — see
-[`plans/workflow-design.md`](../plans/workflow-design.md) §10.3.
+[`docs/plans/workflow-design.md`](plans/workflow-design.md) §10.3.
 
 ## Non-negotiables (project rules)
 

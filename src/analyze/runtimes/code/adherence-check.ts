@@ -6,7 +6,7 @@
 /**
  * Runtime: code.adherence.check
  *
- * plans/docs-module.md Phase 4. Thin wrapper around the shared
+ * docs/plans/docs-module.md Phase 4. Thin wrapper around the shared
  * adherence runner. This module owns the code-specific excerpt
  * hydration: file-path -> findEntitiesByFile, symbol-like ->
  * findEntitiesByName, fallback -> partial body search over the

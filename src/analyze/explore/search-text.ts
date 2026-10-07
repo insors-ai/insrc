@@ -6,7 +6,7 @@
 /**
  * search.text exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 3.1. Given a regex
+ * docs/plans/exploration-based-context-build.md Phase 3.1. Given a regex
  * pattern, grep the repo for text-level matches. Fills the gap the
  * live Test 4 exposed: string-literal rules (model ids, config
  * keys, env-var names) don't surface via symbol.locate because the

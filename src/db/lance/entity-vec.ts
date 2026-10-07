@@ -1,7 +1,7 @@
 /**
  * `entity_vec` LanceDB table -- entity embeddings + filter columns.
  *
- * Phase 3.2 of plans/storage-migration-lmdb-lance.md.
+ * Phase 3.2 of docs/plans/storage-migration-lmdb-lance.md.
  *
  * Schema (post Phase 0.2 dim downshift to 1024):
  *   id:             string         -- the SHA-32 entity id (matches LMDB Entity.id)
@@ -290,7 +290,7 @@ export async function optimizeEntityVecIndex(
 /**
  * ANN query filter. Coarse forms map to a single `artifact` flag
  * check; the object form specifies an explicit kind allowlist
- * (see plans/docs-module.md Section 6.4). The kinds form is
+ * (see docs/plans/docs-module.md Section 6.4). The kinds form is
  * required by the docs retriever to scope ANN to `document |
  * section | config` without also including code entities.
  */

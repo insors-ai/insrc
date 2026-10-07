@@ -6,7 +6,7 @@
 /**
  * `docSummary` sub-DB CRUD.
  *
- * plans/docs-module.md Section 8. One row per doc / section entity,
+ * docs/plans/docs-module.md Section 8. One row per doc / section entity,
  * produced by the post-indexing summariser. Row shape is
  * `DocSummary` from shared/analyze-types; storage encodes as
  * msgpack.

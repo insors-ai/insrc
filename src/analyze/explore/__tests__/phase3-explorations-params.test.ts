@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 3. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 3. Unit tests for
  * the param-validation branches of the three new code-side
  * explorations. Mirrors the Phase 2 doc-explorations pattern -- we
  * only exercise the rejection paths so the failure surfaces before

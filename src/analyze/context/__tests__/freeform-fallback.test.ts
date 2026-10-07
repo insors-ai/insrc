@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 6. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 6. Unit tests for
  * the two driver helpers that anchor the freeform.probe escape hatch:
  *
  * - `fallbackFreeformPlan(intent, shaperId)` synthesises a plan

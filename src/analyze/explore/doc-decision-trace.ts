@@ -6,7 +6,7 @@
 /**
  * doc.decision.trace exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 2. Extract
+ * docs/plans/exploration-based-context-build.md Phase 2. Extract
  * decisions verbatim from doc sections that mention a topic.
  * Retriever + narrow LLM call with tight output schema.
  *

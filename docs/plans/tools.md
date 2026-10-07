@@ -9,12 +9,12 @@
 
 Today we have two parallel registries for executable capabilities:
 
-- **LLM tools** at [src/insrc/agent/tools/registry.ts](../src/insrc/agent/tools/registry.ts) /
-  [executor.ts](../src/insrc/agent/tools/executor.ts). Invoked by the LLM via the
+- **LLM tools** at [src/insrc/agent/tools/registry.ts](../../src/insrc/agent/tools/registry.ts) /
+  [executor.ts](../../src/insrc/agent/tools/executor.ts). Invoked by the LLM via the
   tool-call protocol (Read, Grep, Glob, Bash, WebSearch, WebFetch, ...). Schema
   is JSON Schema so the model can emit structured calls. Approval is
   implicit through risk classification in `tools/validator.ts`.
-- **Delegates** at [src/insrc/daemon/delegates/registry.ts](../src/insrc/daemon/delegates/registry.ts) /
+- **Delegates** at [src/insrc/daemon/delegates/registry.ts](../../src/insrc/daemon/delegates/registry.ts) /
   `delegates/*.ts`. Invoked by controllers via `kind: 'delegate'` tasks.
   Input is untyped. Approval is explicit via `requiresApproval` +
   `buildApprovalGate` hooks.

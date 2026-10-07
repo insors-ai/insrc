@@ -1,6 +1,6 @@
 # `define` workflow
 
-Plan doc. Status: **implemented**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md).
+Plan doc. Status: **implemented**. Parent: [`docs/plans/meta-workflow-framework.md`](meta-workflow-framework.md).
 
 > **As-built deltas (read before trusting the sections below).** The
 > shipped implementation diverges from this original proposal in a few

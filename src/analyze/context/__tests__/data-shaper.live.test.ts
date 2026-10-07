@@ -8,7 +8,7 @@
  *
  * Drives the real Ollama against per-test SQLite + CSV-directory
  * fixtures and asserts each row of the data edge-case matrix
- * (D1-D6 in plans/analyze-context-builder.md):
+ * (D1-D6 in docs/plans/analyze-context-builder.md):
  *
  *   D1 -- SQLite multi-table with an FK: schema enumerated,
  *         FK acknowledged in structure or summary, sample rows in

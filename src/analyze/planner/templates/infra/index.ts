@@ -140,7 +140,7 @@ export const infraAggregateReport: AnalyzeTaskTemplate = {
 	isAggregator: true,
 };
 
-/** plans/docs-module.md Phase 4. Infra-side adherence check. */
+/** docs/plans/docs-module.md Phase 4. Infra-side adherence check. */
 export const infraAdherenceCheck: AnalyzeTaskTemplate = {
 	id:          'infra.adherence.check',
 	target:      'infra',
@@ -172,7 +172,7 @@ export const infraAdherenceCheck: AnalyzeTaskTemplate = {
 			constraintIds:     {
 				type:  'array',
 				items: { type: 'string' },
-				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (plans/docs-module.md Phase 7).',
+				description: 'Doc-summary entity ids whose keyConstraints hydrate as the constraint set (docs/plans/docs-module.md Phase 7).',
 			},
 			maxSourceExcerpts: { type: 'integer', minimum: 1, maximum: 30 },
 		},

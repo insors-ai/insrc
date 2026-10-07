@@ -310,7 +310,7 @@ describe('withTimeout', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Aggregate compilation (Phase 0.1 of plans/analyzers/data-analyzer-skills.md)
+// Aggregate compilation (Phase 0.1 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 describe('aggregateResultKey', () => {
@@ -643,7 +643,7 @@ describe('readAggregateRow', () => {
 
 // ---------------------------------------------------------------------------
 // compileDistinct + readDistinctRows + readDistinctCount
-// (Phase 0.3 of plans/analyzers/data-analyzer-skills.md)
+// (Phase 0.3 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 describe('compileDistinct', () => {

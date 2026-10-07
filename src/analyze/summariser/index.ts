@@ -6,7 +6,7 @@
 /**
  * Doc summariser -- barrel.
  *
- * plans/docs-module.md Section 8. Public surface:
+ * docs/plans/docs-module.md Section 8. Public surface:
  *   - summariseDoc(args): drives a single-entity summarisation
  *   - inferDocFamily(file): path-based family classifier
  *   - DOC_SUMMARISER_PROMPT_PATH: for the boot validator

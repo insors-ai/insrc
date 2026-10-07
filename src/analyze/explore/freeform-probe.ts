@@ -6,7 +6,7 @@
 /**
  * freeform.probe exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 6. The escape hatch:
+ * docs/plans/exploration-based-context-build.md Phase 6. The escape hatch:
  * when an intent falls outside every deterministic recipe, the
  * decomposer emits ONE `freeform.probe` step. The runner invokes the
  * target's legacy tool-loop shaper (`runShaperToolLoop`) bounded by

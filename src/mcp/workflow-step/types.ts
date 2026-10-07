@@ -6,7 +6,7 @@
 /**
  * Input / output shapes for `insrc_workflow_step`.
  *
- * See plans/workflow-implementation.md §7.2 for the protocol.
+ * See docs/plans/workflow-implementation.md §7.2 for the protocol.
  */
 
 import type { WorkflowName, WorkflowPlan } from '../../workflow/types.js';

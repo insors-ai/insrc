@@ -6,12 +6,12 @@
 
 All four tiers are functional end-to-end. 30 new tests green; tsc clean.
 
-- **Classifier** — [`src/workflow/triage/`](../src/workflow/triage/): `routeForSizeClass` table, `CLASSIFY_SCHEMA`, grounded prompt.
-- **Standalone `design.story`** — synthetic single-story `readUpstream` branch ([design-story/index.ts](../src/workflow/runners/design-story/index.ts)) + `finalizeStandaloneLld` ([orchestrator.ts](../src/workflow/orchestrator.ts)); stamps `meta.standalone` / `sizeClass` / `triageRationale`.
+- **Classifier** — [`src/workflow/triage/`](../../src/workflow/triage/): `routeForSizeClass` table, `CLASSIFY_SCHEMA`, grounded prompt.
+- **Standalone `design.story`** — synthetic single-story `readUpstream` branch ([design-story/index.ts](../../src/workflow/runners/design-story/index.ts)) + `finalizeStandaloneLld` ([orchestrator.ts](../../src/workflow/orchestrator.ts)); stamps `meta.standalone` / `sizeClass` / `triageRationale`.
 - **Keying** — `augmentStandaloneParams` (self-minted hash + `S001`) on both the MCP `insrc_workflow_step` and daemon `workflow.run` entries.
-- **Gate** — `requireApprovedLld` skips HLD-staleness for a standalone LLD ([gates.ts](../src/workflow/gates.ts)).
-- **No-plan build** — `admitStandaloneBuild` ([admission.ts](../src/workflow/runners/build/admission.ts)) + a standalone implement path ([build-step/phases/implement.ts](../src/mcp/build-step/phases/implement.ts)) sourcing the spec from the LLD (Small) or scope (Trivial); Trivial persists a `StandaloneBuildRecord` ([standalone-record.ts](../src/workflow/runners/build/standalone-record.ts)) as its sole ledger entry.
-- **Front door** — [`insrc_triage`](../src/mcp/triage-step/) MCP tool (ground → classify → route), returns the pre-filled next call.
+- **Gate** — `requireApprovedLld` skips HLD-staleness for a standalone LLD ([gates.ts](../../src/workflow/gates.ts)).
+- **No-plan build** — `admitStandaloneBuild` ([admission.ts](../../src/workflow/runners/build/admission.ts)) + a standalone implement path ([build-step/phases/implement.ts](../../src/mcp/build-step/phases/implement.ts)) sourcing the spec from the LLD (Small) or scope (Trivial); Trivial persists a `StandaloneBuildRecord` ([standalone-record.ts](../../src/workflow/runners/build/standalone-record.ts)) as its sole ledger entry.
+- **Front door** — [`insrc_triage`](../../src/mcp/triage-step/) MCP tool (ground → classify → route), returns the pre-filled next call.
 
 ---
 

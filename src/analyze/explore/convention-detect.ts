@@ -6,7 +6,7 @@
 /**
  * convention.detect exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 4. Given a
+ * docs/plans/exploration-based-context-build.md Phase 4. Given a
  * directory path, compute the naming schema + base-class idioms
  * the module leans on so the synthesizer can surface conventions
  * before the planner emits new-work tasks.

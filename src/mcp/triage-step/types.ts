@@ -9,7 +9,7 @@
  * Loop: start → emit_classification → classify → done. The controller sizes
  * the request (grounding on its own `insrc_analyze_step` passes) and emits a
  * `TriageResult`; the server maps the size to a workflow entry and hands back
- * the exact next call to make. See `plans/feature-triage-router.md`.
+ * the exact next call to make. See `docs/plans/feature-triage-router.md`.
  */
 
 import type { TriageResult } from '../../workflow/triage/types.js';

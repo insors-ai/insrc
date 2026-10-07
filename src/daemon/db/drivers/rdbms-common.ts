@@ -71,7 +71,7 @@ export interface Dialect {
 	 * Dialects that don't support regex (MSSQL native T-SQL has no
 	 * portable regex) leave this undefined; `compileWhere` raises a
 	 * clear error rather than emitting an invalid query. Phase 5d.3
-	 * Gap 1 (plans/analyzers/data-analyzer-skills.md).
+	 * Gap 1 (docs/plans/analyzers/data-analyzer-skills.md).
 	 */
 	readonly regexPredicate?: (col: string, placeholder: string, negate: boolean) => string;
 	/**
@@ -675,7 +675,7 @@ export function compileAggregate(
 }
 
 // ---------------------------------------------------------------------------
-// Distinct compilation (Phase 0.3 of plans/analyzers/data-analyzer-skills.md)
+// Distinct compilation (Phase 0.3 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 /** Hard cap on `topN`. The tool layer also clamps; this is a

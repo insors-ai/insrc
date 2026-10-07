@@ -8,7 +8,7 @@
  * file so the tool description + docs + tests reference a single
  * authoritative surface.
  *
- * See plans/mcp-multi-turn-analyze.md for the full protocol design.
+ * See docs/plans/mcp-multi-turn-analyze.md for the full protocol design.
  */
 
 import type { ExplorationPlan } from '../../analyze/explore/index.js';

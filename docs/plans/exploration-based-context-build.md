@@ -1,4 +1,4 @@
-# plans/exploration-based-context-build.md
+# docs/plans/exploration-based-context-build.md
 
 Redesign the Context Builder from a **single LLM tool-loop that decides what to look at** to a **three-stage pipeline (decompose → explore → synthesize) where the framework decides + the LLM organizes**.
 

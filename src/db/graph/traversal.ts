@@ -1,7 +1,7 @@
 /**
  * Graph traversal primitives over the LMDB edge tables.
  *
- * Phase 4.1 of plans/storage-migration-lmdb-lance.md. Pure-graph
+ * Phase 4.1 of docs/plans/storage-migration-lmdb-lance.md. Pure-graph
  * layer: operates on `bigint` u64 entity IDs and `RelationKind` byte
  * values. Domain-typed wrappers (findCallers / findCallees /
  * resolveClosure / etc.) land in Phase 4.2 on top of these.

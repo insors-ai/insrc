@@ -1,4 +1,4 @@
-# plans/docs-module.md
+# docs/plans/docs-module.md
 
 Docs analysis module for the analyze framework. Covers standalone
 doc queries ("what did we decide about X?") + cross-cutting
@@ -9,7 +9,7 @@ Status: **DRAFT** -- not yet approved for implementation.
 
 ## 1. Motivation
 
-The indexer already handles non-code files ([indexer/parser/artifact.ts](../src/insrc/indexer/parser/artifact.ts)):
+The indexer already handles non-code files ([indexer/parser/artifact.ts](../../src/insrc/indexer/parser/artifact.ts)):
 
 - `.md` / `.mdx` -> `document` + `section` entities (split on headings)
 - `.yaml` / `.json` / `.toml` / Dockerfile / etc -> `config` entities
@@ -88,7 +88,7 @@ This function is the ONLY doc-retrieval entrypoint. Everything else (shaper tool
 
 Additions to the taxonomy:
 
-- `AnalyzeTarget` gains `'docs'` ([shared/analyze-types.ts](../src/insrc/shared/analyze-types.ts))
+- `AnalyzeTarget` gains `'docs'` ([shared/analyze-types.ts](../../src/insrc/shared/analyze-types.ts))
 - `AnalyzeScopeRef.kind` compatible with docs: `workspace | repo | module | file | manifest-dir`
 - Classifier prompt updated: `docs` = "questions about design docs, plans, requirements, ADRs, READMEs, changelogs, specifications, or 'why did we decide X' style prose retrieval"
 - Scope-picker prompt updated: docs scope bands lean smaller (XS = single doc, S = one directory, M = repo docs dir, L = multi-repo docs, XL = workspace-wide)
@@ -115,7 +115,7 @@ The shaper's tool loop hits `retrieveDocSections` heavily. Also uses `file_read`
 
 ### 3.4 New docs templates
 
-Per existing planner convention (see [runtimes/code/](../src/insrc/analyze/runtimes/code/)):
+Per existing planner convention (see [runtimes/code/](../../src/insrc/analyze/runtimes/code/)):
 
 - `docs.discover` -- leaf. Discovery scan -- inventory doc families + counts. Produces `docs.inventory`.
 - `docs.family.summarise` -- leaf. Per-family summary (design/, plans/, ADRs/, etc). Produces `docs.family.summary`.
@@ -145,7 +145,7 @@ Small additions to the existing shaper prompts (no schema change):
 
 - **code.system.md** + **data.system.md** + **infra.system.md**: add a paragraph -- "if the scope contains design/plan/spec docs (`design/`, `plans/`, `docs/`, `ADR-*.md`, `SPEC-*.md`), sample the most relevant sections into `artefacts` with `cite: { kind: 'section', ... }` citations. Cap: no more than 5 sections; the goal is grounding claims, not summarising docs."
 - **generic.system.md**: broaden inventory to name doc families found.
-- The `artefacts` layer's contract in [contract.ts](../src/insrc/analyze/contract.ts) extends to permit `section` citations alongside `source` and `entity`.
+- The `artefacts` layer's contract in [contract.ts](../../src/insrc/analyze/contract.ts) extends to permit `section` citations alongside `source` and `entity`.
 
 ## 4. Phased rollout
 
@@ -230,20 +230,20 @@ Concretely: the retriever's `closureRepos` argument is a single-element array co
 
 **Findings from the code review pass:**
 
-- Lance `entity_vec` HAS a `kind` column and an `artifact` column ([db/lance/entity-vec.ts](../src/insrc/db/lance/entity-vec.ts)), but the public API's `filter` parameter is coarse: `'all' | 'code' | 'artifact'`. Kind-list filtering (`kind IN ('document', 'section', 'config')`) is NOT exposed.
+- Lance `entity_vec` HAS a `kind` column and an `artifact` column ([db/lance/entity-vec.ts](../../src/insrc/db/lance/entity-vec.ts)), but the public API's `filter` parameter is coarse: `'all' | 'code' | 'artifact'`. Kind-list filtering (`kind IN ('document', 'section', 'config')`) is NOT exposed.
 - Lance does NOT have a `file` column -- path-prefix filtering (`file LIKE 'design/%'`) requires a schema migration OR a LMDB post-filter.
 - LMDB `listEntitiesByKind` takes ONE kind at a time -- no kind-list API.
 
 **V1 changes shipped in Phase 1:**
 
-1. **Broaden `EntityVecFilter`** ([db/lance/entity-vec.ts:290](../src/insrc/db/lance/entity-vec.ts#L290)):
+1. **Broaden `EntityVecFilter`** ([db/lance/entity-vec.ts:290](../../src/insrc/db/lance/entity-vec.ts#L290)):
    ```ts
    export type EntityVecFilter =
      | 'all' | 'code' | 'artifact'
      | { readonly kinds: readonly EntityKind[] };
    ```
    When the object form is passed, the search adds `kind IN (...)` to the `where` clause. Backwards compatible.
-2. **Add `listEntitiesByKinds`** to [db/entities.ts](../src/insrc/db/entities.ts) -- variadic version of `listEntitiesByKind` accepting a kind set. Single-scan; no per-kind loop cost.
+2. **Add `listEntitiesByKinds`** to [db/entities.ts](../../src/insrc/db/entities.ts) -- variadic version of `listEntitiesByKind` accepting a kind set. Single-scan; no per-kind loop cost.
 3. **Path-prefix filter stays in LMDB** for V1 -- the retriever hydrates ANN hits then post-filters by `entity.file` against the family patterns. Docs are a small subset of the corpus (this workspace: ~thousands vs 253k total) so scan cost is <100ms.
 
 **Deferred to V2 if warranted:** adding a `file` column to `entity_vec` for path-native filtering. Only worth it if V1 post-filtering becomes a bottleneck (empirically decide after V1 ships).

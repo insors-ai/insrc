@@ -6,7 +6,7 @@
 /**
  * `design.epic` (HLD) workflow runners — Phase C.
  *
- * Six coarse-handoff steps that mirror `plans/workflow-design.md`
+ * Six coarse-handoff steps that mirror `docs/plans/workflow-design.md`
  * §5.1. All are LLM-pause runners; the framework only supplies
  * prompt + schema + finalize wrapping. Analyze work is delegated
  * to the outer LLM via `insrc_analyze_step`, same pattern as

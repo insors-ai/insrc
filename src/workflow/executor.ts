@@ -23,7 +23,7 @@
  *
  * NO PARALLEL LLM CALLS. Steps run one at a time in plan order,
  * awaits are sequential. That's the framework's non-negotiable —
- * see plans/meta-workflow-framework.md §7 + CLAUDE.md.
+ * see docs/plans/meta-workflow-framework.md §7 + CLAUDE.md.
  */
 
 import { getLogger } from '../shared/logger.js';

@@ -30,7 +30,7 @@
  *     already passed this check.
  *
  * See: design/analyze-context-builder.md "Failure modes"
- *      plans/analyze-context-builder.md Phase 6
+ *      docs/plans/analyze-context-builder.md Phase 6
  */
 
 import { listEntitiesForRepo } from '../../db/entities.js';

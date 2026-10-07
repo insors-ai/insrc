@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Section 6.1. Path-based DocFamily inference.
+ * docs/plans/docs-module.md Section 6.1. Path-based DocFamily inference.
  *
  * Verifies the ordering rule (design > plans > docs > adr > rfc >
  * spec > changelog > readme > other) + basename fallbacks.

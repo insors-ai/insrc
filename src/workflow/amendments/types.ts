@@ -6,7 +6,7 @@
 /**
  * HLD amendment types — Phase E.
  *
- * Mirrors `plans/workflow-design.md` §11.2. Every amendment is a
+ * Mirrors `docs/plans/workflow-design.md` §11.2. Every amendment is a
  * self-contained, mechanically-appliable delta to the base HLD.
  * Ten shapes, each with its own invariants enforced by the applier.
  *

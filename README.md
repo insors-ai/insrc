@@ -280,7 +280,7 @@ first-run details.
 - [`docs/workflow.md`](docs/workflow.md) — workflow user guide
 - [`design/analyze-framework.md`](design/analyze-framework.md) — analyze framework
 - [`design/indexer.html`](design/indexer.html) — indexer architecture
-- [`plans/`](plans/) — storage substrate, graph layer, repo registry contract,
+- [`docs/plans/`](docs/plans/) — storage substrate, graph layer, repo registry contract,
   tool registry, workflow framework design notes
 - [`CLAUDE.md`](CLAUDE.md) — full engineering guide and architectural rules
 

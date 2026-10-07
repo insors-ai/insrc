@@ -1,7 +1,7 @@
 /**
  * LMDB-backed conversation persistence (sessions + turns).
  *
- * Phase 2.6 of plans/storage-migration-lmdb-lance.md. Public surface
+ * Phase 2.6 of docs/plans/storage-migration-lmdb-lance.md. Public surface
  * preserved verbatim from the prior DuckDB-backed implementation so
  * callers (`daemon/index.ts`, `daemon/chat-sessions.ts`,
  * `db/compaction.ts`, `cli/commands/conversation.ts`) don't change in

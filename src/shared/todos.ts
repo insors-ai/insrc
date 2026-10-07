@@ -59,7 +59,7 @@ export function canTransitionItem(from: TodoItemStatus, to: TodoItemStatus): boo
   // Defensive fallback: if `from` is somehow not a known status (data
   // corruption, partial row, race with delete), return false rather
   // than throw. The TypeScript signature lies in production where data
-  // can drift from the schema. See plans/analyzers/code-analyzer.md F3.
+  // can drift from the schema. See docs/plans/analyzers/code-analyzer.md F3.
   return (ITEM_TRANSITIONS[from] ?? []).includes(to);
 }
 

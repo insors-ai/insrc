@@ -6,7 +6,7 @@
 /**
  * db.connections.list exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 5. Enumerate the
+ * docs/plans/exploration-based-context-build.md Phase 5. Enumerate the
  * data-driver connections registered for the active repo. Wraps the
  * same primitive that powers `db_list_connections` (see
  * daemon/tools/builtins/db/index.ts) -- one code path, two consumers.

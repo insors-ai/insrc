@@ -2,7 +2,7 @@
  * LMDB-backed graph relations + cross-file-resolver queue.
  *
  * Phase 2.3 (resolved edges) + Phase 2.4 (unresolved queue) of
- * plans/storage-migration-lmdb-lance.md, landed in one file because
+ * docs/plans/storage-migration-lmdb-lance.md, landed in one file because
  * the surfaces are tangled in the existing caller code.
  *
  * Surface preserved verbatim from the prior DuckDB-backed

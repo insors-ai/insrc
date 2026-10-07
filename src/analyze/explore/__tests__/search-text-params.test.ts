@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 3.1. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 3.1. Unit tests for
  * search.text param parsing + scope-boundary enforcement. Same
  * pattern as the other exploration param tests -- exercise only the
  * rejection paths so bad params fail before a filesystem walk.

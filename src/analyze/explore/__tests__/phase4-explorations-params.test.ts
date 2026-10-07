@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 4. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 4. Unit tests for
  * param-validation branches of the 4 new explorations. Mirrors the
  * Phase 2 + 3 pattern -- rejection paths only, so a bad param
  * surfaces before an LMDB / grep / LLM call gets spent.

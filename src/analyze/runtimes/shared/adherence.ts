@@ -8,7 +8,7 @@
  * code.adherence.check / data.adherence.check /
  * infra.adherence.check.
  *
- * plans/docs-module.md Phase 4. Per-target runtimes contribute:
+ * docs/plans/docs-module.md Phase 4. Per-target runtimes contribute:
  *   - subjectKey     ('codeSubject' | 'dataSubject' | 'infraSubject')
  *   - subjectLabel   (rendered in the prompt: "Code" | "Data" | "Infra")
  *   - hydrateExcerpts(subject, repoPath, cap) -> AdherenceExcerpt[]
@@ -316,7 +316,7 @@ async function resolveConstraints(
 
 	// Priority 3: constraintIds -- doc-summary entity ids whose
 	// keyConstraints are hydrated from the LiveProjectContext
-	// (plans/docs-module.md Phase 7). Lets the planner point at
+	// (docs/plans/docs-module.md Phase 7). Lets the planner point at
 	// specific docs by id without needing a docs.constraint.enumerate
 	// upstream task in every plan.
 	const constraintIds = params['constraintIds'];

@@ -26,7 +26,7 @@ import { SIZE_CLASSES, type BugfixMagnitude, type SizeClass, type TriageRoute } 
 // ---------------------------------------------------------------------------
 
 /**
- * Map a size tier to its workflow entry. See `plans/feature-triage-router.md`.
+ * Map a size tier to its workflow entry. See `docs/plans/feature-triage-router.md`.
  *
  * `magnitude` is consulted ONLY for the `bugfix` tier (the single scope-gated
  * category): it selects issue→build (`small`) vs issue→design→plan→build

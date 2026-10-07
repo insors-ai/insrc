@@ -6,7 +6,7 @@
 /**
  * manifests.locate exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 5. Locate infra-
+ * docs/plans/exploration-based-context-build.md Phase 5. Locate infra-
  * artefact manifests already indexed under the active repo:
  * Kubernetes / Helm / Terraform / Docker / CI. Deterministic;
  * walks the entity graph and classifies each artefact by path +

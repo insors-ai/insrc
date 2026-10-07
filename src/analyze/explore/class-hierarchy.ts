@@ -6,7 +6,7 @@
 /**
  * class.hierarchy exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 3. Given a class (by
+ * docs/plans/exploration-based-context-build.md Phase 3. Given a class (by
  * symbolName OR entityId), walk INHERITS + IMPLEMENTS edges in both
  * directions and return a compact hierarchy node the synthesizer can
  * fold into `structure` / `surface`.

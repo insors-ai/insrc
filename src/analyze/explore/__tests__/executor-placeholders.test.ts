@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 1 follow-up:
+ * docs/plans/exploration-based-context-build.md Phase 1 follow-up:
  * placeholder substitution in the executor. Verifies that string
  * params like `$e1.hits[0].path` are resolved against prior
  * exploration outputs BEFORE the runner sees them.

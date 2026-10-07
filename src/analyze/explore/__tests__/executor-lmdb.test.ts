@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Section 3. Executor
+ * docs/plans/exploration-based-context-build.md Section 3. Executor
  * tests: dispatch, dependency resolution, cache hits, failure
  * handling, unsupported-type diagnostics.
  *

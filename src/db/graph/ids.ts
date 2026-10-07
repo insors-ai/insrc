@@ -1,7 +1,7 @@
 /**
  * Sequential ID allocators for the LMDB graph store.
  *
- * Phase 1.2 of plans/storage-migration-lmdb-lance.md. Per the design
+ * Phase 1.2 of docs/plans/storage-migration-lmdb-lance.md. Per the design
  * doc:
  *
  *   - Entity ID: u64 sequential, allocated by an atomic counter in the

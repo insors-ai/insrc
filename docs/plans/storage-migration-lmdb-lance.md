@@ -2,7 +2,7 @@
 
 Execution plan for the storage substrate re-split. **Design** (schema,
 API, alternatives considered, why LMDB) lives in
-[plans/graph-storage-lmdb.md](graph-storage-lmdb.md). This document is
+[docs/plans/graph-storage-lmdb.md](graph-storage-lmdb.md). This document is
 the *how* and *when*: phased work, gates, and sequencing.
 
 ## Why (one paragraph)

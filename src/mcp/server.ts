@@ -404,7 +404,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 
 	// -------------------------------------------------------------------
 	// insrc_workflow_step — multi-turn workflow runner
-	// (plans/workflow-implementation.md). Same multi-turn shape as
+	// (docs/plans/workflow-implementation.md). Same multi-turn shape as
 	// insrc_analyze_step: server holds state under a 22-char opaque
 	// token, hands prompts + schemas to the outer LLM turn by turn.
 	// -------------------------------------------------------------------
@@ -779,7 +779,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 	// your own `insrc_analyze_step` passes) and routes it to the right start
 	// stage: Epic → define; Feature → standalone LLD → plan → build; Small →
 	// standalone LLD → build; Trivial → build. Server maps size → route and
-	// pre-fills the exact next call. See `plans/feature-triage-router.md`.
+	// pre-fills the exact next call. See `docs/plans/feature-triage-router.md`.
 	// -------------------------------------------------------------------
 	registerAndRecord(
 		'insrc_triage',

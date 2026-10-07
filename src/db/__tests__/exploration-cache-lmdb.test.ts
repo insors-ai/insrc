@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Section 7. Tests for
+ * docs/plans/exploration-based-context-build.md Section 7. Tests for
  * the exploration cache CRUD:
  *   - put + get round-trip
  *   - key derivation stability (same params -> same key -> cache hit)

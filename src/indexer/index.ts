@@ -483,7 +483,7 @@ export class IndexerService {
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       log.info({ repo: repoPath, fileCount, skipped, elapsed: `${elapsed}s` }, 'full index complete');
       await updateRepoStatus(this.db, repoPath, 'ready', new Date().toISOString());
-      // Post-indexing doc summarisation (plans/docs-module.md Section 8).
+      // Post-indexing doc summarisation (docs/plans/docs-module.md Section 8).
       // Enqueued at background priority -- the queue runs it after
       // whatever else is pending. Skip-if-unchanged inside the driver
       // makes re-runs cheap; safe to fire on every full-index.
@@ -525,7 +525,7 @@ export class IndexerService {
     // section entities, enqueue per-entity summarisation. Queue
     // dedups by entityId so rapid saves collapse; driver skip-if-
     // unchanged means re-fire on unchanged body is a cheap point
-    // lookup + hash compare. See plans/docs-module.md Section 8.
+    // lookup + hash compare. See docs/plans/docs-module.md Section 8.
     await this.enqueueDocSummarisationForFile(filePath);
   }
 
@@ -623,7 +623,7 @@ export class IndexerService {
   }
 
   // ---------------------------------------------------------------------------
-  // Doc summariser handlers (plans/docs-module.md Section 8)
+  // Doc summariser handlers (docs/plans/docs-module.md Section 8)
   // ---------------------------------------------------------------------------
 
   /**

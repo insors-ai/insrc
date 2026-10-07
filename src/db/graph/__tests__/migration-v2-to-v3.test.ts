@@ -1,6 +1,6 @@
 /**
  * Tests for the v2 -> v3 forward migration: repo-registry strict
- * contract (plans/repo-registry-strict-contract.md).
+ * contract (docs/plans/repo-registry-strict-contract.md).
  *
  * Seeds a v2 store with synthetic phantom rows + module entities,
  * runs the migration, asserts the v3 invariants:

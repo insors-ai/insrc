@@ -1,7 +1,7 @@
 # Plan: Graph Storage Re-split -- Custom LMDB Layer + LanceDB Restore
 
 **Design doc.** Execution-side phasing lives in
-[plans/storage-migration-lmdb-lance.md](storage-migration-lmdb-lance.md).
+[docs/plans/storage-migration-lmdb-lance.md](storage-migration-lmdb-lance.md).
 
 Reverse the prior DuckDB consolidation experiment. End state:
 **three substrates**, each doing what it's built for, instead of one substrate
@@ -99,7 +99,7 @@ space is mostly hobby projects.
 
 ## Related plans
 
-- [plans/storage-migration-lmdb-lance.md](storage-migration-lmdb-lance.md) --
+- [docs/plans/storage-migration-lmdb-lance.md](storage-migration-lmdb-lance.md) --
   execution plan for this design (phased work, gates, sequencing). This
   doc is the *what* / *why*; the migration plan is the *how* / *when*.
 - [plans/data-driver-duckdb-files.md](data-driver-duckdb-files.md) --
@@ -110,7 +110,7 @@ space is mostly hobby projects.
 - [plans/cross-file-references.md](cross-file-references.md) -- the
   cross-file resolver was rewritten in Phase A.8 to issue DuckDB SQL.
   This plan rewrites it again to use the LMDB graph API.
-- [plans/analyzers/data-analyzer-skills.md](analyzers/data-analyzer-skills.md)
+- [docs/plans/analyzers/data-analyzer-skills.md](analyzers/data-analyzer-skills.md)
   -- unaffected at the skill level. Skills hit the data-driver pool, not
   the storage pool. End-to-end smoke runs are *gated* on this plan
   landing.

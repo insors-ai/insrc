@@ -1,7 +1,7 @@
 /**
  * LanceDB connection lazy-init singleton.
  *
- * Phase 3.1 of plans/storage-migration-lmdb-lance.md. Mirrors the
+ * Phase 3.1 of docs/plans/storage-migration-lmdb-lance.md. Mirrors the
  * shape of `db/graph/store.ts`: lazy-init via `getLanceConn()`,
  * lifecycle close via `closeLanceConn()`, test-only path injection
  * via `setLanceConnPath()`.

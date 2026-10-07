@@ -1,7 +1,7 @@
 /**
  * Forward-migration runner for the LMDB graph env.
  *
- * Phase 7.2 of plans/storage-migration-lmdb-lance.md. Scaffolding +
+ * Phase 7.2 of docs/plans/storage-migration-lmdb-lance.md. Scaffolding +
  * empty registry. v1 is the first schema version, so there are no
  * registered migrations yet -- the file ships as a wired-up no-op
  * that activates the moment a v2 (or beyond) migration is added.
@@ -137,7 +137,7 @@ const MIGRATION_V1_TO_V2: Migration = {
 
 /**
  * v2 → v3: repo-registry strict contract
- * (plans/repo-registry-strict-contract.md).
+ * (docs/plans/repo-registry-strict-contract.md).
  *
  *   1. Provision shared-modules reserved registry rows (one per
  *      `SharedModulesNamespace`) at fixed reserved IDs at the top

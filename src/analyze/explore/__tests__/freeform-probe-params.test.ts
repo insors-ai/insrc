@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 6. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 6. Unit tests for
  * freeform.probe param validation. The runner itself invokes the
  * target's legacy tool loop -- that path lives in a live test; here
  * we only exercise the reject branches.

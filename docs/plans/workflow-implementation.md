@@ -2,9 +2,9 @@
 
 Plan doc. Status: **implemented (Phases A–G)**. Parents:
 
-- [`plans/meta-workflow-framework.md`](meta-workflow-framework.md) — architecture
-- [`plans/workflow-define.md`](workflow-define.md) — `define` workflow
-- [`plans/workflow-design.md`](workflow-design.md) — `design.epic` + `design.story`
+- [`docs/plans/meta-workflow-framework.md`](meta-workflow-framework.md) — architecture
+- [`docs/plans/workflow-define.md`](workflow-define.md) — `define` workflow
+- [`docs/plans/workflow-design.md`](workflow-design.md) — `design.epic` + `design.story`
 
 > **As-built deltas.** `define`, `design.epic`, `design.story`,
 > amendments, and the GitHub tracker are implemented under `src/workflow/`
@@ -88,14 +88,14 @@ We do NOT rebuild these. The workflow framework consumes them:
 
 | Reused | Source | How the workflow framework uses it |
 | :--- | :--- | :--- |
-| Multi-turn state store | [`mcp/analyze-step/state-store.ts`](../src/mcp/analyze-step/state-store.ts) | Copy the pattern (LRU + TTL + 22-char tokens) into `mcp/workflow-step/state-store.ts`. Same contract. |
-| `stepPlan` executor pattern | [`analyze/explore/executor.ts`](../src/analyze/explore/executor.ts) | Copy the pause/resume shape for workflow step execution. Placeholder substitution (`$s1.<accessor>`) works the same way. |
-| Structured-output retry + ajv | [`agent/providers/structured-output.ts`](../src/agent/providers/structured-output.ts) | Reuse `withStructuredRetry` and `validateAgainstSchema` verbatim for step output validation. |
-| MCP server registration | [`mcp/server.ts`](../src/mcp/server.ts) | Add a second tool (`insrc_workflow_step`) alongside `insrc_analyze_step`. Same server, same subprocess. |
-| Analyze framework | [`analyze/`](../src/analyze/) | Every workflow's `context.assemble` step calls `analyze.query` (a thin wrapper around `insrc_analyze_step`) to build the citation-grounded context bundle. |
-| Repo ignore filter | [`analyze/context/repo-ignore-filter.ts`](../src/analyze/context/repo-ignore-filter.ts) | Any file-writing step reuses this to avoid writing under gitignored paths. |
-| Config surface | [`config/analyze.ts`](../src/config/analyze.ts) | Extend for workflow-specific config (shaper choice, retry counts). |
-| CLI framework (commander) | [`cli/index.ts`](../src/cli/index.ts) | Add `insrc workflow` command group. |
+| Multi-turn state store | [`mcp/analyze-step/state-store.ts`](../../src/mcp/analyze-step/state-store.ts) | Copy the pattern (LRU + TTL + 22-char tokens) into `mcp/workflow-step/state-store.ts`. Same contract. |
+| `stepPlan` executor pattern | [`analyze/explore/executor.ts`](../../src/analyze/explore/executor.ts) | Copy the pause/resume shape for workflow step execution. Placeholder substitution (`$s1.<accessor>`) works the same way. |
+| Structured-output retry + ajv | [`agent/providers/structured-output.ts`](../../src/agent/providers/structured-output.ts) | Reuse `withStructuredRetry` and `validateAgainstSchema` verbatim for step output validation. |
+| MCP server registration | [`mcp/server.ts`](../../src/mcp/server.ts) | Add a second tool (`insrc_workflow_step`) alongside `insrc_analyze_step`. Same server, same subprocess. |
+| Analyze framework | [`analyze/`](../../src/analyze/) | Every workflow's `context.assemble` step calls `analyze.query` (a thin wrapper around `insrc_analyze_step`) to build the citation-grounded context bundle. |
+| Repo ignore filter | [`analyze/context/repo-ignore-filter.ts`](../../src/analyze/context/repo-ignore-filter.ts) | Any file-writing step reuses this to avoid writing under gitignored paths. |
+| Config surface | [`config/analyze.ts`](../../src/config/analyze.ts) | Extend for workflow-specific config (shaper choice, retry counts). |
+| CLI framework (commander) | [`cli/index.ts`](../../src/cli/index.ts) | Add `insrc workflow` command group. |
 
 ## 4. New infrastructure
 

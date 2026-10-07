@@ -6,7 +6,7 @@
 /**
  * test.locate exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 4. Given a subject
+ * docs/plans/exploration-based-context-build.md Phase 4. Given a subject
  * (module name, class name, or function name), enumerate the test
  * entities + files that plausibly cover it.
  *

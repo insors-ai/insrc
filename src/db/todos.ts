@@ -1,7 +1,7 @@
 /**
  * LMDB-backed persistence for the session-scoped TODO framework.
  *
- * Phase 2.7 of plans/storage-migration-lmdb-lance.md. Public surface
+ * Phase 2.7 of docs/plans/storage-migration-lmdb-lance.md. Public surface
  * preserved verbatim from the prior DuckDB-backed implementation so
  * callers (`daemon/todos-api.ts`, `daemon/todos-rpc.ts`, etc.) don't
  * change in this phase. The `db: DbClient` parameter is retained but

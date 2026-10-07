@@ -1,6 +1,6 @@
 /**
  * Hot-backup orchestrator (Phase 7.1 of
- * plans/storage-migration-lmdb-lance.md).
+ * docs/plans/storage-migration-lmdb-lance.md).
  *
  * Snapshots both substrates while the daemon is still serving:
  *

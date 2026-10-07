@@ -707,7 +707,7 @@ export type IndexJob =
    * a full index completes (fired inline at the end of full-index)
    * OR on demand. Skip-if-unchanged means re-summarise is cheap.
    *
-   * See plans/docs-module.md Section 8.
+   * See docs/plans/docs-module.md Section 8.
    */
   | { kind: 'doc-summarise-repo'; repoPath: string }
   /**

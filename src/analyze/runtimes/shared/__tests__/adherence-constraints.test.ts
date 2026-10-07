@@ -1,5 +1,5 @@
 /**
- * plans/docs-module.md Phase 7. Tests for the adherence-check
+ * docs/plans/docs-module.md Phase 7. Tests for the adherence-check
  * runner's constraint-sourcing priority:
  *   1. params.constraintsSource -> upstream task's `constraints`
  *   2. params.constraints (inline)

@@ -1,7 +1,7 @@
 /**
  * `config_vec` LanceDB table -- config-entry embeddings.
  *
- * Phase 3.4 of plans/storage-migration-lmdb-lance.md.
+ * Phase 3.4 of docs/plans/storage-migration-lmdb-lance.md.
  *
  * Schema (post Phase 0.2 dim downshift):
  *   id:         string         -- entry id (matches LMDB config_entry.id)

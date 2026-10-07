@@ -1,7 +1,7 @@
 /**
  * LMDB env + sub-DB scaffolding for the storage layer.
  *
- * Phase 1.1 of plans/storage-migration-lmdb-lance.md. This file owns
+ * Phase 1.1 of docs/plans/storage-migration-lmdb-lance.md. This file owns
  * the env lifecycle (open/close), exposes typed handles for each of
  * the 19 sub-DBs, and provides minimal txn helpers. ID allocation is
  * 1.2 (separate file); typed record codecs are 1.3; test path injection
@@ -111,7 +111,7 @@ const MAX_DBS = 32;
  *         derived and rebuilt by the v1→v2 migration on existing
  *         envs.
  *   v3 -- repo-registry strict contract
- *         (plans/repo-registry-strict-contract.md):
+ *         (docs/plans/repo-registry-strict-contract.md):
  *         - RepoRow gains a `kind: RepoKind` discriminator
  *           ('workspace' | 'shared-modules') and an optional
  *           `namespace: SharedModulesNamespace` field for
@@ -236,7 +236,7 @@ export interface GraphStore {
 	configByScope:       AnyDb;
 
 	// Doc summaries -- one row per doc/section entity, produced by the
-	// post-indexing summariser (plans/docs-module.md Section 8).
+	// post-indexing summariser (docs/plans/docs-module.md Section 8).
 	docSummary:          AnyDb;
 	// Secondary index: repoId -> entityU64. dupSort so a repo has many
 	// summary rows; enables per-repo sweeps without scanning the whole
@@ -247,7 +247,7 @@ export interface GraphStore {
 	// invocation (concept.resolve / module.profile / etc.). Keyed by
 	// (repoId, repoLastIndexedAt, paramHash) so a re-index
 	// automatically invalidates every cached entry for that repo.
-	// See plans/exploration-based-context-build.md Section 7.
+	// See docs/plans/exploration-based-context-build.md Section 7.
 	explorationCache:    AnyDb;
 }
 
@@ -444,8 +444,8 @@ export async function getGraphStore(): Promise<GraphStore> {
  *
  * Daemon startup runs this once via `runReaderCheck('startup')`, then a
  * 5-min timer runs `runReaderCheck('periodic')`. See Phase 5.5 of
- * plans/storage-migration-lmdb-lance.md and the "Stale reader slots"
- * row in plans/graph-storage-lmdb.md's risk table.
+ * docs/plans/storage-migration-lmdb-lance.md and the "Stale reader slots"
+ * row in docs/plans/graph-storage-lmdb.md's risk table.
  */
 export function runReaderCheck(reason: string): number {
 	const inst = _instance;

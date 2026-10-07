@@ -1,5 +1,5 @@
 /**
- * Data Analyzer-side built-in tools (Phase 3 of plans/analyzers/data-analyzer.md).
+ * Data Analyzer-side built-in tools (Phase 3 of docs/plans/analyzers/data-analyzer.md).
  *
  * Distinct from `db_*` (which lives in `daemon/tools/builtins/db/` and
  * shipped with the data-driver): the `data_*` family is analyzer-

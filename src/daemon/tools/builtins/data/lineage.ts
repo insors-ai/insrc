@@ -2,7 +2,7 @@
  * data_lineage -- cross-link a data target (table / collection / file)
  * to the code that reads or writes it.
  *
- * Phase 3.1 of plans/analyzers/data-analyzer.md. Implements a v1
+ * Phase 3.1 of docs/plans/analyzers/data-analyzer.md. Implements a v1
  * lineage probe that:
  *
  *   1. Vector-searches the active session's repo closure for code
@@ -144,7 +144,7 @@ export const dataLineageTool: Tool = {
 	requiresApproval: false,
 
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
-		// Cross-agent depth check (Phase 4 of plans/analyzers/data-analyzer.md).
+		// Cross-agent depth check (Phase 4 of docs/plans/analyzers/data-analyzer.md).
 		// `data_lineage` is exposed both internally (data-analyzer's own
 		// runner; depth=0) and cross-agent (sibling analyzers; depth>=1
 		// when this is the second hop). The cap is strict: once a

@@ -6,7 +6,7 @@
 /**
  * Runtime: data.adherence.check
  *
- * plans/docs-module.md Phase 4. Data-side adherence check. Thin
+ * docs/plans/docs-module.md Phase 4. Data-side adherence check. Thin
  * wrapper around the shared adherence runner. Hydrates excerpts
  * from indexed data-adjacent config + SQL files
  * (`schema.sql`, `migrations/*.sql`, `*.dbml`, `*.prisma`,

@@ -1,6 +1,6 @@
 /**
  * LMDB-backed entity persistence. Phase 2.2 of
- * plans/storage-migration-lmdb-lance.md.
+ * docs/plans/storage-migration-lmdb-lance.md.
  *
  * Public surface preserved verbatim from the prior DuckDB-backed
  * implementation: callers (`indexer/`, `daemon/`, `agent/tasks/`,
@@ -733,7 +733,7 @@ export async function listEntitiesByKind(
 /**
  * Variadic version of `listEntitiesByKind`: return every entity
  * whose kind is in the given set. Single entity-table scan; O(N)
- * with the kind check inlined per row. plans/docs-module.md Section
+ * with the kind check inlined per row. docs/plans/docs-module.md Section
  * 6.4 -- the docs retriever calls this to enumerate every doc /
  * section / config entity in a repo without three separate scans.
  *
@@ -1078,7 +1078,7 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 		// Walk in_edge by prefix(u64), removing both the in_edge
 		// entry and the matching out_edge mirror at (from, kind, u64).
 		sweepIncomingEdges(s, u64);
-		// Doc-summariser cascade (plans/docs-module.md Section 8):
+		// Doc-summariser cascade (docs/plans/docs-module.md Section 8):
 		// drop any DocSummary row + its secondary index entry keyed
 		// on this u64. Cheap no-op when the entity isn't a doc.
 		deleteDocSummaryInTxn(s, u64);

@@ -1,7 +1,7 @@
 /**
  * 1-hop edge primitives over the LMDB out_edge / in_edge sub-DBs.
  *
- * Phase 4.2 of plans/storage-migration-lmdb-lance.md. Splits the
+ * Phase 4.2 of docs/plans/storage-migration-lmdb-lance.md. Splits the
  * neighbor-scan iterator out of `traversal.ts` so 1-hop callers
  * (findCallers / findCallees / findDefinedIn / findImports / domain
  * search wrappers) can use it without dragging in BFS / SCC machinery.

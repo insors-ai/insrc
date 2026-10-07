@@ -6,7 +6,7 @@
 /**
  * HldArtifact — Phase C.
  *
- * Shape mirrors `plans/workflow-design.md` §7.1. Renders to the Epic's
+ * Shape mirrors `docs/plans/workflow-design.md` §7.1. Renders to the Epic's
  * nested item-root `HLD.md` (sc2: `docs/epics/<slug>-E<date><hash8>/HLD.md`).
  * Downstream LLDs read the canonical JSON at `.insrc/artifacts/HLD-<hash>.json`.
  *

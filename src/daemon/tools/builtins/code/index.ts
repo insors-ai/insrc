@@ -3,7 +3,7 @@
  *
  * Tools with the `code_` first-underscore-segment that read from the
  * LMDB code graph + Lance entity_vec table to support code-analyzer
- * skills (plans/analyzers/code-analyzer-skills.md). Distinct from the
+ * skills (docs/plans/analyzers/code-analyzer-skills.md). Distinct from the
  * cross-agent `code_*` tools (`code_locate` / `code_trace` /
  * `code_describe`) which are registered separately via
  * `daemon/cross-agent/code-tools.ts` -- those are the surface

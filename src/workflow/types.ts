@@ -10,8 +10,8 @@ import type { BugfixMagnitude, SizeClass } from './triage/types.js';
 /**
  * Workflow framework type surface.
  *
- * See plans/meta-workflow-framework.md for the architecture and
- * plans/workflow-implementation.md §5 for how the pieces fit
+ * See docs/plans/meta-workflow-framework.md for the architecture and
+ * docs/plans/workflow-implementation.md §5 for how the pieces fit
  * together.
  *
  * A workflow is a NAMED, versioned recipe:
@@ -394,7 +394,7 @@ export interface ArtifactMetaBase {
 	 *  feature routed here by triage, with no parent DEF/HLD. Its `epicHash` is
 	 *  a self-minted identity, not a shared Epic hash. Downstream gates skip
 	 *  HLD-staleness for a standalone LLD (no HLD to be stale against). See
-	 *  `plans/feature-triage-router.md`. */
+	 *  `docs/plans/feature-triage-router.md`. */
 	readonly standalone?:  boolean;
 	/** The triage size class that routed this feature. Absent on Epic-chain
 	 *  artifacts that were not classified. */

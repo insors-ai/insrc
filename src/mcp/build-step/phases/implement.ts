@@ -49,7 +49,7 @@ export async function handleImplement(
 
 	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
 	// (build only) feature. Bypasses task/tracker resolution; the spec is the
-	// standalone LLD or the scope statement. See `plans/feature-triage-router.md`.
+	// standalone LLD or the scope statement. See `docs/plans/feature-triage-router.md`.
 	if (input.standalone?.standalone === true) {
 		return handleStandaloneImplement(repoPath, input.standalone);
 	}

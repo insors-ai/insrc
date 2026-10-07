@@ -1,6 +1,6 @@
 # Implementation plan — Analyze Context Builder
 
-Design: [`design/analyze-context-builder.md`](../design/analyze-context-builder.md)
+Design: [`design/analyze-context-builder.md`](../../design/analyze-context-builder.md)
 
 ## Scope
 

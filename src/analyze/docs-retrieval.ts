@@ -6,7 +6,7 @@
 /**
  * Docs retrieval primitive.
  *
- * plans/docs-module.md Section 3.1. The single retrieval entry
+ * docs/plans/docs-module.md Section 3.1. The single retrieval entry
  * point used by:
  *   - The docs shaper (Phase 2) when building bundles
  *   - The adherence-check templates (Phase 4) when correlating
@@ -21,7 +21,7 @@
  *   - Hybrid rank fusing cosine similarity + keyword hit count
  *   - Family / path bias for filenameHint matches
  *   - Repo closure filter (V1 = current repo only per
- *     plans/docs-module.md Section 6.3)
+ *     docs/plans/docs-module.md Section 6.3)
  *   - Path-prefix filter as LMDB post-filter (no Lance schema
  *     migration; docs corpus is small enough that scanning is
  *     under 100ms even at 10k+ doc entities)

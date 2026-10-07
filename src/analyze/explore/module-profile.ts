@@ -6,7 +6,7 @@
 /**
  * module.profile exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 1. Given a
+ * docs/plans/exploration-based-context-build.md Phase 1. Given a
  * directory path (or single file), produce a compact profile:
  *   - subdirs (immediate children only)
  *   - files in dir with language + size + kind

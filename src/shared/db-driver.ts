@@ -241,7 +241,7 @@ export interface PlanResult {
 }
 
 // ---------------------------------------------------------------------------
-// Aggregation (Phase 0.1 of plans/analyzers/data-analyzer-skills.md)
+// Aggregation (Phase 0.1 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 /**
@@ -313,7 +313,7 @@ export interface AggregateResult {
 /**
  * Top-N distinct value request. Returns the most frequent values for
  * one column plus the column's overall distinct cardinality. Used by
- * `db_sql_distinct` (Phase 0.3 of plans/analyzers/data-analyzer-skills.md)
+ * `db_sql_distinct` (Phase 0.3 of docs/plans/analyzers/data-analyzer-skills.md)
  * and the `data.source.rdbms.sample-distinct` skill.
  *
  * `topN` is clamped to [1, 1000] in the tool layer; results are
@@ -390,7 +390,7 @@ export interface FunctionalDependencyResult {
 }
 
 // ---------------------------------------------------------------------------
-// Catalog enumeration (Phase 1.1 of plans/analyzers/data-analyzer-skills.md)
+// Catalog enumeration (Phase 1.1 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 export interface TableListing {
@@ -415,7 +415,7 @@ export interface IndexListing {
 }
 
 // ---------------------------------------------------------------------------
-// Histogram (Phase 0.2 of plans/analyzers/data-analyzer-skills.md)
+// Histogram (Phase 0.2 of docs/plans/analyzers/data-analyzer-skills.md)
 // ---------------------------------------------------------------------------
 
 export type HistogramMode = 'equal-width' | 'equal-frequency';

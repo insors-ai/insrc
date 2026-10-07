@@ -6,7 +6,7 @@
 /**
  * `explorationCache` LMDB sub-DB CRUD.
  *
- * plans/exploration-based-context-build.md Section 7 (Storage +
+ * docs/plans/exploration-based-context-build.md Section 7 (Storage +
  * caching). One row per successful exploration invocation.
  * Deterministic explorations gain a lot from this cache; repeated
  * shaper runs with tiny prompt variation reuse cached results.

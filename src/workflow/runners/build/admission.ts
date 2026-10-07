@@ -232,7 +232,7 @@ function short(hash: string): string {
  *      tracking artifact.
  *  Mirrors `admitBuild`'s never-throw-for-modeled-conditions discipline: a
  *  missing/unapproved LLD returns a typed refusal, not an exception. See
- *  `plans/feature-triage-router.md`. */
+ *  `docs/plans/feature-triage-router.md`. */
 export function admitStandaloneBuild(
 	repoPath:    string,
 	epicHash:    string,

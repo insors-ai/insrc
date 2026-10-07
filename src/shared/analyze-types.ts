@@ -130,7 +130,7 @@ export interface AnalyzeTaskTemplate {
 }
 
 // ---------------------------------------------------------------------------
-// Doc summariser types (plans/docs-module.md Section 8)
+// Doc summariser types (docs/plans/docs-module.md Section 8)
 // ---------------------------------------------------------------------------
 
 /**
@@ -180,7 +180,7 @@ export type DocStatus =
  * watcher fires an update). Keyed by `entityId` = the doc / section
  * entity's SHA-32 identifier.
  *
- * See plans/docs-module.md Section 8 for the full design.
+ * See docs/plans/docs-module.md Section 8 for the full design.
  */
 export interface DocSummary {
 	/** Canonical doc title -- from the doc's first H1 heading, or the

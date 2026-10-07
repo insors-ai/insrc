@@ -6,7 +6,7 @@
 /**
  * Docs tools -- shaper-facing surface for the docs module.
  *
- * plans/docs-module.md Phase 7. Wraps the docs-retrieval primitive
+ * docs/plans/docs-module.md Phase 7. Wraps the docs-retrieval primitive
  * + doc-summary CRUD + live-project-context assembler so the docs
  * shaper (and the code/data/infra shapers in Phase 8) can consult
  * them from the tool loop.
@@ -50,7 +50,7 @@ function fail(id: string, msg: string): ToolResult {
 
 function firstClosureRepo(deps: ToolDeps): string | undefined {
 	const closure = deps.closureRepos ?? [];
-	// V1 doc retrieval is repo-scoped (plans/docs-module.md Section
+	// V1 doc retrieval is repo-scoped (docs/plans/docs-module.md Section
 	// 6.3): the tool always uses the FIRST closure repo. Callers that
 	// legitimately want cross-repo doc lookup can widen the closure
 	// on a future revision.

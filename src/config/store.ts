@@ -1,7 +1,7 @@
 /**
  * LMDB-backed config-entry store.
  *
- * Phase 2.8 of plans/storage-migration-lmdb-lance.md. Public surface
+ * Phase 2.8 of docs/plans/storage-migration-lmdb-lance.md. Public surface
  * preserved verbatim from the prior DuckDB-backed implementation: the
  * `ConfigStore` class with `upsertEntry / deleteEntry / deleteByScope /
  * getEntry / listEntries / vectorSearch`. Constructor still takes a

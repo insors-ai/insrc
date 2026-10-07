@@ -1,5 +1,5 @@
 /**
- * plans/exploration-based-context-build.md Phase 2. Unit tests for
+ * docs/plans/exploration-based-context-build.md Phase 2. Unit tests for
  * the param-validation branches of the three new doc explorations.
  *
  * These tests intentionally exercise ONLY parsing / validation --

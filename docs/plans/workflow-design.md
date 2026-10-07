@@ -1,6 +1,6 @@
 # `design` workflow — HLD + LLD
 
-Plan doc. Status: **implemented**. Parent: [`plans/meta-workflow-framework.md`](meta-workflow-framework.md). Sibling: [`plans/workflow-define.md`](workflow-define.md).
+Plan doc. Status: **implemented**. Parent: [`docs/plans/meta-workflow-framework.md`](meta-workflow-framework.md). Sibling: [`docs/plans/workflow-define.md`](workflow-define.md).
 
 > **As-built deltas.** Design (`design.epic` + `design.story`) and
 > amendments are implemented. Two facts differ from this proposal:

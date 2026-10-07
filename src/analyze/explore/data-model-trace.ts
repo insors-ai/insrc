@@ -6,7 +6,7 @@
 /**
  * data-model.trace exploration runner.
  *
- * plans/exploration-based-context-build.md Phase 4. Given an entity
+ * docs/plans/exploration-based-context-build.md Phase 4. Given an entity
  * name (typically a domain class -- Invoice, GRN, PurchaseOrder,
  * ...), enumerate the shape of the model and its neighbourhood: the
  * class definition, its supers, its subclasses, and the top callers

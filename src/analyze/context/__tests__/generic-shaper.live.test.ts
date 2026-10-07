@@ -8,7 +8,7 @@
  *
  * Drives the real Ollama against three workspace configurations and
  * asserts each row of the generic edge-case matrix (G1-G3 in
- * plans/analyze-context-builder.md):
+ * docs/plans/analyze-context-builder.md):
  *
  *   G1 -- code-only workspace: code in summary; data + infra
  *         declared-absent

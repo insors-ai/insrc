@@ -339,4 +339,4 @@ The executor runs t01..t07 serially. Total: 7 tasks, low-tier model for the disc
 - `design/analyze-context-builder.md` — the `code-shaper`
 - `design/analyze-plan-builder.md` — what produces the task list
 - `design/indexer.html` — the LMDB graph that backs entity citations
-- `plans/tools.md` — the surviving tool registry that some code templates use
+- `docs/plans/tools.md` — the surviving tool registry that some code templates use

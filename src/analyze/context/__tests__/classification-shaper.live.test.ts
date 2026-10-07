@@ -9,7 +9,7 @@
  * Drives the real Ollama against three workspace configurations
  * (code-dominant / data-dominant / mixed) and the empty-workspace
  * cleanup, asserting the four classification edge-case matrix rows
- * from plans/analyze-context-builder.md:
+ * from docs/plans/analyze-context-builder.md:
  *
  *   CL1 -- code-dominant workspace: code surface mentioned; data +
  *          infra explicitly "none / not detected"

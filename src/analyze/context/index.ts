@@ -17,7 +17,7 @@
  * P5 adds the prompt files at prompts/analyze/<shaper>.system.md.
  *
  * See: design/analyze-context-builder.md "Shapers", "Public API"
- *      plans/analyze-context-builder.md Phase 0
+ *      docs/plans/analyze-context-builder.md Phase 0
  */
 
 import { runShaper } from './driver.js';

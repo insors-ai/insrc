@@ -6,7 +6,7 @@
 /**
  * Exploration executor.
  *
- * plans/exploration-based-context-build.md Section 3. Takes an
+ * docs/plans/exploration-based-context-build.md Section 3. Takes an
  * `ExplorationPlan`, runs each exploration in order via the
  * type-registered runner, and returns an `ExecutedPlan` with typed
  * outputs.

@@ -72,7 +72,7 @@ export const PATHS = {
   // dropped along with the legacy analyzer runner.
   codeAnalyzerSectionCache: join(INSRC_DIR, 'cache', 'code-analyzer-sections'),
   // Cache root for the Data Analyzer's per-task LRU
-  // (plans/analyzers/data-analyzer.md Phase 2.4). Mirrors the
+  // (docs/plans/analyzers/data-analyzer.md Phase 2.4). Mirrors the
   // code-analyzer cache shape; key shape differs --
   // SHA256(question + scope + tier + connection-fingerprint) -- so
   // schema changes invalidate per-target rather than per-commit.

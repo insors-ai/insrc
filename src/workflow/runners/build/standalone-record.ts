@@ -14,7 +14,7 @@
  * per-task validates — so the completion gate has a real record to approve
  * without a hand-back-fill. Both records are keyed identically to a normal BUILD
  * artifact (`buildArtifactPaths`) so `approveWorkflowTarget` finds them by the
- * `BUILD-` filename prefix. See `plans/feature-triage-router.md` +
+ * `BUILD-` filename prefix. See `docs/plans/feature-triage-router.md` +
  * docs/plans/PLAN-build-ledger-plan-driven-builds-today-S001.md.
  */
 

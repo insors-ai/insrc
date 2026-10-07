@@ -8,7 +8,7 @@
  *
  * Drives the real Ollama against the tiny-multi-lang-repo fixture
  * and asserts the code edge-case matrix rows that are reachable in
- * P5.c (C1, C3, C4, C6 in plans/analyze-context-builder.md):
+ * P5.c (C1, C3, C4, C6 in docs/plans/analyze-context-builder.md):
  *
  *   C1 -- Small multi-language repo, run-mode: all three languages
  *         (TypeScript / Python / Go) acknowledged in summary; all

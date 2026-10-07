@@ -1,7 +1,7 @@
 /**
  * Phase 5.x strict-contract: namespace-keyed reserved Repo registry
  * rows for shared external modules. See
- * `plans/repo-registry-strict-contract.md`.
+ * `docs/plans/repo-registry-strict-contract.md`.
  *
  * Each `SharedModulesNamespace` maps to a single reserved registry
  * row at a stable u32 ID at the top of the address space. Module

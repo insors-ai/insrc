@@ -1,16 +1,17 @@
 /**
  * SQLite driver (kind: `sqlite`).
  *
- * Uses `better-sqlite3` (synchronous, fast, no pool needed -- each
- * driver instance holds one read-only db handle). Config `url` is a
- * file:// URL or a plain path string.
+ * Uses Node's built-in `node:sqlite` (synchronous, no native addon to
+ * build, no pool needed -- each driver instance holds one read-only db
+ * handle). Config `url` is a file:// URL or a plain path string.
  *
  * Opened in read-only mode; writes would raise SQLITE_READONLY from
  * the driver even before our builder-level guards kick in. Belt +
  * braces.
  */
 
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
+import type { SQLInputValue, SQLOutputValue } from 'node:sqlite';
 
 import { getLogger } from '../../../shared/logger.js';
 import type {
@@ -72,13 +73,15 @@ class SqliteDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'sqlite';
 
-	private readonly db: Database.Database;
+	private readonly db: DatabaseSync;
 	private readonly schemaCache = new Map<string, SchemaDescription>();
 	private readonly prismaPath: string | undefined;
 
 	constructor(readonly id: string, filename: string, prismaPath?: string) {
-		this.db = new Database(filename, { readonly: true, fileMustExist: true });
-		this.db.pragma('query_only = ON');
+		// readOnly opens with SQLITE_OPEN_READONLY, which also refuses a
+		// missing file rather than creating one.
+		this.db = new DatabaseSync(filename, { readOnly: true });
+		this.db.exec('PRAGMA query_only = ON');
 		this.prismaPath = prismaPath;
 		// SQLite ships with the REGEXP operator surface but no
 		// implementation -- without registration `col REGEXP pattern`
@@ -113,12 +116,11 @@ class SqliteDriver implements RdbmsDriver {
 		// `PRAGMA table_info(X)` requires an unquoted identifier; we've
 		// already verified the shape above so concatenation is safe.
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const info = this.db.prepare(`PRAGMA table_info(${target})`).all() as any[];
+		const info = this.rows(`PRAGMA table_info(${target})`) as any[];
 		if (info.length === 0) {
 			throw new Error(`data-driver: table '${target}' not found`);
 		}
-		const fks = this.db.prepare(`PRAGMA foreign_key_list(${target})`)
-			.all() as { from: string; table: string; to: string }[];
+		const fks = this.rows(`PRAGMA foreign_key_list(${target})`) as { from: string; table: string; to: string }[];
 		const fkMap = new Map<string, { table: string; column: string }>();
 		for (const fk of fks) { fkMap.set(fk.from, { table: fk.table, column: fk.to }); }
 
@@ -143,8 +145,7 @@ class SqliteDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const { text, values } = buildSampleSql(target, opts, cols, SQLITE_DIALECT);
 		log.debug({ id: this.id, text }, 'sample query');
-		const stmt = this.db.prepare(text);
-		const rows = stmt.all(...values as unknown[]) as Record<string, unknown>[];
+		const rows = this.rows(text, values);
 		const limit = Math.min(opts.limit, 50);
 		return {
 			target,
@@ -163,7 +164,7 @@ class SqliteDriver implements RdbmsDriver {
 			: { limit: 50 };
 		const { text, values } = buildExplainSql(queryAst.target, opts, cols, SQLITE_DIALECT);
 		log.debug({ id: this.id, text }, 'explain query');
-		const rows = this.db.prepare(text).all(...values as unknown[]) as Record<string, unknown>[];
+		const rows = this.rows(text, values);
 		return { plan: rows.map(r => JSON.stringify(r)).join('\n') };
 	}
 
@@ -176,8 +177,7 @@ class SqliteDriver implements RdbmsDriver {
 		// the engine surfaces those as "no such function: ..." errors
 		// at run-time. The tool layer renders that as `success: false`
 		// without the daemon needing per-driver checks here.
-		const row = this.db.prepare(compiled.text)
-			.get(...compiled.values as unknown[]) as Record<string, unknown> | undefined;
+		const row = this.row(compiled.text, compiled.values);
 		return { target, values: readAggregateRow(row, compiled.keys) };
 	}
 
@@ -186,10 +186,8 @@ class SqliteDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, SQLITE_DIALECT);
 		log.debug({ id: this.id }, 'distinct query');
-		const countRow = this.db.prepare(compiled.distinctCountSql)
-			.get() as Record<string, unknown> | undefined;
-		const valueRows = this.db.prepare(compiled.topValuesSql)
-			.all() as Record<string, unknown>[];
+		const countRow = this.row(compiled.distinctCountSql);
+		const valueRows = this.rows(compiled.topValuesSql);
 		return {
 			target,
 			column: request.column,
@@ -206,8 +204,7 @@ class SqliteDriver implements RdbmsDriver {
 			knownColumns: cols,
 			dialect: SQLITE_DIALECT,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -219,8 +216,7 @@ class SqliteDriver implements RdbmsDriver {
 			knownColumns: cols,
 			dialect: SQLITE_DIALECT,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -231,13 +227,14 @@ class SqliteDriver implements RdbmsDriver {
 		if (opts?.schema !== undefined && opts.schema !== 'main') {
 			return { target: 'sqlite:main', tables: [], truncated: false };
 		}
-		const rows = this.db.prepare(
+		const rows = this.rows(
 			`SELECT type, name FROM sqlite_master
 			 WHERE type IN ('table', 'view')
 			   AND name NOT LIKE 'sqlite_%'
 			 ORDER BY name
 			 LIMIT ?`,
-		).all(cap + 1) as { type: string; name: string }[];
+			[cap + 1],
+		) as { type: string; name: string }[];
 		const truncated = rows.length > cap;
 		const sliced = truncated ? rows.slice(0, cap) : rows;
 		return {
@@ -257,11 +254,10 @@ class SqliteDriver implements RdbmsDriver {
 		// 'c' for explicit CREATE INDEX. Identifier already validated by
 		// quoteTarget above; concatenation safe.
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const idxRows = this.db.prepare(`PRAGMA index_list(${target})`).all() as any[];
+		const idxRows = this.rows(`PRAGMA index_list(${target})`) as any[];
 		const indexes: { name: string; columns: string[]; unique: boolean; primaryKey: boolean }[] = [];
 		for (const r of idxRows) {
-			const cols = this.db.prepare(`PRAGMA index_info(${quoteIdentForPragma(String(r.name))})`)
-				.all() as { name: string }[];
+			const cols = this.rows(`PRAGMA index_info(${quoteIdentForPragma(String(r.name))})`) as { name: string }[];
 			indexes.push({
 				name: String(r.name),
 				columns: cols.map(c => c.name),
@@ -276,8 +272,7 @@ class SqliteDriver implements RdbmsDriver {
 		return executeAntiJoin(request, {
 			dialect: SQLITE_DIALECT,
 			describe: (t) => this.describe(t).then(s => ({ columns: s.columns })),
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -288,8 +283,7 @@ class SqliteDriver implements RdbmsDriver {
 			target,
 			knownColumns: cols,
 			dialect: SQLITE_DIALECT,
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -301,8 +295,7 @@ class SqliteDriver implements RdbmsDriver {
 			knownColumns: cols,
 			dialect: SQLITE_DIALECT,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -315,8 +308,7 @@ class SqliteDriver implements RdbmsDriver {
 			dialect: SQLITE_DIALECT,
 			request,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) =>
-				this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -326,7 +318,7 @@ class SqliteDriver implements RdbmsDriver {
 		return executeDickeyFuller({
 			target, knownColumns: cols, dialect: SQLITE_DIALECT, request,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) => this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
@@ -336,13 +328,44 @@ class SqliteDriver implements RdbmsDriver {
 		return executeTemporalGapStats({
 			target, knownColumns: cols, dialect: SQLITE_DIALECT, request,
 			aggregate: (req) => this.aggregate(target, req),
-			runRows: async (sql, values) => this.db.prepare(sql).all(...values as unknown[]) as Record<string, unknown>[],
+			runRows: async (sql, values) => this.rows(sql, values),
 		});
 	}
 
 	async close(): Promise<void> {
 		this.db.close();
 	}
+
+	/** Every row of `sql`, as plain objects (see plainRow). */
+	private rows(sql: string, values: readonly unknown[] = []): Record<string, unknown>[] {
+		const stmt = this.db.prepare(sql);
+		stmt.setReadBigInts(true);
+		return stmt.all(...values as SQLInputValue[]).map(plainRow);
+	}
+
+	/** The first row of `sql` as a plain object, or undefined. */
+	private row(sql: string, values: readonly unknown[] = []): Record<string, unknown> | undefined {
+		const stmt = this.db.prepare(sql);
+		stmt.setReadBigInts(true);
+		const r = stmt.get(...values as SQLInputValue[]);
+		return r === undefined ? undefined : plainRow(r);
+	}
+}
+
+/**
+ * Copy a node:sqlite row into the shape the driver has always returned:
+ * a plain object (node:sqlite rows have a null prototype), INTEGERs as
+ * numbers (read as bigint so values past 2^53 lose precision instead of
+ * throwing), and BLOBs as Buffers.
+ */
+function plainRow(r: Record<string, SQLOutputValue>): Record<string, unknown> {
+	const out: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(r)) {
+		out[k] = typeof v === 'bigint' ? Number(v)
+			: v instanceof Uint8Array ? Buffer.from(v.buffer, v.byteOffset, v.byteLength)
+			: v;
+	}
+	return out;
 }
 
 // ---------------------------------------------------------------------------

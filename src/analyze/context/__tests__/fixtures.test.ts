@@ -25,9 +25,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 import {
 	setupFixtures,
@@ -36,13 +36,18 @@ import {
 } from './fixtures/setup.js';
 
 /**
- * Run a SQL string against the seeded SQLite via the sqlite3 CLI.
- * Returns stdout split by line. Same indirection the fixture builder
- * uses -- avoids the better-sqlite3 native ABI pin.
+ * Run a SQL string against the seeded SQLite via node:sqlite. Returns
+ * one line per row, columns joined by `|` (NULL as empty) -- the
+ * sqlite3 CLI's default list output.
  */
 function sqliteQuery(dbPath: string, sql: string): string[] {
-	const out = execFileSync('sqlite3', [dbPath, sql], { encoding: 'utf8' });
-	return out.split('\n').filter(s => s.length > 0);
+	const db = new DatabaseSync(dbPath, { readOnly: true });
+	try {
+		return db.prepare(sql).all()
+			.map(row => Object.values(row).map(v => (v === null ? '' : String(v))).join('|'));
+	} finally {
+		db.close();
+	}
 }
 
 // ---------------------------------------------------------------------------

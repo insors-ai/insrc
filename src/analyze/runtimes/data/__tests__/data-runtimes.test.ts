@@ -14,11 +14,10 @@
  *   1. Pure unit tests for _shared.ts helpers + bootstrap +
  *      prompt-file-exists. Always run.
  *   2. Integration tests against a real SQLite connection (via
- *      the existing better-sqlite3 driver) using the seeded
- *      fixture from analyze/context/__tests__/fixtures/setup.ts.
- *      Gated INSRC_LIVE_TESTS=1 (better-sqlite3 ABI pin requires
- *      Node 22, same as every other graph/driver-touching live
- *      test).
+ *      the node:sqlite driver) using the seeded fixture from
+ *      analyze/context/__tests__/fixtures/setup.ts. Gated
+ *      INSRC_LIVE_TESTS=1, same as every other graph/driver-touching
+ *      live test.
  *
  * Run:
  *   PATH=/opt/homebrew/opt/node@22/bin:$PATH INSRC_LIVE_TESTS=1 \
@@ -214,15 +213,13 @@ let originalHome: string | undefined;
 let tmpHome:      string;
 let repoRoot:     string;
 
-// Avoid importing better-sqlite3 / drivers at module load when the
-// gate is off (LMDB-free environments don't have the ABI binding).
+// Avoid importing the drivers at module load when the gate is off.
 // Dynamic-import inside the live setup hook.
 
 async function buildSqliteFixture(): Promise<string> {
-	const BetterSqlite3Mod = await import('better-sqlite3');
-	const BetterSqlite3 = BetterSqlite3Mod.default;
+	const { DatabaseSync } = await import('node:sqlite');
 	const dbPath = join(repoRoot, 'app.sqlite');
-	const db = new BetterSqlite3(dbPath);
+	const db = new DatabaseSync(dbPath);
 	db.exec(`
 		CREATE TABLE users (
 			id    INTEGER PRIMARY KEY,

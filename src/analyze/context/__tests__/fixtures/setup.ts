@@ -29,7 +29,6 @@
  *   import { setupFixtures, teardownFixtures } from './fixtures/setup.js';
  */
 
-import { execFileSync } from 'node:child_process';
 import {
 	existsSync,
 	mkdirSync,
@@ -39,6 +38,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 export interface FixtureSet {
 	/** Root tmp dir under which every fixture sits. */
@@ -185,18 +185,8 @@ function buildTinyMultiLangRepo(dir: string): string {
 // ---------------------------------------------------------------------------
 
 function buildSeededSqlite(path: string): string {
-	// Use the system `sqlite3` CLI instead of the better-sqlite3 native
-	// binding. Two reasons:
-	//   1. better-sqlite3's prebuilt binary is pinned (via .npmrc) to
-	//      the daemon's deployment Node version (currently 22). Local
-	//      test runs on a different Node version hit NODE_MODULE_VERSION
-	//      mismatch (ERR_DLOPEN_FAILED).
-	//   2. The fixture is a one-shot write -- a subprocess is fast
-	//      enough and skips the ABI-pin problem entirely.
-	//
-	// sqlite3 is preinstalled on macOS and most Linux distros. The
-	// fixture builder is test-time only; if a CI host doesn't have
-	// sqlite3, install it (or skip the live tests that need it).
+	// Built-in node:sqlite: no native addon ABI and no host `sqlite3`
+	// binary to depend on.
 
 	// Idempotency: remove a prior file before seeding.
 	if (existsSync(path)) {
@@ -233,14 +223,11 @@ function buildSeededSqlite(path: string): string {
 		`INSERT INTO order_items (order_id, product, qty) VALUES (3, 'sprocket', 3);`,
 	].join('\n');
 
+	const db = new DatabaseSync(path);
 	try {
-		execFileSync('sqlite3', [path], { input: sql, stdio: ['pipe', 'ignore', 'pipe'] });
-	} catch (err) {
-		throw new Error(
-			'fixture setup: failed to invoke sqlite3 CLI. Install it (e.g. brew install sqlite, ' +
-				`apt-get install sqlite3) or skip live tests that depend on seeded.sqlite. ` +
-				`Underlying: ${(err as Error).message}`,
-		);
+		db.exec(sql);
+	} finally {
+		db.close();
 	}
 	return path;
 }

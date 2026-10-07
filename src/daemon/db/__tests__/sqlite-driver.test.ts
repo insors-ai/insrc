@@ -12,7 +12,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import BetterSqlite3 from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
 const originalHome = process.env['HOME'];
 const tmpHome = mkdtempSync(join(tmpdir(), 'insrc-sqlite-'));
@@ -25,7 +25,7 @@ const { connectionsPath } = await import('../config.js');
 const repoRoot = mkdtempSync(join(tmpdir(), 'insrc-sqlite-repo-'));
 const dbPath = join(repoRoot, 'app.sqlite');
 
-const seed = new BetterSqlite3(dbPath);
+const seed = new DatabaseSync(dbPath);
 seed.exec(`
 	CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT);
 	CREATE TABLE orders (
@@ -271,7 +271,7 @@ describe('SqliteDriver (via pool)', () => {
 		// to ~3 per second. Datetimes stored as ISO strings so SQLite's
 		// `unixepoch()` works.
 		const tsPath = join(repoRoot, 'ts.sqlite');
-		const seedTs = new BetterSqlite3(tsPath);
+		const seedTs = new DatabaseSync(tsPath);
 		seedTs.exec(`
 			CREATE TABLE events (id INTEGER PRIMARY KEY, ts TEXT NOT NULL, val REAL NOT NULL);
 		`);
@@ -311,6 +311,7 @@ describe('SqliteDriver (via pool)', () => {
 		// the tool layer verbatim and surfaces as `success: false` to
 		// the LLM. Confirms the per-dialect coverage gap is honest
 		// rather than silently returning fabricated zeros.
+		await writeConn();  // the temporalTrend case above replaced the connection list
 		const pool = new DriverPool(repoRoot);
 		await pool.reload();
 		const drv = await pool.acquire('app');

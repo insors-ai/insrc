@@ -40,7 +40,7 @@ import assert from 'node:assert/strict';
 import { copyFileSync, cpSync, existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
 import { _resetAnalyzeConfigCacheForTests } from '../../../config/analyze.js';
 import { registerBuiltinDataDrivers } from '../../../daemon/db/drivers/index.js';
@@ -86,11 +86,10 @@ test.before(() => {
 	registerBuiltinDataDrivers();
 	fixtures = setupFixtures();
 
-	// Build a brand-new empty SQLite for D4. better-sqlite3 with
-	// fileMustExist: false on first open creates the file; we open + close
-	// to materialize it with no tables.
+	// Build a brand-new empty SQLite for D4. A read-write open creates
+	// the file; we open + close to materialize it with no tables.
 	emptySqlitePath = join(fixtures.root, 'empty.sqlite');
-	const empty = new Database(emptySqlitePath);
+	const empty = new DatabaseSync(emptySqlitePath);
 	empty.close();
 });
 

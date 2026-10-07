@@ -24,7 +24,12 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-07T09:01:35.361Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-07. Nine daemon reviews; the last four had one or two MED findings each and no HIGH. Every finding through the ninth is applied; the revisions after the ninth review (its two findings, and the user's two decisions on the open questions: keep 'no-plan-for-request' behind a guard, move all eight copies of the model-failure test to one shared function) were not sent back for a tenth review.",
+      "at": "2026-10-07T09:01:35.361Z"
+    }
   },
   "body": {
     "summary": {

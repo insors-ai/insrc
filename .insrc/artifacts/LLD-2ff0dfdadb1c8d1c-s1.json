@@ -1,0 +1,947 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791362817440-s4i7om",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-07T08:53:35.282Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 397835,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791360301609-41fijn",
+    "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every s1 acceptance criterion (ac1-ac6 of DEF §6.1) is designed: one item per story with all evidence, s1/S001 joined with sourceIds kept, ambiguity notices instead of merging, fix stories as distinct children of an issue, unresolved-parent notice plus no invented epic, tasks identified through their parent story.",
+          "evidence": "DEF.md lines 118-123 list ac1-ac6. The LLD's §3.2 construction rules (groups, standalone precedence, EXT membership, fix stories by shared hash, correctsRef resolution, task minting via taskWorkflowId) and §3.3 notice rules cover each one. Non-goals are respected: no route, gate or currency logic is designed, and the adjacent-scope list pushes those to s2-s5. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The id minters throw on an invalid createdAt or a non-hex hash, and safeCanonical turns any throw into undefined (id.ts:91-106, :185), so the H-form fallback can never throw.",
+          "evidence": "id.ts:91-94 `if (Number.isNaN(d.getTime())) throw`; :104 `if (... !/^[0-9a-f]{8,}$/.test(epicHash)) throw`; :185-186 `try { return toCanonical(mint()); } catch { return undefined; }`. storyIdToOrdinal (:123-124) also throws on 'x', and safeCanonical catches that too. [files: src/workflow/id.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildRecordFolderArgs anchors a standalone story on the LLD's epicCreatedAt, then the LLD's createdAt, then the definition head's createdAt, then the record's own createdAt; an epic story anchors on the DEF/ISSUE createdAt. The builder's anchor order copies this.",
+          "evidence": "storage.ts:420-421 `createdAtISO: (standalone ? readEpicCreatedAtStamp(repoPath, lldArtifactId(...)) : undefined) ?? upstream.createdAt ?? head.createdAt ?? ownCreatedAt`, where upstream is the LLD core for standalone (:385-387) and readEpicDefinitionCore (DEF then ISSUE, :357-365) for epic. Confirmed against real folders: LLD-761a43a6fa645815-s9 has createdAt 2026-08-05 but its folder is E20260803761a43a6, which is the DEF's date. LLD-d88062a6e63aa312-S001 (2026-08-04, no head) has folder E20260804d88062a6. The trivial BUILD-d5a433047dc3439f-S001 (2026-09-30) has folder E20260930d5a43304. [files: src/workflow/storage.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "BUILD records can carry a standalone flag that disagrees with the head/LLD, so BUILD standalone must be ignored when a head or LLD exists; inheritedStoryStandalone takes the head first, then the LLD.",
+          "evidence": "storage.ts:252-261 `readEpicDefinitionCore(...).standalone ?? readArtifactCore(..., lldArtifactId(...)).standalone ?? fallback`. Store: BUILD-d88062a6e63aa312-S001 has `\"standalone\": false` while LLD-d88062a6e63aa312-S001 has `\"standalone\": true`. Same for the dfc0371b7200f5b5 S001 pair. [files: src/workflow/storage.ts, .insrc/artifacts/BUILD-d88062a6e63aa312-S001.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "workflow.pending reads approval as non-empty meta.approvedAt / meta.rejectedAt, the stamps gates.ts writes, and mints its per-record id from epicCreatedAt ?? createdAt (a known divergence the design does not test against).",
+          "evidence": "pending.ts:126-128 checks `meta['approvedAt']` / `meta['rejectedAt']` as non-empty strings; gates.ts:606 `const approvedAt = new Date().toISOString();` and :954 `const rejectedAt = ...`. pending.ts:161-170 `const createdAt = str(meta['epicCreatedAt']) ?? str(meta['createdAt'])`. [files: src/workflow/pending.ts, src/workflow/gates.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No existing helper already reads the whole artifact store into records, so loadArtifactRecordSet is genuinely new; the reused id.ts minters and storage.ts helpers exist with the signatures the LLD states.",
+          "evidence": "The only readdirSync over ARTIFACTS_DIR outside tests is pending.ts's kind-filtered listing, which drops records that aren't pending. In tests it appears only in define-extend-e2e, resolve-comment and artifact-content. Signatures exist as stated: id.ts exports epicWorkflowId(hash, createdAt), storyWorkflowId(hash, createdAt, storyId), taskWorkflowId(..., taskId), toCanonical, safeCanonical, parseWorkflowId, taskIdToOrdinal and deriveWorkItemIdentity; storage.ts:181 exports workItemAnchorCreatedAt(meta). [files: src/workflow/id.ts, src/workflow/storage.ts, src/workflow/pending.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The listed call sites (id.ts minters/parsers, storage.ts ARTIFACTS_DIR and workItemAnchorCreatedAt) cover everything the new module consumes, and no existing caller has to change because the module is additive under src/workflow/delivery/.",
+          "evidence": "src/workflow/delivery/ does not exist yet (glob is empty), so no existing signature changes. Every external symbol the LLD's construction rules name is in its call-site lists and exists. inheritedStoryStandalone and buildRecordFolderArgs are deliberately re-implemented in memory rather than called, because both read the disk (storage.ts:300-318, 373-425), and the LLD says so explicitly. [files: src/workflow/id.ts, src/workflow/storage.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "AMD records are flat, with top-level epicHash, amendment, proposedAt, status and an optional approvedAt; every other kind is { meta, body }.",
+          "evidence": "AMD-761a43a6fa645815-1.json has top-level `\"id\"`, `\"epicHash\"`, `\"amendment\": {...}`, `\"proposedAt\"`, `\"status\": \"approved\"`, `\"approvedAt\"`. The pending AMDs (e.g. AMD-edb76e2e4d41217d-2) have `status: pending` and no approvedAt. CR-d5a433047dc3439f-S001 has meta.epicHash and meta.storyId inside `meta`. EXT records keep meta.approvedAt inside meta (EXT-761a43a6fa645815-s9.json:97), with body.addedStory {id,title} and body.amendmentId. [files: .insrc/artifacts/AMD-761a43a6fa645815-1.json, .insrc/artifacts/EXT-761a43a6fa645815-s9.json, .insrc/artifacts/CR-d5a433047dc3439f-S001.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Work-item hashes come from meta.issueHash for an ISSUE and meta.specHash for a SPEC, a DEF's meta.seededFromSpec holds the bare SPEC hash, and ISSUE titles are in body.title.",
+          "evidence": "ISSUE-0855311b6b32eb72.json:20 `\"issueHash\": \"0855311b6b32eb72\"`; SPEC-*.json:20 `\"specHash\": ...`; DEF-914cbf5ea9026b92.json:22 `\"seededFromSpec\": \"26c321a52f39c4b7\"`, which matches SPEC-26c321a52f39c4b7. All 44 ISSUE files carry a `title` field at body depth. [files: .insrc/artifacts/ISSUE-0855311b6b32eb72.json, .insrc/artifacts/DEF-914cbf5ea9026b92.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older records mix story-id forms (s1, S001, s001) and story-level BUILD task ids (S001), and the loader and builder handle all of them without merging wrongly or creating spurious tasks.",
+          "evidence": "PLAN-dfc0371b7200f5b5-s001.json has `\"storyId\": \"s001\"`, while LLD, BUILD and CR use `S001`. storyIdToOrdinal's /^[sS](\\d+)$/ maps both to 1. Exactly 20 BUILD files contain a task `\"id\": \"S<n>\"` (e.g. BUILD-0855311b6b32eb72-S001), matching c8; the LLD creates no task for these. No meta.storyId in the store is outside the s/S+digits form, so the ':R(<raw>)' path is defensive only. [files: .insrc/artifacts/PLAN-dfc0371b7200f5b5-s001.json, .insrc/artifacts/BUILD-0855311b6b32eb72-S001.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD implements only sc1-sc3, the contracts s1 owns, and leaves route (sc4), review/attention (sc5), currency/amendment staleness (sc6) and the snapshot/handler (sc7) to s2-s5. Its sc2 refinements (LLD-first anchor for standalone stories, and the H-form also covering an un-mintable createdAt or hash) stay inside s1's own contract.",
+          "evidence": "HLD.md:44, :92 and :141 name s1 as Owner Story for sc1, sc2 and sc3. The HLD's sc2 comment (:104-110) requires ids to equal the existing path-scheme folder, and the LLD's anchor refinement is what storage.ts:420-421 actually does. The notice table matches HLD:172-175 exactly (true for record-unreadable, identity-ambiguous, unresolved-parent, validation-conflict). No sc4-sc7 field or rule is designed. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Slug-based parentRef resolution (against other work items' meta.epicSlug, excluding the issue's own hash) gives the stated outcome for every real parentRef shape: a self-slug gives null, an outward slug resolves, a bare hash resolves, and nothing in the store triggers false ambiguity.",
+          "evidence": "ISSUE-0855311b6b32eb72 parentRef.slug 'bug-build-record-triage-routed-small' equals its own epicSlug, so it is excluded by hash and gives null. 'vs-code-editor-dev-chat-ui' appears only under hash f9563bf5bbb29c43, and 'add-daemon-driven-code-review-stage' only under 761a43a6fa645815 (the DEF plus LLD/PLAN/EXT/AMD records). 'artifact-docs-folders-fork-per-stage', referenced by ISSUE-0b2faed8 and ISSUE-3a98d279, appears only as the epicSlug of ISSUE-e20235c17f083a16 and so resolves uniquely. ISSUE-095906bac5bbacaf uses the bare hash 'd5a433047dc3439f' with storyId 's1', which matches the trivial BUILD/CR work item. Each failure (unreadable store, unreadable, invalid or meta-less file, unknown prefix, unparseable storyId, un-mintable anchor) has stated detection and handling in §5. [files: .insrc/artifacts/ISSUE-095906bac5bbacaf.json, .insrc/artifacts/ISSUE-3a98d27994547262.json, .insrc/artifacts/ISSUE-e20235c17f083a16.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of s1 ac1-ac6 maps to at least one named test over fabricated or real-shape records, and the real-shape fixtures the tests cite exist with the shapes the tests assume.",
+          "evidence": "§6's acceptance mapping lists tests for ac1-ac6. The fixtures it cites match the store: LLD-d88062a6e63aa312-S001 (standalone true, no head, no epicCreatedAt), BUILD-d88062a6e63aa312-S001 (standalone false), BUILD-d5a433047dc3439f-S001 (standalone true, sizeClass 'trivial', no head), ISSUE-57446545909fe95c (parentRef slug plus storyId 's1'), ISSUE-0855311b6b32eb72 (self-slug), BUILD-0855311b6b32eb72-S001 (S001 task id). One small wording issue: §6 calls the dfc0371b S001/s001 pair 'in epic dfc0371b', but that work item has no DEF and is standalone. The fixture still exercises the s1/S001 join. [files: .insrc/artifacts/LLD-dfc0371b7200f5b5-S001.json, .insrc/artifacts/PLAN-dfc0371b7200f5b5-s001.json]",
+          "action": "Optional: call the dfc0371b fixture a standalone work item rather than an epic in the test names.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-07T09:16:37.665Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-07T09:21:44.641Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This story builds the foundation every other delivery pass reads: a loader that reads the artifact store once into an immutable record set, and a pure builder that turns that record set into one graph of epics, stories, tasks and issues under the framework's existing canonical identity. It also fixes the single notice shape and attention table that every pass uses to report missing, ambiguous or unresolved evidence. Nothing here writes to the store or decides a stage.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A stateless, read-only projection pipeline in a new src/workflow/delivery module, beside pending.ts and artifact-content.ts. One request performs one read of every JSON record under the artifact store into an immutable record set (sc1), keeping unreadable files as load failures instead of throwing. The identity pass (s1) turns that record set into a work-item graph (sc2) of epics, stories, tasks and issues under the canonical work-item identity, with every item's evidence records attached. Three passes then run independently over the same graph and record set, each producing an annotation keyed by work-item or artifact id: route-aware stage with its reason (s2, sc4), gate signals and the gate-based attention reasons (s3, sc5), and record currency, amendment/extension checks and data-quality notices (s4, sc6). All three report problems through the one notice shape s1 owns (sc3). The snapshot step (s5) merges graph and annotations into the published response (sc7), computes counts and the final Needs-attention flag, sorts everything deterministically, and stamps the read time. The daemon exposes it as two new handler-map entries that lazy-import the module, following the workflow.pending idiom; no existing handler changes.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactRecordSet",
+          "purpose": "One immutable reading of the artifact store: every parsed record with the facts all passes share, plus every file that could not be read. The single source every later layer reads, so no pass re-reads the disk and all passes see the same records.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c18",
+            "c4"
+          ],
+          "interfaceSketch": "type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';\n\ntype ApprovalState = 'approved' | 'rejected' | 'pending';\n\ninterface ArtifactRecord {\n  readonly artifactId: string;              // file stem, e.g. 'LLD-<hash>-s1'\n  readonly kind: DeliveryArtifactKind;\n  readonly workItemHash: string | null;     // meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC; top-level epicHash for an AMD\n  readonly storyIdRaw: string | null;       // meta.storyId exactly as written\n  readonly storyOrdinal: number | null;     // canonical ordinal of storyIdRaw, null when absent or unparseable\n  readonly approval: { readonly state: ApprovalState; readonly approvedAt: string | null; readonly rejectedAt: string | null };\n                                            // meta.approvedAt / meta.rejectedAt; for an AMD, top-level approvedAt / rejectedAt / status\n  readonly createdAt: string | null;        // meta.createdAt; top-level proposedAt for an AMD\n  readonly epicCreatedAt: string | null;    // meta.epicCreatedAt when stamped\n  readonly meta: Readonly<Record<string, unknown>>;   // the record's meta; for a flat AMD, every top-level field except `amendment`\n  readonly body: unknown;                             // the record's body; for a flat AMD, its `amendment` object\n}\n\n// Per-kind lift: every kind except AMD is read as { meta, body }; AMD records are flat\n// ({ id, epicHash, amendment, status, approvedAt?, rejectedAt?, ... }) and are lifted as described above.\n// A non-AMD file without meta is a 'missing-meta' load failure.\n\ninterface RecordLoadFailure {\n  readonly fileName: string;\n  readonly reason: 'unreadable' | 'invalid-json' | 'missing-meta' | 'unknown-kind';\n  readonly detail: string;\n}\n\ninterface ArtifactRecordSet {\n  readonly repo: string;\n  readonly readAt: string;                  // ISO time the directory was listed\n  readonly records: readonly ArtifactRecord[];   // sorted by artifactId\n  readonly failures: readonly RecordLoadFailure[]; // sorted by fileName\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "WorkItemGraph",
+          "purpose": "The identity and hierarchy of all work: each epic, story, task and issue exactly once under its canonical id, with parent/child links, the source ids it was joined from, and the artifacts that are its evidence.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ],
+          "interfaceSketch": "type DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue';\n\ninterface WorkItemNode {\n  readonly id: string;                      // canonical work-item id, e.g. 'E20261007<hash8>:S001', ':T002' for tasks; issue id for an issue\n                                            // Records are grouped by workItemHash + storyOrdinal BEFORE the id is minted. The id's date segment\n                                            // is the work item's anchor date: the definition head's (DEF-/ISSUE-<hash>) createdAt when one exists;\n                                            // otherwise workItemAnchorCreatedAt (meta.epicCreatedAt ?? meta.createdAt, storage.ts:181) of the\n                                            // group's earliest-created design head (LLD, else SPEC or BUILD for routes without one). The minted id\n                                            // must equal deriveWorkItemIdentity's output and the work item's existing path-scheme folder whenever\n                                            // those can be derived. Only when no record of the group has any createdAt is the id\n                                            // 'H<workItemHash>[:S<nnn>]', with an 'identity-anchor-missing' notice.\n  readonly kind: DeliveryItemKind;\n  readonly title: string | null;            // null when no record names it\n  readonly workItemHash: string | null;\n  readonly standalone: boolean;\n  readonly sourceIds: readonly string[];    // every raw id joined into this item, e.g. ['s1', 'S001']\n  readonly parentId: string | null;\n  readonly childIds: readonly string[];     // sorted\n  readonly evidenceArtifactIds: readonly string[]; // sorted; artifacts whose identity resolves to this item\n  readonly plannedTaskIds: readonly string[];      // stories only: task ids from the PLAN\n                                                   // Task items are minted only from t<n> ids (taskIdToOrdinal); a build task id equal to the\n                                                   // story's own id is a story-level result, creates no task item and raises no notice\n  readonly correctsRef: { readonly epicHash?: string; readonly storyId?: string; readonly slug?: string; readonly resolvedItemId: string | null } | null;\n                                            // issues only, from meta.parentRef; resolved by epicHash, else by slug against records' meta.epicSlug,\n                                            // EXCLUDING records that share the issue's own hash (the issue and its fix stories). A parentRef that\n                                            // names only the issue itself means 'no corrected parent': correctsRef is null and no notice is raised.\n  readonly seededFromSpecId: string | null; // 'SPEC-' + meta.seededFromSpec (which holds the bare 16-char spec hash); matched against\n                                            // the SPEC record's artifactId, and that SPEC is then in this item's evidence\n}\n\ninterface WorkItemGraph {\n  readonly items: ReadonlyMap<string, WorkItemNode>;\n  readonly rootIds: readonly string[];      // epics, standalone stories, issues; sorted\n  readonly notices: readonly DeliveryNotice[];  // identity notices (sc3)\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "DeliveryNotice",
+          "purpose": "The one shape every pass uses to report missing, malformed, ambiguous or contradictory evidence, so notices from identity, stage, gate and currency passes can be merged, sorted and counted uniformly. Owned at the root story because s2, s3 and s4 sit on separate branches and all emit notices.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "type NoticeCode =\n  | 'record-unreadable'          // s1: a file in the store could not be loaded\n  | 'identity-ambiguous'         // s1: records the canonical rule cannot settle as same or different\n  | 'unresolved-parent'          // s1: an issue's corrected parent, or a record's epic, is not in the store\n  | 'identity-anchor-missing'    // s1: no recorded date at all to mint the canonical id; hash form used\n  | 'unattached-spec'            // s1: a SPEC that no work item names as its seededFromSpec (store-level, attention false)\n  | 'unknown-route'              // s2: no recorded route for an item that needs one\n  | 'review-without-build'       // s2: a code review exists with no build record\n  | 'unplanned-task'             // s3: a build task with no matching planned task\n  | 'validation-conflict'        // s3: completion approved while a task failed\n  | 'incomplete-evidence'        // s4 (missing fields), s5 (a plan missing on a route that requires one): expected evidence absent\n  | 'review-currency-unknown'    // s4: no recorded field settles whether a review is current\n  | 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing\n\ninterface DeliveryNotice {\n  readonly code: NoticeCode;\n  readonly message: string;\n  readonly itemIds: readonly string[];      // sorted; empty for store-level notices\n  readonly artifactIds: readonly string[];  // sorted\n  readonly fileNames: readonly string[];    // sorted; for unreadable files that have no artifact id\n  readonly attention: boolean;              // true when this notice alone makes an item need attention\n}\n\n// attention by code (fixed): true for 'record-unreadable', 'identity-ambiguous', 'unresolved-parent', 'validation-conflict';\n// false for 'identity-anchor-missing', 'unattached-spec', 'unknown-route', 'review-without-build', 'unplanned-task',\n// 'incomplete-evidence', 'review-currency-unknown', 'base-predates-extension'. Unresolved references therefore count toward\n// Needs attention (S003:FR005); informational notices stay visible without flooding the filter."
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "Private to s1: how the store directory is listed and each file parsed; how a record's kind, work-item hash and raw story id are lifted from its file name and meta; the use of the canonical ordinal rule to join s1/S1/S001 and the decision of when two records are ambiguous rather than the same; sourcing story membership from the Define's story list and from accepted extension records; attaching fix stories to an issue through the shared work-item hash and resolving meta.parentRef; nesting tasks by plan and build task ids; and the sort order of records, failures and child lists. No other story reads the files or re-derives identity. Also private: the per-kind lift, including reading flat amendment records; the anchor-date rule for minting canonical ids after grouping by hash and ordinal, which must reproduce deriveWorkItemIdentity and the existing path-scheme folder for every work item those can identify; attaching each SPEC to the item that names it in meta.seededFromSpec; resolving a slug-only parentRef through records' meta.epicSlug. Its LLD maps each of s1 ac1-ac6 to a named test, including ac3 (an ambiguity notice naming the other record), ac4 (two fix stories under one issue) and ac6 (colliding short task ids in two stories). Task items are minted only from t<n> build and plan task ids; a build task id equal to the story's id is left for s3 as a story-level result, with a fixture of that shape. Slug resolution of an issue's parentRef excludes records sharing the issue's own hash; a parentRef that names only the issue itself yields no corrected parent and no notice. Fixtures cover both real shapes: a self-slug parentRef (for example ISSUE-0855311b6b32eb72) and an outward slug (for example ISSUE-2d9e9e694a94116b)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s2: the mapping from a work item's recorded route fields to a DeliveryRoute, read in this order of precedence: ISSUE meta.magnitude for an issue and for every fix story whose work-item hash is that issue's hash (small-bugfix or sized-bugfix, ahead of any BUILD stamp such as 'trivial'); the story's LLD meta.sizeClass; the standalone BUILD record's meta.sizeClass (the only place a trivial route is recorded); and, for a story under a non-standalone epic with none of these, the full chain; including treating any value that is not a SizeClass member (such as a scope letter 'M') or a missing stamp as unknown; a non-standalone BUILD's sizeClass is never read; the first-match-wins precedence that picks the stage; which gate counts as the ready gate for each route; and the wording of stage reasons. It reads approval state only through sc1 and never consults gate or currency annotations. Its LLD maps each of s2 ac1-ac7 to a named test over fabricated records."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: deciding review currency only from recorded fields (for example the framework's existing story-design staleness against its high-level design) and reporting unknown otherwise, never from file modification time; comparing accepted extension records with their epic framing; and detecting expected-but-missing fields, such as an artifact with no title. It never decides route-dependent gaps, which need s2's route. It reports through notices and never adds or removes work items. Also private: deriving each epic's amendments, and any story design's staleness against its high-level design, from the AMD, HLD and LLD records already in sc1, reusing only pure helpers such as computeHldEffectiveHash and never the amendments module's disk-reading listers, so the pass adds no second read and one malformed amendment cannot fail the snapshot. Staleness hashes the epic's approved amendments in rising approvedAt order, the order the existing scanner uses, which is separate from sc6's presentation sort by amendmentId. Its LLD maps each of s4 ac1-ac5 to a named test, including ac5 asserting that no file in the store changes. Its ac4 test covers the missing-field half (an artifact with no title); the build-without-plan half is tested in s5."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private to s5: running the load, graph and three annotation passes in order for one request; joining annotations onto items; deciding needsAttention as any sc5 attention reason or any notice with attention true; computing counts over the full item set; the deterministic sort of items and notices; choosing openWith from whether an artifact's markdown carries its marker; the two daemon handler-map entries and their repo resolution and error mapping; the artifact-id validation that keeps evidence reads inside the artifact store; and the 1,000-artifact performance fixture. Also private: the error-path mapping (absent store is an empty snapshot; unreadable store, invalid or unknown evidence id is { error }). Also private: the determinism test (two snapshots over the same fixture are identical) and the regression check that the existing workflow.pending and workflow.artifactContent tests pass unchanged. Its LLD maps each of s5 ac1-ac6 to a named test: ac1 asserts the store is byte-identical after a request, ac3 reads a marker-less BUILD through workflow.deliveryEvidence, and ac6 is a type-level check that the VS Code plugin compiles against the published types plus a fixture the JetBrains mirror parses. Also private: the one route-dependent completeness check, raising an 'incomplete-evidence' notice for a story whose sc4 route requires a plan (full-chain, feature, sized-bugfix) but which has a build and no plan; small and small-bugfix routes never get it. Its LLD also owns the test for the build-without-plan half of s4 ac4: a full-chain story with a build and no plan gets the incomplete-evidence notice, and small and small-bugfix stories with a build and no plan do not."
+        }
+      ],
+      "rolloutPhase": "Phase A — record set, work-item graph and notices",
+      "nonFunctional": {
+        "performance": "workflow.delivery returns a full snapshot for a fixture of 1,000 artifact records forming 500 work items within 500 ms of daemon-side time on the reference environment, leaving the client its PRD budget of one second to first render. The store is read once per request; passes are linear in records plus items. No LLM provider is called anywhere in the pipeline.",
+        "security": "Read-only by construction: the module opens files for reading only and has no write path. workflow.deliveryEvidence accepts an artifact id, never a path; the id must match the artifact-id pattern and resolve inside the artifact store, and rendered markdown is read only through the existing docs/ containment rule. Artifact content is returned as data and never evaluated. Clients never read the store themselves.",
+        "observability": "Each request logs, through the module's own logger, the repository, record count, unreadable count, item count, notice count by code, and elapsed time. Unreadable records appear both in the log and as notices in the response, so a thin view is never silent.",
+        "durability": "Nothing is persisted or cached. Artifact files are written by tmp-then-rename, so a concurrent read sees each file either before or after a write, never half-written; a work item whose JSON and markdown are mid-update is reported from its JSON and marked openWith 'evidence-read' if the markdown cannot be resolved."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "loadArtifactRecordSet",
+          "signature": "function loadArtifactRecordSet(repoPath: string, fs?: ReadonlyStoreFs, now?: () => string): ArtifactRecordSet",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Absolute path of the registered repository whose artifact store (ARTIFACTS_DIR) is read.",
+              "optional": false
+            },
+            {
+              "name": "fs",
+              "type": "ReadonlyStoreFs",
+              "purpose": "Read-only filesystem port (exists, listDir, readFile); defaults to node:fs reads. Lets tests use a temporary directory and proves there is no write path.",
+              "optional": true
+            },
+            {
+              "name": "now",
+              "type": "() => string",
+              "purpose": "Clock for readAt; defaults to new Date().toISOString().",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ArtifactRecordSet",
+            "meaning": "sc1: every *.json file under the store lifted per kind into an ArtifactRecord, or recorded as a RecordLoadFailure; records sorted by artifactId, failures by fileName. An absent store yields empty records and failures."
+          },
+          "errors": [
+            {
+              "type": "DeliveryStoreUnreadableError",
+              "condition": "The artifact store directory exists but cannot be listed. A single unreadable or malformed file is never an error; it becomes a RecordLoadFailure."
+            }
+          ],
+          "preconditions": [
+            "repoPath is an absolute path."
+          ],
+          "postconditions": [
+            "No file under repoPath is created, modified or deleted.",
+            "Each *.json file in the store appears exactly once, either in records or in failures.",
+            "AMD files are lifted from their flat shape; every other kind from { meta, body }.",
+            "storyOrdinal is storyIdToOrdinal(storyIdRaw) when it parses, otherwise null; the call never throws for a bad id."
+          ]
+        },
+        {
+          "name": "buildWorkItemGraph",
+          "signature": "function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph",
+          "parameters": [
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "The sc1 value from loadArtifactRecordSet (or a fabricated one in tests).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WorkItemGraph",
+            "meaning": "sc2: each epic, story, task and issue once under its canonical id, with parent/child links, source ids, evidence artifact ids, planned task ids, corrected-parent and seeding links, plus identity notices (sc3)."
+          },
+          "errors": [],
+          "preconditions": [
+            "recordSet.records is sorted by artifactId."
+          ],
+          "postconditions": [
+            "Pure: the same recordSet always yields an identical graph (same ids, same order of every list).",
+            "Every record with a work-item key is evidence of exactly one item, or is named in a notice.",
+            "Every story and task id is minted through safeCanonical over storyWorkflowId / taskWorkflowId from the item's anchor date and equals deriveWorkItemIdentity's canonical form for the same inputs; a mint that would throw falls back to the H-form or ':R(<raw>)' form with a notice, so the function never throws.",
+            "No item is given a parent that the records do not name."
+          ]
+        },
+        {
+          "name": "groupRecordsByWorkItem",
+          "signature": "function groupRecordsByWorkItem(recordSet: ArtifactRecordSet): ReadonlyMap<string, readonly ArtifactRecord[]>",
+          "parameters": [
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "The sc1 record set.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReadonlyMap<string, readonly ArtifactRecord[]>",
+            "meaning": "Records keyed by '<workItemHash>|<key>' where <key> is the storyOrdinal when storyIdRaw parses, 'R(<storyIdRaw>)' when a storyIdRaw is present but unparseable (matching the ':R(<raw>)' story item), and empty for epic-level records with no storyIdRaw and for pending or rejected EXT records (which attach to their epic, not a story); each list sorted by artifactId; records with no work-item hash, and SPEC records (which attach by seededFromSpec, not by hash), are omitted. Exported so s2-s4 do not each re-index sc1."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Pure and order-stable.",
+            "Every story-level key ('<hash>|<ordinal>' or '<hash>|R(<raw>)') matches exactly one story item. An epic-level key ('<hash>|') matches the epic or issue item for that hash when a DEF or ISSUE head exists; under a hash with no head it matches no item, and those records are reported by an 'unresolved-parent' notice. Consumers map a record to its item through WorkItemNode.evidenceArtifactIds, never by assuming a key has an item."
+          ]
+        },
+        {
+          "name": "makeNotice",
+          "signature": "function makeNotice(code: NoticeCode, message: string, refs: { readonly itemIds?: readonly string[]; readonly artifactIds?: readonly string[]; readonly fileNames?: readonly string[] }): DeliveryNotice",
+          "parameters": [
+            {
+              "name": "code",
+              "type": "NoticeCode",
+              "purpose": "One of the sc3 notice codes.",
+              "optional": false
+            },
+            {
+              "name": "message",
+              "type": "string",
+              "purpose": "Human-readable explanation naming the evidence.",
+              "optional": false
+            },
+            {
+              "name": "refs",
+              "type": "{ itemIds?, artifactIds?, fileNames? }",
+              "purpose": "Items, artifacts and unreadable files the notice concerns.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliveryNotice",
+            "meaning": "sc3 notice with sorted, de-duplicated id lists and attention taken from NOTICE_ATTENTION[code]; callers cannot set attention themselves."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "attention === NOTICE_ATTENTION[code]."
+          ]
+        },
+        {
+          "name": "sortNotices",
+          "signature": "function sortNotices(notices: readonly DeliveryNotice[]): readonly DeliveryNotice[]",
+          "parameters": [
+            {
+              "name": "notices",
+              "type": "readonly DeliveryNotice[]",
+              "purpose": "Notices from any pass.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly DeliveryNotice[]",
+            "meaning": "Notices ordered by code, then artifactIds, then itemIds, then fileNames, then message; exact duplicates removed."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Deterministic total order (k7)."
+          ]
+        },
+        {
+          "name": "NOTICE_ATTENTION",
+          "signature": "const NOTICE_ATTENTION: Readonly<Record<NoticeCode, boolean>>",
+          "parameters": [],
+          "returns": {
+            "type": "Readonly<Record<NoticeCode, boolean>>",
+            "meaning": "The fixed attention table from sc3: true for record-unreadable, identity-ambiguous, unresolved-parent, validation-conflict; false for every other code."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exhaustive over NoticeCode; a new code fails to compile until it is given a value."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ArtifactRecord / RecordLoadFailure / ArtifactRecordSet (sc1)",
+        "change": "new",
+        "details": "New types in src/workflow/delivery/types.ts with the exact fields of HLD sc1 and the DeliveryArtifactKind and ApprovalState unions. Lift rules: kind from the file-name prefix; workItemHash from meta.epicHash, meta.issueHash (ISSUE), meta.specHash (SPEC) or top-level epicHash (AMD); storyIdRaw from meta.storyId; approval from meta.approvedAt / meta.rejectedAt (AMD: top-level approvedAt / rejectedAt, and status 'approved' / 'rejected' when the timestamps are absent); createdAt from meta.createdAt (AMD: proposedAt); epicCreatedAt from meta.epicCreatedAt. A file whose prefix is not a DeliveryArtifactKind is an 'unknown-kind' failure.",
+        "callSites": [
+          "src/workflow/id.ts::storyIdToOrdinal",
+          "src/workflow/storage.ts::ARTIFACTS_DIR"
+        ]
+      },
+      {
+        "entity": "WorkItemNode / WorkItemGraph (sc2)",
+        "change": "new",
+        "details": "New types with the exact fields of HLD sc2. Construction rules: (1) definition heads: each DEF-<hash> is an epic node and each ISSUE-<hash> an issue node, id = safeCanonical(() => epicWorkflowId(hash, head.createdAt)), falling back to 'H<hash>' with an 'identity-anchor-missing' notice when it returns undefined; epic title = meta.epicSlug, issue title = body.title. (2) Story groups: records grouped by workItemHash + storyOrdinal; anchor date follows buildRecordFolderArgs (storage.ts:405-425) so ids match the existing folders: for an epic story, the DEF's createdAt; for a standalone story, the story's LLD workItemAnchorCreatedAt (epicCreatedAt ?? createdAt), else the definition head's (ISSUE) createdAt, else the earliest BUILD's createdAt (trivial route); id = safeCanonical(() => storyWorkflowId(hash, anchor, storyIdRaw)) (id.ts:185); every mint in the builder goes through safeCanonical, so a malformed createdAt, a non-hex hash or an unparseable id never throws. When the mint returns undefined the item id falls back to 'H<workItemHash>[:S<nnn>]' with an 'identity-anchor-missing' notice; a story whose storyIdRaw does not parse gets the id '<epic or H-form>:R(<storyIdRaw>)', a form no canonical id can take. standalone follows the same precedence as inheritedStoryStandalone (storage.ts:252), re-implemented over the sc1 records already in memory (the builder never calls that helper, which reads the disk): the definition head's meta.standalone, else the story's LLD meta.standalone, else, only when the group has neither a head nor an LLD (the trivial route, where buildRecordFolderArgs also falls back to the BUILD's own createdAt), the BUILD's meta.standalone. When a head or LLD exists, a BUILD's, PLAN's or CR's standalone and epicSlug are never read for identity, because BUILD records are known to carry a wrong standalone flag in that case (storage.ts:242-247). Story membership of an epic = DEF body.stories ids ∪ approved EXT body.addedStory ids ∪ any story group under that hash formed by records other than EXT; a pending or rejected EXT never creates a story item and is attached as evidence of its epic instead; story title from the DEF story entry or EXT addedStory, else meta.epicSlug for a standalone story. Fix stories share the issue's hash and become its children. (3) Tasks: from PLAN body.tasks[] and BUILD body.tasks[] ids matching t<n>, id = safeCanonical(() => taskWorkflowId(hash, anchor, storyIdRaw, taskId)); when that returns undefined (the parent story has an H-form or ':R(<raw>)' id) the task id is '<parent story item id>:T<nnn>' with nnn from taskIdToOrdinal, title from the PLAN task; a BUILD task id equal to the story's own id creates no task. plannedTaskIds = PLAN task ids. (4) Evidence: LLD, PLAN, BUILD, CR and story-scoped EXT records attach to their story; HLD and AMD records to their epic; an ISSUE to its issue node; a SPEC to the item whose meta.seededFromSpec names its hash. (5) correctsRef from ISSUE meta.parentRef, resolved by epicHash, else by parentRef.slug in each of its stored forms: an epicSlug label (matched against other work items' meta.epicSlug), a bare 16-hex work-item hash (matched against work-item hashes), or a hierarchical slug or canonical id (parsed with parseWorkflowId and matched on hash8 and date, its story segment used when present); records with the issue's own hash are always excluded; a parentRef naming only the issue itself gives correctsRef null. When the matched work item is found and parentRef also names a storyId, resolvedItemId is that story's item (storyId compared by ordinal); if that story does not exist under the matched work item, resolvedItemId is the work item itself and an 'unresolved-parent' notice names the missing story. When a slug matches records under more than one work-item hash, resolvedItemId is null and an 'identity-ambiguous' notice names the issue and every candidate; no candidate is chosen. (6) rootIds = epics, issues, and stories with no epic or issue parent, sorted.",
+        "callSites": [
+          "src/workflow/id.ts::epicWorkflowId",
+          "src/workflow/id.ts::parseWorkflowId",
+          "src/workflow/id.ts::safeCanonical",
+          "src/workflow/id.ts::storyWorkflowId",
+          "src/workflow/id.ts::taskIdToOrdinal",
+          "src/workflow/id.ts::taskWorkflowId",
+          "src/workflow/id.ts::toCanonical",
+          "src/workflow/storage.ts::workItemAnchorCreatedAt"
+        ]
+      },
+      {
+        "entity": "NoticeCode / DeliveryNotice (sc3)",
+        "change": "new",
+        "details": "New union and interface with the exact members and fields of HLD sc3, plus NOTICE_ATTENTION. s1 itself raises: record-unreadable (one per RecordLoadFailure, store-level, fileNames set), identity-ambiguous (a record whose storyIdRaw is present but does not parse under the canonical rule; it keeps its own ':R(<raw>)' item and the notice names it and the other story items under the same hash. Disagreeing meta.standalone or meta.epicSlug values between a story's records are NOT ambiguity: standalone comes from the head, else the LLD, and BUILD/PLAN/CR values are ignored), unresolved-parent (a story-scoped record whose hash has no definition head and is not standalone, or an ISSUE whose outward parentRef matches no work item), identity-anchor-missing (no createdAt anywhere in a group) and unattached-spec (a SPEC no item names).",
+        "callSites": []
+      },
+      {
+        "entity": "ReadonlyStoreFs",
+        "change": "new",
+        "details": "Port with exactly three read operations: exists(path): boolean, listDir(path): readonly string[], readFile(path): string. The default implementation wraps node:fs existsSync, readdirSync and readFileSync; there is no write method on the type.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "loadArtifactRecordSet produces ArtifactRecordSet exactly as sketched in HLD sc1, including the per-kind AMD lift and the four RecordLoadFailure reasons."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "buildWorkItemGraph produces the WorkItemGraph shape of HLD sc2, reusing id.ts minters and storage.ts's anchor helper; groupRecordsByWorkItem is the shared read-only index over sc1. Two refinements of sc2's anchor comment, both required by sc2's own rule that ids equal the existing path-scheme folder: (1) for a standalone story the anchor is the LLD's workItemAnchorCreatedAt before the ISSUE head's createdAt, the order buildRecordFolderArgs uses (storage.ts:405-425); epic stories still anchor on the DEF; (2) the H-form id also covers a createdAt or hash that safeCanonical cannot mint, not only a missing createdAt. Consumers must read ids as opaque and never re-derive them from sc2's comment."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "notice.ts defines NoticeCode and DeliveryNotice exactly as sketched in HLD sc3, owns NOTICE_ATTENTION (the fixed attention table) and the deterministic sort; makeNotice is the only constructor, so no pass can set attention itself."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The artifact store directory exists but cannot be listed (permissions, I/O error).",
+          "detection": "ReadonlyStoreFs.listDir throws for the store path after exists() returned true.",
+          "response": "loadArtifactRecordSet throws DeliveryStoreUnreadableError carrying the path and the underlying message; s5 maps it to { error }.",
+          "userImpact": "The client shows the store as unavailable instead of an empty board.",
+          "recoverable": true
+        },
+        {
+          "scenario": "One file in the store cannot be read.",
+          "detection": "ReadonlyStoreFs.readFile throws for that file.",
+          "response": "A RecordLoadFailure with reason 'unreadable' is recorded; loading continues with the next file. The graph builder raises one 'record-unreadable' notice (attention true) naming the file.",
+          "userImpact": "Every other work item is still shown; the notice tells the reader coverage is incomplete.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file is not valid JSON.",
+          "detection": "JSON.parse throws.",
+          "response": "RecordLoadFailure with reason 'invalid-json' and the parser message; loading continues.",
+          "userImpact": "As above: one notice, everything else present.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A non-AMD file parses but has no object meta.",
+          "detection": "The parsed value has no meta property, or meta is not a plain object.",
+          "response": "RecordLoadFailure with reason 'missing-meta'; no ArtifactRecord is produced for it.",
+          "userImpact": "The record is reported, not silently dropped.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A *.json file whose name prefix is not a known artifact kind.",
+          "detection": "The prefix before the first '-' is not in DeliveryArtifactKind.",
+          "response": "RecordLoadFailure with reason 'unknown-kind'.",
+          "userImpact": "Reported as unreadable coverage, not mistaken for a work item.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A record's meta.storyId is present but does not parse under the canonical rule.",
+          "detection": "storyIdToOrdinal throws; the loader catches it and stores storyOrdinal null with storyIdRaw kept.",
+          "response": "The graph builder gives that record its own story item keyed by the raw id and raises 'identity-ambiguous' naming it and any story group under the same hash.",
+          "userImpact": "The record stays visible and is flagged rather than merged into the wrong story.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A record's createdAt is present but not a valid ISO date, or its work-item hash is not >=8-char lowercase hex.",
+          "detection": "safeCanonical returns undefined because utcDate or hash8Of throws inside the minter (id.ts:91-106).",
+          "response": "The item id falls back to the 'H<workItemHash>[:S<nnn>]' form and an 'identity-anchor-missing' notice names the record.",
+          "userImpact": "The work item is still shown, flagged as having no usable identity date.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No artifact store directory exists for the repository.",
+          "expected": "An ArtifactRecordSet with empty records and failures and a readAt; the graph is empty with no notices."
+        },
+        {
+          "input": "Records for the same story written as s1 (LLD) and S001 (BUILD).",
+          "expected": "One story item; sourceIds ['S001', 's1']; both records in its evidence."
+        },
+        {
+          "input": "A standalone LLD with no DEF or ISSUE head and no meta.epicCreatedAt, e.g. LLD-d88062a6e63aa312-S001.",
+          "expected": "Story id dated from that LLD's own createdAt, matching its existing docs/standalone folder segment; the story is a root; no notice."
+        },
+        {
+          "input": "A BUILD with no epicCreatedAt whose own createdAt is a different day from its epic's DEF.",
+          "expected": "The BUILD joins the story under the DEF's anchor date; it never mints a second story id."
+        },
+        {
+          "input": "An ISSUE whose parentRef slug equals its own epicSlug (e.g. ISSUE-0855311b6b32eb72).",
+          "expected": "correctsRef is null and no unresolved-parent notice is raised."
+        },
+        {
+          "input": "An ISSUE whose parentRef slug names another work item (e.g. ISSUE-2d9e9e694a94116b naming vs-code-editor-dev-chat-ui).",
+          "expected": "correctsRef.resolvedItemId is that work item's id."
+        },
+        {
+          "input": "An ISSUE whose outward parentRef matches no work item in the store.",
+          "expected": "The issue is present, correctsRef.resolvedItemId is null, and an 'unresolved-parent' notice names the issue."
+        },
+        {
+          "input": "An issue with two fix stories S001 and S002 under its hash.",
+          "expected": "The issue node has both as distinct children, each with its own tasks and evidence."
+        },
+        {
+          "input": "Two stories in different epics each with a planned task t1.",
+          "expected": "Two task items with different canonical ids (each under its own story id)."
+        },
+        {
+          "input": "A BUILD whose body.tasks contains only { id: 'S001', passed: false }.",
+          "expected": "No task item is created and no notice is raised; the record remains in the story's evidence for s3."
+        },
+        {
+          "input": "A flat AMD record with status 'approved' and approvedAt set.",
+          "expected": "ArtifactRecord kind AMD, approval approved, attached as evidence of its epic."
+        },
+        {
+          "input": "A SPEC whose hash appears in a DEF's meta.seededFromSpec.",
+          "expected": "The SPEC is in that epic's evidence and seededFromSpecId is 'SPEC-<hash>'."
+        },
+        {
+          "input": "A SPEC no item names.",
+          "expected": "A store-level 'unattached-spec' notice with attention false."
+        },
+        {
+          "input": "An approved EXT adds story s6 that the DEF's story list does not yet contain.",
+          "expected": "Story s6 is present under the epic, titled from body.addedStory."
+        },
+        {
+          "input": "An LLD whose epic hash has no DEF and which is not marked standalone.",
+          "expected": "The story is a root with an 'unresolved-parent' notice; no epic is invented."
+        },
+        {
+          "input": "LLD-d88062a6e63aa312-S001 has standalone true while BUILD-d88062a6e63aa312-S001 has standalone false; likewise the dfc0371b7200f5b5 S001 pair.",
+          "expected": "One story item each, standalone true (from the LLD), and no identity-ambiguous notice."
+        },
+        {
+          "input": "An LLD with an unparseable storyId 'x' under an epic hash that also has a DEF and an HLD.",
+          "expected": "groupRecordsByWorkItem puts the LLD under '<hash>|R(x)' and the DEF and HLD under '<hash>|'; the graph has a matching ':R(x)' story item."
+        },
+        {
+          "input": "An HLD or AMD record under a work-item hash that has no DEF or ISSUE head.",
+          "expected": "The record is keyed '<hash>|' in groupRecordsByWorkItem, attaches to no item, and is named by an 'unresolved-parent' notice."
+        },
+        {
+          "input": "A trivial-route story whose only records are BUILD-d5a433047dc3439f-S001 (meta.standalone true, sizeClass 'trivial') and its CR, with no DEF, ISSUE or LLD.",
+          "expected": "A root story item with standalone true, dated from the BUILD's createdAt, with no unresolved-parent notice."
+        },
+        {
+          "input": "ISSUE-57446545909fe95c with parentRef { slug: 'add-daemon-driven-code-review-stage', storyId: 's1' }.",
+          "expected": "correctsRef.resolvedItemId is the S001 story item of that epic."
+        },
+        {
+          "input": "An ISSUE whose parentRef names an existing epic by slug and a storyId that epic does not have.",
+          "expected": "correctsRef.resolvedItemId is the epic item, and an 'unresolved-parent' notice names the missing story."
+        },
+        {
+          "input": "An ISSUE whose parentRef slug matches records under two different work-item hashes.",
+          "expected": "correctsRef.resolvedItemId is null and an 'identity-ambiguous' notice names the issue and both candidates."
+        },
+        {
+          "input": "A pending EXT and a rejected EXT under an epic, each naming a story id the DEF does not list.",
+          "expected": "Neither creates a story item; both appear in the epic's evidence."
+        },
+        {
+          "input": "ISSUE-095906bac5bbacaf whose parentRef.slug is the bare hash 'd5a433047dc3439f' with storyId 's1'.",
+          "expected": "correctsRef.resolvedItemId is the S001 story of work item d5a433047dc3439f (its BUILD and CR records); no unresolved-parent notice."
+        },
+        {
+          "input": "An ISSUE whose parentRef.slug is a hierarchical slug such as 'E20260804d88062a6-S001'.",
+          "expected": "parseWorkflowId resolves it to the S001 story whose hash8 and anchor date match."
+        },
+        {
+          "input": "A task t2 under a story whose storyId is the unparseable 'x', and a task under a story whose only createdAt is invalid.",
+          "expected": "Task ids '<parent story item id>:T002'; buildWorkItemGraph does not throw."
+        },
+        {
+          "input": "A rejected EXT naming story s9 that no DEF entry or other record names.",
+          "expected": "groupRecordsByWorkItem keys it '<hash>|' (epic level), no s9 story item exists, and the EXT is in the epic's evidence."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Artifact files are written by tmp-then-rename (writeAtomic), so each file is read either before or after a write, never half-written.",
+          "source": "c18"
+        },
+        {
+          "text": "Approval state is read from the approvedAt / rejectedAt stamps the approve and reject paths write.",
+          "source": "c4"
+        },
+        {
+          "text": "Story ids compare by ordinal: s1, S1 and S001 name the same story.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run via npx tsx --test (the convention of src/workflow/__tests__/pending.test.ts and chain.test.ts)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the graph builder's identity, nesting, linking and notice rules over fabricated in-memory record sets, with no filesystem.",
+          "subjects": [
+            "buildWorkItemGraph",
+            "groupRecordsByWorkItem",
+            "makeNotice",
+            "sortNotices",
+            "NOTICE_ATTENTION"
+          ],
+          "fixturesNeeded": [
+            "A record-set builder helper that fabricates ArtifactRecords per kind, in the style of pending.test.ts's pendingLld",
+            "Real-shape fixtures copied from the store: the S001/s001 pair in epic dfc0371b, ISSUE-0855311b6b32eb72 (self-slug parentRef), ISSUE-2d9e9e694a94116b (outward slug), LLD-d88062a6e63aa312-S001 (standalone, no head, no epicCreatedAt), BUILD-0855311b6b32eb72-S001 (story-level task id), one flat AMD record",
+            "Records with an invalid createdAt and with a non-hex work-item hash, asserting the H-form id and an identity-anchor-missing notice",
+            "An LLD with storyId 'x' alongside its epic's DEF, asserting groupRecordsByWorkItem keys it '<hash>|R(x)', not the epic bucket",
+            "A SPEC record named by a DEF's seededFromSpec, plus an HLD under a hash with no DEF, asserting the SPEC is absent from groupRecordsByWorkItem and the head-less HLD key maps to no item and carries an unresolved-parent notice"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the loader against a temporary artifact store on disk: per-kind lift, load failures, absent and unreadable store, and that nothing is written.",
+          "subjects": [
+            "loadArtifactRecordSet",
+            "ReadonlyStoreFs default implementation"
+          ],
+          "fixturesNeeded": [
+            "mkdtemp repository with .insrc/artifacts containing valid DEF/LLD/PLAN/BUILD/CR/ISSUE/SPEC/EXT/AMD files, one invalid-JSON file, one file without meta, one unknown-prefix file",
+            "A ReadonlyStoreFs stub whose listDir throws, for the unreadable-store case"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove minted ids equal deriveWorkItemIdentity's canonical form over the work item's anchor inputs and the work item's existing path-scheme folder segment. workflow.pending mints each record's id from that record's own epicCreatedAt ?? createdAt (pending.ts:161-170), so its per-record id can differ from the delivery view's for a record dated on another day than its anchor; that is a known divergence and no test asserts agreement with workflow.pending. It includes a sized-bugfix story whose LLD has no epicCreatedAt and a createdAt on a different day from its ISSUE, asserting the id follows the LLD as buildRecordFolderArgs does.",
+          "subjects": [
+            "buildWorkItemGraph ids versus deriveWorkItemIdentity / toCanonical"
+          ],
+          "fixturesNeeded": [
+            "Epic, standalone and issue groups whose expected ids are computed with deriveWorkItemIdentity and compared to literals pinned in the test"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "graph.test.ts: 'a story with LLD, PLAN, BUILD and CR is one item with all four as evidence'",
+            "graph.test.ts: 'pending and rejected EXT records create no story item and appear as epic evidence'",
+            "graph.test.ts: 'a rejected EXT whose story nothing else names is keyed epic-level and creates no story key'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "graph.test.ts: 's1 and S001 records join one story and both raw ids are kept in sourceIds'",
+            "graph.test.ts: 'the real S001/s001 pair from epic dfc0371b yields one story'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "graph.test.ts: 'an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items'",
+            "graph.test.ts: 'LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice'",
+            "graph.test.ts: 'a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "graph.test.ts: 'an issue with fix stories S001 and S002 has two distinct story children with their own tasks and evidence'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "graph.test.ts: 'an issue whose outward parentRef matches nothing is present with an unresolved-parent notice'",
+            "graph.test.ts: 'a self-slug parentRef gives correctsRef null and no notice'",
+            "graph.test.ts: 'a standalone story with no head is a root with no invented epic, dated from its own LLD'",
+            "graph.test.ts: 'a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice'",
+            "graph.test.ts: 'a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story'",
+            "graph.test.ts: 'a parentRef naming an existing epic and a storyId it lacks resolves to the epic with an unresolved-parent notice naming the missing story'",
+            "graph.test.ts: 'a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "graph.test.ts: 'task t1 in two stories of different epics gets two distinct canonical ids'",
+            "graph.test.ts: 'a BUILD task id equal to the story id creates no task item and no notice'",
+            "graph.test.ts: 'tasks under an :R(x) story and under a story with an invalid createdAt get <story id>:T<nnn> ids and the builder does not throw'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Separate loader and pure graph builder over a flat record set",
+        "oneLineSummary": "One function reads the store into the sc1 record set through an injected read-only filesystem port; a second, pure function turns that record set into the sc2 graph in fixed sub-passes; a small notice module fixes the sc3 shape and the attention table.",
+        "approach": "The loader takes the repository path and a read-only filesystem port (list a directory, read a file) and returns the sc1 ArtifactRecordSet: every JSON file under the artifact store is parsed, lifted per kind (AMD flat, everything else meta/body) and either becomes an ArtifactRecord or a RecordLoadFailure; both lists are sorted. It never throws for a bad file and touches nothing outside the store directory. The record set is a plain immutable value, so s2-s4 receive exactly what s1 produced.\n\nThe graph builder is a pure function of the record set. It runs fixed sub-passes in order: group records by work-item hash and story ordinal; choose each group's anchor date (definition head, else the earliest design head's epicCreatedAt-or-createdAt) and mint canonical ids with the existing id.ts minters; create epic, story, task and issue nodes; source epic story membership from the Define's story list and accepted EXT records; nest tasks from t<n> plan and build ids; link fix stories to issues by shared hash, resolve parentRef (excluding the issue's own hash) and attach SPECs by seededFromSpec; then collect identity notices. A notice module exports the sc3 types, a constructor that applies the fixed attention-by-code table, and a deterministic sort. A read-only helper that groups records by work-item key is exported so later passes do not each re-index the record set.",
+        "pros": [
+          "The pure builder is testable with fabricated in-memory record sets and no filesystem, which is how every s1 acceptance criterion can get a named test.",
+          "The filesystem port lets the loader's tests use a temporary directory and assert the store is untouched, and keeps the read-only rule structural.",
+          "Matches the HLD layering exactly: sc1 and sc2 are separate values, so s2-s4 consume both without re-reading the disk.",
+          "Reuses id.ts minters (storyWorkflowId, taskWorkflowId, toCanonical) and storage.ts's anchor helpers rather than re-implementing identity, satisfying k4."
+        ],
+        "cons": [
+          "Two entry points instead of one, so s5 must call them in order.",
+          "The exported grouping helper becomes a small extra public surface that s2-s4 depend on."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Single read-and-build entry point",
+        "oneLineSummary": "One function reads the store and returns the graph directly, keeping the record set internal.",
+        "approach": "A single readWorkItemGraph(repo) lists and parses the store, lifts each record, and builds the graph in the same traversal, returning the graph plus the record set as a by-product. The record set is not a separately constructed value: it is whatever the traversal accumulated.\n\nCallers make one call and get both structures. Identity notices and load failures are folded into the graph's notice list.",
+        "pros": [
+          "One call for s5; no ordering between loader and builder to get wrong.",
+          "Slightly fewer intermediate allocations."
+        ],
+        "cons": [
+          "Graph construction cannot be tested without a filesystem, so identity tests need a temporary directory per case and run slower.",
+          "Folding load failures into graph notices blurs sc1's RecordLoadFailure list and sc2's identity notices, which the HLD keeps separate.",
+          "Interleaving parse and identity work makes the one-read guarantee harder to see and to test."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Produces the same graph but merges the loader and builder, so identity rules can only be tested through the filesystem and sc1's failure list is blurred into sc2's notices."
+      },
+      {
+        "id": "a3",
+        "name": "Mutable graph builder that later passes extend",
+        "oneLineSummary": "s1 exposes a builder object that s2-s4 register hooks on, so each pass decorates nodes in place.",
+        "approach": "s1 provides a GraphBuilder class that loads records and builds nodes; later stories register visitor hooks that run during the build and attach their annotations directly onto nodes. The final graph carries identity, stage, gates and currency together.\n\nThe builder owns traversal order, and each pass contributes a visitor.",
+        "pros": [
+          "One traversal for all passes."
+        ],
+        "cons": [
+          "Contradicts the HLD: s2, s3 and s4 must read only sc1 and sc2 and must not read each other's output, while in-place decoration makes each pass observe the others' writes.",
+          "Mutable nodes break the immutable record set and graph that the determinism constraint (k7) relies on.",
+          "s1 would have to know about s2-s4 hook signatures, inverting the story dependency graph."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Breaks the HLD's independence of s2-s4 and the immutability the determinism constraint relies on; s1 would have to know later stories' hook signatures."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md (HLD-2ff0dfda, approved 2026-10-07) :: sc1, sc2, sc3 and the s1 story boundary",
+      "quotedText": "Records are grouped by workItemHash + storyOrdinal BEFORE the id is minted."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "design.story/s1 code how-does-it-work over src/workflow/id.ts, storage.ts and path-scheme.ts",
+      "quotedText": "Identity is minted by epicWorkflowId, storyWorkflowId and taskWorkflowId (src/workflow/id.ts:146-167), serialized by toCanonical (:173)."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:126-128 (pending = neither stamp); written at src/workflow/gates.ts:606 (approvedAt) and :954 (rejectedAt)",
+      "quotedText": "// Pending = neither stamped: the SAME fields approve/reject write (k5)."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:263 (readEpicCreatedAt), :357 (readEpicDefinitionCore), :363-372 (buildRecordFolderArgs)",
+      "quotedText": "the parent Epic's define for an epic build, or the standalone LLD for a standalone build ... falling back to the record's own createdAt"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/id.ts:119 (storyIdToOrdinal)",
+      "quotedText": "The ordinal is what matters — 's1', 'S1' and 'S001' all yield 1."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/restructure-docs-artifact-markdown-from-flat-E20260915599a9b50/HLD.md :: sc1: Uniform work-item identity",
+      "quotedText": "One canonical, both-way identity for every work item and story — epic-parented or standalone — so identity can serve as the folder key and lookup key the whole layout hangs on."
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "design.story/s1 direct reads of .insrc/artifacts on 2026-10-07",
+      "quotedText": "PLAN task ids: 865 of form t<n>; BUILD task ids: 220 t<n>, 20 S<n>; EXT body carries addedStory and amendmentId; titles: DEF meta.epicSlug, ISSUE body.title."
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/pending.test.ts:53 (pendingLld fixture builder); src/workflow/__tests__/folder-identity-regression.test.ts",
+      "quotedText": "node:test fixtures built in-memory and pinned literal paths for folder identity."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/define.ts:64-73 (DefineStory)",
+      "quotedText": "readonly id: string; // 's1', 's2', ...  readonly title: string;"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:77-87 (writeAtomic)",
+      "quotedText": "export function writeAtomic(absPath: string, content: string): void { ... renameSync(tmp, absPath);"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/id.ts:91-106 (utcDate, hash8Of throw), :185 (safeCanonical); src/workflow/storage.ts:242-262 (inheritedStoryStandalone precedence: head, then LLD; it reads the disk and is not called); src/workflow/pending.ts:161-170 (per-record workItemId)",
+      "quotedText": "export function safeCanonical(mint: () => WorkflowId): string | undefined { try { return toCanonical(mint()); } catch { return undefined; } }"
+    }
+  ]
+}

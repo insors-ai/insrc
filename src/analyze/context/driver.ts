@@ -571,6 +571,9 @@ export interface RunShaperToolLoopArgs {
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
 	readonly inputs:         RunShaperArgs['inputs'];
+	/** The scope `inputs` carries, resolved. The loop's tools run in
+	 *  its lookup directory. */
+	readonly scope:          ResolvedScope;
 	readonly promptPath:     string;
 	readonly provider?:      LLMProvider;
 	readonly onTrace?:       (event: ShaperTraceEvent) => void;
@@ -601,13 +604,11 @@ export async function runShaperToolLoop(
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
 	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
-	// The caller builds its own inputs; resolve the scope they carry.
-	const scope = await resolveScope(scopeRefOf(args.inputs));
 	const toolDeps = buildToolDeps({
 		runId:          args.runId,
 		shaperId:       args.shaperId,
 		invocationMode: args.invocationMode,
-		scope,
+		scope:          args.scope,
 		provider,
 	});
 	const { messages: finalMessages, toolCallCount } = await runToolLoop(
@@ -1304,6 +1305,7 @@ async function tryExplorationPipeline(
 		closureRepos:     [repoPath],
 		repoLastIndexedAtMs: lastIndexedBigInt,
 		plan,
+		scope:            args.scope,
 	});
 
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE

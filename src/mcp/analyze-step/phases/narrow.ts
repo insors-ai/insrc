@@ -175,6 +175,7 @@ export async function handleNarrow(
 		runId:               state.runId,
 		repoPath:            scope.lookupPath,
 		closureRepos:        [scope.lookupPath],
+		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		plan:                state.plan,
 		resumeState: {

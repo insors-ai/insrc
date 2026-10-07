@@ -98,6 +98,28 @@ test('executor dispatches to the registered runner', async () => {
 	assert.ok(called);
 });
 
+test('executor hands the request\'s resolved scope to the runner; without one the runner gets none', async () => {
+	const seen: unknown[] = [];
+	_overrideRunnerForTest('concept.resolve', async (_exp, ctx) => {
+		seen.push(ctx.scope);
+		return { type: 'concept.resolve', query: 'stub', hits: [] };
+	});
+	const file = `${REPO}/src/pay.ts`;
+	const scope = { kind: 'file' as const, value: file, repoPath: REPO, lookupPath: REPO, filePath: file };
+	// Distinct params so neither call is answered from the lookup cache.
+	await executePlan({
+		runId: 'test', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n,
+		plan: { answerType: 'structural-map', synthesisHint: 't', explorations: [makeExp({ params: { query: 'with-scope' } })] },
+		scope,
+	});
+	await executePlan({
+		runId: 'test', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n,
+		plan: { answerType: 'structural-map', synthesisHint: 't', explorations: [makeExp({ params: { query: 'without-scope' } })] },
+	});
+	assert.deepEqual(seen, [scope, undefined]);
+	assert.equal(seen[0], scope, 'the very object, not a copy');
+});
+
 // ---------------------------------------------------------------------------
 // Unsupported type handling
 // ---------------------------------------------------------------------------

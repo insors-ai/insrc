@@ -26,6 +26,7 @@
 
 import { legacyShaperPromptPathFor } from '../context/index.js';
 import type { RunShapeInput } from '../context/types.js';
+import type { ResolvedScope } from '../context/scope.js';
 import { runShaperToolLoop, ShaperToolLoopExhausted } from '../context/driver.js';
 import { getLogger } from '../../shared/logger.js';
 
@@ -80,16 +81,28 @@ function parseParams(exp: Exploration): FreeformProbeParams {
  * focus so the tool loop knows what it's answering.
  */
 export async function runFreeformProbe(
-	exp: Exploration,
-	ctx: ExplorationRunnerContext,
+	exp:  Exploration,
+	ctx:  ExplorationRunnerContext,
+	/** The tool loop; a test passes a stand-in. */
+	loop: typeof runShaperToolLoop = runShaperToolLoop,
 ): Promise<FreeformProbeOutput> {
 	const params = parseParams(exp);
 	const promptPath = legacyShaperPromptPathFor(params.shaperId);
 
+	// The request's own scope, so the loop is told what the request
+	// named (a file, an entity, a connection) and not just "the repo".
+	// A caller that executes a plan on a bare repo path hands over no
+	// scope: that is a workspace scope on the path.
+	const scope: ResolvedScope = ctx.scope ?? {
+		kind:       'workspace',
+		value:      ctx.repoPath,
+		repoPath:   null,
+		lookupPath: ctx.repoPath,
+	};
+
 	// Reconstruct a run-mode input. The tool loop's buildMessages
-	// carries the intent verbatim; we use the runner context's repo
-	// path as the scope reference target so the legacy prompt's
-	// scope-boundary rule keys off the correct closure.
+	// carries the intent verbatim, so the scope reference here is what
+	// the legacy prompt's scope-boundary rule keys off.
 	const inputs: RunShapeInput = {
 		intent: {
 			target:    params.shaperId === 'generic' ? 'generic'
@@ -100,7 +113,7 @@ export async function runFreeformProbe(
 			scope:    'M',
 			focused:  true,
 			focus:    params.purpose,
-			scopeRef: { kind: 'workspace', value: ctx.repoPath },
+			scopeRef: { kind: scope.kind, value: scope.value },
 			reasoning:
 				'freeform.probe escape-hatch: intent fell outside every ' +
 				'deterministic recipe; the decomposer emitted a single ' +
@@ -113,11 +126,12 @@ export async function runFreeformProbe(
 	let toolCallCount = 0;
 	let exhaustedNote = '';
 	try {
-		const result = await runShaperToolLoop({
+		const result = await loop({
 			runId:          ctx.runId,
 			shaperId:       params.shaperId,
 			invocationMode: 'run',
 			inputs,
+			scope,
 			promptPath,
 		});
 		rawBundle     = result.rawBundle;

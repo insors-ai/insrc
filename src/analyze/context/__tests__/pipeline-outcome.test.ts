@@ -174,6 +174,10 @@ test('focused request on a repo: stand-in arguments and bundle equal the recorde
 	assert.deepEqual(calls.executePlan, [{
 		runId: 'r1', repoPath: REPO, closureRepos: [REPO],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
+		// Added since the baseline: the resolved scope, for a runner that
+		// needs what the request named. The path, closure, last-indexed
+		// time and plan -- what the lookup cache key is made from -- are unchanged.
+		scope: dirScope(INTENT),
 	}]);
 	assert.equal(calls.executed.length, 1);
 	assert.deepEqual(Object.keys(calls.synthesize[0] as object).sort(), ['executed', 'intent', 'runId', 'target']);
@@ -332,6 +336,7 @@ test('module scope: lookup path and cache key unchanged', async () => {
 	assert.deepEqual(calls.executePlan, [{
 		runId: 'r1', repoPath: moduleDir, closureRepos: [moduleDir],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
+		scope,
 	}]);
 	assert.deepEqual(seen, [moduleDir]);
 	// NOT the repo root.

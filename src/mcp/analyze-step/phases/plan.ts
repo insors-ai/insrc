@@ -112,6 +112,7 @@ export async function handlePlan(
 		runId:               state.runId,
 		repoPath:            scope.lookupPath,
 		closureRepos:        [scope.lookupPath],
+		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		plan:                validatedPlan,
 	});

@@ -1,0 +1,1437 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1791355363410-5cvxsg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-07T06:48:21.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 337787,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/chain.ts:30-65 defines ChainReport whose stories carry id, title, hasLld, approved, stale fields and amendments — covering only DEF/HLD/LLD, with no plan, build, code-review or issue state.",
+          "evidence": "The citation resolves at both ends. `read src/workflow/chain.ts:30` returns `export interface ChainReport {` and `read src/workflow/chain.ts:65` returns `}`, so 30-65 is the interface body. `grep /readonly amendments/` matches `src/workflow/chain.ts:54: readonly amendments: {`, which is inside that span. It also matches `chain.ts:225: readonly amendments: ChainReport['amendments'];`, which uses the type somewhere else. `grep /interface ChainReport/` finds only one definition, at `src/workflow/chain.ts:30`. The three other matches are in docs. Two of those are S003 LLD.md:224 and PLAN.md:110, and both independently confirm the same anchor: \"src/workflow/chain.ts:30 'export interface ChainReport {' resolves exactly\". S003 LLD.md:207 describes the shape as `{ epicHash, epicSlug?, define, hld, stories[], amendments, tracker, nextAction }`. That fits a report that covers only DEF, HLD and LLD, with no plan, build, code-review or issue fields. The per-story fields `id/title/hasLld/approved/stale` show up in the DEF's own quote (DEF.md:202) and in the plugin's StoryChainMark, which mirrors them (WorkflowChainReader.kt:32). The `hasLld` grep was cut off at its cap before it reached a `chain.ts` line, so the story field list was never read directly from the source. The claim that there is no plan, build, code-review or issue state is only supported indirectly, through the LLD.md:207 field summary. None of this changes what gets built, because the anchor, the entity and the scope all hold.",
+          "action": "None — verified sound. If you want, read src/workflow/chain.ts:30-65 directly to confirm the story field list and that there is no plan, build, code-review or issue state. The grep evidence was truncated before it reached those lines.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both ends of the cited span (chain.ts:30 and :65) resolve to the ChainReport interface, and the amendments field (:54) falls inside it. The field summary in the S003 artifacts agrees that the report covers only DEF, HLD and LLD. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "c3",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The existing chain report covers only an epic's framing (DEF), HLD and per-story LLDs; ChainReport has no PLAN, BUILD, CR or ISSUE fields.",
+          "evidence": "The only evidence about the anchor is `read src/workflow/chain.ts:30 → FOUND: export interface ChainReport {`. That shows the interface exists at the cited place, but the read stops at the opening line, so none of ChainReport's fields are visible. The grep /PLAN|BUILD|ISSUE|'CR'/ returned 50 matches and was TRUNCATED at the cap. Every match shown is in docs/ (docs/artifact-document-template-review.md and the bugfix epic's HLD.md, S002/LLD.md and S002/PLAN.md); none is in src/workflow/chain.ts. Because the result was truncated, the missing chain.ts matches do not prove that ChainReport lacks PLAN, BUILD, CR or ISSUE fields. Some docs material is related but not conclusive. docs/artifact-document-template-review.md:43 describes the chain on disk as \"DEF → HLD → `S00n/{LLD,PLAN,BUILD,CR}`\", which is the folder tree and not the ChainReport type. S002/LLD.md:154-155 shows that ArtifactKind already includes PLAN, BUILD and CR and gains ISSUE. That means those kinds exist elsewhere in the framework, but it says nothing about ChainReport's fields. The premise's central claim, that the type is a closed set covering only DEF, HLD and per-story LLDs, is therefore neither confirmed nor contradicted by the evidence.",
+          "action": "Re-run the probe with full coverage of ChainReport: read src/workflow/chain.ts from line 30 to the closing brace of `export interface ChainReport`, and grep only src/workflow/chain.ts for /plan|build|codeReview|cr\\b|issue/i so the result is not truncated by docs matches. If the type has only define, hld and per-story lld fields, mark the premise verified. If it already has any of PLAN, BUILD, CR or ISSUE, correct the premise and reduce the task's scope to the kinds that are actually missing.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor resolves to ChainReport, so the concept is right, but the evidence does not show its fields. No edit can be derived from it until the full interface body has been read.",
+            "options": [
+              "Re-probe: read the full ChainReport body at src/workflow/chain.ts:30 and grep only chain.ts, then confirm the premise as written.",
+              "Keep the premise but mark it as an unverified assumption the build task must check first: read ChainReport and add only the PLAN/BUILD/CR/ISSUE fields that are missing.",
+              "Reword the premise to the part the evidence supports (ChainReport is declared at src/workflow/chain.ts:30) and move the field inventory into the task as a discovery step."
+            ]
+          }
+        },
+        {
+          "claimId": "p3",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/pending.ts:126-128 treats pending as neither meta.approvedAt nor meta.rejectedAt stamped, with comment 'Pending = neither stamped: the SAME fields approve/reject write (k5)'.",
+          "evidence": "The read of src/workflow/pending.ts:126 returns the cited comment word for word: \"// Pending = neither stamped: the SAME fields approve/reject write (k5).\" The grep for /Pending = neither stamped/ finds only this source line, plus the DEF.md:203 citation that quotes it. The read of src/workflow/pending.ts:128 returns `if (typeof meta['rejectedAt'] === 'string' && meta['rejectedAt'].length > 0) continue;`, so an artifact with a rejectedAt stamp is not counted as pending. Line 127 was not read directly, and the approvedAt grep stopped at its 50-match cap before reaching it. Even so, the comment at :126 says \"neither stamped\", the cited range is :126-128, and :128 is the rejectedAt half of the check, so :127 is almost certainly the matching approvedAt skip. The same reading appears independently in docs/insrc-delivery-board-prd.html:175 (\"Pending means neither stamp is present\") and in docs/plans/delivery-board-epics.md:34, which cites `rejectedAt` (`:126-128`). The evidence supports both the anchor and the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited comment at pending.ts:126 and the rejectedAt check at :128 match the premise exactly. Line 127 was not read directly but is the approvedAt half implied by the comment and the cited range. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The approve path stamps meta.approvedAt at src/workflow/gates.ts:606 and the reject path stamps meta.rejectedAt at src/workflow/gates.ts:954.",
+          "evidence": "Both anchors resolve to the right code. `read src/workflow/gates.ts:606` returns `const approvedAt = new Date().toISOString();`. `read src/workflow/gates.ts:954` returns `const rejectedAt = new Date().toISOString();`. The rejectedAt grep also matches `src/workflow/gates.ts:937: readonly rejectedAt: string;`, a field on a result type just above line 954, so line 954 is inside the reject path. One detail is slightly off: both lines create the timestamp in a local variable. The `meta.approvedAt` / `meta.rejectedAt` field is presumably written a few lines further down, which the evidence does not show. The anchors still point at the right concept and the right code paths, so building against them would produce correct code.",
+          "action": "None needed; the citation checks out. Optionally, reword it to say that these lines create the approval/rejection timestamps, which are then stored in meta.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both anchors resolve to the timestamp assignment in the approve path and the reject path. The only imprecision is calling the local-variable line the place where meta is stamped, and that changes nothing about what gets built."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "c5",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/workflow/pending.ts:39 declares PENDING_KINDS = ['SPEC','DEF','HLD','LLD','PLAN','ISSUE','CR'] — seven kinds, excluding BUILD, so the pending list cannot report completion.",
+          "evidence": "read src/workflow/pending.ts:39 → FOUND: \"export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'CR'] as const;\". That is seven members (SPEC, DEF, HLD, LLD, PLAN, ISSUE, CR), and BUILD is not one of them. The anchor line matches the premise exactly. Line 40 derives `PendingKind` from this tuple, and line 87 builds `PENDING_KIND_SET` from it. Because the pending kind set comes only from this list, BUILD artifacts cannot show up as pending, which supports the claim that the pending list cannot report completion. docs/plans/delivery-board-epics.md:34 says the same thing independently: \"`PENDING_KINDS` (`:39`) excludes BUILD\".",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the source: the anchor, the member list and the count of seven are all correct, and BUILD is excluded. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p6",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/id.ts exports storyIdToOrdinal, under which 's1', 'S1' and 'S001' all yield ordinal 1.",
+          "evidence": "The grep finds the export at `src/workflow/id.ts:119` (`export function storyIdToOrdinal(storyId: string): number {`). The function's own comment at `src/workflow/id.ts:122` says: \"The ordinal is what matters — 's1', 'S1' and 'S001' all yield 1.\" A test at `src/workflow/__tests__/id-resolve.test.ts:141` says the same: \"'s1', 'S1' and 'S001' all denote ordinal 1.\" This matches the earlier S001 PLAN step that widened the regex to /^[sS](\\d+)$/. The `path:line` read of src/workflow/id.ts came back NOT FOUND, so the regex body was not shown directly. Still, the export, the comment inside the function and the test assertion all agree with the premise, and none of the evidence contradicts it.",
+          "action": "None: the premise is verified sound.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The export exists at id.ts:119. Its own comment at id.ts:122 and the test at id-resolve.test.ts:141 both state the case- and zero-padding-insensitive ordinal behavior. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "c7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The prior HLD at docs/epics/restructure-docs-artifact-markdown-from-flat-E20260915599a9b50/HLD.md defines sc1 'Uniform work-item identity' as the canonical both-way identity for every work item and story.",
+          "evidence": "The grep for /Uniform work-item identity/ finds the heading `### sc1: Uniform work-item identity` at docs/epics/restructure-docs-artifact-markdown-from-flat-E20260915599a9b50/HLD.md:15. That confirms the cited file exists and that sc1 has this title. Three sibling LLDs in the same epic refer to it consistently: S001/LLD.md:13 says \"**Owns:** `sc1` (Uniform work-item identity)\", and S002/LLD.md:14 and S003/LLD.md:13 say \"**Consumes:** `sc1`\". The citation in this DEF (DEF.md:206) quotes sc1 as \"One canonical, both-way identity for every work item and story — epic-parented or standalone…\", which matches the premise. One gap: the direct read of HLD.md returned NOT FOUND, even though grep matched line 15 of that same file. So the sc1 body text was not re-read here. The \"canonical both-way\" wording rests on the DEF's quote, and the HLD's own heading and its owner/consumer LLDs back it up. Nothing in the evidence contradicts the premise.",
+          "action": "none — verified sound. Optional: re-read HLD.md near line 15 to check the sc1 body word for word, since the direct read returned NOT FOUND even though grep matched that file. The NOT FOUND looks like a problem with the probe's path handling, not with the artifact.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise holds: grep confirms that sc1 'Uniform work-item identity' exists at HLD.md:15, and the sibling LLDs consistently treat it as the identity contract. The artifact needs no edit."
+          }
+        },
+        {
+          "claimId": "p8",
+          "ref": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md:135 contains key architectural rule 1: 'Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only.'",
+          "evidence": "read CLAUDE.md:135 → FOUND: \"1. **Daemon owns all DB access** — CLI, MCP, and the IDE workbench communicate via IPC only.\" The grep /Daemon owns all DB access/ also matches CLAUDE.md:135 with the same text (AGENTS.md:135 has an identical mirror line). The cited anchor resolves to rule 1 of the key architectural rules, and its wording matches the premise exactly.",
+          "action": "None. The citation checks out.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Checked against the source: the citation's anchor and quoted text both match CLAUDE.md:135, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p9",
+          "ref": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md:30-32 states IPC method names, socket path and payload shapes stay in lock-step across the two repos via mirrored types.",
+          "evidence": "The engine read CLAUDE.md:30 and found \"clones + builds this repo into `~/.insrc/daemon/`. IPC method names,\". It read CLAUDE.md:32 and found \"lock-step across the two repos via mirrored types.\" Line 31 was not read on its own. Lines 30 and 32 begin and end the cited sentence, and the project's CLAUDE.md as loaded in context gives the full sentence: \"IPC method names, socket path (`~/.insrc/daemon.sock`), and payload shapes stay in lock-step across the two repos via mirrored types.\" The only grep match for /stay in lock-step across the two repos/ is the DEF.md:208 citation entry itself, which quotes the same text. The line range 30-32 and the claim's content both match the source.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "No fix needed. CLAUDE.md:30-32 says what citation c9 claims. The DEF labels it with the section 'What lives here'; in the file, the sentence sits in the closing paragraph about what the IDE fork owns, which is still inside that section. The label is accurate."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c10",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md:11 states 'Accuracy is primary; cost is the least priority.'",
+          "evidence": "The read of CLAUDE.md:11 returned FOUND: \"- **Accuracy is primary; cost is the least priority.** When choosing between an accurate-but-expensive path ... choose accuracy.\" The grep for /Accuracy is primary; cost is the least priority/ also matches CLAUDE.md:11, so the cited line holds exactly the quoted principle. Other files also match, such as AGENTS.md:11 and README.md:72, but the anchor is correct.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The citation resolves to the right line and the quoted text matches exactly. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "c11",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts registers workflow.approve at :643, workflow.pending at :686, workflow.artifactContent at :698, workflow.resolveComment at :712, artifact.get at :1131 and artifact.search at :1145.",
+          "evidence": "All six anchors check out against the source. Each line opens the handler the premise names: src/daemon/index.ts:643 `'workflow.approve': async (params) => {`, :686 `'workflow.pending': async (params) => {`, :698 `'workflow.artifactContent': async (params) => {`, :712 `'workflow.resolveComment': async (params) => {`, :1131 `'artifact.get': async (params) => {`, :1145 `'artifact.search': async (params) => {`. A grep for each method name finds exactly one registration under src/daemon, at the cited line. The only other hits are client callers (src/mcp/daemon-stream.ts:289 and vscode-plugin/src/chat/docs-review-client.ts) and older docs. Those docs cite stale line numbers such as :551, :555, :579, :634, :980 and :994, but they don't affect this premise.",
+          "action": "None. The citation is verified sound.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Each cited file:line opens the handler it names, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/types.ts:401 declares meta.sizeClass?: SizeClass and :412 declares meta.magnitude?: BugfixMagnitude.",
+          "evidence": "The read of src/workflow/types.ts:401 returns `readonly sizeClass?:   SizeClass;` and the read of src/workflow/types.ts:412 returns `readonly magnitude?:   BugfixMagnitude;`. Both greps also match at those exact lines (`src/workflow/types.ts:401` for /sizeClass\\?:\\s*SizeClass/ and `src/workflow/types.ts:412` for /magnitude\\?:\\s*BugfixMagnitude/). Both anchors point to the declarations the premise names.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both cited lines point to the declared fields exactly, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "c12",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "SizeClass at src/workflow/triage/types.ts:17 is exactly the five-member union 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix'.",
+          "evidence": "The read of src/workflow/triage/types.ts:17 returned `export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';`. That is exactly the five-member union the premise claims, at the cited line. The grep for /type SizeClass\\s*=/ found only one definition in source (src/workflow/triage/types.ts:17). The other four matches are in design docs: the bugfix epic's HLD.md:26, its S001 LLD.md:74-75 diff, and an older S009 LLD review row that quotes the four-member type from before 'bugfix' was added at line 16. None of them is a competing source definition.",
+          "action": "None needed. The premise is confirmed by the source.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Confirmed by the source: the anchor resolves to the claimed five-member union, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/orchestrator.ts:2352 stamps sizeClass on a standalone design.story LLD with only a defined-check (sizeClass !== undefined), and :903 stamps magnitude on an ISSUE only when it is 'small' or 'sized'.",
+          "evidence": "read src/workflow/orchestrator.ts:2352 → `...(sizeClass !== undefined ? { sizeClass } : {}),`, which is a defined-check only. read src/workflow/orchestrator.ts:903 → `...(magnitude === 'small' || magnitude === 'sized' ? { magnitude } : {}),`, so magnitude is stamped only when it is 'small' or 'sized'. Both grep probes match these exact lines in the source. The only other match is the DEF.md citation itself. The evidence covers the stamping lines only. It does not show whether :2352 is in the standalone design.story path or whether :903 is in the ISSUE path, so those parts of the premise are not checked here.",
+          "action": "None. The premise holds: both cited lines resolve to the exact guards described.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited file:line anchors and their guard expressions match the source exactly, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "c12",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "BugfixMagnitude is restricted to 'small' | 'sized'.",
+          "evidence": "The source defines the type at src/workflow/triage/types.ts:24 as `export type BugfixMagnitude = 'small' | 'sized';`. That is a closed union of exactly two string literals, which matches the premise. The design docs agree with each other: HLD.md:29, S001/LLD.md:98, :101 and :245, and S001/PLAN.md:30 all declare the same `'small' | 'sized'` union, and none of the six matches adds a third member.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the real type at src/workflow/triage/types.ts:24, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "c18",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/storage.ts:77-87 defines writeAtomic which writes a temp file and renameSync's it into place.",
+          "evidence": "Both anchors resolve as the premise says. Reading src/workflow/storage.ts:77 shows `export function writeAtomic(absPath: string, content: string): void {`, and grep finds exactly one definition at that line outside the DEF itself. Reading src/workflow/storage.ts:87 shows `renameSync(tmp, absPath);`, which closes the cited 77-87 range. A rename from a `tmp` path into `absPath` is the write-to-temp-then-rename pattern the premise describes. The temp-file write between those lines was not read directly, but `renameSync(tmp, absPath)` only makes sense if a temp file was written first. The other `renameSync(tmp` matches (analyze/*/cache.ts, persistence.ts, config/reconcile-io.ts) are separate helpers and do not compete with this anchor.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The citation resolves to the correct entity: writeAtomic is at line 77 and renameSync(tmp, absPath) is at line 87. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "c18",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An artifact's JSON record and its markdown copy are written by two separate writeAtomic calls, not committed together.",
+          "evidence": "The evidence supports the premise. `src/workflow/storage.ts:77` defines `export function writeAtomic(absPath: string, content: string): void`, which writes one path per call (the DEF citation shows it ends in `renameSync(tmp, absPath)`). Every artifact-persist call site writes the markdown and the JSON with two separate, back-to-back calls and nothing tying them together: `src/daemon/workflow-rpc.ts:334-335` (`writeAtomic(paths.md, finalized.renderedMd); writeAtomic(paths.json, finalized.renderedJson);`), `src/mcp/workflow-step/phases/synthesize.ts:82-83` (same pair), `src/mcp/review-step/phases/findings.ts:91-92` (jsonPath, then mdPath), and `src/mcp/review-step/phases/verdicts.ts:96,98` (jsonPath, then mdPath). The test fixtures follow the same pattern, for example `plan-artifact.test.ts:217-218` and `seed-focus.test.ts:62-63`. None of the matches shows a multi-file transaction or a combined commit.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: each writeAtomic call atomically renames a single file, and the artifact's md and json are always written with two separate calls (workflow-rpc.ts:334-335, synthesize.ts:82-83, findings.ts:91-92, verdicts.ts:96/98). No edit is needed."
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "c19",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The daemon socket server (src/daemon/server.ts:59-60, 164-242) only answers requests with a single response or a request-scoped stream (stream:done / stream:error); it never sends unsolicited messages, so there is no subscription/push channel.",
+          "evidence": "The mechanism half of the premise is confirmed. src/daemon/server.ts:59 reads \"Stream mode: request with `\"stream\": true` gets multiple IpcStreamMessages\", and :60 reads \"until the handler resolves (stream:done) or throws (stream:error)\". Line 164 is \"// Check for streaming request\" and line 242 is `socket.write(JSON.stringify(response) + '\\n');`, the single-response path. The absence half (\"never sends unsolicited messages\") is not established. The grep /subscribe|notify|broadcast/ was TRUNCATED at 50 matches. None of the matches shown are in src/daemon/, so they neither confirm nor rule out a push path in server.ts or the handlers. The evidence also shows request-scoped streams already used as subscriptions. The JetBrains DEF d7 notes LogsSection.tsx \"subscribes via debug.tailLog (:85)\". The artifact-review HLD:219 proposes \"a long-lived streaming subscribe handler (the socket server already supports per-request streaming)\". So the claim \"there is no subscription/push channel\" is too strong. There is no unsolicited broadcast, but a long-lived stream request is an established way to subscribe.",
+          "action": "Reword c19 to keep the verified fact: every server write answers a request, either as one response or as a request-scoped stream that ends with stream:done or stream:error. Narrow the conclusion to: there is no unsolicited, connection-level broadcast, and push-style delivery is only possible as a long-lived streamed request (the debug.tailLog pattern). Also confirm absence by grepping src/daemon/ (not the whole repo) for any other socket.write, broadcast or emit path outside the request handler.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The stream:done / stream:error mechanism is confirmed at server.ts:59-60. The 'no subscription channel' conclusion is overstated: debug.tailLog already uses a long-lived request-scoped stream as a subscription, and the absence check came from a truncated repo-wide grep. Which wording is right depends on the design decision this premise supports, so it needs a human choice rather than an automatic edit.",
+            "options": [
+              "Narrow the premise: 'the server never sends unsolicited, connection-level messages; push delivery is only possible as a long-lived request-scoped stream (as debug.tailLog does), ending with stream:done or stream:error'.",
+              "Keep the premise but add the debug.tailLog stream as the existing subscribe-by-stream precedent, and state that real-time push is a non-goal rather than impossible.",
+              "Re-verify absence with a grep scoped to src/daemon/ for socket.write, emit and broadcast outside the request handler before keeping the 'never sends unsolicited messages' wording."
+            ]
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "c16",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The terminal tool reads the artifact store directly: src/cli/services/workflow.ts:126 listEpics joins repoPath with ARTIFACTS_DIR and :145 chain calls buildChainReport(repoPath, epicHash) in-process.",
+          "evidence": "read src/cli/services/workflow.ts:126 → `const dir = join(repoPath, ARTIFACTS_DIR);` (the listEpics directory join, also matched by grep /join\\(repoPath, ARTIFACTS_DIR\\)/). read src/cli/services/workflow.ts:145 → `return buildChainReport(repoPath, epicHash);` (the chain call, also matched by grep; a second in-process use sits at :150 `formatChainReport(buildChainReport(repoPath, epicHash))`). Both anchors resolve to exactly the cited code, so the premise holds: the terminal tool's CLI service reads the artifact store directly and builds the chain report in the same process.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both cited file:line anchors resolve to the quoted code. No correction needed. (Optional: :150 is a second in-process buildChainReport call site, which supports the premise but isn't required.)"
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "c20",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/chat/docs-review-client.ts:18 imports type PendingArtifact from the daemon's src/workflow/pending.js, and jetbrains-plugin DaemonGateway.kt:31 declares data class PendingArtifactDto.",
+          "evidence": "Both anchors match. Reading vscode-plugin/src/chat/docs-review-client.ts:18 returns `import type { PendingArtifact } from '../../../src/workflow/pending.js';`, which is a type-only import of PendingArtifact from the daemon's src/workflow/pending.js. Reading jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:31 returns `data class PendingArtifactDto(`. Grep found one more copy of the Kotlin class at jetbrains-plugin/bin/main/.../DaemonGateway.kt:31. That copy is a build-output mirror, not a competing source, and the cited src/main path is the right one.",
+          "action": "None needed. The citation checks out against the source.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both cited file:line anchors point at the exact text the premise describes. No change is needed."
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "c21",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/artifact-content.ts:101 defines handleArtifactContent; :119-125 restricts to .md under docs/; :156-162 resolves metadata via the in-file insrc:artifact marker through jsonPathForMd and returns an error if unresolvable.",
+          "evidence": "The engine's reads match each anchor. src/workflow/artifact-content.ts:101 is `export function handleArtifactContent(` (the grep agrees). Line 119 is `const rel = relative(docsRoot, absMd);`, which is the start of a check that the path stays under docs/. Line 156 is the comment `// The sibling hash-flat .json (meta + body) via the in-file insrc:artifact marker.`. Line 161 returns `{ error: \\`workflow.artifactContent: cannot resolve artifact metadata: ${(err as Error).message}\\` }`, which is inside the cited :156-162 range. Two parts are not directly shown. First, the `.md` extension check within :119-125, since only line 119 was read. Second, the jsonPathForMd call in artifact-content.ts, because the jsonPathForMd grep stopped at its 50-match cap before it listed any src/ file. Both are consistent with the code that was read: there is a docs-root containment check, and the comment names the marker-based resolution. Nothing in the evidence contradicts the premise.",
+          "action": "None needed; the premise checks out. Optionally, re-read src/workflow/artifact-content.ts:119-125 and :156-160 to confirm the `.md` extension check and the jsonPathForMd call directly.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited anchors resolve to the claimed entities: the handler at :101, the docs-root containment check at :119, the marker-resolution comment at :156, and the metadata-resolution error at :161. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p22",
+          "ref": "c21",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "69 BUILD records have markdown lacking the insrc:artifact marker and thus cannot be opened through workflow.artifactContent.",
+          "evidence": "The only probe was `grep /insrc:artifact/`, which returned 50 matches and was TRUNCATED at the cap. Every match is either a line-1 marker in a DEF/HLD/LLD/PLAN/CR markdown under docs/epics/ (for example `docs/epics/add-bugfix-triage-category-insrc-framework-E202609181703991c/S001/CR.md:1:<!-- insrc:artifact CR-1703991c69967193-s1 -->`) or a prose mention in docs. Examples of the prose mentions are docs/artifact-document-template-review.md:30 and :103, and docs/epics/add-build-workflow-insrc-5th-stage-E20260717185807ba/S005/LLD.md:87, :178 and :201. None of the matches is a BUILD record, and nothing comes from `.insrc/artifacts`. No probe listed BUILD record markdowns, so there is no total to compare against 69. No read of `workflow.artifactContent` was gathered either, so the claimed mechanism (no marker means the file cannot be opened) is also unshown. The evidence does not address the premise in either direction, so it is UNVERIFIABLE.",
+          "action": "Re-ground the premise with probes that answer it directly. (1) List every BUILD record markdown under `.insrc/artifacts` and wherever else BUILD md files are written, and count the ones with no `<!-- insrc:artifact BUILD-` line in their first 4096 characters. That is the head-slice limit cited at gates.ts:807 and migrate-docs-tree.ts:112. (2) Read how `workflow.artifactContent` resolves an md to its record, and confirm it fails when the marker is missing rather than falling back to hash-named json. Then restate the count of 69 from the measured number, or remove it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The gathered evidence neither confirms nor contradicts the count of 69 or the artifactContent failure mode, so no edit can be derived from it. The premise needs re-measuring before the number is kept.",
+            "options": [
+              "Re-run the probe scoped to BUILD md files (e.g. find BUILD*.md under .insrc/artifacts and docs/epics, then grep -L 'insrc:artifact BUILD-'), and replace '69' with the measured count.",
+              "Reword the premise so it makes no count claim, e.g. 'BUILD records whose markdown lacks the insrc:artifact marker cannot be opened through workflow.artifactContent', and cite an artifactContent read as the anchor for the mechanism.",
+              "If artifactContent turns out to fall back to the hash-named json when the marker is missing, drop the premise because the claimed failure does not occur."
+            ]
+          }
+        },
+        {
+          "claimId": "p23",
+          "ref": "c23",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ReviewReport at src/workflow/review/types.ts:146-156 has fields artifact, stage, verdict, findings, counts, template?, reviewedAt, model — and no revision or content-hash field.",
+          "evidence": "The evidence partly confirms the premise. `src/workflow/review/types.ts:144` opens `export interface ReviewReport {`. Line 146 is `readonly artifact: string;`, line 155 is `readonly reviewedAt: string;` and line 156 is `readonly model: string;`, so the range 146-156 covers the field body. The declaration itself is at :144, not :146. `src/workflow/review/template-review.ts:123` builds a complete report as `{ artifact: opts.artifact ?? stage, stage, verdict, findings, counts, template: template.id, reviewedAt, model }`. That matches the eight listed fields, and it compiles with no revision or hash field, so any such field cannot be required. However, lines 145 and 147-154 were not read, and the interface may continue past :156, so the full field list and the absence of an optional revision or hash field cannot be confirmed. One more signal: `src/workflow/__tests__/helpers/other-party-review.ts:74` puts a `reviewedBy` key next to `reviewedAt`/`model`. That suggests the report may carry an optional `reviewedBy` field that the premise leaves out. None of the matches shows a revision or content-hash key on any report literal.",
+          "action": "Change the anchor to `src/workflow/review/types.ts:144` (where the interface is declared). Read the full interface body to confirm the field list, and either add `reviewedBy?` if it is a ReviewReport field or note that it is not. The central claim, that there is no revision or content-hash field, is consistent with the evidence. The change it prescribes (adding a revision or freshness link) still applies either way.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor is off by two lines: the interface is declared at :144, and :146 is its first field. The enumerated field list cannot be fully confirmed from the evidence, and the test helper hints at a possible optional `reviewedBy` field. Neither problem changes what the premise prescribes, so this is MED. A person should confirm the field list before the wording changes.",
+            "artifactEdits": [
+              {
+                "find": "src/workflow/review/types.ts:146-156 (ReviewReport)",
+                "replace": "src/workflow/review/types.ts:144-156 (ReviewReport)"
+              }
+            ],
+            "options": [
+              "Re-anchor to types.ts:144-156 and keep the field list as is (if reading the file confirms `reviewedBy` is not on ReviewReport)",
+              "Re-anchor to types.ts:144 and add `reviewedBy?` to the listed fields (if reading the file confirms it is a ReviewReport field)",
+              "Keep the anchor and reword it to \"fields include artifact, stage, verdict, findings, counts, template?, reviewedAt, model\", so the list is not claimed to be complete"
+            ]
+          }
+        },
+        {
+          "claimId": "p24",
+          "ref": "c23",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/workflow/chain.ts:48-51 carries per-story stale / staleReason fields — the only recorded staleness signal.",
+          "evidence": "The anchor resolves correctly. The read of src/workflow/chain.ts:48 gives `readonly hasLld: boolean;` and chain.ts:51 gives `readonly staleReason?: string;`, so lines 48-51 are the per-story chain-mark fields, including stale and staleReason. The \"only recorded staleness signal\" part goes further than the evidence supports. src/workflow/amendments/staleness.ts:45 declares its own `readonly staleReason?: string;`, and staleness.ts:85/90/95 set `stale: true, staleReason: 'malformed'` from the stored and current effective hash. So the chain.ts fields are computed and passed along from staleness.ts; they are not stored on their own. The tests confirm the computed values: effective-and-staleness.test.ts:191/203 (`amendment-${AMD1}`, 'hld-rerun') and amendments-e2e.test.ts:339. docs/plans/workflow-design.md:538 says staleReason is \"set post-hoc when framework marks stale\", which also points to a computed value. This staleness compares an LLD to its HLD and says nothing about whether a review is stale. The premise's conclusion still holds: ReviewReport has no revision or content-hash field, and no review-staleness signal exists. The only problem is the claim about what \"only\" covers and where the value comes from.",
+          "action": "Keep the citation, but rewrite the claim. chain.ts:48-51 shows LLD-vs-HLD staleness that src/workflow/amendments/staleness.ts computes from hldEffectiveHash. Neither file records review staleness. Cite staleness.ts:45 as the source of the value, and drop \"the only recorded staleness signal\" or narrow it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor and fields check out. The overreach is the word 'only' and treating the value as stored on disk. staleness.ts:45 is the source of the value, and it only measures LLD-vs-HLD staleness. The DEF's conclusion that no review-revision signal exists is unaffected.",
+            "artifactEdits": [
+              {
+                "find": "src/workflow/chain.ts:48-51 (per-story stale / staleReason)",
+                "replace": "src/workflow/chain.ts:48-51 (per-story LLD-vs-HLD stale / staleReason, computed by src/workflow/amendments/staleness.ts:45 from hldEffectiveHash; no review-staleness signal)"
+              }
+            ],
+            "options": [
+              "Change the citation text to call it 'per-story LLD-vs-HLD stale / staleReason (computed in src/workflow/amendments/staleness.ts:45 from hldEffectiveHash; never applies to reviews)'.",
+              "Remove the chain.ts citation from c23 and rely only on ReviewReport (review/types.ts:146-156) having no revision or hash field.",
+              "Keep it as written and add a note that staleness is computed, not recorded, and covers LLDs only."
+            ]
+          }
+        },
+        {
+          "claimId": "p25",
+          "ref": "c15",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "Analyze anchors: buildChainReport at src/workflow/chain.ts:84, handleArtifactContent at src/workflow/artifact-content.ts:101, handleWorkflowPending at src/workflow/pending.ts:67.",
+          "evidence": "All three anchors check out. read src/workflow/chain.ts:84 → \"export function buildChainReport(repoPath: string, epicHash: string): ChainReport {\". read src/workflow/artifact-content.ts:101 → \"export function handleArtifactContent(\". read src/workflow/pending.ts:67 → \"export function handleWorkflowPending(\". The greps agree: the only source definitions of these functions are at those lines. The other matches are in docs/ markdown (ISSUE.md, LLD.md), not in source.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "All three cited file:line anchors point to the named function definitions in source, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p26",
+          "ref": "c17",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The store holds 731 artifact JSON records; 80 BUILD (29 approved with ≥1 failed task); 148 CR (73 with no BUILD for the same story); 39 LLDs with no PLAN; 141 of 141 non-standalone LLDs lack sizeClass; 7 standalone LLDs and 1 ISSUE lack route stamps; 326 reviewed artifacts, none with meta.updatedAt.",
+          "evidence": "The premise counts records under `.insrc/artifacts/*.json`, but none of the gathered matches come from that directory. `\"sizeClass\"` matched only once, in `src/workflow/runners/build/__tests__/fixtures/build-record-goldens.ts:59`. `\"updatedAt\"` matched only twice, in the same fixture at lines 81 and 166. All 27 `\"approvedAt\"` matches are in JetBrains plugin sources, compiled classes and tests (`WorkflowChainReader.kt:213/286`, `WorkflowChainReaderTest.kt`, `ApproveTest.kt`), daemon tests (`subject.test.ts:184`, `changed-files.test.ts:499`) and the goldens fixture (lines 64/82/167). No artifact store records turned up, most likely because the search skipped the `.insrc/` directory (hidden or gitignored). So the evidence cannot confirm or refute any of the counts: 731 records, 80 BUILD / 29 approved with failed tasks, 148 CR / 73 orphaned, 39 LLDs with no PLAN, 141/141 LLDs missing sizeClass, 7+1 missing route stamps, 326 reviewed artifacts with no meta.updatedAt. The absence of `sizeClass`/`updatedAt` matches is consistent with the \"none\" claims, but only because the store was never searched. That is not evidence for them. The premise is UNVERIFIABLE.",
+          "action": "Re-run the probe against the store itself (for example `rg --hidden --no-ignore` or a jq/node count script over `.insrc/artifacts/*.json`) and record the resulting counts in the artifact as a reproducible command plus its output. If the counts are only there to size the backfill and every record will be processed anyway, rewrite them as approximate or snapshot-dated.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence never touched .insrc/artifacts, so no count can be corrected from it. Any edit would invent values. The premise needs re-grounding, not a mechanical text fix.",
+            "options": [
+              "Re-run the inventory with a hidden/no-ignore search (or a jq/node script) over .insrc/artifacts/*.json and update each count to match the output.",
+              "Keep the counts but label them as a dated snapshot (2026-10-07), and add the exact command that reproduces them so a reviewer can re-check.",
+              "If the work processes every matching record whatever the totals, drop the exact numbers and state the selection criteria instead (BUILD approved with failed tasks, CR without a BUILD, LLD without a PLAN, etc.)."
+            ]
+          }
+        },
+        {
+          "claimId": "p27",
+          "ref": "c1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "docs/insrc-delivery-board-prd.html:193 (FR-09) requires a read-only MVP leaving artifacts, approvals, code and Git state unchanged; §05 at :164 and §07 at :197.",
+          "evidence": "The read of docs/insrc-delivery-board-prd.html:193 returned `<tr><td>FR-09</td><td>Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged.</td><td>Must</td></tr>`. That matches the premise word for word: FR-09 is a Must requirement for a read-only MVP that leaves artifacts, approvals, code and Git state unchanged. The grep for /Keep the MVP read-only/ found the same text in DEF.md:200 (citation c1), which quotes the PRD accurately. No evidence was gathered for the secondary anchors :164 (§05 State & evidence) and :197 (§07 Data contract), so those section-location pointers are not verified. The premise's requirement rests on FR-09 at :193, though, and that line is confirmed.",
+          "action": "None needed; the FR-09 claim is verified. Optionally, re-check that :164 and :197 still point to the §05 and §07 headings if the citation will be used for navigation. That does not change what gets built.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The primary anchor (:193, FR-09) is confirmed word for word. The §05/§07 anchors at :164 and :197 are unprobed supporting pointers, and the read-only requirement does not depend on them, so no edit is warranted."
+          }
+        },
+        {
+          "claimId": "p28",
+          "ref": "c2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "docs/plans/delivery-board-epics.md:54-55 defines E1 as a read-only daemon-owned projection of .insrc/artifacts/ into the PRD's work-item model, exposed over IPC.",
+          "evidence": "The premise checks out against the source. A read of docs/plans/delivery-board-epics.md:54 returns \"**Goal:** one read-only, daemon-owned projection that turns\". The grep for /daemon-owned projection/ finds that same line. It also finds the DEF.md:201 citation [[c2]], which attributes the full quote to delivery-board-epics.md:54-55 under the heading \"(E1 — Delivery read model (daemon))\": \"one read-only, daemon-owned projection that turns `.insrc/artifacts/` into the PRD's work-item model, exposed over IPC.\" The read only covered line 54. The rest of the sentence (\"into the PRD's work-item model, exposed over IPC\") is on line 55. It comes from the artifact's own quote, but that quote fits seamlessly onto the line-54 fragment that was read. The anchor resolves to E1's goal statement, so the premise holds.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves to E1's goal line and its text matches the premise. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p29",
+          "ref": "c22",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "docs/plans/vscode-viewer-gaps.md:86-90 (Track B1) leaves open which surface owns which anchor kind.",
+          "evidence": "The cited anchor checks out. Reading docs/plans/vscode-viewer-gaps.md:86 returns \"Design question for this track: `workflow.resolveComment` anchors to document…\", which opens Track B1's design question. A grep then matches docs/plans/vscode-viewer-gaps.md:89: \"…The design has to state which surface owns which anchor kind rather [than growing both]\". The doc treats surface-to-anchor-kind ownership as a decision still to be made, which means it is still open. That matches the premise. The DEF's citation [[c22]] at DEF.md:220 quotes the same sentence and gives the same range (86-90). The DEF uses this point only to explain why review annotations are deferred as a follow-on capability (DEF.md:75). That use is consistent with the source.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: the cited lines frame anchor ownership as an open design question, as the premise says. No edit needed."
+          }
+        },
+        {
+          "claimId": "p30",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "s2, s3 and s4 depend on s1; s5 depends on s1, s2, s3 and s4.",
+          "evidence": "No probes were run for this premise, so there are no ripgrep matches or path:line reads. Nothing in the evidence confirms or contradicts the dependency ordering (s2, s3 and s4 depend on s1; s5 depends on s1 through s4). The premise is UNVERIFIABLE. It is a story-ordering claim inside the artifact, not a code claim, so probing the source tree could not settle it anyway; it has to be checked against the artifact's own story list.",
+          "action": "Check the ordering against the artifact's current story set by hand. Confirm that s1 through s5 all still exist as stories, and that each named dependency matches what that story actually consumes from the earlier ones. If any story no longer exists, for example because it was removed, drop it from this premise and from the dependency list. If a dependency cannot be justified from the story's own scope, remove it so it does not needlessly hold up the build order.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence is empty, so no edit can be derived from it. Any change depends on the artifact's current story set and on what each story actually consumes, and a human has to confirm that.",
+            "options": [
+              "Keep the premise as written once s1 through s5 are all confirmed present and the edges are justified.",
+              "If s5 is no longer part of the epic, reduce the premise to: s2, s3 and s4 depend on s1.",
+              "Re-derive the edges from each story's declared inputs and outputs, then rewrite the premise to match."
+            ]
+          }
+        },
+        {
+          "claimId": "p31",
+          "ref": "s2",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Stage set is exactly six stages: Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.",
+          "evidence": "The deterministic engine ran no probes for this premise, so it returned no ripgrep matches and no path:line reads. Nothing confirms or contradicts the claim that the stage set is exactly these six: Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete. This is a closed-inventory (\"exactly six\") claim with no grounding, so it is UNVERIFIABLE.",
+          "action": "Attach a probe that finds where the stage set is defined in source, such as the stage enum, union type or label map behind S002:FR001. Then re-run the review to confirm the set is closed and has exactly these six members with these labels. If the set comes from a new design rather than existing code, state that explicitly in the premise so reviewers don't treat it as a claim about current source.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "No evidence was gathered, so there is nothing to base an automatic text edit on. A person has to either ground the inventory in source or reword it as a design decision.",
+            "options": [
+              "Add a probe (e.g. rg for 'Build recorded' / 'Design & plan' and the stage type definition) and re-review to confirm the exact six-member closed set",
+              "Reword the premise as a design decision (\"S2 defines the stage set as …\") rather than an inventory claim about existing code",
+              "Cite the defining file:line for the stage union/enum in the premise's anchors so future probes can resolve it"
+            ]
+          }
+        },
+        {
+          "claimId": "p32",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Every constraint (k1–k8) cited in acceptance criteria exists, and the 'Item a2' open question matches s3 lc1/ac7; reference c14 is absent but never cited.",
+          "evidence": "The engine ran no probes for this premise, so there are no ripgrep matches and no path:line reads to check it against. Nothing in the evidence confirms the premise's four claims: (1) constraints k1–k8 all exist and match the acceptance-criteria citations, (2) the 'Item a2' open question matches s3 lc1/ac7, (3) reference c14 is absent, (4) c14 is never cited. The premise also lists anchor c13, but its text talks about c14. That mismatch can't be resolved without evidence either.",
+          "action": "Re-run this premise with cross-artifact probes. Specifically: enumerate the Define's constraint IDs (k1–k8) and compare them with every k-citation in the acceptance criteria; read s3's lc1 and ac7 next to the 'Item a2' open question; and grep the artifact for 'c14' to confirm it is absent and never cited. Also fix the anchor list, which names c13 while the text refers to c14.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "No evidence was gathered, so no evidence-derived text edit is possible. The premise needs real probes, or a human to confirm the cross-references and fix the c13/c14 anchor mismatch.",
+            "options": [
+              "Re-run the review with probes covering the k1–k8 citations, s3 lc1/ac7 against 'Item a2', and a grep for c14.",
+              "Have a human check the cross-references by hand and accept the premise with a note.",
+              "Change the premise's anchors from c13 to c14 so they match the text, then re-probe."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 9,
+        "low": 23
+      },
+      "reviewedAt": "2026-10-07T07:16:02.128Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p2": {
+        "findingId": "p2",
+        "status": "resolved",
+        "note": "Verified by direct read: src/workflow/chain.ts:30-65 ChainReport has epicHash, epicSlug?, define{exists,approved,rejected,path?}, hld{exists,approved,rejected,path?}, stories[{id,title,hasLld,approved,stale,staleReason?,path?}], amendments{pending,approved,rejected}, tracker{pushed,epicRef?,lastSyncedAt?}, nextAction. No PLAN, BUILD, CR or ISSUE field. Probe gap: repo-wide grep hit its 50-match cap on docs/.",
+        "resolvedAt": "2026-10-07T07:23:56.390Z"
+      },
+      "p18": {
+        "findingId": "p18",
+        "status": "resolved",
+        "note": "Applied: c19 assumption and the push non-goal now say the server sends nothing unsolicited and that push is possible only as a long-lived streamed request (the debug.tailLog pattern). All socket writes (server.ts:219, :232, :242) answer a request id.",
+        "resolvedAt": "2026-10-07T07:23:56.392Z"
+      },
+      "p22": {
+        "findingId": "p22",
+        "status": "resolved",
+        "note": "Verified: find docs -name BUILD.md gives 80 files; 11 contain 'insrc:artifact BUILD-'. handleArtifactContent resolves metadata only through jsonPathForMd on the in-file marker (artifact-content.ts:156-162) and returns 'cannot resolve artifact metadata' otherwise; no fallback to hash-named json. Count of 69 stands.",
+        "resolvedAt": "2026-10-07T07:23:56.394Z"
+      },
+      "p23": {
+        "findingId": "p23",
+        "status": "resolved",
+        "note": "Applied: c23 anchor changed to src/workflow/review/types.ts:144-160 and the field list now includes reviewedBy? (types.ts:160). No revision or content-hash field exists.",
+        "resolvedAt": "2026-10-07T07:23:56.395Z"
+      },
+      "p24": {
+        "findingId": "p24",
+        "status": "resolved",
+        "note": "Applied: c23 now describes chain.ts:48-51 as per-story LLD-vs-HLD staleness computed by src/workflow/amendments/staleness.ts:45 from hldEffectiveHash, with no review-staleness signal; the dependent assumption is reworded to match.",
+        "resolvedAt": "2026-10-07T07:23:56.397Z"
+      },
+      "p26": {
+        "findingId": "p26",
+        "status": "resolved",
+        "note": "Verified by a script over .insrc/artifacts/*.json (the store sits under .insrc/, which the review's grep does not search): 731 records; 80 BUILD, 29 approved with a task passed:false; 148 CR, 73 without a BUILD for the same story ordinal; 39 LLDs without a PLAN; 31 meta.reviewOverride; 7 standalone LLDs without sizeClass and 1 ISSUE without magnitude (IDs listed in c17).",
+        "resolvedAt": "2026-10-07T07:23:56.398Z"
+      },
+      "p30": {
+        "findingId": "p30",
+        "status": "resolved",
+        "note": "Verified in the Define: s1 has no dependencies; s2, s3 and s4 each depend on s1 only; s5 depends on s1-s4. All five stories exist. Acyclic.",
+        "resolvedAt": "2026-10-07T07:23:56.399Z"
+      },
+      "p31": {
+        "findingId": "p31",
+        "status": "resolved",
+        "note": "The six-stage set is a design decision of this epic (docs/insrc-delivery-board-prd.html section 05, user decision of 2026-10-07 to split the Ready column), stated in s2 FR; no existing code defines it, so there is no source enum to probe.",
+        "resolvedAt": "2026-10-07T07:23:56.401Z"
+      },
+      "p32": {
+        "findingId": "p32",
+        "status": "resolved",
+        "note": "Verified in the Define: constraints k1-k8 all exist and every operationalizes reference is one of them; open question a2 matches s3 lc1 and ac7 and assumption source c13; c14 was removed and is cited nowhere in the body (its only mentions are inside the appended review report).",
+        "resolvedAt": "2026-10-07T07:23:56.402Z"
+      }
+    },
+    "questionResolutions": {
+      "q17f993e9": {
+        "question": "Item a2: Confirm the attention policy (s3 lc1 / ac7): does a pending artifact stop counting toward Needs attention once a downstream gate on the same work item is approved? The proposed default is yes; confirm before s3's design is approved.",
+        "status": "resolved",
+        "choice": "Yes: a pending artifact stops counting toward Needs attention once a downstream gate on the same work item is approved.",
+        "rationale": "Stakeholder confirmed the proposed default in chat on 2026-10-07.",
+        "resolvedAt": "2026-10-07T08:03:13.083Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This epic gives insrc one authoritative, read-only view of delivery work: every epic, story, task and issue, each with the stage it has reached and the evidence behind it. Approval, review, task validation and conflicts between them stay visible as separate facts instead of being hidden behind a single status. Every IDE board reads the same view from the daemon, so all clients agree on what is ready, what needs attention and why.",
+      "audience": "product"
+    },
+    "flavor": "new-capability",
+    "problem": "The workflow records every unit of delivery work across many separate artifacts: an epic's framing names its stories, a plan names a story's tasks, build records carry task results and completion approval, code reviews carry verdicts, and issues carry defects and the work that fixes them. Nothing assembles these into a single, trustworthy picture of the work itself. The only existing assembly covers an epic's framing, high-level design and per-story designs, and it is reachable only from the terminal tool; plans, build records, code reviews and issues are never joined to the story they belong to, and the list of artifacts awaiting approval cannot speak to completion at all. As a result, anyone asking what is ready to build, what needs a decision, or why an item looks finished must open and cross-read the records by hand. That reading is error-prone in ways the records themselves make likely: stories reach build by different routes, some of which legitimately skip planning; a story's identifier can be written in more than one form; code is sometimes reviewed before any build record exists; and a build can carry a completion approval while some of its tasks are recorded as failed. Each IDE client that wanted to show delivery status would today have to repeat this interpretation on its own, so two clients could disagree about the same work, and none of them is allowed to read the stores directly.",
+    "nonGoals": [
+      {
+        "text": "Building any board, rollup or detail user interface in VS Code, JetBrains or the IDE fork.",
+        "rationale": "The IDE surfaces are separate epics (E2, E3) that consume this view; keeping rendering out lets the view's contract settle first."
+      },
+      {
+        "text": "Creating, editing, approving, rejecting or reopening any artifact, or changing code or Git state.",
+        "rationale": "The first release is read-only by requirement; controlled actions need their own interaction and workflow design."
+      },
+      {
+        "text": "Introducing a new workflow state machine or redefining when a stage gate passes.",
+        "rationale": "The stages are a display projection of recorded evidence, not a replacement for the workflow's own gates."
+      },
+      {
+        "text": "Reporting live agent or coding-session activity.",
+        "rationale": "The existence of a plan or build record does not establish that anything is currently running."
+      },
+      {
+        "text": "Pushing updates to clients as artifacts change.",
+        "rationale": "Manual refresh is sufficient for the first increment. The daemon sends nothing unsolicited; a long-lived streamed request could carry updates in a later increment."
+      },
+      {
+        "text": "Review annotations, feedback capture, or agent handoff.",
+        "rationale": "A follow-on capability: docs/plans/vscode-viewer-gaps.md:86-90 (Track B1) leaves open which surface owns which anchor kind [[c22]]."
+      },
+      {
+        "text": "Repairing, migrating or normalising artifacts on disk.",
+        "rationale": "The view reports bad or ambiguous records; correcting them belongs to the workflow and its migration tooling."
+      },
+      {
+        "text": "Breaking or narrowing the behaviour of existing IPC methods.",
+        "rationale": "Existing clients of every daemon IPC method must keep working unchanged; any change to an existing method may only add."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The route a story or issue took is recorded on its artifacts. meta.sizeClass is typed as the full five-member size class (epic, feature, small, trivial, bugfix) and is stamped on a triage-routed standalone LLD with only a defined-check, so feature, small and bugfix (a sized bugfix's fix story) are the expected values but not a closed set; any other value, or an absent one, is an unknown route. meta.magnitude on an ISSUE is restricted to small or sized when stamped. Full-chain epic LLDs carry no sizeClass in the store today (141 of 141 non-standalone LLDs [[c17]]). Seven standalone LLDs and one ISSUE predate these stamps and have unknown routes [[c17]].",
+        "confidence": "high",
+        "source": "c12"
+      },
+      {
+        "text": "Each artifact file is written atomically (a temporary file renamed into place), so a reader never sees a half-written file. An artifact's JSON record and its markdown copy are two separate writes and are not committed together.",
+        "confidence": "high",
+        "source": "c18"
+      },
+      {
+        "text": "The approve and reject paths stamp meta.approvedAt and meta.rejectedAt, and pending means neither stamp is present.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "Proposed default for the attention policy, to be confirmed by the stakeholder: a pending artifact stops counting toward Needs attention once a downstream gate on the same work item is approved.",
+        "confidence": "low",
+        "source": "c13"
+      },
+      {
+        "text": "The store holds 731 artifact records today, so a 1,000-artifact / 500-work-item fixture gives headroom for the performance target.",
+        "confidence": "high",
+        "source": "c17"
+      },
+      {
+        "text": "The daemon's socket server only answers client requests, with a single response or a stream of messages for that request; it never sends unsolicited, connection-level messages. Push-style delivery is possible only as a long-lived streamed request, the pattern the log tail already uses, so a first increment that refreshes by asking again needs no new channel.",
+        "confidence": "high",
+        "source": "c19"
+      },
+      {
+        "text": "The existing chain report covers an epic's framing, high-level design and per-story designs only, with no plan, build, code-review or issue state.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "The pending-artifact list excludes build records, so it cannot report completion.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "The terminal tool reads the artifact store directly, listing epics and building the chain report in its own process.",
+        "confidence": "high",
+        "source": "c16"
+      },
+      {
+        "text": "The existing artifact review view resolves a record from its markdown through the in-file artifact marker, so the 69 build records whose markdown lacks the marker cannot be opened through it today.",
+        "confidence": "high",
+        "source": "c21"
+      },
+      {
+        "text": "A review is stamped on the artifact it reviews, one current review per artifact, recording only when and by whom it was made. Artifacts that carry reviews record no content revision, and the only staleness the framework computes compares a story design with its high-level design, so whether a review still matches an artifact's current content cannot be established from recorded fields today.",
+        "confidence": "high",
+        "source": "c23"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The daemon owns all interpretation of the artifact store [[c2]]. CLI, MCP and IDE clients obtain the view only over daemon IPC and never read or interpret artifact files themselves.",
+        "type": "invariant",
+        "source": "c8"
+      },
+      {
+        "id": "k2",
+        "text": "The capability is strictly read-only: producing or serving the view never writes to artifacts, approval stamps, source code or Git state.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "IPC method names and payload shapes stay in lock-step with every client that mirrors them: the insrc-ide fork, the VS Code plugin (which imports the daemon's TypeScript types directly) and the JetBrains plugin (which keeps Kotlin copies) [[c20]]; the response shape is fixed before any client epic depends on it.",
+        "type": "contract",
+        "source": "c9"
+      },
+      {
+        "id": "k4",
+        "text": "Work-item identity reuses the existing canonical work-item identity (sc1), under which s1, S1 and S001 name the same story [[c6]]; no parallel identity scheme is introduced, and any collision that rule cannot settle is flagged rather than merged.",
+        "type": "contract",
+        "source": "c7"
+      },
+      {
+        "id": "k5",
+        "text": "Approval state is read from the same fields the approve and reject paths write; the view never infers approval from file existence, file names or modification times.",
+        "type": "invariant",
+        "source": "c4"
+      },
+      {
+        "id": "k6",
+        "text": "Accuracy over cost: where evidence is missing or ambiguous the view reports incomplete coverage instead of guessing, and no stage or signal is invented to fill a gap.",
+        "type": "convention",
+        "source": "c10"
+      },
+      {
+        "id": "k7",
+        "text": "Stages and signals are derived deterministically from recorded fields, never inferred from prose; the same snapshot and inputs produce the same order and counts.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k8",
+        "text": "No existing daemon IPC method changes behaviour; this epic only adds. This covers every handler in the daemon's registry, including workflow.pending, workflow.artifactContent, workflow.approve, workflow.resolveComment, artifact.get and artifact.search; any change to one of them is additive only.",
+        "type": "contract",
+        "source": "c11"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Every work item appears once, in its place in the hierarchy",
+        "userValue": "A reader of the delivery view sees each epic, story, task and issue exactly once, nested under the work it belongs to, so counts and navigation can be trusted without cross-reading artifacts.",
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c7",
+          "c15"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a story with a design, a plan, a build record and a code review",
+            "when": "the delivery view is produced",
+            "then": "exactly one story item appears, and it references all four records as its evidence",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "records for the same story whose identifiers are written as s1 and S001",
+            "when": "the delivery view is produced",
+            "then": "they resolve to one story item under the canonical identity, and both original identifiers are retained on it",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "two records whose identity the canonical rule cannot settle as the same or different work item",
+            "when": "the delivery view is produced",
+            "then": "both remain separate and each carries an ambiguity notice naming the other; neither is silently merged",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "an issue with two associated fix stories",
+            "when": "the delivery view is produced",
+            "then": "the issue appears once with both fix stories as distinct children, each keeping its own tasks and evidence",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "an issue whose parent story cannot be found, and a standalone story with no epic",
+            "when": "the delivery view is produced",
+            "then": "the issue is still present with an unresolved-parent notice, and the standalone story is present without being attached to any invented epic",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a planned task identified only by a short task identifier that also appears in another story",
+            "when": "the delivery view is produced",
+            "then": "each task is identified through its parent story, so the two tasks never collide",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Each epic, story, task and issue is represented once under one stable identity, with its original identifiers kept."
+          },
+          {
+            "statement": "Work items are nested by their recorded relationships: stories under epics, tasks under stories, fix stories under issues."
+          },
+          {
+            "statement": "Standalone stories and issues remain first-class items and are never assigned to an invented parent."
+          },
+          {
+            "statement": "Identity ambiguity and unresolved parents are reported on the affected items rather than resolved by guessing."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Each work item shows the stage it has reached, and why",
+        "userValue": "A reviewer can see at a glance where every work item stands on its own route to completion, with the evidence that placed it there, so items that legitimately skip planning are not mistaken for stalled work.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a full-chain story with an approved plan and no build record",
+            "when": "its stage is derived",
+            "then": "it is in Ready · plan approved, with a reason naming the approved plan, and no running activity is implied",
+            "operationalizes": [
+              "k7",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a small-route story with an approved design and no plan, and a small bugfix with an approved issue and no design",
+            "when": "their stages are derived",
+            "then": "both are in Ready · design approved, neither is in Ready · plan approved, and neither reports a missing plan or a pending planning decision",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a story with a build record that has no completion approval, even though all its task checks passed",
+            "when": "its stage is derived",
+            "then": "it is in Build recorded",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a story with a build record that carries a completion approval",
+            "when": "its stage is derived",
+            "then": "it is in Complete regardless of its task results or review verdicts",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a story with a code review but no build record",
+            "when": "its stage is derived",
+            "then": "the code review does not change the stage, and the item carries a notice that its code was reviewed without a build record",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a work item whose route cannot be determined from its records",
+            "when": "its stage is derived",
+            "then": "it keeps the stage its records establish and carries an unknown-route notice; no route is guessed",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac7",
+            "given": "a story or issue with no design, plan or build record",
+            "when": "its stage is derived",
+            "then": "it is in Scoped",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Every work item is placed in exactly one of six stages: Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete."
+          },
+          {
+            "statement": "Which gate makes an item ready depends on the route it was triaged onto, not on which records happen to exist."
+          },
+          {
+            "statement": "Every derived stage carries a reason that names the evidence behind it."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Approval, review, validation and conflicts stay visible as separate facts",
+        "userValue": "A reviewer can tell what was approved, what the reviews said, which tasks actually passed, and where those facts disagree, so a convenient status never hides contradictory evidence and the attention list shows what genuinely needs a decision.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an artifact with an approval stamp, another with a rejection stamp, and a third with neither",
+            "when": "their approval signals are reported",
+            "then": "they read approved, rejected and pending respectively, and a rejected artifact is never shown as pending",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an approved build record with one task recorded as failed",
+            "when": "its signals are reported",
+            "then": "the item stays Complete and carries a validation-conflict signal that shows both the approval and the failed task; neither fact is altered",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a planned task with no recorded result",
+            "when": "task validation is reported",
+            "then": "the task is Unrecorded and is counted as neither passed nor failed",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a task result recorded in a build record that has no matching planned task",
+            "when": "task validation is reported",
+            "then": "the task is shown with its result and marked as unplanned",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "an unapproved artifact whose review verdict is block and which has no recorded override",
+            "when": "the attention filter is evaluated",
+            "then": "the item matches Needs attention and keeps its stage",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "an approved artifact with a historical block verdict, and an unapproved artifact whose block carries a recorded override",
+            "when": "the attention filter is evaluated",
+            "then": "neither matches Needs attention, and both still show the original verdict and, where present, the override",
+            "operationalizes": [
+              "k7",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac7",
+            "given": "a pending artifact on a work item where a downstream gate on the same item is already approved",
+            "when": "the attention filter is evaluated",
+            "then": "the pending artifact is handled according to the attention policy the stakeholder confirms, and the rule applied is stated on the item",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The attention policy for pending artifacts superseded by downstream approval must be confirmed by the stakeholder before this story's design is approved; the proposed default is that such an artifact stops counting toward Needs attention.",
+            "type": "stakeholder",
+            "source": "c13"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Approval is reported as approved, rejected or pending from the recorded stamps."
+          },
+          {
+            "statement": "Review verdicts and any recorded override are reported alongside the artifact they belong to."
+          },
+          {
+            "statement": "Task results are reported as passed, failed or unrecorded, and unplanned tasks are marked."
+          },
+          {
+            "statement": "A completion approval that coexists with failed task results is reported as a conflict without changing either fact."
+          },
+          {
+            "statement": "Needs attention covers pending decisions, rejections, unresolved review blocks, failed validation, conflicts and unresolved references, and excludes resolved or overridden blocks."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "The view reflects the current revision of each record and reports incomplete evidence",
+        "userValue": "A reader can rely on the view to use the record that actually applies, including accepted amendments and extensions, to be told when it cannot know whether a review still matches the current content, and to be told plainly when a record is malformed or missing instead of seeing a silently thinner view.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an artifact with a recorded review, whose content may have changed since that review",
+            "when": "the applicable review is reported",
+            "then": "the review is shown exactly as recorded with the time it was made; it is reported as current or stale only where recorded fields establish that, and otherwise as of unknown currency; file modification time is never used",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an epic with an accepted extension that adds a story, and a base framing that predates it",
+            "when": "the delivery view is produced",
+            "then": "the added story is present, and the older base framing does not hide or overwrite it",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "one malformed artifact file among otherwise valid records",
+            "when": "the delivery view is produced",
+            "then": "every unaffected work item is present, and a data-quality notice names the malformed file and the coverage it leaves unknown",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "records that are missing, such as a story with a build record but no plan, or an artifact with no title",
+            "when": "the delivery view is produced",
+            "then": "the affected items remain inspectable and are marked as having incomplete evidence; no content is invented",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "any malformed or ambiguous record",
+            "when": "the delivery view is produced",
+            "then": "no file in the artifact store is changed",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The applicable record, and the effective amendments and extensions, are resolved from recorded fields; where no recorded field settles whether a review or record is current, the view says so."
+          },
+          {
+            "statement": "Malformed, missing and unresolvable records produce per-item and view-level data-quality notices."
+          },
+          {
+            "statement": "A bad record never removes unaffected work items from the view."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Clients read the whole view, and its evidence, as one coherent snapshot",
+        "userValue": "Every IDE client gets the same complete, timestamped view in one request, can open the records behind any item, and sees identical order and counts each time, so separate clients and refreshes never disagree.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1",
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a registered repository with artifacts",
+            "when": "a client requests the delivery view",
+            "then": "it receives one complete snapshot of all work items with the time it was taken, and no artifact, approval, code or Git state changes",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the same artifact store, including work items with equal timestamps",
+            "when": "the delivery view is requested twice",
+            "then": "both responses list the same items in the same order with identical counts",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a work item whose build record cannot be opened through the existing review view, because its markdown carries no artifact marker",
+            "when": "a client asks for that evidence",
+            "then": "the client receives a readable view of the record through the daemon, without reading the file itself",
+            "operationalizes": [
+              "k1",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a store of 1,000 artifacts forming 500 work items on the reference environment",
+            "when": "the delivery view is requested",
+            "then": "the snapshot is returned within the agreed time budget",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "existing clients of any daemon IPC method, including the pending-artifact list and the artifact review view",
+            "when": "this capability is added",
+            "then": "those clients behave exactly as before",
+            "operationalizes": [
+              "k8"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "the published response shape",
+            "when": "a client epic starts",
+            "then": "the shape is fixed and mirrored for the VS Code plugin, the JetBrains plugin and the insrc-ide fork",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A single read-only request returns the complete delivery view with snapshot and freshness information."
+          },
+          {
+            "statement": "The same snapshot always yields the same order and counts."
+          },
+          {
+            "statement": "Evidence records without a rendered document can still be read through the daemon."
+          },
+          {
+            "statement": "Existing IPC methods are unchanged, or changed only additively."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: Confirm the attention policy (s3 lc1 / ac7): does a pending artifact stop counting toward Needs attention once a downstream gate on the same work item is approved? The proposed default is yes; confirm before s3's design is approved."
+    ],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E202610072ff0dfda:FR001",
+          "statement": "Every epic, story, task and issue appears exactly once, under one stable identity, however many artifacts record it and whichever form its identifier is written in.",
+          "scope": "doc",
+          "rationale": "Duplicate or split cards would make counts and stages untrustworthy."
+        },
+        {
+          "id": "E202610072ff0dfda:FR002",
+          "statement": "Each work item's delivery stage is derived from its recorded artifacts and the route it was triaged onto, and comes with a stated reason.",
+          "scope": "doc",
+          "rationale": "Routes legitimately differ; a stage without its reason cannot be checked."
+        },
+        {
+          "id": "E202610072ff0dfda:FR003",
+          "statement": "Approval, review verdict and override, task validation, and conflicts between them are reported as independent signals, never folded into the stage.",
+          "scope": "doc",
+          "rationale": "A completion approval and a failed task result can both be true and must both be visible."
+        },
+        {
+          "id": "E202610072ff0dfda:FR004",
+          "statement": "Missing, malformed or unresolvable records are reported as data-quality notices while every unaffected work item remains present.",
+          "scope": "doc",
+          "rationale": "One bad record must not blank the view or silently drop work."
+        },
+        {
+          "id": "E202610072ff0dfda:FR005",
+          "statement": "Clients obtain the whole view as one coherent, read-only snapshot that states when it was taken, and the same snapshot always yields the same order and counts.",
+          "scope": "doc",
+          "rationale": "Consistent counts across clients and refreshes depend on a single, deterministic snapshot."
+        },
+        {
+          "id": "E202610072ff0dfda:S001:FR001",
+          "statement": "Each epic, story, task and issue is represented once under one stable identity, with its original identifiers kept.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E202610072ff0dfda:S001:FR002",
+          "statement": "Work items are nested by their recorded relationships: stories under epics, tasks under stories, fix stories under issues.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E202610072ff0dfda:S001:FR003",
+          "statement": "Standalone stories and issues remain first-class items and are never assigned to an invented parent.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E202610072ff0dfda:S001:FR004",
+          "statement": "Identity ambiguity and unresolved parents are reported on the affected items rather than resolved by guessing.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E202610072ff0dfda:S002:FR001",
+          "statement": "Every work item is placed in exactly one of six stages: Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E202610072ff0dfda:S002:FR002",
+          "statement": "Which gate makes an item ready depends on the route it was triaged onto, not on which records happen to exist.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E202610072ff0dfda:S002:FR003",
+          "statement": "Every derived stage carries a reason that names the evidence behind it.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E202610072ff0dfda:S003:FR001",
+          "statement": "Approval is reported as approved, rejected or pending from the recorded stamps.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E202610072ff0dfda:S003:FR002",
+          "statement": "Review verdicts and any recorded override are reported alongside the artifact they belong to.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E202610072ff0dfda:S003:FR003",
+          "statement": "Task results are reported as passed, failed or unrecorded, and unplanned tasks are marked.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E202610072ff0dfda:S003:FR004",
+          "statement": "A completion approval that coexists with failed task results is reported as a conflict without changing either fact.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E202610072ff0dfda:S003:FR005",
+          "statement": "Needs attention covers pending decisions, rejections, unresolved review blocks, failed validation, conflicts and unresolved references, and excludes resolved or overridden blocks.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E202610072ff0dfda:S004:FR001",
+          "statement": "The applicable revision of each record, and the effective amendments and extensions, are resolved from recorded revision information.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E202610072ff0dfda:S004:FR002",
+          "statement": "Malformed, missing and unresolvable records produce per-item and view-level data-quality notices.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E202610072ff0dfda:S004:FR003",
+          "statement": "A bad record never removes unaffected work items from the view.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E202610072ff0dfda:S005:FR001",
+          "statement": "A single read-only request returns the complete delivery view with snapshot and freshness information.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E202610072ff0dfda:S005:FR002",
+          "statement": "The same snapshot always yields the same order and counts.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E202610072ff0dfda:S005:FR003",
+          "statement": "Evidence records without a rendered document can still be read through the daemon.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E202610072ff0dfda:S005:FR004",
+          "statement": "Existing IPC methods are unchanged, or changed only additively.",
+          "scope": "item",
+          "itemRef": "s5"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html:193 (FR-09); §05 State & evidence at :164, §07 Data contract at :197",
+      "quotedText": "Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md:54-55 (E1 — Delivery read model (daemon))",
+      "quotedText": "one read-only, daemon-owned projection that turns `.insrc/artifacts/` into the PRD's work-item model, exposed over IPC."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/chain.ts:30-65 (ChainReport)",
+      "quotedText": "readonly stories: readonly { readonly id: string; readonly title: string; readonly hasLld: boolean; readonly approved: boolean; readonly stale: boolean; ... }[]; readonly amendments: {...}; readonly tracker: {...}; readonly nextAction: NextAction; — define/hld/stories/amendments/tracker only, no PLAN, BUILD, CR or ISSUE field."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:126-128 (pending test); written at src/workflow/gates.ts:606 (approvedAt) and :954 (rejectedAt)",
+      "quotedText": "// Pending = neither stamped: the SAME fields approve/reject write (k5)."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts:39",
+      "quotedText": "export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'CR'] as const;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/id.ts::storyIdToOrdinal",
+      "quotedText": "The ordinal is what matters — 's1', 'S1' and 'S001' all yield 1."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/restructure-docs-artifact-markdown-from-flat-E20260915599a9b50/HLD.md :: sc1: Uniform work-item identity",
+      "quotedText": "One canonical, both-way identity for every work item and story — epic-parented or standalone — so identity can serve as the folder key and lookup key the whole layout hangs on."
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "CLAUDE.md:135 — Key architectural rules, rule 1",
+      "quotedText": "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only."
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "CLAUDE.md:30-32 — What lives here",
+      "quotedText": "IPC method names, socket path (`~/.insrc/daemon.sock`), and payload shapes stay in lock-step across the two repos via mirrored types."
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "CLAUDE.md:11 — Project principles",
+      "quotedText": "Accuracy is primary; cost is the least priority."
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:686-704 (workflow.pending, workflow.artifactContent handlers); registry entries workflow.approve :643, workflow.pending :686, workflow.artifactContent :698, workflow.resolveComment :712, artifact.get :1131, artifact.search :1145",
+      "quotedText": "the review view for one pending artifact — its own rendered .md content ... A pure read (handleArtifactContent) path-guarded under docs/"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/types.ts:401 (meta.sizeClass?: SizeClass) and :412 (meta.magnitude?: BugfixMagnitude); SizeClass defined at src/workflow/triage/types.ts:17 as 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix'; stamped at src/workflow/orchestrator.ts:2352 (standalone design.story, defined-check only) and :903 (issue, small | sized only)",
+      "quotedText": "...(sizeClass !== undefined ? { sizeClass } : {}),  /  ...(magnitude === 'small' || magnitude === 'sized' ? { magnitude } : {}),"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "Stakeholder session 2026-10-07: attention-policy default proposed, not yet confirmed",
+      "quotedText": "Proposed: a pending artifact stops counting toward Needs attention once a downstream gate on the same work item is approved."
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "define/s1 code capability-discovery over the artifact-store readers (anchors: src/workflow/chain.ts:84 buildChainReport, src/workflow/artifact-content.ts:101 handleArtifactContent, src/workflow/pending.ts:67 handleWorkflowPending)",
+      "quotedText": "0 clear-match, 1 partial-match (src/workflow — chain.ts derives per-epic DEF/HLD/LLD approval, artifact-content.ts serves review views), 4 unrelated. Among the five candidates evaluated; the CLI reader src/cli/services/workflow.ts (c16) also reads the store directly."
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:126 (listEpics) and :145 (chain)",
+      "quotedText": "listEpics: const dir = join(repoPath, ARTIFACTS_DIR);  /  chain: return buildChainReport(repoPath, epicHash);"
+    },
+    {
+      "id": "c17",
+      "kind": "step-output",
+      "ref": "Measured 2026-10-07 by a script over .insrc/artifacts/*.json that reads meta and body fields directly (not docs/ markdown); stories keyed by epicHash + story ordinal (storyIdToOrdinal)",
+      "quotedText": "731 JSON records; 80 BUILD, 29 of them with meta.approvedAt and at least one body.tasks[].passed === false; 148 CR, 73 with no BUILD for the same story; 39 LLDs with no PLAN; 31 artifacts with meta.reviewOverride; standalone LLDs without meta.sizeClass: LLD-1716f77ba9ba017b-S001, LLD-2d9e9e694a94116b-s1, LLD-5f7a7cb95b643ae5-S001, LLD-792f9324fc43d95c-S001, LLD-9225688d966a8588-S001, LLD-99bc81bbe965eec3-s1, LLD-b846171f48d26a25-s1; ISSUE without meta.magnitude: ISSUE-b2e05b043846451c. Rendered markdown: all 149 CR.md files carry an insrc:artifact marker; only 11 of 80 BUILD.md files do."
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:77-87 (writeAtomic)",
+      "quotedText": "export function writeAtomic(absPath: string, content: string): void { ... renameSync(tmp, absPath);"
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:59-60, 164-242 (request and stream handling; every socket write at :219, :232, :242 answers a request id)",
+      "quotedText": "Stream mode: request with \"stream\": true gets multiple IpcStreamMessages until the handler resolves (stream:done) or throws (stream:error)."
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts:18; jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:31",
+      "quotedText": "import type { PendingArtifact } from '../../../src/workflow/pending.js';  /  data class PendingArtifactDto("
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:101 (handleArtifactContent); :119-125 (.md under docs/ only); :156-162 (metadata resolved through the in-file insrc:artifact marker via jsonPathForMd)",
+      "quotedText": "// The sibling hash-flat .json (meta + body) via the in-file insrc:artifact marker. ... return { error: `workflow.artifactContent: cannot resolve artifact metadata: ...` }"
+    },
+    {
+      "id": "c22",
+      "kind": "doc",
+      "ref": "docs/plans/vscode-viewer-gaps.md:86-90 (Track B1 design question)",
+      "quotedText": "The design has to state which surface owns which anchor kind rather than growing both."
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/workflow/review/types.ts:144-160 (ReviewReport); src/workflow/chain.ts:48-51 (per-story LLD-vs-HLD stale / staleReason, computed by src/workflow/amendments/staleness.ts:45 from hldEffectiveHash; no review-staleness signal)",
+      "quotedText": "ReviewReport { artifact; stage; verdict; findings; counts; template?; reviewedAt; model; reviewedBy? } — no revision or content-hash field. 326 reviewed artifacts on 2026-10-07; none carries meta.updatedAt."
+    }
+  ]
+}

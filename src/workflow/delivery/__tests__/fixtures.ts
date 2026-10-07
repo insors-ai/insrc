@@ -12,20 +12,14 @@
  *     (standalone, epicCreatedAt, parentRef, storyId, body task ids). The
  *     loader tests write these values to a temporary store; nothing here
  *     reads the live .insrc/artifacts directory.
- *   - Builders: recordFromFile lifts one store file into an ArtifactRecord
- *     the way the loader does (AMD flat, every other kind meta/body); the
+ *   - Builders: recordFromFile lifts one store file through the loader's own
+ *     liftStoreFile (AMD flat, every other kind meta/body); the
  *     per-kind helpers fabricate records for the graph tests, in the style
  *     of pending.test.ts's pendingLld.
  */
 
-import { storyIdToOrdinal } from '../../id.js';
-import type {
-	ApprovalState,
-	ArtifactRecord,
-	ArtifactRecordSet,
-	DeliveryArtifactKind,
-	RecordLoadFailure,
-} from '../types.js';
+import { liftStoreFile } from '../load.js';
+import type { ArtifactRecord, ArtifactRecordSet, DeliveryArtifactKind, RecordLoadFailure } from '../types.js';
 
 /** One artifact store file's parsed JSON. */
 export type RawStoreFile = Readonly<Record<string, unknown>>;
@@ -336,74 +330,11 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 // Builders
 // ---------------------------------------------------------------------------
 
-const KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
-
-function asObject(v: unknown): Readonly<Record<string, unknown>> {
-	return typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : {};
-}
-
-function asString(v: unknown): string | null {
-	return typeof v === 'string' ? v : null;
-}
-
-function ordinalOf(storyId: string | null): number | null {
-	if (storyId === null) return null;
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
-}
-
-function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
-	const approvedAt = asString(fields['approvedAt']);
-	const rejectedAt = asString(fields['rejectedAt']);
-	const status = asString(fields['status']);
-	const state: ApprovalState = approvedAt !== null || status === 'approved' ? 'approved'
-		: rejectedAt !== null || status === 'rejected' ? 'rejected'
-		: 'pending';
-	return { state, approvedAt, rejectedAt };
-}
-
-/** The kind named by a store file name's prefix, or null for an unknown prefix. */
-export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
-	const prefix = fileName.split('-')[0] ?? '';
-	return (KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
-}
-
-/** Lift one store file into an ArtifactRecord: AMD flat, every other kind from { meta, body }. */
+/** Lift one store file into an ArtifactRecord exactly as the loader does; throws on a load failure. */
 export function recordFromFile(fileName: string, raw: RawStoreFile): ArtifactRecord {
-	const kind = kindOfFile(fileName);
-	if (kind === null) throw new Error(`fixtures: unknown artifact kind for '${fileName}'`);
-	const artifactId = fileName.replace(/\.json$/, '');
-	if (kind === 'AMD') {
-		const { amendment, ...meta } = raw;
-		return {
-			artifactId, kind,
-			workItemHash:  asString(raw['epicHash']),
-			storyIdRaw:    null,
-			storyOrdinal:  null,
-			approval:      approvalOf(raw),
-			createdAt:     asString(raw['proposedAt']),
-			epicCreatedAt: null,
-			meta,
-			body:          amendment,
-		};
-	}
-	const meta = asObject(raw['meta']);
-	const storyIdRaw = asString(meta['storyId']);
-	const hashKey = kind === 'ISSUE' ? 'issueHash' : kind === 'SPEC' ? 'specHash' : 'epicHash';
-	return {
-		artifactId, kind,
-		workItemHash:  asString(meta[hashKey]),
-		storyIdRaw,
-		storyOrdinal:  ordinalOf(storyIdRaw),
-		approval:      approvalOf(meta),
-		createdAt:     asString(meta['createdAt']),
-		epicCreatedAt: asString(meta['epicCreatedAt']),
-		meta,
-		body:          raw['body'],
-	};
+	const lifted = liftStoreFile(fileName, raw);
+	if ('reason' in lifted) throw new Error(`fixtures: '${fileName}' does not lift: ${lifted.reason} (${lifted.detail})`);
+	return lifted;
 }
 
 /** ArtifactRecords for the named REAL_STORE files (all of them when omitted), sorted by artifactId. */

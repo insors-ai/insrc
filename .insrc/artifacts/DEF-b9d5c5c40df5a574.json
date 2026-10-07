@@ -571,6 +571,11 @@
       "reviewedAt": "2026-10-07T04:48:26.814Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-07T05:04:21.563Z",
+    "reviewOverride": {
+      "reason": "User approved on 2026-10-07 with the review blocking. Of the 11 MED in the third daemon review, 5 are unverifiable because the reviewer's evidence grep stops at 50 matches (src/workflow/review/probe.ts:27), 3 are internal-consistency checks for which no probe read the artifact, and the others are 'exclusivity not proven' notes. The two real leftovers (stale citation c14 and an open question that belonged to the removed story 5) were removed after that review.",
+      "at": "2026-10-07T05:04:21.562Z"
     }
   },
   "body": {

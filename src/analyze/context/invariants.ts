@@ -38,7 +38,8 @@ import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 
-import type { ClassifiedIntent } from './types.js';
+import { freshnessPathOf } from './scope.js';
+import type { ResolvedScope } from './scope.js';
 
 const log = getLogger('analyze:context:invariants');
 
@@ -84,12 +85,12 @@ export class ScopeNotIndexedError extends Error {
 }
 
 /**
- * Ensure the intent's scope has a non-empty graph closure -- i.e.
- * there is at least one indexed entity for the repo containing
- * `intent.scopeRef.value`.
+ * Ensure the scope has a non-empty graph closure -- i.e. there is
+ * at least one indexed entity for the repo containing the scope's
+ * path.
  *
  * Resolves the containing repo via longest-prefix match against
- * `listRepos`. Skips silently for `scopeRef.kind === 'connection'`
+ * `listRepos`. Skips silently for a connection scope
  * (data-only scopes don't depend on the code graph).
  *
  * Throws ScopeNotIndexedError when:
@@ -105,17 +106,15 @@ export class ScopeNotIndexedError extends Error {
  * telemetry.
  */
 export async function ensureNonEmptyClosure(
-	intent: ClassifiedIntent,
+	scope: ResolvedScope,
 ): Promise<string | undefined> {
-	const ref = intent.scopeRef;
-
 	// Data-only scopes don't need a code graph.
-	if (ref.kind === 'connection') {
-		log.debug({ scope: ref.value }, 'ensureNonEmptyClosure: skipping connection-kind scope');
+	if (scope.kind === 'connection') {
+		log.debug({ scope: scope.value }, 'ensureNonEmptyClosure: skipping connection-kind scope');
 		return undefined;
 	}
 
-	const scopePath = scopePathFor(ref);
+	const scopePath = freshnessPathOf(scope);
 	if (scopePath.length === 0) {
 		// Empty or non-filesystem scope; nothing we can check.
 		return undefined;
@@ -184,13 +183,4 @@ export async function ensureNonEmptyClosure(
 		'ensureNonEmptyClosure: closure non-empty',
 	);
 	return best.path;
-}
-
-/**
- * Same path-extraction shape as the driver's `inferScopePath`, but
- * limited to this module to avoid the import cycle.
- */
-function scopePathFor(ref: ClassifiedIntent['scopeRef']): string {
-	if (ref.kind === 'connection') return '';
-	return ref.value;
 }

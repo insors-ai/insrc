@@ -106,6 +106,17 @@ export async function resolveScope(
 	}
 }
 
+/**
+ * The file-system path matched against the registry for a scope: to
+ * find its repo's last-indexed time, and for the indexed check. A
+ * connection has none -- an empty string says "no registered repo to
+ * check" (a connection's data is not in the code graph).
+ */
+export function freshnessPathOf(scope: ResolvedScope): string {
+	if (scope.kind === 'connection') return '';
+	return scope.filePath ?? scope.value;
+}
+
 /** The registered repo containing `path` at a path-segment boundary; the longest wins. */
 export function longestPrefixRepo(
 	path:  string,

@@ -11,7 +11,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
-import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
+import type { LoadedConnections } from '../../../daemon/db/config.js';
+import type { AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
+import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import {
 	DecomposerLlmUnavailableError,
@@ -39,6 +41,7 @@ import {
 	SynthesizerPromptMissingError,
 	SynthesizerSchemaUnrecoverable,
 } from '../synthesizer.js';
+import { resolveScope, type ResolvedScope, type ScopeDeps } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 
 type RawBundle = Omit<AnalyzeContextBundle, 'meta'>;
@@ -116,15 +119,25 @@ function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 	return { steps: s, calls };
 }
 
-function run(over: StandIns = {}, intent: ClassifiedIntent = INTENT, mode: 'run' | 'classification' | 'task' = 'run') {
+function run(
+	over: StandIns = {},
+	intent: ClassifiedIntent = INTENT,
+	mode: 'run' | 'classification' | 'task' = 'run',
+	scope?: ResolvedScope,
+) {
 	const { steps: s, calls } = steps(over);
 	const inputs = mode === 'classification'
 		? { userPrompt: 'q', scopeRef: intent.scopeRef }
 		: { intent };
 	return runPipeline(
-		{ invocationMode: mode, shaperId: 'code', inputs: inputs as never, runId: 'r1' },
+		{ invocationMode: mode, shaperId: 'code', inputs: inputs as never, runId: 'r1', scope: scope ?? dirScope(intent) },
 		s,
 	).then(outcome => ({ outcome, calls }));
+}
+
+/** The resolved scope of a directory kind: lookups run in the scope's own directory. */
+function dirScope(intent: ClassifiedIntent): ResolvedScope {
+	return { kind: intent.scopeRef.kind, value: intent.scopeRef.value, repoPath: REPO, lookupPath: intent.scopeRef.value };
 }
 
 function cause(outcome: PipelineOutcome): PipelineCause {
@@ -205,11 +218,11 @@ test("pipeline returns each cause for the stand-in that produces it, including '
 	// invalid input: an unknown kind of source, and inputs with no intent.
 	const { steps: s } = steps();
 	const unknownSource = await runPipeline(
-		{ invocationMode: 'run', shaperId: 'nope' as never, inputs: { intent: INTENT } as never, runId: 'r' }, s,
+		{ invocationMode: 'run', shaperId: 'nope' as never, inputs: { intent: INTENT } as never, runId: 'r', scope: dirScope(INTENT) }, s,
 	);
 	assert.equal(cause(unknownSource), 'invalid-input');
 	const noIntent = await runPipeline(
-		{ invocationMode: 'run', shaperId: 'code', inputs: { userPrompt: 'q', scopeRef: INTENT.scopeRef } as never, runId: 'r' }, s,
+		{ invocationMode: 'run', shaperId: 'code', inputs: { userPrompt: 'q', scopeRef: INTENT.scopeRef } as never, runId: 'r', scope: dirScope(INTENT) }, s,
 	);
 	assert.equal(cause(noIntent), 'invalid-input');
 
@@ -245,15 +258,84 @@ test("pipeline returns 'not-applicable' for classification and task modes", asyn
 	}
 });
 
-test('the two gates still stand, each naming its own cause', async () => {
+test('the gate on a request with no focus still stands, naming its own cause', async () => {
 	const unfocused = await run({}, { ...INTENT, focused: false, focus: undefined } as unknown as ClassifiedIntent);
 	assert.equal(cause(unfocused.outcome), 'unfocused-not-served');
 	assert.equal(unfocused.calls.decompose.length, 0);
-	for (const kind of ['file', 'symbol', 'manifest-dir', 'connection'] as const) {
-		const r = await run({}, { ...INTENT, scopeRef: { kind, value: `${REPO}/x` } });
-		assert.equal(cause(r.outcome), 'scope-kind-not-served', kind);
-		assert.equal(r.calls.decompose.length, 0, kind);
+});
+
+// ---------------------------------------------------------------------------
+// All seven kinds of scope are served
+// ---------------------------------------------------------------------------
+
+const FILE = `${REPO}/src/pay.ts`;
+
+/** resolveScope with stand-in readers: one registered repo, one entity, one connection. */
+function resolve(ref: AnalyzeScopeRef): Promise<ResolvedScope> {
+	const ent = { id: 'ent-settle', name: 'settle', kind: 'function', file: FILE, startLine: 3 } as unknown as Entity;
+	const deps: ScopeDeps = {
+		listRepos:           async () => [{ path: REPO, status: 'ready' } as unknown as RegisteredRepo],
+		findEntitiesByFile:  async (f) => (f === FILE ? [ent] : []),
+		listEntitiesForRepo: async () => [ent],
+		loadConnections:     async () => ({
+			file: { connections: [] }, resolved: [{ id: 'ledger-db', kind: 'sqlite' }], warnings: [],
+		} as unknown as LoadedConnections),
+	};
+	return resolveScope(ref, deps);
+}
+
+test('pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path', async () => {
+	const cases: ReadonlyArray<{ ref: AnalyzeScopeRef; lookupPath: string; freshness: string }> = [
+		{ ref: { kind: 'file',         value: FILE },               lookupPath: REPO,            freshness: FILE },
+		{ ref: { kind: 'symbol',       value: `${FILE}#settle` },   lookupPath: REPO,            freshness: FILE },
+		{ ref: { kind: 'manifest-dir', value: `${REPO}/deploy` },   lookupPath: `${REPO}/deploy`, freshness: `${REPO}/deploy` },
+		{ ref: { kind: 'connection',   value: 'ledger-db' },        lookupPath: REPO,            freshness: '' },
+	];
+	for (const c of cases) {
+		const scope = await resolve(c.ref);
+		assert.equal(scope.lookupPath, c.lookupPath, c.ref.kind);
+		const seen: string[] = [];
+		const { steps: s, calls } = steps();
+		const withFreshness: PipelineSteps = { ...s, lastIndexedAt: async (p) => { seen.push(p); return 1_700_000_000_000; } };
+		const outcome = await runPipeline(
+			{ invocationMode: 'run', shaperId: 'code', inputs: { intent: { ...INTENT, scopeRef: c.ref } } as never, runId: 'r1', scope },
+			withFreshness,
+		);
+		assert.equal(outcome.kind, 'bundle', `${c.ref.kind}: ${JSON.stringify(outcome)}`);
+		assert.equal(calls.decompose.length, 1, `${c.ref.kind}: the planning call was made`);
+		// The lookups ran in the directory the scope resolved to.
+		const executed = calls.executePlan[0] as { repoPath: string; closureRepos: string[] };
+		assert.equal(executed.repoPath, c.lookupPath, c.ref.kind);
+		assert.deepEqual(executed.closureRepos, [c.lookupPath], c.ref.kind);
+		// ... and the last-indexed time was read for the scope's own path.
+		assert.deepEqual(seen, [c.freshness], c.ref.kind);
 	}
+});
+
+test('module scope: lookup path and cache key unchanged', async () => {
+	// A module inside a registered repo. Before scope resolution existed
+	// the lookups ran in the module's own directory, and the lookup cache
+	// key is made from that path, the last-indexed time and the plan.
+	const moduleDir = `${REPO}/src/billing`;
+	const scope = await resolve({ kind: 'module', value: moduleDir });
+	assert.equal(scope.repoPath, REPO);
+	const seen: string[] = [];
+	const { steps: s, calls } = steps();
+	const outcome = await runPipeline(
+		{
+			invocationMode: 'run', shaperId: 'code', runId: 'r1', scope,
+			inputs: { intent: { ...INTENT, scopeRef: { kind: 'module', value: moduleDir } } } as never,
+		},
+		{ ...s, lastIndexedAt: async (p) => { seen.push(p); return 1_700_000_000_000; } },
+	);
+	assert.equal(outcome.kind, 'bundle');
+	assert.deepEqual(calls.executePlan, [{
+		runId: 'r1', repoPath: moduleDir, closureRepos: [moduleDir],
+		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
+	}]);
+	assert.deepEqual(seen, [moduleDir]);
+	// NOT the repo root.
+	assert.notEqual((calls.executePlan[0] as { repoPath: string }).repoPath, REPO);
 });
 
 // ---------------------------------------------------------------------------
@@ -271,7 +353,6 @@ test('cause-to-error table: one case per cause, ShaperLlmUnavailableError only f
 		'empty-plan':             ShaperNoPlanError,
 		'bundle-invalid':         ShaperAnswerInvalidError,
 		'unfocused-not-served':   ShaperNoPlanError,
-		'scope-kind-not-served':  ShaperNoPlanError,
 	};
 	// Every member of the cause list has a row here and a case in the table.
 	assert.deepEqual([...PIPELINE_CAUSES].sort(), Object.keys(expected).sort());

@@ -48,7 +48,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { OllamaProvider } from '../../agent/providers/ollama.js';
@@ -74,7 +74,10 @@ import {
 	writeBundle,
 	type CacheKey,
 } from './cache.js';
-import { ensureNonEmptyClosure } from './invariants.js';
+import { ensureNonEmptyClosure, ScopeKindTargetMismatchError } from './invariants.js';
+import { freshnessPathOf, resolveScope } from './scope.js';
+import type { ResolvedScope, ScopeDeps } from './scope.js';
+import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 import {
 	ANALYZE_CONTEXT_BUNDLE_SCHEMA,
 	SCHEMA_VERSION,
@@ -85,7 +88,7 @@ import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError 
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
 import type { ExplorationPlan } from '../explore/index.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
 	BundleLayerName,
@@ -236,12 +239,20 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 			: {}),
 	};
 
+	// (2.5) Resolve the scope ONCE, for every mode. Everything below
+	// that needs the scope's repo, its lookup directory, its entity or
+	// its connection takes it from here. For run mode the pairing of
+	// the scope's kind with the kind of source is checked first: a
+	// request can arrive with a ready-made intent that no classifier
+	// validated.
+	const scope = await prepareScope(invocationMode, inputs);
+
 	// (3) Resolve the scope's repo lastIndexedAt from the registry. Used
 	// for both the cache freshness check below + stamping into meta on
 	// write. `undefined` here means the scope target isn't a registered
 	// repo (e.g. a 'connection' scope ref) -- the cache layer treats
 	// that as "no freshness watermark to check" and skips the check.
-	const currentLastIndexedAt = await resolveRepoLastIndexedAt(inferScopePath(inputs));
+	const currentLastIndexedAt = await resolveRepoLastIndexedAt(freshnessPathOf(scope));
 
 	// (4) Cache lookup.
 	const cached = readBundle(runId, cacheKey, opts, currentLastIndexedAt);
@@ -264,7 +275,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// a task fires, the run-mode invocation has already validated
 	// the closure.
 	if (invocationMode === 'run' && shaperId === 'code') {
-		await ensureNonEmptyClosure((inputs as RunShapeInput).intent);
+		await ensureNonEmptyClosure(scope);
 	}
 
 	// (4.6) The lookup pipeline: plan lookups -> execute them -> write
@@ -276,6 +287,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		shaperId,
 		inputs,
 		runId,
+		scope,
 	});
 	// A cause the pipeline names becomes its own typed error here, in
 	// one place; an invalid bundle is one more cause. Only a mode the
@@ -320,7 +332,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 		runId,
 		shaperId,
 		invocationMode,
-		inputs,
+		scope,
 		provider,
 	});
 
@@ -589,11 +601,13 @@ export async function runShaperToolLoop(
 	const promptContent = loadPromptFile(args.promptPath);
 	const messages = buildMessages(promptContent, args.inputs, args.invocationMode, args.shaperId);
 	const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);
+	// The caller builds its own inputs; resolve the scope they carry.
+	const scope = await resolveScope(scopeRefOf(args.inputs));
 	const toolDeps = buildToolDeps({
 		runId:          args.runId,
 		shaperId:       args.shaperId,
 		invocationMode: args.invocationMode,
-		inputs:         args.inputs,
+		scope,
 		provider,
 	});
 	const { messages: finalMessages, toolCallCount } = await runToolLoop(
@@ -927,13 +941,16 @@ interface BuildToolDepsArgs {
 	readonly runId:          string;
 	readonly shaperId:       ShaperId;
 	readonly invocationMode: ShaperMode;
-	readonly inputs:         RunShaperArgs['inputs'];
+	readonly scope:          ResolvedScope;
 	readonly provider:       LLMProvider;
 }
 
 function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	const sessionId = `analyze-shaper-${args.runId}-${args.invocationMode}-${args.shaperId}`;
-	const repoPath = inferRepoPath(args.inputs);
+	// The directory the tools run in: the scope's own directory for a
+	// repo / module / manifest directory / workspace; the containing
+	// repo for a file or a symbol; the declaring repo for a connection.
+	const repoPath = args.scope.lookupPath;
 	return {
 		sessionId,
 		repoPath,
@@ -950,66 +967,35 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	};
 }
 
-function inferRepoPath(inputs: RunShaperArgs['inputs']): string {
-	// Order: ClassificationShapeInput carries scopeRef directly;
-	// RunShapeInput + TaskShapeInput nest it under intent.
-	if ('scopeRef' in inputs) {
-		return resolveRepoPath((inputs as ClassificationShapeInput).scopeRef);
-	}
-	if ('intent' in inputs) {
-		return resolveRepoPath((inputs as RunShapeInput | TaskShapeInput).intent.scopeRef);
-	}
-	return process.cwd();
+/** The scope a set of inputs carries: classification inputs hold it
+ *  directly; run and task inputs hold it on the intent. */
+function scopeRefOf(inputs: RunShaperArgs['inputs']): AnalyzeScopeRef {
+	if ('scopeRef' in inputs) return (inputs as ClassificationShapeInput).scopeRef;
+	return (inputs as RunShapeInput | TaskShapeInput).intent.scopeRef;
 }
 
 /**
- * Map a scopeRef onto the directory that should be used as the tool
- * deps' repoPath:
- *   - repo / workspace / manifest-dir / module: value is already a
- *     directory; use as-is.
- *   - file / symbol: value points at a file or symbol-in-file; walk
- *     up to the containing directory so tool-deps repoPath is a real
- *     directory. (search_glob, file_read with relative paths, the
- *     data-driver pool's repo-root check all assume a directory.)
- *   - connection: no filesystem path; fall back to cwd. Connection-
- *     scope tests should NOT rely on this path -- the driver routes
- *     data tools via the connection id, not repoPath.
+ * Check the pairing (run mode) and resolve the scope.
+ *
+ * The pairing of a kind of scope with a kind of source is validated
+ * by the classifier -- but a request can reach the context builder
+ * with a ready-made intent no classifier saw (the daemon's run-context
+ * and plan requests, the one-shot agent tool). So run mode makes the
+ * same test here, BEFORE the scope is resolved, against the same table.
  */
-function resolveRepoPath(ref: { kind: string; value: string }): string {
-	switch (ref.kind) {
-		case 'file':
-		case 'symbol': {
-			// Walk up to the containing dir. If value already lacks a
-			// trailing file segment (e.g. caller passed a dir by
-			// mistake), dirname returns the dir itself; harmless.
-			const dir = dirname(ref.value);
-			return dir === '' || dir === '.' ? process.cwd() : dir;
+export async function prepareScope(
+	invocationMode: ShaperMode,
+	inputs:         RunShaperArgs['inputs'],
+	deps?:          ScopeDeps,
+): Promise<ResolvedScope> {
+	const ref = scopeRefOf(inputs);
+	if (invocationMode === 'run' && 'intent' in inputs) {
+		const target = (inputs as RunShapeInput).intent.target;
+		if (!isKindCompatibleWithTarget(target, ref.kind)) {
+			throw new ScopeKindTargetMismatchError(ref.kind, target, TARGET_TO_KINDS[target]);
 		}
-		case 'connection':
-			return process.cwd();
-		default:
-			return ref.value;
 	}
-}
-
-/**
- * For freshness checking, we want the filesystem path that should be
- * matched against the registry. Differs from inferRepoPath only on
- * 'connection' kind: there we return an empty string to signal "no
- * registered repo to check" rather than substituting cwd (which would
- * accidentally pick up any registered repo containing the process's
- * working directory).
- */
-function inferScopePath(inputs: RunShaperArgs['inputs']): string {
-	if ('scopeRef' in inputs) {
-		return (inputs as ClassificationShapeInput).scopeRef.value;
-	}
-	if ('intent' in inputs) {
-		const intent = (inputs as RunShapeInput | TaskShapeInput).intent;
-		if (intent.scopeRef.kind === 'connection') return '';
-		return intent.scopeRef.value;
-	}
-	return '';
+	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
 }
 
 /**
@@ -1070,9 +1056,8 @@ export async function resolveRepoLastIndexedAt(scopePath: string): Promise<numbe
  * contract: `errorForPipelineCause` has one case per member, so a new
  * way of not proceeding cannot fall into a default error.
  *
- * The last two are INTERIM: they name the two gates the pipeline
- * still has (a request with no focus, and four kinds of scope). Each
- * is deleted with its gate.
+ * The last one is INTERIM: it names the gate the pipeline still has
+ * (a request with no focus) and is deleted with it.
  */
 export const PIPELINE_CAUSES = [
 	'invalid-input',           // unknown kind of source, or inputs with no intent
@@ -1084,7 +1069,6 @@ export const PIPELINE_CAUSES = [
 	'empty-plan',              // the plan that would be executed has no lookups
 	'bundle-invalid',          // the pipeline's bundle fails validation (set by settlePipelineOutcome)
 	'unfocused-not-served',    // interim
-	'scope-kind-not-served',   // interim
 ] as const;
 export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
 
@@ -1136,7 +1120,6 @@ export function errorForPipelineCause(
 			return new ShaperAnswerInvalidError('bundle validation', message);
 		case 'empty-plan':
 		case 'unfocused-not-served':
-		case 'scope-kind-not-served':
 			return new ShaperNoPlanError(message);
 		default: {
 			const unreachable: never = cause;
@@ -1205,6 +1188,8 @@ async function tryExplorationPipeline(
 		shaperId:       ShaperId;
 		inputs:         RunShaperArgs['inputs'];
 		runId:          string;
+		/** The scope, already resolved (resolveScope). */
+		scope:          ResolvedScope;
 	},
 	steps: PipelineSteps = REAL_PIPELINE_STEPS,
 ): Promise<PipelineOutcome> {
@@ -1229,18 +1214,6 @@ async function tryExplorationPipeline(
 		return didNotProceed(
 			'unfocused-not-served',
 			'the lookup pipeline does not yet serve a request that asks no specific question',
-		);
-	}
-
-	// V1..V5 requires a directory-shaped scope so concept.resolve /
-	// doc retrieval / manifests walk / pool acquisition all have a
-	// repo path. `repo | module | file | workspace` all resolve to
-	// a filesystem path.
-	const scopeKind = intent.scopeRef.kind;
-	if (scopeKind !== 'repo' && scopeKind !== 'module' && scopeKind !== 'workspace') {
-		return didNotProceed(
-			'scope-kind-not-served',
-			`the lookup pipeline does not yet serve a scope of kind '${scopeKind}'`,
 		);
 	}
 
@@ -1320,8 +1293,10 @@ async function tryExplorationPipeline(
 	}
 
 	// (b) Execute the plan.
-	const repoPath = resolveRepoPath(intent.scopeRef);
-	const lastIndexedMs = await steps.lastIndexedAt(inferScopePath(args.inputs));
+	// All seven kinds of scope are served: the lookups run in the
+	// directory the scope resolved to.
+	const repoPath = args.scope.lookupPath;
+	const lastIndexedMs = await steps.lastIndexedAt(freshnessPathOf(args.scope));
 	const lastIndexedBigInt = BigInt(lastIndexedMs ?? 0);
 	const executed = await steps.executePlan({
 		runId:            args.runId,
@@ -1513,7 +1488,7 @@ export const _stableStringifyForTest = stableStringify;
 export const _classifyOllamaErrorForTest = classifyOllamaError;
 export const _deriveEmptyLayersForTest = deriveEmptyLayers;
 export const _resolveRepoLastIndexedAtForTest = resolveRepoLastIndexedAt;
-export const _inferScopePathForTest = inferScopePath;
+export const _buildToolDepsForTest = buildToolDeps;
 export const _renderUpstreamSectionForTest = renderUpstreamSection;
 export const _fallbackFreeformPlanForTest = fallbackFreeformPlan;
 export const _runExplorationPipelineForTest = tryExplorationPipeline;

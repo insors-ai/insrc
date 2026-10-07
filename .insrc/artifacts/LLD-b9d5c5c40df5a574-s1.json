@@ -306,7 +306,8 @@
             "The daemon's context requests, the one-shot agent tool and the daemon's workflow runner pass that data on: the daemon's error payload carries it, the one-shot tool prints the completeness line and the failed step's reason, and the workflow runner fails its step with the cause and the report",
             "'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run",
             "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)",
-            "The error can arise only in run mode, where the lookup pipeline runs; the classification and task bundles are written by the tool loop and never raise it. Six calls reach the three bundle builders. Three are the daemon's request handlers (src/daemon/analyze-rpc.ts:270 classification, :283 run, :311 task), which go through one wrapper that maps an error to the response: the run handler's response carries the code with { reason, results, report } as its data, and the other two cannot receive it. The fourth is the daemon's plan-tree entry (analyze-rpc.ts:431) and the fifth the plan tree's own run-context step (src/analyze/orchestrator/driver.ts:291): each maps the error through its mapping function, so the run fails with 'answer-step-failed' and the data. The sixth is the classifier (src/analyze/classifier/driver.ts:132), which builds a classification bundle and cannot receive it. Two callers sit above the run handler: the one-shot agent tool (src/mcp/server.ts:1331-1340), which today prints the code and message and drops the data, and now also prints the completeness line and the failed step's reason from it; and the daemon's workflow runner (src/daemon/workflow-rpc.ts:226-229), which fails its step with the cause and the report"
+            "The error can arise only in run mode, where the lookup pipeline runs; the classification and task bundles are written by the tool loop and never raise it. Six calls reach the three bundle builders. Three are the daemon's request handlers (src/daemon/analyze-rpc.ts:270 classification, :283 run, :311 task), which go through one wrapper that maps an error to the response: the run handler's response carries the code with { reason, results, report } as its data, and the other two cannot receive it. The fourth is the daemon's plan-tree entry (analyze-rpc.ts:431) and the fifth the plan tree's own run-context step (src/analyze/orchestrator/driver.ts:291): each maps the error through its mapping function, so the run fails with 'answer-step-failed' and the data. The sixth is the classifier (src/analyze/classifier/driver.ts:132), which builds a classification bundle and cannot receive it. Two callers sit above the run handler: the one-shot agent tool (src/mcp/server.ts:1331-1340), which today prints the code and message and drops the data, and now also prints the completeness line and the failed step's reason from it; and the daemon's workflow runner (src/daemon/workflow-rpc.ts:226-229), which fails its step with the cause and the report",
+            "A fourth cause arises after the lookups ran: 'answer-prompt-missing', returned when the answer-writing step cannot load its prompt file, which it loads inside the step, after the plan was executed (src/analyze/context/driver.ts:1282, :1340, :1359-1364; synthesizer.ts:125). Its outcome carries `found` like the other three. It keeps its own error and code, since a missing prompt file is a fault of the installation and should be named as one: ShaperPromptMissingError gains an optional `found`, the cause table sets it for this cause, and both mapping functions put { results, report } in the error's data beside the existing code. The same error raised before any lookup ran (a missing planning prompt) has no `found`"
           ]
         },
         {
@@ -358,7 +359,8 @@
           "postconditions": [
             "Each of the twenty-six plan-task runtime files returns a completeness record for what it produced; the plan walk copies it to the task's record. A planner-kind task has no runtime and its record carries none: its child plan's tasks stand in for it",
             "The final report's text starts with the completeness line, written by code",
-            "The run's result and the run record carry the report as an optional field, as the bundle does. It is absent in one case only: a run record stored before the change, which the resume path returns whole (src/analyze/orchestrator/driver.ts:123-140). The report's shape gains no 'not recorded' state, and no report is invented for such a record; renderCompletenessLine is given only a real report. Where a run's result is turned into text, an absent report gives the line 'Completeness was not recorded for this run.' Every run made after the change has a report. Stories s2, s3 and s5, which read sc2, therefore see one shape, and an absent report always means 'made before this Story'"
+            "The run's result and the run record carry the report as an optional field, as the bundle does. It is absent in one case only: a run record stored before the change, read back by the resume path (src/analyze/orchestrator/driver.ts:123-140). The report's shape gains no 'not recorded' state, and no report is invented for such a record; renderCompletenessLine is given only a real report. Where a run's result is turned into text, an absent report gives the line 'Completeness was not recorded for this run.' Every run made after the change has a report. Stories s2, s3 and s5, which read sc2, therefore see one shape, and an absent report always means 'made before this Story'",
+            "The resume path does not return the stored record as it is: it builds the result field by field (src/analyze/orchestrator/driver.ts:132-140). That literal copies `report` from the stored record, so a run made after the change resumes with its report and only a record stored before it resumes with none"
           ]
         }
       ]
@@ -460,7 +462,7 @@
       {
         "entity": "The plan-task runtimes and the two kinds of task that have no findings of their own",
         "change": "field-add",
-        "details": "Twenty-six files return a plan task's result (code 6, data 5, docs 5, generic 1, infra 8, and the shared aggregator); each is a change site and each returns a completeness record. Two kinds of task are not sources of findings, and the report is not derived from a record of theirs. (1) A planner-kind task has no runtime: the walk builds its record from the child plan's final report (src/analyze/executor/walker.ts:294-302). Its record carries no completeness; the report's sources are gathered by a new function, collectPlanSources, which walks the executed plan and, for a planner-kind task, takes the child plan's task records in its place, each named by its path (parent task id, then child task id). A planner-kind task that failed (no child report) is a failed source, as today's failed record already says. (2) An aggregate-report task writes a summary from the other tasks' results. Its runtime returns a record like every runtime (returned 1, basis 'model-directed', with the note that its completeness is that of the tasks it summarises), and collectPlanSources leaves it out of the sources, so it can neither hide an incomplete task nor be counted as one. The rule 'a runtime that returns no record is recorded as failed' applies to template-kind tasks only. The task records stored under the run's directory are written and never read back by the walk (readTaskOutput is exported and called only from a test); resuming is at run level, where the stored run record is returned whole (src/analyze/orchestrator/driver.ts:123-138), and that case is the run record's not-recorded line.",
+        "details": "Twenty-six files return a plan task's result (code 6, data 5, docs 5, generic 1, infra 8, and the shared aggregator); each is a change site and each returns a completeness record. Two kinds of task are not sources of findings, and the report is not derived from a record of theirs. (1) A planner-kind task has no runtime: the walk builds its record from the child plan's final report (src/analyze/executor/walker.ts:294-302). Its record carries no completeness; the report's sources are gathered by a new function, collectPlanSources, which walks the executed plan and, for a planner-kind task, takes the child plan's task records in its place, each named by its path (parent task id, then child task id). A planner-kind task that failed (no child report) is a failed source, as today's failed record already says. (2) An aggregate-report task writes a summary from the other tasks' results. Its runtime returns a record like every runtime (returned 1, basis 'model-directed', with the note that its completeness is that of the tasks it summarises), and collectPlanSources leaves it out of the sources, so it can neither hide an incomplete task nor be counted as one. The rule 'a runtime that returns no record is recorded as failed' applies to template-kind tasks only. The task records stored under the run's directory are written and never read back by the walk (readTaskOutput is exported and called only from a test); resuming is at run level, where the result is rebuilt from the stored run record (src/analyze/orchestrator/driver.ts:123-140), and that case is the run record's not-recorded line.",
         "callSites": [
           "src/analyze/runtimes/code/adherence-check.ts",
           "src/analyze/runtimes/code/aggregate-report.ts",
@@ -698,7 +700,7 @@
         {
           "scenario": "A plan-tree run record written before this change is replayed",
           "detection": "The stored record has no report.",
-          "response": "The run's result is returned as stored, with a report whose completeness line reads 'Completeness was not recorded for this run.'",
+          "response": "The run's result is rebuilt from the stored record with no report; none is invented. Where the result is turned into text, the line 'Completeness was not recorded for this run.' is written in the report's place.",
           "userImpact": "An old answer is not presented as complete or as incomplete.",
           "recoverable": true
         }
@@ -860,7 +862,8 @@
           "subjects": [
             "the pipeline's three causes after the lookups ran carry the executed results and the report, and the cause table turns each into ShaperAnswerStepFailedError with its reason",
             "both classifyShaperError functions map it to 'answer-step-failed' with the reason, the results and the report in data, and a failed planning call is still 'shaper-llm-unavailable'",
-            "the daemon's error payload, the one-shot agent tool's message and the daemon's workflow runner's step failure each carry the report and the reason"
+            "the daemon's error payload, the one-shot agent tool's message and the daemon's workflow runner's step failure each carry the report and the reason",
+            "a missing answer prompt, found after the lookups ran, gives the prompt-missing error with the results and the report, and both mapping functions keep its code and put them in its data; a missing planning prompt carries none"
           ]
         },
         {
@@ -869,7 +872,8 @@
           "subjects": [
             "a run with one failed task and one limited task returns a report that names both, and its final report's text starts with the completeness line",
             "the run record stores the report, and a run record written without one is returned with no report, none is invented for it, and its text form carries the not-recorded line",
-            "a run with a nested plan: the report names an incomplete task of the child plan by its path, the planner-kind task itself is not a source, and the aggregate-report task is not a source"
+            "a run with a nested plan: the report names an incomplete task of the child plan by its path, the planner-kind task itself is not a source, and the aggregate-report task is not a source",
+            "a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)"
           ]
         },
         {
@@ -955,7 +959,8 @@
             "integration: a plan-tree run with a failed and a limited task returns a report naming both",
             "live: a focused request whose text search reaches its limit says so in its first line",
             "unit: the step tool's bundle phase derives the report from its state and heads its markdown with the line",
-            "unit: a sole free-form answer's bundle carries the one-source report"
+            "unit: a sole free-form answer's bundle carries the one-source report",
+            "integration: a run record written after the change resumes with its report"
           ]
         },
         {
@@ -963,7 +968,8 @@
           "provingTests": [
             "unit: the three causes after the lookups ran carry the results and the report",
             "unit: both mapping functions return 'answer-step-failed' with the data",
-            "unit: the daemon's payload, the one-shot tool and the workflow runner carry the report"
+            "unit: the daemon's payload, the one-shot tool and the workflow runner carry the report",
+            "unit: a missing answer prompt found after the lookups ran carries the results and the report"
           ]
         }
       ]
@@ -1051,7 +1057,7 @@
           ]
         }
       ],
-      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change. Nothing the index stores changes: an item's full length is read from its file when a result is built, so entities and summaries indexed before the change are reported correctly without being indexed again.",
+      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report resumes with no report, and its text form carries the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change. Nothing the index stores changes: an item's full length is read from its file when a result is built, so entities and summaries indexed before the change are reported correctly without being indexed again.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

@@ -507,3 +507,23 @@ The target-hint branch, scope resolution and the pairing table are handled as in
 ## 10. Open questions
 
 - The HLD's code 'no-plan-for-request' has no case that occurs today: an empty plan, an uncovered answer type and an unparseable plan are all replaced by the free-form lookup (src/analyze/context/driver.ts:1136, :1171). This design raises it from a check that stands behind that replacement. Keep the code with that check, or drop it from the contract?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**1 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T08:45:44.419Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| change-sites | MED | Removing the unfocused gate needs a prompt change only in the planning prompt; the answer-writing call is unchanged and can serve an intent with no focus. | The design lists decompose.system.md as the only prompt change for an unfocused intent (3.9) on the ground that every recipe substitutes the focus, so 'with no focus the model has nothing to substitute'. The answer-writing prompts have the same dependency and are in no change-site list: synthesize.code.system.md:90, synthesize.data.system.md:30, synthesize.infra.system.md:25 and synthesize.docs.system.md:53 each instruct the focus layer to contain `Intent focus: <intent.focus>`, and synthesize.docs.system.md:50 draws the system line's subject 'from `intent.focus`'. None of them mentions an unfocused intent, and synthesizer.ts contains no handling of focus at all. Today these prompts are never reached without a focus because of the gate at driver.ts:1102. After the change, the code, data and infra recipes (structural-map, data-inventory, infra-inventory) go through synthesize with no focus. The bundle schema only requires focus to be a string (schema.ts:92), so this would not fail validation, but the model is told to print a value that does not exist, and no test in section 6 covers what the answer-writing step is given for an unfocused intent. [files: src/prompts/analyze/synthesize.code.system.md, src/prompts/analyze/synthesize.data.system.md, src/prompts/analyze/synthesize.infra.system.md, src/prompts/analyze/synthesize.docs.system.md, src/analyze/context/synthesizer.ts] | Add the answer-writing prompts for code, data and infra to the change sites: state what the focus layer and system line say when the intent has no focus (for example the named scope and 'broad survey'), and add a unit test that reads each prompt for that rule. If this is meant to be left to Story s5's layout work, say so explicitly and state what the layer contains in the meantime. |
+
+#### Could not verify (does not block)
+
+_None._

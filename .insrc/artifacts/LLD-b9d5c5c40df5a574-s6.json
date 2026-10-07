@@ -24,204 +24,7 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers DEF Story s6 ac1-ac4 and the HLD s6 boundary / sc6 (three codes declared in both lists, only 'no-plan-for-request' raised here), and builds no non-goal.",
-          "evidence": "DEF.md:215-218 gives ac1 (unfocused request gets a context), ac2 (hinted request proceeds), ac3 (failure names the actual cause), ac4 (file/symbol never reports model unavailable); each has a designed mechanism in sections 2.1-2.7 and a row in the acceptance mapping. HLD.md:165-175 (sc6) asks for exactly 'no-plan-for-request', 'answer-step-failed' (raised by s1) and 'run-abandoned' (raised by s7) in RunErrorCode and AnalyzeRpcErrorCode with RunFailure/RunStage unchanged; section 3.1 matches. HLD.md:220 words the unfocused case as 'a broad survey ... from the lookups that exist'; the design sends it to the existing planning call instead and records the deviation in c10 and alternative a3.",
-          "action": "None. The c10 deviation from the HLD wording is already recorded; keep it visible at approval.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The pipeline has eight null returns at the cited lines, two of them gates, and every one ends in the single ShaperLlmUnavailableError throw; a bundle that fails validation falls through to the same throw.",
-          "evidence": "src/analyze/context/driver.ts: null returns at :1089 (mode), :1099 (unknown shaperId), :1100 (no intent), :1102 (`if (intent.focused !== true) return null`), :1110 (scope kind not repo/module/workspace), :1130 (decomposer unavailable/prompt missing), :1252 and :1258 (synthesizer). :243-249 logs 'exploration-based bundle failed validation; falling through' and :276-281 throws ShaperLlmUnavailableError('Run-mode exploration pipeline returned no bundle...').",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The target-hint branch always builds an unfocused intent and calls no validator; no caller supplies connectionExists; the plan tree maps ClassifierValidationExhausted to 'classifier-validation-exhausted' and other errors to 'internal-error', while the daemon mapping already returns the inner code and defers to classifyShaperError.",
-          "evidence": "src/analyze/orchestrator/driver.ts:216-222 builds `focused: false` with reasoning 'target hinted via slash command (classifier skipped)...' and goes straight to :246. classify is called at orchestrator/driver.ts:234 and daemon/analyze-rpc.ts:322, neither passing connectionExists (classifier/driver.ts:110 is the only declaration). orchestrator/driver.ts:414-426 wraps 'classifier-validation-exhausted', pattern-tests messages, then 'internal-error'. daemon/analyze-rpc.ts:343-372 reads `err.lastFailure.code` and ends in `return classifyShaperError(err)`.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A focused request on a repo, a module or a workspace keeps the same planning call and the same lookups after scope resolution moves to resolveScope (first 'invariant to preserve').",
-          "evidence": "Today a module scope runs in the module directory: resolveRepoPath's default branch returns `ref.value` (driver.ts:978-979), used at :1176 as executePlan's `repoPath` and `closureRepos: [repoPath]` (:1179-1183), and the planning prompt prints `Repo path: ${intent.scopeRef.value}` (decomposer.ts:308). The design defines lookupPath as 'repoPath when known' with repoPath 'the registered repo that contains the scope (longest prefix)', and has buildMessages print the repo path plus a further line only 'for a file, a symbol or a connection'. So for a module (and a manifest directory) inside a registered repo the lookups move to the repo root and the planning prompt no longer names the module at all. The exploration cache is also keyed on that path (executor.ts:190-191, :210-211). No test in section 6 asserts that a module scope still reaches the planner or the lookups. [files: src/analyze/context/driver.ts, src/analyze/context/decomposer.ts, src/analyze/explore/executor.ts]",
-          "action": "State what a module and a manifest-dir scope resolve to: either keep lookupPath as the scope's own directory for those kinds, or add a line naming the directory to the planning prompt (and to the free-form intent) and say the lookup root changes. Then correct or drop the 'as it does today' invariant and add a module-scope test for the planner turn and the lookup path.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The reused error classes and codes have the stated shapes, and the new codes and classes do not already exist.",
-          "evidence": "driver.ts:147-152 ShaperSchemaUnrecoverable(retries: number, lastErrors) writes 'Shaper completeStructured exhausted ${retries} retries'; :157-160 ShaperPromptMissingError(promptPath). decomposer.ts:69-73 DecomposerPromptMissingError keeps the path only inside its message. 'invalid-input', 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch', 'shaper-prompt-missing', 'shaper-schema-unrecoverable' are in both orchestrator/types.ts:263-289 and daemon/analyze-rpc.ts:132-154. A grep of src for 'no-plan-for-request', 'answer-step-failed', 'run-abandoned' returns nothing. SynthesizerSchemaUnrecoverable exists (synthesizer.ts:65).",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The three readers behind ScopeDeps exist, and loadConnections throws on an unparseable file as the error path assumes.",
-          "evidence": "src/db/repos.ts:213 `listRepos(_db: DbClient): Promise<RegisteredRepo[]>`; src/db/entities.ts:795 `findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]>`; src/daemon/db/config.ts:74 `loadConnections(repoPath): Promise<LoadedConnections>` returns an empty list on ENOENT (:82-84) and throws `db-connections.json: invalid JSON (...)` (:92), on a wrong shape (:95) and on a duplicate id (:105). The real functions take a db argument that ScopeDeps omits, so the defaults are thin wrappers. I did not check that Entity carries a line number for the 'kind and line' message.",
-          "action": "When building, confirm the Entity field used for the line in the ambiguous-symbol message.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The inventory of readers of the scope's value in the context builder, and of callers of buildMessages / prepareDecompose, is complete.",
-          "evidence": "Grep of src/analyze/context (non-test) for scopeRef: driver.ts:190 (inferScopePath), :924 buildToolDeps -> inferRepoPath (reached from :291 and :564), :941-1001 the three helpers, :1176-1177, decomposer.ts:308, invariants.ts:89 and :172. No other reader. decomposer.ts buildMessages is called at :161 (decompose) and :237 (prepareDecompose); the analyzer's prepareDecompose has one production caller, mcp/analyze-step/phases/start.ts:91, with the workspace scope built at :51-58. `_inferScopePathForTest` is exported at driver.ts:1352 and used at resolve-repo-indexed.test.ts:78-93. I did not read the tool loop's buildMessages (driver.ts:441), which serialises the inputs into the prompt; the shaper prompts refer to `Inputs.intent.scopeRef.value`, so the raw value still reaches the model there.",
-          "action": "None for the inventory. Decide whether the tool-loop prompts' 'the ONLY directory you are allowed to inspect' wording (generic/infra/classification system prompts) needs a note for a symbol value of the form '<file>#<name>'.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The step tool's plan and narrow phases can pass the ResolvedScope to stepPlan as listed in 3.8.",
-          "evidence": "plan.ts:108-114 calls stepPlan with `repoPath: state.repoPath, closureRepos: [state.repoPath]` taken from the decoded state token; narrow.ts:171 calls stepPlan the same way. The token start.ts writes (:93-101) holds `version: STATE_VERSION, runId, repoPath, repoIndexedAt, intent, synthesizerKey, stage` and no resolved scope. The design says 'executePlan's arguments carry it, and so do stepPlan's' and lists plan.ts and narrow.ts as call sites, but never says where those phases get the ResolvedScope: carried in the state token (a shape change with a STATE_VERSION decision for tokens in flight) or resolved again on each phase. [files: src/mcp/analyze-step/phases/plan.ts, src/mcp/analyze-step/phases/start.ts, src/mcp/analyze-step/phases/narrow.ts]",
-          "action": "Add to 3.8 how plan.ts and narrow.ts obtain the ResolvedScope: name the state-token field and what happens to a token minted before the change, or state that each phase calls resolveScope again from state.intent.scopeRef.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing orchestrator tests the design says it replaces or rewrites are where it says they are, with the stated content.",
-          "evidence": "src/analyze/orchestrator/__tests__/orchestrator.test.ts:72 `[new ClassifierValidationExhausted([], []), 'classifier-validation-exhausted']` (the constructor takes one ValidationFailure, classifier/driver.ts:84); :82-87 the two message-pattern assertions; :89-93 'unrecognized error -> internal-error', which still holds through classifyShaperError's final `wrap('internal-error', err)` (orchestrator/driver.ts:440). `_classifyClassifierErrorForTest` / `_classifyShaperErrorForTest` are exported at orchestrator/driver.ts:552-553.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The code additions are additive to both unions and leave stored run records readable; no stored shape changes.",
-          "evidence": "orchestrator/types.ts:263-289 RunErrorCode and daemon/analyze-rpc.ts:132-154 AnalyzeRpcErrorCode are string unions; adding members does not change RunFailure or RunRecord. The symbol-form change is safe for existing values: classifier/validate.ts:142-143 runs `existsSync(path)` on the whole value before the symbol case (:163), so a value that is not a plain existing path already fails validation today. Two compatibility effects the design does not record are raised under other items: exploration cache keys move with the lookup path for a module scope, and the step tool's state token may gain a field.",
-          "action": "None here; see the module-scope and state-token findings.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design stays inside s6: it declares but does not raise the s1 and s7 codes, leaves the size picker and the free-form size to s2, and does not widen the plan tasks' own scope readers (s7).",
-          "evidence": "Section 3.1 raises only 'no-plan-for-request'. The scope picker call (orchestrator/driver.ts:194-199) and the `scope: 'M'` in freeform-probe.ts:100 are explicitly left ('left for Story s2'). The plan tasks' readers are untouched and already agree with the corrected rows where the design relies on them: runtimes/data/_shared.ts:33-38 accepts workspace, repo, manifest-dir; runtimes/infra/_shared.ts:50-56 accepts repo, manifest-dir, workspace; runtimes/code/_shared.ts:61-66 accepts repo and manifest-dir. The remaining widening (module, file, symbol for code tasks) is s7's stated scope.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Section 5 states the same handling as the contract in 2.2 for a bundle that fails validation and for an invalid answer.",
-          "evidence": "Section 2.2 maps 'bundle-invalid' and 'answer-invalid' to the new ShaperAnswerInvalidError, and says 'The existing ShaperSchemaUnrecoverable is not used, because its constructor writes \"Shaper completeStructured exhausted N retries\"' — true at driver.ts:147-152, where the constructor is `(retries: number, lastErrors: readonly string[])`. Section 5 still says, for both cases, 'runShaper throws ShaperSchemaUnrecoverable with the validation errors' and 'runShaper throws ShaperSchemaUnrecoverable carrying that message'. Built from section 5, the error reports exhausted retries that never happened and needs a retry count that does not exist. Migration step 1 also says 'the three new error classes' where 3.4 lists four. [files: src/analyze/context/driver.ts]",
-          "action": "Rewrite the two section-5 responses to throw ShaperAnswerInvalidError with its stage, and change step 1 to four classes (with the path field on the two prompt-missing errors).",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Resolving the scope first for every mode keeps 'a scope that is not indexed fails as scope-not-indexed' for the newly served symbol scope.",
-          "evidence": "Today the order in runShaper is freshness read (:190), cache (:193), then ensureNonEmptyClosure for code in run mode (:212-214), which throws ScopeNotIndexedError when the containing repo has zero entities (invariants.ts:152-158). The design puts resolveScope before all of these and resolves a symbol by counting the file's stored entities of that name; in a registered repo that is not yet indexed that count is zero, so the request fails as ScopeRefUnresolvedError ('no entity of that name') before the indexed check runs. The error-path list has no case for it, and the stated cause would be wrong: the symbol may exist, the repo is not indexed. [files: src/analyze/context/driver.ts, src/analyze/context/invariants.ts]",
-          "action": "State the case: for a symbol, either run the indexed check before entity resolution or have resolveScope distinguish 'file has no stored entities at all' and raise ScopeNotIndexedError; add a test.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The test subjects agree with the contract they prove for ac3.",
-          "evidence": "The unit subject and the ac3 row read 'runShaper throws ShaperSchemaUnrecoverable, not ShaperLlmUnavailableError, when the pipeline's bundle fails validation', while the next subject requires that no message 'contains \"exhausted\" or \"retries\"'. ShaperSchemaUnrecoverable always writes 'exhausted ${retries} retries' (driver.ts:149-151), so the two subjects cannot both pass, and the first contradicts 2.2 (ShaperAnswerInvalidError). The mapping subject also lists only 'ShaperInvalidInputError, ShaperNoPlanError and ScopeRefUnresolvedError' for both classifyShaperError functions; ShaperAnswerInvalidError appears only in a later, separate subject. [files: src/analyze/context/driver.ts]",
-          "action": "Change the subject and the ac3 row to assert ShaperAnswerInvalidError with stage 'bundle validation', and put all four classes in the single list iterated through both mapping functions.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing tests named for change exist at the cited places and assert what the design says.",
-          "evidence": "src/analyze/context/__tests__/freeform-fallback.test.ts:65-68 'falls back to reasoning when focus is unset' asserts purpose === 'r'. src/analyze/context/__tests__/resolve-repo-indexed.test.ts:78-93 holds four inferScopePath cases through `_inferScopePathForTest` (first case starts at :78, the design cites :79). src/analyze/classifier/__tests__/validate.test.ts:112-116 is the 'infra+repo -> mismatch' case that flips. src/analyze/planner/validate.ts:305 reads `opts.focused === true ? focusedLowerBound(plan.scope) : band.lo`, the bound the hinted-with-prompt case now takes.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 1,
-        "med": 4,
-        "low": 10,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-07T08:17:29.472Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    }
+    "authoredBy": "controller"
   },
   "body": {
     "summary": {
@@ -430,7 +233,7 @@
         },
         {
           "name": "resolveRepoPath",
-          "signature": "// replaced, together with inferScopePath and inferRepoPath, by one exported function in a new module src/analyze/context/scope.ts. All three are deleted; their callers are listed in the postconditions.\nfunction resolveScope(ref: AnalyzeScopeRef, deps?: ScopeDeps): Promise<ResolvedScope>\n\ninterface ResolvedScope {\n  readonly kind: AnalyzeScopeRef['kind'];\n  readonly value: string;                 // as given\n  readonly repoPath: string | null;       // the registered repo that contains the scope (longest prefix), or the connection's repo; null when none is registered\n  readonly lookupPath: string;            // the directory lookups run in: repoPath when known, else the scope's own directory\n  readonly filePath?: string;             // file and symbol\n  readonly entityId?: string;             // symbol\n  readonly entityName?: string;           // symbol\n  readonly connectionId?: string;         // connection\n}\ninterface ScopeDeps { listRepos(): Promise<readonly RegisteredRepo[]>; findEntitiesByFile(file: string): Promise<readonly Entity[]>; loadConnections(repoPath: string): Promise<LoadedConnections>; }",
+          "signature": "// replaced, together with inferScopePath and inferRepoPath, by one exported function in a new module src/analyze/context/scope.ts. All three are deleted; their callers are listed in the postconditions.\nfunction resolveScope(ref: AnalyzeScopeRef, deps?: ScopeDeps): Promise<ResolvedScope>\n\ninterface ResolvedScope {\n  readonly kind: AnalyzeScopeRef['kind'];\n  readonly value: string;                 // as given\n  readonly repoPath: string | null;       // the registered repo that contains the scope (longest prefix), or the connection's repo; null when none is registered\n  readonly lookupPath: string;            // the directory lookups run in. repo, module, manifest-dir, workspace: the scope's own directory, as today. file, symbol: repoPath, or the file's directory when no repo is registered. connection: its repo\n  readonly filePath?: string;             // file and symbol\n  readonly entityId?: string;             // symbol\n  readonly entityName?: string;           // symbol\n  readonly connectionId?: string;         // connection\n}\ninterface ScopeDeps { listRepos(): Promise<readonly RegisteredRepo[]>; findEntitiesByFile(file: string): Promise<readonly Entity[]>; loadConnections(repoPath: string): Promise<LoadedConnections>; }",
           "parameters": [
             {
               "name": "ref",
@@ -453,14 +256,19 @@
             {
               "type": "ScopeRefUnresolvedError",
               "condition": "a symbol value with no '#'; a symbol whose file holds no entity of that name, or more than one (the message lists them with kind and line); a connection id registered in no repo, or in more than one (the message names the repos)"
+            },
+            {
+              "type": "ScopeNotIndexedError (existing)",
+              "condition": "a symbol whose containing registered repo has no stored entities"
             }
           ],
           "preconditions": [],
           "postconditions": [
             "Nothing else in the context builder reads scopeRef.value. The readers today, all moved to the ResolvedScope: the cache freshness read for every mode (src/analyze/context/driver.ts:190, through inferScopePath, including classification inputs that carry a scopeRef and no intent); the tool loop's path for the classification and task modes (:291) and for the free-form lookup (:564, reached from src/analyze/explore/freeform-probe.ts:116 with an intent that lookup builds itself), both through inferRepoPath (:945-948); the pipeline's lookup path and its freshness read (:1175-1177); the planning prompt (decomposer.ts:308); and the indexed check (invariants.ts)",
-            "For a path inside no registered repo, repoPath is null and lookupPath is the scope's own directory, which is today's behaviour; the code source's indexed check then fails as 'scope-not-indexed' as it does today",
+            "For a repo, a module, a manifest directory and a workspace, lookupPath is the scope's own directory whether or not a registered repo contains it, which is today's behaviour: the lookups, the lookup cache's key and the planning prompt's 'Repo path' line all get the same value they get today (src/analyze/context/driver.ts:978-979, :1176-1183; decomposer.ts:308). Only a file, a symbol and a connection get a different path from today, and those are not served today",
             "For a connection, lookupPath is the connection's repo, where today the tool loop is given the daemon's working directory",
-            "The scope is resolved for classification mode too, so a symbol or connection that does not resolve fails there with 'scope-ref-unresolved', where today it runs on with a wrong path"
+            "The scope is resolved for classification mode too, so a symbol or connection that does not resolve fails there with 'scope-ref-unresolved', where today it runs on with a wrong path",
+            "For a symbol, the containing repo is checked for being indexed before the entity is looked for: a registered repo with no stored entities fails as ScopeNotIndexedError (the test ensureNonEmptyClosure makes, src/analyze/context/invariants.ts:152-158), for every kind of source, so a symbol in a repo that is not yet indexed is not reported as 'no entity of that name'"
           ]
         },
         {
@@ -626,7 +434,7 @@
       {
         "entity": "The planning prompt's user turn",
         "change": "field-modify",
-        "details": "buildMessages has two callers, decompose and the exported prepareDecompose, which the step tool's start phase calls (src/mcp/analyze-step/phases/start.ts:91) with a workspace scope it builds itself (:51-58). Both gain the resolved scope: DecomposeArgs gets a scope field, and prepareDecompose takes it as a second argument and stays synchronous; the step tool's start phase, which is already asynchronous, calls resolveScope first. buildMessages takes the ResolvedScope: it prints the repo path from it, and for a file, a symbol or a connection one further line naming that file, entity or connection, so the planning call plans lookups on it.",
+        "details": "buildMessages has two callers, decompose and the exported prepareDecompose, which the step tool's start phase calls (src/mcp/analyze-step/phases/start.ts:91) with a workspace scope it builds itself (:51-58). Both gain the resolved scope: DecomposeArgs gets a scope field, and prepareDecompose takes it as a second argument and stays synchronous; the step tool's start phase, which is already asynchronous, calls resolveScope first. buildMessages takes the ResolvedScope: it prints lookupPath as the 'Repo path' line, which for a repo, a module, a manifest directory and a workspace is the same value as today, and for a file, a symbol or a connection one further line naming that file, entity or connection, so the planning call plans lookups on it.",
         "callSites": [
           "src/analyze/context/decomposer.ts",
           "src/mcp/analyze-step/phases/start.ts"
@@ -635,7 +443,7 @@
       {
         "entity": "The lookup executor's runner context and the free-form lookup",
         "change": "field-add",
-        "details": "The free-form lookup never sees the request's scope today: runShaperToolLoop takes only inputs (src/analyze/context/driver.ts:557-570), its one caller builds its own intent with a workspace scope on the runner context's repo path (src/analyze/explore/freeform-probe.ts:93-110, :116), and the runner context carries only repoPath (src/analyze/explore/types.ts:761). So a file, symbol or connection request that falls to the free-form lookup loses the thing it named. The runner context gains the ResolvedScope; executePlan's arguments carry it, and so do stepPlan's, for the step tool. The free-form lookup builds its intent with the request's own scope (kind and value) and passes the ResolvedScope to runShaperToolLoop, whose arguments gain it and which takes the loop's path from lookupPath. The size 'M' written there is left for Story s2.",
+        "details": "The free-form lookup never sees the request's scope today: runShaperToolLoop takes only inputs (src/analyze/context/driver.ts:557-570), its one caller builds its own intent with a workspace scope on the runner context's repo path (src/analyze/explore/freeform-probe.ts:93-110, :116), and the runner context carries only repoPath (src/analyze/explore/types.ts:761). So a file, symbol or connection request that falls to the free-form lookup loses the thing it named. The runner context gains the ResolvedScope; executePlan's arguments carry it, and so do stepPlan's, for the step tool. The step tool's plan and narrow phases take their paths from the state token (src/mcp/analyze-step/phases/plan.ts:108-114, narrow.ts:171), which holds the intent and no resolved scope (start.ts:93-101); each phase calls resolveScope again on the intent's scope from the token, so the token's shape and its version do not change and a token minted before the change still works. The free-form lookup builds its intent with the request's own scope (kind and value) and passes the ResolvedScope to runShaperToolLoop, whose arguments gain it and which takes the loop's path from lookupPath. The size 'M' written there is left for Story s2.",
         "callSites": [
           "src/analyze/explore/freeform-probe.ts",
           "src/analyze/explore/types.ts",
@@ -665,7 +473,7 @@
         {
           "scenario": "The planning prompt file or the answer-writing prompt file is missing",
           "detection": "The pipeline catches DecomposerPromptMissingError or SynthesizerPromptMissingError and returns 'planner-prompt-missing' or 'answer-prompt-missing'.",
-          "response": "runShaper throws ShaperPromptMissingError naming the file; mapped to the existing 'shaper-prompt-missing'.",
+          "response": "runShaper throws ShaperPromptMissingError with the path the cause carries; mapped to the existing 'shaper-prompt-missing'.",
           "userImpact": "The request fails and names a broken installation, where today it says the model is unavailable.",
           "recoverable": false
         },
@@ -679,14 +487,14 @@
         {
           "scenario": "The pipeline produced a bundle that fails validation",
           "detection": "validateBundleWithErrors returns not ok in runShaper, where today the result is logged and falls through to the 'model unavailable' throw.",
-          "response": "runShaper throws ShaperSchemaUnrecoverable with the validation errors; mapped to the existing 'shaper-schema-unrecoverable'. Story s1 replaces this row.",
+          "response": "runShaper throws ShaperAnswerInvalidError with the stage 'bundle validation' and the validation errors; mapped to the existing code 'shaper-schema-unrecoverable'. Story s1 replaces this row.",
           "userImpact": "The request fails and says the answer did not have the required shape.",
           "recoverable": true
         },
         {
           "scenario": "The answer-writing step fails for a reason other than its model or its prompt file, for example its output does not have the required shape after its retries",
           "detection": "The catch-all after the answer-writing call (src/analyze/context/driver.ts:1254-1258), which today logs and returns null for any other error, returns the cause 'answer-invalid' with the error's message.",
-          "response": "runShaper throws ShaperSchemaUnrecoverable carrying that message; mapped to the existing 'shaper-schema-unrecoverable'. Story s1 replaces this row with an error that carries the lookup results.",
+          "response": "runShaper throws ShaperAnswerInvalidError with the stage 'answer writing' and that message; mapped to the existing code 'shaper-schema-unrecoverable'. Story s1 replaces this row with an error that carries the lookup results.",
           "userImpact": "The request fails and says the answer could not be produced in the required shape, where today it says the model is unavailable.",
           "recoverable": true
         },
@@ -709,6 +517,13 @@
           "detection": "resolveScope splits at the last '#'; it reads the file's stored entities and counts those whose name equals the given name.",
           "response": "ScopeRefUnresolvedError; the message gives the form expected, or lists the entities of that name with kind and line; mapped to 'scope-ref-unresolved'.",
           "userImpact": "The request fails and says what would resolve.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A symbol scope in a registered repo that has not been indexed",
+          "detection": "resolveScope, before it looks for the entity, counts the stored entities of the containing repo and finds none.",
+          "response": "ScopeNotIndexedError with the scope path and how the repo is registered; mapped to the existing 'scope-not-indexed'.",
+          "userImpact": "The request fails and says the repo is not indexed, not that the symbol does not exist.",
           "recoverable": true
         },
         {
@@ -810,7 +625,7 @@
       ],
       "invariantsToPreserve": [
         {
-          "text": "A request with a focus on a repo, a module or a workspace builds its context as it does today: the same planning call, the same lookups, the same answer-writing call.",
+          "text": "A request with a focus on a repo, a module or a workspace builds its context as it does today: the same planning call with the same 'Repo path' line, the same lookups in the same directory, the same lookup cache key, the same answer-writing call.",
           "source": "c1"
         },
         {
@@ -853,7 +668,7 @@
             "pipeline returns 'not-applicable' for classification and task modes",
             "an unfocused intent that falls to the free-form lookup gets the stated broad-survey purpose and not the classifier's reasoning text (the existing case in freeform-fallback.test.ts:66, which asserts the reasoning text, is changed with it)",
             "the table from cause to error: one case per member of PipelineCause, each asserting the error class and that only the two model-failed causes give ShaperLlmUnavailableError",
-            "runShaper throws ShaperSchemaUnrecoverable, not ShaperLlmUnavailableError, when the pipeline's bundle fails validation",
+            "runShaper throws ShaperAnswerInvalidError with stage 'bundle validation', not ShaperLlmUnavailableError and not ShaperSchemaUnrecoverable, when the pipeline's bundle fails validation",
             "the message of each error states its cause: 'bundle failed validation' for 'bundle-invalid', 'answer-writing output invalid' for 'answer-invalid', and the prompt file's path for the two prompt-missing causes; none contains 'exhausted' or 'retries'",
             "a file-scope request whose plan is replaced by the free-form lookup: the intent the free-form lookup builds has kind 'file' and the file's path, and the loop's path is the resolved repo (today the intent is a workspace scope on the repo)"
           ],
@@ -873,7 +688,10 @@
             "the planning prompt's user turn names the file, entity or connection from the ResolvedScope and prints the repo path, not the raw value",
             "the existing test of inferScopePath (src/analyze/context/__tests__/resolve-repo-indexed.test.ts:79-93) rewritten against resolveScope, keeping its cases",
             "prepareDecompose given a resolved scope returns the same user turn as decompose builds for it, and the step tool's start phase passes a resolved workspace scope",
-            "the tool loop's path for classification, task and free-form use is the resolved lookupPath, and for a connection it is the connection's repo, not the working directory"
+            "the tool loop's path for classification, task and free-form use is the resolved lookupPath, and for a connection it is the connection's repo, not the working directory",
+            "a module scope and a manifest directory scope inside a registered repo: lookupPath is the scope's own directory, and the planning prompt's 'Repo path' line and the lookup executor's path are that directory, as today (mutation: make lookupPath the repo root, the test fails)",
+            "a symbol scope in a registered repo with no stored entities fails with ScopeNotIndexedError, not ScopeRefUnresolvedError",
+            "the step tool's plan and narrow phases resolve the scope from the intent in the state token, and a token without any scope field still works"
           ],
           "fixturesNeeded": [
             "an in-memory list of registered repos, entities by file, and connections by repo"
@@ -896,11 +714,10 @@
           "level": "unit",
           "purpose": "The mappings from errors to codes on both sides.",
           "subjects": [
-            "the plan tree's and the daemon's classifyShaperError each map ShaperInvalidInputError, ShaperNoPlanError and ScopeRefUnresolvedError to their codes",
-            "one test iterates a single list of error classes through both functions and asserts the same code from each",
+            "the plan tree's and the daemon's classifyShaperError each map ShaperInvalidInputError, ShaperNoPlanError, ScopeRefUnresolvedError and ShaperAnswerInvalidError to their codes",
+            "one test iterates a single list of error classes (the five mapped today and the four new ones) through both functions and asserts the same code from each",
             "the plan tree's classifyClassifierError returns the inner code of ClassifierValidationExhausted for both inner codes, and passes ScopeNotIndexedError and ShaperLlmUnavailableError to the context mapping (today: 'classifier-validation-exhausted' and 'internal-error')",
             "the three new codes are members of both RunErrorCode and AnalyzeRpcErrorCode (a compile-time assignment in a source file, since tsc skips tests)",
-            "both classifyShaperError functions map ShaperAnswerInvalidError to 'shaper-schema-unrecoverable'",
             "the existing table test's ClassifierValidationExhausted row (orchestrator.test.ts:72) rewritten with a real ValidationFailure, expecting its inner code"
           ]
         },
@@ -947,7 +764,7 @@
           "criterionId": "ac3",
           "provingTests": [
             "unit: the table from cause to error, one case per member of PipelineCause, with ShaperLlmUnavailableError only for the two model-failed causes",
-            "unit: runShaper throws ShaperSchemaUnrecoverable when the bundle fails validation",
+            "unit: runShaper throws ShaperAnswerInvalidError with stage 'bundle validation' when the bundle fails validation",
             "unit: both classifyShaperError functions agree over one list of error classes",
             "unit: the plan tree's classifyClassifierError returns the inner code and passes context errors on",
             "live: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped",
@@ -971,7 +788,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the three new codes to RunErrorCode and AnalyzeRpcErrorCode and the three new error classes beside the existing ones, with their cases in both classifyShaperError functions. Nothing raises them yet.",
+          "action": "Add the three new codes to RunErrorCode and AnalyzeRpcErrorCode and the four new error classes beside the existing ones, with their cases in both classifyShaperError functions, and the path field on the planning call's and the answer-writing call's prompt-missing errors. Nothing raises them yet.",
           "rollbackable": true
         },
         {
@@ -1136,6 +953,11 @@
       "id": "c12",
       "kind": "prior-artifact",
       "ref": "Second daemon review of this LLD, 2026-10-07: block, 3 MED did not hold. All three are applied in this revision: a new error class for an invalid answer or bundle, because the existing class's message says retries were exhausted; the free-form lookup given the request's scope through the runner context; the existing table-test row for ClassifierValidationExhausted."
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "Third daemon review of this LLD, 2026-10-07: block, 1 HIGH and 4 MED did not hold. All five are applied in this revision: lookupPath stays the scope's own directory for a repo, a module, a manifest directory and a workspace; the step tool's phases resolve the scope again from the token's intent; section 5 and the tests name ShaperAnswerInvalidError; a symbol in a repo that is not indexed fails as not indexed."
     }
   ]
 }

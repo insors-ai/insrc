@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s6",
     "createdAt": "2026-10-07T09:26:37.335Z",
-    "updatedAt": "2026-10-07T09:52:49.521Z",
+    "updatedAt": "2026-10-07T09:59:15.508Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -32,200 +32,225 @@
       {
         "id": "t6",
         "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
       }
     ],
-    "summary": "The lookup pipeline now returns an outcome (a bundle, not-applicable, or one named cause) where it returned nothing, and one exhaustive table converts each cause to a typed error, replacing the single 'model unavailable' throw. The two gates remain, each with an interim cause removed with its gate in later tasks.",
+    "summary": "runShaper now checks the scope/source pairing for run mode and resolves the scope once for every mode; the freshness read, the tool loop's path, the pipeline's lookup path and the indexed check take the resolved scope. The three old path functions are deleted and the pipeline's gate on the kind of scope is removed, so a file, a symbol, a manifest directory and a connection are served.",
     "changeLog": [
       {
         "target": {
           "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/agent/providers/mcp-sampling-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/agent/providers/model-call-error.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/__tests__/validate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/scope-picker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/invariants.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure-callers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/prepare-scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:59:15.508Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/resolve-repo-indexed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-errors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/decomposer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/model-failure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/context/synthesizer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/aggregator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/mcp/sampling-bridge.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       },
       {
         "target": {
           "file": "src/prompts/analyze/classify.system.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:52:49.521Z"
+        "timestamp": "2026-10-07T09:59:15.508Z"
       }
     ],
-    "commit": "110f872b"
+    "commit": "17859ca4"
   }
 }

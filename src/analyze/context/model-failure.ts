@@ -44,12 +44,41 @@ export const MODEL_CALL_FAILURE_TEXTS: readonly string[] = Object.freeze([
 	...CLI_FAILURE_TEXTS,
 ]);
 
+/**
+ * A provider's retry helper reports the last attempt's error behind
+ * this prefix (src/agent/providers/structured-output.ts).
+ */
+const RETRY_PREFIX = /^structured-output: validation failed after \d+ attempts: /;
+
+/**
+ * A wrong-shaped answer is reported with the answer itself quoted
+ * after ` text=` (a CLI answer that does not parse, a sampling answer
+ * that is not JSON). What the MODEL wrote is not evidence about the
+ * call: an answer that merely mentions 'ECONNREFUSED' -- likely when
+ * the repository under analysis is this one -- must not be read as a
+ * failed call. So the quoted answer is cut off before matching.
+ */
+function withoutQuotedAnswer(message: string): string {
+	const at = message.indexOf(' text=');
+	return at === -1 ? message : message.slice(0, at);
+}
+
 /** True when `err` reports that the call to the model failed. */
 export function isModelCallFailure(err: unknown): boolean {
 	if (err instanceof ModelCallFailedError) return true;
 	if (!(err instanceof Error)) return false;
-	const msg = err.message;
-	for (const text of MODEL_CALL_FAILURE_TEXTS) {
+	const msg = withoutQuotedAnswer(err.message);
+	// The provider's own wording for a failed call opens the message
+	// (after the retry helper's prefix, when there is one). It is never
+	// matched further in, where it could be quoted text.
+	const own = msg.replace(RETRY_PREFIX, '');
+	for (const text of CLI_FAILURE_TEXTS) {
+		if (own.startsWith(text)) return true;
+	}
+	// The local provider wraps a connection failure with its own
+	// prefix, and a socket error can be nested in another's message,
+	// so these are matched anywhere -- outside a quoted answer.
+	for (const text of OLLAMA_FAILURE_TEXTS) {
 		if (msg.includes(text)) return true;
 	}
 	return false;

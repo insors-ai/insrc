@@ -114,6 +114,32 @@ test('isModelCallFailure: Ollama texts, CLI call failures, ModelCallFailedError 
 	assert.equal(isModelCallFailure(undefined), false);
 });
 
+test('what the model WROTE is not evidence about the call: a quoted answer is never matched', () => {
+	// A wrong-shaped answer is reported with the answer quoted after ` text=`.
+	// An answer that mentions a failure text -- likely when the repository
+	// under analysis is this one -- is still a failure of shape.
+	const quoted = [
+		'codex agent_message.text was not parseable JSON: Unexpected token. text=the daemon logs ECONNREFUSED when Ollama is not running',
+		'codex agent_message.text was not parseable JSON: Unexpected token. text=claude exited with 1 is matched by isModelCallFailure',
+		'McpSamplingProvider: response was not valid JSON: Unexpected end. text=fetch failed; socket hang up; Model not found',
+		'structured-output: validation failed after 3 attempts: McpSamplingProvider: response was not valid JSON: x. text=codex exited with 2',
+	];
+	for (const text of quoted) {
+		assert.equal(isModelCallFailure(new Error(text)), false, text);
+	}
+
+	// The CLI's own wording counts only where the provider puts it: at
+	// the start of the message, or right behind the retry helper's prefix.
+	assert.equal(isModelCallFailure(new Error('claude exited with 1. stderr=x stdout=')), true);
+	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 3 attempts: claude exited with 1. stderr=x')), true);
+	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 2 attempts: codex emitted error event: {}')), true);
+	assert.equal(isModelCallFailure(new Error("/summary must be string; saw 'claude exited with 1'")), false);
+	assert.equal(isModelCallFailure(new Error('the note says codex exited with 2')), false);
+
+	// A real connection failure with nothing quoted is still recognised, wrapped or not.
+	assert.equal(isModelCallFailure(new Error('structured-output: validation failed after 3 attempts: connect ECONNREFUSED 127.0.0.1:11434')), true);
+});
+
 test('modelCallFailureDetail returns the failure\'s own words', () => {
 	assert.equal(modelCallFailureDetail(new ModelCallFailedError('client declined')), 'client declined');
 	assert.equal(modelCallFailureDetail(new Error('claude exited with 1')), 'claude exited with 1');

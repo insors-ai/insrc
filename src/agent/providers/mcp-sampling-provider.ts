@@ -183,6 +183,11 @@ export class McpSamplingProvider implements LLMProvider {
 			return await this.sampler(req);
 		} catch (err) {
 			if (err instanceof ModelCallFailedError || err instanceof ModelResponseShapeError) throw err;
+			// A programming error inside the callback (a bad property
+			// access while building the request, say) is a bug here, not
+			// a failed model call: let it surface as what it is.
+			if (err instanceof TypeError || err instanceof RangeError
+			 || err instanceof ReferenceError || err instanceof SyntaxError) throw err;
 			throw new ModelCallFailedError(err instanceof Error ? err.message : String(err));
 		}
 	}

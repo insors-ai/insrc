@@ -50,13 +50,13 @@ export interface ResolvedScope {
 	/** The directory lookups run in. */
 	readonly lookupPath: string;
 	/** file and symbol. */
-	readonly filePath?: string;
+	readonly filePath?: string | undefined;
 	/** symbol. */
-	readonly entityId?: string;
+	readonly entityId?: string | undefined;
 	/** symbol. */
-	readonly entityName?: string;
+	readonly entityName?: string | undefined;
 	/** connection. */
-	readonly connectionId?: string;
+	readonly connectionId?: string | undefined;
 }
 
 /** The readers resolveScope needs. Defaulted to the real stores; tests supply them. */
@@ -170,16 +170,21 @@ async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedSc
 	if (repo === undefined) {
 		throw new ScopeNotIndexedError(filePath, undefined, 'no registered repo contains the scope path');
 	}
-	const repoEntities = await deps.listEntitiesForRepo(repo.path);
-	if (repoEntities.length === 0) {
-		throw new ScopeNotIndexedError(
-			filePath,
-			repo.path,
-			`registered repo has zero indexed entities (status: ${repo.status})`,
-		);
-	}
-
+	// The file's own entities are what is needed, and finding any is
+	// proof the repo is indexed. Only when the file has none is the
+	// whole repo read, to tell "the repo is not indexed" from "this file
+	// holds no entities" -- so a symbol that resolves costs one read.
 	const inFile = await deps.findEntitiesByFile(filePath);
+	if (inFile.length === 0) {
+		const repoEntities = await deps.listEntitiesForRepo(repo.path);
+		if (repoEntities.length === 0) {
+			throw new ScopeNotIndexedError(
+				filePath,
+				repo.path,
+				`registered repo has zero indexed entities (status: ${repo.status})`,
+			);
+		}
+	}
 	const matches = inFile.filter(e => e.name === name);
 	if (matches.length === 0) {
 		throw new ScopeRefUnresolvedError(

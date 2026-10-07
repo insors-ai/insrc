@@ -132,6 +132,12 @@ export interface RunShaperArgs {
 	 * OllamaProvider from analyze config.
 	 */
 	readonly provider?: LLMProvider | undefined;
+	/**
+	 * Optional stand-ins for the lookup pipeline's steps and for the
+	 * scope readers, for tests. Production callers leave both unset.
+	 */
+	readonly pipelineSteps?: PipelineSteps | undefined;
+	readonly scopeDeps?:     ScopeDeps | undefined;
 }
 
 /** The call of the lookup pipeline whose model failed. */
@@ -245,7 +251,7 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// the scope's kind with the kind of source is checked first: a
 	// request can arrive with a ready-made intent that no classifier
 	// validated.
-	const scope = await prepareScope(invocationMode, inputs);
+	const scope = await prepareScope(invocationMode, inputs, args.scopeDeps);
 
 	// (3) Resolve the scope's repo lastIndexedAt from the registry. Used
 	// for both the cache freshness check below + stamping into meta on
@@ -282,13 +288,10 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// the answer. Every run-mode request goes through it. It returns a
 	// bundle, or the one cause for which it did not proceed, or
 	// 'not-applicable' for a mode it does not serve.
-	const outcome = await tryExplorationPipeline({
-		invocationMode,
-		shaperId,
-		inputs,
-		runId,
-		scope,
-	});
+	const outcome = await tryExplorationPipeline(
+		{ invocationMode, shaperId, inputs, runId, scope },
+		args.pipelineSteps ?? REAL_PIPELINE_STEPS,
+	);
 	// A cause the pipeline names becomes its own typed error here, in
 	// one place; an invalid bundle is one more cause. Only a mode the
 	// pipeline does not serve (classification, task) continues to the

@@ -371,6 +371,27 @@ test('completeStructured: a rejected request followed by a wrong-shaped answer i
 	);
 });
 
+test('a programming error inside the sampling callback surfaces as itself, not as a failed model call', async () => {
+	const buggy: SamplingCallback = async () => {
+		const params = undefined as unknown as { messages: unknown[] };
+		return params.messages as never;   // TypeError: cannot read properties of undefined
+	};
+	const p = new McpSamplingProvider({ sampler: buggy });
+	await assert.rejects(
+		() => p.complete([{ role: 'user', content: 'hi' }]),
+		(err: unknown) => {
+			assert.ok(err instanceof TypeError, `got ${(err as Error).name}`);
+			assert.ok(!(err instanceof ModelCallFailedError));
+			return true;
+		},
+	);
+	// Through the structured path it is not reported as a failed call either.
+	await assert.rejects(
+		() => p.completeStructured([{ role: 'user', content: 'hi' }], SIMPLE_SCHEMA, { maxAttempts: 2 }),
+		(err: unknown) => !(err instanceof ModelCallFailedError),
+	);
+});
+
 test('fromSdkResult raises a shape error, not a failed call, for non-text content', () => {
 	assert.throws(
 		() => fromSdkResult({ role: 'assistant', model: 'm', content: { type: 'image', data: '', mimeType: 'image/png' } } as never),

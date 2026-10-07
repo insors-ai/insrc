@@ -22,7 +22,8 @@ import {
 	_getRunnersForTest,
 	_overrideRunnerForTest,
 } from '../executor.js';
-import { executePlan } from '../executor.js';
+import { executePlan, stepPlan } from '../executor.js';
+import { handleAnalyzeStep } from '../../../mcp/analyze-step/handler.js';
 import type {
 	Exploration,
 	ExplorationOutput,
@@ -118,6 +119,56 @@ test('executor hands the request\'s resolved scope to the runner; without one th
 	});
 	assert.deepEqual(seen, [scope, undefined]);
 	assert.equal(seen[0], scope, 'the very object, not a copy');
+});
+
+test('stepPlan hands the resolved scope to the runner too', async () => {
+	const seen: unknown[] = [];
+	_overrideRunnerForTest('concept.resolve', async (_exp, ctx) => {
+		seen.push(ctx.scope);
+		return { type: 'concept.resolve', query: 'stub', hits: [] };
+	});
+	const scope = { kind: 'workspace' as const, value: REPO, repoPath: REPO, lookupPath: REPO };
+	const step = await stepPlan({
+		runId: 'test', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n,
+		plan: { answerType: 'structural-map', synthesisHint: 't', explorations: [makeExp({ params: { query: 'step-with-scope' } })] },
+		scope,
+	});
+	assert.equal(step.kind, 'done');
+	assert.deepEqual(seen, [scope]);
+});
+
+test('the step tool\'s plan phase resolves the scope from the token and runs the lookups there', async () => {
+	// Through the tool's own handler: start mints a token (an intent, no
+	// resolved scope); plan decodes it, resolves the scope again and
+	// executes the plan with it.
+	const seen: Array<{ repoPath: string; closureRepos: readonly string[]; scope: unknown }> = [];
+	_overrideRunnerForTest('concept.resolve', async (_exp, ctx) => {
+		seen.push({ repoPath: ctx.repoPath, closureRepos: ctx.closureRepos, scope: ctx.scope });
+		return { type: 'concept.resolve', query: 'stub', hits: [] };
+	});
+	const parse = <T>(e: { content: { text: string }[] }): T => JSON.parse(e.content[0]!.text) as T;
+
+	const started = await handleAnalyzeStep({
+		phase: 'start', repo: REPO, focus: `plan-phase scope ${Date.now()}`, target: 'code', scope: 'S',
+	});
+	assert.notEqual(started.isError, true, started.content[0]!.text.slice(0, 300));
+	const { state } = parse<{ state: string }>(started);
+
+	const planned = await handleAnalyzeStep({
+		phase: 'plan', state,
+		plan: {
+			answerType: 'structural-map', synthesisHint: 'h',
+			explorations: [{ id: 'e1', type: 'concept.resolve', purpose: 'p', params: { query: 'plan-phase-scope' } }],
+		},
+	});
+	assert.notEqual(planned.isError, true, planned.content[0]!.text.slice(0, 400));
+	assert.equal(parse<{ next: string }>(planned).next, 'emit_bundle');
+
+	// The lookup ran where the scope resolved to, and was handed the scope.
+	assert.equal(seen.length, 1);
+	assert.equal(seen[0]!.repoPath, REPO);
+	assert.deepEqual(seen[0]!.closureRepos, [REPO]);
+	assert.deepEqual(seen[0]!.scope, { kind: 'workspace', value: REPO, repoPath: REPO, lookupPath: REPO });
 });
 
 // ---------------------------------------------------------------------------

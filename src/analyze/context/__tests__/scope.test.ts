@@ -209,8 +209,12 @@ test('resolveScope symbol not-indexed cases: empty repo, no containing repo, emp
 	assert.equal((e1 as ScopeNotIndexedError).registeredAs, INNER);
 	assert.equal((e1 as ScopeNotIndexedError).scopePath, file);
 	assert.match(e1.message, /status: indexing/);
-	// The entity was never looked for.
-	assert.ok(!emptyRepo.calls.some(c => c.startsWith('findEntitiesByFile')));
+	// The file was read first; finding nothing there, the repo was read
+	// to tell "not indexed" from "no entity of that name".
+	assert.deepEqual(
+		emptyRepo.calls.filter(c => !c.startsWith('listRepos')),
+		[`findEntitiesByFile:${file}`, `listEntitiesForRepo:${INNER}`],
+	);
 
 	// (2) No registered repo contains the file.
 	const elsewhere = deps({ repos: [repo(OTHER)], entities: [entity(file, 'settle')] });
@@ -226,6 +230,25 @@ test('resolveScope symbol not-indexed cases: empty repo, no containing repo, emp
 	assert.equal((e3 as ScopeNotIndexedError).registeredAs, undefined);
 	const mod = await resolveScope({ kind: 'module', value: `${INNER}/src` }, pristine);
 	assert.deepEqual(mod, { kind: 'module', value: `${INNER}/src`, repoPath: null, lookupPath: `${INNER}/src` });
+});
+
+test('a symbol that resolves costs one read: the whole repo is read only when the file has no entities', async () => {
+	const file = `${INNER}/src/pay.ts`;
+	// The file has entities: the repo is indexed, no repo-wide read.
+	const d = deps({ entities: [entity(file, 'settle')] });
+	await resolveScope({ kind: 'symbol', value: `${file}#settle` }, d);
+	assert.ok(!d.calls.some(c => c.startsWith('listEntitiesForRepo')), d.calls.join(', '));
+	// A wrong name in an indexed file: still no repo-wide read, and the failure is "no such entity".
+	const d2 = deps({ entities: [entity(file, 'settle')] });
+	const wrong = await rejection(() => resolveScope({ kind: 'symbol', value: `${file}#missing` }, d2));
+	assert.ok(wrong instanceof ScopeRefUnresolvedError);
+	assert.ok(!d2.calls.some(c => c.startsWith('listEntitiesForRepo')));
+	// A file with no entities in a repo that IS indexed: the repo is read, and the failure is still "no such entity".
+	const other = `${INNER}/src/other.ts`;
+	const d3 = deps({ entities: [entity(other, 'x')] });
+	const empty = await rejection(() => resolveScope({ kind: 'symbol', value: `${file}#settle` }, d3));
+	assert.ok(empty instanceof ScopeRefUnresolvedError, `got ${empty.name}`);
+	assert.ok(d3.calls.includes(`listEntitiesForRepo:${INNER}`));
 });
 
 // ---------------------------------------------------------------------------

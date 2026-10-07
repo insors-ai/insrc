@@ -428,3 +428,26 @@ Sizing uses the totals. Nothing is partitioned: a request beyond the raised ceil
 - **[[c52]]** `code` `src/daemon/db/list-files.ts`
 - **[[c53]]** `code` `src/analyze/classifier/validate.ts`
 - **[[c54]]** `prior-artifact` `HLD-b9d5c5c40df5a574 eighth review of 2026-10-07 by the daemon: block, 4 MED did not hold, none HIGH. All four are applied in this revision. Redis and etcd are given no complete listing (it would mean scanning every key of a live store); this is put to the stakeholder.`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.epic (design.epic)
+
+**2 do not hold · 1 could not be verified · 12 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T06:39:53.640Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| coverage-of-intent | MED | Story s4 meets DEF S004 ac1 ('every result is returned and none is dropped ... in any kind of source the analyzer covers') for every data source. | The HLD gives Redis and etcd no complete listing ('Redis and etcd get no complete mode in this Epic ... a listing from them carries a completeness record that says it is a sample'), and c54 says 'this is put to the stakeholder', so it is not yet decided. The code confirms the listing is a bounded sample: redis.ts:137-138 `const limit = Math.min(Math.max(1, Math.floor(opts?.limit ?? 200)), 1000); const samplePool = Math.min(limit * 50, 5000);`, and the same at etcd.ts:115-116. After s4 the table-listing lookup and the object-listing plan task still return a cut listing for these two sources, which S004 ac1 forbids as written. The same applies to c46 (treating the classification and task loops like the free-form lookup), which is also 'put to the stakeholder'. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, src/daemon/db/drivers/redis.ts, src/daemon/db/drivers/etcd.ts] | Record the stakeholder's decision on Redis/etcd (and on c46) in the HLD, and either amend DEF S004 ac1 to except sources with no countable namespaces or design a complete listing for them. |
+| change-sites | MED | The cancellation inventory covers every caller that reaches a tool loop whose turn limit Story s4 removes: the daemon's three context requests and its plan request (socket), the one-shot tool and workflow runner (direct), and the plan tree's first step and the classifier (the run's signal). | The classifier has a second caller the design does not list for cancellation. daemon/index.ts:1737-1739 registers a fifth standard handler in the cited range, `'analyze.classify': async (params) => { ... return mod.classify(params); }`, and daemon/analyze-rpc.ts:319-322 runs `const opts: ClassifyOpts = { runId: parsed.runId }; ... const intent = await runClassifier({ input, opts });`. That reaches the classification loop at classifier/driver.ts:120 (`shaper.buildClassificationBundle`). The design names 'four context requests' at index.ts:1718-1748 and gives the signal parameter to 'buildRun and the other three'; for the classifier it says only that the plan tree 'pass[es] the run's existing signal'. An analyze.classify request has no run signal, is not one of the four functions given a signal parameter, and is not in the run-id-to-canceller table. Built as written, after s4 a classify request received over the socket runs a loop with no turn limit and no way to be stopped, which breaks the design's own rule that the limit is not removed until cancellation exists on every path. [files: src/daemon/analyze-rpc.ts, src/daemon/index.ts, src/analyze/classifier/driver.ts] | Add the daemon's classify request (analyze-rpc.ts:307, handler at index.ts:1737) to Story s4's cancellation inventory: give it the standard-handler signal, register it in the canceller table by run id, pass the signal into runClassifier, and map the cancelled case to 'aborted' in the daemon's classifier error mapping (analyze-rpc.ts:343). Correct the count of context-reaching standard handlers from four to five. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| error-paths | The design states what becomes of the existing 'shaper-tool-loop-exhausted' failure once the turn limit is removed. | The code has a typed error and a code for reaching the limit in both lists: context/driver.ts:142 `super(`Shaper tool-loop exceeded maxToolTurns=${turns}`)`, :686 `throw new ShaperToolLoopExhausted(maxToolTurns)`, orchestrator/types.ts:275 and analyze-rpc.ts:136 'shaper-tool-loop-exhausted', mapped at orchestrator/driver.ts:437 and analyze-rpc.ts:896, and freeform-probe.ts:29 imports the class. I searched the HLD for the code and the class name and found no statement on whether Story s4 removes them, keeps them unused, or what Story s1's 'failed output' uses in the interval. It is not a contradiction, only unstated. | State in Story s4 (or sc6) whether 'shaper-tool-loop-exhausted' and ShaperToolLoopExhausted are removed from both code lists and both mappings with the limit, and note the mirrored IDE contract if they are. |

@@ -26,6 +26,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
@@ -36,6 +37,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { ResolvedScope } from './scope.js';
 
 import type {
 	AnswerType,
@@ -53,9 +55,15 @@ const DECOMPOSE_PROMPT_REL = 'prompts/analyze/decompose.system.md';
 // ---------------------------------------------------------------------------
 
 export class DecomposerLlmUnavailableError extends Error {
+	/** The underlying failure's own message, without this error's prefix. */
+	readonly detail: string;
+
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for decomposer: ${cause}`);
+		// Provider-neutral: the planning provider is role-routed and
+		// need not be Ollama.
+		super(`The model call for planning failed: ${cause}`);
 		this.name = 'DecomposerLlmUnavailableError';
+		this.detail = cause;
 	}
 }
 
@@ -67,9 +75,12 @@ export class DecomposerSchemaUnrecoverable extends Error {
 }
 
 export class DecomposerPromptMissingError extends Error {
+	readonly path: string;
+
 	constructor(path: string) {
 		super(`Decomposer prompt file missing: ${path}`);
 		this.name = 'DecomposerPromptMissingError';
+		this.path = path;
 	}
 }
 
@@ -146,6 +157,8 @@ export const DECOMPOSE_SCHEMA: StructuredSchema = {
 export interface DecomposeArgs {
 	readonly intent:   ClassifiedIntent;
 	readonly runId:    string;
+	/** The intent's scope, already resolved (resolveScope). */
+	readonly scope:    ResolvedScope;
 	readonly provider?: LLMProvider;
 }
 
@@ -158,7 +171,7 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 	const promptContent = loadPromptFile();
 	const provider = args.provider ?? resolveRoleProvider('analyze.decompose', cfg);
 
-	const messages = buildMessages(promptContent, args.intent);
+	const messages = buildMessages(promptContent, args.intent, args.scope);
 
 	let raw: {
 		answerType:    AnswerType;
@@ -232,9 +245,9 @@ export interface DecomposePrepared {
  * would have sent -- prompt is loaded verbatim from disk; user turn is
  * composed the same way `buildMessages` composes it.
  */
-export function prepareDecompose(intent: ClassifiedIntent): DecomposePrepared {
+export function prepareDecompose(intent: ClassifiedIntent, scope: ResolvedScope): DecomposePrepared {
 	const promptContent = loadPromptFile();
-	const messages = buildMessages(promptContent, intent);
+	const messages = buildMessages(promptContent, intent, scope);
 	return {
 		systemPrompt: messages[0]!.content as string,
 		userTurn:     messages[1]!.content as string,
@@ -294,10 +307,33 @@ function validatePlanTopology(explorations: readonly Exploration[]): void {
 // Message composition
 // ---------------------------------------------------------------------------
 
-function buildMessages(promptContent: string, intent: ClassifiedIntent): LLMMessage[] {
+/**
+ * One line naming what a scope narrower than a directory points at,
+ * so the planning call plans lookups on it. A directory scope (repo,
+ * module, manifest directory, workspace) needs none: the 'Repo path'
+ * line already is that directory.
+ */
+function scopeLine(scope: ResolvedScope): string {
+	switch (scope.kind) {
+		case 'file':
+			return `Scope: the file ${scope.filePath ?? scope.value}\n`;
+		case 'symbol':
+			return `Scope: the entity '${scope.entityName ?? ''}' in the file ${scope.filePath ?? scope.value}\n`;
+		case 'connection':
+			return `Scope: the data connection '${scope.connectionId ?? scope.value}'\n`;
+		default:
+			return '';
+	}
+}
+
+/** The planning prompt's section for an intent with no focus. The user
+ *  turn names it; a test holds the name and the prompt's heading equal. */
+export const NO_FOCUS_SECTION = 'Recipes for an intent with no focus';
+
+function buildMessages(promptContent: string, intent: ClassifiedIntent, scope: ResolvedScope): LLMMessage[] {
 	const focusLine = intent.focused && intent.focus !== undefined
 		? `focus: "${intent.focus}"`
-		: 'focus: (unfocused -- broad understanding request)';
+		: `focus: none (a broad survey of the scope -- follow "${NO_FOCUS_SECTION}")`;
 
 	const userContent =
 		`Classified intent:\n` +
@@ -305,7 +341,10 @@ function buildMessages(promptContent: string, intent: ClassifiedIntent): LLMMess
 		JSON.stringify(intent, null, 2) +
 		'\n```\n' +
 		`\n` +
-		`Repo path: ${intent.scopeRef.value}\n` +
+		// The directory the lookups run in -- for a directory scope, the
+		// scope's own directory, exactly as the raw value used to print.
+		`Repo path: ${scope.lookupPath}\n` +
+		scopeLine(scope) +
 		`\n` +
 		`Classify the answer type. Emit the ExplorationPlan JSON now. ` +
 		`First char \`{\`, no markdown fence, no prose. Every array present ` +
@@ -348,25 +387,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
+	if (isModelCallFailure(err)) return new DecomposerLlmUnavailableError(modelCallFailureDetail(err));
 	if (!(err instanceof Error)) return new DecomposerSchemaUnrecoverable([String(err)]);
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new DecomposerLlmUnavailableError(msg);
-	}
-	return new DecomposerSchemaUnrecoverable([msg]);
+	return new DecomposerSchemaUnrecoverable([err.message]);
 }
 
 // ---------------------------------------------------------------------------

@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { ResolvedScope } from '../context/scope.js';
+
 /**
  * Exploration types -- the vocabulary the decomposer emits and the
  * executor dispatches on.
@@ -760,6 +762,12 @@ export interface ExplorationRunnerContext {
 	readonly runId:       string;
 	readonly repoPath:    string;
 	readonly closureRepos: readonly string[];
+	/** The request's scope, resolved. Present when the plan is executed
+	 *  for a request (the lookup pipeline, the step tool); a runner that
+	 *  needs what the request named reads it here. Absent for a caller
+	 *  that executes a plan on a bare repo path -- `repoPath` then is
+	 *  all there is, and it stands for a workspace scope on it. */
+	readonly scope?:      ResolvedScope | undefined;
 	/** Read a prior exploration's output by id. Returns undefined
 	 *  when the id doesn't resolve (should not happen if the
 	 *  decomposer emitted a valid dependsOn). */

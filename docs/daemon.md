@@ -633,6 +633,36 @@ npx --no-install tsx cli/index.ts daemon status
 Confirm `INSRC_REPO` (in the MCP registration) and any explicit
 `repo` argument match a `[ready]` path exactly.
 
+### An analyze request fails: what its error code means
+
+A request that cannot proceed reports the actual cause. `shaper-llm-unavailable`
+is reported only when a call to a model failed, and its message names the
+call (`planning` or `answer writing`) and carries the provider's own words,
+whichever provider served it (Ollama, the `claude` or `codex` CLI, or an MCP
+sampling client).
+
+| Code | Meaning |
+|---|---|
+| `scope-ref-kind-target-mismatch` | The kind of scope does not go with the kind of source (for example a code request on a data connection). The message lists the kinds allowed. |
+| `scope-ref-unresolved` | The scope does not resolve: a path that does not exist; a symbol not written as `<absolute file path>#<entity name>`, or whose name matches no stored entity (or several); a connection registered in no repo (or in several). |
+| `scope-not-indexed` | The scope's repo is not registered or has no indexed entities. A symbol scope always needs the index. |
+| `shaper-prompt-missing` | A prompt file is missing from the install. The message names the file. |
+| `shaper-schema-unrecoverable` | The answer could not be produced in the required shape. |
+| `shaper-llm-unavailable` | A model call failed. |
+| `invalid-input` | The request was built wrongly (unknown kind of source, no intent). |
+| `no-plan-for-request` | The plan for the request has no lookups. |
+| `answer-step-failed` | Declared; not raised yet. |
+| `run-abandoned` | Declared; not raised yet. |
+
+`no-plan-for-request`, `answer-step-failed` and `run-abandoned` were added on
+2026-10-07 to both of the daemon's code lists (`RunErrorCode` and
+`AnalyzeRpcErrorCode`). A client that mirrors those lists (the IDE repository)
+needs the three new members. Two behaviours also changed for a client that
+matches on codes: failures that used to arrive as `shaper-llm-unavailable`
+without a model having been called now arrive under their own code, and a
+plan-tree run reports the validator's own code where it used to report
+`classifier-validation-exhausted`.
+
 ### Ollama-backed calls hang for 30+ s
 
 First inference on a model always cold-starts. If it never

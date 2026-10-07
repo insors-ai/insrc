@@ -1,0 +1,885 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791364359968-vy5vj3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-07T09:17:56.654Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 316675,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s6",
+    "lldRunId": "wf-1791360221429-2l2w8l",
+    "lldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-07T09:23:32.470Z",
+    "rangeBase": "680370457bf9b1ddcb61ea2d2dd5543863f475c1"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story is mostly work inside the analyzer's context builder. It starts with small additive pieces that nothing calls yet (new error codes and classes, one shared test for a failed model call, a function that resolves a scope once, a corrected table of which scope goes with which source). It then changes the lookup pipeline to return a named cause where it returns nothing today, moves every reader of a scope to the resolved one, and only then removes the two gates that stop a broad request and four kinds of scope from being served. The plan tree's two classification branches and live checks against the real model come last."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare the new codes and error classes, and map them on both sides",
+        "summary": "Add 'no-plan-for-request', 'answer-step-failed' and 'run-abandoned' to RunErrorCode and AnalyzeRpcErrorCode. Add the five error classes of the context builder (ShaperInvalidInputError, ShaperNoPlanError, ScopeRefUnresolvedError, ScopeKindTargetMismatchError, ShaperAnswerInvalidError with its stage) and the optional 'call' argument on ShaperLlmUnavailableError. Add their cases to both classifyShaperError functions. Nothing raises them yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The three codes are members of both unions, proven by a compile-time assignment in a source file",
+          "Both classifyShaperError functions return the stated code for each of the five new classes, and one test iterates a single list of classes through both",
+          "ShaperLlmUnavailableError built with a call reads 'The model call for <call> failed: ...'; built without one it keeps today's text",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "both classifyShaperError functions map each of the five new error classes to its code"
+          },
+          {
+            "level": "unit",
+            "name": "one list of ten error classes gives the same code from the plan tree's and the daemon's mapping"
+          },
+          {
+            "level": "unit",
+            "name": "ShaperLlmUnavailableError message with and without a call"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "One shared test for a failed model call, used by the planning and answer-writing calls",
+        "summary": "Add src/analyze/context/model-failure.ts with isModelCallFailure: the existing Ollama and socket texts, the CLI provider's failures of the call itself, and a typed ModelCallFailedError that the sampling provider raises when the sampling request fails. Use it in the classifiers of the planning call and the answer-writing call. Replace the 'Local Ollama' prefix on their two model-unavailable errors with a provider-neutral one, give each a field holding the underlying message, and give their two prompt-missing errors a path field.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "isModelCallFailure is true for each Ollama text, each CLI call failure and ModelCallFailedError, and false for a shape failure",
+          "With a stand-in provider that throws a CLI call failure, the planning call raises its model-unavailable error and so does the answer-writing call; neither raises a schema error",
+          "A stand-in sampler that rejects makes the sampling provider raise ModelCallFailedError; a response that is not text stays a shape failure",
+          "Neither model-unavailable error's message contains 'Ollama' for a failure that did not come from Ollama",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "isModelCallFailure: Ollama texts, CLI call failures, ModelCallFailedError are failures; shape failures are not"
+          },
+          {
+            "level": "unit",
+            "name": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure"
+          },
+          {
+            "level": "unit",
+            "name": "sampling provider raises ModelCallFailedError when the sampler rejects; non-text content is a shape failure"
+          },
+          {
+            "level": "unit",
+            "name": "model-unavailable messages are provider-neutral and carry the underlying message in a field"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Move the six other copies of the failure-text list to the shared test",
+        "summary": "Replace the list in the plan tree's planner, its aggregator, the classifier, the scope picker, the summariser and the tool loop's classifyOllamaError with a call to isModelCallFailure. Each keeps its own error classes and codes.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "No file under src/analyze other than model-failure.ts contains the failure-text list (a test searches the source)",
+          "For each of the six callers a stand-in CLI call failure gives that caller's model-unavailable error and a shape failure gives its schema error",
+          "Every existing test of those six classifiers is run under Node 22 and still passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "source search: the failure-text list exists only in model-failure.ts"
+          },
+          {
+            "level": "unit",
+            "name": "each of the six callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "The scope module: resolve a scope once",
+        "summary": "Add src/analyze/context/scope.ts with resolveScope, ResolvedScope and ScopeDeps (registered repos, entities by file, entities by repo, connections by repo). Rules: directory kinds keep their own directory as lookupPath; a file and a symbol use the containing registered repo; a symbol is '<absolute file path>#<name>', split at the last '#', and must match exactly one stored entity; a connection id must be declared by exactly one registered repo. A symbol outside any registered repo, with an empty registry, or in a repo with no stored entities fails as not indexed. Nothing calls it yet.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "resolveScope returns the stated fields for each of the seven kinds, with longest-prefix choice between nested repos",
+          "A module and a manifest directory inside a registered repo keep their own directory as lookupPath; making lookupPath the repo root makes this test fail",
+          "Symbol: no '#', no entity, two entities (both listed) fail with ScopeRefUnresolvedError; the three not-indexed cases fail with ScopeNotIndexedError",
+          "Connection: one repo resolves; none and two fail with ScopeRefUnresolvedError naming the repos; a connections file that fails to parse is reported, not skipped",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveScope for each of the seven kinds, with nested repos"
+          },
+          {
+            "level": "unit",
+            "name": "resolveScope symbol cases: split, no '#', none, two, '#' in the path"
+          },
+          {
+            "level": "unit",
+            "name": "resolveScope connection cases: one, none, two, unparseable connections file"
+          },
+          {
+            "level": "unit",
+            "name": "resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null"
+          },
+          {
+            "level": "unit",
+            "name": "resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Correct the pairing table, the symbol form in the validator, and the classifier prompt",
+        "summary": "Change TARGET_TO_KINDS to the corrected rows with its comment. Make the validator split a symbol's value at the last '#' before any file-system test. Rewrite the classifier prompt's pairing list and its rule for a symbol's value. Rewrite the matrix test and add the test that compares the prompt with the table.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The matrix test asserts every pairing of five kinds of source and seven kinds of scope against the corrected rows",
+          "A symbol value in the new form passes when its file exists and fails with 'scope-ref-unresolved' with no '#' or a file part that is not a file",
+          "A test reads the classifier prompt and finds the same rows as the exported table; changing one row in either makes it fail",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pairing matrix: thirty-five pairings against the corrected rows"
+          },
+          {
+            "level": "unit",
+            "name": "validator symbol form: passes, no '#', file part not a file"
+          },
+          {
+            "level": "unit",
+            "name": "classifier prompt's pairing list equals the exported table"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The pipeline returns a named cause, and one table converts it to an error",
+        "summary": "Change the pipeline's return type to the three-case outcome with the eight causes. Give each of its null returns its cause, including the catch-all after the answer-writing call. Add the exhaustive table from cause to error in runShaper, report a bundle that fails validation as ShaperAnswerInvalidError, and delete the single 'model unavailable' throw. Export the pipeline for tests with four steps passed in (planning, lookups, answer writing, free-form replacement). Both gates stay in this task, each returning its own cause.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The pipeline returns each of the eight causes for the stand-in input that produces it, and 'not-applicable' for classification and task modes",
+          "The table has one case per cause with a never check and no bare default; only the two model-failed causes give ShaperLlmUnavailableError",
+          "Each error's message states its cause; none says retries were exhausted; the two prompt-missing errors carry the prompt's path",
+          "For a request with a focus on a repo, the planning, lookup and answer-writing stand-ins each receive the same arguments as a baseline recorded before the change, and the bundle is equal",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in"
+          },
+          {
+            "level": "unit",
+            "name": "pipeline returns 'not-applicable' for classification and task modes"
+          },
+          {
+            "level": "unit",
+            "name": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for the two model-failed causes"
+          },
+          {
+            "level": "unit",
+            "name": "runShaper throws ShaperAnswerInvalidError with stage 'bundle validation' for an invalid bundle"
+          },
+          {
+            "level": "unit",
+            "name": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider"
+          },
+          {
+            "level": "unit",
+            "name": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline"
+          },
+          {
+            "level": "unit",
+            "name": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Resolve the scope for every mode inside the context builder",
+        "summary": "In runShaper, make the pairing check for run mode, then call resolveScope for every mode. Move the readers inside the context builder to the resolved scope: the cache freshness read, the tool loop's path at both call sites, the pipeline's lookup path and freshness read, and the indexed check, whose signature changes to take the resolved scope. Delete resolveRepoPath, inferRepoPath and inferScopePath with the test export. Remove the pipeline's gate on the kind of scope.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The pipeline returns a bundle for a file, a symbol, a manifest directory and a connection scope with the resolved path given to the lookups; restoring the gate on the kind of scope makes this test fail",
+          "A module scope gives the lookups the module's own directory and the same lookup cache key as before",
+          "runShaper in run mode refuses a pairing the table does not allow, with ScopeKindTargetMismatchError, before resolving the scope",
+          "The rewritten tests of the indexed check (eight calls) and of scope-path inference keep every case they had, and add the symbol exception",
+          "A generic request and a classification-mode request on a symbol in a repo with no stored entities fail as not indexed; the same on a module proceed",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path"
+          },
+          {
+            "level": "unit",
+            "name": "module scope: lookup path and cache key unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "runShaper refuses a pairing the table does not allow before resolving the scope"
+          },
+          {
+            "level": "unit",
+            "name": "indexed check takes a resolved scope: eight rewritten cases plus the symbol exception"
+          },
+          {
+            "level": "unit",
+            "name": "scope-path inference cases rewritten against resolveScope"
+          },
+          {
+            "level": "unit",
+            "name": "tool loop's path for classification and task modes is the resolved lookupPath"
+          },
+          {
+            "level": "unit",
+            "name": "generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "The planning prompt's user turn and the step tool take the resolved scope",
+        "summary": "Give decompose's arguments and prepareDecompose a resolved scope, and have buildMessages print lookupPath as the 'Repo path' line plus one line naming the file, entity or connection. In the step tool, resolve the scope and make the pairing test in the start phase, and have the plan and narrow phases resolve the scope again from the intent in the state token, whose shape does not change.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "For a module scope the user turn's 'Repo path' line is the module's directory, as before; for a file, a symbol and a connection it has the further line",
+          "prepareDecompose given a resolved scope returns the same user turn as decompose builds for it",
+          "The step tool's start phase passes a resolved workspace scope and returns an error result, minting no state, for a stand-in pairing the table refuses",
+          "A state token minted without any scope field still drives the plan and narrow phases",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "planning user turn: 'Repo path' from lookupPath, and the line naming a file, entity or connection"
+          },
+          {
+            "level": "unit",
+            "name": "prepareDecompose and decompose build the same user turn for a resolved scope"
+          },
+          {
+            "level": "unit",
+            "name": "step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope"
+          },
+          {
+            "level": "unit",
+            "name": "step tool plan and narrow phases resolve the scope from a token that has no scope field"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "The free-form lookup receives the request's scope",
+        "summary": "Add the resolved scope to the lookup executor's runner context and to executePlan's and stepPlan's arguments. Make the free-form lookup build its intent with the request's own scope and pass the resolved scope to runShaperToolLoop, whose arguments gain it and which takes the loop's path from lookupPath.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A file-scope request whose plan is replaced by the free-form lookup builds an intent of kind 'file' with the file's path, and the loop's path is the resolved repo",
+          "For a connection the loop's path is the connection's repo, not the working directory",
+          "The existing free-form tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "free-form lookup for a file-scope request builds a file intent and uses the resolved repo as the loop's path"
+          },
+          {
+            "level": "unit",
+            "name": "free-form loop's path for a connection is the connection's repo"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Serve a request with no focus",
+        "summary": "Add the section for an intent with no focus to the planning prompt, one recipe per kind of source, after the other recipes and before the output format, and name it from the user turn. Add the rule for an intent with no focus to the six answer-writing prompts. Change the free-form replacement's purpose for such an intent to a stated broad survey. Then remove the pipeline's gate on an unfocused intent.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace, and the planning stand-in received the unfocused intent; restoring the gate makes this test fail",
+          "The planning prompt has a recipe for each of the five kinds of source, naming only lookups that exist and no limit parameter; removing the section makes this test fail",
+          "Every prompt that prints the intent's focus states what to write when there is none; the test finds those prompts by search",
+          "An unfocused intent replaced by the free-form lookup gets the broad-survey purpose, not the classifier's reasoning text",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace"
+          },
+          {
+            "level": "unit",
+            "name": "planning prompt has a no-focus recipe per kind of source, with existing lookups and no limit parameter"
+          },
+          {
+            "level": "unit",
+            "name": "planning user turn for an unfocused intent names the no-focus section"
+          },
+          {
+            "level": "unit",
+            "name": "every prompt that prints the intent's focus states the no-focus rule"
+          },
+          {
+            "level": "unit",
+            "name": "free-form replacement's purpose for an unfocused intent is the broad survey"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "The plan tree's two classification branches",
+        "summary": "On the branch for a request with a stated kind of source, carry the trimmed prompt as the focus and call the validator on the intent. Supply the connection check from both callers of the classifier and from the daemon's classify request. Change the plan tree's classify mapping to return the validator's inner code and to pass other errors to the context mapping, and rewrite the two existing tests that pin the old behaviour.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t1",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "With a prompt the hinted intent is focused with the prompt as its focus; with an empty prompt it is unfocused",
+          "A hinted pairing the table refuses, and a scope that does not resolve, fail the run at stage 'classify' with the check's code and a failed run record",
+          "The classify mapping returns the inner code of ClassifierValidationExhausted and maps a context error through classifyShaperError",
+          "The classifier receives a connection check from each of its callers",
+          "The tests are run under Node 22 and pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "hinted request: focused with the prompt as focus, unfocused with an empty prompt"
+          },
+          {
+            "level": "integration",
+            "name": "hinted pairing the table refuses fails at 'classify' with a failed run record"
+          },
+          {
+            "level": "integration",
+            "name": "hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'"
+          },
+          {
+            "level": "integration",
+            "name": "hinted request with a valid pairing reaches the context builder and the planner"
+          },
+          {
+            "level": "unit",
+            "name": "plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten"
+          },
+          {
+            "level": "unit",
+            "name": "the classifier receives a connection check from each caller"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Live checks and the mirrored contract",
+        "summary": "Add the live tests gated by INSRC_LIVE_TESTS. They start the context build in process from this working tree, with the real model and the real stores read through the running daemon's index, so they do not depend on the installed daemon having the new code. Run them: an unfocused code request, a file scope and a symbol scope return a bundle; the real planning call follows the recipe; failures carry the right code. Record the three new codes for the IDE repository.",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "An unfocused code request on this repository returns a bundle whose focus layer says there is no focus and names the scope, with no 'undefined' and no '<intent.focus>'",
+          "The real planning call for an unfocused code request on a module returns the recipe's lookups on that module's path",
+          "A scope that does not resolve fails with 'scope-ref-unresolved' while the model is running",
+          "The full unit sweep of src/analyze, src/mcp and src/daemon passes under Node 22"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "unfocused code request on this repository returns a bundle with a no-focus focus layer"
+          },
+          {
+            "level": "live",
+            "name": "file scope and symbol scope return a bundle"
+          },
+          {
+            "level": "live",
+            "name": "real planning call follows the no-focus recipe for code and returns a free-form lookup for docs"
+          },
+          {
+            "level": "live",
+            "name": "failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "pipeline returns 'bundle' for an unfocused intent on a repo, a module and a workspace, and the planning stand-in received the unfocused intent (mutation: restore the focused gate, the test fails)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "pipeline returns 'bundle' for a file, a symbol, a manifest directory and a connection scope, and the lookup stand-in received the resolved repo as its path (mutation: restore the scope-kind gate)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "pipeline returns each of 'planner-model-failed', 'planner-prompt-missing', 'answer-model-failed', 'answer-prompt-missing', 'answer-invalid', 'invalid-input' for the stand-in error or input that causes it",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pipeline returns 'empty-plan' when the free-form replacement, passed in as a fourth stand-in, returns a plan with no lookups (with the real replacement the cause cannot be reached, since it always returns one lookup)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pipeline returns 'not-applicable' for classification and task modes",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unfocused intent that falls to the free-form lookup gets the stated broad-survey purpose and not the classifier's reasoning text (the existing case in freeform-fallback.test.ts:66, which asserts the reasoning text, is changed with it)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the table from cause to error: one case per member of PipelineCause, each asserting the error class and that only the two model-failed causes give ShaperLlmUnavailableError",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper throws ShaperAnswerInvalidError with stage 'bundle validation', not ShaperLlmUnavailableError and not ShaperSchemaUnrecoverable, when the pipeline's bundle fails validation",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the message of each error states its cause: 'bundle failed validation' for 'bundle-invalid', 'answer-writing output invalid' for 'answer-invalid', and the prompt file's path for the two prompt-missing causes; none contains 'exhausted' or 'retries'; for the two model-failed causes the message names the call that failed ('planning', 'answer writing') and, with a stand-in error from a provider that is not Ollama, does not contain 'Ollama'",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a file-scope request whose plan is replaced by the free-form lookup: the intent the free-form lookup builds has kind 'file' and the file's path, and the loop's path is the resolved repo (today the intent is a workspace scope on the repo)",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "runShaper in run mode refuses a code request on a connection scope with ScopeKindTargetMismatchError before resolving the scope, and accepts every pairing in the corrected table",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the planning prompt has the section for an intent with no focus, with a recipe for each of the five kinds of source, each naming only lookups that exist in the catalog and no limit parameter (the test reads the prompt file and the lookup registry)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the planning call's user turn for an unfocused intent names that section",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "every prompt under src/prompts/analyze that tells the model to write 'Intent focus: <intent.focus>' also states the rule for an intent with no focus (the test finds the prompts by searching for that line, so a prompt added later is covered)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "isModelCallFailure is true for each Ollama and socket text and for each of the CLI provider's call failures ('claude --print failed', 'claude exited with', 'codex emitted error event', 'codex exited with'), and false for a shape failure ('no structured_output', 'not parseable JSON')",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "with a stand-in provider that throws a CLI call failure, the planning call raises DecomposerLlmUnavailableError and the pipeline returns 'planner-model-failed' (not a free-form replacement), and the answer-writing call raises SynthesizerLlmUnavailableError and the pipeline returns 'answer-model-failed' (not 'answer-invalid')",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the message test for the two model-failed causes throws the classes the pipeline actually catches, DecomposerLlmUnavailableError and SynthesizerLlmUnavailableError, built from a CLI failure, and asserts the final message does not contain 'Ollama'",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "with a stand-in sampler that rejects, the sampling provider raises ModelCallFailedError, isModelCallFailure is true for it, and the pipeline returns 'planner-model-failed' and 'answer-model-failed' for the two calls; a sampling response that is not text is a shape failure",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "no file under src/analyze other than model-failure.ts contains the list of failure texts (the test searches the source for 'ECONNREFUSED'), so a ninth copy cannot be added unnoticed",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "for each of the six other callers (planner, aggregator, classifier, scope picker, summariser, tool loop), a stand-in CLI call failure is classified as that caller's model-unavailable error and a shape failure as its schema error",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveScope for each of the seven kinds inside a registered repo, including longest-prefix choice between nested repos",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "symbol: split at the last '#'; no '#'; no entity of that name; two entities of that name (the message lists both); a file path that itself contains '#'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "connection: found in one repo; in none; in two (the message names both); a connections file that fails to parse is reported, not skipped",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a path inside no registered repo gives repoPath null and the scope's own directory",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the planning prompt's user turn names the file, entity or connection from the ResolvedScope and prints the repo path, not the raw value",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the existing test of inferScopePath (src/analyze/context/__tests__/resolve-repo-indexed.test.ts:79-93) rewritten against resolveScope, keeping its cases",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareDecompose given a resolved scope returns the same user turn as decompose builds for it, and the step tool's start phase passes a resolved workspace scope",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the tool loop's path for classification, task and free-form use is the resolved lookupPath, and for a connection it is the connection's repo, not the working directory",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "a module scope and a manifest directory scope inside a registered repo: lookupPath is the scope's own directory, and the planning prompt's 'Repo path' line and the lookup executor's path are that directory, as today (mutation: make lookupPath the repo root, the test fails)",
+        "coveredByTaskIds": [
+          "t4",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a symbol scope in a registered repo with no stored entities fails with ScopeNotIndexedError, not ScopeRefUnresolvedError",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the step tool's plan and narrow phases resolve the scope from the intent in the state token, and a token without any scope field still works",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a generic request and a classification-mode request on a symbol in a registered repo with no stored entities both fail with ScopeNotIndexedError; the same two on a module in that repo proceed as today",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the step tool's start phase tests the pairing of the intent it builds: its workspace scope passes for every kind of source, and a stand-in scope the table refuses returns an error result and mints no state",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a symbol whose file is inside no registered repo, and a symbol with an empty registry, both fail with ScopeNotIndexedError with registeredAs undefined; a module with an empty registry proceeds as today",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the existing tests of the indexed check (invariants.test.ts, eight calls) rewritten to pass a resolved scope, keeping the cases for a registry with no repos and for a connection, and adding the symbol exception",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the matrix test rewritten to the corrected rows: every pairing of five kinds of source and seven kinds of scope asserted as accepted or refused (the existing 'infra+repo -> mismatch' case flips)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a symbol value in the new form passes when the file exists and fails with 'scope-ref-unresolved' when it has no '#' or the file part is not a file",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a connection is checked when the function is supplied, and both callers of the classifier now supply it (asserted on the argument the classifier receives)",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "the classifier prompt's pairing list states the same rows as the table: the test reads the prompt file and compares it with the exported table, so the two cannot drift",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the plan tree's and the daemon's classifyShaperError each map ShaperInvalidInputError, ShaperNoPlanError, ScopeRefUnresolvedError, ScopeKindTargetMismatchError and ShaperAnswerInvalidError to their codes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "one test iterates a single list of error classes (the five mapped today and the five new ones) through both functions and asserts the same code from each",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the plan tree's classifyClassifierError returns the inner code of ClassifierValidationExhausted for both inner codes, and passes ScopeNotIndexedError and ShaperLlmUnavailableError to the context mapping (today: 'classifier-validation-exhausted' and 'internal-error')",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "the three new codes are members of both RunErrorCode and AnalyzeRpcErrorCode (a compile-time assignment in a source file, since tsc skips tests)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the existing table test's ClassifierValidationExhausted row (orchestrator.test.ts:72) rewritten with a real ValidationFailure, expecting its inner code",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "with a prompt, the intent passed to the context builder has focused true and the prompt as focus; with an empty prompt it has focused false",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hinted kind of source that does not go with the scope fails the run at stage 'classify' with 'scope-ref-kind-target-mismatch' and writes a failed run record",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hinted request with a valid pairing reaches the context builder and the planner",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "the daemon's run-context request for an unfocused code request on this repository returns a bundle (the check of 2026-10-07 that failed at once)",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "the same for a file scope and for a symbol scope in the new form",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unfocused request with the model stopped fails with 'shaper-llm-unavailable', and a request whose scope does not resolve fails with 'scope-ref-unresolved' while the model is running",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "the real planning call for an unfocused code request on a module returns the recipe's lookups on that module's path, and for an unfocused docs request returns a single free-form lookup",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "the bundle returned for an unfocused code request has a focus layer that says there is no focus and names the scope, and does not contain the text 'undefined' or '<intent.focus>'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 (LLD-b9d5c5c40df5a574-s6) contract details: the pipeline's outcome, runShaper's cause table, resolveScope, the validator, runAnalyze, and the two mapping functions"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 data model changes: the new codes, PipelineOutcome, ResolvedScope, the typed errors, the symbol form, the hinted intent, the planning prompt's user turn and its no-focus section, the free-form lookup's scope, the answer-writing prompts, and how a failed model call is recognised"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 error paths: error cases, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 test strategy: six test levels with 53 subjects, and the acceptance mapping"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration: eight steps and the backward-compatibility statement"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s1 context of this plan: file sizes and call-site counts measured on 2026-10-07 by line count and text search, including the seven files that declare the model-failure text list"
+    }
+  ]
+}

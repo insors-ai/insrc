@@ -42,6 +42,7 @@ import {
 	STATE_VERSION,
 	type StepStatePayload,
 } from '../state.js';
+import { stepScope } from '../scope.js';
 import { refineSynthesizerKey } from '../synthesizer-key.js';
 import type {
 	StepInputPlan,
@@ -105,10 +106,13 @@ export async function handlePlan(
 	// executePlan; narrow-LLM explorations PAUSE here and return an
 	// emit_narrow envelope so the outer client's LLM produces the
 	// narrow output.
+	// The token carries the intent, not a resolved scope: resolve it again.
+	const scope = await stepScope(state.intent);
 	const step = await stepPlan({
 		runId:               state.runId,
-		repoPath:            state.repoPath,
-		closureRepos:        [state.repoPath],
+		repoPath:            scope.lookupPath,
+		closureRepos:        [scope.lookupPath],
+		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		plan:                validatedPlan,
 	});

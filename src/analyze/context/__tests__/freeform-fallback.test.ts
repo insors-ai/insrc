@@ -62,9 +62,27 @@ test('fallbackFreeformPlan preserves intent.focus in the step purpose', () => {
 	assert.equal((plan.explorations[0]!.params as { purpose: string }).purpose, 'trace the RSS');
 });
 
-test('fallbackFreeformPlan falls back to reasoning when focus is unset', () => {
-	const plan = _fallbackFreeformPlanForTest({ ...INTENT, focus: undefined, reasoning: 'r' }, 'code');
-	assert.equal((plan.explorations[0]!.params as { purpose: string }).purpose, 'r');
+test("free-form replacement's purpose for an unfocused intent is the broad survey", () => {
+	// An intent with no focus has no question to hand the loop. It used
+	// to be handed the classifier's reasoning text -- a note about how
+	// the request was classified, not a question.
+	const unfocused = {
+		...INTENT, focused: false, focus: undefined,
+		reasoning: 'target hinted via slash command (classifier skipped); scope hinted',
+	};
+	const plan = _fallbackFreeformPlanForTest(unfocused, 'code');
+	const step = plan.explorations[0]!;
+	const purpose = (step.params as { purpose: string }).purpose;
+	assert.equal(purpose, 'Broad survey of the workspace /tmp/probe-repo');
+	assert.ok(!purpose.includes('classifier'), purpose);
+	assert.ok(!purpose.includes('undefined'), purpose);
+	assert.ok(step.purpose.endsWith('Broad survey of the workspace /tmp/probe-repo'), step.purpose);
+
+	// The scope's kind and value are named, whatever they are.
+	const onModule = _fallbackFreeformPlanForTest(
+		{ ...unfocused, scopeRef: { kind: 'module', value: '/r/src/billing' } }, 'code',
+	);
+	assert.equal((onModule.explorations[0]!.params as { purpose: string }).purpose, 'Broad survey of the module /r/src/billing');
 });
 
 // ---------------------------------------------------------------------------

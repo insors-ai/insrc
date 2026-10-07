@@ -22,6 +22,7 @@ import { resolveRepoLastIndexedAt } from '../../../analyze/context/driver.js';
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import { readBundleForStep } from '../cache-lookup.js';
 import { encodeState, STATE_VERSION, type StepStatePayload } from '../state.js';
+import { stepScope } from '../scope.js';
 import { pickSynthesizerKey } from '../synthesizer-key.js';
 import type { StepInputStart, StepOutputDone, StepOutputEmitPlan } from '../types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -57,6 +58,10 @@ export async function handleStart(
 		reasoning: `insrc_analyze_step invocation: ${input.focus}`,
 	};
 
+	// Check the pairing and resolve the scope before anything is
+	// minted: a refused pairing throws here, so no state exists for it.
+	const resolvedScope = await stepScope(intent);
+
 	const synthesizerKey = pickSynthesizerKey(target);
 	const repoIndexedAt  = (await resolveRepoLastIndexedAt(repoPath)) ?? null;
 
@@ -88,7 +93,7 @@ export async function handleStart(
 	}
 
 	// (3) Fresh run. Load decomposer prompt + schema; seed state.
-	const prepared = prepareDecompose(intent);
+	const prepared = prepareDecompose(intent, resolvedScope);
 
 	const state: StepStatePayload = {
 		version:        STATE_VERSION,

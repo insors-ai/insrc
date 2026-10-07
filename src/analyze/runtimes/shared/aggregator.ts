@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { resolveRoleProvider } from '../../context/shaper-provider.js';
 import { getLogger } from '../../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from '../../context/model-failure.js';
 import type {
 	AnalyzeScope,
 	AnalyzeTarget,
@@ -228,25 +229,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification (mirrors planner/driver.ts + shaper patterns)
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
 	if (!(err instanceof Error)) return new Error(`aggregator-internal: ${String(err)}`);
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new Error(`aggregator-llm-unavailable: ${msg}`);
-	}
-	return new Error(`aggregator-schema-unrecoverable: ${msg}`);
+	if (isModelCallFailure(err)) return new Error(`aggregator-llm-unavailable: ${modelCallFailureDetail(err)}`);
+	return new Error(`aggregator-schema-unrecoverable: ${err.message}`);
 }
 
 // ---------------------------------------------------------------------------

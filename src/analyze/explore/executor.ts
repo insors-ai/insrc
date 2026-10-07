@@ -24,6 +24,7 @@
  * responsibility to emit a valid topological ordering).
  */
 
+import type { ResolvedScope } from '../context/scope.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -125,6 +126,8 @@ export interface ExecutePlanArgs {
 	 *  every cached exploration for the repo. */
 	readonly repoLastIndexedAtMs: bigint;
 	readonly plan:             ExplorationPlan;
+	/** The request's resolved scope, handed to each runner. */
+	readonly scope?:           ResolvedScope | undefined;
 }
 
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
@@ -204,6 +207,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 						closureRepos: args.closureRepos,
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
+						scope:        args.scope,
 					};
 					output = await runner(exp, ctx);
 					if (cacheable) {
@@ -493,6 +497,7 @@ export async function stepPlan(
 					closureRepos: args.closureRepos,
 					readDep:      (id: string) => outputsById.get(id),
 					ignoreFilter,
+					scope:        args.scope,
 				};
 				const prep = await narrow.prepare(exp, ctx);
 				if (prep.kind === 'short-circuit') {
@@ -539,6 +544,7 @@ export async function stepPlan(
 						closureRepos: args.closureRepos,
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
+						scope:        args.scope,
 					};
 					output = await runner(exp, ctx);
 					await putCachedExploration(

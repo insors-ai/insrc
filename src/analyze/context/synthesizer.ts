@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
@@ -56,9 +57,15 @@ const SYNTHESIZE_INFRA_PROMPT_REL      = 'prompts/analyze/synthesize.infra.syste
 // ---------------------------------------------------------------------------
 
 export class SynthesizerLlmUnavailableError extends Error {
+	/** The underlying failure's own message, without this error's prefix. */
+	readonly detail: string;
+
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for synthesizer: ${cause}`);
+		// Provider-neutral: the answer-writing provider is role-routed
+		// and need not be Ollama.
+		super(`The model call for answer writing failed: ${cause}`);
 		this.name = 'SynthesizerLlmUnavailableError';
+		this.detail = cause;
 	}
 }
 
@@ -70,9 +77,12 @@ export class SynthesizerSchemaUnrecoverable extends Error {
 }
 
 export class SynthesizerPromptMissingError extends Error {
+	readonly path: string;
+
 	constructor(path: string) {
 		super(`Synthesizer prompt file missing: ${path}`);
 		this.name = 'SynthesizerPromptMissingError';
+		this.path = path;
 	}
 }
 
@@ -329,25 +339,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
+	if (isModelCallFailure(err)) return new SynthesizerLlmUnavailableError(modelCallFailureDetail(err));
 	if (!(err instanceof Error)) return new SynthesizerSchemaUnrecoverable([String(err)]);
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new SynthesizerLlmUnavailableError(msg);
-	}
-	return new SynthesizerSchemaUnrecoverable([msg]);
+	return new SynthesizerSchemaUnrecoverable([err.message]);
 }
 
 // ---------------------------------------------------------------------------

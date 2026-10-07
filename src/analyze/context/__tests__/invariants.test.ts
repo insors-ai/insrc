@@ -29,6 +29,8 @@ import {
 	ensureNonEmptyClosure,
 } from '../invariants.js';
 import type { ClassifiedIntent } from '../types.js';
+import { ScopeRefUnresolvedError } from '../invariants.js';
+import { resolveScope, type ResolvedScope } from '../scope.js';
 
 // ---------------------------------------------------------------------------
 // Per-test LMDB sandbox
@@ -59,6 +61,22 @@ function codeIntent(value: string, kind: ClassifiedIntent['scopeRef']['kind'] = 
 		scopeRef:  { kind, value },
 		reasoning: 'invariants test fixture',
 	};
+}
+
+/**
+ * The resolved scope the indexed check now takes. Built by hand here:
+ * the check does its own registry matching from the scope's path, so
+ * these cases exercise exactly what they did when it took an intent.
+ */
+function scopeOf(intent: ClassifiedIntent): ResolvedScope {
+	const { kind, value } = intent.scopeRef;
+	if (kind === 'connection') {
+		return { kind, value, repoPath: '/some/repo', lookupPath: '/some/repo', connectionId: value };
+	}
+	if (kind === 'file') {
+		return { kind, value, repoPath: null, lookupPath: value, filePath: value };
+	}
+	return { kind, value, repoPath: null, lookupPath: value };
 }
 
 function makeEntity(repo: string, file: string): Entity {
@@ -92,7 +110,7 @@ async function registerAndSeedRepo(path: string, withEntities: boolean): Promise
 
 test('ensureNonEmptyClosure: pristine registry -> skipped silently, returns undefined', async () => {
 	const intent = codeIntent('/some/scope/path');
-	const result = await ensureNonEmptyClosure(intent);
+	const result = await ensureNonEmptyClosure(scopeOf(intent));
 	assert.equal(result, undefined);
 });
 
@@ -104,7 +122,7 @@ test('ensureNonEmptyClosure: connection-kind scope is skipped silently', async (
 	// Even with repos in the registry, a connection scope skips.
 	await registerAndSeedRepo('/some/repo', true);
 	const intent = codeIntent('my-conn', 'connection');
-	const result = await ensureNonEmptyClosure(intent);
+	const result = await ensureNonEmptyClosure(scopeOf(intent));
 	assert.equal(result, undefined);
 });
 
@@ -116,7 +134,7 @@ test('ensureNonEmptyClosure: registered repo with entities -> returns repo path'
 	const repoPath = '/registered/with-entities';
 	await registerAndSeedRepo(repoPath, true);
 	const intent = codeIntent(repoPath);
-	const result = await ensureNonEmptyClosure(intent);
+	const result = await ensureNonEmptyClosure(scopeOf(intent));
 	assert.equal(result, repoPath);
 });
 
@@ -124,7 +142,7 @@ test('ensureNonEmptyClosure: scope nested under registered repo with entities ->
 	const repoPath = '/registered/parent';
 	await registerAndSeedRepo(repoPath, true);
 	const intent = codeIntent(`${repoPath}/src/feature/x.ts`, 'file');
-	const result = await ensureNonEmptyClosure(intent);
+	const result = await ensureNonEmptyClosure(scopeOf(intent));
 	assert.equal(result, repoPath);
 });
 
@@ -137,7 +155,7 @@ test('ensureNonEmptyClosure: registered repo with ZERO entities -> ScopeNotIndex
 	await registerAndSeedRepo(repoPath, false);
 	const intent = codeIntent(repoPath);
 	await assert.rejects(
-		() => ensureNonEmptyClosure(intent),
+		() => ensureNonEmptyClosure(scopeOf(intent)),
 		(err: unknown) => {
 			assert.ok(err instanceof ScopeNotIndexedError);
 			assert.equal(err.scopePath, repoPath);
@@ -157,7 +175,7 @@ test('ensureNonEmptyClosure: scope outside every registered repo -> ScopeNotInde
 	await registerAndSeedRepo('/registered/elsewhere', true);
 	const intent = codeIntent('/unregistered/scope');
 	await assert.rejects(
-		() => ensureNonEmptyClosure(intent),
+		() => ensureNonEmptyClosure(scopeOf(intent)),
 		(err: unknown) => {
 			assert.ok(err instanceof ScopeNotIndexedError);
 			assert.equal(err.scopePath, '/unregistered/scope');
@@ -176,7 +194,7 @@ test('ensureNonEmptyClosure: longest-prefix repo wins when nested', async () => 
 	await registerAndSeedRepo('/registered/outer',          true);
 	await registerAndSeedRepo('/registered/outer/inner',    true);
 	const intent = codeIntent('/registered/outer/inner/deep/x.ts', 'file');
-	const result = await ensureNonEmptyClosure(intent);
+	const result = await ensureNonEmptyClosure(scopeOf(intent));
 	assert.equal(result, '/registered/outer/inner');
 });
 
@@ -188,7 +206,7 @@ test('ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)', as
 	await registerAndSeedRepo('/registered/repo-c', true);
 	const intent = codeIntent('/registered/repo-c-other');
 	await assert.rejects(
-		() => ensureNonEmptyClosure(intent),
+		() => ensureNonEmptyClosure(scopeOf(intent)),
 		ScopeNotIndexedError,
 	);
 });
@@ -212,4 +230,55 @@ test('ScopeNotIndexedError handles undefined registeredAs', () => {
 	const e = new ScopeNotIndexedError('/scope', undefined, 'reason');
 	assert.equal(e.registeredAs, undefined);
 	assert.match(e.message, /No registered repo contains this path/);
+});
+
+// ---------------------------------------------------------------------------
+// The symbol exception: a symbol needs the index in every mode and for
+// every kind of source, because it resolves to a stored entity. The
+// check is made when the scope is resolved -- against the real store.
+// ---------------------------------------------------------------------------
+
+test('symbol exception: a symbol in a registered repo with ZERO entities -> ScopeNotIndexedError, not "no entity of that name"', async () => {
+	const repoPath = '/registered/empty-for-symbol';
+	await registerAndSeedRepo(repoPath, false);
+	await assert.rejects(
+		() => resolveScope({ kind: 'symbol', value: `${repoPath}/src/pay.ts#settle` }),
+		(err: unknown) => {
+			assert.ok(err instanceof ScopeNotIndexedError, `got ${(err as Error).name}: ${(err as Error).message}`);
+			assert.ok(!(err instanceof ScopeRefUnresolvedError));
+			assert.equal(err.registeredAs, repoPath);
+			assert.equal(err.scopePath, `${repoPath}/src/pay.ts`);
+			return true;
+		},
+	);
+});
+
+test('symbol exception: a symbol outside every registered repo, and with a pristine registry -> ScopeNotIndexedError', async () => {
+	// pristine registry: the check above skips silently for other kinds; a symbol cannot.
+	await assert.rejects(
+		() => resolveScope({ kind: 'symbol', value: '/nowhere/src/pay.ts#settle' }),
+		(err: unknown) => err instanceof ScopeNotIndexedError && err.registeredAs === undefined,
+	);
+	await registerAndSeedRepo('/registered/other', true);
+	await assert.rejects(
+		() => resolveScope({ kind: 'symbol', value: '/nowhere/src/pay.ts#settle' }),
+		(err: unknown) => err instanceof ScopeNotIndexedError && err.registeredAs === undefined,
+	);
+});
+
+test('symbol exception: in an indexed repo a symbol resolves to its stored entity; an unknown name is unresolved', async () => {
+	const repoPath = '/registered/indexed-for-symbol';
+	await registerAndSeedRepo(repoPath, true);   // seeds one entity 'fn' in <repo>/index.ts
+	const resolved = await resolveScope({ kind: 'symbol', value: `${repoPath}/index.ts#fn` });
+	assert.equal(resolved.repoPath, repoPath);
+	assert.equal(resolved.lookupPath, repoPath);
+	assert.equal(resolved.entityName, 'fn');
+	assert.equal(typeof resolved.entityId, 'string');
+	// ... and the indexed check passes for it.
+	assert.equal(await ensureNonEmptyClosure(resolved), repoPath);
+
+	await assert.rejects(
+		() => resolveScope({ kind: 'symbol', value: `${repoPath}/index.ts#missing` }),
+		(err: unknown) => err instanceof ScopeRefUnresolvedError,
+	);
 });

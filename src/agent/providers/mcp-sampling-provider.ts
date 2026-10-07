@@ -63,6 +63,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
+import { ModelCallFailedError, ModelResponseShapeError } from './model-call-error.js';
 import {
 	validateAgainstSchema,
 	withStructuredRetry,
@@ -170,6 +171,30 @@ export class McpSamplingProvider implements LLMProvider {
 		};
 	}
 
+	/**
+	 * Send one sampling request. A request that is rejected, times
+	 * out or breaks in transport is a failed model call and is raised
+	 * as ModelCallFailedError -- the client words such a failure in
+	 * its own way, so text cannot identify it. A response that arrived
+	 * in an unusable shape keeps its own error.
+	 */
+	private async sample(req: SamplingRequest): Promise<SamplingResponse> {
+		try {
+			return await this.sampler(req);
+		} catch (err) {
+			if (err instanceof ModelCallFailedError || err instanceof ModelResponseShapeError) throw err;
+			// A programming error inside the callback (a bad property
+			// access while building the request, say) is a bug here, not
+			// a failed model call: let it surface as what it is.
+			// A transport failure can arrive AS a TypeError (undici raises
+			// `TypeError: fetch failed` / `terminated`): that one is a
+			// failed call. Any other is a bug.
+			const transport = err instanceof TypeError && /fetch failed|terminated|network|socket/i.test(err.message);
+			if (!transport && (err instanceof TypeError || err instanceof RangeError || err instanceof ReferenceError)) throw err;
+			throw new ModelCallFailedError(err instanceof Error ? err.message : String(err));
+		}
+	}
+
 	// -- complete -------------------------------------------------------
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
@@ -183,7 +208,7 @@ export class McpSamplingProvider implements LLMProvider {
 		}
 		const req = this.buildRequest(messages, opts);
 		const t0 = Date.now();
-		const res = await this.sampler(req);
+		const res = await this.sample(req);
 		log.debug(
 			{
 				elapsedMs:    Date.now() - t0,
@@ -213,7 +238,12 @@ export class McpSamplingProvider implements LLMProvider {
 		opts?:    StructuredCompletionOpts,
 	): Promise<T> {
 		const maxAttempts = opts?.maxAttempts ?? 3;
-		return withStructuredRetry<T>(
+		// withStructuredRetry turns anything the call throws into a
+		// retry and, at the end, into one untyped "validation failed"
+		// error. Remember whether the LAST attempt failed because the
+		// sampling request itself failed, so that case keeps its type.
+		let lastCallFailure: ModelCallFailedError | undefined;
+		const run = withStructuredRetry<T>(
 			async (retryNote) => {
 				const augmented = augmentForSchema(messages, schema, retryNote);
 				const req = this.buildRequest(augmented, {
@@ -221,7 +251,14 @@ export class McpSamplingProvider implements LLMProvider {
 					...(opts?.temperature !== undefined ? { temperature: opts.temperature } : {}),
 				});
 				const t0 = Date.now();
-				const res = await this.sampler(req);
+				lastCallFailure = undefined;
+				let res: SamplingResponse;
+				try {
+					res = await this.sample(req);
+				} catch (err) {
+					if (err instanceof ModelCallFailedError) lastCallFailure = err;
+					throw err;
+				}
 				log.debug(
 					{
 						elapsedMs:    Date.now() - t0,
@@ -236,6 +273,12 @@ export class McpSamplingProvider implements LLMProvider {
 			(raw) => validateAgainstSchema<T>(schema, raw),
 			maxAttempts,
 		);
+		try {
+			return await run;
+		} catch (err) {
+			if (lastCallFailure !== undefined) throw lastCallFailure;
+			throw err;
+		}
 	}
 
 	// -- stream ---------------------------------------------------------

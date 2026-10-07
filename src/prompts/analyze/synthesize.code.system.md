@@ -88,6 +88,7 @@ Every layer is a **single JSON string** in your output. Use Markdown headings in
     - `Resolved target: <path from concept.resolve hits[0].path>`
     - `Confidence: <score>` (from `hits[0].score` -- flag if < 0.5)
     - `Intent focus: <intent.focus>`
+    - When the intent has no focus (`focused` is false), write that line as `Intent focus: none (broad survey of <scopeRef.kind> <scopeRef.value>)`; a `system` line that takes its subject from the focus takes `<scopeRef.value>` instead; and a line that draws on a lookup the plan did not run is written as `not run`. Never print a placeholder or the word `undefined`.
     - `Scope bucket: <intent.scope>`
 
 - **`summary`** — 1-2 paragraphs framing the module. Draw ONLY from the exploration outputs:

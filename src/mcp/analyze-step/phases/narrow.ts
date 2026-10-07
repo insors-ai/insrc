@@ -27,6 +27,7 @@
 import { getNarrowRunner, stepPlan } from '../../../analyze/explore/index.js';
 import { putCachedExploration } from '../../../db/exploration-cache.js';
 import { getLogger } from '../../../shared/logger.js';
+import { stepScope } from '../scope.js';
 import { prepareSynthesize } from '../../../analyze/context/synthesizer.js';
 
 import {
@@ -168,10 +169,13 @@ export async function handleNarrow(
 		'insrc_analyze_step[narrow]: finalized; resuming stepPlan',
 	);
 
+	// The token carries the intent, not a resolved scope: resolve it again.
+	const scope = await stepScope(state.intent);
 	const step = await stepPlan({
 		runId:               state.runId,
-		repoPath:            state.repoPath,
-		closureRepos:        [state.repoPath],
+		repoPath:            scope.lookupPath,
+		closureRepos:        [scope.lookupPath],
+		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		plan:                state.plan,
 		resumeState: {

@@ -51,6 +51,7 @@ Every layer is a **single JSON string** in your output. Use Markdown headings in
 
 - **`focus`** — one paragraph restating the query framing:
     - `Intent focus: <intent.focus>`
+    - When the intent has no focus (`focused` is false), write that line as `Intent focus: none (broad survey of <scopeRef.kind> <scopeRef.value>)`; a `system` line that takes its subject from the focus takes `<scopeRef.value>` instead; and a line that draws on a lookup the plan did not run is written as `not run`. Never print a placeholder or the word `undefined`.
     - `Answer type: <plan.answerType>`
     - `Scope bucket: <intent.scope>`
     - `Retrieved section count: <sum of retrievedSectionCount + doc.mention.hits.length across the outputs>`

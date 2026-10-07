@@ -31,6 +31,7 @@ import type {
 	SamplingRequest,
 	SamplingResponse,
 } from '../agent/providers/mcp-sampling-provider.js';
+import { ModelResponseShapeError } from '../agent/providers/model-call-error.js';
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('mcp:sampling-bridge');
@@ -141,7 +142,7 @@ export function toSdkParams(request: SamplingRequest): CreateMessageRequestParam
 export function fromSdkResult(result: CreateMessageResult): SamplingResponse {
 	const content = extractTextContent(result.content);
 	if (content === undefined) {
-		throw new Error(
+		throw new ModelResponseShapeError(
 			`mcp sampling: response content was not text (type=${(result.content as { type?: string }).type ?? 'unknown'})`,
 		);
 	}

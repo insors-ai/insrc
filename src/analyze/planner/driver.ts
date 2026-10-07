@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { getLogger } from '../../shared/logger.js';
+import { isModelCallFailure, modelCallFailureDetail } from '../context/model-failure.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
 import { CONTRACT_FOOTER_MD } from '../contract.js';
 import { assembleMarkdown } from '../context/bundle.js';
@@ -502,25 +503,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Error classification (mirrors the shaper + classifier surface)
 // ---------------------------------------------------------------------------
 
-const UNAVAILABLE_PATTERNS = [
-	'Ollama is not running',
-	'Model not found',
-	'ECONNREFUSED',
-	'ECONNRESET',
-	'fetch failed',
-	'socket hang up',
-	'EPIPE',
-	'other side closed',
-	'Did not receive done or success response in stream',
-];
-
 function classifyError(err: unknown): Error {
 	if (!(err instanceof Error)) return new Error(String(err));
-	const msg = err.message;
-	for (const pat of UNAVAILABLE_PATTERNS) {
-		if (msg.includes(pat)) return new PlanBuilderLlmUnavailableError(msg);
-	}
-	return new PlanBuilderSchemaUnrecoverable([msg]);
+	if (isModelCallFailure(err)) return new PlanBuilderLlmUnavailableError(modelCallFailureDetail(err));
+	return new PlanBuilderSchemaUnrecoverable([err.message]);
 }
 
 // ---------------------------------------------------------------------------

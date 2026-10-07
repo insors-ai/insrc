@@ -1,0 +1,310 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791369976484-ax2581",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-07T10:46:16.522Z",
+    "model": "claude:opus",
+    "elapsedMs": 218944,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/agent/providers/__tests__/mcp-sampling-provider.test.ts",
+        "src/agent/providers/mcp-sampling-provider.ts",
+        "src/agent/providers/model-call-error.ts",
+        "src/analyze/classifier/__tests__/validate.test.ts",
+        "src/analyze/classifier/driver.ts",
+        "src/analyze/classifier/scope-picker.ts",
+        "src/analyze/classifier/validate.ts",
+        "src/analyze/context/__tests__/decompose-scope.test.ts",
+        "src/analyze/context/__tests__/freeform-fallback.test.ts",
+        "src/analyze/context/__tests__/invariants.test.ts",
+        "src/analyze/context/__tests__/model-failure-callers.test.ts",
+        "src/analyze/context/__tests__/model-failure.test.ts",
+        "src/analyze/context/__tests__/no-focus-prompts.test.ts",
+        "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+        "src/analyze/context/__tests__/prepare-scope.test.ts",
+        "src/analyze/context/__tests__/resolve-repo-indexed.test.ts",
+        "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+        "src/analyze/context/__tests__/scope.test.ts",
+        "src/analyze/context/__tests__/shaper-errors.test.ts",
+        "src/analyze/context/__tests__/unfocused.live.test.ts",
+        "src/analyze/context/decomposer.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/invariants.ts",
+        "src/analyze/context/model-failure.ts",
+        "src/analyze/context/scope.ts",
+        "src/analyze/context/synthesizer.ts",
+        "src/analyze/explore/__tests__/executor-lmdb.test.ts",
+        "src/analyze/explore/__tests__/freeform-probe-scope.test.ts",
+        "src/analyze/explore/executor.ts",
+        "src/analyze/explore/freeform-probe.ts",
+        "src/analyze/explore/types.ts",
+        "src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+        "src/analyze/orchestrator/__tests__/orchestrator.test.ts",
+        "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+        "src/analyze/orchestrator/driver.ts",
+        "src/analyze/orchestrator/types.ts",
+        "src/analyze/planner/driver.ts",
+        "src/analyze/runtimes/shared/aggregator.ts",
+        "src/analyze/summariser/driver.ts",
+        "src/daemon/analyze-rpc.ts",
+        "src/mcp/__tests__/analyze-step-scope.test.ts",
+        "src/mcp/analyze-step/phases/narrow.ts",
+        "src/mcp/analyze-step/phases/plan.ts",
+        "src/mcp/analyze-step/phases/start.ts",
+        "src/mcp/analyze-step/scope.ts",
+        "src/mcp/sampling-bridge.ts",
+        "src/prompts/analyze/classify.system.md",
+        "src/prompts/analyze/decompose.system.md",
+        "src/prompts/analyze/synthesize.adherence.system.md",
+        "src/prompts/analyze/synthesize.capability.system.md",
+        "src/prompts/analyze/synthesize.code.system.md",
+        "src/prompts/analyze/synthesize.data.system.md",
+        "src/prompts/analyze/synthesize.docs.system.md",
+        "src/prompts/analyze/synthesize.infra.system.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts:163",
+            "message": "The test named 'hinted request with a valid pairing reaches the context builder and the planner' never reaches the planner. It runs against a sandbox directory in no registered repo, so the run stops at the context builder's indexed check with 'scope-not-indexed' at stage 'plan'; the test's own comment defers the planner to the live checks. The LLD specifies this integration level with the classifier, context builder and planner stood in (as orchestrator.test.ts does), so the planner half of the ac2 proving test is not exercised, nor is the intent actually received by the context builder asserted (only the 'classified' event).",
+            "expectationRef": "LLD testStrategy integration level: 'a hinted request with a valid pairing reaches the context builder and the planner' (with the classifier, context builder and planner stood in); PLAN t11 integration test of the same name; acceptanceMapping ac2"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/classifier/driver.ts:119",
+            "message": "The connection check is not supplied by the classifier's callers. Neither the plan tree nor the daemon's classify request passes `connectionExists`; instead the classifier defaults it internally through connectionCheckFor(). The validator's check does run for every caller, but the approved design places the supply at the two call sites and at the daemon's classify request, and the proving test was to assert on the argument the classifier receives. The test instead asserts connectionCheckFor({}) === connectionIsRegistered, which does not show either caller passing anything.",
+            "expectationRef": "PLAN t11: 'Supply the connection check from both callers of the classifier and from the daemon's classify request' / acceptance check 'The classifier receives a connection check from each of its callers'; LLD validateIntentSemantics.connectionExists: 'Now supplied by both callers of the classifier'; LLD test 'both callers of the classifier now supply it (asserted on the argument the classifier receives)'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/pipeline-outcome.test.ts:163",
+            "message": "The focused-request invariance test does not compare against a baseline recorded before the change. Its expected stand-in arguments are hand-written from reading the old call sites (the comment says the pipeline had no seam then, so it could not be recorded by running it), and the executePlan expectation already includes the new `scope` field. The invariant 'a focused request on a repo builds its context as it does today' is therefore asserted against the author's reading of the old code, not a recorded baseline.",
+            "expectationRef": "PLAN t6 acceptance check: 'For a request with a focus on a repo, the planning, lookup and answer-writing stand-ins each receive the same arguments as a baseline recorded before the change, and the bundle is equal'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/__tests__/analyze-step-scope.test.ts:50",
+            "message": "The refused-pairing case for the step tool is tested only on the helper stepScope(), which throws ScopeKindTargetMismatchError. No test drives the start phase (or handleAnalyzeStep) with a refused pairing to show that it returns an error result and mints no state; the start phase itself does not return an error result, it lets the throw bubble to the handler's generic catch. The 'mints no state' claim is inferred from the helper being called before encodeState, not asserted.",
+            "expectationRef": "PLAN t8 acceptance check: 'The step tool's start phase passes a resolved workspace scope and returns an error result, minting no state, for a stand-in pairing the table refuses'; LLD runShaper errors: the start phase 'makes the same test itself ... and returns an error result naming the pairing'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:494",
+            "message": "For ClassifierValidationExhausted the plan tree's classify mapping returns the inner failure's code but the wrapper error's message (`err.message`), not the inner failure's message; the inner message is only placed under data.lastFailure.",
+            "expectationRef": "LLD classifyClassifierError returns: 'For ClassifierValidationExhausted, the inner failure's code and message, as the daemon's mapping already returns'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1084",
+            "message": "The exported `PipelineOutcome` 'did-not-proceed' member declares `readonly promptPath?: string;` without `| undefined`. Under exactOptionalPropertyTypes the documented form is `promptPath?: string | undefined`, which the same Story uses for `RunShaperArgs.pipelineSteps`, `ExecutePlanArgs.scope` and the `ResolvedScope` fields. The `didNotProceed` helper has to conditionally spread the key to work around it.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/scope.test.ts:31",
+            "message": "The test-local `Fixture` interface declares optional properties without `| undefined` (`repos?: readonly RegisteredRepo[]`, `entities?`, `connections?`, `registryFails?: boolean`). The same pattern recurs in `StandIns` in pipeline-outcome.test.ts (~line 83: `decompose?`, `synthesize?`, `fallback?`) and in `Seen.executePlan[].scope?` in run-shaper-wiring.test.ts.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/invariants.ts:42",
+            "message": "invariants.ts now value-imports `freshnessPathOf` from './scope.js', while the new scope.ts value-imports `ScopeNotIndexedError` and `ScopeRefUnresolvedError` from './invariants.js', creating a runtime import cycle. The removed `scopePathFor` helper was kept local expressly 'to avoid the import cycle', so this departs from the module's stated practice. It is harmless today only because both uses are inside function bodies.",
+            "expectationRef": "module-idiom: no import cycles within analyze/context",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/invariants.test.ts:32",
+            "message": "`ScopeRefUnresolvedError` is imported in a second, separate `import { ... } from '../invariants.js'` statement directly below the existing multi-name import from the same module. Sibling tests in this folder use one import statement per module.",
+            "expectationRef": "module-idiom: one import statement per module",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/context/__tests__/unfocused.live.test.ts:1",
+            "message": "All four promised live tests are present but unverified. They are gated behind INSRC_LIVE_TESTS=1 and skip cleanly when it is unset, and no build record shows a gated run. The live-only claims (the real planning call follows the no-focus recipe, a real unfocused request returns a bundle, 'shaper-llm-unavailable' with the model stopped) therefore have no confirmed pass.",
+            "expectationRef": "unfocused code request on this repository returns a bundle with a no-focus focus layer; file scope and symbol scope return a bundle; real planning call follows the no-focus recipe for code and returns a free-form lookup for docs; failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/__tests__/hinted-branch.test.ts:1",
+            "message": "The promised test 'hinted request with a valid pairing reaches the context builder and the planner' is present but only covers the first half of its name. By its own comment the run stops at the context builder's indexed check ('scope-not-indexed' at stage 'plan') before any model call; the planner is never reached and is deferred to the unverified live tests. Present but partial; pass-state unverified.",
+            "expectationRef": "hinted request with a valid pairing reaches the context builder and the planner",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/analyze-step/phases/narrow.ts:172",
+            "message": "The narrow phase's new behaviour (re-resolve the scope from the token, pass scope.lookupPath and the scope to stepPlan) is not asserted through handleNarrow. The promised test 'step tool plan and narrow phases resolve the scope from a token that has no scope field' calls stepScope() directly on a decoded token. Only the plan phase is driven through the real handler (executor-lmdb.test.ts). The pre-existing analyze-step-narrow.test.ts is outside the changed set, and its header says the finalize-and-resume-stepPlan path is exercised elsewhere. Present but indirect; pass-state unverified.",
+            "expectationRef": "step tool plan and narrow phases resolve the scope from a token that has no scope field",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/classifier/__tests__/validate.test.ts:52",
+            "message": "Three promised tests exist only under different names, so they cannot be matched by title. 'pairing matrix: thirty-five pairings against the corrected rows' is 'the matrix covers every pairing: five kinds of source by seven kinds of scope' plus the generated per-pair cases. 'indexed check takes a resolved scope: eight rewritten cases plus the symbol exception' is the rewritten ensureNonEmptyClosure cases plus three 'symbol exception:' tests in invariants.test.ts. 'scope-path inference cases rewritten against resolveScope' is the 'scope path: ...' tests in resolve-repo-indexed.test.ts. The behaviour is covered; pass-state unverified.",
+            "expectationRef": "pairing matrix: thirty-five pairings against the corrected rows; indexed check takes a resolved scope: eight rewritten cases plus the symbol exception; scope-path inference cases rewritten against resolveScope",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/pipeline-outcome.test.ts:1",
+            "message": "No build record was supplied, so every promised unit and integration test is present but unverified; none can be reported as passing. The testsReaching edges are empty for every entry, including the test files and docs, because the grounding is file-level diff entries rather than graph symbols. I did not treat those empty edges as not-exercised gaps: the diff text shows a corresponding test for each changed source file (model-failure, scope, driver, decomposer, synthesizer, validate, invariants, executor, freeform-probe, both orchestrator mappings, analyze-rpc, mcp-sampling-provider). Run the suite to confirm the pass-state.",
+            "expectationRef": "all promised unit and integration tests (pass-state)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:894",
+            "message": "Correctness: classifyOllamaError now classifies through isModelCallFailure, which also matches claude/codex CLI failures and typed sampling failures, but it still builds ShaperLlmUnavailableError with no `call` argument. That constructor branch words the message as \"Local Ollama unavailable for shaper invocation: ...\". The tool loop accepts an injected or role-routed provider, so a CLI or sampling failure in classification/task mode or inside freeform.probe is now reported as an Ollama outage. That is the misattribution this Story removes elsewhere, and docs/daemon.md states the message names the provider's own words \"whichever provider served it\".",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/agent/providers/mcp-sampling-provider.ts:189",
+            "message": "Correctness: sample() rethrows every TypeError, RangeError, ReferenceError and SyntaxError as a programming bug rather than a failed model call. Transport failures routinely arrive as these types: undici/fetch raise `TypeError: fetch failed` and `TypeError: terminated`, and a malformed transport frame raises SyntaxError from JSON.parse. Such a failure skips ModelCallFailedError, so completeStructured never sets lastCallFailure and the caller gets the untyped \"validation failed after N attempts\" error. Only the `fetch failed` text is rescued downstream by the text list; the others are classified as a schema failure.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/model-failure.ts:81",
+            "message": "Correctness: the Ollama failure texts are matched anywhere in the message, and only a ` text=` suffix is stripped first. Other shape failures echo model- or data-derived content without that marker, such as schema validation messages that quote an offending value or enum, and the retry helper's joined errors. An answer mentioning `Model not found`, `EPIPE`, `fetch failed` or `ECONNREFUSED` (likely when the analysed repository is this one) is then classified as a failed model call. On the planning path this turns a recoverable schema failure, which would have used the freeform.probe replacement, into a hard `planner-model-failed` stop. The CLI texts got the anchored-prefix treatment; the Ollama texts did not.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1284",
+            "message": "Unhandled error path: tryExplorationPipeline is documented as returning one of three outcomes, with PIPELINE_CAUSES as \"the whole contract\". Only decompose and synthesize are wrapped. A throw from steps.lastIndexedAt or steps.executePlan (a runner failure, a cache or store error) escapes as a raw rejection, bypasses errorForPipelineCause, and reaches both classifyShaperError mappings as `internal-error` with no cause or stage. There is no lookup-execution member in the cause list.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:254",
+            "message": "Correctness and cost: prepareScope now runs before the bundle cache lookup, for every mode. A cache hit used to touch no store. It now pays a registry read, plus an entity read for a symbol scope, plus a connections-file read for every registered repo for a connection scope. A cached bundle also becomes unreachable when resolution throws, for example when one unrelated repo has an unparseable connections file. Classification and task modes on a connection scope previously always proceeded (using the working directory); they now fail hard with ScopeRefUnresolvedError when the id is declared in zero or two repos, although the pairing and resolution checks are described as run-mode concerns.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:976",
+            "message": "Unhandled error path: scopeRefOf assumes inputs carry either `scopeRef` or `intent`. For inputs with neither it dereferences `undefined.intent.scopeRef` and throws a bare TypeError; the removed inferRepoPath/inferScopePath returned a fallback. Because prepareScope runs first, the pipeline's `invalid-input` cause (\"run-mode inputs carry no intent\") cannot be reached for such inputs, so a caller's mistake surfaces as `internal-error` instead of ShaperInvalidInputError.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/scope.ts:179",
+            "message": "Avoidable cost: when the symbol's file has no stored entities, resolveSymbol calls listEntitiesForRepo and materialises every entity of the repo only to test `length === 0`. A mistyped file path, or a symbol in a file with no entities, in a large repo loads the full entity set on each request. Through runShaper this happens before the cache lookup, and the MCP step tool repeats it in the start, plan and narrow phases. An existence or count probe would answer the same question.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/classifier/validate.ts:200",
+            "message": "Duplication: checkSymbolValue re-implements the `lastIndexOf('#')` split and the empty-part rejection that resolveSymbol performs, with the same message text, and validate.ts declares its own private SYMBOL_SEPARATOR alongside the exported one in context/scope.ts. Nothing holds the two parsers together; a change to the separator or the split rule in one makes the validator and the resolver disagree about what a symbol value is.",
+            "counterpartRef": "resolveSymbol / SYMBOL_SEPARATOR (src/analyze/context/scope.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/scope.ts:241",
+            "message": "Duplication: resolveConnection and connectionIsRegistered contain the same loop: list repos, load each repo's connections serially, wrap a read failure in ScopeRefUnresolvedError, and test `resolved.some(c => c.id === connectionId)`. They differ only in the wording of the error and in boolean versus collected result. One helper returning the declaring repos would serve both. The two also disagree on an id declared in two repos: the validator accepts it and resolution later rejects it.",
+            "counterpartRef": "connectionIsRegistered (src/analyze/context/scope.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/invariants.ts:153",
+            "message": "Duplication: ensureNonEmptyClosure now takes a ResolvedScope but still re-reads the registry and runs its own inline longest-prefix loop. The scope already carries `repoPath` computed by longestPrefixRepo, which is exported from the module invariants.ts now imports. The containing repo is therefore computed twice per run-mode code request by two copies of the boundary rule (three registry reads counting resolveRepoLastIndexedAt), and the copies can drift.",
+            "counterpartRef": "longestPrefixRepo (src/analyze/context/scope.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:518",
+            "message": "Duplication: the five new error-to-code branches are added identically to the plan tree's classifyShaperError and the daemon's classifyShaperError. The Story's own test describes them as \"one contract\", yet they remain two hand-maintained if-chains kept equal only by a parity test over ten hand-listed classes. A sixth error class added to one side and not to the test list falls silently to `internal-error` on the other.",
+            "counterpartRef": "classifyShaperError (src/daemon/analyze-rpc.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/orchestrator/driver.ts:494",
+            "message": "Correctness: the validator's `failure.code` and `err.lastFailure.code` are cast with `as RunFailure['code']` at lines 473 and 494 rather than checked. A validator code that is not a RunErrorCode member is written to the run record and emitted to clients unverified. The cast removes the compile-time guarantee that CAUSE_CODES_IN_BOTH_LISTS provides for the other new codes.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:1404",
+            "message": "Correctness: `intent.focus ?? 'Broad survey of ...'` does not catch an empty-string focus. hintedIntentBase trims and guards its own intent, but a ready-made intent from the daemon's run-context request or the one-shot tool with `focus: ''` hands the free-form loop an empty purpose. decomposer.buildMessages has the same gap in the other direction: it tests `focused && focus !== undefined`, so an empty focus prints `focus: \"\"` instead of the no-focus line.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 12,
+      "low": 15
+    }
+  }
+}

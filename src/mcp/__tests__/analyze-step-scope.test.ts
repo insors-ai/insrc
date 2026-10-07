@@ -15,6 +15,7 @@ import type { ScopeDeps } from '../../analyze/context/scope.js';
 import { prepareDecompose } from '../../analyze/context/decomposer.js';
 import type { AnalyzeTarget, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { RegisteredRepo } from '../../shared/types.js';
+import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import { stepScope } from '../analyze-step/scope.js';
 import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
 
@@ -93,4 +94,46 @@ test('step tool plan and narrow phases resolve the scope from a token that has n
 	const scope = await stepScope(decoded.intent, deps());
 	assert.equal(scope.lookupPath, decoded.repoPath);
 	assert.deepEqual(scope, { kind: 'workspace', value: REPO, repoPath: REPO, lookupPath: REPO });
+});
+
+// ---------------------------------------------------------------------------
+// Through the tool's own start phase
+// ---------------------------------------------------------------------------
+
+function parseEnvelope<T>(envelope: { content: { text: string }[] }): T {
+	return JSON.parse(envelope.content[0]!.text) as T;
+}
+
+test('the real start phase builds a workspace scope, for every kind of source, and its prompt names that directory', async () => {
+	// The pairing test in the start phase can only ever be reached with
+	// the scope the phase itself builds. That scope is pinned here: a
+	// workspace on the resolved repo, which every row of the table
+	// allows. If the start phase is later widened to another kind of
+	// scope, this test is where the pairing has to be reconsidered.
+	const repo = process.cwd();
+	for (const target of ['code', 'docs', 'data', 'infra', 'generic'] as const) {
+		const envelope = await handleAnalyzeStep({
+			phase: 'start', repo, focus: `scope pin ${target} ${Date.now()}`, target, scope: 'S',
+		});
+		assert.notEqual(envelope.isError, true, `${target}: ${envelope.content[0]!.text.slice(0, 200)}`);
+		const out = parseEnvelope<{ next: string; userTurn: string; state: string }>(envelope);
+		assert.equal(out.next, 'emit_plan', target);
+
+		// The token minted by the real start phase: an intent with a
+		// workspace scope on the repo, and no resolved scope.
+		const state = decodeState(out.state) as unknown as Record<string, unknown> & { intent: ClassifiedIntent; repoPath: string };
+		assert.deepEqual(state.intent.scopeRef, { kind: 'workspace', value: repo }, target);
+		assert.equal(state.intent.target, target);
+		assert.ok(!('scope' in state) && !('resolvedScope' in state), 'the token carries no resolved scope');
+
+		// The planning prompt the start phase prepared from the resolved
+		// scope prints the directory the lookups will run in.
+		assert.ok(out.userTurn.split('\n').includes(`Repo path: ${repo}`), `${target}: ${out.userTurn.slice(-300)}`);
+		assert.ok(!out.userTurn.includes('\nScope: '), 'a workspace scope has no further line');
+
+		// And that token drives the later phases' scope: resolved again
+		// from its intent, to the directory its repoPath names.
+		const again = await stepScope(state.intent, deps());
+		assert.equal(again.lookupPath, state.repoPath, target);
+	}
 });

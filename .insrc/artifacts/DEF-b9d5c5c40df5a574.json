@@ -957,9 +957,7 @@
         ]
       }
     ],
-    "openQuestions": [
-      "The per-turn reminder that tells agents to use the analyzer first is a hook script on the user's machine (~/.claude/hooks/insrc-steering-reminder.sh) and no source for it was found in this repository. Where is it maintained and installed from, so that Story s5 can change it?"
-    ],
+    "openQuestions": [],
     "functionalDefinition": {
       "requirements": [
         {
@@ -1145,18 +1143,6 @@
       "kind": "code",
       "ref": "src/prompts/analyze/synthesize.code.system.md",
       "quotedText": "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
-    },
-    {
-      "id": "c14",
-      "kind": "code",
-      "ref": "src/prompts/steering-block.md",
-      "quotedText": "Do this BEFORE manual"
-    },
-    {
-      "id": "c15",
-      "kind": "convention",
-      "ref": "~/.claude/hooks/insrc-steering-reminder.sh, the per-turn reminder: a hook script installed on the user's machine; no copy of it was found in this repository's source",
-      "quotedText": "inject a reminder so the model"
     },
     {
       "id": "c16",

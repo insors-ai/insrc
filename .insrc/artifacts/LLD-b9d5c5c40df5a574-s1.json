@@ -253,7 +253,8 @@
             "The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned",
             "stepPlan's branch for a lookup that pauses for a model call awaits the lookup's prepare with no conversion today (src/analyze/explore/executor.ts:482-502), and the step tool calls stepPlan outside its try blocks (src/mcp/analyze-step/phases/plan.ts:111, phases/narrow.ts:174), so a throw there aborts the whole step call. That await is wrapped in the same conversion as the other branch: a throw becomes the failed output for that lookup, with LookupFailedError's findings copied to `partial`, and the plan goes on to the next lookup",
             "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). No finalize validates the agent's answer today, so a malformed answer surfaces as a plain TypeError that the catch cannot tell from any other failure. The narrow phase therefore validates the agent's answer against the lookup's schema before it calls finalize, and returns the retryable 'narrow-finalize' error when that fails, which the agent can correct. Any throw from finalize itself then becomes the failed output for that lookup and the run goes on",
-            "The three lookups that pause for a model call (doc.constraint.enumerate, doc.decision.trace, capability.reuse-check) gather their completeness facts in prepare, where the cut and the limit are applied, but build their output in finalize on a later turn from a prepared value carried in the step state (for example { subject, retrievedSectionCount, validEntityIds }, doc-constraint-enumerate.ts:150-154). Each prepared value gains a `completenessFacts` field holding what prepare knows (the limit reached, the sections cut with their kept and full lengths), and finalize builds the record from it. A step state minted before the change has no such field: finalize then builds a record with notEstablished set and the note that the facts were not carried, so an in-flight run finishes and says so"
+            "The three lookups that pause for a model call (doc.constraint.enumerate, doc.decision.trace, capability.reuse-check) gather their completeness facts in prepare, where the cut and the limit are applied, but build their output in finalize on a later turn from a prepared value carried in the step state (for example { subject, retrievedSectionCount, validEntityIds }, doc-constraint-enumerate.ts:150-154). Each prepared value gains a `completenessFacts` field holding what prepare knows (the limit reached, the sections cut with their kept and full lengths), and finalize builds the record from it. A step state minted before the change has no such field: finalize then builds a record with notEstablished set and the note that the facts were not carried, so an in-flight run finishes and says so",
+            "A failed output is never written to the lookup cache, at any of the four conversion sites; the cache's own contract is that only successful outputs are stored (src/db/exploration-cache.ts:124-125). executePlan already stores inside the try, before the catch (executor.ts:212-229). The two new sites must keep to it: the conversion around prepare in stepPlan sits so that the store at executor.ts:505 is not reached for a failed output, and the narrow phase, which today stores whatever finalize produced (src/mcp/analyze-step/phases/narrow.ts:128-138), skips the store when the output is the failed one"
           ]
         },
         {
@@ -304,7 +305,8 @@
             "Both classifyShaperError functions map ShaperAnswerStepFailedError to the declared code 'answer-step-failed', with data { reason, results, report }",
             "The daemon's context requests, the one-shot agent tool and the daemon's workflow runner pass that data on: the daemon's error payload carries it, the one-shot tool prints the completeness line and the failed step's reason, and the workflow runner fails its step with the cause and the report",
             "'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run",
-            "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)"
+            "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)",
+            "The error can arise only in run mode, where the lookup pipeline runs; the classification and task bundles are written by the tool loop and never raise it. Six calls reach the three bundle builders. Three are the daemon's request handlers (src/daemon/analyze-rpc.ts:270 classification, :283 run, :311 task), which go through one wrapper that maps an error to the response: the run handler's response carries the code with { reason, results, report } as its data, and the other two cannot receive it. The fourth is the daemon's plan-tree entry (analyze-rpc.ts:431) and the fifth the plan tree's own run-context step (src/analyze/orchestrator/driver.ts:291): each maps the error through its mapping function, so the run fails with 'answer-step-failed' and the data. The sixth is the classifier (src/analyze/classifier/driver.ts:132), which builds a classification bundle and cannot receive it. Two callers sit above the run handler: the one-shot agent tool (src/mcp/server.ts:1331-1340), which today prints the code and message and drops the data, and now also prints the completeness line and the failed step's reason from it; and the daemon's workflow runner (src/daemon/workflow-rpc.ts:226-229), which fails its step with the cause and the report"
           ]
         },
         {
@@ -333,7 +335,7 @@
             "ANALYZE_CONTEXT_BUNDLE_SCHEMA declares `report` as an optional property and SCHEMA_VERSION becomes 2; the version is part of the bundle cache key, so bundles cached before are built again",
             "The schema handed to a model has `report` removed at both places it reaches one: the answer-writing call (stripMetaFromSchema, used at three sites in synthesizer.ts, which deletes only `meta` today and keeps its result; `report` is deleted alongside `meta` inside that kept copy) and the tool loop's final answer (runFinalStructuredEmit, which is given the full schema today). A `report` found in a model's answer is discarded before validation",
             "The three functions that turn a bundle into text (renderBundleAsMarkdown, src/mcp/bundle-md.ts; assembleMarkdown, src/analyze/context/bundle.ts; flattenBundle, src/daemon/workflow-rpc.ts) write renderCompletenessLine(report) first when the bundle has a report. When it has none, renderBundleAsMarkdown writes 'Completeness was not recorded for this answer.' and the other two, whose text goes into a model's prompt, write nothing",
-            "The step tool's start phase returns a cached bundle directly, without passing the bundle phase (src/mcp/analyze-step/phases/start.ts:71-93), and builds a fallback meta with the literal schema version 1 (:84-91). It uses SCHEMA_VERSION there. A bundle it finds was stored under the new cache key and so carries its report, and renderBundleAsMarkdown writes its completeness line"
+            "The step tool's start phase has a branch for a cached bundle (src/mcp/analyze-step/phases/start.ts:71-93) that never runs: the function it asks always returns nothing (src/mcp/analyze-step/cache-lookup.ts:40-42) and the bundle phase stores nothing for it. The only change there is that its fallback meta uses SCHEMA_VERSION where it has the literal 1 (:90). Should a step cache be added later, the branch already renders through renderBundleAsMarkdown and so would write the completeness line"
           ]
         },
         {
@@ -412,7 +414,7 @@
       {
         "entity": "Content cut inside a lookup or a runtime, and data-driver listings",
         "change": "field-add",
-        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, and module.profile's 4,096 (module-profile.ts:222, :284). The summariser's 8,192-character cut is applied at index time and has its own entry below. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.",
+        "details": "Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, and module.profile's 4,096 (module-profile.ts:222, :284). The summariser's 8,192-character cut is applied at index time and has its own entry below. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them, and the five inventories' own `truncated` output field (inventory-kubernetes.ts:126, inventory-helm.ts:138, inventory-docker.ts:153, inventory-ci.ts:147, inventory-terraform.ts:222) is removed with it, as on the lookup outputs; the tests that assert it today (src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts:811, :877) change to assert the record. The limits and cuts keep their values.",
         "callSites": [
           "src/analyze/explore/doc-constraint-enumerate.ts",
           "src/analyze/explore/doc-decision-trace.ts",
@@ -565,13 +567,31 @@
       {
         "entity": "Lookups and runtimes that reach more than one limit, and the step tool's cached-bundle path",
         "change": "field-modify",
-        "details": "Change sites the earlier lists did not name: data-model.trace, with one overall and two per-target limits; discovery-families, with a per-family sample; the step tool's start phase, with its literal schema version and its direct return of a cached bundle; and the narrow phase, which gains the validation of the agent's answer before finalize.",
+        "details": "Change sites the earlier lists did not name: data-model.trace, with one overall and two per-target limits; discovery-families, with a per-family sample; the step tool's start phase, whose never-run cached-bundle branch has a literal schema version; and the narrow phase, which gains the validation of the agent's answer before finalize.",
         "callSites": [
           "src/analyze/explore/data-model-trace.ts",
           "src/analyze/runtimes/infra/discovery-families.ts",
           "src/mcp/analyze-step/phases/start.ts",
           "src/mcp/analyze-step/phases/narrow.ts",
           "src/analyze/context/synthesizer.ts"
+        ]
+      },
+      {
+        "entity": "The callers that pass the answer-step failure on",
+        "change": "field-modify",
+        "details": "Change sites for the paragraph above: the daemon's wrapper and its three handlers, the plan-tree entry, the plan tree's run-context step, the one-shot agent tool's error branch and the workflow runner. The classifier's call is listed because it reaches the builder; it does not change. Current behaviour that changes: the one-shot agent tool drops an error's data.",
+        "callSites": [
+          "src/daemon/analyze-rpc.ts",
+          "src/analyze/orchestrator/driver.ts",
+          "src/analyze/classifier/driver.ts",
+          "src/mcp/server.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/mcp/analyze-step/cache-lookup.ts",
+          "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+          "src/analyze/runtimes/infra/inventory-helm.ts",
+          "src/analyze/runtimes/infra/inventory-docker.ts",
+          "src/analyze/runtimes/infra/inventory-ci.ts",
+          "src/analyze/runtimes/infra/inventory-terraform.ts"
         ]
       }
     ],
@@ -715,7 +735,7 @@
         },
         {
           "input": "Every lookup of a plan fails",
-          "expected": "The answer-writing step is still run, on failed outputs only, as today; the report lists all of them as failed. Whether to skip the answer-writing call in that case is raised as an open question."
+          "expected": "The answer-writing step is still run, on failed outputs only, as today; the report lists all of them as failed."
         },
         {
           "input": "A bundle with no report (a classification or task bundle, which this Story does not give one)",
@@ -797,7 +817,9 @@
             "a table test over every registered plan-task runtime: each returns a completeness record; the plan walk copies it to the task record, and a runtime that returns none is recorded as failed",
             "stepPlan with a lookup whose prepare throws records the failed output for it and goes on to the next lookup (mutation: remove the conversion); an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called, and a finalize that throws records the failed output",
             "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them gives a record that is not established",
-            "data-model.trace with more targets than its limit and a target with more fields than its limit reports both limits, each with its scope; discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder"
+            "data-model.trace with more targets than its limit and a target with more fields than its limit reports both limits, each with its scope; discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder",
+            "a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)",
+            "no plan-task output of the five infra inventories has a `truncated` field; a walk that stops at its cap is in the record as a limit"
           ],
           "fixturesNeeded": [
             "stand-in stores and drivers for the lookups",
@@ -815,7 +837,7 @@
             "a lookup output and a bundle cached before the change are not returned: the lookup cache's key includes its version and the bundle cache's key the schema version",
             "the step tool's bundle phase, given a state holding one failed and one limited lookup, attaches the report it derives from that state and returns markdown whose first line names both",
             "a request answered by the free-form lookup alone returns a bundle whose report has one source, with basis 'model-directed' and not complete",
-            "the step tool's start phase, on a cached bundle, returns markdown that starts with the completeness line and a meta whose schema version is the current one",
+            "no source file under src/mcp/analyze-step writes a literal schema version: the start phase's fallback meta refers to SCHEMA_VERSION",
             "the kept model-facing schema has neither meta nor report, on the first call and on a later one"
           ]
         },
@@ -875,7 +897,8 @@
             "unit: a table test over every registered plan-task runtime, each returning a record",
             "unit: buildCompleteness computes complete and rejects contradictory facts",
             "unit: buildCompleteness accepts several reached limits with their scopes",
-            "unit: data-model.trace and discovery-families report every limit they reach"
+            "unit: data-model.trace and discovery-families report every limit they reach",
+            "unit: the infra inventories report a stopped walk in the record and have no `truncated` field"
           ]
         },
         {
@@ -885,7 +908,8 @@
             "unit: each catch clause is covered by a test of its class",
             "unit: the free-form lookup at its turn limit is a failed output with partial findings",
             "unit: stepPlan with a lookup whose prepare throws records the failed output and goes on",
-            "unit: the search tool on an unreadable root fails with the real cause"
+            "unit: the search tool on an unreadable root fails with the real cause",
+            "unit: a failed output is never stored in the lookup cache"
           ]
         },
         {
@@ -915,8 +939,7 @@
             "integration: a plan-tree run with a failed and a limited task returns a report naming both",
             "live: a focused request whose text search reaches its limit says so in its first line",
             "unit: the step tool's bundle phase derives the report from its state and heads its markdown with the line",
-            "unit: a sole free-form answer's bundle carries the one-source report",
-            "unit: the step tool's start phase heads a cached bundle's markdown with the completeness line"
+            "unit: a sole free-form answer's bundle carries the one-source report"
           ]
         },
         {
@@ -1139,6 +1162,11 @@
       "id": "c11",
       "kind": "code",
       "ref": "A direct read on 2026-10-07 of the indexer's body cut, the entity row's encoding, the lookups with several limits and the step tool's cached-bundle path. Files: src/indexer/parser/artifact.ts, src/shared/types.ts, src/db/graph/codec.ts, src/db/entities.ts, src/analyze/explore/data-model-trace.ts, src/analyze/runtimes/infra/discovery-families.ts, src/mcp/analyze-step/phases/start.ts, src/analyze/context/synthesizer.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "A direct read on 2026-10-07 of the calls into the three bundle builders, the step tool's cache lookup, the lookup cache's store sites and the infra inventories' outputs. Files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts, src/analyze/classifier/driver.ts, src/mcp/server.ts, src/daemon/workflow-rpc.ts, src/mcp/analyze-step/cache-lookup.ts, src/mcp/analyze-step/phases/narrow.ts, src/db/exploration-cache.ts, src/analyze/runtimes/infra/inventory-kubernetes.ts, src/analyze/runtimes/infra/inventory-helm.ts, src/analyze/runtimes/infra/inventory-docker.ts, src/analyze/runtimes/infra/inventory-ci.ts, src/analyze/runtimes/infra/inventory-terraform.ts"
     }
   ]
 }

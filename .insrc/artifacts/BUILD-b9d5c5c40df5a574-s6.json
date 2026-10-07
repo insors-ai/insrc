@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s6",
     "createdAt": "2026-10-07T09:26:37.335Z",
-    "updatedAt": "2026-10-07T09:42:12.664Z",
+    "updatedAt": "2026-10-07T09:45:28.981Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -20,158 +20,176 @@
       {
         "id": "t3",
         "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
       }
     ],
-    "summary": "Replaced the six remaining copies of the model-failure text list (planner, aggregator, classifier, scope picker, summariser, tool loop) with the shared check, each keeping its own error classes and codes, and added a source-search test that fails if the list is copied again.",
+    "summary": "Added the scope module: one function resolves a scope's kind and value to its registered repo, the directory lookups run in, and for a symbol or a connection the stored entity or the declaring repo, with typed failures for a value that does not resolve or a symbol whose repo is not indexed. Nothing calls it yet.",
     "changeLog": [
       {
         "target": {
           "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/agent/providers/mcp-sampling-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/agent/providers/model-call-error.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/classifier/scope-picker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure-callers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/model-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/scope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-errors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/decomposer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/model-failure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/scope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/context/synthesizer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/planner/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/aggregator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       },
       {
         "target": {
           "file": "src/mcp/sampling-bridge.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:42:12.664Z"
+        "timestamp": "2026-10-07T09:45:28.981Z"
       }
     ],
-    "commit": "eb3dd989"
+    "commit": "23a8d2bf"
   }
 }

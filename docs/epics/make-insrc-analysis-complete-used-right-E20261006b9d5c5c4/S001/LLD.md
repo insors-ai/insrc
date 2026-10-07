@@ -489,7 +489,7 @@ Three, not two. renderBundleAsMarkdown (src/mcp/bundle-md.ts) is what an agent o
 | `ac2` | `unit: a text search that throws becomes the failed output`, `unit: each catch clause is covered by a test of its class`, `unit: the free-form lookup at its turn limit is a failed output with partial findings` |
 | `ac3` | `unit: each lookup that cuts content reports partlyRead with the kept and full lengths` |
 | `ac4` | `unit: the Node search backend reports skipped and unreadable files and shortened lines`, `unit: the ripgrep backend reports its omissions and what it excludes by rule`, `unit: search.text and config.trace turn the search's omissions into the record` |
-| `ac5` | `unit: deriveAnswerReport and renderCompletenessLine`, `unit: runShaper's run-mode bundle carries the derived report`, `unit: the two functions that turn a bundle into text write the completeness line first`, `integration: a plan-tree run with a failed and a limited task returns a report naming both`, `live: a focused request whose text search reaches its limit says so in its first line` |
+| `ac5` | `unit: deriveAnswerReport and renderCompletenessLine`, `unit: runShaper's run-mode bundle carries the derived report`, `unit: the three functions that turn a bundle into text write the completeness line first`, `integration: a plan-tree run with a failed and a limited task returns a report naming both`, `live: a focused request whose text search reaches its limit says so in its first line` |
 | `ac6` | `unit: the three causes after the lookups ran carry the results and the report`, `unit: both mapping functions return 'answer-step-failed' with the data`, `unit: the daemon's payload, the one-shot tool and the workflow runner carry the report` |
 
 ## 7. Migration

@@ -809,7 +809,7 @@
           "provingTests": [
             "unit: deriveAnswerReport and renderCompletenessLine",
             "unit: runShaper's run-mode bundle carries the derived report",
-            "unit: the two functions that turn a bundle into text write the completeness line first",
+            "unit: the three functions that turn a bundle into text write the completeness line first",
             "integration: a plan-tree run with a failed and a limited task returns a report naming both",
             "live: a focused request whose text search reaches its limit says so in its first line"
           ]

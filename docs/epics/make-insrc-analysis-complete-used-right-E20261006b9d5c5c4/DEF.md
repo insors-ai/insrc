@@ -17,10 +17,11 @@ An analysis that silently leaves results out cannot be trusted, and today the an
 5. [Constraints](#5-constraints)
 6. [Stories](#6-stories)
 7. [References](#7-references)
+8. [Open questions](#8-open-questions)
 
 ## 1. Problem
 
-The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported.
+The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported. Beneath all of this, a request that asks no specific question cannot be analysed at all: the analyzer builds no context for it and reports the model as unavailable although the model was never asked, and nothing shows that a broad analysis has run through to a final report.
 
 ## 2. Functional requirements
 
@@ -30,6 +31,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:FR004** — No lookup or analysis step drops results because of a fixed limit, and no limit is removed before the analyzer can handle what it lets through. _(A fixed limit makes large questions silently wrong; removing one without handling makes them fail.)_
 - **E20261006b9d5c5c4:FR005** — The form of an analyzer's answer fits the kind of question asked, including a question that asks for every occurrence of something, for each kind of source the analyzer covers.
 - **E20261006b9d5c5c4:FR006** — No answer layout limits how many findings may be reported.
+- **E20261006b9d5c5c4:FR007** — A request that asks no specific question is analysed from request to final report, and a request that cannot proceed says why.
 
 **s1:**
 
@@ -64,6 +66,16 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S005:FR002** — The answer layouts of all analyzer kinds are free of limits on findings.
 - **E20261006b9d5c5c4:S005:FR003** — Each layout covers every lookup its analyzer can run.
 
+**s6:**
+
+- **E20261006b9d5c5c4:S006:FR001** — A request that asks no specific question gets its context built and can proceed.
+- **E20261006b9d5c5c4:S006:FR002** — A failure to proceed reports its actual cause.
+
+**s7:**
+
+- **E20261006b9d5c5c4:S007:FR001** — A broad analysis runs through every stage to a final report.
+- **E20261006b9d5c5c4:S007:FR002** — A run that stops records where and why.
+
 ## 3. Non-goals
 
 - **Reducing what an analysis costs in time or model usage.** — The project rule puts accuracy first and cost last; a complete answer may take longer and that is accepted.
@@ -80,6 +92,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - `med` Every place the analyzer drops results can be found by reading its recipes, runtimes, prompts and the search primitives it calls. [[c1]]
 - `med` The number of results a request will touch can be counted before the request is run in full; today only the size of the whole repository is counted. [[c2]]
 - `med` A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings, building on the way the framework already runs a large plan as child plans whose results an aggregator combines. [[c10]]
+- `low` The stages of a broad analysis that lie beyond building the context (planning, running the plan, combining the results) work or can be corrected within Story s7; no completed run on record shows this either way. [[c21]]
 
 ## 5. Constraints
 
@@ -118,7 +131,7 @@ As someone relying on an analysis, I am told plainly when a result was cut, when
 
 As someone asking a question, the analyzer finds out how big my question really is before it answers, so a large question is recognised as large and is not treated like a small one.
 
-**Depends on:** `s1`
+**Depends on:** `s1`, `s7`
 
 **Extends:** [[c2]] [[c11]]
 
@@ -136,7 +149,7 @@ As someone asking a question, the analyzer finds out how big my question really 
 
 As someone asking a large question, the analyzer works through all of it by a known method for its size and gives me one combined answer, so the size of my question never decides how much of it gets looked at.
 
-**Depends on:** `s1`, `s2`
+**Depends on:** `s1`, `s2`, `s7`
 
 **Acceptance criteria:**
 
@@ -153,7 +166,7 @@ As someone asking a large question, the analyzer works through all of it by a kn
 
 As someone relying on an analysis, I get every result a lookup found, whatever the size of my question, because nothing in the analyzer stops at a fixed number.
 
-**Depends on:** `s1`, `s3`
+**Depends on:** `s1`, `s3`, `s7`
 
 **Extends:** [[c1]]
 
@@ -186,6 +199,38 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 
 - `lc1` (convention) Structural reference in a prompt goes at its end. [[c3]]
 
+### 6.6 E20261006b9d5c5c4:S006 — An unfocused request gets an answer, and a request that cannot proceed says why
+
+**User value:** `size: M`
+
+As someone asking the analyzer a broad question about a repository or a module, I get an analysis back, and when the analyzer cannot proceed I am told the actual reason, not that the model is unavailable when it was never asked.
+
+**Extends:** [[c21]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given a request that names an area but asks no specific question, when the analyzer builds the context for it, then it produces that context, where today it produces none and the request fails. _(operationalizes `k1`)_
+- **ac2:** Given a request started with a stated kind of source, which today is always treated as asking no specific question, when the analyzer handles it, then it proceeds as far as any other request does. _(operationalizes `k1`)_
+- **ac3:** Given a request the analyzer cannot proceed with, when it fails, then the failure names the actual cause, and says the model is unavailable only when a call to the model failed. _(operationalizes `k3`, `k7`)_
+- **ac4:** Given a request that names a single file or a single symbol, when the analyzer builds the context for it, then it either produces that context or reports that such a request is not supported, and never reports the model as unavailable. _(operationalizes `k3`)_
+
+### 6.7 E20261006b9d5c5c4:S007 — A broad analysis completes from request to final report
+
+**User value:** `size: L`
+
+As someone asking the analyzer a broad question, the whole analysis runs to a final report, so the work this Epic does on completeness, sizing and handling has a working path to apply to.
+
+**Depends on:** `s6`
+
+**Extends:** [[c21]]
+
+**Acceptance criteria:**
+
+- **ac1:** Given a broad request on a repository that is indexed, when the analysis is run, then it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected. _(operationalizes `k1`)_
+- **ac2:** Given an analysis whose plan includes steps that themselves plan further steps, when it is run, then those nested steps run and their results reach the final report. _(operationalizes `k7`)_
+- **ac3:** Given an analysis that stops part of the way through, when it ends, then the record of the run says at which stage it stopped and why, and is not left reading as still in progress. _(operationalizes `k3`)_
+- **ac4:** Given a completed analysis, when it is asked for again by the same run, then the stored result is returned as before. _(operationalizes `k1`)_
+
 ## 7. References
 
 - **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178). Also in the shared grep primitive: the search's output is kept only up to 4 MB and the rest discarded without a signal (the ripgrep call at src/daemon/tools/builtins/search/grep.ts:181, through src/daemon/tools/shell-helper.ts:86-89), and the ripgrep path cuts a matching line at 500 characters too (:193); the two search backends leave out different files by rule (ripgrep honours .gitignore and skips hidden and binary files; the fallback skips dot-names and a fixed list of directories, :95). On the plan-tree path the same kinds of limit sit in the plan-task runtimes (runtimes/data/discovery-objects.ts:56, runtimes/infra/_shared.ts:90, runtimes/infra/discovery-families.ts:53, runtimes/docs/family-summarise.ts:162 and the three adherence checks).` — "const DEFAULT_TOP_K = 30;"
@@ -206,3 +251,9 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 - **[[c18]]** `stakeholder` `user, 2026-10-07: reading one large item in full moves from Story s1 to Story s3; Story s1 removes the fixed cut and reports a partly read item`
 - **[[c19]]** `stakeholder` `user, 2026-10-07` — "A. Both paths in this epic"
 - **[[c20]]** `stakeholder` `user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts`
+- **[[c21]]** `step-output` `Live check of 2026-10-07 through the daemon: a request to build the run context for src/analyze/classifier with focused false fails at once with 'Local Ollama unavailable for shaper invocation: Run-mode exploration pipeline returned no bundle'; the same request with focused true and a focus sentence returns a bundle in 30 seconds. Cause in code: src/analyze/context/driver.ts:1102 returns for an unfocused intent and :276-282 then throws; src/analyze/orchestrator/driver.ts:219 marks every target-hinted request unfocused. Saved run records in ~/.insrc/analyze: 4,318 run directories, two plan-tree run records, both left at the classify stage as in progress. No client in this repository sends analyze.run.start.`
+- **[[c22]]** `prior-artifact` `insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')`
+
+## 8. Open questions
+
+- Story s7 rests on a low-confidence assumption: no completed broad analysis is on record. Its design begins by running one and recording how far it gets; if what is found is larger than one Story, how should it be split?

@@ -36,7 +36,7 @@
       "audience": "product"
     },
     "flavor": "enhancement",
-    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported.",
+    "problem": "The analyzer's findings are incomplete in a way neither the analyzer nor its reader can see. Each of its lookups returns at most a fixed number of results, chosen once and unrelated to the size of the question, and the rest are dropped without the answer saying so; some lookups that fail outright read the same as ones that found nothing. The same question therefore gets a correct answer on a small area of a codebase and a wrong one on a large area, with nothing to tell them apart, which contradicts the framework's own stated rule that nothing relevant is cut. How large a request is gets decided up front from its wording and the overall size of the repository, not from what the question actually touches, and when the analyzer is called through the tools coding agents use it is not decided at all and a middle size is assumed; that size sets how many steps are planned and how much an answer may report, and plays no part in how a large result is dealt with. The answer is then written to one of six fixed layouts, chosen by the kind of source or check and not by the kind of question, each of which suits one sort of answer, such as a structural overview, and each of which itself limits how much may be reported. Beneath all of this, a request that asks no specific question cannot be analysed at all: the analyzer builds no context for it and reports the model as unavailable although the model was never asked, and nothing shows that a broad analysis has run through to a final report.",
     "nonGoals": [
       {
         "text": "Reducing what an analysis costs in time or model usage.",
@@ -86,6 +86,11 @@
         "text": "A result set too large to reason over at once can be divided, reasoned over part by part, and combined without losing findings, building on the way the framework already runs a large plan as child plans whose results an aggregator combines.",
         "confidence": "med",
         "source": "c10"
+      },
+      {
+        "text": "The stages of a broad analysis that lie beyond building the context (planning, running the plan, combining the results) work or can be corrected within Story s7; no completed run on record shows this either way.",
+        "confidence": "low",
+        "source": "c21"
       }
     ],
     "constraints": [
@@ -222,7 +227,8 @@
         "title": "The analyzer sizes a request from what it actually touches",
         "sizeEstimate": "M",
         "dependsOn": [
-          "s1"
+          "s1",
+          "s7"
         ],
         "existingCapabilityRefs": [
           "c2",
@@ -293,7 +299,8 @@
         "sizeEstimate": "L",
         "dependsOn": [
           "s1",
-          "s2"
+          "s2",
+          "s7"
         ],
         "userValue": "As someone asking a large question, the analyzer works through all of it by a known method for its size and gives me one combined answer, so the size of my question never decides how much of it gets looked at.",
         "acceptanceCriteria": [
@@ -375,7 +382,8 @@
         "sizeEstimate": "L",
         "dependsOn": [
           "s1",
-          "s3"
+          "s3",
+          "s7"
         ],
         "existingCapabilityRefs": [
           "c1"
@@ -517,9 +525,125 @@
             "statement": "Each layout covers every lookup its analyzer can run."
           }
         ]
+      },
+      {
+        "id": "s6",
+        "title": "An unfocused request gets an answer, and a request that cannot proceed says why",
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c21"
+        ],
+        "userValue": "As someone asking the analyzer a broad question about a repository or a module, I get an analysis back, and when the analyzer cannot proceed I am told the actual reason, not that the model is unavailable when it was never asked.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a request that names an area but asks no specific question",
+            "when": "the analyzer builds the context for it",
+            "then": "it produces that context, where today it produces none and the request fails",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a request started with a stated kind of source, which today is always treated as asking no specific question",
+            "when": "the analyzer handles it",
+            "then": "it proceeds as far as any other request does",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a request the analyzer cannot proceed with",
+            "when": "it fails",
+            "then": "the failure names the actual cause, and says the model is unavailable only when a call to the model failed",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a request that names a single file or a single symbol",
+            "when": "the analyzer builds the context for it",
+            "then": "it either produces that context or reports that such a request is not supported, and never reports the model as unavailable",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A request that asks no specific question gets its context built and can proceed."
+          },
+          {
+            "statement": "A failure to proceed reports its actual cause."
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "A broad analysis completes from request to final report",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s6"
+        ],
+        "existingCapabilityRefs": [
+          "c21"
+        ],
+        "userValue": "As someone asking the analyzer a broad question, the whole analysis runs to a final report, so the work this Epic does on completeness, sizing and handling has a working path to apply to.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a broad request on a repository that is indexed",
+            "when": "the analysis is run",
+            "then": "it completes every stage and returns a final report, and what stopped it at any stage it did not pass today is found and corrected",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an analysis whose plan includes steps that themselves plan further steps",
+            "when": "it is run",
+            "then": "those nested steps run and their results reach the final report",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an analysis that stops part of the way through",
+            "when": "it ends",
+            "then": "the record of the run says at which stage it stopped and why, and is not left reading as still in progress",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a completed analysis",
+            "when": "it is asked for again by the same run",
+            "then": "the stored result is returned as before",
+            "operationalizes": [
+              "k1"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A broad analysis runs through every stage to a final report."
+          },
+          {
+            "statement": "A run that stops records where and why."
+          }
+        ]
       }
     ],
-    "openQuestions": [],
+    "openQuestions": [
+      "Story s7 rests on a low-confidence assumption: no completed broad analysis is on record. Its design begins by running one and recording how far it gets; if what is found is larger than one Story, how should it be split?"
+    ],
     "functionalDefinition": {
       "requirements": [
         {
@@ -551,6 +675,11 @@
         {
           "id": "E20261006b9d5c5c4:FR006",
           "statement": "No answer layout limits how many findings may be reported.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261006b9d5c5c4:FR007",
+          "statement": "A request that asks no specific question is analysed from request to final report, and a request that cannot proceed says why.",
           "scope": "doc"
         },
         {
@@ -660,6 +789,30 @@
           "statement": "Each layout covers every lookup its analyzer can run.",
           "scope": "item",
           "itemRef": "s5"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S006:FR001",
+          "statement": "A request that asks no specific question gets its context built and can proceed.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S006:FR002",
+          "statement": "A failure to proceed reports its actual cause.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S007:FR001",
+          "statement": "A broad analysis runs through every stage to a final report.",
+          "scope": "item",
+          "itemRef": "s7"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S007:FR002",
+          "statement": "A run that stops records where and why.",
+          "scope": "item",
+          "itemRef": "s7"
         }
       ]
     }
@@ -768,6 +921,16 @@
       "id": "c20",
       "kind": "stakeholder",
       "ref": "user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts"
+    },
+    {
+      "id": "c21",
+      "kind": "step-output",
+      "ref": "Live check of 2026-10-07 through the daemon: a request to build the run context for src/analyze/classifier with focused false fails at once with 'Local Ollama unavailable for shaper invocation: Run-mode exploration pipeline returned no bundle'; the same request with focused true and a focus sentence returns a bundle in 30 seconds. Cause in code: src/analyze/context/driver.ts:1102 returns for an unfocused intent and :276-282 then throws; src/analyze/orchestrator/driver.ts:219 marks every target-hinted request unfocused. Saved run records in ~/.insrc/analyze: 4,318 run directories, two plan-tree run records, both left at the classify stage as in progress. No client in this repository sends analyze.run.start."
+    },
+    {
+      "id": "c22",
+      "kind": "prior-artifact",
+      "ref": "insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')"
     }
   ]
 }

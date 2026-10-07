@@ -36,7 +36,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S001:FR001** — No lookup drops results because of a fixed limit, in any kind of source the analyzer covers.
 - **E20261006b9d5c5c4:S001:FR002** — Each lookup result carries a statement of completeness.
 - **E20261006b9d5c5c4:S001:FR003** — A failed lookup is distinguishable from an empty one.
-- **E20261006b9d5c5c4:S001:FR004** — A large single item is read in full.
+- **E20261006b9d5c5c4:S001:FR004** — No fixed cut is applied to an item's content, and a partly read item is reported.
 
 **s2:**
 
@@ -48,6 +48,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S003:FR001** — A handling method exists for every request size.
 - **E20261006b9d5c5c4:S003:FR002** — Large result sets are processed completely, in parts, and combined.
 - **E20261006b9d5c5c4:S003:FR003** — The answer reports how the request was handled.
+- **E20261006b9d5c5c4:S003:FR004** — A single item too large to read at once is read in full, in sections.
 
 **s4:**
 
@@ -98,8 +99,8 @@ As someone relying on an analysis, I get every result a lookup found, and I am t
 - **ac1:** Given a lookup whose true number of results is larger than any limit the analyzer used to apply, when the analyzer performs that lookup, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
 - **ac2:** Given any lookup the analyzer performs, when its result is produced, then the result states whether it is complete, and if it is not, how many results exist and why some are missing. _(operationalizes `k3`)_
 - **ac3:** Given a lookup that cannot be carried out, when the analyzer reports on it, then it is reported as failed with the reason, and never as a lookup that found nothing. _(operationalizes `k3`, `k7`)_
-- **ac4:** Given a single item, such as a long document section, that is larger than what was previously kept, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
 - **ac5:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
+- **ac4:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then no fixed cut is applied, and if only part of it was read the result names the item and says how much was read. _(operationalizes `k2`, `k3`)_
 
 ### 6.2 E20261006b9d5c5c4:S002 — The analyzer sizes a request from what it actually touches
 
@@ -133,6 +134,7 @@ As someone asking a large question, the analyzer works through all of it by a kn
 - **ac3:** Given a request handled in parts, when its answer is delivered, then the answer states how many parts there were and that all were processed, or names any part that was not and why. _(operationalizes `k3`)_
 - **ac4:** Given a small request, when the analyzer handles it, then its results are returned whole without being divided. _(operationalizes `k1`)_
 - **ac5:** Given a part that fails while a large request is being handled, when the answer is assembled, then the findings of the other parts are kept and the failed part is reported as not covered. _(operationalizes `k3`, `k7`)_
+- **ac6:** Given a single item, such as a long document section, that is larger than what was previously kept, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
 
 ### 6.4 E20261006b9d5c5c4:S004 — The form of an answer fits the question, for every kind of analyzer
 
@@ -158,7 +160,7 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 
 ## 7. References
 
-- **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file.` — "const DEFAULT_TOP_K = 30;"
+- **[[c1]]** `analyze-bundle` `Lookups in src/analyze that return at most a fixed number of results (file:line of the constant, default / maximum): explore/search-text.ts:39-40 (30 / 200); explore/symbol-locate.ts:37-38 (50 / 200); explore/config-trace.ts:42-43 (40 / 200); explore/test-locate.ts:44-45 (20 / 100); explore/import-graph.ts:48-49 (15 / 60); explore/usage-example.ts:37-38 (12 / 40); explore/doc-mention.ts:37-38 (15 / 40); explore/concept-resolve.ts:64 (20); explore/capability-reuse-check.ts:58-59 (5 / 12); explore/db-tables-list.ts:36-37 (40 / 500); explore/manifests-locate.ts:51-52 (200 / 1,000); explore/data-model-trace.ts:47-49 (4 targets, 12 fields, 6 callers); explore/convention-detect.ts:54, :57 (5 subclasses, 8 idioms); runtimes/data/discovery-objects.ts:56 (200 files); runtimes/infra/_shared.ts:90 (5,000 files); runtimes/infra/discovery-families.ts:53 (8 samples). Cuts on the content of one item: explore/doc-constraint-enumerate.ts:227 and explore/doc-decision-trace.ts:242 (first 2,000 characters); runtimes/code/adherence-check.ts:92, runtimes/data/adherence-check.ts:100 and runtimes/infra/adherence-check.ts:89 (first 1,200); explore/module-profile.ts:222, :284 (first 4,096); summariser/driver.ts:317 (first 8,192). Not counted: text-length limits on plan fields (planner/schema.ts:42-44), which bound a model's own wording, not results. Found by an analyzer run of 2026-10-06 (two search.text explorations and a module.profile over src/analyze) and confirmed by reading each file. Found by the HLD's review and added: the maxSources parameter of the two document lookups (explore/executor.ts:315, :337); src/analyze/docs-retrieval.ts:290; explore/capability-reuse-check.ts:303, :348-350; explore/db-table-describe.ts:175, :181; runtimes/docs/family-summarise.ts:162; the preview limits explore/doc-mention.ts:39-40; and, in the shared grep primitive src/daemon/tools/builtins/search/grep.ts, the cut of a matching line at 500 characters (:107), the skip of files over 2 MB (:102), the silent skip of unreadable files (:111) and the per-file match limit (:178).` — "const DEFAULT_TOP_K = 30;"
 - **[[c2]]** `code` `src/analyze/classifier/scope-picker.ts` — "readonly totalEntityCount: number;"
 - **[[c3]]** `doc` `CLAUDE.md` — "Accuracy is primary; cost is the least priority."
 - **[[c4]]** `doc` `design/analyze-context-builder.md` — "The shaper has **no token budget, no summarize-down, no truncation knobs**."
@@ -173,3 +175,4 @@ As someone reading an analysis, the answer is laid out for the question I asked,
 - **[[c13]]** `code` `src/prompts/analyze/synthesize.code.system.md` — "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
 - **[[c16]]** `stakeholder` `user, 2026-10-07` — "the agent should be given proper steering for when to use it's own tools and when to use analyze. this doesn't need to be coded, just steering should be eoungh"
 - **[[c17]]** `prior-artifact` `ISSUE-12f70133491114c9, filed 2026-10-07: the code graph loses cross-file import and call edges`
+- **[[c18]]** `stakeholder` `user, 2026-10-07: reading one large item in full moves from Story s1 to Story s3; Story s1 removes the fixed cut and reports a partly read item`

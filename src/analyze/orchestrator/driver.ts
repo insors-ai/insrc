@@ -456,7 +456,16 @@ export async function hintedIntentBase(
 		? { target, focused: true, focus, scopeRef }
 		: { target, focused: false, scopeRef };
 	// The size is not part of either check; 'M' is a placeholder here.
-	const failure = await validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, connectionExists);
+	let failure: Awaited<ReturnType<typeof validateIntentSemantics>>;
+	try {
+		failure = await validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, connectionExists);
+	} catch (err) {
+		// The connection check can throw (an unreadable connections file,
+		// a registry that cannot be read). That is a failure of this
+		// stage like any other: it gets a code and a failed run record,
+		// not an unhandled rejection that leaves the record in progress.
+		return { ok: false, failure: classifyShaperError(err) };
+	}
 	if (failure !== null) {
 		return {
 			ok: false,

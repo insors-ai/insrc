@@ -20,6 +20,7 @@ import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { connectionCheckFor } from '../../classifier/driver.js';
+import { ScopeRefUnresolvedError } from '../../context/invariants.js';
 import { connectionIsRegistered, type ScopeDeps } from '../../context/scope.js';
 import { hintedIntentBase, runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord } from '../persistence.js';
@@ -183,6 +184,26 @@ test('hinted request with a valid pairing reaches the context builder and the pl
 	} finally {
 		purgeRunForTests(id);
 	}
+});
+
+test('hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection', async () => {
+	// The real check throws when a repo's connections file cannot be read.
+	const unreadable = async (): Promise<boolean> => {
+		throw new ScopeRefUnresolvedError("Connection 'ledger-db' could not be checked: the connections file of repo '/a' could not be read (invalid JSON).");
+	};
+	const viaTyped = await hintedIntentBase('data', 'q', { kind: 'connection', value: 'ledger-db' }, unreadable);
+	assert.ok(!viaTyped.ok);
+	if (viaTyped.ok) return;
+	assert.equal(viaTyped.failure.code, 'scope-ref-unresolved');
+	assert.match(viaTyped.failure.message, /could not be read \(invalid JSON\)/);
+
+	// Any other error from the check still becomes a failure with a code.
+	const viaPlain = await hintedIntentBase('data', 'q', { kind: 'connection', value: 'ledger-db' },
+		async () => { throw new Error('graph store not initialised'); });
+	assert.ok(!viaPlain.ok);
+	if (viaPlain.ok) return;
+	assert.equal(viaPlain.failure.code, 'internal-error');
+	assert.match(viaPlain.failure.message, /graph store not initialised/);
 });
 
 // ---------------------------------------------------------------------------

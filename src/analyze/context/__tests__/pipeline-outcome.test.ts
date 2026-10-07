@@ -72,6 +72,8 @@ interface Calls {
 	executePlan: unknown[];
 	synthesize:  unknown[];
 	fallback:    unknown[];
+	/** What the lookup stand-in returned, in call order. */
+	executed:    ExecutedPlan[];
 }
 
 interface StandIns {
@@ -81,12 +83,12 @@ interface StandIns {
 }
 
 function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
-	const calls: Calls = { decompose: [], executePlan: [], synthesize: [], fallback: [] };
+	const calls: Calls = { decompose: [], executePlan: [], synthesize: [], fallback: [], executed: [] };
 	const s: PipelineSteps = {
 		decompose: async (a) => { calls.decompose.push(a); return (over.decompose ?? (async () => PLAN))(); },
 		executePlan: async (a) => {
 			calls.executePlan.push(a);
-			return {
+			const executed = {
 				plan: a.plan,
 				results: a.plan.explorations.map(e => ({
 					exploration: e,
@@ -101,6 +103,8 @@ function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 				})),
 				elapsedMs: 0, cacheHits: 0, cacheMisses: 0,
 			} as unknown as ExecutedPlan;
+			calls.executed.push(executed);
+			return executed;
 		},
 		synthesize: async (a) => { calls.synthesize.push(a); return (over.synthesize ?? (async () => RAW))(); },
 		fallbackFreeformPlan: (intent, shaperId) => {
@@ -145,21 +149,26 @@ function stamp(raw: RawBundle, explorationCount: number): AnalyzeContextBundle {
 test('focused request on a repo: stand-in arguments and bundle equal the recorded baseline', async () => {
 	const { outcome, calls } = await run();
 	assert.deepEqual(outcome, { kind: 'bundle', raw: RAW, explorationCount: 1 });
-	// The baseline: what each step received before the outcome type
-	// existed -- the planning call the intent and run id; the lookups
-	// the scope's directory, its last-indexed time and the plan; the
-	// answer-writing call the intent, the results and the 'code' key.
+	// The baseline is what each step received before the outcome type
+	// existed, taken from the call sites as they stood (the pipeline had
+	// no seam then, so it could not be recorded by running it; the three
+	// argument expressions are unchanged in the diff): the planning call
+	// gets the intent and run id; the lookups get the scope's directory
+	// as both path and closure, its last-indexed time and the plan; the
+	// answer-writing call gets the run id, the intent, exactly what the
+	// lookups returned, and the 'code' key.
 	assert.deepEqual(calls.decompose, [{ intent: INTENT, runId: 'r1' }]);
 	assert.deepEqual(calls.executePlan, [{
 		runId: 'r1', repoPath: REPO, closureRepos: [REPO],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
 	}]);
-	assert.equal(calls.synthesize.length, 1);
-	const synthArgs = calls.synthesize[0] as { runId: string; intent: ClassifiedIntent; target: string; executed: ExecutedPlan };
-	assert.equal(synthArgs.runId, 'r1');
-	assert.equal(synthArgs.intent, INTENT);
-	assert.equal(synthArgs.target, 'code');
-	assert.equal(synthArgs.executed.results.length, 1);
+	assert.equal(calls.executed.length, 1);
+	assert.deepEqual(Object.keys(calls.synthesize[0] as object).sort(), ['executed', 'intent', 'runId', 'target']);
+	assert.deepEqual(calls.synthesize, [{
+		runId: 'r1', intent: INTENT, executed: calls.executed[0], target: 'code',
+	}]);
+	// The very object the lookups returned, not a copy or a subset.
+	assert.equal((calls.synthesize[0] as { executed: ExecutedPlan }).executed, calls.executed[0]);
 	assert.deepEqual(calls.fallback, [], 'a covered plan is not replaced');
 });
 

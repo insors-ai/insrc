@@ -438,3 +438,25 @@ Sizing uses the totals. Nothing is partitioned: a request beyond the raised ceil
 - **[[c63]]** `code` `src/analyze/runtimes/shared/adherence.ts` — "const repoPath = executeArgs.intent.scopeRef.value;"
 - **[[c64]]** `code` `src/prompts/analyze/classify.system.md`
 - **[[c65]]** `prior-artifact` `HLD-b9d5c5c40df5a574 thirteenth review of 2026-10-07 by the daemon: block, 2 MED did not hold, none HIGH. Both are applied in this revision, and the direct readers of a scope's value were searched for across src/analyze and listed.`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.epic (design.epic)
+
+**3 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-07T07:03:46.337Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| current-behaviour | MED | The classify-stage mapping, including the daemon's counterpart, knows only the classifier's own errors and records anything raised by the classifier's context build as 'internal-error'. | True for the plan tree only (src/analyze/orchestrator/driver.ts:414-426 ends in `return wrap('internal-error', err);`). The daemon's counterpart already routes context-build errors through the context mapping: src/daemon/analyze-rpc.ts:366-371 'The classifier's shaper-side pre-step can also throw shaper-typed errors … Defer to the shaper error classifier for those.' / `return classifyShaperError(err);`. So on the daemon side a ScopeNotIndexedError or ShaperLlmUnavailableError from the classification bundle keeps its code today. [files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts] | Restate the s6 change as plan-tree only (orchestrator/driver.ts classifyClassifierError delegating to classifyShaperError, as the daemon does), and say the daemon's mapping needs only the new cases added. |
+| change-sites | MED | Reaching the turn limit (Story s1) and a cancelled loop (Story s4) can be returned as 'the existing failed output, with whatever the loop had gathered'. | The existing failed output has no field for gathered content: src/analyze/explore/types.ts:690-695 `FailedExplorationOutput { type: 'failed'; requested; errorCode; message }`. The loop also discards what it gathered when it stops: src/analyze/context/driver.ts:686 `throw new ShaperToolLoopExhausted(maxToolTurns);` and the class (:140-145) carries only the turn count, while the conversation `convo` is a local. freeform-probe.ts:133-141 accordingly returns `rawBundle: emptyRawBundle(), toolCallCount: 0`. Contract sc1 excludes 'failed' from the completeness record and adds no payload to it, so neither the type nor the throw site in the design can carry the gathered material. [files: src/analyze/explore/types.ts, src/analyze/context/driver.ts, src/analyze/explore/freeform-probe.ts] | Add to sc1 (or to Story s1's scope) an optional payload on the failed output for partial findings, and state that runToolLoop's limit and cancel exits return or attach the conversation's tool results instead of throwing a count-only error. |
+| tests | MED | The tests the design names as affected exist as described, and the inventory of what changes when the turn limit, its error and its code are removed covers the tests that reference them. | The named tests are real: src/analyze/classifier/__tests__/validate.test.ts:112 'infra+repo -> scope-ref-kind-target-mismatch' (must flip under the corrected table) and the manifest/catalog equality test. But the s4 removal inventory names no test that imports the removed class: src/analyze/orchestrator/__tests__/orchestrator.test.ts:51, :115 (`[new ShaperToolLoopExhausted('exhausted'), 'shaper-tool-loop-exhausted']`), src/analyze/context/__tests__/driver-unit.test.ts:33, :212-215, and driver.live.test.ts:56, :378-447. A named ESM import of a deleted export fails the whole file at load. Config literals with `maxToolTurns: 40` also sit in role-router.test.ts:32, summariser-provider.test.ts:23, sampler-context.test.ts:27 and shaper-provider.test.ts:29, :114. Separately, the HLD carries no mapping from acceptance criteria to tests; it only says s3 is 'exercised by … tests that lower the threshold'. [files: src/analyze/orchestrator/__tests__/orchestrator.test.ts, src/analyze/context/__tests__/driver-unit.test.ts, src/analyze/context/__tests__/driver.live.test.ts, src/analyze/classifier/__tests__/validate.test.ts] | Add the three test files that import ShaperToolLoopExhausted, and the config-literal fixtures, to Story s4's retirement list; require each Story's LLD to map its Define criteria to tests, since the HLD does not. |
+
+#### Could not verify (does not block)
+
+_None._

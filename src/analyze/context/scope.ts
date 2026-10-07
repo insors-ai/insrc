@@ -206,6 +206,33 @@ async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedSc
 	};
 }
 
+/**
+ * Is `connectionId` declared by at least one registered repo? The
+ * classifier's validator asks this for a connection scope. (Whether
+ * exactly one repo declares it is decided when the scope is resolved.)
+ * An unreadable connections file is reported, not skipped.
+ */
+export async function connectionIsRegistered(
+	connectionId: string,
+	deps: ScopeDeps = REAL_DEPS,
+): Promise<boolean> {
+	const repos = await deps.listRepos();
+	// Serial on purpose: one file read per repo, in registry order.
+	for (const repo of repos) {
+		let loaded: LoadedConnections;
+		try {
+			loaded = await deps.loadConnections(repo.path);
+		} catch (err) {
+			throw new ScopeRefUnresolvedError(
+				`Connection '${connectionId}' could not be checked: the connections file of ` +
+					`repo '${repo.path}' could not be read (${(err as Error).message}).`,
+			);
+		}
+		if (loaded.resolved.some(c => c.id === connectionId)) return true;
+	}
+	return false;
+}
+
 async function resolveConnection(connectionId: string, deps: ScopeDeps): Promise<ResolvedScope> {
 	const repos = await deps.listRepos();
 	const declaring: string[] = [];

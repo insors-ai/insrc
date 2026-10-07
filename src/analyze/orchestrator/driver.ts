@@ -30,6 +30,8 @@
 import { getLogger } from '../../shared/logger.js';
 
 import { classify, pickScope } from '../classifier/index.js';
+import { validateIntentSemantics } from '../classifier/validate.js';
+import { connectionIsRegistered } from '../context/scope.js';
 import {
 	ClassifierLlmUnavailableError,
 	ClassifierPromptMissingError,
@@ -75,6 +77,8 @@ import type {
 } from './types.js';
 import type {
 	AnalyzeScope,
+	AnalyzeScopeRef,
+	AnalyzeTarget,
 	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
 
@@ -177,6 +181,17 @@ export async function runAnalyze(
 
 	let intent: ClassifiedIntent;
 	if (args.targetHint !== undefined) {
+		// No classifier runs on this branch, so no validator does either.
+		// Make its two checks here, before any model call: the pairing of
+		// the scope's kind with the hinted kind of source, and that the
+		// scope resolves.
+		const hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef);
+		if (!hinted.ok) {
+			record = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });
+			writeRunRecord(record);
+			log.warn({ runId, code: hinted.failure.code }, 'runAnalyze: hinted request failed validation');
+			return emitDoneAndReturn(failResult('classify', hinted.failure, undefined, start, runId));
+		}
 		// Skip the full classifier -- caller (chat panel slash command)
 		// has explicitly picked the target. Saves the ~3-min classifier
 		// round-trip. But the classifier ALSO picks the scope band; if
@@ -221,10 +236,8 @@ export async function runAnalyze(
 			}
 		}
 		intent = {
-			target: args.targetHint,
+			...hinted.base,
 			scope:  pickedScope,
-			focused: false,
-			scopeRef: initialScopeRef,
 			reasoning: `target hinted via slash command (classifier skipped); ${pickReasoning}`,
 		};
 		log.info(
@@ -415,21 +428,70 @@ export async function runAnalyze(
 }
 
 // ---------------------------------------------------------------------------
+// The branch for a request with a stated kind of source
+// ---------------------------------------------------------------------------
+
+type HintedIntentBase = Pick<ClassifiedIntent, 'target' | 'focused' | 'focus' | 'scopeRef'>;
+
+/**
+ * Build what a hinted request's intent is known to be before its size
+ * is picked, and validate it.
+ *
+ * The user's prompt IS the request's focus: an intent built here used
+ * to be marked unfocused always, though the prompt was in hand. With
+ * an empty prompt it is unfocused -- which the pipeline serves.
+ *
+ * `validate` is the classifier's validator; `connectionExists` the
+ * check it uses for a connection scope. Both are parameters so a test
+ * can stand in for the registry.
+ */
+export async function hintedIntentBase(
+	target:      AnalyzeTarget,
+	userPrompt:  string,
+	scopeRef:    AnalyzeScopeRef,
+	connectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,
+): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }> {
+	const focus = userPrompt.trim();
+	const base: HintedIntentBase = focus.length > 0
+		? { target, focused: true, focus, scopeRef }
+		: { target, focused: false, scopeRef };
+	// The size is not part of either check; 'M' is a placeholder here.
+	const failure = await validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, connectionExists);
+	if (failure !== null) {
+		return {
+			ok: false,
+			failure: {
+				code:    failure.code as RunFailure['code'],
+				message: failure.message,
+			},
+		};
+	}
+	return { ok: true, base };
+}
+
+// ---------------------------------------------------------------------------
 // Per-stage error classifiers
 // ---------------------------------------------------------------------------
 
 function classifyClassifierError(err: unknown): RunFailure {
 	if (err instanceof ClassifierLlmUnavailableError) return wrap('classifier-llm-unavailable', err);
 	if (err instanceof ClassifierSchemaUnrecoverable) return wrap('classifier-schema-unrecoverable', err);
-	if (err instanceof ClassifierValidationExhausted) return wrap('classifier-validation-exhausted', err);
-	if (err instanceof ClassifierPromptMissingError) return wrap('classifier-prompt-missing', err);
-	// Scope-ref errors come from the classifier's intent-validator as
-	// plain Error with stable messages; pattern-match.
-	if (err instanceof Error) {
-		if (/scope-ref-unresolved/.test(err.message)) return wrap('scope-ref-unresolved', err);
-		if (/scope-ref-kind-target-mismatch/.test(err.message)) return wrap('scope-ref-kind-target-mismatch', err);
+	// The validator's failure arrives wrapped. Surface its own code
+	// (scope-ref-unresolved / scope-ref-kind-target-mismatch) as the
+	// run's code, as the daemon's mapping does, so a run names the
+	// precise reason and not "validation exhausted".
+	if (err instanceof ClassifierValidationExhausted) {
+		return {
+			code:    err.lastFailure.code as RunFailure['code'],
+			message: err.message,
+			data:    { lastFailure: { code: err.lastFailure.code, message: err.lastFailure.message } },
+		};
 	}
-	return wrap('internal-error', err);
+	if (err instanceof ClassifierPromptMissingError) return wrap('classifier-prompt-missing', err);
+	// Anything else came from the classifier's own context build (the
+	// classification bundle): map it as a context error, so a scope
+	// that is not indexed or a model that is unavailable keeps its cause.
+	return classifyShaperError(err);
 }
 
 function classifyShaperError(err: unknown): RunFailure {

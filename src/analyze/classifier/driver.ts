@@ -40,6 +40,7 @@ import { resolveRoleProvider } from '../context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { isModelCallFailure, modelCallFailureDetail } from '../context/model-failure.js';
+import { connectionIsRegistered } from '../context/scope.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
 import { CONTRACT_FOOTER_MD } from '../contract.js';
 import { shaperFor } from '../context/index.js';
@@ -107,8 +108,18 @@ export interface ClassifyDriverArgs {
 	readonly input:    ClassifyInput;
 	readonly opts:     ClassifyOpts;
 	readonly provider?: LLMProvider | undefined;
-	/** Optional connection-existence check for `kind=connection` scopes. */
+	/** Connection-existence check for `kind=connection` scopes. When a
+	 *  caller supplies none, the real one is used -- so the check runs
+	 *  for every caller of the classifier (it used to be skipped whenever
+	 *  the caller passed nothing, which was always). */
 	readonly connectionExists?: (id: string) => Promise<boolean>;
+}
+
+/** The connection check a classify call validates with. */
+export function connectionCheckFor(
+	args: Pick<ClassifyDriverArgs, 'connectionExists'>,
+): (id: string) => Promise<boolean> {
+	return args.connectionExists ?? connectionIsRegistered;
 }
 
 export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedIntent> {
@@ -158,7 +169,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedInte
 		}
 
 		// Semantic validation: scopeRef.kind ↔ target match + path resolution.
-		const failure = await validateIntentSemantics(raw, args.connectionExists);
+		const failure = await validateIntentSemantics(raw, connectionCheckFor(args));
 		if (failure === null) {
 			log.debug(
 				{ runId: opts.runId, target: raw.target, scope: raw.scope, attempt },

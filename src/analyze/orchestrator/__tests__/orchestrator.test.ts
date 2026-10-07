@@ -69,7 +69,6 @@ test('classifyClassifierError: typed errors map to stable codes', () => {
 	const cases: Array<[Error, string]> = [
 		[new ClassifierLlmUnavailableError('down'),                   'classifier-llm-unavailable'],
 		[new ClassifierSchemaUnrecoverable(['mismatch']),             'classifier-schema-unrecoverable'],
-		[new ClassifierValidationExhausted([], []),                   'classifier-validation-exhausted'],
 		[new ClassifierPromptMissingError('/p'),                      'classifier-prompt-missing'],
 	];
 	for (const [err, expected] of cases) {
@@ -79,11 +78,33 @@ test('classifyClassifierError: typed errors map to stable codes', () => {
 	}
 });
 
-test('classifyClassifierError: scope-ref pattern in plain Error message', () => {
-	const a = _classifyClassifierErrorForTest(new Error('scope-ref-unresolved: foo'));
-	assert.equal(a.code, 'scope-ref-unresolved');
-	const b = _classifyClassifierErrorForTest(new Error('scope-ref-kind-target-mismatch: bar'));
-	assert.equal(b.code, 'scope-ref-kind-target-mismatch');
+test("plan tree's classify mapping returns the inner code and passes context errors on; the table-test row rewritten", () => {
+	// The validator's failure arrives wrapped. The run is given ITS code,
+	// not 'classifier-validation-exhausted' -- as the daemon's mapping does.
+	const unresolved = _classifyClassifierErrorForTest(new ClassifierValidationExhausted({
+		code: 'scope-ref-unresolved', message: "Path '/nope' does not exist on disk.",
+	}));
+	assert.equal(unresolved.code, 'scope-ref-unresolved');
+	assert.match(unresolved.message, /Path '\/nope' does not exist on disk/);
+	assert.deepEqual(unresolved.data, {
+		lastFailure: { code: 'scope-ref-unresolved', message: "Path '/nope' does not exist on disk." },
+	});
+	const mismatch = _classifyClassifierErrorForTest(new ClassifierValidationExhausted({
+		code: 'scope-ref-kind-target-mismatch', message: "scopeRef.kind='connection' is incompatible with target='code'.",
+	}));
+	assert.equal(mismatch.code, 'scope-ref-kind-target-mismatch');
+
+	// An error from the classifier's own context build (the classification
+	// bundle) is mapped as a context error -- it used to be 'internal-error'.
+	const notIndexed = _classifyClassifierErrorForTest(new ScopeNotIndexedError('/r/unindexed', undefined, 'no entities'));
+	assert.equal(notIndexed.code, 'scope-not-indexed');
+	assert.equal(notIndexed.data?.['scopePath'], '/r/unindexed');
+	assert.equal(_classifyClassifierErrorForTest(new ShaperLlmUnavailableError('down')).code, 'shaper-llm-unavailable');
+	assert.equal(_classifyClassifierErrorForTest(new ShaperPromptMissingError('/p')).code, 'shaper-prompt-missing');
+
+	// A plain Error whose message merely mentions a code is NOT matched by
+	// text any more: the code is read from the typed error, or not at all.
+	assert.equal(_classifyClassifierErrorForTest(new Error('scope-ref-unresolved: foo')).code, 'internal-error');
 });
 
 test('classifyClassifierError: unrecognized error -> internal-error', () => {

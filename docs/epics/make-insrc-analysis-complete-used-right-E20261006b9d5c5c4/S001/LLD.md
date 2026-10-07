@@ -1,0 +1,503 @@
+<!-- insrc:artifact LLD-b9d5c5c40df5a574-s1 -->
+
+# LLD: E20261007b9d5c5c4:S001
+
+## Summary
+
+**Epic:** `make-insrc-analysis-complete-used-right`
+**HLD base run:** `wf-1791349476498-tih4l4`
+**HLD effective hash:** `7d17654ecfd1...`
+
+Today a result that was cut, a lookup that failed and an answer that could not be written can all look like a complete, successful result. This Story gives every lookup result and every plan-task result one statement of its own completeness, built at the place that knows what was left out, and makes a lookup that cannot run report as failed instead of as empty. Every answer then carries a report derived from those statements, with a completeness line written by code at its head. When the step that writes the answer fails, the request ends with that failure and with what the lookups found. No limit is changed: this Story only makes the analyzer say what it left out.
+
+## Contents
+
+1. [HLD context](#1-hld-context)
+2. [Contract details](#2-contract-details)
+3. [Data model changes](#3-data-model-changes)
+4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
+5. [Error paths](#5-error-paths)
+6. [Test strategy](#6-test-strategy)
+7. [Migration](#7-migration)
+8. [Alternatives considered](#8-alternatives-considered)
+9. [References](#9-references)
+10. [Open questions](#10-open-questions)
+
+## 1. HLD context
+
+> See **HLD-b9d5c5c40df5a574** § 2. Framework summary
+
+**Rollout phase:** Phase B — say when a result is incomplete
+**Owns:** `sc1` (Completeness record), `sc2` (Answer report)
+**Consumes:** `sc6` (Causes of not proceeding)
+
+**Adjacent scope (owned by other stories — do NOT implement here):**
+- `s2`: The two measuring sources and the mapping from counts to the five sizes. From lookup results, at all four places that assume a size today. From the named area, on the plan tree: the measuring pass after both classification branches, removal of the scope picker's model call, removal of the size from the classifier's output, what the decomposer and planner receive as size at each moment, the size's effect on plan depth as well as task count, and measuring a child plan from the area it names when it is spawned, with the planner model's figure and a size on the daemon request kept as hints. A size given by a caller or a slash command kept as a hint. The unmeasurable case. Filling the measure into the answer report and showing it in the answer. The source of the measure for each of the seven kinds of scope, including counting a data connection's tables or objects from the live source through the data driver, and the fallback to XL, recorded as not determined, when a count cannot be taken. Adding a complete mode to the data drivers' listings for the count (the five relational drivers, four of the six namespace drivers, the file listing; Redis and etcd are recorded as not determined, since their listing is a sample of keys), with the limited mode kept for other callers; a listing that reports it was cut is never a determined count. — owns `sc3`
+- `s3`: The table from size to handling method and the size above which results are handled in parts. How outputs are divided along directory and file boundaries, and one large item into consecutive sections, so that a single item is read in full. In the lookup pipeline: writing a per-part result for each part serially and the new combine step (its input, its output, its own size rule, its failure case). On the plan tree: the same size rule on the aggregator's input, combining in stages. Keeping a failed part out of the combined answer. The step tool's part turn. Filling the handling report and showing it in the answer. The limits are still in place, so this is exercised by results that are large within them and by tests that lower the threshold. — owns `sc4`
+- `s4`: Removing every limit on how many results a lookup or plan-task runtime returns: the sixteen sites the Define lists and those found since, in the lookups (the maxSources parameter of the two document lookups, the result cut in document retrieval, the cuts inside capability reuse-check, table describe and the document family summary, the preview limits of doc.mention) and in the plan-task runtimes (the file-list and file caps of data and infrastructure discovery and their sample caps). Removing the fixed cuts on an item's content (the eight sites the Define lists, including the three adherence checks). The complete mode of the text search for both backends: no limit on hits, no per-file match limit, no cut of a matching line, no skipping of a file for its size, no discarding of output (the search's output is read as a stream, not kept up to a fixed size), a stated rule for a search that runs out of time (reported as failed, never as complete), and the files each backend excludes by rule stated in the result. Removing the limit parameters, their examples and the fan-out bound from the planning prompt. What was reported as limited in Story s1 now does not occur; the larger results are handled by Story s3's method. Raising the lookup cache's version again, and dropping limit parameters before a lookup's cache key is taken. Building cancellation (a signal from each caller through the context builder to a check between turns; the run's signal into the plan walk and the classifier; the optional signal on the daemon's standard handlers; the signal parameter on the daemon's context-building functions; a signal on the step tool's plan and narrow phases, through stepPlan and the runner context; the new cancel request for the five requests received over the socket that reach a tool loop (the three context requests, the plan request and the classify request), with the daemon's table of run id to canceller; the cancelled case in the classify stage's mapping; 'aborted' in the daemon's error codes; what a cancelled loop returns), moving the table-listing lookup and the object-listing plan task to the complete mode of the data drivers' listings, and only then removing the turn limit and retiring its configuration setting (catalog row, retired list, the analyzer's configuration, the planning prompt, the VS Code extension's declaration with a release, the pages that document it, the reconcile fixture) for all three users of the loop (the free-form lookup and the classification and task modes) and giving the loop the complete mode of its search tools. Removing the error and the code for reaching the turn limit from both lists and both mappings, with the tests that import the error and the test configuration that sets the limit.
+- `s5`: Adding the enumeration question kind to the planner's choices and rendering it directly from lookup results, including returning it from the step tool's plan phase with no model turn. Choosing a layout by question kind and source kind at both places a layout is selected today. Removing the limits from the six layouts and the older per-source layouts and from the summariser's output schema. Making each layout describe every lookup it may draw on, with that reference at the end of the prompt. Laying out the answer report, which Stories s1 to s3 already write, in the form each layout uses. — owns `sc5`
+- `s6`: Giving a request that asks no specific question a run context: what the lookup pipeline plans for it (a broad survey of the area it names, from the lookups that exist) where today it returns at once; the same for a request started with a stated kind of source, which is always marked unfocused; serving, in the lookup pipeline, the four kinds of scope it returns for today (a file, a symbol, a manifest directory, a data connection), and how each resolves to what the lookups need. Replacing the single 'model unavailable' error with the cause of each way of not proceeding, as new codes in the existing list and new typed errors, and with the existing codes where one fits: every place the pipeline returns nothing, and the fall-through for a bundle that fails validation, is listed and given its cause. It owns the place the error is raised, the pipeline's rule for returning nothing, and the functions that map these errors to codes (the plan tree's and the daemon's, and the classify stage's mapping, through which an error from the classifier's context build is routed). The form of a symbol scope's value, its resolution to one stored entity, and the validator and classifier prompt brought in line. The one function that resolves a scope's value to a repo, a path or an entity, and moving the lookup pipeline's direct readers of the value to it (the planning prompt, the context builder's path resolution, the indexed check). Correcting the table of which kind of scope goes with which kind of source, with the classifier prompt's copy of it, the table's comment and the matrix test, and applying it on both classification branches: the plan tree's classify mapping surfaces the validator's inner code, and the branch with no classifier calls the validator's checks directly. Supplying the connection check from both callers of the classifier, and mapping a connection id to its repo. It declares all three new codes in both lists; Stories s1 and s7 raise one each. — owns `sc6`
+- `s7`: Widening the plan tasks of each family (code, docs, infra, data) to exactly the kinds of scope the corrected table gives it, with the scope check the docs tasks share with the code tasks taking the family's row as an argument, and every task that reads the scope's value directly (three docs tasks, the shared adherence task, the task that lists data connections) moved to the resolution function Story s6 defines, including a data connection for the data tasks, and refusing any other pairing with the existing code for it. Running a broad analysis through classification, the run context, planning, the plan walk with its nested plans, and the aggregator, to a final report; finding and correcting what stops it at each stage. A stop the run catches is already recorded; what is added is a handler for an error nothing catches, in the plan walk and in the daemon's request, that writes the run record, and the rule that a record still in progress with no live run behind it is abandoned: the daemon's in-memory set of running ids, the three readers that apply it, and the rewrite of the record as failed with the code 'run-abandoned', which Story s6 declares and this Story raises. Making a task's refusal of a scope a typed error the plan walk recognises, with an optional code on the failed-task record. Its design begins by running one and recording how far it gets; if what is found is more than one Story, it is brought back to be split.
+
+## 2. Contract details
+
+**Surface level:** internal-shared
+
+### 2.1 `Completeness`
+
+```typescript
+// new module src/analyze/completeness.ts
+interface Completeness {
+  readonly complete: boolean;
+  readonly total: number | null;
+  readonly returned: number;
+  readonly limited?: { readonly limit: number; readonly reason: string } | undefined;
+  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;
+  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;
+  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem' | 'model-directed';
+  readonly basisNote?: string | undefined;
+}
+interface WithCompleteness { readonly completeness: Completeness }
+
+function buildCompleteness(facts: {
+  readonly returned: number;
+  readonly total?: number | null | undefined;        // omitted: equal to returned when nothing is limited, else null
+  readonly limited?: Completeness['limited'];
+  readonly skipped?: Completeness['skipped'];
+  readonly partlyRead?: Completeness['partlyRead'];
+  readonly basis: Completeness['basis'];
+  readonly basisNote?: string | undefined;
+  readonly notEstablished?: boolean | undefined;      // the result cannot know whether it is complete
+}): Completeness
+```
+
+**Parameters:**
+- `facts: object (above)` — What the lookup or runtime knows at the place it applied a limit, skipped something or cut content.
+
+**Returns:** `Completeness` — The record. `complete` is computed, never passed in: false when limited, skipped or partlyRead is non-empty, or notEstablished is set; true otherwise. Empty skipped and partlyRead lists are omitted.
+
+**Errors:**
+- `RangeError` when returned is negative, total is a number smaller than returned, or a limit is given whose limit is smaller than returned: the facts contradict each other, which is a bug in the caller
+
+**Postconditions:**
+- An inconsistent record (complete yet limited) cannot be constructed
+- Every lookup output except 'failed' and 'unsupported', and every plan-task result, carries one
+
+### 2.2 `runGrepSearch`
+
+```typescript
+function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrepData>   // signature unchanged
+
+interface SearchGrepData {
+  pattern: string; root: string; usedRipgrep: boolean; hits: GrepHit[]; truncated: boolean;   // as today
+  omitted: {
+    readonly skippedFiles: readonly { readonly path: string; readonly reason: 'too-large' | 'unreadable' }[];
+    readonly shortenedLines: readonly { readonly path: string; readonly line: number; readonly totalChars: number }[];
+    readonly perFileLimitReached: boolean;      // ripgrep's per-file match limit
+    readonly outputDiscarded: boolean;          // the backend's output passed its size cap
+    readonly excludedByRule: string;            // what this backend never reads, in words
+  };
+}
+```
+
+**Parameters:**
+- `opts: GrepSearchOptions` — Unchanged.
+
+**Returns:** `Promise<SearchGrepData>` — As today, plus what the search left out. The field is additive: the search tool's other callers and the review probe are unaffected and keep every limit.
+
+**Postconditions:**
+- The Node backend records a file it skips for its size or because it cannot be read, where today the read error is caught and dropped
+- Both backends record a matching line they shorten
+- excludedByRule states the backend's rule: for ripgrep, files matched by ignore files and hidden and binary files; for the Node backend, the directories it never walks
+
+### 2.3 `executePlan`
+
+```typescript
+function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan>   // signature unchanged; stepPlan likewise
+```
+
+**Parameters:**
+- `args: ExecutePlanArgs` — Unchanged.
+
+**Returns:** `Promise<ExecutedPlan>` — Each result's output is a lookup output carrying its completeness record, or the failed or unsupported output. The existing conversion of a thrown error to the failed output is the single place a lookup failure becomes one.
+
+**Postconditions:**
+- A lookup signals 'could not run' by throwing; none returns an empty result for it
+- A lookup that had gathered something before it failed throws LookupFailedError (new) carrying it; the conversion copies it to the failed output's new `partial` field
+- The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned
+
+### 2.4 `AnswerReport`
+
+```typescript
+// src/analyze/completeness.ts
+interface SourceNote { readonly sourceId: string; readonly sourceKind: 'lookup' | 'plan-task'; readonly reason: string }
+interface AnswerReport {
+  readonly completeness: { readonly complete: boolean; readonly incomplete: readonly SourceNote[]; readonly failed: readonly SourceNote[] };
+  readonly answerFailure?: string | undefined;
+  readonly measure?: unknown;     // typed by Story s2
+  readonly handling?: unknown;    // typed by Story s3
+}
+
+function deriveAnswerReport(sources: readonly {
+  readonly sourceId: string;
+  readonly sourceKind: 'lookup' | 'plan-task';
+  readonly completeness?: Completeness | undefined;   // absent for a failed source
+  readonly failure?: string | undefined;              // the failed source's reason
+}[]): AnswerReport
+
+function renderCompletenessLine(report: AnswerReport): string
+```
+
+**Parameters:**
+- `sources: array (above)` — One entry per executed lookup, or per plan task on the plan tree.
+
+**Returns:** `AnswerReport` — complete is true only when every source is complete and none failed. incomplete names each source whose record is not complete, with a reason composed from its limited, skipped and partlyRead; failed names each failed, unsupported or dependency-skipped source with its reason. renderCompletenessLine turns the report into the one line written at the head of an answer: 'Complete.' or 'Incomplete: ...' naming every such source.
+
+**Errors:**
+- `RangeError` when a source has neither a completeness record nor a failure: every source must account for itself
+
+**Postconditions:**
+- The report is derived, never written by a model
+- A source with no completeness record and no failure cannot be silently counted as complete
+
+### 2.5 `errorForPipelineCause`
+
+```typescript
+function errorForPipelineCause(cause: PipelineCause, message: string, extra?: { readonly promptPath?: string | undefined; readonly found?: AnswerStepFound | undefined }): Error
+
+interface AnswerStepFound { readonly results: readonly ExecutedExploration[]; readonly report: AnswerReport }
+
+class ShaperAnswerStepFailedError extends Error {
+  readonly reason: 'model-failed' | 'invalid-answer' | 'invalid-bundle';
+  readonly found: AnswerStepFound;
+}
+```
+
+**Parameters:**
+- `extra.found: AnswerStepFound` _(optional)_ — What the lookups returned and the report derived from them, for the three causes that arise after the lookups ran.
+
+**Returns:** `Error` — The three rows Story s6 marked interim change: 'answer-model-failed', 'answer-invalid' and 'bundle-invalid' each give ShaperAnswerStepFailedError with its reason, carrying the lookup results and a report whose answerFailure is set. The pipeline's 'did-not-proceed' outcome carries `found` for those causes. The other rows are unchanged.
+
+**Postconditions:**
+- Both classifyShaperError functions map ShaperAnswerStepFailedError to the declared code 'answer-step-failed', with data { reason, results, report }
+- The daemon's context requests, the one-shot agent tool and the daemon's workflow runner pass that data on: the daemon's error payload carries it, the one-shot tool prints the completeness line and the failed step's reason, and the workflow runner fails its step with the cause and the report
+- 'shaper-llm-unavailable' is still reported for a failed planning call, where no lookups have run
+
+### 2.6 `runShaper`
+
+```typescript
+function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle>   // signature unchanged
+
+interface AnalyzeContextBundle { /* seven layers and meta, as today */ readonly report?: AnswerReport | undefined }
+```
+
+**Parameters:**
+- `args: RunShaperArgs` — Unchanged.
+
+**Returns:** `Promise<AnalyzeContextBundle>` — For run mode the bundle carries the report derived from the executed lookups. For a free-form answer the report has one source whose record has basis 'model-directed' and is not complete.
+
+**Errors:**
+- `ShaperAnswerStepFailedError -> 'answer-step-failed'` when the answer-writing call's model failed, its output was invalid, or the bundle failed validation
+
+**Postconditions:**
+- ANALYZE_CONTEXT_BUNDLE_SCHEMA declares `report` as an optional property and SCHEMA_VERSION becomes 2; the version is part of the bundle cache key, so bundles cached before are built again
+- The schema handed to a model has `report` removed at both places it reaches one: the answer-writing call (stripMetaFromSchema, used at three sites in synthesizer.ts) and the tool loop's final answer (runFinalStructuredEmit, which is given the full schema today). A `report` found in a model's answer is discarded before validation
+- The two functions that turn a bundle into text (renderBundleAsMarkdown, src/mcp/bundle-md.ts; assembleMarkdown, src/analyze/context/bundle.ts) write renderCompletenessLine(report) first when the bundle has a report, and 'Completeness was not recorded for this answer.' when it has none
+
+### 2.7 `runAggregator`
+
+```typescript
+function runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>   // signature unchanged
+
+interface TemplateExecuteResult { readonly outputs: ReadonlyMap<string, unknown>; readonly completeness: Completeness }
+interface TaskExecutionRecord { /* as today */ readonly completeness?: Completeness | undefined }
+interface RunAnalyzeOk { /* as today */ readonly report: AnswerReport }
+```
+
+**Parameters:**
+- `args: RunAggregatorArgs` — Unchanged in shape; the task outputs it renders into the aggregation prompt now come with each task's completeness record.
+
+**Returns:** `Promise<AggregateReport>` — Unchanged in shape. The run's result gains the answer report, derived from every task record of the plan walk (a failed or dependency-skipped task is a failed source) and from the report of the run's first step, the run context.
+
+**Postconditions:**
+- Each of the plan-task runtimes returns a completeness record for what it produced; the plan walk copies it to the task's record
+- The run record stores the report; a record written before the change is replayed with a report that says completeness was not recorded
+- The final report's text starts with the completeness line, written by code
+
+## 3. Data model changes
+
+### 3.1 `The twenty lookup outputs (ExplorationOutput)` — field-add
+
+Each output except 'failed' and 'unsupported' gains `completeness`. The fields it replaces are removed: `truncated` on three outputs (src/analyze/explore/types.ts:458, :553, :673), `totalCallers` (:303), whose value becomes completeness.total, and the free-form lookup's `exhaustedNote` (:650). `totalEntities`, `totalBytes` and the degree totals stay: they are content, not statements of completeness. A `notFoundNote` stays where it explains an empty result that is complete; where it reports that something could not be read or resolved, that fact moves to completeness.skipped and the note is left empty. The basis per lookup: text for search.text and config.trace; graph for concept.resolve, symbol.locate, import.graph, usage.example, class.hierarchy, convention.detect, test.locate, data-model.trace, manifests.locate and capability.reuse-check; doc-index for doc.mention, doc.decision.trace and doc.constraint.enumerate; data-source for the three db lookups; filesystem for module.profile; model-directed for freeform.probe. Every graph-based result carries the basisNote that the stored graph's own coverage is not established (ISSUE-12f70133491114c9).
+
+**Call sites:**
+- `src/analyze/explore/types.ts`
+- `src/analyze/explore/search-text.ts`
+- `src/analyze/explore/config-trace.ts`
+- `src/analyze/explore/module-profile.ts`
+- `src/analyze/explore/db-tables-list.ts`
+- `src/analyze/explore/db-table-describe.ts`
+- `src/analyze/explore/db-connections-list.ts`
+- `src/analyze/explore/doc-constraint-enumerate.ts`
+- `src/analyze/explore/doc-decision-trace.ts`
+- `src/analyze/explore/freeform-probe.ts`
+
+### 3.2 `FailedExplorationOutput` — field-add
+
+Gains `partial?: readonly { readonly source: string; readonly content: string }[]`: what was found before the lookup failed. Filled for the free-form lookup when its loop reaches the turn limit (each tool call it made and what it returned), and by any lookup that throws LookupFailedError with findings. Reaching the turn limit is a failed output, where today it is an empty result with a note. The loop's own error (ShaperToolLoopExhausted) gains a field holding the tool results it gathered, where today it carries only the turn count.
+
+**Call sites:**
+- `src/analyze/explore/types.ts`
+- `src/analyze/explore/executor.ts`
+- `src/analyze/explore/freeform-probe.ts`
+- `src/analyze/context/driver.ts`
+
+### 3.3 `The catch clauses of the lookups` — invariant-change
+
+Thirteen lookup files hold twenty-eight catch clauses. The rule: a catch clause may return a result only when it handles one named, expected condition (an optional file that does not exist; a listing a driver does not support) AND the result's completeness record says so, as skipped or as a basisNote. Every other catch rethrows, so the executor reports the lookup as failed. Six clauses read so far swallow an error and change to a throw: search-text.ts:107-120, config-trace.ts:107-111, db-connections-list.ts:45-49, doc-constraint-enumerate.ts:128-132, doc-decision-trace.ts:135-139 and the free-form lookup's turn-limit branch. The remaining clauses are classified one by one in the build, each recorded as 'expected: <condition>' or 'rethrow'.
+
+**Call sites:**
+- `src/analyze/explore/search-text.ts`
+- `src/analyze/explore/config-trace.ts`
+- `src/analyze/explore/db-connections-list.ts`
+- `src/analyze/explore/doc-constraint-enumerate.ts`
+- `src/analyze/explore/doc-decision-trace.ts`
+- `src/analyze/explore/module-profile.ts`
+- `src/analyze/explore/db-table-describe.ts`
+- `src/analyze/explore/db-tables-list.ts`
+
+### 3.4 `Content cut inside a lookup or a runtime, and data-driver listings` — field-add
+
+Every place that cuts an item's content reports it in partlyRead with the item's name, the characters kept and the characters it had: the two document lookups' 2,000-character cut, the three adherence checks' 1,200, module.profile's 4,096 and the summariser's 8,192. Every place that stops at a count reports it in limited with the limit and what it was a limit on. The table-listing lookup and the object-listing plan task read the data driver's cut flag into limited. The infra file walk's `truncated` and the per-family sample become limited on the inventories that use them. The limits and cuts keep their values.
+
+**Call sites:**
+- `src/analyze/explore/doc-constraint-enumerate.ts`
+- `src/analyze/explore/doc-decision-trace.ts`
+- `src/analyze/explore/module-profile.ts`
+- `src/analyze/explore/db-tables-list.ts`
+- `src/analyze/runtimes/infra/_shared.ts`
+- `src/analyze/runtimes/infra/discovery-families.ts`
+- `src/analyze/runtimes/infra/adherence-check.ts`
+
+### 3.5 `The step tool's bundle` — invariant-change
+
+The agent writes the seven layers; the tool derives the report itself from the lookups it executed for that run and attaches it to the bundle it accepts. A bundle in which the agent supplied a `report` is rejected with the existing retryable 'bundle-schema' error. The markdown it returns starts with the completeness line.
+
+**Call sites:**
+- `src/mcp/analyze-step/phases/bundle.ts`
+
+### 3.6 `The answer-writing prompts that describe a lookup output's fields` — field-modify
+
+Five prompts list a lookup output's fields and name the ones this Story removes: synthesize.adherence.system.md (:24 totalCallers, :25 and :28 truncated, :56 an instruction to flag search.text.truncated), synthesize.data.system.md (:19, :46 and :68, truncated on the table listing), synthesize.capability.system.md (:24 totalCallers) and synthesize.code.system.md (:46 totalCallers, :73 truncated, :79 exhaustedNote). Each field list is changed to name `completeness` in their place, and each instruction that tells the model to mark a cut result is changed to read the record. Only these field lists and those instructions change: the layout each prompt asks for is Story s5's and is left as it is. Current behaviour that could break: a prompt left naming a removed field would have the model look for a flag that is never present and conclude the result is complete.
+
+**Call sites:**
+- `src/prompts/analyze/synthesize.adherence.system.md`
+- `src/prompts/analyze/synthesize.data.system.md`
+- `src/prompts/analyze/synthesize.capability.system.md`
+- `src/prompts/analyze/synthesize.code.system.md`
+
+### 3.7 `A plan task's stored record, read back on resume` — invariant-change
+
+The plan walk stores each finished task's record under the run's directory and, when a run is resumed, treats a stored record with status ok as complete and takes its outputs from disk (src/analyze/executor/cache.ts). A record stored before this change has no completeness. On resume such a record is not treated as complete: the task runs again, so no task enters the report without a record. Current behaviour that changes: a resumed run reuses every stored ok record.
+
+**Call sites:**
+- `src/analyze/executor/cache.ts`
+- `src/analyze/executor/walker.ts`
+- `src/analyze/executor/types.ts`
+
+### 3.8 `Other readers and writers of what this Story changes` — field-modify
+
+usage-example.ts fills totalCallers and changes to fill completeness.total. The step tool's narrow phase writes a lookup output to the lookup cache (src/mcp/analyze-step/phases/narrow.ts:28) and so writes under the versioned key, with an output that carries a record; the cache's deletion by repo (src/db/entities.ts:580) is by repo and is unaffected. The turn-limit error is read in three places: the free-form lookup (freeform-probe.ts:140), which rethrows it as a failed lookup with the findings; and the two mapping functions (src/analyze/orchestrator/driver.ts:515, src/daemon/analyze-rpc.ts:907), which keep mapping it to 'shaper-tool-loop-exhausted' for the tool loop run as the whole answer, and now pass on the findings it carries. The review probe is the search primitive's third caller (src/workflow/review/probe.ts) and ignores the new field.
+
+**Call sites:**
+- `src/analyze/explore/usage-example.ts`
+- `src/mcp/analyze-step/phases/narrow.ts`
+- `src/db/entities.ts`
+- `src/analyze/orchestrator/driver.ts`
+- `src/daemon/analyze-rpc.ts`
+- `src/workflow/review/probe.ts`
+
+## 4. Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc1` | implements | Implements the record and its builder, puts it on every lookup output and plan-task result, and adds the failed output's optional partial findings. One refinement of the sketch: `basis` gains the value 'model-directed' for the free-form lookup, whose answer rests on a search a model chose and so cannot be established complete; the HLD describes that case in words without giving it a value. |
+| `sc2` | implements | Implements the report, its derivation from the records and the completeness line. `measure` and `handling` are declared as optional and untyped here; Stories s2 and s3 type and fill them. |
+| `sc6` | consumes | Raises the declared code 'answer-step-failed' through Story s6's cause table: the three interim rows become one error class with a reason, and both mapping functions gain its case. Neither the cause list's other members nor the failure type change. |
+
+## 5. Error paths
+
+**Error cases**
+
+- **A text search cannot run (the search process fails, the pattern is invalid, the root cannot be read)** (recoverable)
+  - Detection: runGrepSearch throws inside search.text or config.trace; the catch clause that returns an empty result today is removed, so the error reaches the lookup executor's catch.
+  - Response: The executor writes the failed output with the lookup's type, an error code and the message. The answer report lists it under failed.
+  - User impact: The answer says the search failed and why, where today it reads as a search that found nothing.
+- **A document lookup or a data-connection listing fails inside its own catch clause** (recoverable)
+  - Detection: The clauses at doc-constraint-enumerate.ts:128-132, doc-decision-trace.ts:135-139 and db-connections-list.ts:45-49 rethrow where they return a result today.
+  - Response: Failed output, as above.
+  - User impact: A failed lookup is named as failed.
+- **The free-form lookup's tool loop reaches its turn limit** (recoverable)
+  - Detection: The loop raises its existing limit error, which now carries the tool results gathered; the free-form lookup's catch for that error rethrows it as LookupFailedError with those results.
+  - Response: Failed output with `partial` filled. The lookup is listed as failed in the answer report, and the answer-writing step is given the failed output to state honestly, as for any other failed lookup; the request does not end here.
+  - User impact: The answer says the free-form search did not finish and shows what it had found, where today it returns an empty result with a note.
+- **The answer-writing call's model fails after the lookups ran** (recoverable)
+  - Detection: The pipeline's existing catch for the answer-writing call's model-unavailable error returns the cause 'answer-model-failed', now with the executed results and the derived report.
+  - Response: ShaperAnswerStepFailedError with reason 'model-failed'; mapped to 'answer-step-failed' with the results and the report in its data. No other way of answering is tried.
+  - User impact: The request fails, and the caller receives what the lookups found and which of them were incomplete.
+- **The answer-writing step's output is invalid, or the assembled bundle fails validation** (recoverable)
+  - Detection: The pipeline's catch-all after the answer-writing call ('answer-invalid'), and the validation in settlePipelineOutcome ('bundle-invalid').
+  - Response: ShaperAnswerStepFailedError with reason 'invalid-answer' or 'invalid-bundle', carrying the results and the report.
+  - User impact: As above; the failure says the answer did not have the required shape.
+- **A model's answer includes a `report`** (recoverable)
+  - Detection: The model-facing schema has no `report` property and rejects unknown properties; as a second guard the pipeline deletes a `report` key from the raw answer before it validates.
+  - Response: The model's report is never used; the report on the bundle is the derived one.
+  - User impact: None: an answer cannot claim its own completeness.
+- **An agent supplies a `report` in the bundle it writes through the step tool** (recoverable)
+  - Detection: The step tool's bundle phase validates against the model-facing schema, which has no `report`.
+  - Response: The existing retryable 'bundle-schema' error; no bundle is accepted.
+  - User impact: The agent is told to re-emit the bundle without a report.
+- **A lookup or runtime hands buildCompleteness facts that contradict each other** (terminal)
+  - Detection: buildCompleteness checks returned against total and against the limit.
+  - Response: RangeError. In a lookup it reaches the executor and becomes a failed output for that lookup; in a runtime it fails that task.
+  - User impact: A bug in a lookup shows as that lookup failing, not as a wrong completeness statement.
+- **A plan-task runtime returns no completeness record** (terminal)
+  - Detection: The type requires it; for a runtime that still omits it at run time, the plan walk finds the field missing when it builds the task record.
+  - Response: The task is recorded as failed with the reason 'no completeness record', so it appears in the report as failed and is never counted as complete.
+  - User impact: A runtime that was missed in this Story cannot produce a silently complete result.
+- **A cached lookup output or a cached bundle was written before this change** (recoverable)
+  - Detection: The lookup cache's key now includes a version, and the bundle cache's key includes the schema version, so neither old entry is found.
+  - Response: The lookup is run again and the bundle built again.
+  - User impact: The first request after the update is slower; nothing stale is served as complete.
+- **A plan-tree run record written before this change is replayed** (recoverable)
+  - Detection: The stored record has no report.
+  - Response: The run's result is returned as stored, with a report whose completeness line reads 'Completeness was not recorded for this run.'
+  - User impact: An old answer is not presented as complete or as incomplete.
+
+**Edge cases**
+
+| Input | Expected |
+| :--- | :--- |
+| A lookup that finds nothing, and ran without leaving anything out | total 0, returned 0, complete true. Its notFoundNote, where it has one, still explains the empty result. It is not a failure. |
+| A lookup that reaches its limit | complete false; limited gives the limit and what it limits; total is the count that exists when the lookup knows it, else null. |
+| A text search that skipped two files over the size limit and shortened one matching line | complete false; skipped names both files with reason 'too-large'; partlyRead names the file and line with the characters kept and the characters it had. |
+| A text search with nothing left out | complete true, with a basisNote that states what the backend never reads by rule (ignored, hidden and binary files for ripgrep). |
+| A lookup that reads the stored graph and returns everything it found | complete true with respect to the graph, with the basisNote that the graph's own coverage is not established. The answer report repeats that note once, not per lookup. |
+| A free-form answer | One source with basis 'model-directed', total null, complete false, and the note that completeness cannot be established for a search a model directs. |
+| A document section cut at 2,000 characters | The lookup's result is not complete and partlyRead names the section with 2,000 read of its length. |
+| A data-driver listing that reports it was cut | limited on the table-listing lookup and on the object-listing plan task, with the driver's limit. |
+| A data driver that does not support listing (an expected condition) | The catch clause that handles it returns a result whose record lists the connection under skipped with that reason; it is not a failure. |
+| A plan with one failed lookup and three complete ones | The answer is written from the three; the report is incomplete and lists the failed lookup with its reason; the completeness line at the head says so. |
+| Every lookup of a plan fails | The answer-writing step is still run, on failed outputs only, as today; the report lists all of them as failed. Whether to skip the answer-writing call in that case is raised as an open question. |
+| A bundle with no report (a classification or task bundle, which this Story does not give one) | The two functions that turn a bundle into text write 'Completeness was not recorded for this answer.' |
+
+**Invariants to preserve**
+
+- Every limit and every content cut keeps its present value: this Story changes what a result says, not how much it returns. [[c1]]
+- The lookup executor converts an error a lookup throws into the failed output, at the two places it does so; that conversion stays the single place a lookup failure becomes one. [[c1]]
+- The search tool exposed to other callers and the review probe get the same hits with the same limits; the new field is additive. [[c3]]
+- Each lookup's output reaches the answer-writing call as JSON in the user message, so the completeness record reaches the model without any new wiring; the prompts change only where they name a removed field. [[c5]]
+- The bundle is seven text layers plus meta, validated with unknown fields rejected; the schema version is part of the bundle cache key. [[c5]]
+- A plan task's status is ok, failed or skipped-dependency-unavailable, and the run's failed tasks are an id and a reason. [[c4]]
+- The pipeline returns a named cause and one table converts it to an error; a failed planning call is 'shaper-llm-unavailable'. [[c6]]
+
+## 6. Test strategy
+
+**Test framework:** `node:test with node:assert/strict, run through tsx under Node 22, as in the existing suites under src/analyze; live suites are gated by INSRC_LIVE_TESTS=1. tsc does not compile test files, so every test is proven by running it, and each check that guards a behaviour is shown to fail under a named mutation.`
+
+**Test levels**
+
+- **unit** — The completeness record's builder and the answer report derived from it.
+  - Subjects: `buildCompleteness computes complete: false for limited, skipped, partlyRead or notEstablished, true otherwise, and rejects contradictory facts with RangeError`, `deriveAnswerReport: all complete; one incomplete (reason composed from limited, skipped and partlyRead); one failed; a source with neither a record nor a failure is rejected`, `renderCompletenessLine names every incomplete and every failed source, and repeats a shared basisNote once`
+- **unit** — The search primitive and the two text lookups.
+  - Subjects: `the Node search backend reports a file skipped for its size, a file it cannot read, and a shortened line with its full length, where each is dropped silently today`, `the ripgrep backend reports shortened lines, the per-file limit being reached and discarded output, and states what it excludes by rule`, `search.text and config.trace turn the search's omissions into skipped, partlyRead and limited, and a search that throws becomes the failed output (mutation: restore the catch that returns an empty result)`, `the search tool's hits and limits are unchanged for its other callers`
+  - Fixtures: `a temporary directory with a file over the size limit, an unreadable file and a file with a line longer than 500 characters`
+- **unit** — Every lookup output and every plan-task result carries a record.
+  - Subjects: `a table test over all twenty lookup types: each runner's output has a completeness record with its stated basis, and no output has a `truncated`, `totalCallers` or `exhaustedNote` field`, `each lookup that stops at a count reports limited with the limit, and each that cuts content reports partlyRead with the kept and full lengths (document lookups, module.profile, the adherence checks)`, `each of the catch clauses is covered by a test of its class: an expected condition returns a result whose record says so; anything else reaches the executor as a failed output`, `the free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered, and a free-form answer's record has basis 'model-directed' and is not complete`, `the table-listing lookup and the object-listing plan task read the data driver's cut flag into limited`, `a table test over every registered plan-task runtime: each returns a completeness record; the plan walk copies it to the task record, and a runtime that returns none is recorded as failed`
+  - Fixtures: `stand-in stores and drivers for the lookups`, `a stand-in runtime that omits the record`
+- **unit** — The report on the bundle, and the schema a model is given.
+  - Subjects: `the stored bundle schema accepts a report and the schema version is 2; the schema given to the answer-writing call and to the tool loop's final answer has no report property`, `a report in a model's answer is discarded and the bundle carries the derived one; a bundle an agent writes with a report is rejected by the step tool as 'bundle-schema'`, `runShaper's run-mode bundle carries the report derived from the executed lookups, through the pipeline's stand-in steps`, `renderBundleAsMarkdown and assembleMarkdown write the completeness line first, and the not-recorded line for a bundle with no report`, `a lookup output and a bundle cached before the change are not returned: the lookup cache's key includes its version and the bundle cache's key the schema version`
+- **unit** — The answer-step failure and its way out.
+  - Subjects: `the pipeline's three causes after the lookups ran carry the executed results and the report, and the cause table turns each into ShaperAnswerStepFailedError with its reason`, `both classifyShaperError functions map it to 'answer-step-failed' with the reason, the results and the report in data, and a failed planning call is still 'shaper-llm-unavailable'`, `the daemon's error payload, the one-shot agent tool's message and the daemon's workflow runner's step failure each carry the report and the reason`
+- **integration** — The plan tree's result, with the classifier, context builder, planner, walk and aggregator stood in.
+  - Subjects: `a run with one failed task and one limited task returns a report that names both, and its final report's text starts with the completeness line`, `the run record stores the report, and a record written without one is replayed with the not-recorded line`
+- **live** — The real pipeline on this repository, gated by INSRC_LIVE_TESTS.
+  - Subjects: `a focused request whose text search reaches its limit returns a bundle whose first line says it is incomplete and names that lookup`, `a request with a lookup made to fail returns a bundle that lists it as failed, not as empty`
+  - Fixtures: `this repository indexed, with the model reachable`
+
+**Acceptance mapping**
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `unit: a table test over all twenty lookup types, each with a completeness record and its basis`, `unit: each lookup that stops at a count reports limited, and each that cuts content reports partlyRead`, `unit: a table test over every registered plan-task runtime, each returning a record`, `unit: buildCompleteness computes complete and rejects contradictory facts` |
+| `ac2` | `unit: a text search that throws becomes the failed output`, `unit: each catch clause is covered by a test of its class`, `unit: the free-form lookup at its turn limit is a failed output with partial findings` |
+| `ac3` | `unit: each lookup that cuts content reports partlyRead with the kept and full lengths` |
+| `ac4` | `unit: the Node search backend reports skipped and unreadable files and shortened lines`, `unit: the ripgrep backend reports its omissions and what it excludes by rule`, `unit: search.text and config.trace turn the search's omissions into the record` |
+| `ac5` | `unit: deriveAnswerReport and renderCompletenessLine`, `unit: runShaper's run-mode bundle carries the derived report`, `unit: the two functions that turn a bundle into text write the completeness line first`, `integration: a plan-tree run with a failed and a limited task returns a report naming both`, `live: a focused request whose text search reaches its limit says so in its first line` |
+| `ac6` | `unit: the three causes after the lookups ran carry the results and the report`, `unit: both mapping functions return 'answer-step-failed' with the data`, `unit: the daemon's payload, the one-shot tool and the workflow runner carry the report` |
+
+## 7. Migration
+
+**State before:** From the direct reads recorded in step s1 (2026-10-07): the twenty lookup outputs have no common statement of completeness; three carry `truncated`, one `totalCallers`, the free-form lookup `exhaustedNote`, and eleven a free-text `notFoundNote` (src/analyze/explore/types.ts). The executor turns only a THROWN error into the failed output (src/analyze/explore/executor.ts:218-229), and several lookups catch their own error and return an empty result (search-text.ts:107-120 and four more read in full). The text search drops oversized and unreadable files and shortens lines without reporting it (src/daemon/tools/builtins/search/grep.ts). A plan task's result is an untyped map with no completeness (src/analyze/executor/types.ts:59-62). The bundle is seven layers plus meta at SCHEMA_VERSION 1, with no report (src/analyze/context/schema.ts). The lookup cache's key has no version (src/db/exploration-cache.ts:14-18). From Story s6's build: three causes that arise after the lookups ran map to interim errors that carry nothing the lookups found, and the code 'answer-step-failed' is declared and never raised.
+
+**State after:** Every lookup output except 'failed' and 'unsupported', and every plan-task result, carries a completeness record built by buildCompleteness; the replaced fields (`truncated`, `totalCallers`, `exhaustedNote`) are gone. A lookup that cannot run throws and is reported as failed, with partial findings where it had any. The text search reports what it left out. Every bundle and every plan-tree run result carries an answer report derived by code, and the text form of an answer starts with the completeness line. A failed answer step ends the request with 'answer-step-failed', carrying the lookup results and the report. The bundle schema is at version 2 and the lookup cache's key carries a version, so nothing stored before the change is served as if it had a record.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+**Steps**
+
+1. Add the new module with the completeness record, its builder, the answer report, its derivation and the completeness line. Nothing uses it yet. — ↩ rollbackable
+2. Add the `omitted` field to the text search's result and fill it in both backends. Additive: existing callers ignore it. — ↩ rollbackable
+3. Add `completeness` to each lookup output type and fill it in each lookup, removing `truncated`, `totalCallers` and `exhaustedNote` and updating their readers in the same change, so the type checker finds every reader. Add `partial` to the failed output and the error class that carries findings. Raise the lookup cache's key version in the same change, so no output stored without a record is returned. — ↩ rollbackable
+4. Classify each of the twenty-eight catch clauses in the lookups: change each that swallows an error to rethrow, and make each that handles an expected condition say so in the record. Change the free-form lookup's turn limit from an empty result to a failed output with partial findings. — ↩ rollbackable _(needs: `step 3`)_
+5. Make the completeness record a required part of a plan-task runtime's result, fill it in every runtime, copy it to the task record in the plan walk, and record a runtime that returns none as failed. — ↩ rollbackable _(needs: `step 1`)_
+6. Add the optional `report` to the bundle type and stored schema and raise the schema version to 2; remove `report` from the schema given to a model at both sites and discard one found in a model's answer; derive the report in run mode and for the free-form answer; have the step tool derive and attach it and reject an agent-supplied one. — ↩ rollbackable _(needs: `step 3`)_
+7. Write the completeness line at the head of the text form of a bundle in both rendering functions, with the not-recorded line for a bundle that has no report. — ↩ rollbackable _(needs: `step 6`)_
+8. Replace the three interim rows of the cause table with the answer-step-failed error carrying the results and the report; add its case to both mapping functions; pass its data through the daemon's error payload, the one-shot tool's message and the workflow runner's step failure. — ↩ rollbackable _(needs: `step 6`)_
+9. Add the report to the plan tree's run result and run record, derived from the task records and the run context's report; start the final report's text with the completeness line; replay an older run record with the not-recorded line. — ↩ rollbackable _(needs: `step 5`, `step 6`)_
+10. Update the daemon guide's error-code table and the description of the bundle for the report and the 'answer-step-failed' code. — ↩ rollbackable
+
+**Backward compat:** The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change.
+
+## 8. Alternatives considered
+
+### 8.1 a1: Each result builds its own completeness record, and the old flags are replaced — **CHOSEN**
+
+Every lookup output and every plan-task result carries the completeness record, built at the place that knows what was left out through one shared builder; the truncated flags, totals and not-found notes it replaces are removed in the same Story.
+
+The completeness record is a field on each of the twenty lookup outputs and on each plan-task result. Each lookup and each runtime builds it where the facts are known (where a limit is applied, where a file is skipped, where content is cut), through one small builder that enforces the record's own rules, for example that 'complete' is false whenever anything is limited, skipped or partly read. The search primitive returns what it left out, so the two text lookups can report it. The fields the record replaces (three truncated flags, the two totals, the free-form lookup's exhausted note) are removed and their readers updated; a not-found note stays where it describes an empty result that is complete, and moves into the record where it describes something missing.
+
+A lookup that cannot run throws, so the executor's existing conversion makes it the failed output; each catch clause in the lookups is classified as an expected condition or a swallowed error. The failed output gains an optional field for partial findings. The answer report is derived from the records by one function and stored in a declared field of the bundle; a completeness line is written at the head of the answer from the report by code, not by the model. The plan tree's final report gains the same answer report.
+
+### 8.2 a2: Add the completeness record beside the existing flags
+
+As a1, but the truncated flags, totals and notes stay; the completeness record is added next to them and the old fields are removed in a later Story.
+
+Each lookup output and plan-task result gains the completeness record, built as in a1. The existing truncated flags, totals and notes are left in place and still filled, so their readers and the cached outputs' older fields keep working. The answer report is derived only from the new record. A later Story removes the old fields once nothing reads them.
+
+**Rejected because:** Meets the criteria but leaves two statements of completeness in each output that can disagree, and defers their removal to a Story this Epic does not have.
+
+### 8.3 a3: Derive the record in the executor from what each output already says
+
+Lookups and runtimes are left as they are; the lookup executor and the plan walk wrap each result with a completeness record computed by a per-type adapter from its existing flags.
+
+The executor and the plan walk attach a completeness record to each result after it is produced. A table with one adapter per lookup type and per runtime reads that result's existing truncated flag, totals or notes and writes the record. The answer report is derived from the records as in a1. Swallowed errors are found by the adapter treating a result with a failure note as failed.
+
+**Rejected because:** Cannot meet ac3 or ac4, and cannot tell a swallowed error from an empty result, because the facts it needs are in no output today.
+
+## 9. References
+
+- **[[c1]]** `step-output` `s1 context, entry 1 (a direct read of source on 2026-10-07, not an analyzer run): What a lookup result says about its own completeness today. Files: src/analyze/explore/types.ts, src/analyze/explore/executor.ts`
+- **[[c2]]** `step-output` `s1 context, entry 2 (a direct read of source on 2026-10-07, not an analyzer run): Where lookups catch an error and return an empty or partial result. Files: src/analyze/explore/search-text.ts, src/analyze/explore/config-trace.ts, src/analyze/explore/db-connections-list.ts, src/analyze/explore/doc-constraint-enumerate.ts, src/analyze/explore/doc-decision-trace.ts, src/analyze/explore/freeform-probe.ts, src/analyze/explore/module-profile.ts, src/analyze/explore/db-table-describe.ts, src/analyze/explore/db-tables-list.ts`
+- **[[c3]]** `step-output` `s1 context, entry 3 (a direct read of source on 2026-10-07, not an analyzer run): What the text search leaves out without saying. Files: src/daemon/tools/builtins/search/grep.ts, src/analyze/explore/search-text.ts, src/analyze/explore/config-trace.ts`
+- **[[c4]]** `step-output` `s1 context, entry 4 (a direct read of source on 2026-10-07, not an analyzer run): The plan tree's task results, their cuts, and the final report. Files: src/analyze/executor/types.ts, src/analyze/runtimes/infra/_shared.ts, src/analyze/runtimes/infra/discovery-families.ts, src/analyze/runtimes/infra/adherence-check.ts, src/analyze/runtimes/shared/aggregator.ts, src/analyze/orchestrator/types.ts`
+- **[[c5]]** `step-output` `s1 context, entry 5 (a direct read of source on 2026-10-07, not an analyzer run): How results reach the answer, the bundle's schema, and the two caches. Files: src/analyze/context/synthesizer.ts, src/analyze/context/schema.ts, src/analyze/context/driver.ts, src/mcp/analyze-step/phases/bundle.ts, src/db/exploration-cache.ts`
+- **[[c6]]** `prior-artifact` `s1 context, entry 6 (Story s6 approved build, BUILD record under S006): What Story s6 built that this Story adds to. Files: src/analyze/context/driver.ts, src/analyze/orchestrator/types.ts, src/daemon/analyze-rpc.ts`
+- **[[c7]]** `prior-artifact` `HLD-b9d5c5c40df5a574: shared contracts sc1 (completeness record, owned by s1), sc2 (answer report, owned by s1), sc6 (causes of not proceeding, owned by s6)`
+- **[[c8]]** `prior-artifact` `DEF-b9d5c5c40df5a574: Story s1 and its acceptance criteria ac1 to ac6`
+- **[[c9]]** `code` `A text search of src on 2026-10-07 for the fields this Story removes and the symbols it changes (truncated, totalCallers, exhaustedNote, ShaperToolLoopExhausted, runGrepSearch, the lookup cache, TaskExecutionRecord). Files: src/prompts/analyze/synthesize.adherence.system.md, src/prompts/analyze/synthesize.data.system.md, src/prompts/analyze/synthesize.capability.system.md, src/prompts/analyze/synthesize.code.system.md, src/analyze/executor/cache.ts, src/analyze/executor/walker.ts, src/analyze/explore/usage-example.ts, src/mcp/analyze-step/phases/narrow.ts, src/db/entities.ts, src/workflow/review/probe.ts`
+
+## 10. Open questions
+
+- Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 28 catch clauses in 13 files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 28 change.
+- Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.

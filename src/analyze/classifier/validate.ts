@@ -24,7 +24,6 @@
  */
 
 import { existsSync, statSync } from 'node:fs';
-import { dirname } from 'node:path';
 
 import type {
 	AnalyzeScopeRef,
@@ -39,18 +38,30 @@ import type {
  * "analyze this repo / workspace / connection" can flow through
  * the generic-shaper regardless of what the user pointed at.
  *
- * code  -> repo | module | file | symbol | workspace
- * data  -> connection | workspace
- * infra -> manifest-dir | workspace
+ * This table is the ONE statement of which kind goes with which
+ * kind of source. Each row lists every kind that has a meaning for
+ * that source -- it matches what the source's plan tasks accept:
+ *
+ * code  -> repo | module | file | symbol | manifest-dir | workspace
+ * data  -> connection | repo | manifest-dir | workspace
+ * infra -> repo | manifest-dir | workspace
+ * docs  -> repo | module | file | workspace
  * generic -> any
+ *
+ * The classifier's prompt (prompts/analyze/classify.system.md) states
+ * the same rows; a test holds the two equal.
  */
-const TARGET_TO_KINDS: Readonly<Record<AnalyzeTarget, ReadonlyArray<AnalyzeScopeRef['kind']>>> = Object.freeze({
-	code:    ['repo', 'module', 'file', 'symbol', 'workspace'],
-	data:    ['connection', 'workspace'],
-	infra:   ['manifest-dir', 'workspace'],
+export const TARGET_TO_KINDS: Readonly<Record<AnalyzeTarget, ReadonlyArray<AnalyzeScopeRef['kind']>>> = Object.freeze({
+	code:    ['repo', 'module', 'file', 'symbol', 'manifest-dir', 'workspace'],
+	data:    ['connection', 'repo', 'manifest-dir', 'workspace'],
+	infra:   ['repo', 'manifest-dir', 'workspace'],
 	docs:    ['repo', 'module', 'file', 'workspace'],
 	generic: ['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace'],
 });
+
+/** Separates the file path from the entity name in a symbol scope's
+ *  value: `<absolute file path>#<entity name>`, split at the LAST one. */
+const SYMBOL_SEPARATOR = '#';
 
 /** Filesystem-y kinds whose `value` must point at an existing path. */
 const FILESYSTEM_KINDS: ReadonlySet<AnalyzeScopeRef['kind']> = new Set([
@@ -139,6 +150,14 @@ async function checkScopeRefResolves(
 		return null;
 	}
 
+	// A symbol's value is not itself a path: it is a file path, the
+	// separator, and an entity name. Split it BEFORE any test against
+	// the file system and test the file part. Whether the name matches
+	// a stored entity is decided when the scope is resolved, not here.
+	if (scopeRef.kind === 'symbol') {
+		return checkSymbolValue(scopeRef.value);
+	}
+
 	const path = scopeRef.value;
 	if (!existsSync(path)) {
 		return {
@@ -160,19 +179,6 @@ async function checkScopeRefResolves(
 			}
 			break;
 		}
-		case 'symbol': {
-			// Symbol values typically encode "<file>:<symbol>" or
-			// similar. We loosely require the containing dir to exist
-			// (in case the value is "file:symbol" we don't fully parse).
-			const parent = dirname(path);
-			if (!existsSync(parent)) {
-				return {
-					code:    'scope-ref-unresolved',
-					message: `kind='symbol' value '${path}' resolves to a parent directory that doesn't exist.`,
-				};
-			}
-			break;
-		}
 		case 'repo':
 		case 'module':
 		case 'manifest-dir':
@@ -188,5 +194,31 @@ async function checkScopeRefResolves(
 		}
 	}
 
+	return null;
+}
+
+function checkSymbolValue(value: string): ValidationFailure | null {
+	const at = value.lastIndexOf(SYMBOL_SEPARATOR);
+	const filePart = at === -1 ? '' : value.slice(0, at);
+	const namePart = at === -1 ? '' : value.slice(at + 1);
+	if (filePart.length === 0 || namePart.length === 0) {
+		return {
+			code:    'scope-ref-unresolved',
+			message:
+				`kind='symbol' expects '<absolute file path>${SYMBOL_SEPARATOR}<entity name>'; got '${value}'.`,
+		};
+	}
+	if (!existsSync(filePart)) {
+		return {
+			code:    'scope-ref-unresolved',
+			message: `kind='symbol': file '${filePart}' does not exist on disk.`,
+		};
+	}
+	if (!statSync(filePart).isFile()) {
+		return {
+			code:    'scope-ref-unresolved',
+			message: `kind='symbol' expects a regular file before '${SYMBOL_SEPARATOR}'; '${filePart}' is not a file.`,
+		};
+	}
 	return null;
 }

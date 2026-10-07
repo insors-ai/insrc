@@ -31,17 +31,17 @@ You receive a user's raw request, the scope reference they surfaced, and a small
 
 The `scopeRef.kind` you emit must be compatible with `target`:
 
-  - `target=code`    → kinds: `repo | module | file | symbol | workspace`
-  - `target=data`    → kinds: `connection | workspace`
-  - `target=infra`   → kinds: `manifest-dir | workspace`
+  - `target=code`    → kinds: `repo | module | file | symbol | manifest-dir | workspace`
+  - `target=data`    → kinds: `connection | repo | manifest-dir | workspace`
+  - `target=infra`   → kinds: `repo | manifest-dir | workspace`
   - `target=docs`    → kinds: `repo | module | file | workspace`
   - `target=generic` → any kind
 
-A `target=data` with `scopeRef.kind=file` is incoherent and will fail validation. If the user surfaced a path that doesn't fit the natural target (e.g. they pointed at a code repo but asked a data question), choose `target=generic` so the planner can resolve it.
+A `target=data` with `scopeRef.kind=file` is incoherent and will fail validation. A data or infra question about a repo is fine as it stands: keep `kind=repo`. Only when the path the user surfaced has no pairing with the natural target (e.g. they pointed at a single file but asked a data question) choose `target=generic` so the planner can resolve it.
 
 ## Path resolution (HARD RULE)
 
-The `scopeRef.value` you emit MUST resolve. For filesystem-y kinds (`repo | module | file | symbol | manifest-dir | workspace`), the path must exist on disk and be the right shape (`file` for `kind=file`, directory for the others). For `kind=connection`, the value must be a registered connection id.
+The `scopeRef.value` you emit MUST resolve. For the path kinds (`repo | module | file | manifest-dir | workspace`), the path must exist on disk and be the right shape (`file` for `kind=file`, directory for the others). For `kind=symbol`, the value is `<absolute file path>#<entity name>`: the file must exist on disk and the name is the entity's name exactly as it is declared (e.g. `/repo/src/pay.ts#settle`). For `kind=connection`, the value must be a registered connection id.
 
 If the user surfaced a value that doesn't resolve, surface that failure honestly -- the framework rejects the classification and the run aborts. Do NOT invent a fake path to "make the validator happy".
 

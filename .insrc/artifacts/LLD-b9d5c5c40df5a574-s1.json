@@ -48,7 +48,7 @@
           "assumptions": [
             "c1"
           ],
-          "interfaceSketch": "interface Completeness {\n  readonly complete: boolean;            // false whenever limited, skipped or partlyRead is non-empty\n  readonly total: number | null;         // items that exist; null when it cannot be counted\n  readonly returned: number;\n  readonly limited?: { readonly limit: number; readonly reason: string } | undefined; // a limit was reached\n  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;\n  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;\n  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem';\n  readonly basisNote?: string | undefined; // what the basis excludes by rule, or that its own coverage is not established\n}\ninterface WithCompleteness { readonly completeness: Completeness }\n// every ExplorationOutput except 'failed' and 'unsupported', and every plan-task result, extends WithCompleteness"
+          "interfaceSketch": "interface Completeness {\n  readonly complete: boolean;            // false whenever limited, skipped or partlyRead is non-empty\n  readonly total: number | null;         // items that exist; null when it cannot be counted\n  readonly returned: number;\n  readonly limited?: readonly { readonly what: string; readonly limit: number; readonly scope: 'overall' | 'per-group'; readonly reason: string }[] | undefined; // a limit was reached\n  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;\n  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;\n  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem';\n  readonly basisNote?: string | undefined; // what the basis excludes by rule, or that its own coverage is not established\n}\ninterface WithCompleteness { readonly completeness: Completeness }\n// every ExplorationOutput except 'failed' and 'unsupported', and every plan-task result, extends WithCompleteness"
         },
         {
           "id": "sc2",
@@ -174,7 +174,7 @@
       "api": [
         {
           "name": "Completeness",
-          "signature": "// new module src/analyze/completeness.ts\ninterface Completeness {\n  readonly complete: boolean;\n  readonly total: number | null;\n  readonly returned: number;\n  readonly limited?: { readonly limit: number; readonly reason: string } | undefined;\n  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;\n  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;\n  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem' | 'model-directed';\n  readonly basisNote?: string | undefined;\n}\ninterface WithCompleteness { readonly completeness: Completeness }\n\nfunction buildCompleteness(facts: {\n  readonly returned: number;\n  readonly total?: number | null | undefined;        // omitted: equal to returned when nothing is limited, else null\n  readonly limited?: Completeness['limited'];\n  readonly skipped?: Completeness['skipped'];\n  readonly partlyRead?: Completeness['partlyRead'];\n  readonly basis: Completeness['basis'];\n  readonly basisNote?: string | undefined;\n  readonly notEstablished?: boolean | undefined;      // the result cannot know whether it is complete\n}): Completeness",
+          "signature": "// new module src/analyze/completeness.ts\ninterface Completeness {\n  readonly complete: boolean;\n  readonly total: number | null;\n  readonly returned: number;\n  readonly limited?: readonly { readonly what: string; readonly limit: number; readonly scope: 'overall' | 'per-group'; readonly reason: string }[] | undefined;\n  readonly skipped?: readonly { readonly what: string; readonly reason: string }[] | undefined;\n  readonly partlyRead?: readonly { readonly what: string; readonly readChars: number; readonly totalChars: number }[] | undefined;\n  readonly basis: 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem' | 'model-directed';\n  readonly basisNote?: string | undefined;\n}\ninterface WithCompleteness { readonly completeness: Completeness }\n\nfunction buildCompleteness(facts: {\n  readonly returned: number;\n  readonly total?: number | null | undefined;        // omitted: equal to returned when nothing is limited, else null\n  readonly limited?: Completeness['limited'];\n  readonly skipped?: Completeness['skipped'];\n  readonly partlyRead?: Completeness['partlyRead'];\n  readonly basis: Completeness['basis'];\n  readonly basisNote?: string | undefined;\n  readonly notEstablished?: boolean | undefined;      // the result cannot know whether it is complete\n}): Completeness",
           "parameters": [
             {
               "name": "facts",
@@ -190,13 +190,14 @@
           "errors": [
             {
               "type": "RangeError",
-              "condition": "returned is negative, total is a number smaller than returned, or a limit is given whose limit is smaller than returned: the facts contradict each other, which is a bug in the caller"
+              "condition": "returned is negative, total is a number smaller than returned, or an overall limit is given that is smaller than returned (a per-group limit is not compared with the overall count): the facts contradict each other, which is a bug in the caller"
             }
           ],
           "preconditions": [],
           "postconditions": [
             "An inconsistent record (complete yet limited) cannot be constructed",
-            "Every lookup output except 'failed' and 'unsupported', and every plan-task result, carries one"
+            "Every lookup output except 'failed' and 'unsupported', and every plan-task result, carries one",
+            "`limited` is a list, one entry per limit that was reached, each saying what it limits and whether it applies to the whole result or to each group within it. A result can reach several: data-model.trace limits targets to 4, and fields to 12 and top callers to 6 for each target (src/analyze/explore/data-model-trace.ts:47-49); discovery-families keeps a sample for each family (src/analyze/runtimes/infra/discovery-families.ts:93); the text search passes one number both as ripgrep's per-file limit and as the overall limit (grep.ts:178, :200). This refines the HLD's sketch of sc1, which shows one limit"
           ]
         },
         {
@@ -251,7 +252,7 @@
             "A lookup that had gathered something before it failed throws LookupFailedError (new) carrying it; the conversion copies it to the failed output's new `partial` field",
             "The lookup cache's key includes a version (EXPLORATION_CACHE_VERSION, new, in src/db/exploration-cache.ts), raised here, so an output stored without a completeness record is not returned",
             "stepPlan's branch for a lookup that pauses for a model call awaits the lookup's prepare with no conversion today (src/analyze/explore/executor.ts:482-502), and the step tool calls stepPlan outside its try blocks (src/mcp/analyze-step/phases/plan.ts:111, phases/narrow.ts:174), so a throw there aborts the whole step call. That await is wrapped in the same conversion as the other branch: a throw becomes the failed output for that lookup, with LookupFailedError's findings copied to `partial`, and the plan goes on to the next lookup",
-            "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). That stays for the one case it was written for, the agent's answer failing the lookup's schema, which the agent can correct. Any other throw from finalize becomes the failed output for that lookup and the run goes on",
+            "A throw from a lookup's finalize on the step tool's path is a retryable 'narrow-finalize' error today (phases/narrow.ts:107-126). No finalize validates the agent's answer today, so a malformed answer surfaces as a plain TypeError that the catch cannot tell from any other failure. The narrow phase therefore validates the agent's answer against the lookup's schema before it calls finalize, and returns the retryable 'narrow-finalize' error when that fails, which the agent can correct. Any throw from finalize itself then becomes the failed output for that lookup and the run goes on",
             "The three lookups that pause for a model call (doc.constraint.enumerate, doc.decision.trace, capability.reuse-check) gather their completeness facts in prepare, where the cut and the limit are applied, but build their output in finalize on a later turn from a prepared value carried in the step state (for example { subject, retrievedSectionCount, validEntityIds }, doc-constraint-enumerate.ts:150-154). Each prepared value gains a `completenessFacts` field holding what prepare knows (the limit reached, the sections cut with their kept and full lengths), and finalize builds the record from it. A step state minted before the change has no such field: finalize then builds a record with notEstablished set and the note that the facts were not carried, so an in-flight run finishes and says so"
           ]
         },
@@ -330,8 +331,9 @@
           "preconditions": [],
           "postconditions": [
             "ANALYZE_CONTEXT_BUNDLE_SCHEMA declares `report` as an optional property and SCHEMA_VERSION becomes 2; the version is part of the bundle cache key, so bundles cached before are built again",
-            "The schema handed to a model has `report` removed at both places it reaches one: the answer-writing call (stripMetaFromSchema, used at three sites in synthesizer.ts) and the tool loop's final answer (runFinalStructuredEmit, which is given the full schema today). A `report` found in a model's answer is discarded before validation",
-            "The three functions that turn a bundle into text (renderBundleAsMarkdown, src/mcp/bundle-md.ts; assembleMarkdown, src/analyze/context/bundle.ts; flattenBundle, src/daemon/workflow-rpc.ts) write renderCompletenessLine(report) first when the bundle has a report. When it has none, renderBundleAsMarkdown writes 'Completeness was not recorded for this answer.' and the other two, whose text goes into a model's prompt, write nothing"
+            "The schema handed to a model has `report` removed at both places it reaches one: the answer-writing call (stripMetaFromSchema, used at three sites in synthesizer.ts, which deletes only `meta` today and keeps its result; `report` is deleted alongside `meta` inside that kept copy) and the tool loop's final answer (runFinalStructuredEmit, which is given the full schema today). A `report` found in a model's answer is discarded before validation",
+            "The three functions that turn a bundle into text (renderBundleAsMarkdown, src/mcp/bundle-md.ts; assembleMarkdown, src/analyze/context/bundle.ts; flattenBundle, src/daemon/workflow-rpc.ts) write renderCompletenessLine(report) first when the bundle has a report. When it has none, renderBundleAsMarkdown writes 'Completeness was not recorded for this answer.' and the other two, whose text goes into a model's prompt, write nothing",
+            "The step tool's start phase returns a cached bundle directly, without passing the bundle phase (src/mcp/analyze-step/phases/start.ts:71-93), and builds a fallback meta with the literal schema version 1 (:84-91). It uses SCHEMA_VERSION there. A bundle it finds was stored under the new cache key and so carries its report, and renderBundleAsMarkdown writes its completeness line"
           ]
         },
         {
@@ -543,6 +545,34 @@
           "src/analyze/context/live-project-context.ts",
           "src/analyze/runtimes/shared/adherence.ts"
         ]
+      },
+      {
+        "entity": "The body the indexer stores for an entity, and its length before the indexer's own cut",
+        "change": "field-add",
+        "details": "The indexer cuts every body it stores from a non-code file to 8,192 characters and appends a marker line, '\u2026 (truncated)' (src/indexer/parser/artifact.ts:92, :298-300, applied at :182, :250 for sections, :287 for documents and :355). Every later reader measures the stored body, so a 100,000-character section cut again to 2,000 by a document lookup would be reported as 2,000 of about 8,206, and a document cut only by the indexer would read as whole. The cut is recorded at its source: the entity gains an optional `bodyTotalChars`, set by the parser to the original length when it cuts and absent when it does not. The stored row carries it; rows are msgpack objects and a row without the field decodes as before (src/db/graph/codec.ts:164). Every place this Story reports a partly read body takes the full length from it: the two document lookups, the summariser (whose bodyTotalChars on the summary is the original length, not the stored body's), module.profile and the adherence checks' body reads. An entity stored before the change has no field. Its body still shows whether it was cut, because a cut body ends with the marker: such an entity is reported as partly read with the kept length and, since the full length is unknown, listed under skipped with the reason that its full length was not recorded when it was indexed; it gains the field when its file is indexed again. A body with no marker and no field is whole. The helper that answers 'how long was this entity's body, and was it cut' is one function in the completeness module, so the marker is tested in one place. The cut and the marker keep their values. Current behaviour that could break: readers that display the body show the marker line as today.",
+        "schemaDiff": "Entity, EntityRow: + bodyTotalChars?: number",
+        "callSites": [
+          "src/indexer/parser/artifact.ts",
+          "src/shared/types.ts",
+          "src/db/graph/codec.ts",
+          "src/db/entities.ts",
+          "src/analyze/explore/doc-constraint-enumerate.ts",
+          "src/analyze/explore/doc-decision-trace.ts",
+          "src/analyze/explore/module-profile.ts",
+          "src/analyze/summariser/driver.ts"
+        ]
+      },
+      {
+        "entity": "Lookups and runtimes that reach more than one limit, and the step tool's cached-bundle path",
+        "change": "field-modify",
+        "details": "Change sites the earlier lists did not name: data-model.trace, with one overall and two per-target limits; discovery-families, with a per-family sample; the step tool's start phase, with its literal schema version and its direct return of a cached bundle; and the narrow phase, which gains the validation of the agent's answer before finalize.",
+        "callSites": [
+          "src/analyze/explore/data-model-trace.ts",
+          "src/analyze/runtimes/infra/discovery-families.ts",
+          "src/mcp/analyze-step/phases/start.ts",
+          "src/mcp/analyze-step/phases/narrow.ts",
+          "src/analyze/context/synthesizer.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -732,7 +762,8 @@
           "subjects": [
             "buildCompleteness computes complete: false for limited, skipped, partlyRead or notEstablished, true otherwise, and rejects contradictory facts with RangeError",
             "deriveAnswerReport: all complete; one incomplete (reason composed from limited, skipped and partlyRead); one failed; a source with neither a record nor a failure is rejected",
-            "renderCompletenessLine names every incomplete and every failed source, and repeats a shared basisNote once"
+            "renderCompletenessLine names every incomplete and every failed source, and repeats a shared basisNote once",
+            "buildCompleteness accepts several reached limits, compares only an overall limit with the returned count, and accepts a per-group limit smaller than the returned count"
           ]
         },
         {
@@ -764,8 +795,9 @@
             "the free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered, and a free-form answer's record has basis 'model-directed' and is not complete",
             "the table-listing lookup and the object-listing plan task read the data driver's cut flag into limited",
             "a table test over every registered plan-task runtime: each returns a completeness record; the plan walk copies it to the task record, and a runtime that returns none is recorded as failed",
-            "stepPlan with a lookup whose prepare throws records the failed output for it and goes on to the next lookup (mutation: remove the conversion); a finalize that throws anything but a schema failure does the same, and a schema failure stays retryable",
-            "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them gives a record that is not established"
+            "stepPlan with a lookup whose prepare throws records the failed output for it and goes on to the next lookup (mutation: remove the conversion); an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called, and a finalize that throws records the failed output",
+            "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them gives a record that is not established",
+            "data-model.trace with more targets than its limit and a target with more fields than its limit reports both limits, each with its scope; discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder"
           ],
           "fixturesNeeded": [
             "stand-in stores and drivers for the lookups",
@@ -782,7 +814,9 @@
             "renderBundleAsMarkdown, assembleMarkdown and flattenBundle write the completeness line first; for a bundle with no report the first writes the not-recorded line and the other two write nothing",
             "a lookup output and a bundle cached before the change are not returned: the lookup cache's key includes its version and the bundle cache's key the schema version",
             "the step tool's bundle phase, given a state holding one failed and one limited lookup, attaches the report it derives from that state and returns markdown whose first line names both",
-            "a request answered by the free-form lookup alone returns a bundle whose report has one source, with basis 'model-directed' and not complete"
+            "a request answered by the free-form lookup alone returns a bundle whose report has one source, with basis 'model-directed' and not complete",
+            "the step tool's start phase, on a cached bundle, returns markdown that starts with the completeness line and a meta whose schema version is the current one",
+            "the kept model-facing schema has neither meta nor report, on the first call and on a later one"
           ]
         },
         {
@@ -822,7 +856,9 @@
             "an unchanged row without lengths is given them with no model call (the stand-in provider is not called), and an unchanged row that has them is not written again",
             "a row stored without the fields decodes",
             "docs family-summarise and docs discovery-inventory report a cut document under partlyRead with its file and both lengths, and a summary without lengths, a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)",
-            "the project-context assembler reports a limit it reached and the cut documents behind its decisions and constraints, and the adherence check puts them in limited and partlyRead"
+            "the project-context assembler reports a limit it reached and the cut documents behind its decisions and constraints, and the adherence check puts them in limited and partlyRead",
+            "the parser sets the original length on a section longer than 8,192 characters and leaves it absent on a shorter one; a document lookup that cuts such a section reports the kept length against the original length, not the stored body's",
+            "an entity stored without the field whose body ends with the marker is reported as partly read with its full length not recorded; one with neither is whole; a stored row without the field decodes"
           ],
           "fixturesNeeded": [
             "a stand-in summariser provider that counts its calls",
@@ -837,7 +873,9 @@
             "unit: a table test over all twenty lookup types, each with a completeness record and its basis",
             "unit: each lookup that stops at a count reports limited, and each that cuts content reports partlyRead",
             "unit: a table test over every registered plan-task runtime, each returning a record",
-            "unit: buildCompleteness computes complete and rejects contradictory facts"
+            "unit: buildCompleteness computes complete and rejects contradictory facts",
+            "unit: buildCompleteness accepts several reached limits with their scopes",
+            "unit: data-model.trace and discovery-families report every limit they reach"
           ]
         },
         {
@@ -855,7 +893,8 @@
           "provingTests": [
             "unit: each lookup that cuts content reports partlyRead with the kept and full lengths",
             "unit: the lookups that pause for a model call build their record from the facts prepare carried",
-            "unit: the summariser stores the read and full lengths, and the two docs plan tasks report a cut document under partlyRead"
+            "unit: the summariser stores the read and full lengths, and the two docs plan tasks report a cut document under partlyRead",
+            "unit: a section longer than the indexer's cut is reported against its original length"
           ]
         },
         {
@@ -876,7 +915,8 @@
             "integration: a plan-tree run with a failed and a limited task returns a report naming both",
             "live: a focused request whose text search reaches its limit says so in its first line",
             "unit: the step tool's bundle phase derives the report from its state and heads its markdown with the line",
-            "unit: a sole free-form answer's bundle carries the one-source report"
+            "unit: a sole free-form answer's bundle carries the one-source report",
+            "unit: the step tool's start phase heads a cached bundle's markdown with the completeness line"
           ]
         },
         {
@@ -969,9 +1009,17 @@
           "prerequisiteFlags": [
             "step 5"
           ]
+        },
+        {
+          "order": 12,
+          "action": "Add the optional original-length field to the entity and its stored row and set it in the parser where a body is cut; read it wherever a partly read body is reported, with the marker as the fallback for an entity stored before. No stored entity is rewritten: an entity gains the field when its file is indexed again.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 3"
+          ]
         }
       ],
-      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change. The stored document summary gains two optional fields; a row written before the change decodes as before and is filled by the next summarise sweep, and until then the docs plan tasks report that how much of that document was read is not recorded.",
+      "backwardCompat": "The bundle gains an optional field and its text form gains a first line; a consumer that reads the seven layers by name is unaffected, and one that validates the bundle with unknown fields rejected against its own copy of the schema must accept `report` (the IDE's mirrored types are such a copy and need the optional field added). Three failures change their reported code: a failed or invalid answer step was 'shaper-llm-unavailable' or 'shaper-schema-unrecoverable' and is now 'answer-step-failed'; a caller that matched the old codes for those cases must match the new one. A lookup that used to return an empty result on an internal error now appears as failed, so an answer that used to read as 'nothing found' can now read as incomplete: this is the intended change. Lookup outputs lose `truncated`, `totalCallers` and `exhaustedNote`; these are internal to the analyzer and reach a model only as JSON, and the answer-writing prompts that mention them by name are updated with the types. The text search's result only gains a field. Run records and cached bundles written before the change stay readable: a run record without a report is replayed with the not-recorded line, and cached bundles and lookup outputs are not served, because their keys change. The stored document summary gains two optional fields; a row written before the change decodes as before and is filled by the next summarise sweep, and until then the docs plan tasks report that how much of that document was read is not recorded. The entity and its stored row gain one optional field; a row written before the change decodes as before, and until its file is indexed again a body the indexer cut is reported as partly read with its full length not recorded. The IDE's mirrored entity type needs the optional field added only if it validates entities strictly.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -1032,7 +1080,8 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.",
-      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value."
+      "Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.",
+      "Back-flow to the HLD: the completeness record's `limited` is a list of reached limits, each with a scope, where the HLD's sketch of sc1 shows a single limit; several results reach more than one."
     ]
   },
   "citations": [
@@ -1085,6 +1134,11 @@
       "id": "c10",
       "kind": "code",
       "ref": "A direct read on 2026-10-07 of the document summariser, the stored summary and its readers. Files: src/analyze/summariser/driver.ts, src/shared/analyze-types.ts, src/db/doc-summaries.ts, src/indexer/index.ts, src/analyze/runtimes/docs/family-summarise.ts, src/analyze/runtimes/docs/discovery-inventory.ts, src/daemon/tools/builtins/docs/index.ts, src/analyze/context/live-project-context.ts, src/analyze/runtimes/shared/adherence.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "A direct read on 2026-10-07 of the indexer's body cut, the entity row's encoding, the lookups with several limits and the step tool's cached-bundle path. Files: src/indexer/parser/artifact.ts, src/shared/types.ts, src/db/graph/codec.ts, src/db/entities.ts, src/analyze/explore/data-model-trace.ts, src/analyze/runtimes/infra/discovery-families.ts, src/mcp/analyze-step/phases/start.ts, src/analyze/context/synthesizer.ts"
     }
   ]
 }

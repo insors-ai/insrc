@@ -28,6 +28,11 @@
         "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
+    },
+    "approvedAt": "2026-10-07T08:02:03.174Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-07. The Define was approved earlier and its approval was cleared by in-place revisions the user directed: stories s6 and s7 added, s1 made dependent on s6, and story 4's criteria amended for sampled sources (Redis, etcd). No fresh daemon review was run on the revised Define; earlier Define reviews were dominated by the review probe's 50-match cap. The HLD built on it has been through fourteen daemon reviews.",
+      "at": "2026-10-07T08:02:03.174Z"
     }
   },
   "body": {

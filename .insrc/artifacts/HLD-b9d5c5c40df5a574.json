@@ -20,7 +20,12 @@
     "schemaVersion": 1,
     "epicHash": "b9d5c5c40df5a574",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-07T08:02:03.191Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-07. Fourteen daemon reviews; no HIGH finding since the seventh. Every finding raised through the fourteenth (block, 3 MED) is applied, and that last revision was not sent back for a fifteenth review. The findings of the last five rounds were missed change sites, not design errors; that class of finding (per-story change inventories and the mapping of acceptance criteria to tests) is carried into each Story's own design, which gets its own daemon review.",
+      "at": "2026-10-07T08:02:03.191Z"
+    }
   },
   "body": {
     "summary": {

@@ -395,7 +395,7 @@
         "acceptanceCriteria": [
           {
             "id": "ac1",
-            "given": "a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer",
+            "given": "a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, in a source that has something to count",
             "when": "the analyzer performs it",
             "then": "every result is returned and none is dropped",
             "operationalizes": [
@@ -440,11 +440,20 @@
               "k1",
               "k2"
             ]
+          },
+          {
+            "id": "ac6",
+            "given": "a data source with no tables or namespaces of its own, where the analyzer can only list what a sample of its keys suggests (Redis, etcd)",
+            "when": "the analyzer lists it",
+            "then": "the result says it is a sample and is not presented as complete; the analyzer does not scan every key of a live store",
+            "operationalizes": [
+              "k3"
+            ]
           }
         ],
         "functionalRequirements": [
           {
-            "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers."
+            "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers that has something to count; a source that can only be sampled is reported as sampled."
           },
           {
             "statement": "No fixed cut is applied to an item's content."
@@ -934,6 +943,12 @@
       "id": "c22",
       "kind": "prior-artifact",
       "ref": "insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')"
+    },
+    {
+      "id": "c21",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys",
+      "quotedText": "A"
     }
   ]
 }

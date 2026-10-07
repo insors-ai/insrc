@@ -174,11 +174,12 @@ As someone relying on an analysis, I get every result a lookup found, whatever t
 
 **Acceptance criteria:**
 
-- **ac1:** Given a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, when the analyzer performs it, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
+- **ac1:** Given a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, in a source that has something to count, when the analyzer performs it, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
 - **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, when the analyzer reads it, then no fixed cut is applied to it. _(operationalizes `k2`)_
 - **ac3:** Given a text lookup over files of any size and lines of any length, when it runs, then no file is left out for its size, no matching line is shortened, and no part of the search's output is discarded. _(operationalizes `k2`, `k3`)_
 - **ac4:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
 - **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size, and the answer is complete. _(operationalizes `k1`, `k2`)_
+- **ac6:** Given a data source with no tables or namespaces of its own, where the analyzer can only list what a sample of its keys suggests (Redis, etcd), when the analyzer lists it, then the result says it is a sample and is not presented as complete; the analyzer does not scan every key of a live store. _(operationalizes `k3`)_
 
 ### 6.5 E20261006b9d5c5c4:S005 — The form of an answer fits the question, for every kind of analyzer
 
@@ -255,6 +256,7 @@ As someone asking the analyzer a broad question, the whole analysis runs to a fi
 - **[[c20]]** `stakeholder` `user, 2026-10-07: 'go with A' to reordering the work so that completeness reporting comes first, then sizing, then handling in parts, then removal of the limits, then layouts`
 - **[[c21]]** `step-output` `Live check of 2026-10-07 through the daemon: a request to build the run context for src/analyze/classifier with focused false fails at once with 'Local Ollama unavailable for shaper invocation: Run-mode exploration pipeline returned no bundle'; the same request with focused true and a focus sentence returns a bundle in 30 seconds. Cause in code: src/analyze/context/driver.ts:1102 returns for an unfocused intent and :276-282 then throws; src/analyze/orchestrator/driver.ts:219 marks every target-hinted request unfocused. Saved run records in ~/.insrc/analyze: 4,318 run directories, two plan-tree run records, both left at the classify stage as in progress. No client in this repository sends analyze.run.start.`
 - **[[c22]]** `prior-artifact` `insrc_triage of 2026-10-07: bugfix, sized; taken into this Epic as Stories s6 and s7 at the stakeholder's direction ('traige this and then decide one or more new stories')`
+- **[[c21]]** `stakeholder` `user, 2026-10-07: Redis and etcd stay a sample, said so in every result, and are sized XL; no full scan of a live store's keys` — "A"
 
 ## 8. Open questions
 

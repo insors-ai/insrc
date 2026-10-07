@@ -92,7 +92,15 @@ test('each of the six callers classifies a CLI call failure as its model-unavail
 		assert.match(aggregatorClassify(err).message, /^aggregator-schema-unrecoverable: /, `aggregator: ${label}`);
 		assert.ok(classifierClassify(err) instanceof ClassifierSchemaUnrecoverable, `classifier: ${label}`);
 		assert.ok(scopePickerClassify(err) instanceof ScopePickerSchemaUnrecoverable, `scope picker: ${label}`);
-		assert.notEqual(summariserClassify(err), 'llm-unavailable', `summariser: ${label}`);
+		// The summariser has its own, older vocabulary for a wrong-shaped
+		// answer: it names 'schema-unrecoverable' only for the two texts
+		// it knows and files the rest under 'other'. Pinned exactly, so
+		// neither half can drift into 'llm-unavailable'.
+		assert.equal(
+			summariserClassify(err),
+			label.includes('validation failed') ? 'schema-unrecoverable' : 'other',
+			`summariser: ${label}`,
+		);
 		// The tool loop has no schema class of its own: it hands back
 		// the error it was given for its caller to wrap.
 		assert.equal(toolLoopClassify(err), err, `tool loop: ${label}`);

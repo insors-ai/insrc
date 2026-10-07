@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s6",
     "createdAt": "2026-10-07T09:26:37.335Z",
-    "updatedAt": "2026-10-07T09:26:37.335Z",
+    "updatedAt": "2026-10-07T09:30:39.688Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -12,60 +12,120 @@
       {
         "id": "t1",
         "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
       }
     ],
-    "summary": "Declared the three new cause codes in both code lists with a compile-time check, added five typed errors of the context builder and an optional call on the model-unavailable error, and mapped each in the plan tree's and the daemon's shaper-error mapping. Nothing raises them yet.",
+    "summary": "Added one shared check for a failed model call covering Ollama, the claude and codex CLI, and a sampling client (through a typed error), and switched the planning and answer-writing classifiers to it. Their model-unavailable messages are now provider-neutral and carry the underlying message in a field.",
     "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/mcp-sampling-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/mcp-sampling-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/model-call-error.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/model-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
       {
         "target": {
           "file": "src/analyze/context/__tests__/shaper-errors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/decomposer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/model-failure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/synthesizer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-07T09:26:37.335Z"
+        "timestamp": "2026-10-07T09:30:39.688Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/sampling-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-07T09:30:39.688Z"
       }
     ],
-    "commit": "4da7bda2"
+    "commit": "5a3f5f5d"
   }
 }

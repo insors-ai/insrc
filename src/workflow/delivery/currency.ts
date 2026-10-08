@@ -18,18 +18,30 @@
  *
  * An amendment counts toward the effective HLD exactly as listApprovedAmendments
  * counts it: a well-formed record (isAmendmentRecord) with status 'approved' and
- * a string approvedAt. Pure: no I/O, never throws, adds or removes no work item.
+ * a string approvedAt.
+ *
+ * Notices: review-currency-unknown for each item holding reviews no recorded
+ * field settles; base-predates-extension for an accepted extension whose story
+ * its epic's Define does not list (the extend path appends the story to the
+ * Define, so createdAt alone proves nothing); incomplete-evidence for an item no
+ * record gives a title and for each store file that could not be loaded, naming
+ * the items its file name says it covers. The record-unreadable notice for such a
+ * file is the graph builder's; this pass never raises it. Pure: no I/O, never
+ * throws, adds or removes no work item.
  */
 
 import { isAmendmentRecord } from '../amendments/types.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
-import { asObject, asString } from './read.js';
+import { kindOfFile } from './load.js';
+import { makeNotice, sortNotices } from './notice.js';
+import { asObject, asString, storyOrdinalOf } from './read.js';
 import type {
 	ArtifactCurrency,
 	ArtifactRecord,
 	ArtifactRecordSet,
 	CurrencyPassResult,
 	DeliveryArtifactKind,
+	DeliveryNotice,
 	EffectiveAmendment,
 	WorkItemGraph,
 	WorkItemNode,
@@ -176,6 +188,106 @@ function currencyOf(record: ArtifactRecord, ctx: PassContext): ArtifactCurrency 
 	return { artifactId, ...(settled ?? UNKNOWN) };
 }
 
+// ---------------------------------------------------------------------------
+// Notices
+// ---------------------------------------------------------------------------
+
+const ITEM_KINDS: ReadonlySet<WorkItemNode['kind']> = new Set(['epic', 'story', 'issue']);
+
+/** A store file name's stem: KIND-<16-hex hash>[-<story id>].json. */
+const STEM_RE = /^[A-Z]+-([0-9a-f]{16})(?:-([^.]+))?\.json$/;
+
+function storyOrdinalOfItem(item: WorkItemNode): number | null {
+	for (const id of item.sourceIds) {
+		const n = storyOrdinalOf(id);
+		if (n !== null) return n;
+	}
+	return null;
+}
+
+function unknownCurrencyNotices(ctx: PassContext, artifacts: ReadonlyMap<string, ArtifactCurrency>): DeliveryNotice[] {
+	const notices: DeliveryNotice[] = [];
+	const held = new Set<string>();
+	for (const item of ctx.graph.items.values()) {
+		if (!ITEM_KINDS.has(item.kind)) continue;
+		for (const id of item.evidenceArtifactIds) held.add(id);
+		const unknown = item.evidenceArtifactIds.filter(id => artifacts.get(id)?.reviewCurrency === 'unknown');
+		if (unknown.length === 0) continue;
+		const several = (['LLD', 'PLAN'] as const).filter(kind => evidenceOf(item, ctx, kind).length > 1);
+		const tail = several.length === 0 ? ''
+			: `; several ${several.join(' and ')} records are present and which applies is not recorded`;
+		notices.push(makeNotice('review-currency-unknown',
+			`no recorded field settles whether the review of ${unknown.join(', ')} still matches its record${tail}`,
+			{ itemIds: [item.id], artifactIds: unknown }));
+	}
+	const unheld = [...artifacts.values()].filter(a => a.reviewCurrency === 'unknown' && !held.has(a.artifactId)).map(a => a.artifactId);
+	if (unheld.length > 0) {
+		notices.push(makeNotice('review-currency-unknown',
+			`no recorded field settles whether the review of ${unheld.join(', ')} still matches its record; no work item holds them`,
+			{ artifactIds: unheld }));
+	}
+	return notices;
+}
+
+function extensionNotices(ctx: PassContext, recordSet: ArtifactRecordSet): DeliveryNotice[] {
+	const notices: DeliveryNotice[] = [];
+	for (const ext of recordSet.records) {
+		if (ext.kind !== 'EXT' || ext.approval.state !== 'approved') continue;
+		const added = asString(asObject(asObject(ext.body)?.['addedStory'])?.['id']) ?? ext.storyIdRaw;
+		const ordinal = added === null ? null : storyOrdinalOf(added);
+		if (ordinal === null) continue;
+		const epic = [...ctx.graph.items.values()].find(n => n.kind === 'epic' && n.workItemHash === ext.workItemHash);
+		const defs = epic === undefined ? [] : evidenceOf(epic, ctx, 'DEF');
+		const def = defs.length === 1 ? defs[0] : undefined;
+		if (epic === undefined || def === undefined) continue;
+		const stories = asObject(def.body)?.['stories'];
+		const listed = Array.isArray(stories)
+			&& stories.some(s => {
+				const id = asString(asObject(s)?.['id']);
+				return id !== null && storyOrdinalOf(id) === ordinal;
+			});
+		if (listed) continue;
+		const storyItems = storiesOf(ext, ctx).map(n => n.id);
+		notices.push(makeNotice('base-predates-extension',
+			`${ext.artifactId} adds story ${added} to ${epic.id}, but ${def.artifactId} does not list it; the story comes from the extension`,
+			{ itemIds: [epic.id, ...storyItems], artifactIds: [ext.artifactId, def.artifactId] }));
+	}
+	return notices;
+}
+
+function missingTitleNotices(ctx: PassContext): DeliveryNotice[] {
+	const notices: DeliveryNotice[] = [];
+	for (const item of ctx.graph.items.values()) {
+		if (!ITEM_KINDS.has(item.kind) || item.title !== null) continue;
+		notices.push(makeNotice('incomplete-evidence',
+			`no record gives ${item.id} a title`,
+			{ itemIds: [item.id], artifactIds: item.evidenceArtifactIds }));
+	}
+	return notices;
+}
+
+function loadFailureNotices(ctx: PassContext, recordSet: ArtifactRecordSet): DeliveryNotice[] {
+	const notices: DeliveryNotice[] = [];
+	for (const failure of recordSet.failures) {
+		const kind = kindOfFile(failure.fileName);
+		const m = STEM_RE.exec(failure.fileName);
+		const hash = m?.[1] ?? null;
+		const storyId = m?.[2] ?? null;
+		const ordinal = storyId === null ? null : storyOrdinalOf(storyId);
+		const covered = kind === null || hash === null ? [] : [...ctx.graph.items.values()]
+			.filter(n => ITEM_KINDS.has(n.kind) && n.workItemHash === hash)
+			.filter(n => storyId === null || (n.kind === 'story' && ordinal !== null && storyOrdinalOfItem(n) === ordinal))
+			.map(n => n.id);
+		const coverage = kind === null || hash === null
+			? 'its coverage cannot be told from its name'
+			: `it would be the ${kind} record of work item ${hash}${storyId === null ? '' : ` story ${storyId}`}, whose evidence is incomplete`;
+		notices.push(makeNotice('incomplete-evidence',
+			`store file ${failure.fileName} could not be loaded (${failure.reason}: ${failure.detail}); ${coverage}`,
+			{ itemIds: covered, fileNames: [failure.fileName] }));
+	}
+	return notices;
+}
+
 /** The currency pass over one record set and its graph. */
 export function deriveCurrency(graph: WorkItemGraph, recordSet: ArtifactRecordSet): CurrencyPassResult {
 	const byId = new Map(recordSet.records.map(r => [r.artifactId, r] as const));
@@ -199,5 +311,12 @@ export function deriveCurrency(graph: WorkItemGraph, recordSet: ArtifactRecordSe
 		if (list.length > 0) amendments.set(item.id, list);
 	}
 
-	return { artifacts, amendments, notices: [] };
+	const notices = sortNotices([
+		...unknownCurrencyNotices(ctx, artifacts),
+		...extensionNotices(ctx, recordSet),
+		...missingTitleNotices(ctx),
+		...loadFailureNotices(ctx, recordSet),
+	]);
+
+	return { artifacts, amendments, notices };
 }

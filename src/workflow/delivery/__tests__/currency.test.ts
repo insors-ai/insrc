@@ -7,11 +7,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { computeHldEffectiveHash } from '../../artifacts/lld.js';
+import { ARTIFACTS_DIR } from '../../storage.js';
 import { deriveCurrency } from '../currency.js';
 import { buildWorkItemGraph } from '../graph.js';
-import type { ArtifactCurrency, ArtifactRecord, CurrencyPassResult, WorkItemGraph } from '../types.js';
+import { loadArtifactRecordSet } from '../load.js';
+import type { ArtifactCurrency, ArtifactRecord, CurrencyPassResult, ReadonlyStoreFs, WorkItemGraph, WorkItemNode } from '../types.js';
 import {
 	CREATED,
 	amdRecord,
@@ -23,6 +29,7 @@ import {
 	issueRecord,
 	lldRecord,
 	planRecord,
+	realRecords,
 	recordFromFile,
 	recordSet,
 	specRecord,
@@ -164,4 +171,136 @@ test('a review stamped before its record, a standalone design and malformed fiel
 	// An epic with no HLD record.
 	const noHld = run([defRecord(EPIC, ['s1']), lld('s1', current)]).result;
 	assert.equal(currencyOf(noHld, `LLD-${EPIC}-s1`).reviewCurrency, 'unknown');
+});
+
+// ---------------------------------------------------------------------------
+// t3 — notices
+// ---------------------------------------------------------------------------
+
+function holderOf(graph: WorkItemGraph, artifactId: string, kind: WorkItemNode['kind']): WorkItemNode {
+	const n = [...graph.items.values()].find(x => x.kind === kind && x.evidenceArtifactIds.includes(artifactId));
+	assert.ok(n, `a ${kind} holding ${artifactId}`);
+	return n;
+}
+
+test('an extension story stays in the view and its extension newer than the epic framing is reported', () => {
+	const APPROVED = { approvedAt: '2026-10-08T13:00:00.000Z', createdAt: '2026-10-08T13:00:00.000Z' };
+	// An older framing that does not list the extension's story.
+	const old = run([defRecord(EPIC, ['s1']), extRecord(EPIC, 's9', APPROVED)]);
+	const story = holderOf(old.graph, `EXT-${EPIC}-s9`, 'story');
+	const notice = old.result.notices.find(n => n.code === 'base-predates-extension');
+	assert.ok(notice, 'a base-predates-extension notice');
+	assert.deepEqual(notice.artifactIds, [`DEF-${EPIC}`, `EXT-${EPIC}-s9`]);
+	assert.ok(notice.itemIds.includes(story.id), 'it names the added story');
+	assert.equal(notice.attention, false);
+
+	// The real shape: the extend path appended s8 to the Define, which predates the extension.
+	const real = run([defRecord(EPIC, ['s1', 's8']), extRecord(EPIC, 's8', APPROVED)]);
+	assert.ok(holderOf(real.graph, `EXT-${EPIC}-s8`, 'story'), 'the added story is present');
+	assert.equal(real.result.notices.some(n => n.code === 'base-predates-extension'), false, 'a Define that lists the story raises nothing');
+
+	// An extension not yet accepted raises nothing.
+	const pending = run([defRecord(EPIC, ['s1']), extRecord(EPIC, 's9')]);
+	assert.equal(pending.result.notices.some(n => n.code === 'base-predates-extension'), false);
+});
+
+test('an item no record gives a title stays in the view with an incomplete-evidence notice', () => {
+	const { graph, result } = run([buildRecord('eeeeeeeeeeeeeeee', 'S001', [{ id: 't1', passed: true }])]);
+	const story = holderOf(graph, 'BUILD-eeeeeeeeeeeeeeee-S001', 'story');
+	assert.equal(story.title, null);
+	const notice = result.notices.find(n => n.code === 'incomplete-evidence' && n.itemIds.includes(story.id));
+	assert.ok(notice, 'an incomplete-evidence notice on the untitled story');
+	assert.deepEqual(notice.artifactIds, ['BUILD-eeeeeeeeeeeeeeee-S001']);
+	assert.match(notice.message, /no record gives .* a title/);
+});
+
+test('the real-shape fixtures give every record a currency entry, deterministically', () => {
+	const records = realRecords();
+	const first = run(records).result;
+	const second = run(records).result;
+	assert.equal(first.artifacts.size, records.length);
+	assert.deepEqual([...first.artifacts.entries()], [...second.artifacts.entries()]);
+	assert.deepEqual([...first.amendments.entries()], [...second.amendments.entries()]);
+	assert.deepEqual(first.notices, second.notices);
+	assert.equal(first.notices.some(n => n.code === 'record-unreadable'), false, 'the pass never raises record-unreadable');
+});
+
+const BAD_FILE = `LLD-${EPIC}-s2.json`;
+
+/** A store of JSON files (strings written as-is) in a fresh temporary repo. */
+function storeRepo(files: Readonly<Record<string, unknown>>): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-delivery-currency-'));
+	const dir = join(repo, ARTIFACTS_DIR);
+	mkdirSync(dir, { recursive: true });
+	for (const [name, value] of Object.entries(files)) writeFileSync(join(dir, name), typeof value === 'string' ? value : JSON.stringify(value, null, 2));
+	return repo;
+}
+
+/** Path, size, mtime and content hash of every file under root. */
+function snapshotTree(root: string): string[] {
+	const out: string[] = [];
+	const walk = (dir: string): void => {
+		for (const name of readdirSync(dir).sort()) {
+			const p = join(dir, name);
+			const st = statSync(p);
+			if (st.isDirectory()) { out.push(`${p}/`); walk(p); continue; }
+			out.push(`${p} ${st.size} ${st.mtimeMs} ${createHash('sha256').update(readFileSync(p)).digest('hex')}`);
+		}
+	};
+	walk(root);
+	return out;
+}
+
+const STORE_FILES: Readonly<Record<string, unknown>> = {
+	[`DEF-${EPIC}.json`]:      { meta: { epicHash: EPIC, createdAt: CREATED, epicCreatedAt: CREATED, epicSlug: 'e1' }, body: { stories: [{ id: 's1', title: 'One' }, { id: 's2', title: 'Two' }, { id: 's3', title: 'Three' }] } },
+	[`LLD-${EPIC}-s1.json`]:   { meta: { epicHash: EPIC, storyId: 's1', createdAt: CREATED, ...REVIEW }, body: {} },
+	[`LLD-${EPIC}-s3.json`]:   { meta: { epicHash: EPIC, storyId: 's3', createdAt: CREATED, ...REVIEW }, body: {} },
+	[`LLD-${EPIC}-S003.json`]: { meta: { epicHash: EPIC, storyId: 'S003', createdAt: CREATED, ...REVIEW }, body: {} },
+	[BAD_FILE]:                '{ "meta": { "epicHash": ',
+};
+
+test('a malformed file leaves every other item in place and is named with the coverage it leaves unknown', () => {
+	const dir = join('/repo', ARTIFACTS_DIR);
+	const files = new Map(Object.entries(STORE_FILES).map(([name, v]) => [join(dir, name), typeof v === 'string' ? v : JSON.stringify(v)]));
+	const fs: ReadonlyStoreFs = {
+		exists:   p => p === dir || files.has(p),
+		listDir:  () => Object.keys(STORE_FILES),
+		readFile: p => { const v = files.get(p); if (v === undefined) throw new Error(`ENOENT ${p}`); return v; },
+	};
+	const set = loadArtifactRecordSet('/repo', fs, () => '2026-10-08T00:00:00.000Z');
+	assert.deepEqual(set.failures.map(f => f.fileName), [BAD_FILE]);
+
+	const clean = buildWorkItemGraph(recordSet(set.records));
+	const graph = buildWorkItemGraph(set);
+	const result = deriveCurrency(graph, set);
+
+	assert.deepEqual([...graph.items.keys()], [...clean.items.keys()], 'every unaffected item is present');
+	const s2 = [...graph.items.values()].find(n => n.kind === 'story' && n.sourceIds.includes('s2'));
+	assert.ok(s2, 'the story the bad file belongs to is still in the view (from the Define)');
+
+	const coverage = result.notices.filter(n => n.code === 'incomplete-evidence' && n.fileNames.includes(BAD_FILE));
+	assert.equal(coverage.length, 1);
+	assert.deepEqual(coverage[0]?.itemIds, [s2.id], 'it names the item whose coverage is unknown');
+	assert.match(coverage[0]?.message ?? '', /invalid-json/);
+	assert.match(coverage[0]?.message ?? '', /LLD record of work item aaaaaaaaaaaaaaaa story s2/);
+
+	assert.equal(result.notices.some(n => n.code === 'record-unreadable'), false, 'this pass never raises record-unreadable');
+	const unreadable = graph.notices.filter(n => n.code === 'record-unreadable');
+	assert.equal(unreadable.length, 1, 'the graph builder raises exactly one (ISSUE-34b6a247)');
+	assert.deepEqual(unreadable[0]?.fileNames, [BAD_FILE]);
+	assert.equal(unreadable[0]?.attention, true);
+});
+
+test('producing the currency annotation changes no file in the artifact store', () => {
+	const repo = storeRepo(STORE_FILES);
+	try {
+		const before = snapshotTree(repo);
+		const set = loadArtifactRecordSet(repo);
+		const result = deriveCurrency(buildWorkItemGraph(set), set);
+		assert.equal(set.failures.length, 1, 'the malformed file is among the inputs');
+		assert.ok(result.notices.some(n => n.message.includes('several LLD records')), 'the s3 / S003 pair is among the inputs');
+		assert.deepEqual(snapshotTree(repo), before);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
 });

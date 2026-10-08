@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791480244256-q2z5y6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T17:25:11.219Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 66962,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "20d1b6dbd79a09bb",
+    "epicSlug": "bug-src-workflow-delivery-graph-ts",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "attachSpecs in src/workflow/delivery/graph.ts builds itemOfRecord by iterating every draft and setting itemOfRecord[artifactId] = draft for each id in d.evidenceArtifactIds, so the last draft listing an id wins.",
+          "evidence": "grep found `function attachSpecs(` at src/workflow/delivery/graph.ts:536. Inside that function, src/workflow/delivery/graph.ts:544 reads `for (const artifactId of d.evidenceArtifactIds) itemOfRecord.set(artifactId, d);`. The code puts each of the draft's evidence artifact ids into itemOfRecord, keyed by artifact id. Because Map.set overwrites an existing key, the last draft that lists an id wins, as the premise says. The premise writes `itemOfRecord[artifactId] = draft`, but the real structure is a Map that uses `.set(artifactId, d)`. That is only a difference in notation and does not change the behavior. The enclosing loop over every draft (line 543) is not in the gathered reads. However, line 544 is indented inside a loop body and uses the loop variable `d`, which fits iterating over every draft. Lines 546, 552 and 554 show a separate `seededItems` map built afterward, which does not conflict with the premise.",
+          "action": "None — the evidence confirms the premise. Optionally, change the wording from `itemOfRecord[artifactId] = draft` to `itemOfRecord.set(artifactId, d)` (a Map) to match the source.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. The only gap is Map vs. object-index notation, which does not change what gets built, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "addTasks(story, drafts) in src/workflow/delivery/graph.ts gives each task draft the artifact ids of the story's PLAN and BUILD records as its evidenceArtifactIds.",
+          "evidence": "The citation points to the right function. `src/workflow/delivery/graph.ts:371` is `function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {`, which matches the anchor (the only other match is the ISSUE.md citation quoting it). Inside it, `graph.ts:381` keeps only PLAN and BUILD records (`if (r.kind !== 'PLAN' && r.kind !== 'BUILD') continue;`). `graph.ts:391` then walks the collected tasks in ordinal order (`for (const taskId of [...tasks.keys()].sort(byTaskOrdinal))`). `graph.ts:413` sets each draft's `evidenceArtifactIds: t.evidence`. So the sources are limited to PLAN and BUILD records, and each draft's evidenceArtifactIds comes from the per-task `t.evidence`. The one gap is lines 382–412: they aren't in the evidence, so it doesn't show that `t.evidence` holds exactly those records' artifact ids rather than some other identifier. The premise's mechanism is still clearly supported, and nothing contradicts it.",
+          "action": "None needed; the premise is sound. If you want it fully pinned down, add a read of graph.ts:382–390 to the citation to show how `t.evidence` is filled from each PLAN or BUILD record's artifact id.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor resolves to the intended function, and the PLAN/BUILD filter and the evidenceArtifactIds assignment are both confirmed in the source. No edit is required."
+          }
+        },
+        {
+          "claimId": "p3",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Task drafts are inserted into the drafts map after their parent story draft (and the story draft's evidence also lists its PLAN/BUILD record ids), so iterating drafts.values() visits the task after the story and the task overwrites the story as the itemOfRecord holder for PLAN/BUILD ids.",
+          "evidence": "The evidence supports the ordering. In src/workflow/delivery/graph.ts, the story draft is inserted at line 319 (`drafts.set(id, draft);`), and its evidence lists the story's records at line 317 (`evidenceArtifactIds: records.map(r => r.artifactId)`). Tasks are added afterwards: line 342 (`for (const story of info.stories) addTasks(story, drafts);`) calls addTasks, defined at line 371, which inserts each task draft at line 405 (`drafts.set(id, draftOf({`) and links it to the story at line 415 (`story.draft.childIds.push(id)`). A JS Map iterates in insertion order, so drafts.values() visits each task after its parent story. The evidence does not show two parts of the premise: that task drafts also carry the PLAN/BUILD artifact ids, and that the itemOfRecord assignment is last-write-wins. The overwrite consequence is consistent with the ordering, but these reads do not confirm it directly.",
+          "action": "None needed — verified sound. Optional: cite the itemOfRecord assignment loop and the task draft's evidenceArtifactIds line so the overwrite claim is anchored too.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the ordering (story drafts.set at :319, then addTasks at :342 calling drafts.set at :405). No edit is needed. The only gap is that the overwrite semantics and the task evidence ids are not anchored."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The seeding loop in attachSpecs unconditionally assigns item.seededFromSpecId = `SPEC-${spec}` for every record naming a spec, without checking whether the item already names a different spec.",
+          "evidence": "The cited statement exists exactly once in source: `src/workflow/delivery/graph.ts:551: item.seededFromSpecId = \\`SPEC-${spec}\\`;`. The ISSUE's own citation (ISSUE.md:21) quotes it verbatim, so the anchor resolves to the right entity. The field is declared at graph.ts:142 and copied out at graph.ts:158. CR.md:28 independently notes the related itemOfRecord last-writer-wins risk in attachSpecs (graph.ts:544). However, the evidence does not include the lines around 551 that would show whether a guard exists, such as `if (item.seededFromSpecId === null)` or a check for a conflicting spec. The only other read, graph.ts:561 (`${r.artifactId} is not named as the seed of any work item`), is a different statement further down and says nothing about a guard. So the evidence verifies the assignment and its location, but it cannot confirm the premise's main claim that the assignment is unconditional and skips the different-spec check.",
+          "action": "Read src/workflow/delivery/graph.ts around lines 540–555, the seeding loop in attachSpecs. Confirm that no condition on the item's existing seededFromSpecId wraps the assignment at line 551. If none does, the premise holds and the fix stands: assign only when the field is null, and surface or reject a conflicting second spec. If a guard already exists, rewrite the premise's second case.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor and quoted assignment are verified at graph.ts:551. Only the 'unconditional / no different-spec check' part is unproven by the gathered reads. The prescribed fix (guard the assignment and handle a conflicting spec) is correct either way. It is redundant only if a guard already exists, so a person should confirm by reading the surrounding loop before approving.",
+            "options": [
+              "Keep the premise as written once a read of graph.ts:540–555 confirms that no guard surrounds line 551.",
+              "Narrow the premise to the verified fact: 'attachSpecs assigns item.seededFromSpecId = `SPEC-${spec}` at graph.ts:551 for each record naming a spec'. Then state the missing different-spec check as the defect to fix, not as an established fact.",
+              "Add a citation for the loop header and its surrounding lines in attachSpecs (around graph.ts:544–551) so the 'unconditional' claim is grounded."
+            ]
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "c4",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Only DEF and LLD records are stamped with meta.seededFromSpec today (orchestrator stamps it in the Epic/define path and the standalone LLD path), so PLAN/BUILD records never carry it and the first reproduction case is latent.",
+          "evidence": "The evidence partly supports the premise but does not prove it. The grep for the shorthand `{ seededFromSpec }` finds exactly two stamping sites, both in src/workflow/orchestrator.ts. At :1212, `...(seededFromSpec !== undefined ? { seededFromSpec } : {})` uses the value derived at :1186 from `intent.params['specHash']`. At :2354 the same spread uses the value derived at :2320 from `intent.params['specHash']`. Two sites fit the claim of two paths (Epic/define and standalone LLD). The S008 PLAN (t2) also confirms that finalizeDefine stamps DEF meta.\n\nThree gaps keep this from being verified:\n(1) Neither read line names the enclosing function. Nothing shows that :1212 is finalizeDefine (the DEF record) or that :2354 is the standalone LLD finalize rather than a PLAN or BUILD finalize.\n(2) The broad `/seededFromSpec/` grep stopped at its 50-match cap, and every match shown is in docs/. Any src/ hits beyond the cap were not shown, such as other files or long-form `seededFromSpec: <expr>` assignments in plan or build code.\n(3) No probe checked the plan or build stages, or whether meta is copied forward from upstream LLD meta into PLAN/BUILD records.\nSo the claim that PLAN/BUILD records never carry the field is a closed-union assertion the evidence cannot confirm.",
+          "action": "Before relying on \"the first reproduction case is latent\", confirm the set of stamping sites is closed:\n(a) Identify the functions that enclose orchestrator.ts:1212 and :2354, and confirm they produce DEF and LLD records.\n(b) Run `rg -n 'seededFromSpec' src/` with no cap, to rule out long-form assignments and stamping outside orchestrator.ts.\n(c) Check that the plan and build finalize paths do not spread or copy upstream LLD meta (for example `...lld.meta`) into PLAN/BUILD meta, because that would carry seededFromSpec forward implicitly.\nIf any of these shows PLAN/BUILD records carrying the field, the first reproduction case is live and the fix needs to cover it now. If all three come back clean, keep the premise and cite the two confirmed function names.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The two shorthand stamping sites in orchestrator.ts are confirmed, but which record kind each one writes, and the absence of PLAN/BUILD stamping, are not shown by the evidence. The broad grep was truncated, and no probe looked at meta being copied forward. The wording should either be softened or backed by naming the confirmed sites. Neither option can be applied automatically without new evidence.",
+            "options": [
+              "Keep the premise, but anchor it to the two confirmed stamp sites (orchestrator.ts:1212 and :2354) once their enclosing functions are confirmed to be the DEF and standalone LLD finalizers, and add an uncapped src/ grep showing no other stamping.",
+              "Reword it as a hedged assumption: 'seededFromSpec is stamped at orchestrator.ts:1212 and :2354 (believed to be the DEF and standalone-LLD finalizers); PLAN/BUILD are not expected to carry it unless meta is copied forward. Verify before treating case 1 as latent.'",
+              "Treat the first reproduction case as potentially live and make the fix handle seededFromSpec on PLAN/BUILD records anyway (defensive), which makes this premise non-load-bearing."
+            ]
+          }
+        },
+        {
+          "claimId": "p6",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Draft items have kinds including story, epic, issue and task; the fix restricts SPEC-seed attribution to story, epic and issue items, excluding task.",
+          "evidence": "The evidence backs only part of this premise. `src/workflow/delivery/graph.ts:310` builds an item with `kind: 'story'`, and `src/workflow/delivery/graph.ts:407` builds one with `kind: 'task'`. The test fixture at `src/workflow/delivery/__tests__/types.test.ts:127` also uses `kind: 'story'`. So 'story' and 'task' are real draft-item kinds. Nothing in the evidence shows `kind: 'epic'` or `kind: 'issue'` on a draft item. The only other match is an LLD doc line (`kind: 'artifact'` / `kind: 'epic'`), which is an IPC approve-target union and has nothing to do with delivery draft items. The literal grep `/kind: 'task'/` returned 0 matches even though graph.ts:407 has `kind:                'task',`. That difference comes from the column-aligned whitespace, not from 'task' being missing. Neither cited anchor shows the draft-item kind union in `src/workflow/delivery/types.ts`, so the full inventory (story | epic | issue | task) cannot be checked. The fix's core rule still holds: 'task' is a real kind (graph.ts:407) and must be excluded from SPEC-seed attribution. The unverified part is whether 'epic' and 'issue' exist as kinds to include.",
+          "action": "Check the draft-item `kind` union in `src/workflow/delivery/types.ts`. Confirm that 'epic' and 'issue' are members, and that no other kind (for example 'bug' or 'spike') also needs including or excluding. Then cite that union's `types.ts:<line>` in the premise. If 'epic' or 'issue' turn out not to be draft-item kinds, narrow the attribution filter to the kinds that actually exist. Build the restriction as an explicit allow-list (story/epic/issue), not as `kind !== 'task'`, so a kind added later doesn't silently get SPEC-seed attribution.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms 'story' (graph.ts:310) and 'task' (graph.ts:407) as draft-item kinds. It doesn't show the kind union in types.ts, so 'epic' and 'issue' are unverified. Excluding 'task' is still the correct change, so this is not HIGH. The premise needs a grounded citation to the union before the inventory can be treated as verified.",
+            "options": [
+              "Add a citation to the draft-item kind union in src/workflow/delivery/types.ts (exact line) once it's confirmed to contain story | epic | issue | task.",
+              "Reword the premise to state only what is verified: 'Draft items include story (graph.ts:310) and task (graph.ts:407) kinds; SPEC-seed attribution is restricted to non-task container kinds (story/epic/issue per the types.ts union).'",
+              "If types.ts shows 'epic' or 'issue' is not a draft-item kind, re-scope the allow-list to the kinds that actually exist."
+            ]
+          }
+        },
+        {
+          "claimId": "p7",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "DeliveryNotice kinds are a closed union in src/workflow/delivery/types.ts (including 'unattached-spec'); raising a notice for an item naming two specs requires a notice kind (new or existing) and the fix claims no published type changes.",
+          "evidence": "The closed-union part holds. `src/workflow/delivery/types.ts:117` reads `export type NoticeCode =`. Its members include `| 'record-unreadable'` at types.ts:118 and `| 'unattached-spec'            // s1: a SPEC no work item names as its seededFromSpec` at types.ts:122. The union also appears at HLD.md:150-160. `src/workflow/delivery/notice.ts:23` has the fixed attention table entry `'unattached-spec': false`, so every code needs its own entry in that table. All 31 `makeNotice('…'` call sites (graph.ts, stage.ts, gate.ts, currency.ts, snapshot.ts) pass a literal code from this set. The premise has two inaccuracies. First, the union is named `NoticeCode`; the `DeliveryNotice` kinds are carried in its `code` field. Second, the evidence shows no existing code for \"an item naming two specs\". The nearest existing codes are `'identity-ambiguous'` (graph.ts:233/334/500) and `'incomplete-evidence'`, and neither is clearly about a double seededFromSpec. A new code would add a member to the published `NoticeCode` union at types.ts:117 and an entry to the attention table at notice.ts:23. That conflicts with the fix's claim of \"no published type changes\". The evidence does not show which code the fix actually picks, so this conflict cannot be confirmed or ruled out.",
+          "action": "Make the artifact name the exact notice code it will raise for an item that names two specs. If it reuses an existing code (for example `'identity-ambiguous'`, which already carries itemIds/artifactIds through makeNotice), say so; the \"no published type changes\" claim then stands. If it adds a new code, drop the \"no published type changes\" claim. In that case, list the new member in `NoticeCode` (src/workflow/delivery/types.ts:117) and its attention entry in the table at src/workflow/delivery/notice.ts:23, and mirror the change in the HLD union (HLD.md:150-160). Also fix the name: the closed union is `NoticeCode`, not \"DeliveryNotice kinds\".",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms that NoticeCode is a closed union and that notice.ts:23 holds an attention table keyed by every code. Whether the fix needs a published type change depends on which code it chooses, and that is a design choice the evidence does not settle. The artifact text was not supplied, so no safe verbatim find/replace can be given.",
+            "options": [
+              "Reuse the existing 'identity-ambiguous' code for an item that names two specs. Keep the 'no published type changes' claim and say which code is used.",
+              "Add a new NoticeCode member (e.g. 'ambiguous-spec') at types.ts:117 with an attention entry at notice.ts:23, update the HLD union, and drop the 'no published type changes' claim.",
+              "Raise no notice. Settle the double seededFromSpec deterministically (e.g. pick the first spec by sorted id) and record that choice, so the NoticeCode union does not change."
+            ]
+          }
+        },
+        {
+          "claimId": "p8",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The work item's seededFromSpecId is a single string | null field ('SPEC-' + meta.seededFromSpec), so it can hold only one spec per item.",
+          "evidence": "The gathered evidence supports the premise. src/workflow/delivery/types.ts:102 declares `readonly seededFromSpecId:    string | null;`, and src/workflow/delivery/graph.ts:142 declares the matching internal field `seededFromSpecId: string | null;`. The HLD at docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md:126 gives the same type and documents how the value is built: \"'SPEC-' + meta.seededFromSpec (which holds the bare 16-char spec hash)\". A field typed `string | null` holds at most one spec id, so each item can carry only one spec. The other two reads (types.ts:97 and graph.ts:157) are nearby lines that don't contradict this. The 'SPEC-' prefix comes from the HLD comment, not from a code read, but it is consistent with the declared type.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the declared type in both types.ts:102 and graph.ts:142 and the HLD description, so no correction is needed."
+          }
+        },
+        {
+          "claimId": "p9",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "SPEC records attach to items via seededItems keyed by spec hash and matched by the SPEC record's workItemHash; the SPEC id is pushed into each seeded item's evidenceArtifactIds, else an 'unattached-spec' notice is raised.",
+          "evidence": "The core attachment mechanism checks out. src/workflow/delivery/graph.ts:558 has `const items = r.workItemHash === null ? undefined : seededItems.get(r.workItemHash);`, so the SPEC record's workItemHash is the lookup key into seededItems. src/workflow/delivery/graph.ts:565 has `for (const item of items) item.evidenceArtifactIds.push(r.artifactId);`, so the SPEC id is pushed into each seeded item's evidenceArtifactIds. Two parts of the premise are not covered by the evidence. First, the 'unattached-spec' notice: the read at :568 returned FOUND but with empty content, and the read at :575 returned NOT FOUND, so no line shows the else-branch or the literal 'unattached-spec'. Second, the claim that seededItems is \"keyed by spec hash\": the evidence only shows the get-side key (r.workItemHash), not how the map is filled.",
+          "action": "Add a probe for the else-branch, e.g. grep /unattached-spec/ in src/workflow/delivery/graph.ts, plus a read of the lines around 559–564 (the guard when items is undefined or empty). Also grep for the seededItems.set( site to confirm what the map is keyed by. If no 'unattached-spec' notice exists, reword the premise to drop that clause. The part already confirmed (the lookup by workItemHash and the push into evidenceArtifactIds) does not change what gets built.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The lookup and push are verified. The 'unattached-spec' fallback and the seededItems key are unverified, so I can't safely auto-edit; the next step is a re-probe, not a text correction.",
+            "options": [
+              "Re-probe: grep /unattached-spec/ and /seededItems\\.set\\(/ in src/workflow/delivery/graph.ts, then re-judge",
+              "If the notice exists under a different code/name, update the premise to use the real identifier",
+              "If no fallback notice exists, remove the \"else an 'unattached-spec' notice is raised\" clause from the premise"
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c5",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The issue originates from the code review of ISSUE-34b6a247 (E1 delivery graph fix), which recorded a quality LOW finding 'Latent correctness risk in attachSpecs'.",
+          "evidence": "docs/standalone/bug-e1-s1-delivery-graph-builder-E2026100834b6a247/ISSUE.md:1 identifies that standalone as ISSUE-34b6a247a4828d49. Its S001/BUILD.md:11 describes it as the fix to the E1 delivery graph builder (src/workflow/delivery/graph.ts buildWorkItemGraph). Its code-review record, S001/CR.md:28, contains a LOW row at src/workflow/delivery/graph.ts:544 titled \"Latent correctness risk in attachSpecs\". That row explains that itemOfRecord can put seededFromSpecId on a task instead of the story when a PLAN or BUILD record carries meta.seededFromSpec. The new issue, docs/standalone/bug-src-workflow-delivery-graph-ts-E2026100820d1b6db/ISSUE.md:23, cites this same finding as c5: \"CR for ISSUE-34b6a247 (E1 delivery graph fix): quality LOW 'Latent correctness risk in attachSpecs'\". The evidence confirms the source issue, the severity and the finding title. The grep line is cut off before any dimension label, so the \"quality\" dimension is not directly visible. The cited citation does record it, though, and it does not change what gets built.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the CR record at docs/standalone/bug-e1-s1-delivery-graph-builder-E2026100834b6a247/S001/CR.md:28. No edit is needed."
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 5,
+        "low": 5
+      },
+      "reviewedAt": "2026-10-08T17:31:49.828Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p4": {
+        "findingId": "p4",
+        "status": "resolved",
+        "note": "Verified by reading graph.ts:545-555: the seeding loop assigns item.seededFromSpecId at line 551 with no condition on the item's existing value, so the premise holds as written.",
+        "resolvedAt": "2026-10-08T17:36:48.488Z"
+      },
+      "p5": {
+        "findingId": "p5",
+        "status": "resolved",
+        "note": "Verified: an uncapped `rg seededFromSpec src` finds stamping only at orchestrator.ts:1212 (inside finalizeDefine, from line 1132) and :2354 (inside finalizeStandaloneLld, from line 2279), i.e. DEF and standalone LLD. The one meta spread in the build path (runners/build/standalone-record.ts:361 mergeWithPrior) copies the prior BUILD record at the same path, not LLD meta, so PLAN/BUILD records never carry the field; case 1 stays latent.",
+        "resolvedAt": "2026-10-08T17:36:48.490Z"
+      },
+      "p6": {
+        "findingId": "p6",
+        "status": "resolved",
+        "note": "Verified: src/workflow/delivery/types.ts:73 `export type DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue';` - epic and issue are real kinds; the fix will use an explicit allow-list of story, epic and issue.",
+        "resolvedAt": "2026-10-08T17:36:48.497Z"
+      },
+      "p7": {
+        "findingId": "p7",
+        "status": "resolved",
+        "note": "Accepted and corrected: the fix intent no longer claims 'no published type changes'. It now says the notice code is the fix's choice, and a new NoticeCode (with its attention entry) would be the one published type change.",
+        "resolvedAt": "2026-10-08T17:36:48.497Z"
+      },
+      "p9": {
+        "findingId": "p9",
+        "status": "resolved",
+        "note": "Verified: graph.ts:554 `seededItems.set(spec, set)` keys the map by the spec hash, and graph.ts:559-562 raise makeNotice('unattached-spec', ...) when no item names the SPEC.",
+        "resolvedAt": "2026-10-08T17:36:48.498Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Attach a seeded SPEC to its story, never a task, and flag an item that names two specs",
+    "reproduction": "Build the delivery work-item graph over a store where a story's PLAN (or BUILD) record carries meta.seededFromSpec = <specHash> and lists tasks, plus the SPEC-<specHash> record. Observed: the SPEC attaches to the LAST task draft that holds that PLAN as evidence. The task gets seededFromSpecId and the SPEC in its evidence, while the story gets neither. Expected: the story holds the SPEC. Second case: one story whose LLD names spec A and whose DEF/LLD sibling names spec B. Observed: seededFromSpecId is whichever record is read last, with no notice. Expected: a notice naming both specs. This is latent today because only DEF and LLD records are stamped with seededFromSpec, so the first case cannot occur in a real store yet.",
+    "rootCause": "attachSpecs (src/workflow/delivery/graph.ts) builds itemOfRecord by walking every draft and setting itemOfRecord[artifactId] = draft for each evidence id, so the last draft to list an id wins. addTasks gives each task draft the story's PLAN and BUILD artifact ids as its own evidence, and task drafts are inserted into the drafts map after their story, so for a PLAN or BUILD id the task, not the story, is the recorded holder. The seeding loop then overwrites item.seededFromSpecId on every record that names a spec, without checking whether the item already names a different one.",
+    "fixIntent": "When deciding which item a record seeds, consider only story, epic and issue items, never tasks, so a spec named by a PLAN or BUILD attaches to its story. When one item's records name two or more different specs, raise a notice naming the item and the specs instead of silently keeping the last one. No other graph behaviour or notice changes. Which notice code to raise is the fix's choice; if it needs a new NoticeCode (with its attention entry), that is the one published type change."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "for (const artifactId of d.evidenceArtifactIds) itemOfRecord.set(artifactId, d);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "item.seededFromSpecId = `SPEC-${spec}`;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "CR for ISSUE-34b6a247 (E1 delivery graph fix): quality LOW 'Latent correctness risk in attachSpecs'"
+    }
+  ]
+}

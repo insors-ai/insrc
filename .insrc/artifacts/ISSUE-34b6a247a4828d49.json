@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791470839996-iaeitp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T14:48:30.650Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 70654,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "34b6a247a4828d49",
+    "epicSlug": "bug-e1-s1-delivery-graph-builder",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T15:00:04.900Z",
+    "parentRef": {
+      "slug": "bug-e1-s1-delivery-graph-builder"
+    },
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "buildWorkItemGraph is exported from src/workflow/delivery/graph.ts and takes an ArtifactRecordSet.",
+          "evidence": "The grep for /export function buildWorkItemGraph\\(/ finds the real definition at src/workflow/delivery/graph.ts:191: \"export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph {\". That line confirms the premise: the function is exported from graph.ts and takes one parameter of type ArtifactRecordSet. The cited anchor, line 206, is wrong. The read at :206 returned no content showing the declaration, and the only source match is 15 lines earlier, at :191. The other two matches are docs citations: S002/LLD.md:216, which quotes the same signature, and the bugfix ISSUE.md:19. Because the anchor is stale but still names the right function, the prescribed change is unaffected.",
+          "action": "Change the anchor from src/workflow/delivery/graph.ts:206 to src/workflow/delivery/graph.ts:191, where buildWorkItemGraph is declared. The claim itself (exported, takes an ArtifactRecordSet) is correct and needs no change.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "A line-number fix based on the evidence: the grep shows the declaration at graph.ts:191, not :206. The signature matches the premise exactly, so only the anchor changes.",
+            "artifactEdits": [
+              {
+                "find": "src/workflow/delivery/graph.ts:206",
+                "replace": "src/workflow/delivery/graph.ts:191"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "p2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildWorkItemGraph reads only recordSet.records and never reads recordSet.failures.",
+          "evidence": "grep /recordSet\\.records/ finds four reads in src/workflow/delivery/graph.ts: lines 59, 440, 542 and 551 (`for (const r of recordSet.records)`). grep /recordSet\\.failures/ has exactly one match, in docs/standalone/bug-e1-s1-delivery-graph-builder-E2026100834b6a247/ISSUE.md:11, which is the issue text itself. There are no matches in any src/ file. The broader grep /\\.failures/ (16 matches) finds no hit in graph.ts. The delivery-area hits are only __tests__/fixtures.ts:359 and __tests__/load.test.ts (62, 109, 115, 117, 164), where the loader produces and tests the `failures` array. The read of graph.ts:60 (`const key = groupKeyOf(r);`) confirms that line 59 loops over records. The evidence supports the premise: graph.ts uses recordSet.records and never reads recordSet.failures. One limit: these greps would not catch a destructured read such as `const { failures } = recordSet`. Nothing in the evidence points to one.",
+          "action": "None needed; the evidence supports the premise. If needed, also grep graph.ts for `failures` with no `.` prefix to rule out a destructured read.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence supports the premise, so the artifact needs no change."
+          }
+        },
+        {
+          "claimId": "p3",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The makeNotice calls in graph.ts use exactly four codes — identity-anchor-missing, identity-ambiguous, unresolved-parent, unattached-spec — and none uses 'record-unreadable'.",
+          "evidence": "The grep /makeNotice\\('[a-z-]+'/ returns 13 calls in src/workflow/delivery/graph.ts, and they use exactly four codes. identity-anchor-missing appears at :219 and :301. identity-ambiguous appears at :233, :334 and :495. unresolved-parent appears at :238, :324, :503, :507 and :512. unattached-spec appears at :555. The grep /makeNotice\\('record-unreadable'/ has a single match, src/workflow/delivery/__tests__/notice.test.ts:33, which is a test and not graph.ts. Two other things came back. The read at graph.ts:234 found message text inside the identity-ambiguous call that starts at :233, which fits the premise. The read at graph.ts:570 returned NOT FOUND, but that anchor does not affect the premise. One limit on the evidence: both greps need the code literal on the same line as `makeNotice(`, so a call that puts the code on the next line would not show up. No evidence points to such a call.",
+          "action": "None needed; the evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Confirmed: graph.ts calls makeNotice with exactly four codes, none of them 'record-unreadable', so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p4",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "'record-unreadable' is a member of the notice code union in src/workflow/delivery/types.ts.",
+          "evidence": "The grep for `| 'record-unreadable'` matches src/workflow/delivery/types.ts:118 (`| 'record-unreadable'          // s1: a file in the store could not be loaded`), so the literal is a member of the notice code union there. The HLD has the same union line (docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md:150). The cited anchor is wrong, though. Line 113 of types.ts is a section divider comment (`// ---------------------------------------------------------------------------`), not the union member. The anchor is 5 lines early but points at the right block, so the premise still holds and the planned change is unaffected. Nothing built from it would break.",
+          "action": "Change the anchor from src/workflow/delivery/types.ts:113 to src/workflow/delivery/types.ts:118, where the `| 'record-unreadable'` member is declared. The premise itself needs no change.",
+          "fixability": "auto",
+          "proposedFix": {
+            "rationale": "Grep shows the union member at types.ts:118, while line 113 is a divider comment. This is a mechanical anchor fix taken directly from that grep result.",
+            "artifactEdits": [
+              {
+                "find": "src/workflow/delivery/types.ts:113",
+                "replace": "src/workflow/delivery/types.ts:118"
+              }
+            ]
+          }
+        },
+        {
+          "claimId": "p5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The fixed attention table in src/workflow/delivery/notice.ts maps 'record-unreadable' to true.",
+          "evidence": "read src/workflow/delivery/notice.ts:18 → FOUND: `'record-unreadable':       true,`. A grep for /'record-unreadable':\\s+true/ also matches src/workflow/delivery/notice.ts:18 (the other match is the ISSUE.md citation that quotes this same line). The anchor points to the stated entry, and the entry maps 'record-unreadable' to true.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise exactly at the cited anchor. Nothing needs to change."
+          }
+        },
+        {
+          "claimId": "p6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "loadArtifactRecordSet exists and returns a record set whose failures array lists files that could not be loaded (including invalid JSON), each with fileName, reason, and detail.",
+          "evidence": "The premise's substance holds. `export function loadArtifactRecordSet(` is defined at src/workflow/delivery/load.ts:111. Inside it, load.ts:128 reads `const failures: RecordLoadFailure[] = [];`. Three push sites fill that array with `{ fileName, reason, detail }`: `reason: 'unknown-kind'` (load.ts:132), `reason: 'unreadable'` (load.ts:139) and `reason: 'invalid-json'` (load.ts:146). So invalid JSON is one of the recorded failures, as claimed. The record set type declares `readonly failures: readonly RecordLoadFailure[];` at src/workflow/delivery/types.ts:66. The only issue is the anchors. load.ts:128 points to the failures array declaration, not the function itself (that is at :111), though it is inside the right function. types.ts:61 points to the doc comment `/** ISO time the directory was listed. */`, a neighbouring field of the same type, not the `failures` field at :66. Both anchors are off by a few lines but still point at the right concept, so what gets built does not change.",
+          "action": "Change the anchors to the lines the evidence confirms: src/workflow/delivery/load.ts:111 for loadArtifactRecordSet, and src/workflow/delivery/types.ts:66 for the `failures: readonly RecordLoadFailure[]` field. The premise itself needs no change.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Both anchors are a few lines off from the definitions they mean, but the claim they support is verified. Repointing them to the lines confirmed by the evidence is safe. The edits are only candidates because I could not check that each `find` string appears exactly once in the artifact.",
+            "artifactEdits": [
+              {
+                "find": "src/workflow/delivery/types.ts:61",
+                "replace": "src/workflow/delivery/types.ts:66"
+              },
+              {
+                "find": "src/workflow/delivery/load.ts:128",
+                "replace": "src/workflow/delivery/load.ts:111"
+              }
+            ],
+            "options": [
+              "Repoint both anchors: load.ts:128 → load.ts:111 (function definition) and types.ts:61 → types.ts:66 (failures field)",
+              "Keep load.ts:128 (the failures array declaration inside the function) and repoint only types.ts:61 → types.ts:66",
+              "Leave both anchors as they are and accept the drift, since the premise is substantively correct"
+            ]
+          }
+        },
+        {
+          "claimId": "p7",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "makeNotice can produce a store-level notice that carries fileNames plus reason/detail for a 'record-unreadable' code, with attention taken from the fixed table.",
+          "evidence": "Most of the premise is confirmed:\n- `src/workflow/delivery/notice.ts:44` declares `export function makeNotice(code: NoticeCode, message: string, refs: NoticeRefs): DeliveryNotice`.\n- `NoticeRefs` has a `fileNames` field (`notice.ts:35`), and `makeNotice` sets `fileNames: sortedUnique(refs.fileNames)` (`notice.ts:50`).\n- The returned type, `DeliveryNotice`, has `readonly fileNames: readonly string[]` (`types.ts:139`).\n- The attention table has `'record-unreadable': true` (`notice.ts:18`), so attention does come from the fixed table.\n- `notice.test.ts:33` already calls `makeNotice('record-unreadable', 'bad file', { fileNames: ['z.json'] })`, a store-level notice with no item or artifact ids.\n\nOne part is not supported. Nothing in the evidence shows a `reason` or `detail` field on `NoticeRefs` or `DeliveryNotice`. The only free-text input is the `message: string` parameter. So \"carries reason/detail\" can only be true if the reason and detail are written into `message`. The evidence does not show separate structured fields for them. ISSUE.md:15 asks for a notice that \"carries the failure reason and detail\" but does not say where they go.",
+          "action": "Clarify the premise to say that the failure reason and detail go into the `message` string, for example `makeNotice('record-unreadable', `${failure.reason}: ${failure.detail}`, { fileNames: [failure.fileName] })`. `DeliveryNotice` has no `reason` or `detail` field. If separate structured fields are really required, that is a change to the type model in `types.ts` and `NoticeRefs`, and it must be scoped explicitly.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "makeNotice already supports a store-level 'record-unreadable' notice with fileNames, and its attention comes from the table. The only gap is where the reason and detail go: the evidence shows only the `message` string, with no structured fields. Encoding them in `message` needs no type change and still meets the ISSUE's 'carries the failure reason and detail'.",
+            "options": [
+              "Reword the premise: reason and detail are encoded in the notice's `message` string; fileNames names the failed file; attention comes from NOTICE_ATTENTION (true).",
+              "Add structured `reason`/`detail` fields to DeliveryNotice and NoticeRefs. This is a type-model change and needs explicit design approval.",
+              "Keep the premise but add a note that 'carries reason/detail' means the message text, not separate fields."
+            ]
+          }
+        },
+        {
+          "claimId": "p8",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The approved s1 LLD (LLD-2ff0dfdadb1c8d1c-s1) assigns raising one 'record-unreadable' notice (attention true) naming the file to the graph builder.",
+          "evidence": "S001/LLD.md:194 (the approved s1 LLD, LLD-2ff0dfdadb1c8d1c-s1) reads: \"A RecordLoadFailure with reason 'unreadable' is recorded; loading continues with the next file. The graph builder raises one 'record-unreadable' notice (attention true) naming the file.\" S001/LLD.md:168 agrees: \"s1 itself raises: record-unreadable (one per RecordLoadFailure, store-level, fileNames set)\". The attention value is confirmed by S001/LLD.md:137, HLD.md:172 and src/workflow/delivery/notice.ts:18 ('record-unreadable': true). S004/LLD.md:228 (c9) and ISSUE.md:22 (c4) cite the same LLD sentence. One nuance: line 194 is the error path for the 'unreadable' reason, but line 168 says one notice is raised per RecordLoadFailure of any reason, so the premise holds as stated. The code does not do this yet: src/workflow/delivery/graph.ts never raises the notice (ISSUE.md:11), and ISSUE-34b6a247a4828d49 tracks that gap. This premise is about what the LLD assigns, not what the code does, so the gap does not contradict it.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The approved s1 LLD text confirms the premise word for word (S001/LLD.md:194, :168). No edit is needed. The build gap in graph.ts is already tracked by ISSUE-34b6a247a4828d49, which S004/LLD.md:56 requires to land before this Story's build."
+          }
+        },
+        {
+          "claimId": "p9",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The fix is additive: emitting record-unreadable notices adds no items, removes no items, and leaves other notices unchanged.",
+          "evidence": "The evidence only partly bears on this premise. The read of src/workflow/delivery/graph.ts:206 came back as \"FOUND:\" with no lines, so nothing shows the code where the fix would go or how buildWorkItemGraph builds `items`. The grep for /notices\\.push\\(/ lists 11 push sites in graph.ts (lines 219, 233, 238, 301, 324, 334, 495, 503, 507, 512, 555). All of them push identity-anchor-missing, identity-ambiguous, unresolved-parent or unattached-spec. None pushes record-unreadable, so the new notice would add a new push site rather than reuse an existing one. graph.ts:353 returns `{ items, rootIds, notices: sortNotices(notices) }`. notice.ts:73 shows that sortNotices orders by code and then by ids, and the PLAN says it drops only exact duplicates. A notice with a different code cannot collide with the existing notices or remove any of them, so \"other notices unchanged\" is plausible. Their positions in the sorted list can still move. Two parts are not covered: (a) \"adds no items, removes no items\", because no evidence shows how unreadable records reach or skip the `items` map, and (b) whether the fix also changes how unreadable records are grouped. S004/LLD.md says record-unreadable notices belong to the graph builder (s1), which agrees that buildWorkItemGraph is where they are emitted, but it says nothing about what happens to items.",
+          "action": "Read buildWorkItemGraph in src/workflow/delivery/graph.ts, around lines 200–353, and confirm two things: unreadable/failed records never become items, and adding the record-unreadable push does not change which branch runs for readable records. Then add a test asserting that `items` and `rootIds`, and the non-record-unreadable notices, are deep-equal with and without an unreadable file in the input. Also reword the premise to say the other notices keep their content, not their position in the sorted list.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence partly supports the notice side of the premise: sortNotices dedups only exact duplicates, and a new code cannot collide with existing notices. The evidence says nothing about the items side because the read of graph.ts:206 came back empty. That makes the premise unverifiable as written but not contradicted. A person needs to confirm the items behaviour, or add a regression test, before it is accepted.",
+            "options": [
+              "Keep the premise and add an acceptance test: items, rootIds and the non-record-unreadable notices are deep-equal with and without an unreadable record in the input.",
+              "Reword the premise to: 'Emitting record-unreadable notices adds new notices only; items, rootIds and the content of every other notice are unchanged (their position after sortNotices may shift).' Then check it against the buildWorkItemGraph source.",
+              "Narrow the premise to the notice side, which the evidence supports, and move the items claim into a separate premise grounded on how buildWorkItemGraph handles a failed file."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 5,
+        "low": 4
+      },
+      "reviewedAt": "2026-10-08T15:00:59.505Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p1": {
+        "findingId": "p1",
+        "status": "resolved",
+        "note": "The issue cites graph.ts by file, not line; the :206 anchor is the reviewer's own extraction. No change to the record.",
+        "resolvedAt": "2026-10-08T15:03:51.242Z"
+      },
+      "p4": {
+        "findingId": "p4",
+        "status": "resolved",
+        "note": "The issue cites types.ts by file, not line; the :113 anchor is the reviewer's own extraction. No change to the record.",
+        "resolvedAt": "2026-10-08T15:03:51.244Z"
+      },
+      "p6": {
+        "findingId": "p6",
+        "status": "resolved",
+        "note": "The issue cites files, not lines; the anchors are the reviewer's own extraction. The premise is confirmed.",
+        "resolvedAt": "2026-10-08T15:03:51.245Z"
+      },
+      "p7": {
+        "findingId": "p7",
+        "status": "resolved",
+        "note": "Accepted: the failure reason and detail go into the notice message; DeliveryNotice gains no fields.",
+        "resolvedAt": "2026-10-08T15:03:51.245Z"
+      },
+      "p9": {
+        "findingId": "p9",
+        "status": "resolved",
+        "note": "Accepted: the build adds a test that items, rootIds and every other notice are deep-equal with and without an unreadable file in the record set.",
+        "resolvedAt": "2026-10-08T15:03:51.245Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Raise a record-unreadable notice for every store file the loader could not read",
+    "reproduction": "Put one malformed file (for example invalid JSON in .insrc/artifacts/LLD-<hash>-s2.json) among valid records, load the store with loadArtifactRecordSet and build the graph with buildWorkItemGraph. Observed: the record set lists the file under failures, but the graph's notices contain no 'record-unreadable' notice, so nothing in the delivery view says the file could not be read. Expected, per the approved s1 design: one store-level 'record-unreadable' notice per load failure, naming the file in fileNames, with attention true.",
+    "rootCause": "buildWorkItemGraph (src/workflow/delivery/graph.ts) reads only recordSet.records; it never reads recordSet.failures, and none of its makeNotice calls uses the 'record-unreadable' code (it raises only identity-anchor-missing, identity-ambiguous, unresolved-parent and unattached-spec). The code and its attention value exist in types.ts and notice.ts, and the approved s1 LLD assigns raising it to the graph builder, but the build left it out.",
+    "fixIntent": "The graph builder reports every load failure in the record set as one store-level 'record-unreadable' notice that names the failed file (fileNames) and carries the failure reason and detail, with attention taken from the fixed table (true). Nothing else about the graph changes: no items are added or removed, and other notices are unchanged."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "export function buildWorkItemGraph("
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "'record-unreadable'"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/delivery/notice.ts",
+      "quotedText": "'record-unreadable':       true,"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-2ff0dfdadb1c8d1c-s1 (S001/LLD.md): 'The graph builder raises one 'record-unreadable' notice (attention true) naming the file.'"
+    }
+  ]
+}

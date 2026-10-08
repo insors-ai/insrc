@@ -235,6 +235,15 @@
       "reviewedAt": "2026-10-08T16:36:47.911Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "qbb3f9575": {
+        "question": "A mapped test case that the test runner reports as skipped (for example a test that runs only when an environment variable is set): does it satisfy the named test? The design as written lets it pass the check. The alternative is that a skipped case fails the check unless the named test's level is live, where the builder reports the result instead. Recommended: a skipped case does not satisfy a unit or integration test.",
+        "status": "resolved",
+        "choice": "A skipped case fails a unit or integration test",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: a skipped test proves nothing, and a pass that is green because it was skipped is the hollow pass this record exists to expose. The design's rule for the tests check and its tests were changed to match.",
+        "resolvedAt": "2026-10-08T17:03:46.877Z"
+      }
     }
   },
   "body": {
@@ -389,7 +398,7 @@
           "preconditions": [],
           "postconditions": [
             "Each test file is run on its own, one after another, with the TAP reporter added to today's command; the time limit of the plan covers all of them together, and a file not started when it runs out is recorded as timed out",
-            "tests.ok is true only when every file run exited with 0, no file timed out, no name is unresolved, every case of every named test has the result pass (or skipped, see the open question), and no reported result is 'fail'. When no file is run at all: a Task whose named tests are all reported by the builder, each as 'pass', passes the check with the note that the gate ran no test and every result was reported by the builder; in every other case with no file the rule is today's (it fails unless the route gave an acceptable reason)",
+            "tests.ok is true only when every file run exited with 0, no file timed out, no name is unresolved, every case of every named test has the result pass, and no reported result is 'fail'. A case whose result is skipped does not satisfy its test: it fails the check like a case that failed, and the record shows it as skipped. (A test that can only run with a model or a running daemon is a live or smoke test, whose result the builder reports.) When no file is run at all: a Task whose named tests are all reported by the builder, each as 'pass', passes the check with the note that the gate ran no test and every result was reported by the builder; in every other case with no file the rule is today's (it fails unless the route gave an acceptable reason)",
             "Never throws, as today"
           ]
         },
@@ -610,6 +619,13 @@
           "response": "The test record was already written, before the judge: it holds this run's results for the Task, with `testsPassed` from the tests check, and a mapping supplied on this turn is stored. The build record is not written, as today, so it keeps what it had; its link to the test record, if it has one, is still true, since the link carries no results. The error returned is unchanged.",
           "userImpact": "The builder sees the same error as today. The test record shows what the run did, and a second validate turn needs no mapping.",
           "recoverable": true
+        },
+        {
+          "scenario": "A mapped case was skipped by the test runner, for example a test that runs only when an environment variable is set.",
+          "detection": "The file's TAP output has that title with a SKIP or TODO directive.",
+          "response": "The case's result is 'skipped' and the tests check fails: a skipped test proves nothing about what the plan named.",
+          "userImpact": "The Task fails with the skipped case named. The builder maps a case that runs, or, for a live or smoke test, reports the result with its evidence.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -725,7 +741,7 @@
             "validation-checks.test.ts: with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
             "validation-checks.test.ts: smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
             "validation-checks.test.ts: runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
-            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail or not found (mutation: count not found as pass)",
+            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
             "validation-checks.test.ts: a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
             "validation-checks.test.ts: a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
             "validation-checks.test.ts: a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
@@ -779,7 +795,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "build-step.test.ts: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
-            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail or not found (mutation: count not found as pass)",
+            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
             "Task t1 of Story s7 of the analyzer epic, whose plan names its tests in prose, is submitted with a mapping converted from docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json: the gate runs the three test files, every case is pass, the tests check passes, and TESTS.md is written by the gate in that Story's folder in place of the hand-made one"
           ]
         }

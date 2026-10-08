@@ -20,6 +20,7 @@ import {
 	issueRecord,
 	lldRecord,
 	planRecord,
+	realRecords,
 	recordSet,
 } from './fixtures.js';
 
@@ -41,6 +42,15 @@ function storyStage(out: { graph: WorkItemGraph; result: StagePassResult }, hash
 	assert.ok(story, `no story ${hash}${suffix}; have ${[...out.graph.items.keys()].join(', ')}`);
 	const a = out.result.stages.get(story.id);
 	assert.ok(a, `no stage for ${story.id}`);
+	return a;
+}
+
+/** The annotation of the issue item with this hash. */
+function issueStage(out: { graph: WorkItemGraph; result: StagePassResult }, hash: string): StageAnnotation {
+	const issue = [...out.graph.items.values()].find(n => n.kind === 'issue' && n.workItemHash === hash);
+	assert.ok(issue, `no issue ${hash}`);
+	const a = out.result.stages.get(issue.id);
+	assert.ok(a, `no stage for ${issue.id}`);
 	return a;
 }
 
@@ -139,4 +149,110 @@ test('an unknown or disagreeing stamp gives the unknown route, never a guess', (
 	const trivial = storyStage(run([buildRecord(SOLO, 'S001', [{ id: 'S001', passed: true }], { standalone: true, sizeClass: 'trivial', ...APPROVED })]), SOLO, 1);
 	assert.equal(trivial.route, 'trivial');
 	assert.equal(trivial.stage, 'complete');
+});
+
+// ---------------------------------------------------------------------------
+// t3 — issues and the pass's notices
+// ---------------------------------------------------------------------------
+
+test('a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice', () => {
+	const out = run([
+		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', ...APPROVED }),
+		issueRecord(ISSUE, undefined, { magnitude: 'small', ...APPROVED }),
+	]);
+	const small = storyStage(out, SOLO, 1);
+	assert.equal(small.stage, 'ready-design-approved');
+	assert.equal(small.route, 'small');
+	assert.match(small.reason.text, /needs no plan/);
+	const issue = issueStage(out, ISSUE);
+	assert.equal(issue.stage, 'ready-design-approved');
+	assert.equal(issue.route, 'small-bugfix');
+	assert.deepEqual(issue.reason.artifactIds, [`ISSUE-${ISSUE}`]);
+	for (const a of [small, issue]) assert.notEqual(a.stage, 'ready-plan-approved');
+	assert.deepEqual(out.result.notices, [], 'no plan-related or other notice');
+});
+
+test('a code review with no build leaves the stage and raises review-without-build', () => {
+	const without = storyStage(run([...epic(), lldRecord(EPIC, 's1', APPROVED)]), EPIC, 1);
+	const out = run([...epic(), lldRecord(EPIC, 's1', APPROVED), crRecord(EPIC, 's1', 'pass')]);
+	const a = storyStage(out, EPIC, 1);
+	assert.equal(a.stage, without.stage);
+	assert.deepEqual(a.reason, without.reason, 'the CR is in no rule');
+	assert.equal(out.result.notices.length, 1);
+	const n = out.result.notices[0]!;
+	assert.equal(n.code, 'review-without-build');
+	assert.deepEqual(n.itemIds, [a.itemId]);
+	assert.deepEqual(n.artifactIds, [`CR-${EPIC}-s1`]);
+	assert.equal(n.attention, false);
+});
+
+test("an item with no recorded route keeps its records' stage and raises unknown-route", () => {
+	const out = run([lldRecord(SOLO, 'S001', { standalone: true, ...APPROVED }), planRecord(SOLO, 'S001', ['t1'], APPROVED)]);
+	const a = storyStage(out, SOLO, 1);
+	assert.equal(a.route, 'unknown');
+	assert.equal(a.stage, 'design-plan', 'no route, so no ready gate: the records establish design & plan');
+	const unknown = out.result.notices.filter(n => n.code === 'unknown-route');
+	assert.equal(unknown.length, 1);
+	assert.deepEqual(unknown[0]!.itemIds, [a.itemId]);
+	assert.deepEqual(unknown[0]!.artifactIds, [`LLD-${SOLO}-S001`]);
+	assert.equal(unknown[0]!.attention, false);
+});
+
+test('a story or issue with no design, plan or build is scoped', () => {
+	const out = run([...epic(['s1']), issueRecord(ISSUE, undefined, { magnitude: 'sized' })]);
+	assert.equal(storyStage(out, EPIC, 1).stage, 'scoped');
+	const issue = issueStage(out, ISSUE);
+	assert.equal(issue.stage, 'scoped', 'a pending ISSUE with no fix story');
+	assert.equal(issue.route, 'sized-bugfix');
+
+	const approvedSized = issueStage(run([issueRecord(ISSUE, undefined, { magnitude: 'sized', ...APPROVED })]), ISSUE);
+	assert.equal(approvedSized.stage, 'design-plan', 'an approved sized issue waits on its design');
+});
+
+test('an issue takes the least advanced stage of its fix stories', () => {
+	const out = run([
+		issueRecord(ISSUE, undefined, { magnitude: 'sized', ...APPROVED }),
+		lldRecord(ISSUE, 'S001', { standalone: true, sizeClass: 'bugfix', ...APPROVED }),
+		planRecord(ISSUE, 'S001', ['t1'], APPROVED),
+		buildRecord(ISSUE, 'S001', [{ id: 't1', passed: true }], APPROVED),
+		lldRecord(ISSUE, 'S002', { standalone: true, sizeClass: 'bugfix' }),
+	]);
+	assert.equal(storyStage(out, ISSUE, 1).stage, 'complete');
+	const s2 = storyStage(out, ISSUE, 2);
+	assert.equal(s2.stage, 'design-plan');
+	const issue = issueStage(out, ISSUE);
+	assert.equal(issue.stage, 'design-plan');
+	assert.deepEqual(issue.reason.artifactIds, s2.reason.artifactIds);
+	assert.match(issue.reason.text, new RegExp(`least advanced fix story ${s2.itemId}`));
+});
+
+test('missing evidence records and wrongly typed fields never throw', () => {
+	const records = [
+		...epic(), lldRecord(EPIC, 's1', APPROVED), planRecord(EPIC, 's1', ['t1'], APPROVED),
+		lldRecord(SOLO, 'S001', { standalone: 'yes', sizeClass: 5 }),
+		issueRecord(ISSUE, undefined, { magnitude: { size: 'small' } }),
+	];
+	const set = recordSet(records);
+	const graph = buildWorkItemGraph(set);
+	// The graph names records the stage pass is not given.
+	const thinned = recordSet(records.filter(r => r.kind !== 'PLAN'));
+	let result: StagePassResult | undefined;
+	assert.doesNotThrow(() => { result = deriveStages(graph, thinned); });
+	assert.ok(result);
+	const out = { graph, result };
+	assert.equal(storyStage(out, EPIC, 1).stage, 'design-plan', 'the missing PLAN is skipped');
+	assert.equal(storyStage(out, SOLO, 1).route, 'unknown');
+	assert.equal(issueStage(out, ISSUE).route, 'unknown');
+});
+
+test('every story and issue in the real-shape fixtures gets exactly one stage, deterministically', () => {
+	const set = recordSet(realRecords());
+	const graph = buildWorkItemGraph(set);
+	const first = deriveStages(graph, set);
+	const expected = [...graph.items.values()].filter(n => n.kind === 'story' || n.kind === 'issue').map(n => n.id).sort();
+	assert.deepEqual([...first.stages.keys()], expected);
+	const reversed = recordSet([...realRecords()].reverse());
+	const second = deriveStages(buildWorkItemGraph(reversed), reversed);
+	assert.deepEqual([...second.stages.entries()], [...first.stages.entries()]);
+	assert.deepEqual(second.notices, first.notices);
 });

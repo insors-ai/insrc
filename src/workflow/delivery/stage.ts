@@ -21,8 +21,10 @@
  * verdicts and the other passes' annotations are never consulted. Pure: no I/O.
  */
 
+import { makeNotice, sortNotices } from './notice.js';
 import type {
 	ArtifactRecord,
+	DeliveryNotice,
 	ArtifactRecordSet,
 	DeliveryRoute,
 	DeliveryStage,
@@ -31,6 +33,9 @@ import type {
 	WorkItemGraph,
 	WorkItemNode,
 } from './types.js';
+
+/** Stage order, least advanced first: an issue takes its least advanced fix story's stage. */
+const STAGE_ORDER: readonly DeliveryStage[] = ['scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete'];
 
 /** Routes whose ready gate is an approved plan. */
 const PLAN_ROUTES: ReadonlySet<DeliveryRoute> = new Set(['full-chain', 'feature', 'sized-bugfix']);
@@ -158,9 +163,48 @@ function storyAnnotation(ctx: PassContext, story: WorkItemNode): StageAnnotation
 	return { itemId: story.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } };
 }
 
+/** An issue: its least advanced fix story's stage, or, with none, the rules over its own ISSUE. */
+function issueAnnotation(ctx: PassContext, issueItem: WorkItemNode, stories: ReadonlyMap<string, StageAnnotation>): StageAnnotation {
+	const issue = issueItem.workItemHash !== null ? ctx.issueByHash.get(issueItem.workItemHash) : undefined;
+	const route = issue !== undefined ? routeOfMagnitude(issue) : 'unknown';
+	const suffix = route === 'unknown' ? ' (route unknown, so no ready gate applies)' : '';
+
+	const children = issueItem.childIds.flatMap(id => { const a = stories.get(id); return a !== undefined ? [a] : []; });
+	if (children.length > 0) {
+		const least = children.reduce((a, b) => STAGE_ORDER.indexOf(b.stage) < STAGE_ORDER.indexOf(a.stage) ? b : a);
+		return {
+			itemId: issueItem.id, stage: least.stage, route,
+			reason: { text: `least advanced fix story ${least.itemId}: ${least.reason.text}`, artifactIds: least.reason.artifactIds },
+		};
+	}
+	const { stage, text, artifactIds } = storyStage(route, [], issue);
+	return { itemId: issueItem.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } };
+}
+
+/** The pass's notices for one item: an unknown route, and a code review with no build. */
+function noticesFor(ctx: PassContext, item: WorkItemNode, annotation: StageAnnotation): DeliveryNotice[] {
+	const evidence = evidenceOf(ctx, item);
+	const notices: DeliveryNotice[] = [];
+	if (annotation.route === 'unknown') {
+		const routeFields = evidence.filter(r => r.kind === 'ISSUE' || r.kind === 'LLD' || r.kind === 'BUILD').map(r => r.artifactId);
+		notices.push(makeNotice('unknown-route',
+			`${item.id} has no recorded route; its stage comes from its records alone`,
+			{ itemIds: [item.id], artifactIds: routeFields }));
+	}
+	if (item.kind === 'story') {
+		const reviews = evidence.filter(r => r.kind === 'CR');
+		if (reviews.length > 0 && !evidence.some(r => r.kind === 'BUILD')) {
+			notices.push(makeNotice('review-without-build',
+				`${item.id} has a code review but no build record`,
+				{ itemIds: [item.id], artifactIds: reviews.map(r => r.artifactId) }));
+		}
+	}
+	return notices;
+}
+
 /**
- * Annotate every story in the graph with its stage, route and reason. Never
- * throws: a missing record or a field of the wrong type falls through its rule.
+ * Annotate every story and issue in the graph with its stage, route and reason.
+ * Never throws: a missing record or a field of the wrong type falls through its rule.
  */
 export function deriveStages(graph: WorkItemGraph, recordSet: ArtifactRecordSet): StagePassResult {
 	const byId = new Map(recordSet.records.map(r => [r.artifactId, r] as const));
@@ -170,10 +214,22 @@ export function deriveStages(graph: WorkItemGraph, recordSet: ArtifactRecordSet)
 	}
 	const ctx: PassContext = { graph, byId, issueByHash };
 
-	const stages = new Map<string, StageAnnotation>();
-	for (const id of [...graph.items.keys()].sort()) {
+	const ids = [...graph.items.keys()].sort();
+	const stories = new Map<string, StageAnnotation>();
+	for (const id of ids) {
 		const item = graph.items.get(id);
-		if (item?.kind === 'story') stages.set(id, storyAnnotation(ctx, item));
+		if (item?.kind === 'story') stories.set(id, storyAnnotation(ctx, item));
 	}
-	return { stages, notices: [] };
+
+	const stages = new Map<string, StageAnnotation>();
+	const notices: DeliveryNotice[] = [];
+	for (const id of ids) {
+		const item = graph.items.get(id);
+		if (item === undefined || (item.kind !== 'story' && item.kind !== 'issue')) continue;
+		const annotation = item.kind === 'story' ? stories.get(id) : issueAnnotation(ctx, item, stories);
+		if (annotation === undefined) continue;
+		stages.set(id, annotation);
+		notices.push(...noticesFor(ctx, item, annotation));
+	}
+	return { stages, notices: sortNotices(notices) };
 }

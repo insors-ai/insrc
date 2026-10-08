@@ -20,12 +20,11 @@ import {
 	epicWorkflowId,
 	parseWorkflowId,
 	safeCanonical,
-	storyIdToOrdinal,
 	storyWorkflowId,
-	taskIdToOrdinal,
 	taskWorkflowId,
 } from '../id.js';
 import { makeNotice, sortNotices } from './notice.js';
+import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
 	ArtifactRecord,
 	ArtifactRecordSet,
@@ -85,7 +84,7 @@ function str(v: unknown): string | null {
 }
 
 function obj(v: unknown): Readonly<Record<string, unknown>> {
-	return typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : {};
+	return asObject(v) ?? {};
 }
 
 function arr(v: unknown): readonly unknown[] {
@@ -94,22 +93,6 @@ function arr(v: unknown): readonly unknown[] {
 
 function pad(n: number): string {
 	return String(n).padStart(3, '0');
-}
-
-function storyOrdinalOf(storyId: string): number | null {
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
-}
-
-function taskOrdinalOf(taskId: string): number | null {
-	try {
-		return taskIdToOrdinal(taskId);
-	} catch {
-		return null;
-	}
 }
 
 function earliestCreatedAt(records: readonly ArtifactRecord[]): string | null {

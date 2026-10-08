@@ -32,12 +32,12 @@
  * never throws, never reads or changes a stage.
  */
 
-import { storyIdToOrdinal, taskIdToOrdinal } from '../id.js';
 import { reviewerPartyOf } from '../review/party.js';
 import { effectiveReviewVerdict } from '../review/resolve.js';
 import type { Finding, ReviewReport } from '../review/types.js';
 import type { ReviewResolution } from '../types.js';
 import { makeNotice, sortNotices } from './notice.js';
+import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
 	ArtifactGate,
 	ArtifactRecord,
@@ -58,10 +58,6 @@ type Review = NonNullable<ArtifactGate['review']>;
 
 const VERDICTS: ReadonlySet<string> = new Set<ReviewVerdict>(['pass', 'warn', 'block']);
 const BLOCKING_SEVERITIES: ReadonlySet<string> = new Set(['HIGH', 'MED']);
-
-function asObject(value: unknown): Readonly<Record<string, unknown>> | null {
-	return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
-}
 
 function asVerdict(value: unknown): ReviewVerdict | null {
 	return typeof value === 'string' && VERDICTS.has(value) ? value as ReviewVerdict : null;
@@ -206,22 +202,6 @@ const REASON_ORDER: readonly AttentionReason[] = ['pending-decision', 'rejected'
 
 const ATTENTION_RULE = 'A pending record stops counting toward Needs attention once a later gate on the same item is approved '
 	+ '(epic: SPEC < DEF < HLD; story: SPEC < LLD < PLAN < BUILD); ISSUE, EXT and AMD records are never superseded.';
-
-function storyOrdinalOf(id: string): number | null {
-	try {
-		return storyIdToOrdinal(id);
-	} catch {
-		return null;
-	}
-}
-
-function taskOrdinalOf(id: string): number | null {
-	try {
-		return taskIdToOrdinal(id);
-	} catch {
-		return null;
-	}
-}
 
 /** The first of the ids that parses with the given ordinal reader. */
 function firstOrdinal(ids: readonly string[], read: (id: string) => number | null): number | null {

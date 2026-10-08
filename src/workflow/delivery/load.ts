@@ -16,8 +16,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import { storyIdToOrdinal } from '../id.js';
 import { ARTIFACTS_DIR } from '../storage.js';
+import { asObject, storyOrdinalOf } from './read.js';
 import {
 	DeliveryStoreUnreadableError,
 	type ApprovalState,
@@ -45,21 +45,8 @@ export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
 	return (KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
 }
 
-function asObject(v: unknown): Readonly<Record<string, unknown>> | null {
-	return typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : null;
-}
-
 function asString(v: unknown): string | null {
 	return typeof v === 'string' ? v : null;
-}
-
-function ordinalOf(storyId: string | null): number | null {
-	if (storyId === null) return null;
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
 }
 
 function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
@@ -107,7 +94,7 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 		artifactId, kind,
 		workItemHash:  asString(meta[hashKey]),
 		storyIdRaw,
-		storyOrdinal:  ordinalOf(storyIdRaw),
+		storyOrdinal:  storyIdRaw === null ? null : storyOrdinalOf(storyIdRaw),
 		approval:      approvalOf(meta),
 		createdAt:     asString(meta['createdAt']),
 		epicCreatedAt: asString(meta['epicCreatedAt']),

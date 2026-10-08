@@ -29,10 +29,10 @@
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
     },
-    "approvedAt": "2026-10-07T08:02:03.174Z",
+    "approvedAt": "2026-10-08T10:41:15.684Z",
     "reviewOverride": {
-      "reason": "User-approved override, 2026-10-07. The Define was approved earlier and its approval was cleared by in-place revisions the user directed: stories s6 and s7 added, s1 made dependent on s6, and story 4's criteria amended for sampled sources (Redis, etcd). No fresh daemon review was run on the revised Define; earlier Define reviews were dominated by the review probe's 50-match cap. The HLD built on it has been through fourteen daemon reviews.",
-      "at": "2026-10-07T08:02:03.174Z"
+      "reason": "User-approved override, 2026-10-08. The Define was approved on 2026-10-07 and its approval was cleared by an in-place amendment the user directed: Story s4 gains the requirement that the analyzer reads an item from its file at the place the index points to (FR005, ac2), and the non-goal on the index says this does not change the index. The edits record the stakeholder direction of 2026-10-07 and the question resolution of 2026-10-08. No fresh daemon review was run on the amended text; the user chose to approve by override.",
+      "at": "2026-10-08T10:41:15.684Z"
     }
   },
   "body": {
@@ -53,7 +53,7 @@
       },
       {
         "text": "Changing what the code index contains or how it is built.",
-        "rationale": "The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter."
+        "rationale": "The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter. The index is a pointer to an item: where an item's content matters to an answer, the analyzer reads the item from its file, which changes nothing in the index."
       },
       {
         "text": "Removing limits that protect a model's input from a single oversized item, without a replacement.",
@@ -410,9 +410,9 @@
           },
           {
             "id": "ac2",
-            "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content",
+            "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores",
             "when": "the analyzer reads it",
-            "then": "no fixed cut is applied to it",
+            "then": "no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to",
             "operationalizes": [
               "k2"
             ]
@@ -468,6 +468,9 @@
           },
           {
             "statement": "The planning instructions suggest no fixed number of results."
+          },
+          {
+            "statement": "Where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to; it does not rely on the body the index stores."
           }
         ]
       },
@@ -786,6 +789,12 @@
         {
           "id": "E20261006b9d5c5c4:S004:FR004",
           "statement": "The planning instructions suggest no fixed number of results.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S004:FR005",
+          "statement": "Where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to; it does not rely on the body the index stores.",
           "scope": "item",
           "itemRef": "s4"
         },

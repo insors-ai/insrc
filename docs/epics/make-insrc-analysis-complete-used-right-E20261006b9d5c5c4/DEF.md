@@ -59,6 +59,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S004:FR002** — No fixed cut is applied to an item's content.
 - **E20261006b9d5c5c4:S004:FR003** — A text lookup discards no file, line or output for its size.
 - **E20261006b9d5c5c4:S004:FR004** — The planning instructions suggest no fixed number of results.
+- **E20261006b9d5c5c4:S004:FR005** — Where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to; it does not rely on the body the index stores.
 
 **s5:**
 
@@ -80,7 +81,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 - **Reducing what an analysis costs in time or model usage.** — The project rule puts accuracy first and cost last; a complete answer may take longer and that is accepted.
 - **Routing every codebase question through the analyzer.** — The stakeholder decided a simple text search stays a plain search; only questions about relationships or meaning need analysis.
-- **Changing what the code index contains or how it is built.** — The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter.
+- **Changing what the code index contains or how it is built.** — The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter. The index is a pointer to an item: where an item's content matters to an answer, the analyzer reads the item from its file, which changes nothing in the index.
 - **Removing limits that protect a model's input from a single oversized item, without a replacement.** — A very large item must still be read in full by some means; the Epic requires that it be handled in full, not that the protection simply vanish.
 - **Changing the limits of the general-purpose search tools for callers other than the analyzer.** — Other agents and tools call those primitives with their own expectations; the Epic concerns what the analyzer receives from them.
 - **Guidance to coding agents on when to use their own search tools and when to use the analyzer.** — The stakeholder decided this is steering text only and it was applied by hand on 2026-10-07 (commit 83a1cc0); nothing about it is built or enforced in this Epic.
@@ -175,7 +176,7 @@ As someone relying on an analysis, I get every result a lookup found, whatever t
 **Acceptance criteria:**
 
 - **ac1:** Given a lookup or analysis step whose true number of results is larger than any limit the analyzer used to apply, on either path a request can take through the analyzer, in a source that has something to count, when the analyzer performs it, then every result is returned and none is dropped. _(operationalizes `k2`, `k3`)_
-- **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, when the analyzer reads it, then no fixed cut is applied to it. _(operationalizes `k2`)_
+- **ac2:** Given a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores, when the analyzer reads it, then no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to. _(operationalizes `k2`)_
 - **ac3:** Given a text lookup over files of any size and lines of any length, when it runs, then no file is left out for its size, no matching line is shortened, and no part of the search's output is discarded. _(operationalizes `k2`, `k3`)_
 - **ac4:** Given the analyzer's own instructions and examples to the model that plans a lookup, when they are read, then none of them states or suggests a fixed number of results to ask for. _(operationalizes `k2`)_
 - **ac5:** Given a result set that became larger because a limit was removed, when the analyzer answers, then it is handled by the method for its size, and the answer is complete. _(operationalizes `k1`, `k2`)_

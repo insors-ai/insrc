@@ -25,7 +25,7 @@ import { addRepo } from '../../../db/repos.js';
 import { _classifyShaperErrorForTest as classifyForDaemon } from '../../../daemon/analyze-rpc.js';
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 import type { Entity, EntityKind, LLMProvider } from '../../../shared/types.js';
-import { ShaperToolLoopExhausted, _runToolLoopForTest } from '../../context/driver.js';
+import { saveToolResults, ShaperToolLoopExhausted, _runToolLoopForTest } from '../../context/driver.js';
 import { permissiveIgnoreFilter } from '../../context/repo-ignore-filter.js';
 import { retrieveDocSections } from '../../docs-retrieval.js';
 import { _classifyShaperErrorForTest as classifyForPlanTree } from '../../orchestrator/driver.js';
@@ -435,6 +435,19 @@ test('the free-form lookup at its turn limit is a failed output whose partial ho
 	assert.equal(err.toolResults.length, 3, 'one entry per tool call made before the limit');
 	assert.match(err.toolResults[0]!.source, /^insrc_no_such_tool\(/);
 	assert.match(err.toolResults[0]!.content, /Unknown tool: insrc_no_such_tool/);
+
+	// The loop wrote them to a file, whole, and its message names the file.
+	const saved = err.saved;
+	assert.ok(saved !== undefined, 'the results were written to a file');
+	try {
+		assert.deepEqual(JSON.parse(readFileSync(saved.path, 'utf8')), err.toolResults);
+		assert.equal(saved.count, 3);
+		assert.equal(saved.chars, err.toolResults.reduce((n, r) => n + r.content.length, 0));
+		assert.ok(err.message.includes(saved.path), err.message);
+		assert.match(err.message, /maxToolTurns=3\. The 3 tool result\(s\) gathered before the limit \(\d+ characters, nothing cut\) are in /);
+	} finally {
+		rmSync(saved.path, { force: true });
+	}
 });
 
 test("a free-form answer's record has basis 'model-directed' and is not complete", async () => {
@@ -449,14 +462,43 @@ test("a free-form answer's record has basis 'model-directed' and is not complete
 	assert.equal(out.rawBundle.summary, 'found things');
 });
 
-test("both mapping functions put the gathered tool results in the data of 'shaper-tool-loop-exhausted'", () => {
-	const gathered = [{ source: 'search_grep(pattern=x)', content: 'a.ts:1: x' }];
-	const err = new ShaperToolLoopExhausted(40, gathered);
-	for (const [name, classify] of [['the plan tree', classifyForPlanTree], ['the daemon', classifyForDaemon]] as const) {
-		const mapped = classify(err);
-		assert.equal(mapped.code, 'shaper-tool-loop-exhausted', `${name}: the code is unchanged`);
-		assert.deepEqual(mapped.data, { toolResults: gathered }, `${name}: what the tools returned is in the error's data`);
+test("both mapping functions name the file of the gathered tool results for 'shaper-tool-loop-exhausted', and carry the results only when no file was written", () => {
+	// Results far larger than anything a message should hold: nothing is cut.
+	const gathered = [
+		{ source: 'search_grep(pattern=x)', content: 'a.ts:1: x' },
+		{ source: 'file_read(path=big.ts)', content: 'y'.repeat(3_000_000) },
+	];
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-tool-results-'));
+	try {
+		const saved = saveToolResults(gathered, dir);
+		assert.ok(saved !== undefined);
+		assert.equal(saved.path.startsWith(dir), true);
+		assert.deepEqual(saved, { path: saved.path, count: 2, chars: 9 + 3_000_000 });
+		assert.deepEqual(JSON.parse(readFileSync(saved.path, 'utf8')), gathered, 'the file holds every result, whole');
+
+		const err = new ShaperToolLoopExhausted(40, gathered, saved);
+		for (const [name, classify] of [['the plan tree', classifyForPlanTree], ['the daemon', classifyForDaemon]] as const) {
+			const mapped = classify(err);
+			assert.equal(mapped.code, 'shaper-tool-loop-exhausted', `${name}: the code is unchanged`);
+			// The payload names the file and its size; it does not carry the results.
+			assert.deepEqual(mapped.data, { toolResultsFile: saved.path, toolResultCount: 2, toolResultChars: 3_000_009 }, name);
+			assert.ok(mapped.message.includes(saved.path), `${name}: the message names the file`);
+			assert.ok(JSON.stringify(mapped).length < 2_000, `${name}: the failure itself stays small`);
+		}
+
+		// The file cannot be written (its directory is a file): nothing is lost, the failure carries the results.
+		const notADir = join(dir, 'plain-file');
+		writeFileSync(notADir, 'x');
+		assert.equal(saveToolResults(gathered, join(notADir, 'sub')), undefined);
+		const unsaved = new ShaperToolLoopExhausted(40, gathered, saveToolResults(gathered, join(notADir, 'sub')));
+		assert.deepEqual(classifyForDaemon(unsaved).data, { toolResults: gathered });
+		assert.deepEqual(classifyForPlanTree(unsaved).data, { toolResults: gathered });
+		assert.equal(unsaved.message, 'Shaper tool-loop exceeded maxToolTurns=40');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
 	}
-	// An error built the old way carries an empty list, not undefined.
+
+	// Nothing gathered: no file is written, and the list is empty, not undefined.
+	assert.equal(saveToolResults([]), undefined);
 	assert.deepEqual(classifyForDaemon(new ShaperToolLoopExhausted(40)).data, { toolResults: [] });
 });

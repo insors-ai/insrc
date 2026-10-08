@@ -46,9 +46,10 @@
  *      docs/plans/analyze-context-builder.md Phase 3
  */
 
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { isAbsolute, resolve } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { OllamaProvider } from '../../agent/providers/ollama.js';
@@ -176,15 +177,77 @@ export function toolOutputText(output: unknown): string {
 	}
 }
 
+/** Where the tool results gathered before a turn limit were written, and how much was written. */
+export interface SavedToolResults {
+	/** Absolute path of a JSON file: an array of `{ source, content }`, one per tool call, nothing cut. */
+	readonly path:  string;
+	readonly count: number;
+	/** The total length of every result's content. */
+	readonly chars: number;
+}
+
 export class ShaperToolLoopExhausted extends Error {
 	/** Every tool call the loop made before it reached the limit, with what the tool returned. */
 	readonly toolResults: readonly PartialFinding[];
+	/**
+	 * The file the results were written to. The results are not capped and can
+	 * be large, so a failure reported to a caller names this file in its
+	 * message and does not carry them. Absent when nothing was gathered or the
+	 * file could not be written; the results are then carried in the failure.
+	 */
+	readonly saved: SavedToolResults | undefined;
 
-	constructor(turns: number, toolResults: readonly PartialFinding[] = []) {
-		super(`Shaper tool-loop exceeded maxToolTurns=${turns}`);
+	constructor(turns: number, toolResults: readonly PartialFinding[] = [], saved?: SavedToolResults) {
+		super(
+			`Shaper tool-loop exceeded maxToolTurns=${turns}`
+			+ (saved !== undefined
+				? `. The ${saved.count} tool result(s) gathered before the limit (${saved.chars} characters, nothing cut) are in ${saved.path}`
+				: ''),
+		);
 		this.name = 'ShaperToolLoopExhausted';
 		this.toolResults = toolResults;
+		this.saved = saved;
 	}
+}
+
+/**
+ * The turn-limit error for a loop that gathered `toolResults`: they are
+ * written in full to a temporary file, and the error's message names it.
+ */
+export function toolLoopExhausted(turns: number, toolResults: readonly PartialFinding[]): ShaperToolLoopExhausted {
+	return new ShaperToolLoopExhausted(turns, toolResults, saveToolResults(toolResults));
+}
+
+/**
+ * Write the gathered tool results to a temporary file, whole. Returns
+ * undefined when there is nothing to write or the file cannot be written: the
+ * caller then carries the results themselves, so nothing is lost either way.
+ */
+export function saveToolResults(
+	toolResults: readonly PartialFinding[],
+	dir: string = join(tmpdir(), 'insrc-analyze'),
+): SavedToolResults | undefined {
+	if (toolResults.length === 0) return undefined;
+	try {
+		mkdirSync(dir, { recursive: true });
+		const path = join(dir, `tool-results-${randomUUID()}.json`);
+		writeFileSync(path, JSON.stringify(toolResults, null, 2), 'utf8');
+		return { path, count: toolResults.length, chars: toolResults.reduce((n, r) => n + r.content.length, 0) };
+	} catch (err) {
+		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'tool-loop results could not be written to a file; they stay in the failure');
+		return undefined;
+	}
+}
+
+/**
+ * What a failure reported to a caller carries for this error: the file and
+ * its size when the results were written to one, the results themselves when
+ * they were not.
+ */
+export function toolLoopExhaustedData(err: ShaperToolLoopExhausted): Readonly<Record<string, unknown>> {
+	return err.saved !== undefined
+		? { toolResultsFile: err.saved.path, toolResultCount: err.saved.count, toolResultChars: err.saved.chars }
+		: { toolResults: err.toolResults };
 }
 
 export class ShaperSchemaUnrecoverable extends Error {
@@ -773,7 +836,8 @@ async function runToolLoop(
 		convo.push({ role: 'user', content: resultBlocks });
 	}
 
-	throw new ShaperToolLoopExhausted(maxToolTurns, gathered);
+	// The results are written to a file in full; the error's message names it.
+	throw toolLoopExhausted(maxToolTurns, gathered);
 }
 
 async function runFinalStructuredEmit(
@@ -1371,9 +1435,9 @@ async function tryExplorationPipeline(
 	});
 
 	// (c.0) The answer report, derived from the lookups' own records before any
-	// answer is written. It does not depend on the answer, and a lookup output
+	// answer is written. It does not depend on the answer. A lookup output
 	// that states nothing about its completeness is a defect of that lookup:
-	// it surfaces here as its own error, not as a failed answer step.
+	// it is listed as a failed source, and the answer is written from the rest.
 	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results) };
 
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE

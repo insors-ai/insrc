@@ -106,6 +106,8 @@ async function executePlan(
 	let   tasksCompleted = 0;
 	let   finalReport: unknown = undefined;
 
+	// The aggregator is the last task: plan validation guarantees it (INV-12).
+	// collectPlanSources finds it by the same rule.
 	const aggregatorIndex = node.plan.tasks.length - 1;
 	const total = node.plan.tasks.length;
 	const parentTaskPath = opts.parentTaskPath;

@@ -85,17 +85,17 @@ test('T2 intent and complexity come from the artifact store', () => withTmp((rep
 	const s = DEFAULT_DESIGN_REVIEW_SETTINGS;
 	// Nothing for the hash: a standalone feature design.
 	let plan = resolveDesignReview(repo, 'aaaa', s);
-	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['spec', 'feature', 'design-spec', 6 * MIN]);
+	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['spec', 'feature', 'design-spec', 18 * MIN]);
 
 	// A DEF: a design under an Epic.
 	putArtifact(repo, 'DEF-bbbb');
 	plan = resolveDesignReview(repo, 'bbbb', s);
-	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['spec', 'epic', 'design-spec', 8 * MIN]);
+	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['spec', 'epic', 'design-spec', 24 * MIN]);
 
 	// An ISSUE: a design that answers a fix.
 	putArtifact(repo, 'ISSUE-cccc');
 	plan = resolveDesignReview(repo, 'cccc', s);
-	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['issue', 'issue', 'design-issue', 4 * MIN]);
+	assert.deepEqual([plan.intent, plan.complexity, plan.template.id, plan.deadlineMs], ['issue', 'issue', 'design-issue', 12 * MIN]);
 
 	// Both: the ISSUE is consulted first.
 	putArtifact(repo, 'DEF-cccc');
@@ -110,14 +110,14 @@ test('T2 intent and complexity come from the artifact store', () => withTmp((rep
 // --- T15 ---------------------------------------------------------------------
 
 test('T15 with no setting present the defaults are used', () => withTmp((dir) => {
-	const expected = { premises: { issue: 8, spec: 16 }, timeLimitMs: { issue: 4 * MIN, feature: 6 * MIN, epic: 8 * MIN } };
+	const expected = { premises: { issue: 8, spec: 16 }, timeLimitMs: { issue: 12 * MIN, feature: 18 * MIN, epic: 24 * MIN } };
 	assert.deepEqual(readDesignReviewSettings(join(dir, 'absent.json')), expected);
 	assert.deepEqual(readDesignReviewSettings(writeConfig(dir, undefined)), expected);
 	writeFileSync(join(dir, 'broken.json'), '{ not json');
 	assert.deepEqual(readDesignReviewSettings(join(dir, 'broken.json')), expected);
-	assert.equal(reviewDeadlineMs('issue', expected), 4 * MIN);
-	assert.equal(reviewDeadlineMs('feature', expected), 6 * MIN);
-	assert.equal(reviewDeadlineMs('epic', expected), 8 * MIN);
+	assert.equal(reviewDeadlineMs('issue', expected), 12 * MIN);
+	assert.equal(reviewDeadlineMs('feature', expected), 18 * MIN);
+	assert.equal(reviewDeadlineMs('epic', expected), 24 * MIN);
 }));
 
 test('T15 a changed setting changes the threshold or the limit used', () => withTmp((dir) => {
@@ -125,7 +125,7 @@ test('T15 a changed setting changes the threshold or the limit used', () => with
 	assert.equal(reviewTemplateFor('issue', s).maxPremises, 5);
 	assert.equal(reviewTemplateFor('spec', s).maxPremises, 16, 'an unset value keeps its default');
 	assert.equal(reviewDeadlineMs('epic', s), 9 * MIN);
-	assert.equal(reviewDeadlineMs('issue', s), 4 * MIN);
+	assert.equal(reviewDeadlineMs('issue', s), 12 * MIN);
 }));
 
 test('T15 a value that is not a positive whole number falls back to its default', () => withTmp((dir) => {
@@ -135,12 +135,12 @@ test('T15 a value that is not a positive whole number falls back to its default'
 	assert.deepEqual(s, DEFAULT_DESIGN_REVIEW_SETTINGS);
 }));
 
-test('T15 a limit above 10 minutes is reduced to 10; the hard cap cannot be raised', () => withTmp((dir) => {
-	assert.equal(HARD_REVIEW_DEADLINE_MS, 10 * MIN);
-	const s = readDesignReviewSettings(writeConfig(dir, { timeLimitMs: { issue: 30 * MIN, feature: 10 * MIN + 1, epic: 10 * MIN } }));
-	assert.equal(reviewDeadlineMs('issue', s), 10 * MIN);
-	assert.equal(reviewDeadlineMs('feature', s), 10 * MIN);
-	assert.equal(reviewDeadlineMs('epic', s), 10 * MIN);
+test('T15 a limit above 30 minutes is reduced to 30; the hard cap cannot be raised', () => withTmp((dir) => {
+	assert.equal(HARD_REVIEW_DEADLINE_MS, 30 * MIN);
+	const s = readDesignReviewSettings(writeConfig(dir, { timeLimitMs: { issue: 90 * MIN, feature: 30 * MIN + 1, epic: 30 * MIN } }));
+	assert.equal(reviewDeadlineMs('issue', s), 30 * MIN);
+	assert.equal(reviewDeadlineMs('feature', s), 30 * MIN);
+	assert.equal(reviewDeadlineMs('epic', s), 30 * MIN);
 }));
 
 test('T15 the settings are declared in the config catalog with the same defaults', () => {

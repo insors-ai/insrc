@@ -20,7 +20,12 @@ import { test } from 'node:test';
 import type { LLMProvider } from '../../../shared/types.js';
 import { artifactJsonPath } from '../../storage.js';
 import { reviewArtifactFile, runReview } from '../index.js';
-import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../template.js';
+import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewDeadlineMs, reviewTemplateFor } from '../template.js';
+
+// The limit a review gets by default comes from the settings file of the machine
+// the suite runs on (`designReview.timeLimitMs.*`), so these tests ask for the
+// configured limit of each kind instead of assuming the shipped defaults.
+const LIMIT = { issue: reviewDeadlineMs('issue'), feature: reviewDeadlineMs('feature'), epic: reviewDeadlineMs('epic') };
 import type { ReviewTemplate } from '../template.js';
 
 const MIN = 60_000;
@@ -234,19 +239,19 @@ test('T12 a DEF review and an ISSUE review still run extract, probe and verify w
 test('T16 the first session gets the whole limit, and the limit defaults by intent', async () => {
 	const spec = fakeProvider([answer(SPEC)]);
 	await run(spec);
-	assert.equal(spec.sessions[0]!.deadlineMs, 6 * MIN, 'a standalone feature design by default');
+	assert.equal(spec.sessions[0]!.deadlineMs, LIMIT.feature, 'a standalone feature design by default');
 	const issue = fakeProvider([answer(ISSUE)]);
 	await run(issue, { intent: 'issue' });
-	assert.equal(issue.sessions[0]!.deadlineMs, 4 * MIN);
+	assert.equal(issue.sessions[0]!.deadlineMs, LIMIT.issue);
 	const epic = fakeProvider([answer(SPEC)]);
 	await run(epic, { deadlineMs: 8 * MIN });
 	assert.equal(epic.sessions[0]!.deadlineMs, 8 * MIN);
 });
 
-test('T16 no review gets more than 10 minutes, whatever it is given', async () => {
+test('T16 no review gets more than 30 minutes, whatever it is given', async () => {
 	const f = fakeProvider([answer(SPEC)]);
 	await run(f, { deadlineMs: 45 * MIN });
-	assert.equal(f.sessions[0]!.deadlineMs, 10 * MIN);
+	assert.equal(f.sessions[0]!.deadlineMs, 30 * MIN);
 });
 
 test('T16 the validation repeat is started with only the time that remains', async () => {
@@ -283,7 +288,7 @@ function reviewFile(d: ReturnType<typeof designRepo>, f: ReturnType<typeof fakeP
 	return reviewArtifactFile({ mdPath: d.md, jsonPath: d.json, repo: d.repo, provider: f.provider, model: 'cli-claude:opus', reviewedAt: '2026-10-05T00:00:00.000Z' });
 }
 
-test('a design answering an ISSUE is reviewed once with the ISSUE template and a 4 minute limit, and is not edited', async () => {
+test('a design answering an ISSUE is reviewed once with the ISSUE template and the ISSUE limit, and is not edited', async () => {
 	const d = designRepo({ issue: true });
 	try {
 		const f = fakeProvider([answer(ISSUE, {
@@ -291,7 +296,7 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and a
 		})]);
 		const res = await reviewFile(d, f);
 		assert.equal(f.sessions.length, 1, 'one session, no second pass');
-		assert.equal(f.sessions[0]!.deadlineMs, 4 * MIN);
+		assert.equal(f.sessions[0]!.deadlineMs, LIMIT.issue);
 		assert.equal(f.sessions[0]!.cwd, d.repo);
 		assert.equal(res.report.template, 'design-issue');
 		assert.equal(res.report.verdict, 'warn');
@@ -312,8 +317,8 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and a
 	} finally { d.cleanup(); }
 });
 
-test('a design under an Epic gets the SPEC template and 8 minutes; a standalone feature design 6', async () => {
-	for (const [opts, limit] of [[{ def: true }, 8 * MIN], [{}, 6 * MIN]] as const) {
+test('a design under an Epic gets the SPEC template and the Epic limit; a standalone feature design the feature limit', async () => {
+	for (const [opts, limit] of [[{ def: true }, LIMIT.epic], [{}, LIMIT.feature]] as const) {
 		const d = designRepo(opts);
 		try {
 			const f = fakeProvider([answer(SPEC)]);

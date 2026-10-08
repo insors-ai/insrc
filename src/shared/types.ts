@@ -93,6 +93,12 @@ export interface CompletionOpts {
   /** If provided, text tokens are streamed via this callback during complete(). */
   onToken?: ((token: string) => void) | undefined;
   /**
+   * Working directory for a subprocess-backed provider (`CliProvider`): the
+   * CLI starts there, so a model that reads code reads THIS tree. Absent, the
+   * CLI inherits the daemon's working directory. Ignored by `OllamaProvider`.
+   */
+  cwd?: string | undefined;
+  /**
    * Strict-output hint. Three forms:
    *
    *   - `'json'`               -- parseable-JSON constraint (Ollama
@@ -285,6 +291,8 @@ export interface StructuredCompletionOpts {
    *     `response-truncated` error the retry loop can dispatch on.
    */
   readonly onToken?: ((token: string) => void) | undefined;
+  /** Working directory for a subprocess-backed provider; see {@link CompletionOpts.cwd}. */
+  readonly cwd?: string | undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -28,6 +28,9 @@ this Task — do not exceed its scope.**
 5. If it cannot be made to pass after a genuine effort, **HALT** — report which
    acceptance check failed, why, and what you tried. Do not fabricate success.
 
+## Merging upstream
+{{mergeRule}}
+
 ## Guardrails (from `CLAUDE.md`)
 - TypeScript strict ESM: `.js` in import paths, `import type` for types.
 - `getLogger('module')` not `console.log`. Never `Promise.all` over provider

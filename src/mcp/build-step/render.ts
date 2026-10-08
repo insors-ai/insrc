@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { hldMdRel, lldMdRel, planMdRel } from '../../workflow/storage.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../workflow/artifacts/plan.js';
+import type { BuildStepError } from './types.js';
 
 const IMPLEMENT_TEMPLATE_REL = 'prompts/build/implement-task.md';
 const VALIDATE_TEMPLATE_REL  = 'prompts/build/validate-task.md';
@@ -116,19 +117,45 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 /** Render the implement-task prompt. `resolvedDecisions` fills the
  *  "## Resolved design decisions" section (empty until the open-question gate
  *  populates it in stage 3). */
+/** How upstream changes enter a Story during its build (ISSUE-f9ced66a). A
+ *  `--no-ff` merge committed on its own is the one form the Story's code review
+ *  can separate from the Story's own work; a fast-forward or a squash cannot be. */
+export const MERGE_RULE =
+	'If upstream changes must come in during this Story, merge them with `git merge --no-ff` ' +
+	'(or `git pull --no-rebase --no-ff`) and commit the merge on its own, before any further ' +
+	'Story change. Never squash-merge or fast-forward upstream into the Story. While a merge ' +
+	'is uncommitted the build refuses to run.';
+
+/** The refusal both build phases return while a merge is uncommitted. Retryable:
+ *  committing the merge on its own clears it. */
+export function mergeInProgressError(phase: 'implement' | 'validate'): BuildStepError {
+	return {
+		next: 'error',
+		error: {
+			code: 'merge-in-progress',
+			message: `insrc_build_step[${phase}]: a merge is in progress in this repository. Commit the merge on its own (nothing else in that commit), then retry. ${MERGE_RULE}`,
+			retryable: true,
+		},
+	};
+}
+
 export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resolvedDecisions: string): string {
 	const template = loadTemplate(IMPLEMENT_TEMPLATE_REL);
 	const decisions = resolvedDecisions.trim().length > 0
 		? resolvedDecisions
 		: '_No design decisions were resolved for this Task; use your judgment within the stated scope._';
-	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions });
+	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE });
 }
 
-/** Render the validate-task prompt (read-only inspect + run tests + emit a
- *  JSON verdict). */
-export function renderValidatePrompt(repoPath: string, ref: ResolvedTask): string {
+/** Shown in a validate prompt's check-results section when no evidence was given. */
+const NO_EVIDENCE = '_No check results were supplied._';
+
+/** Render the validate-task prompt for the read-only judge: it reads the change
+ *  and judges it against the daemon's check results (`evidence`), which the
+ *  daemon ran itself. The prompt never asks the judge to run a command. */
+export function renderValidatePrompt(repoPath: string, ref: ResolvedTask, evidence = ''): string {
 	const template = loadTemplate(VALIDATE_TEMPLATE_REL);
-	return fill(template, baseVars(repoPath, ref));
+	return fill(template, { ...baseVars(repoPath, ref), evidence: evidence.trim().length > 0 ? evidence : NO_EVIDENCE });
 }
 
 /** The spec a standalone (no-plan) build implements. */
@@ -176,6 +203,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		`- \`${TYPECHECK_CMD}\` is clean.`,
 		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
 		'- The edit is minimal and matches the surrounding conventions.',
+		'', '## Merging upstream', '', MERGE_RULE,
 	);
 	return lines.join('\n');
 }
@@ -189,30 +217,40 @@ export interface StandaloneValidateSpec {
 	readonly sizeClass: string;
 	/** Relative LLD md path to read (Small only; a Trivial build has no LLD). */
 	readonly lldMdRel?: string | undefined;
+	/** The daemon's check results, rendered into the prompt's check-results section. */
+	readonly evidence?: string | undefined;
 }
 
 /** Render the validate-gate prompt for a STANDALONE (no-plan) build. Same
- *  skeptical, run-it-yourself contract as the plan-driven validate template, but
- *  keyed on the Story identity and pointed at the standalone LLD. The verdict JSON
- *  shape is IDENTICAL (parseVerdict + `passed` are shared), so the daemon parses it
- *  the same way. */
+ *  read-only judge contract as the plan-driven template, keyed on the Story
+ *  identity and pointed at the standalone LLD. The judge verdict shape is the
+ *  same, so the daemon combines it with its own check results the same way. */
 export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): string {
+	const evidence = spec.evidence !== undefined && spec.evidence.trim().length > 0 ? spec.evidence : NO_EVIDENCE;
 	const lines: string[] = [
 		`# Build validation gate — standalone ${spec.sizeClass} Story \`${spec.storyId}\``,
 		'',
-		`You are the **validation gate** for a standalone build. An implementer claims ` +
-		`to have completed this Story. Decide — **from the actual repository state, not ` +
-		`from any summary** — whether it is genuinely done. Be skeptical.`,
+		`You are the **validation judge** for a standalone build. An implementer claims ` +
+		`to have completed this Story. Decide — **from the actual repository state and ` +
+		`the daemon's check results below, not from any summary** — whether it is ` +
+		`genuinely done. Be skeptical.`,
+		'',
+		'You can read the repository (read, search, list files). You cannot run commands, ' +
+		'and you do not need to: the daemon has already run the typecheck and the Story\'s ' +
+		'tests and reports the results below. Do not try to run them yourself.',
 		'',
 	];
 	if (spec.lldMdRel !== undefined) {
 		lines.push(`## Design (LLD)`, '', `Read \`${spec.lldMdRel}\` — its contract, error paths, and test strategy define what "done" means.`, '');
 	}
 	lines.push(
-		'## Evidence to gather yourself (do NOT trust any summary)',
-		'1. **What actually changed** — `git show --stat HEAD` and `git diff --name-only`.',
-		`2. **Tests pass** — run the Story's tests, then \`${TEST_CMD}\`; read the output.`,
-		`3. **Typecheck** — run \`${TYPECHECK_CMD}\`; it must be clean.`,
+		'## Check results (run by the daemon)',
+		evidence,
+		'',
+		'## What to judge',
+		'1. **What actually changed** — read the files the build touched and confirm the change is real.',
+		'2. **Contract** — judge the change against the LLD\'s contract (or, for a trivial build, its stated scope).',
+		'3. **Tests** — confirm the tests exist and exercise what they claim. Whether they pass is the daemon\'s result above.',
 		'4. **Scope** — no changes outside the Story\'s stated surface; shared machinery untouched unless the LLD called for it.',
 		'',
 		'## Verdict — return this JSON exactly',
@@ -220,14 +258,14 @@ export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): st
 		'{',
 		`  "taskId": "${spec.storyId}",`,
 		'  "passed": false,',
-		'  "testsPassed": false,',
-		'  "typecheckClean": false,',
+		'  "checks": [ { "check": "<what you checked>", "satisfied": true, "evidence": "<what you observed>" } ],',
 		'  "scopeRespected": false,',
 		'  "reason": "<one line: why passed is true or false>"',
 		'}',
 		'```',
-		'`passed` is `true` **only if** the LLD\'s contract is satisfied **and** the tests ' +
-		'pass **and** typecheck is clean **and** scope is respected. **If you are unsure, fail.**',
+		'`passed` is `true` **only if** the change satisfies its contract **and** scope is respected. ' +
+		'The daemon combines your verdict with its own test and typecheck results: a failing check ' +
+		'result fails the Story whatever you say. **If you are unsure, fail.**',
 	);
 	return lines.join('\n');
 }

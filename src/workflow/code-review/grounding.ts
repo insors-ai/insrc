@@ -32,6 +32,7 @@ import { gitDiffTool } from '../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData, GitDiffFileStat } from '../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { getLogger } from '../../shared/logger.js';
+import { storyChangeSet, type StoryChangeSet } from '../runners/build/story-commits.js';
 
 const log = getLogger('workflow:code-review:grounding');
 
@@ -174,6 +175,10 @@ export interface DiffResult {
 	readonly files: readonly GitDiffFileStat[];
 	readonly body:  string;
 	readonly truncated: boolean;
+	/** Per-file hunk text already split by the producer (ISSUE-f9ced66a). When
+	 *  present it is used instead of splitting `body`, so a file assembled from
+	 *  several diffs keeps every section and a marker stays on its own file. */
+	readonly hunksByFile?: ReadonlyMap<string, string> | undefined;
 }
 
 /** Raised by a diff seam that cannot read a diff at all (not a git repository /
@@ -279,7 +284,7 @@ export async function assembleDiffCodeReviewGrounding(
  *  file carries a marker in place of hunks; a text file carries its unified-diff
  *  section. Caller/callee/test edges are empty (there is no graph on this path). */
 function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
-	const byFile = splitDiffByFile(diff.body);
+	const byFile = diff.hunksByFile ?? splitDiffByFile(diff.body);
 	const truncNote = diff.truncated ? '\n[diff truncated — reviewed over a bounded slice]' : '';
 	return diff.files.map((f): ChangedSymbolSummary => {
 		const hunks = f.change === 'binary'
@@ -339,6 +344,59 @@ function excludeInput(globs: readonly string[] | undefined): { exclude?: string[
 	return globs !== undefined && globs.length > 0 ? { exclude: [...globs] } : {};
 }
 
+/**
+ * The Story's committed range as ONE {@link DiffResult} carrying only the
+ * Story's own hunks (ISSUE-f9ced66a). Paths no merge touched get one net
+ * `base..HEAD` diff limited to them. A path a merge also changed gets, instead,
+ * the diff of each Story unit that touched it, in order, so no merged-in line
+ * reaches the reviewer. A path edited inside a merge commit is marked. Every call
+ * carries the same exclusions. An empty change set makes no git call at all.
+ */
+export async function storyRangeDiff(
+	repoPath:     string,
+	base:         string,
+	set:          StoryChangeSet,
+	excludeGlobs: readonly string[] | undefined,
+	run:          (repoPath: string, input: Record<string, unknown>) => Promise<DiffResult> = runDiff,
+): Promise<DiffResult> {
+	if (set.paths.length === 0) return { files: [], body: '', truncated: false, hunksByFile: new Map() };
+
+	const shared = new Set(set.sharedPaths);
+	const sections = new Map<string, string[]>();
+	const stats = new Map<string, GitDiffFileStat>();
+	let truncated = false;
+	const collect = (d: DiffResult): void => {
+		truncated ||= d.truncated;
+		const split = splitDiffByFile(d.body);
+		for (const f of d.files) {
+			const prior = stats.get(f.path);
+			stats.set(f.path, prior === undefined ? f : { ...prior, insertions: prior.insertions + f.insertions, deletions: prior.deletions + f.deletions });
+			const section = split.get(f.path) ?? split.get(f.origPath ?? '');
+			if (section !== undefined) sections.set(f.path, [...(sections.get(f.path) ?? []), section]);
+		}
+	};
+
+	const plain = set.paths.filter(p => !shared.has(p));
+	if (plain.length > 0) collect(await run(repoPath, { from: base, paths: plain, ...excludeInput(excludeGlobs) }));
+	for (const unit of set.units) {
+		const own = unit.paths.filter(p => shared.has(p));
+		if (own.length > 0) collect(await run(repoPath, { from: unit.from, to: unit.to, paths: own, ...excludeInput(excludeGlobs) }));
+	}
+
+	const foldedIn = new Map<string, string>();
+	for (const unit of set.units) {
+		if (unit.kind !== 'merge-edit') continue;
+		for (const p of unit.paths) if (!foldedIn.has(p)) foldedIn.set(p, unit.ref.slice(0, 12));
+	}
+	const hunksByFile = new Map<string, string>();
+	for (const [path, parts] of sections) {
+		const merge = foldedIn.get(path);
+		hunksByFile.set(path, `${merge !== undefined ? `[edited inside merge commit ${merge}]\n` : ''}${parts.join('\n')}`);
+	}
+	const files = set.paths.flatMap(p => { const f = stats.get(p); return f !== undefined ? [f] : []; });
+	return { files, body: [...sections.values()].flat().join('\n'), truncated, hunksByFile };
+}
+
 /** The real diff seams, backed by the `git_diff` builtin. Read-only. */
 export function realDiffGroundingDeps(): DiffGroundingDeps {
 	return {
@@ -362,7 +420,13 @@ export function realDiffGroundingDeps(): DiffGroundingDeps {
 			}
 		},
 		async rangeDiff(repoPath, base, excludeGlobs) {
-			return runDiff(repoPath, { from: base, ...excludeInput(excludeGlobs) });
+			let set: StoryChangeSet;
+			try {
+				set = storyChangeSet(repoPath, base);
+			} catch (err) {
+				throw new DiffUnavailableError(`the Story's change set is unavailable for ${repoPath}: ${err instanceof Error ? err.message : String(err)}`);
+			}
+			return storyRangeDiff(repoPath, base, set, excludeGlobs);
 		},
 	};
 }

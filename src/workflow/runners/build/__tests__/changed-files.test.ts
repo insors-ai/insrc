@@ -560,3 +560,77 @@ test('T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers ar
 	await collectBuildChangeLog('/repo', { ...CTX, base: 'abc', exclude: ['own.json'] }, async (_repo: string, opts?: unknown) => { seenOpts.push(opts); return []; });
 	assert.deepEqual(seenOpts, [{ base: 'abc', exclude: ['own.json'] }]);
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-f9ced66a (LLD-f9ced66a-s1, task t5): only the Story's OWN files count
+// after a mid-build merge.
+// ---------------------------------------------------------------------------
+
+/** base → Story commit → `--no-ff` merge of an upstream branch → Story commit.
+ *  Each Story commit also commits a ledger file, as the workflow does. */
+function mkMergedRepo(): { repo: string; base: string } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-merged-'));
+	const git = (...a: string[]): string =>
+		execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	const put = (rel: string, body: string): void => {
+		mkdirSync(dirname(join(repo, rel)), { recursive: true });
+		writeFileSync(join(repo, rel), body);
+	};
+	git('init', '-q', '-b', 'main');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	git('config', 'commit.gpgsign', 'false');
+	put('base.ts', 'export const v = 0;\n');
+	git('add', '-A'); git('commit', '-qm', 'base');
+	const base = git('rev-parse', 'HEAD');
+	git('checkout', '-q', '-b', 'upstream');
+	put('upstream/merged.ts', 'export const u = 1;\n');
+	git('add', '-A'); git('commit', '-qm', 'upstream work');
+	git('checkout', '-q', 'main');
+	put('src/story1.ts', 'export const s1 = 1;\n');
+	put('.insrc/artifacts/BUILD-x-s1.json', '{}\n');
+	git('add', '-A'); git('commit', '-qm', 'story 1');
+	git('merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
+	put('src/story2.ts', 'export const s2 = 1;\n');
+	git('add', '-A'); git('commit', '-qm', 'story 2');
+	return { repo, base };
+}
+
+test("a clean tree with a base reports only the Story's own files, not files a merge brought in", async () => {
+	const { repo, base } = mkMergedRepo();
+	try {
+		const files = [...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })].sort();
+		assert.deepEqual(files, ['src/story1.ts', 'src/story2.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('without a base the derivation is unchanged', async () => {
+	const { repo } = mkMergedRepo();
+	try {
+		// Clean tree, no base: empty, as before.
+		assert.deepEqual(await changedFiles(repo), []);
+		// Dirty tree, no base: the working-tree set, as before.
+		writeFileSync(join(repo, 'upstream', 'merged.ts'), 'export const u = 2;\n');
+		assert.deepEqual(await changedFiles(repo), ['upstream/merged.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test("collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge", async () => {
+	const { repo, base } = mkMergedRepo();
+	try {
+		const log = await collectBuildChangeLog(repo, { ...CTX, base });
+		const files = log.map(e => e.target.file).sort();
+		// The writers' exact-path exclusions are unchanged, so the committed
+		// ledger file is still listed; the merged-in file is not.
+		assert.deepEqual(files, ['.insrc/artifacts/BUILD-x-s1.json', 'src/story1.ts', 'src/story2.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a committed ledger file stays out of the range result after a mid-build merge', async () => {
+	const { repo, base } = mkMergedRepo();
+	try {
+		const files = await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS });
+		assert.equal(files.includes('.insrc/artifacts/BUILD-x-s1.json'), false, 'git still excludes the ledger file');
+		assert.equal(files.includes('upstream/merged.ts'), false);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

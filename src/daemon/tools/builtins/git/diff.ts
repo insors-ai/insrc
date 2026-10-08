@@ -65,6 +65,12 @@ export const gitDiffTool: Tool = {
       from: { type: 'string', description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' },
       to: { type: 'string', description: 'Ending ref. When omitted with `from`, defaults to HEAD.' },
       path: { type: 'string', description: 'Restrict the diff to this file or directory.' },
+      paths: {
+        type: 'array',
+        items: { type: 'string', minLength: 1 },
+        minItems: 1,
+        description: 'Restrict the diff to exactly these repository-root-relative paths, matched literally (no globs). Not with `path`. Combines with `exclude`.',
+      },
       exclude: {
         type: 'array',
         items: { type: 'string', minLength: 1 },
@@ -101,6 +107,17 @@ export const gitDiffTool: Tool = {
       };
     }
     const exclude: readonly string[] = rawExclude ?? [];
+    // Same rule for `paths`: a malformed list must not degrade into "no
+    // restriction", which would silently diff the whole repository.
+    const rawPaths = input['paths'];
+    if (rawPaths !== undefined && (!isExcludeList(rawPaths) || rawPaths.length === 0 || path !== undefined)) {
+      return {
+        output: '[git:diff] invalid-input: `paths` must be a non-empty array of non-empty strings, and cannot be combined with `path`',
+        format: 'text',
+        success: false,
+        error: 'invalid-input',
+      };
+    }
     const context = typeof input['context'] === 'number' ? input['context'] : undefined;
     const ignoreWhitespace = boolInput(input, 'ignoreWhitespace');
     const maxBytes = Math.min(
@@ -112,12 +129,14 @@ export const gitDiffTool: Tool = {
     if (from !== undefined) { diffOpts.from = from; }
     if (to !== undefined) { diffOpts.to = to; }
     if (path !== undefined) { diffOpts.path = path; }
+    if (rawPaths !== undefined) { diffOpts.paths = rawPaths; }
     if (exclude.length > 0) { diffOpts.exclude = exclude; }
     if (context !== undefined) { diffOpts.context = context; }
     const statOpts: DiffOpts = { staged };
     if (from !== undefined) { statOpts.from = from; }
     if (to !== undefined) { statOpts.to = to; }
     if (path !== undefined) { statOpts.path = path; }
+    if (rawPaths !== undefined) { statOpts.paths = rawPaths; }
     if (exclude.length > 0) { statOpts.exclude = exclude; }
     const { argv, mode, range } = buildDiffArgv(diffOpts);
     const statArgv = buildStatArgv(statOpts);
@@ -181,6 +200,8 @@ export interface DiffOpts {
   from?: string;
   to?: string;
   path?: string;
+  /** Exact repository-root-relative paths (`:(top,literal)`); never with `path`. */
+  paths?: readonly string[];
   exclude?: readonly string[];
   context?: number;
   ignoreWhitespace?: boolean;
@@ -196,12 +217,18 @@ function isExcludeList(v: unknown): v is string[] {
  *
  * git refuses a pathspec list made only of exclusions on older versions and
  * anchors a bare one at the cwd on newer ones, so an exclusion always rides on an
- * explicit positive pathspec: the caller's `path`, else the whole repository.
+ * explicit positive pathspec: the caller's `paths` or `path`, else the whole
+ * repository.
  * `top` anchors every exclusion at the repository root whatever the cwd, and
  * `glob` makes `*` stop at a directory separator.
  */
 function pathspecArgs(o: DiffOpts): string[] {
   const exclude = o.exclude ?? [];
+  // An explicit path list is itself the positive pathspec. `literal` keeps a
+  // name with glob characters matching only itself.
+  if (o.paths !== undefined && o.paths.length > 0) {
+    return ['--', ...o.paths.map(p => `:(top,literal)${p}`), ...exclude.map(g => `:(top,exclude,glob)${g}`)];
+  }
   if (exclude.length === 0) { return o.path ? ['--', o.path] : []; }
   return ['--', o.path ? o.path : ':(top)', ...exclude.map(g => `:(top,exclude,glob)${g}`)];
 }

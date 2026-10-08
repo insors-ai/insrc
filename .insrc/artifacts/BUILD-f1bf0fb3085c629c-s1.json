@@ -1,0 +1,225 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "f1bf0fb3085c629c",
+    "storyId": "s1",
+    "createdAt": "2026-10-08T06:58:00.566Z",
+    "updatedAt": "2026-10-08T07:16:08.064Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-08T07:16:08.179Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Added src/mcp/build-step/validation-checks.ts (leading-prefix test-file resolution, per-route check plans, runValidationChecks over the process-group runner with --test-force-exit); a review fix keeps deleted test files out of a trivial build's plan.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e2bcadd9b0f63f99.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-b9d5c5c40df5a574-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-four-defects-left-code-review-E20261007e2bcadd9/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-subprocess.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-subprocess.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/code-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/validation-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/validation-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/code-review-step/__tests__/routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/code-review-step/handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-step/__tests__/review-step-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-step/phases/start.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/validate-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/process-group.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/template-review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/template.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/template.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:16:08.064Z"
+      }
+    ],
+    "commit": "8ff6e576"
+  }
+}

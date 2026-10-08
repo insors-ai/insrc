@@ -6,39 +6,118 @@
 /**
  * `insrc_build_step` phase='validate'.
  *
- * The daemon runs the validation ITSELF as a read-only agentic CLI session
- * against the actual repo: the rendered `validate-task.md` prompt inspects the
- * working tree, runs the tests + typecheck, and emits a JSON verdict. The
- * daemon parses that verdict and returns it — it is the sole authority for
- * `passed`, never a controller self-report.
+ * The daemon runs the validation ITSELF (ISSUE-f1bf0fb3): it runs the typecheck
+ * and the Task's own test files as its own commands, then asks a read-only
+ * reviewer session to judge the acceptance checks and scope against the
+ * repository and those results. testsPassed and typecheckClean are the
+ * daemon's exit-code facts, and `passed` requires them both and the judge's
+ * pass — it is never a controller or model self-report.
  */
 
-import { CliProvider } from '../../../agent/providers/cli-provider.js';
+import { CliProvider, ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../agent/providers/cli-provider.js';
 import { createRoleRouter } from '../../../analyze/context/role-router.js';
 import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
-import { renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
+import type { StructuredSchema } from '../../../shared/types.js';
+import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
 import { buildStartRelPath, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
+import { mergeInProgress } from '../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
+import {
+	planTaskCheckPlan,
+	runValidationChecks,
+	smallStandaloneCheckPlan,
+	trivialCheckPlan,
+	type CheckResult,
+	type ValidationCheckPlan,
+	type ValidationCheckResults,
+} from '../validation-checks.js';
 
 const log = getLogger('mcp:build-step:validate');
 
-/** The minimal provider surface validate drives (one agentic edit-permission
- *  session; the prompt is read-only-inspect + run-tests + emit JSON). */
+/** The provider surface validate drives: ONE read-only reviewer session (read,
+ *  search and the insrc analyze tools; no edits, no shell) that judges the change
+ *  and returns a structured verdict. */
 export interface ValidateProvider {
-	runEditSession(prompt: string, opts: { cwd: string; timeoutMs?: number | undefined }): Promise<{ text: string }>;
+	runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>;
 }
 
-/** Test seam: inject a fake provider whose `runEditSession` returns a canned
+/** Test seam: inject a fake provider whose `runReviewSession` returns a canned
  *  verdict, so the handler is exercised without spawning the live CLI. */
 let providerOverride: ValidateProvider | undefined;
 export function _setBuildValidateProviderForTests(p: ValidateProvider | undefined): void {
 	providerOverride = p;
+}
+
+type CheckRunner = (repoPath: string, plan: ValidationCheckPlan) => Promise<ValidationCheckResults>;
+
+/** Test seam: inject a fake check runner so no test spawns a real typecheck or
+ *  test runner; it receives the plan validate built for its route. */
+let checkRunnerOverride: CheckRunner | undefined;
+export function _setBuildValidateCheckRunnerForTests(runner: CheckRunner | undefined): void {
+	checkRunnerOverride = runner;
+}
+
+/** Time the judge session may take, its one retry included. */
+const JUDGE_DEADLINE_MS = 300_000;
+
+/** What the judge returns. testsPassed / typecheckClean are NOT asked of it:
+ *  the daemon supplies both from its own check results. */
+const JUDGE_VERDICT_SCHEMA: StructuredSchema = {
+	type: 'object',
+	required: ['taskId', 'passed', 'checks', 'scopeRespected', 'reason'],
+	properties: {
+		taskId:         { type: 'string' },
+		passed:         { type: 'boolean' },
+		checks: {
+			type: 'array',
+			items: {
+				type: 'object',
+				required: ['check', 'satisfied', 'evidence'],
+				properties: { check: { type: 'string' }, satisfied: { type: 'boolean' }, evidence: { type: 'string' } },
+			},
+		},
+		scopeRespected: { type: 'boolean' },
+		reason:         { type: 'string' },
+	},
+};
+
+interface JudgeVerdict {
+	readonly taskId:         string;
+	readonly passed:         boolean;
+	readonly checks:         readonly { readonly check: string; readonly satisfied: boolean; readonly evidence: string }[];
+	readonly scopeRespected: boolean;
+	readonly reason:         string;
+}
+
+/** The judge object's shape, checked here because runReviewSession does not. Returns the failing field, or undefined. */
+function judgeShapeError(v: unknown): string | undefined {
+	if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'the verdict is not an object';
+	const o = v as Record<string, unknown>;
+	if (typeof o['passed'] !== 'boolean') return '`passed` is missing or not a boolean';
+	if (!Array.isArray(o['checks'])) return '`checks` is missing or not an array';
+	if (typeof o['scopeRespected'] !== 'boolean') return '`scopeRespected` is missing or not a boolean';
+	if (typeof o['reason'] !== 'string') return '`reason` is missing or not a string';
+	return undefined;
+}
+
+function describeCheck(label: string, r: CheckResult): string {
+	const status = r.ok ? 'PASSED' : r.timedOut ? 'TIMED OUT' : 'FAILED';
+	const lines = [`### ${label}: ${status}`];
+	if (r.command.length > 0) lines.push(`- command: \`${r.command}\``, `- exit code: ${r.exitCode ?? 'none'} · ${Math.round(r.durationMs / 100) / 10} s`);
+	if (r.note !== undefined) lines.push(`- note: ${r.note}`);
+	if (r.outputTail.trim().length > 0) lines.push('- output (tail):', '```', r.outputTail.trimEnd(), '```');
+	return lines.join('\n');
+}
+
+/** The check-results section the validate prompts carry. */
+export function renderCheckEvidence(results: ValidationCheckResults): string {
+	return [describeCheck('Typecheck', results.typecheck), describeCheck('Tests', results.tests)].join('\n\n');
 }
 
 /** Resolve the edit-session provider for build validation. Validation is a
@@ -64,6 +143,9 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[validate]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}
+	// A merge must be committed on its own before the next round of Story work
+	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
+	if (mergeInProgress(repoPath)) return mergeInProgressError('validate');
 
 	// S002: standalone (no-plan) validate — a triage-routed Small story. Resolve the
 	// story identity from the standalone context (mirroring handleStandaloneImplement)
@@ -77,12 +159,12 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
-	const prompt = renderValidatePrompt(repoPath, resolved.ref);
-	return runValidateSession(repoPath, prompt, {
-		epicHash: resolved.ref.epicHash,
-		storyId:  resolved.ref.storyId,
-		taskId:   resolved.ref.taskId,
-	}, input.summary);
+	const ref = resolved.ref;
+	return runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
+		epicHash: ref.epicHash,
+		storyId:  ref.storyId,
+		taskId:   ref.taskId,
+	}, planTaskCheckPlan(repoPath, ref.task), input.summary);
 }
 
 /** S002: the standalone (no-plan) validate branch. Resolves the Story identity
@@ -102,19 +184,22 @@ async function handleStandaloneValidate(
 	}
 	const storyId = ctx.storyId ?? 'S001';
 
-	// Point the verdict gate at the standalone LLD when one exists (Small). A missing
-	// / unreadable LLD just omits the reference — the gate still runs the tests + typecheck.
+	// Point the verdict gate at the standalone LLD when one exists (Small), and take
+	// its test strategy as the tests to run. A missing / unreadable LLD omits the
+	// reference, and its check plan then names no test file, which fails the tests.
 	let lldMdRelPath: string | undefined;
+	let testStrategy: Parameters<typeof smallStandaloneCheckPlan>[1];
 	if (producesLld) {
 		try {
 			const lld = readLldArtifact(repoPath, epicHash, storyId);
 			lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);
+			testStrategy = lld.body.testStrategy;
 		} catch (e) {
 			log.info({ storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[validate]: standalone LLD unreadable for the verdict prompt');
 		}
 	}
-
-	const prompt = renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath });
+	const checks = producesLld ? smallStandaloneCheckPlan(repoPath, testStrategy) : trivialCheckPlan(repoPath);
+	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
 	// serving a standalone story; discarding that here left the shared persist to
 	// re-derive it from a definition head a Small story does not have (ISSUE-0855311b).
@@ -126,43 +211,70 @@ async function handleStandaloneValidate(
 			...(ctx.sizeClass !== undefined && ctx.sizeClass.length > 0 ? { sizeClass: ctx.sizeClass } : {}),
 			...(ctx.triageRationale !== undefined && ctx.triageRationale.length > 0 ? { triageRationale: ctx.triageRationale } : {}),
 		},
-	}, summary);
+	}, checks, summary);
 }
 
-/** Shared: run the read-only verdict session under the sc6 routing seam, parse the
- *  verdict, and persist the BUILD ledger record as a fail-open SIDE EFFECT. Used by
- *  BOTH the plan-driven and the standalone (S002) branches so the verdict + persist
- *  behaviour is identical. */
+/** Shared: run the daemon's checks, then the read-only judge session under the sc6
+ *  routing seam, combine the two into the verdict, and persist the BUILD ledger
+ *  record as a fail-open SIDE EFFECT. Used by BOTH the plan-driven and the
+ *  standalone (S002) branches so the verdict + persist behaviour is identical. */
 async function runValidateSession(
 	repoPath: string,
-	prompt:   string,
+	prompt:   (evidence: string) => string,
 	ident:    {
 		readonly epicHash: string; readonly storyId: string; readonly taskId: string;
 		/** Present ONLY on the standalone branch: the route the caller declared. */
 		readonly standalone?: { readonly sizeClass?: string; readonly triageRationale?: string } | undefined;
 	},
+	/** The typecheck and test files the daemon runs before the judge. */
+	checks:   ValidationCheckPlan,
 	/** The implementer's narrative, if supplied — see BuildStepInputValidate.summary. */
 	summary?: string,
 ): Promise<BuildStepDone | BuildStepError> {
-	// Establish the sc6 routing seam so the edit-session provider resolves through
-	// the same choke point as the workflow runner (the 'build' tier), unifying the
-	// pattern and tiering any deep reasoning the session triggers.
+	// The daemon's own checks come first: their exit codes are facts the judge reads
+	// and cannot override.
+	log.info({ taskId: ident.taskId, storyId: ident.storyId, testFiles: checks.testFiles.length }, 'insrc_build_step[validate]: running checks');
+	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, checks);
+
+	// Establish the sc6 routing seam so the judge provider resolves through the same
+	// choke point as the workflow runner (the 'build' tier).
 	const router = createRoleRouter({});
 	return runWithRoutingContext({ router, repoPath }, async () => {
 		const provider: ValidateProvider = providerOverride ?? resolveValidateProvider(repoPath);
 
-		log.info({ taskId: ident.taskId, storyId: ident.storyId }, 'insrc_build_step[validate]: running verdict session');
-		const response = await provider.runEditSession(prompt, { cwd: repoPath });
-
-		const verdict = parseVerdict(response.text);
-		if (verdict === undefined) {
-			return err(
-				'unparseable-verdict',
-				`insrc_build_step[validate]: the validation session did not emit a parseable JSON verdict. ` +
-				`Raw tail: ${response.text.slice(-600)}`,
-			);
+		log.info({ taskId: ident.taskId, storyId: ident.storyId }, 'insrc_build_step[validate]: running judge session');
+		let judged: unknown;
+		try {
+			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS });
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			if (e instanceof ReviewSessionTimeoutError) {
+				return err('verdict-session-timeout', `insrc_build_step[validate]: the judge session passed its ${Math.round(JUDGE_DEADLINE_MS / 1000)} s deadline; no verdict was recorded.`);
+			}
+			if (/structured_output|JSON|parse/i.test(message)) {
+				return err('unparseable-verdict', `insrc_build_step[validate]: the judge session returned no usable verdict: ${message.slice(0, 600)}`);
+			}
+			return err('verdict-session-failed', `insrc_build_step[validate]: the judge session failed: ${message.slice(0, 600)}`);
 		}
-		const passed = (verdict as { passed?: unknown }).passed === true;
+		const shapeError = judgeShapeError(judged);
+		if (shapeError !== undefined) {
+			return err('unparseable-verdict', `insrc_build_step[validate]: the judge's verdict is unusable: ${shapeError}.`);
+		}
+		const judge = judged as JudgeVerdict;
+		const testsPassed = results.tests.ok;
+		const typecheckClean = results.typecheck.ok;
+		const passed = judge.passed && testsPassed && typecheckClean;
+		const verdict = {
+			...judge,
+			taskId: ident.taskId,
+			passed,
+			testsPassed,
+			typecheckClean,
+			...(passed || judge.passed === false ? {} : {
+				reason: `${judge.reason} — but the daemon's checks failed: ${[typecheckClean ? undefined : 'typecheck', testsPassed ? undefined : 'tests'].filter(x => x !== undefined).join(' and ')}.`,
+			}),
+			evidence: results,
+		};
 
 		// Persist the BUILD ledger record as a SIDE EFFECT of the verdict, so story
 		// completion has a real BUILD-<epicHash>-<storyId> record to approve without a
@@ -269,62 +381,6 @@ async function runValidateSession(
 		}
 		return { next: 'done', verdict, passed };
 	});
-}
-
-/** Extract the verdict object from the session's free-form text — the LAST
- *  fenced ```json block, else the LAST balanced trailing `{...}` object.
- *  Returns undefined when nothing parses. */
-export function parseVerdict(text: string): unknown {
-	// 1) Prefer the last ```json fenced block.
-	const fenceRe = /```json\s*([\s\S]*?)```/gi;
-	let lastFenced: string | undefined;
-	for (let m = fenceRe.exec(text); m !== null; m = fenceRe.exec(text)) {
-		lastFenced = m[1];
-	}
-	if (lastFenced !== undefined) {
-		const parsed = tryParse(lastFenced);
-		if (parsed !== undefined) return parsed;
-	}
-	// 2) Fall back to the last balanced top-level `{...}` in the text.
-	const obj = lastBalancedObject(text);
-	if (obj !== undefined) return tryParse(obj);
-	return undefined;
-}
-
-function tryParse(s: string): unknown {
-	try {
-		const v = JSON.parse(s.trim()) as unknown;
-		return typeof v === 'object' && v !== null ? v : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
-/** Scan for the last balanced `{...}` region (brace-depth walk, ignoring
- *  braces inside double-quoted strings). */
-function lastBalancedObject(text: string): string | undefined {
-	let best: string | undefined;
-	for (let start = text.indexOf('{'); start !== -1; start = text.indexOf('{', start + 1)) {
-		let depth = 0;
-		let inStr = false;
-		let escaped = false;
-		for (let i = start; i < text.length; i++) {
-			const ch = text[i]!;
-			if (inStr) {
-				if (escaped) escaped = false;
-				else if (ch === '\\') escaped = true;
-				else if (ch === '"') inStr = false;
-				continue;
-			}
-			if (ch === '"') inStr = true;
-			else if (ch === '{') depth++;
-			else if (ch === '}') {
-				depth--;
-				if (depth === 0) { best = text.slice(start, i + 1); break; }
-			}
-		}
-	}
-	return best;
 }
 
 function err(code: string, message: string): BuildStepError {

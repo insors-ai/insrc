@@ -129,7 +129,7 @@ export async function judgeQuality(
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildQualityPrompt(subject, grounding, note), QUALITY_FINDINGS_SCHEMA);
+		provider.completeStructured<unknown>(buildQualityPrompt(subject, grounding, note), QUALITY_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<QualityOutput> = (raw) =>
 		validateAgainstSchema<QualityOutput>(QUALITY_FINDINGS_SCHEMA, raw);

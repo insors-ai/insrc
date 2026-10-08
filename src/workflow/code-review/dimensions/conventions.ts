@@ -153,7 +153,7 @@ export async function judgeConventions(
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildConventionsPrompt(subject, grounding, note), CONVENTIONS_FINDINGS_SCHEMA);
+		provider.completeStructured<unknown>(buildConventionsPrompt(subject, grounding, note), CONVENTIONS_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<ConventionsOutput> = (raw) =>
 		validateAgainstSchema<ConventionsOutput>(CONVENTIONS_FINDINGS_SCHEMA, raw);

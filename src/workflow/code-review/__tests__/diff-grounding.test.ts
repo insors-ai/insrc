@@ -20,12 +20,14 @@ import { join } from 'node:path';
 import {
 	assembleDiffCodeReviewGrounding,
 	realDiffGroundingDeps,
+	storyRangeDiff,
 	DiffUnavailableError,
 	type DiffGroundingDeps,
 	type DiffResult,
 } from '../grounding.js';
 import type { GitDiffFileStat } from '../../../daemon/tools/builtins/git/diff.js';
 import { getLogger } from '../../../shared/logger.js';
+import { storyChangeSet, type StoryChangeSet } from '../../runners/build/story-commits.js';
 
 // ---- fixtures ----
 
@@ -377,4 +379,174 @@ test('integration, real git: with no base and a clean tree the last commit is re
 		const res = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { excludeGlobs: ['.insrc/artifacts/*.json'] });
 		assert.deepEqual(res.changedFiles, ['src/a.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-f9ced66a (LLD-f9ced66a-s1, task t6): the range diff carries only the
+// Story's own hunks, whatever a mid-build merge brought in.
+// ---------------------------------------------------------------------------
+
+/** A real repo on `main`: a base, and an `upstream` branch from it. */
+function mergeRepo(): { repo: string; base: string; git: (...a: string[]) => string; put: (rel: string, body: string) => void; commit: (msg: string) => void; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'cr-diff-story-'));
+	const git = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	const put = (rel: string, body: string): void => { mkdirSync(join(repo, rel, '..'), { recursive: true }); writeFileSync(join(repo, rel), body); };
+	const commit = (msg: string): void => { git('add', '-A'); git('commit', '-q', '-m', msg); };
+	git('init', '-q', '-b', 'main'); git('config', 'user.email', 't@t'); git('config', 'user.name', 'T'); git('config', 'commit.gpgsign', 'false');
+	put('README.md', 'base\n');
+	put('shared.txt', ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9'].join('\n') + '\n');
+	commit('base');
+	const base = git('rev-parse', 'HEAD');
+	git('checkout', '-q', '-b', 'upstream');
+	put('up/merged.ts', 'export const merged = "UPSTREAM-FILE";\n');
+	put('shared.txt', ['UPSTREAM-LINE', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9'].join('\n') + '\n');
+	commit('upstream work');
+	git('checkout', '-q', 'main');
+	return { repo, base, git, put, commit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+const sigOf = (res: { grounding: { symbols: readonly { file: string; signature: string }[] } }, file: string): string => {
+	const s = res.grounding.symbols.find(x => x.file === file);
+	assert.ok(s !== undefined, `${file} is in the grounding`);
+	return s.signature;
+};
+
+test('the range diff carries full hunks for the Story files and none for merged-in files', async () => {
+	const r = mergeRepo();
+	try {
+		r.put('src/story1.ts', 'export const s1 = "STORY-ONE";\n'); r.commit('story 1');
+		r.git('merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
+		r.put('src/story2.ts', 'export const s2 = "STORY-TWO";\n'); r.commit('story 2');
+
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base });
+		assert.deepEqual([...res.changedFiles].sort(), ['src/story1.ts', 'src/story2.ts']);
+		assert.match(sigOf(res, 'src/story1.ts'), /\+export const s1 = "STORY-ONE";/);
+		assert.match(sigOf(res, 'src/story2.ts'), /\+export const s2 = "STORY-TWO";/);
+		for (const s of res.grounding.symbols) assert.doesNotMatch(s.signature, /UPSTREAM/);
+	} finally { r.cleanup(); }
+});
+
+test("a file changed by both a Story commit and the merge carries only the Story's own hunks", async () => {
+	const r = mergeRepo();
+	try {
+		r.put('shared.txt', ['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'STORY-LINE'].join('\n') + '\n'); r.commit('story edits shared');
+		r.git('merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
+
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base });
+		assert.deepEqual(res.changedFiles, ['shared.txt']);
+		const sig = sigOf(res, 'shared.txt');
+		assert.match(sig, /\+STORY-LINE/);
+		assert.doesNotMatch(sig, /UPSTREAM-LINE/, 'the merged-in line does not reach the reviewer');
+	} finally { r.cleanup(); }
+});
+
+test('edits folded into a merge commit are reviewed and marked', async () => {
+	const r = mergeRepo();
+	try {
+		r.put('src/story1.ts', 'export const s1 = 1;\n'); r.commit('story 1');
+		r.git('merge', '-q', '--no-ff', '--no-commit', 'upstream');
+		r.put('src/folded.ts', 'export const folded = "INSIDE-MERGE";\n');
+		r.commit('merge upstream, with a Story edit');
+		const merge = r.git('rev-parse', 'HEAD');
+
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base });
+		assert.deepEqual([...res.changedFiles].sort(), ['src/folded.ts', 'src/story1.ts']);
+		const sig = sigOf(res, 'src/folded.ts');
+		assert.ok(sig.startsWith(`[edited inside merge commit ${merge.slice(0, 12)}]`), sig.slice(0, 80));
+		assert.match(sig, /INSIDE-MERGE/);
+		assert.doesNotMatch(sigOf(res, 'src/story1.ts'), /edited inside merge commit/);
+	} finally { r.cleanup(); }
+});
+
+test('a range with no Story change gives an empty grounding without calling git_diff', async () => {
+	const r = mergeRepo();
+	try {
+		r.git('merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
+		const set = storyChangeSet(r.repo, r.base);
+		let calls = 0;
+		const out = await storyRangeDiff(r.repo, r.base, set, undefined, async () => { calls++; return { files: [], body: '', truncated: false }; });
+		assert.equal(calls, 0);
+		assert.deepEqual(out.files, []);
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base });
+		assert.deepEqual(res.grounding.symbols, []);
+	} finally { r.cleanup(); }
+});
+
+test("a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first", async () => {
+	const r = mergeRepo();
+	try {
+		r.put('shared.txt', ['l1', 'l2', 'l3', 'l4', 'STORY-A', 'l6', 'l7', 'l8', 'l9'].join('\n') + '\n'); r.commit('story A');
+		r.put('shared.txt', ['l1', 'l2', 'l3', 'l4', 'STORY-A', 'l6', 'l7', 'l8', 'STORY-B'].join('\n') + '\n'); r.commit('story B');
+		r.git('merge', '-q', '--no-ff', '--no-commit', 'upstream');
+		r.put('z-folded.ts', 'export const z = "FOLDED";\n');
+		r.commit('merge upstream, with a Story edit');
+
+		const res = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: r.base });
+		assert.deepEqual([...res.changedFiles].sort(), ['shared.txt', 'z-folded.ts']);
+		const shared = sigOf(res, 'shared.txt');
+		assert.match(shared, /\+STORY-A/);
+		assert.match(shared, /\+STORY-B/);
+		assert.equal(shared.split('diff --git a/shared.txt').length - 1, 2, 'one section per Story commit, none overwritten');
+		assert.doesNotMatch(shared, /UPSTREAM-LINE|edited inside merge commit/);
+		assert.match(sigOf(res, 'z-folded.ts'), /^\[edited inside merge commit [0-9a-f]{12}\]\n/);
+	} finally { r.cleanup(); }
+});
+
+test('without hunksByFile buildDiffSymbols splits the body as before', async () => {
+	const { deps } = fakeDeps({ working: { files: [fileStat('src/a.ts'), fileStat('src/b.ts')], body: diffBody('src/a.ts', 'src/b.ts'), truncated: false } });
+	const res = await assembleDiffCodeReviewGrounding('/repo', deps);
+	assert.match(sigOf(res, 'src/a.ts'), /^diff --git a\/src\/a\.ts b\/src\/a\.ts/);
+	assert.match(sigOf(res, 'src/b.ts'), /^diff --git a\/src\/b\.ts b\/src\/b\.ts/);
+	// With hunksByFile, the map wins over the body.
+	const withMap: DiffGroundingDeps = {
+		workingTreeDiff: async () => ({ files: [fileStat('src/a.ts')], body: diffBody('src/a.ts'), truncated: false, hunksByFile: new Map([['src/a.ts', 'FROM-THE-MAP']]) }),
+		lastCommitDiff:  async () => ({ files: [], body: '', truncated: false }),
+	};
+	assert.equal(sigOf(await assembleDiffCodeReviewGrounding('/repo', withMap), 'src/a.ts'), 'FROM-THE-MAP');
+});
+
+test('the range diff applies the exclusions to every per-unit call', async () => {
+	const set: StoryChangeSet = {
+		paths: ['plain.ts', 'shared.txt'],
+		units: [
+			{ kind: 'commit', ref: 'c1', from: 'p1', to: 'c1', paths: ['plain.ts', 'shared.txt'] },
+			{ kind: 'commit', ref: 'c2', from: 'c1', to: 'c2', paths: ['shared.txt'] },
+		],
+		sharedPaths: ['shared.txt'],
+		foldedPaths: [],
+	};
+	const inputs: Record<string, unknown>[] = [];
+	await storyRangeDiff('/repo', 'base', set, ['ledger/**'], async (_r, input) => { inputs.push(input); return { files: [], body: '', truncated: false }; });
+	assert.deepEqual(inputs, [
+		{ from: 'base', paths: ['plain.ts'], exclude: ['ledger/**'] },
+		{ from: 'p1', to: 'c1', paths: ['shared.txt'], exclude: ['ledger/**'] },
+		{ from: 'c1', to: 'c2', paths: ['shared.txt'], exclude: ['ledger/**'] },
+	]);
+});
+
+test('a truncated per-unit call marks the grounding truncated and a storyChangeSet failure steps down', async () => {
+	const set: StoryChangeSet = {
+		paths: ['shared.txt'],
+		units: [{ kind: 'commit', ref: 'c1', from: 'p1', to: 'c1', paths: ['shared.txt'] }],
+		sharedPaths: ['shared.txt'], foldedPaths: [],
+	};
+	const out = await storyRangeDiff('/repo', 'base', set, undefined, async () => ({ files: [fileStat('shared.txt')], body: diffBody('shared.txt'), truncated: true }));
+	assert.equal(out.truncated, true);
+	const deps: DiffGroundingDeps = {
+		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
+		lastCommitDiff:  async () => ({ files: [], body: '', truncated: false }),
+		rangeDiff:       async () => out,
+	};
+	const res = await assembleDiffCodeReviewGrounding('/repo', deps, { base: 'base' });
+	assert.match(sigOf(res, 'shared.txt'), /\[diff truncated/);
+
+	// An unresolvable base: the real rangeDiff raises DiffUnavailableError, and
+	// the assembler steps down to the last commit as before.
+	const r = mergeRepo();
+	try {
+		r.put('src/story1.ts', 'export const s1 = 1;\n'); r.commit('story 1');
+		await assert.rejects(realDiffGroundingDeps().rangeDiff!(r.repo, 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'), DiffUnavailableError);
+		const stepped = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' });
+		assert.deepEqual(stepped.changedFiles, ['src/story1.ts'], 'the last commit, as before');
+	} finally { r.cleanup(); }
 });

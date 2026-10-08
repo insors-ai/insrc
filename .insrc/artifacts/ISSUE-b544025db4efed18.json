@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791377725478-3tqdkc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-07T12:55:59.832Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 34354,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b544025db4efed18",
+    "epicSlug": "test-processes-intermittently-fail-exit-after",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Test processes sometimes never exit because the logger's worker-thread transport keeps them alive",
+    "reproduction": "Run `npx tsx --test src/db/__tests__/conversations-lance-integration.test.ts` 20 times, each under `timeout 25`. Observed: all 14 tests pass every time, but about 1 run in 4 (5 of 20) never exits and is killed by the timeout, reporting 'Promise resolution is still pending but the event loop has already resolved'. Across the full sweep (`npx tsx --test 'src/**/__tests__/*.test.ts'`, 408 files) at least one file hits this almost every run, so the sweep never finishes and the build validate gate, which runs that sweep, can never pass. A Node diagnostic report of a hung test process shows no JavaScript running and one live worker thread holding a referenced timer and async handle. Expected: a test process exits as soon as its tests finish.",
+    "rootCause": "src/shared/logger.ts creates its root logger in getRoot by passing a pino `transport` built by buildDaemonTransport, buildMcpTransport or buildCliTransport, all of which declare pino-roll targets (the MCP and CLI builders also pino-pretty). pino runs transport targets in a worker thread, and every process that calls getLogger — about 223 source modules import it, so every test process — starts that worker. Intermittently the worker keeps the process alive after the tests are done. Controlled experiment: the same test file hangs on exit in 5 of 20 runs with the transport as-is and in 0 of 20 runs with the transport replaced by a synchronous pino destination, with nothing else changed.",
+    "fixIntent": "Make a test process's logging unable to keep the process alive once its tests finish, so every test file exits reliably and the full sweep completes. Daemon, MCP and CLI logging keep their current destinations and rotation in normal (non-test) runs, and getLogger's interface is unchanged for its callers."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/shared/logger.ts",
+      "quotedText": "_root = pino({ level: resolveLevel(), transport, });"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/logger.ts",
+      "quotedText": "target: 'pino-roll',"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: logger.ts transport selection (getRoot d842327d48590f7be3ece22e665cdbe8, buildCliTransport 1803fc21a102b9ee45365b45322b6354, buildDaemonTransport 5bc0c7bac2600fb22428375614f65004, getLogger 67702e7f7b4ca5b294550e4c24b8b798; 223 importing source files by grep)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/__tests__/conversations-lance-integration.test.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "Controlled reproduction: 5/20 exit hangs with the pino transport vs 0/20 with a synchronous destination; Node diagnostic report of a hung child: one live worker thread, referenced timer + async handle, empty JavaScript stack."
+    }
+  ]
+}

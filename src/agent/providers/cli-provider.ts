@@ -35,7 +35,7 @@
  *   - embeddings:       depends on whether embedDelegate is wired
  */
 
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -50,6 +50,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
+import { runInProcessGroup } from '../../shared/process-group.js';
 import { rootUnionKey } from './structured-output.js';
 
 const log = getLogger('cli-provider');
@@ -166,14 +167,14 @@ export class CliProvider implements LLMProvider {
 			const prompt = serialiseMessages(messages);
 			if (this.kind === 'claude') {
 				const args = ['--print', '--output-format', 'json', ...this.modelArgs(opts)];
-				const { envelope } = await this.runClaude(args, prompt);
+				const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
 				return {
 					text: envelope.result ?? '',
 					stopReason: 'end_turn' as const,
 				};
 			}
 			const args = ['exec', '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt);
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
 			return {
 				text: agentText ?? '',
 				stopReason: 'end_turn' as const,
@@ -259,7 +260,7 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', JSON.stringify(schema),
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt);
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
 			if (envelope.is_error) {
 				throw new Error(`claude --print failed: ${envelope.result ?? 'no error message'}`);
 			}
@@ -274,7 +275,7 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, JSON.stringify(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt);
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
@@ -441,6 +442,13 @@ export class CliProvider implements LLMProvider {
 	}
 
 
+	/** The exec override for a one-shot call: run the CLI in `cwd` when the
+	 *  caller names one, else no override, so the CLI inherits the daemon's
+	 *  working directory exactly as before. */
+	private execIn(cwd: string | undefined): ExecOverride | undefined {
+		return cwd !== undefined ? { cwd, timeoutMs: this.timeoutMs } : undefined;
+	}
+
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
@@ -582,32 +590,21 @@ async function runSubprocess(
 	return result;
 }
 
-function spawnOnce(
+/** One CLI run through the shared process-group runner: a timeout kills the
+ *  whole group and reports exit code -9, and anything the CLI leaves running
+ *  is killed when it exits (ISSUE-f1bf0fb3). */
+async function spawnOnce(
 	command: string,
 	args: readonly string[],
 	stdin: string,
 	timeoutMs: number,
 	cwd?: string,
 ): Promise<SubprocessResult> {
-	return new Promise(resolve => {
-		const start = Date.now();
-		const child = spawn(command, [...args], { stdio: ['pipe', 'pipe', 'pipe'], ...(cwd !== undefined ? { cwd } : {}) });
-		let stdout = '';
-		let stderr = '';
-		let timedOut = false;
-		const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, timeoutMs);
-		child.stdout.on('data', (c: Buffer) => { stdout += c.toString(); });
-		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });
-		child.on('error', err => {
-			clearTimeout(timer);
-			resolve({ stdout, stderr: stderr + `\nspawn error: ${(err as Error).message}`, exitCode: -1, durationMs: Date.now() - start });
-		});
-		child.on('close', exitCode => {
-			clearTimeout(timer);
-			resolve({ stdout, stderr, exitCode: timedOut ? -9 : (exitCode ?? -1), durationMs: Date.now() - start });
-		});
-		child.stdin.end(stdin);
-	});
+	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd });
+	if (r.spawnError !== undefined) {
+		return { stdout: r.stdout, stderr: r.stderr + `\nspawn error: ${r.spawnError}`, exitCode: -1, durationMs: r.durationMs };
+	}
+	return { stdout: r.stdout, stderr: r.stderr, exitCode: r.timedOut ? -9 : r.exitCode, durationMs: r.durationMs };
 }
 
 

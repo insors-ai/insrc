@@ -169,7 +169,7 @@ export async function judgeCoverage(
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildCoveragePrompt(subject, grounding, note), COVERAGE_FINDINGS_SCHEMA);
+		provider.completeStructured<unknown>(buildCoveragePrompt(subject, grounding, note), COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<CoverageOutput> = (raw) =>
 		validateAgainstSchema<CoverageOutput>(COVERAGE_FINDINGS_SCHEMA, raw);

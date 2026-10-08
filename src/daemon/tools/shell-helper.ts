@@ -23,6 +23,8 @@ export interface ShellResult {
   signal?: NodeJS.Signals | undefined;
   /** True when we killed the process via timeout. */
   timedOut: boolean;
+  /** True when stdout passed `maxBytes` and the rest was dropped. */
+  stdoutTruncated: boolean;
 }
 
 export interface ShellOptions {
@@ -53,6 +55,7 @@ export function runShell(
       code: null,
       spawnError: true,
       timedOut: false,
+      stdoutTruncated: false,
     });
   }
 
@@ -97,7 +100,7 @@ export function runShell(
       options.signal?.removeEventListener('abort', onAbort);
       spawnError = true;
       stderr += (stderr ? '\n' : '') + `[spawn] ${err.message}`;
-      resolve({ stdout, stderr, code: null, spawnError, timedOut });
+      resolve({ stdout, stderr, code: null, spawnError, timedOut, stdoutTruncated: stdoutBytes > maxBytes });
     });
 
     child.on('close', (code, signal) => {
@@ -109,6 +112,7 @@ export function runShell(
         code,
         spawnError,
         timedOut,
+        stdoutTruncated: stdoutBytes > maxBytes,
         ...(signal ? { signal } : {}),
       });
     });

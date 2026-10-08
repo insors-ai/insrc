@@ -39,9 +39,10 @@ The daemon does **not**:
 8. [Usage via Claude Code (MCP)](#usage-via-claude-code)
 9. [Usage via Codex CLI (MCP)](#usage-via-codex-cli)
 10. [What an answer says about its completeness](#what-an-answer-says-about-its-completeness)
-11. [CLI reference](#cli-reference)
-12. [Troubleshooting](#troubleshooting)
-13. [Uninstall](#uninstall)
+11. [What a build records about its tests](#what-a-build-records-about-its-tests)
+12. [CLI reference](#cli-reference)
+13. [Troubleshooting](#troubleshooting)
+14. [Uninstall](#uninstall)
 
 ---
 
@@ -656,6 +657,75 @@ The IDE mirrors these types and is not changed from here. It needs:
 - the optional `error.data` on the output of `insrc_analyze_step`.
 
 ---
+
+## What a build records about its tests
+
+When a Task (or a standalone Story) is submitted to the build validation gate
+(`insrc_build_step`, `phase: 'validate'`), the daemon runs the typecheck and the
+tests itself, and keeps what the tests did in the Story's **test record**:
+`TESTS.md` in the Story's folder, beside `PLAN.md` and `BUILD.md`, with its
+data in `.insrc/artifacts/TESTS-<epicHash>-<storyId>.json`.
+
+### Telling the gate which tests carry each planned test
+
+A plan names its tests in prose. At the validate turn the builder passes
+`tests`, one entry per named test:
+
+```json
+{ "name": "<the test's text, exactly as the plan states it>",
+  "cases": [ { "file": "src/x/__tests__/x.test.ts", "title": "<the test's title, as the file declares it>" } ] }
+```
+
+The daemon runs each mapped file on its own and reads a result for every case:
+
+| Result | Meaning | Does the Task pass the tests check? |
+|---|---|---|
+| `pass` | the test of that title ran and passed | yes |
+| `fail` | it ran and failed | no |
+| `skipped` | the runner skipped it (a skip or a todo) | no: a skipped test proves nothing |
+| `not found` | no test of that title ran in that file | no |
+
+The check also fails when a file exits with a non-zero code, times out, or
+when a named test has no case at all. A title is matched at any depth of
+nesting, by its own title.
+
+For a `live` or `smoke` test the daemon cannot run (it needs a model, a running
+daemon or a person), the entry carries `reported` in place of, or beside, its
+cases: `{ "result": "pass" | "fail", "evidence": "<where the proof is>" }`. It
+is recorded as reported by the builder, not run by the gate, and is shown apart
+in the record. A reported `fail` fails the check. A reported result on a test of
+any other level is refused.
+
+Other rules:
+
+- A later validate turn of the same Task may omit `tests`: the mapping stored
+  in the record is used. A supplied mapping replaces it.
+- Without a mapping, a test name that begins with `<file>.test.ts:` is run by
+  that file, as before; any other name has nothing to run and fails the check.
+- A wrong mapping (a name the Task does not have, a file that is not a tracked
+  `.test.ts` file of the repository, an empty title, a key the shape does not
+  have) is refused with the error `invalid-test-mapping`, which lists every
+  fault. Nothing is run and nothing is written.
+- A Trivial standalone build names no tests: `tests` is ignored and the test
+  files its commit touched are run.
+
+### What the record holds
+
+One section per Task, replaced when that Task is validated again: the commit
+and time of the run, whether the tests check passed, each named test with its
+cases and their results, the results reported by the builder with their
+evidence, each file run with its exit code, and any test that failed in those
+files outside the named cases. The whole output of each file's run is written
+to a file under the system's temporary directory, and its path is returned in
+the verdict's evidence; nothing is cut from it.
+
+The record is written straight after the tests are run, before the verdict is
+judged, so it is there also when the judging session fails. `BUILD.md` links to
+it and holds no results of its own.
+
+The test record is a record of what was run. It cannot be approved or rejected:
+`insrc_workflow_approve` returns its path in `skipped[]` with a reason that
+begins `not-approvable:`.
 
 ## CLI reference
 

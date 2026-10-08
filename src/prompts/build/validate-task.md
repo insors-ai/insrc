@@ -31,6 +31,7 @@ Task's tests and reports the results below. Do not try to run them yourself.
    results above; quote what you observed.
 3. **Tests** — confirm the required tests exist in the test files and exercise
    what their names claim. Whether they pass is the daemon's result above.
+   {{judgeNamedTestsRule}}
 4. **Scope** — no changes outside this Task's stated surface; sibling code and
    the shared machinery are untouched unless the Task called for it.
 

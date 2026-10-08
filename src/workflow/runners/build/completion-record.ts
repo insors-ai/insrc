@@ -18,8 +18,9 @@
  * the ledger record could not be written.
  */
 
-import { buildRecordPathsFor, persistBuildRecord, type BuildRecord } from './standalone-record.js';
-import { buildStartRelPath, resolveStoryRangeBase } from './range-base.js';
+import { storyWorkflowFiles } from './own-files.js';
+import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { resolveStoryRangeBase } from './range-base.js';
 import { inheritedStoryStandalone } from '../../storage.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
@@ -62,17 +63,18 @@ export async function ensureBuildRecordOnCompletion(
 			},
 			body: { tasks: [] },
 		};
-		// EXCLUDE the record's own json + md, for the same reason the validate writer
-		// does: at completion time those two are typically the only dirty paths, so
-		// without this the record reports that the Story changed its own ledger entry.
-		const own = buildRecordPathsFor(repoPath, base);
+		// EXCLUDE the workflow's own files for this Story (the build record's json and
+		// md, the test record's, and the build-start file), from the one list the
+		// validate writer also uses: at completion time they are typically the only
+		// dirty paths, so without this the record reports that the Story changed its
+		// own ledger entries.
+		const exclude = storyWorkflowFiles(repoPath, base);
 		// Same resolver the validate writer uses, so the two can never disagree
 		// about this Story's base. See range-base.ts for the precedence and for why
 		// an unresolvable base yields empty rather than a substituted range.
 		const rangeBase = resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
 		const ctx = {
-			// ...and the Story's build-start file, as the validate writer does.
-			author: 'insrc-build', timestamp: now, exclude: [own.json, own.md, buildStartRelPath(ref.epicHash, ref.storyId)],
+			author: 'insrc-build', timestamp: now, exclude,
 			...(rangeBase !== undefined ? { base: rangeBase } : {}),
 		};
 		const changeLog = listChanged !== undefined

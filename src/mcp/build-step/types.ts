@@ -20,6 +20,8 @@
 
 import type { BuildAdmissionRefusal } from '../../workflow/runners/build/schemas.js';
 
+import type { TestMappingEntry } from './test-mapping.js';
+
 // ---------------------------------------------------------------------------
 // Phases + inputs
 // ---------------------------------------------------------------------------
@@ -78,6 +80,16 @@ export interface BuildStepInputValidate {
 	 * whitespace-only is treated as omitted.
 	 */
 	readonly summary?: string | undefined;
+	/**
+	 * OPTIONAL mapping from the Task's named tests to the test cases that carry
+	 * them: for each name, the file and title of every test case, and for a
+	 * live or smoke test the gate cannot run, the result and where the evidence
+	 * is. The gate runs the files itself and records a result per case in the
+	 * Story's test record. Omitted → the mapping stored for the Task by an
+	 * earlier turn, else the file-name prefix of each test name. Ignored on the
+	 * trivial standalone route, which names no tests.
+	 */
+	readonly tests?: readonly TestMappingEntry[] | undefined;
 }
 
 export type BuildStepInput =

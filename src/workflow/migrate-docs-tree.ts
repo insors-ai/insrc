@@ -106,13 +106,16 @@ const FLAT_DIRS = ['docs/defines', 'docs/designs', 'docs/plans', 'docs/builds', 
  *  excluded it from its own group — leaving its folder permanently unconvergeable
  *  and contributing the second folder this module exists to eliminate. */
 function parseArtifactId(id: string): { kind: ArtifactKind; hash: string; storyId: string | undefined } | null {
-	const m = /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE)-([0-9a-f]{16})(?:-(.+))?$/.exec(id);
+	const m = /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE|TESTS)-([0-9a-f]{16})(?:-(.+))?$/.exec(id);
 	if (m === null) return null;
 	const kind    = m[1] as ArtifactKind;
 	const hash    = m[2]!;
 	const storyId = m[3];
 	// Story-scoped kinds require a storyId; item-root kinds must NOT carry one.
-	const storyScoped = kind === 'LLD' || kind === 'PLAN' || kind === 'BUILD' || kind === 'CR' || kind === 'EXT';
+	// TESTS (a Story's test record) is listed so that a nested TESTS.md converges
+	// with its Story: left out, it would stay behind in a forked folder, apart
+	// from its BUILD.md, and keep that folder alive.
+	const storyScoped = kind === 'LLD' || kind === 'PLAN' || kind === 'BUILD' || kind === 'CR' || kind === 'EXT' || kind === 'TESTS';
 	if (storyScoped && (storyId === undefined || storyId.length === 0)) return null;
 	if (!storyScoped && storyId !== undefined) return null;
 	return { kind, hash, storyId };

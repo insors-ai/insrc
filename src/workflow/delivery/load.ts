@@ -16,7 +16,7 @@ import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import { ARTIFACTS_DIR } from '../storage.js';
+import { ARTIFACTS_DIR, TESTS_ID_PREFIX } from '../storage.js';
 import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
 import {
 	DeliveryStoreUnreadableError,
@@ -126,6 +126,9 @@ export function loadArtifactRecordSet(
 	const failures: RecordLoadFailure[] = [];
 	for (const fileName of names) {
 		if (!fileName.endsWith('.json')) continue;
+		// A Story's test record is the gate's own record of a run, not a delivery
+		// artifact: it is neither a record of this model nor a file it failed to load.
+		if (fileName.startsWith(TESTS_ID_PREFIX)) continue;
 		if (kindOfFile(fileName) === null) {
 			failures.push({ fileName, reason: 'unknown-kind', detail: `no artifact kind for prefix '${fileName.split('-')[0] ?? ''}'` });
 			continue;

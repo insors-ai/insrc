@@ -19,7 +19,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ensureBuildRecordOnCompletion } from '../completion-record.js';
-import { persistStandaloneBuildRecord } from '../standalone-record.js';
+import { execFileSync } from 'node:child_process';
+
+import { storyWorkflowFiles } from '../own-files.js';
+import { buildStartRelPath } from '../range-base.js';
+import { buildRecordPathsFor, persistBuildRecord, persistStandaloneBuildRecord, type BuildRecord } from '../standalone-record.js';
+import { persistTestRecordTask } from '../test-record.js';
 import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { parseBuildArtifactRef } from '../../../gates.js';
 
@@ -247,5 +252,51 @@ test('t4 — an explicit standalone FALSE on the definition artifact is not writ
 		assert.ok(out !== undefined);
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 's1')));
 		assert.ok(!('standalone' in rec.meta), 'false is OMITTED, never asserted');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// The workflow's own files are left out of the change log by BOTH writers
+// (LLD-9b4a74dc-S001, task t5)
+// ---------------------------------------------------------------------------
+
+test("completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)", async () => {
+	await withRepo(async (repo) => {
+		const g = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+		g('init', '-q');
+		g('config', 'user.email', 'test@example.com');
+		g('config', 'user.name', 'Test');
+		writeFileSync(join(repo, 'README.md'), 'seed\n');
+		g('add', '-A');
+		g('commit', '-q', '-m', 'seed');
+		const base = g('rev-parse', 'HEAD');
+		// The Story's build started here ...
+		mkdirSync(join(repo, '.insrc', 'build-start'), { recursive: true });
+		writeFileSync(join(repo, buildStartRelPath(HASH, 's1')), JSON.stringify({ epicHash: HASH, storyId: 's1', rangeBase: base, stampedAt: '2026-03-01T09:00:00.000Z' }));
+		// ... and its work is one committed source file.
+		mkdirSync(join(repo, 'src'), { recursive: true });
+		writeFileSync(join(repo, 'src', 'pay.ts'), 'export const x = 1;\n');
+		g('add', 'src/pay.ts');
+		g('commit', '-q', '-m', 'feat(build): s1/t1 the work');
+
+		// The validate turn has written both records; nothing else is dirty.
+		const at = '2026-03-01T10:00:00.000Z';
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: at }, { taskId: 't1', ranAt: at, testsPassed: true, tests: [], files: [] });
+		const rec: BuildRecord = { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: at, updatedAt: at }, body: { tasks: [{ id: 't1', passed: true }] } };
+		const build = persistBuildRecord(repo, rec);
+		const dirty = g('status', '--porcelain', '--untracked-files=all').split('\n').map(l => l.slice(3)).sort();
+		const rel = (p: string): string => p.slice(repo.length + 1);
+		assert.deepEqual(dirty, [rel(build.json), rel(tests.json), buildStartRelPath(HASH, 's1'), rel(build.md), rel(tests.md)].sort(),
+			'precondition: the only dirty files are the two records and the build-start file');
+
+		// The ONE list both writers use names exactly those files.
+		const own = buildRecordPathsFor(repo, rec);
+		assert.deepEqual(storyWorkflowFiles(repo, rec), [own.json, own.md, tests.json, tests.md, buildStartRelPath(HASH, 's1')]);
+
+		// Completion, with the REAL change-set derivation: the committed range, not the records.
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });
+		assert.ok(out !== undefined);
+		const changeLog = readJson(out.json).body['changeLog'] as { target: { file: string } }[];
+		assert.deepEqual(changeLog.map(c => c.target.file), ['src/pay.ts']);
 	});
 });

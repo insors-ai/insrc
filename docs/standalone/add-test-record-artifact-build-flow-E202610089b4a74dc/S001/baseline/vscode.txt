@@ -1,0 +1,841 @@
+ok 1 - runReachabilityProbe pushes the derived running/stopped/errored state into the status surface
+not ok 2 - runReachabilityProbe degrades a hung probe to errored within the bounded deadline
+not ok 3 - runReachabilityProbe never throws even if reachability() rejects
+not ok 4 - activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves
+not ok 5 - the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+not ok 6 - only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+ok 7 - package.json carries every Marketplace-required field for a single installable package (ac1)
+ok 8 - the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)
+ok 9 - S003 model-picker: contributes the palette-reachable insrc.models.setTier command (k6)
+ok 10 - package.json no longer sets private:true (so vsce can package/publish)
+ok 11 - scripts include bundle + package (vsce) + vscode:prepublish (typecheck+bundle) + the preserved vscode:uninstall
+ok 12 - esbuild is a declared devDependency (not relied on transitively) — review LOW fix
+ok 13 - .vscodeignore excludes source/tests/tsconfig/.github/raw-src but keeps assets/ and out/ (k5)
+ok 14 - the publish workflow is workflow_dispatch-only (no push/pull_request/schedule) with no test job (k7/lc2)
+ok 15 - the workflow publishes via vsce to the Marketplace only (no ovsx) + reads the PAT from a secret (lc1/k2)
+ok 16 - esbuild emits self-contained CJS out/extension.js that loads under an ESM (type:module) root (requires with a fake vscode, exposes activate/deactivate)
+ok 17 - the emitted out/uninstall.js, run as `node out/uninstall.js` under a temp HOME, actually SWEEPS the wired hosts (main-check fires) and never touches the real $HOME
+ok 18 - unwireAllHosts builds an adapter per HostSpec and removes the mcp key + steering block, returning a tally
+ok 19 - unwireAllHosts is an idempotent no-op for a never-wired host (file byte-unchanged; failed:0)
+ok 20 - a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep
+ok 21 - runUninstall runs the sweep over HOST_SPECS + defaultHostFileSystem and never throws / never rejects
+ok 22 - source-scan: src/uninstall.ts carries NO vscode import (plain node) and imports only the hosts seams + node builtins (k5)
+ok 23 - submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)
+ok 24 - single-in-flight: a second submit supersedes the first — no interleave + prior turn reaped (H1/M2)
+ok 25 - new-chat mid-stream stops the prior turn (no cross-session post) (M3)
+ok 26 - malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)
+ok 27 - an errored turn persists its transcript rows (L3)
+ok 28 - empty/whitespace submit-turn is a no-op (no run)
+ok 29 - a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown
+ok 30 - onDidDispose cancels the active turn and stops posting further
+ok 31 - unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops
+ok 32 - no provider installed: open posts an error notice (no crash)
+ok 33 - rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin
+ok 34 - rendered shell mints a FRESH nonce per render
+ok 35 - S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)
+ok 36 - S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)
+ok 37 - S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker
+ok 38 - S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)
+ok 39 - S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact
+ok 40 - S005 shell: empty providers.available -> disabled selector
+ok 41 - S005 open() posts a history-list
+ok 42 - open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn
+ok 43 - LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)
+ok 44 - LLM titling: a failed/empty derivation keeps the truncated-prompt fallback
+ok 45 - LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)
+ok 46 - S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op
+ok 47 - S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history
+ok 48 - S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent
+ok 49 - S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)
+ok 50 - S005 a first-turn error still refreshes the history dropdown (title label)
+ok 51 - S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none
+ok 52 - S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)
+ok 53 - S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact
+ok 54 - S001 (bugfix): the edit-review gate is RETIRED — even a legacy set-edit-mode:review turn is visualize-only (no revert)
+ok 55 - S006 integration: an AUTO turn renders visualize-only (no accept/reject revert on reject) + edit marker still renders
+ok 56 - S006 integration: set-edit-mode updates + persists session.editMode
+ok 57 - S006 integration: diffView=editor routes to the native editor seam (no chat edit-prompt)
+ok 58 - S006: without editGovernance the host behaves as before (no edit-prompt; file-edit marker still renders)
+ok 59 - S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact
+ok 60 - S001 (bugfix): the edit-prompt is always visualize-only (review flag never set) — the gate is retired
+ok 61 - S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)
+ok 62 - S001 lc1: two identical prompts yield two distinct-keyed live user-rows
+ok 63 - S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)
+ok 64 - S002: a cancel-turn with no active turn is an idempotent no-op (no throw)
+ok 65 - S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (\#insrc-prompt) is the send/stop control; the trailing \#insrc-send button is retired
+ok 66 - S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched
+ok 67 - S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins
+ok 68 - S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions
+ok 69 - S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged
+ok 70 - both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%
+ok 71 - S002 ac1: the fixed-region layout holds — \#insrc-term is the only scroll region; header + input stay flex:0
+ok 72 - S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill
+ok 73 - S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin
+ok 74 - S002: an empty submit is a host no-op (no turn starts)
+ok 75 - S002 ac3: renderShell embeds a single \#insrc-progress widget above the input, hidden at rest
+ok 76 - S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)
+ok 77 - S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)
+ok 78 - S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams
+ok 79 - S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — \#insrc-input has no box chrome, rows=2 kept, ❯ top-aligned
+ok 80 - S001 (fidelity) ac2: the placeholder gains the interrupt hint
+ok 81 - ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar
+ok 82 - UI: the \#insrc-history session dropdown carries a leading history/clock glyph so its purpose reads
+ok 83 - ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)
+ok 84 - S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged
+ok 85 - S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)
+ok 86 - S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)
+ok 87 - S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)
+ok 88 - S004 t7: permission-decision with no active turn is a safe no-op (never throws)
+ok 89 - S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)
+ok 90 - S001 adopt() supersedes an already-live channel (prior disposed; single active channel)
+ok 91 - S001 adopt() with no agentic CLI posts the same error a fresh open does
+ok 92 - S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)
+ok 93 - S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates
+ok 94 - S001 ready before any open-time delivery still populates history (models the dropped initial post)
+ok 95 - S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session
+ok 96 - S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)
+ok 97 - S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool
+ok 98 - S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)
+ok 99 - S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched
+ok 100 - S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip
+ok 101 - S001 (bugfix): a stale/idless permission-decision (no pendingPerms entry) falls through to adapter.decide (codex/in-turn relay unchanged)
+ok 102 - S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)
+ok 103 - S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)
+ok 104 - S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome
+ok 105 - S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)
+ok 106 - S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)
+ok 107 - S001 (bugfix): set-permission-mode persists onto the active (saved) session
+ok 108 - S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode
+ok 109 - S001 (bugfix): the webview sets the mode control from a restored session
+ok 110 - S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)
+ok 111 - S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn
+ok 112 - S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)
+ok 113 - S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)
+ok 114 - claude: text turn maps to status + assistant-delta(s) + done(ok)
+ok 115 - claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff
+ok 116 - claude: is_error result maps to done(ok:false)
+ok 117 - nothing is yielded after the terminal event, even if the stream continues
+ok 118 - codex: item.completed + turn.completed maps to assistant-delta + done(ok)
+ok 119 - an in-stream error is terminal: nothing (incl. a second done) is yielded after it
+ok 120 - a stdout stream error surfaces as a terminal error event (never throws/rejects)
+ok 121 - abandoning the stream early kills the subprocess (no orphan)
+ok 122 - the terminal done carries the captured native session id (resume handle for S005)
+ok 123 - error path 1: spawn throws synchronously -> terminal error event (never rejects)
+ok 124 - error path 2: ENOENT spawn error -> terminal error naming the missing CLI
+ok 125 - error path 3: non-zero exit with no terminal event -> error carrying the stderr tail
+ok 126 - error path 4: an auth-failure stderr -> a re-login error message
+ok 127 - error path 5: an unparseable stream line is skipped+warned, not fatal
+ok 128 - cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)
+ok 129 - cancel(): unknown/finished turnId is a no-op (idempotent, no throw)
+ok 130 - capabilities.resume is true for both providers; a resume request passes the native flag
+ok 131 - ProviderRegistry.available lists only installed agentic CLIs (never Ollama)
+ok 132 - ProviderRegistry.get() on an absent provider throws unknown-provider
+ok 133 - claude: a Bash tool_use sets ToolCallEvent.command from input.command
+ok 134 - claude: a command-less tool_use omits command (renders as the tool name, k2)
+ok 135 - codex: a command_execution item sets command from item.command
+ok 136 - codex: a tool_call item without a command omits command (k2)
+ok 137 - claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use
+ok 138 - claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted
+ok 139 - claude: a tool_result with empty content still emits a tool-result (empty output)
+ok 140 - claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])
+ok 141 - codex: a completed command_execution with output emits both a tool-call and a tool-result
+ok 142 - codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)
+ok 143 - deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)
+ok 144 - deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)
+ok 145 - deriveChatTitle: an error event -> undefined; an unknown provider -> undefined
+ok 146 - S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)
+ok 147 - S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)
+ok 148 - S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)
+ok 149 - S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox
+ok 150 - S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)
+ok 151 - S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent
+ok 152 - S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)
+ok 153 - S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)
+ok 154 - S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)
+ok 155 - S001 (bugfix): permission_denied with a nested input.command sets event.command
+ok 156 - S001 (bugfix): a top-level command takes precedence over input.command
+ok 157 - S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)
+ok 158 - S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)
+ok 159 - S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block
+ok 160 - S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)
+ok 161 - S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block
+ok 162 - S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir (no sandbox widening on a click)
+ok 163 - S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])
+ok 164 - S004 t5: an unparseable line is skipped+logged, never thrown (as today)
+ok 165 - S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)
+ok 166 - S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)
+ok 167 - S004 t5: decide() on an unknown turn is a safe no-op (never throws)
+ok 168 - claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta
+ok 169 - claude: a marker-only text block emits the selection-request with NO empty assistant-delta
+ok 170 - claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw
+ok 171 - claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)
+ok 172 - claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)
+ok 173 - codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped
+ok 174 - codex: a malformed marker -> NO event, the raw text stays a delta, no throw
+ok 175 - codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence
+ok 176 - codex: a no-marker delta behaves exactly as today
+ok 177 - claude: tool-call and its tool-result carry the tool_use id as callId
+ok 178 - codex: a command item with an id carries it as callId on both events; an id-less item omits it
+ok 179 - renderTerminalStyle: opens/closes <style>, contains every token + var(--vscode-*,<fallback>), CSP-safe
+ok 180 - renderTerminalStyle: deterministic (two calls byte-identical)
+ok 181 - renderTerminalStyle: emits a rule for every SurfaceKind class
+ok 182 - renderTerminalStyle: throws TerminalThemeError on an empty token, naming the path
+ok 183 - renderTerminalStyle: throws TerminalThemeError on a token with angle brackets (style-breaking)
+ok 184 - renderTerminalStyle: rejects color injection (closes var() + rule) with no angle brackets
+ok 185 - renderTerminalStyle: rejects color injection (semicolon + selector) with no angle brackets
+ok 186 - renderTerminalStyle: rejects color injection (url() beacon) with no angle brackets
+ok 187 - renderTerminalStyle: rejects color injection (double-quote break) with no angle brackets
+ok 188 - renderTerminalStyle: rejects color injection (brace break) with no angle brackets
+ok 189 - renderTerminalStyle: rejects marker-glyph injection (quote + selector)
+ok 190 - renderTerminalStyle: rejects marker-glyph injection (brace break)
+ok 191 - renderTerminalStyle: rejects marker-glyph injection (backslash escape)
+ok 192 - renderTerminalStyle: still accepts the legitimate quoted font stack + rgba/hex colors
+ok 193 - renderTerminalStyle: light-theme variant renders a valid deterministic <style> with light values
+ok 194 - surfaceClass: total over all five SurfaceKind members; each class appears in the rendered output
+ok 195 - terminalTheme: carries the tui.css values and is frozen
+ok 196 - pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status)
+ok 197 - content(id) resolves the retained mdPath and maps renderedMarkdown/openQuestions/blocked
+ok 198 - content() maps approvable:false -> blocked:true
+ok 199 - approve(id) resolves mdPath into workflow.approve { artifactPath } and returns the result
+ok 200 - comment() posts workflow.resolveComment with { artifactId, comments:[{body}] }
+ok 201 - MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content/approve fall back to the raw id (never send "")
+ok 202 - every method throws on the daemon { error } arm (never a silent empty result)
+ok 203 - t2: content() round-trips a view carrying all four structured records, each one unmodified
+ok 204 - t2: content() on a view carrying none of the four yields all four ABSENT
+ok 205 - t2: content() still throws on the daemon { error } arm — unavailable stays distinguishable from empty
+ok 206 - t2: source-scan — no new rpc method name appears in docs-review-client
+ok 207 - t2/s3: content() carries sequenceDefinition through by REFERENCE, unmodified
+ok 208 - t2/s3: a view carrying sequenceDefinition but no other record leaves the other four ABSENT
+ok 209 - t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rather than restating it
+ok 210 - open() posts the pending list from client.pending()
+ok 211 - open-doc for a known id posts docs-content mapped from the client
+ok 212 - open-doc for a stale/unknown id does NOT fetch content — it refreshes the list
+ok 213 - docs-decision accept approves via the client and re-fetches pending
+ok 214 - a blocked approve (skipped[], nothing approved) surfaces the reason non-lossily and stays pending
+ok 215 - docs-decision reject records the reviewer note via client.comment and re-fetches
+ok 216 - a stale decision (id no longer pending) is dropped, not sent to the client
+ok 217 - client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)
+ok 218 - HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)
+ok 219 - MED-4: commentable is true for LLD/HLD/DEF and false for other pending kinds (PLAN)
+ok 220 - MED-3: a slow refresh response cannot overwrite a newer one (sequence guard)
+ok 221 - ISSUE-605c7057: a slow earlier open cannot overwrite a newer one (newer wins, either completion order)
+ok 222 - ISSUE-605c7057: a superseded open that FAILS does not replace the current document with its error
+ok 223 - ISSUE-605c7057: a failure of the CURRENT open still posts blocked:true (fail-closed kept)
+ok 224 - ISSUE-605c7057: a list refresh does not discard an in-flight open
+ok 225 - rendered shell: one nonce, unwidened CSP, docs-review surface, guardMd present, no remote origin
+ok 226 - t4: the body container is NOT preformatted, and the shell carries markdown element rules for it
+ok 227 - the docs-review host + client modules are vscode-free
+ok 228 - t4: the happy path parses through the vendored renderer and scrubs with guardMd
+ok 229 - t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }
+ok 230 - t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message
+ok 231 - t4: guardMd strips a non-http href and an image src from the rendered body
+ok 232 - t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place — a DELIBERATE narrowing at the first implementer, not an eroded invariant
+ok 233 - t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it
+ok 234 - t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two cannot be paired across documents
+ok 235 - t5: a document with NO headings posts an empty anchors array
+ok 236 - t5: a degraded index posts degradation and does NOT set blocked; a fetch failure sets blocked and claims NO degradation
+ok 237 - t5: source-scan — the index rides the EXISTING docs-content variant; no new message type
+ok 238 - t5: the pre-existing SIX members of the docs-content variant keep their meaning
+ok 239 - t6: rendered headings carry the slugs derived for the SAME markdown — every target matches a posted anchor
+ok 240 - t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-targeted
+ok 241 - t6: a document with NO headings renders no chooser AT ALL — not an empty control
+ok 242 - t6: the chooser labels each entry with the heading VERBATIM and jumps to the chosen slug
+ok 243 - t6: the chooser placeholder selection does NOT fire a jump
+ok 244 - t6: the ac3 notice appears when degraded and is ABSENT when not
+ok 245 - t6: the shell still has exactly ONE markup-injection site after the chooser and notice
+ok 246 - t6: approve and request-changes still reach workflow.approve / workflow.resolveComment unchanged, and the COMMENTABLE_KINDS gate holds
+ok 247 - t5: a DEGRADED index posts degradation and does NOT set blocked — the branch the earlier test never reached
+ok 248 - t6: a DEGRADED body renders NO chooser — entries whose targets do not exist are worse than none
+ok 249 - t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped
+ok 250 - t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)
+ok 251 - t1: a content() rejection still posts blocked:true and carries no record
+ok 252 - t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape
+ok 253 - t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere
+ok 254 - t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups
+ok 255 - t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element
+ok 256 - t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId
+ok 257 - t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell's injection-site count is still exactly one
+ok 258 - t2: the item CSS fragment references only --it-* variables
+ok 259 - t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed
+ok 260 - t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match
+ok 261 - t3 (contract): docs-sections.ts is unchanged and still has zero imports
+ok 262 - t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld
+ok 263 - t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed
+ok 264 - t4: removal to end — an FR section that is the last section removes to the end of the container without throwing
+ok 265 - t4: heading preservation — the heading element, its text and its stamped id are identical before and after
+ok 266 - t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified
+ok 267 - t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched
+ok 268 - t5: DOCS_FR_SOURCE is inlined into the single nonce'd script and the placement call sits after stampSlugs and before the chooser / notice
+ok 269 - t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered
+ok 270 - t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls
+ok 271 - t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown
+ok 272 - t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none
+ok 273 - t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story
+ok 274 - t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed
+ok 275 - ac3: the same record rendered twice yields identical identifiers — the cross-document guarantee
+ok 276 - a very large record renders every requirement — no pagination, no virtualisation, no truncation
+ok 277 - the functional-requirement items carry LIST semantics, not just visual separation
+ok 278 - t2: all three records are forwarded by REFERENCE on the existing docs-content message
+ok 279 - t2: openDoc posts exactly ONE docs-content message per open — no second round trip
+ok 280 - t2: an absent record stays an ABSENT KEY ('erDefinition' in payload === false)
+ok 281 - t2: a document carrying ONLY a sequence record leaves erDefinition absent — the real S002 shape
+ok 282 - t2: the fail-closed arm posts blocked:true and carries NONE of the three records
+ok 283 - t2 (contract): protocol.ts indexes all three off DocsContent rather than restating them
+ok 284 - t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime
+ok 285 - t3: companionVisualKind maps the closed union TOTALLY — both diagram kinds to diagram, the mock to experience
+ok 286 - t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
+ok 287 - t3: linkOut is reachable on BOTH non-absent states — the failure state most of all
+ok 288 - t3: body is `unknown`, matching the shipped StructuredRenderer<T> return shape
+ok 289 - t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet
+ok 290 - t4 PARITY: the client derivation matches erDefinitionToIr over shared fixtures, with the daemon as the authority
+ok 291 - t4: a class-ranged slot becomes an edge; scalar, rangeless and unknown-shaped slots become attributes
+ok 292 - t4: a DANGLING range loses only its relationship — every box and every other edge still draw
+ok 293 - t4: cardinality flags produce the daemon's crow's-foot token in every combination
+ok 294 - t4: a self-reference and a 3-cycle both terminate and draw — layout iterates the sorted class list
+ok 295 - t4: determinism — the same record renders an identical element tree every time
+ok 296 - t4 ac4: every element is createElementNS in the SVG namespace and every label is textContent
+ok 297 - t4 ac4: hostile class and slot names survive character-for-character and reach no attribute
+ok 298 - t4 contract: DOCS_DIAGRAM_SOURCE assigns no markup, and the shell still has EXACTLY ONE innerHTML
+ok 299 - t4 gate: the four-combination table, asserted through the discriminator AND what was built
+ok 300 - t4 gate: absent does ZERO DOM work — no element is created at all
+ok 301 - t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES what was referenced
+ok 302 - t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a silent nothing
+ok 303 - t4 gate: a ux-mock ref is not this factory's business — the experience slot stays s4's
+ok 304 - t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one
+ok 305 - t4 layout: no row escapes its box, and no two boxes overlap — the defects the first visual read caught
+ok 306 - t4 layout: a box grows to fit its longest row rather than clipping it
+ok 307 - t5 PARITY: the client sequence derivation matches sequenceDefinitionToIr, daemon as the authority
+ok 308 - t5 PARITY: ordering, labels and the :repeat suffix over constructed shapes
+ok 309 - t5: a message naming an undeclared participant is DROPPED, not fatal — the deliberate divergence
+ok 310 - t5: every participant and every message from the REAL record is rendered, in order
+ok 311 - t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup
+ok 312 - t5: an empty or malformed sequence record is ABSENT and creates no element
+ok 313 - t5: determinism — the same sequence record renders an identical tree every time
+ok 314 - t5: the factory dispatches on the RECORD present, never on the ref kind
+ok 315 - t5: a sequence record with no ref is labelled from the record, not left blank
+ok 316 - t5 layout: no caption escapes the canvas and no two participant heads overlap
+ok 317 - t6 gate: the four-combination table, driven through the SHIPPED bootstrap
+ok 318 - t6 ac2: the dominant path does ZERO DOM work and leaves the body region untouched
+ok 319 - t6: `classes: {}` and an empty sequence record are ABSENT, not an empty frame
+ok 320 - t6: diagram-html routes to the stated failure (lc1), never a silent nothing
+ok 321 - t6: the link-out is offered in the FAILURE state, where it matters most
+ok 322 - t6: the slot build runs AFTER stampSlugs — every heading id is undisturbed
+ok 323 - t6 placement: a resolving anchor mounts beside that heading; a stale one falls back rather than dropping
+ok 324 - t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+ok 325 - t6 resilience: a forced throw in the slot build leaves all five other surfaces intact
+ok 326 - t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged
+ok 327 - t6 regression: the HOST decision path still reaches the daemon unchanged
+ok 328 - t6: the fail-closed arm shows the blocked banner and NO slot
+ok 329 - t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce'd script and the call sits between stampSlugs and the chooser
+ok 330 - t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+ok 331 - t7 (updated by S004/t6): a document carrying BOTH refs now shows TWO slots, diagram FIRST
+ok 332 - t7 (updated by S004/t6): a ux-mock ref ALONE now routes to the stated failure, not to nothing
+ok 333 - t7: every committed evidence image exists at the path its commit claims
+ok 334 - t6 FIX: the anchor resolves on a NUMBERED heading — the format every real insrc document uses
+ok 335 - CR/coverage: all four webview source strings PARSE together in one scope
+ok 336 - t1: uxDefinition is forwarded by REFERENCE on the existing docs-content message
+ok 337 - t1: openDoc posts exactly ONE docs-content message per open — no second round trip
+ok 338 - t1: an absent record stays an ABSENT KEY ('uxDefinition' in payload === false)
+ok 339 - t1: a ux-mock ref's ofSectionId resolves HOST-side to experienceAnchorSlug over THIS markdown's index
+ok 340 - t1: an ofSectionId naming no section posts NO experienceAnchorSlug key — not an empty string
+ok 341 - t1: the two pickers PARTITION the companions array — the ux ref is not the diagram ref
+ok 342 - t1: a companions array of DIAGRAM refs only yields no experienceAnchorSlug
+ok 343 - t1: the fail-closed arm posts blocked:true and carries NO uxDefinition
+ok 344 - t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather than restating it
+ok 345 - t1/t2: the shell matches the pin, and NOTHING reads either new field yet
+ok 346 - t2: the pin moved by EXACTLY the declared source string and CSS fragment — nothing else slipped in
+not ok 347 - t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild
+ok 348 - t2: TextBlock renders as <p class="ux-text"> with its text via textContent
+ok 349 - t2: every TextBlock modifier maps to the daemon class, including all four colour roles
+ok 350 - t2: Container renders as ux-container and recurses over items
+ok 351 - t2: ColumnSet renders as ux-columnset with its Columns as children, in order
+ok 352 - t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style
+ok 353 - t2: Image shows its url as TEXT — no img element, no src, nothing fetchable
+ok 354 - t2: Image with no altText falls back to the daemon’s literal "image"
+ok 355 - t2: Input.Text is a non-interactive affordance — a label and a styled span, never an input
+ok 356 - t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id
+ok 357 - t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option
+ok 358 - t2: a multi-select ChoiceSet uses the daemon’s box mark, single-select its circle
+ok 359 - t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART, with no anchor and no href
+ok 360 - t2: the stated parity divergence fires on LINK chips and only link chips
+ok 361 - t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY
+ok 362 - t2: an unknown element type renders a VISIBLE ux-unknown NAMING the type
+ok 363 - t2: a malformed element, a missing text and a non-array child list each degrade IN PLACE
+ok 364 - t2: a non-array body yields an empty card rather than throwing
+ok 365 - t2: every element is created with createElement and every string written without parsing
+ok 366 - t2: hostile text renders character-for-character and creates no element and no attribute
+ok 367 - t2: no attribute value anywhere is built from record text
+ok 368 - t2: the renderer emits NO node/edge construct — the uxDefinitionToIr regression guard
+ok 369 - t2 PARITY: the daemon tree and the client tree are structurally IDENTICAL over every shared fixture
+ok 370 - t2 PARITY POSITIVE CONTROL: a re-nested variant makes the structural diff FAIL
+ok 371 - t2 PARITY of vocabulary: every ux-* class the client emits is one the daemon’s stylesheet defines
+ok 372 - t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles
+ok 373 - t2 PARITY of degradation: the client renders ux-unknown for the same inputs the daemon does
+ok 374 - t2 PARITY, the ONE stated asymmetry: the daemon THROWS on a null element, the client degrades
+ok 375 - t2 THEME: the ux CSS fragment carries NO literal colour and no var() that can resolve to nothing
+ok 376 - t2: DOCS_UX_SOURCE contains no markup sink, scanned with comments stripped first
+ok 377 - t2: the emitted shell still contains EXACTLY ONE .innerHTML= after a FIFTH source string joins
+ok 378 - t2: ALL FIVE source strings parse together in one scope — the dgEl-collision guard, extended
+ok 379 - t2: the FULL emitted script parses — including the bootstrap consts the five strings share scope with
+ok 380 - t3/t7: every committed S004 evidence artefact exists at the path its commit claims
+ok 381 - t4: the bound is a SINGLE named constant with no second hard-coded copy
+ok 382 - t4: the chosen value is strictly greater than the plan floor AND than the measured real maximum
+ok 383 - t4: EVERY one of the four real records renders UNTRUNCATED — the bound never fires on authored content
+ok 384 - t4: a synthetic over-deep structure TRIPS the guard, names depth as the reason, and TERMINATES
+ok 385 - t4: a CYCLIC structure terminates — the case that would hang without a bound
+ok 386 - t4 MUTATION: removing the bound makes the pathological case diverge
+ok 387 - t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, across all FOUR diagram refs
+ok 388 - t5: a companions array of DIAGRAM refs only yields NO ux ref
+ok 389 - t5: the three sc4 states come back correctly from the factory in isolation
+ok 390 - t5: `body: []` and a malformed record are treated as ABSENT, not as a broken card
+ok 391 - t5: a record with NO ref still renders — the record gates content, the ref gates label and link
+ok 392 - t5: the label comes from the REF, never hard-coded per call
+ok 393 - t5: ac3’s dominant path is ZERO DOM ACTIVITY — the absent gate returns before anything is created
+ok 394 - t5: a renderer throw degrades to the stated failure rather than escaping the factory
+ok 395 - t5: the bound is PASSED IN, not re-declared — still one named constant after the factory lands
+ok 396 - t5/t6: the factory is inlined and called at EXACTLY ONE site
+ok 397 - t6 GATE: the four-combination table, driven through the SHIPPED bootstrap
+ok 398 - t6: ac3’s dominant path is ZERO DOM ACTIVITY from the experience path
+ok 399 - t6: `body: []` and a malformed record are ABSENT through the real bootstrap
+ok 400 - t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to what S003 renders
+ok 401 - t6: the two slots are PEERS — diagram first, experience second, in the emitted markup
+ok 402 - t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none
+ok 403 - t6: a forced throw in the experience slot build leaves SIX other surfaces intact — including the diagram
+ok 404 - t6: a resolvable anchor places the slot beside its heading; a stale one falls back rather than dropping it
+ok 405 - t6: a DIGIT-LEADING anchor slug places the EXPERIENCE slot without throwing
+ok 406 - t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented
+ok 407 - t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity
+ok 408 - t3: deriveSectionIndex returns anchors in DOCUMENT ORDER with level set to the ATX depth
+ok 409 - t3: two identically-titled headings get DISTINCT slugs via an appended ordinal and NEITHER is dropped
+ok 410 - t3: a `\#` line inside a FENCED CODE BLOCK is not a heading — the phantom-section guard
+ok 411 - t3: a fence is not closed by a DIFFERENT delimiter or a shorter run
+ok 412 - t3: markdown with NO headings yields an empty anchors array
+ok 413 - t3: an EMPTY-STRING body yields an empty anchors array
+ok 414 - t3: a PUNCTUATION-ONLY heading still yields a stable NON-EMPTY slug
+ok 415 - t3: deriveSectionIndex is DETERMINISTIC across repeated calls on the same markdown
+ok 416 - t3: a SectionResolver resolves a known ofSectionId to that section's slug
+ok 417 - t3: a SectionResolver returns undefined rather than THROWING for an unknown ofSectionId
+ok 418 - t3: ONE IDENTITY — the slug deriveSectionIndex emits EQUALS the string the resolver returns for the same section
+ok 419 - t3: module purity — the sc3 module is vscode-free and imports no DOM type
+ok 420 - S006 governor: beginTurn snapshots; auto observe renders visualize-only (review:false) + no tracking
+ok 421 - S006 governor: review decide(reject) restores the pre-turn baseline; decide(accept) keeps disk
+ok 422 - S006 governor: same path observed twice keeps the FIRST baseline (revert = true pre-turn)
+ok 423 - S006 governor: a NEW file (no baseline) renders all-additions; reject removes it
+ok 424 - S006 governor: non-git -> no-baseline visualize-only; reject is a no-op with a note, never throws
+ok 425 - S006 governor: computes its own diff from before/after (provider-agnostic; independent of sc2)
+ok 426 - S006 governor: diffView=editor routes to showEditor (no chat render)
+ok 427 - S006 governor: a stale/unknown edit-decision is a no-op
+ok 428 - S006 defaultComputeDiff: unchanged content yields all-context lines
+ok 429 - S006 governor: a late observe from a SUPERSEDED turn does not render into the new turn (cross-turn guard)
+ok 430 - the adapter spawns the CLI directly via node:child_process (k1)
+ok 431 - the exec path never reaches the daemon IPC (k1: extension-managed, bypasses daemon)
+ok 432 - the exec path makes no direct cloud REST call (k2: own-CLI-OAuth only)
+ok 433 - the adapter is vscode-free (import-scan)
+ok 434 - Ollama is never a registrable provider (k4)
+ok 435 - extension.ts gates the chat command on insrc.chat.enabled (config read)
+ok 436 - extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store
+ok 437 - the chat host + protocol + store modules are vscode-free
+ok 438 - package.json contributes the chat command + the insrc.chat.enabled config (default on)
+ok 439 - S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)
+ok 440 - S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams
+ok 441 - S006: the edit-governor module is vscode-free
+ok 442 - group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)
+ok 443 - group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter
+ok 444 - group-lock: the module is vscode-free
+ok 445 - S007: package.json contributes the insrc.chat.docsReview command
+ok 446 - S007: extension.ts wires the docs-review host inside the chat gate over the shared client
+ok 447 - S007: the docs-review host + client modules are vscode-free
+ok 448 - editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container
+ok 449 - editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix
+ok 450 - editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact
+ok 451 - S006 git-baseline: a TRACKED file resolves via `show <ref>:./<rel>` (cwd-relative; subdir-safe)
+ok 452 - S006 git-baseline: an UNTRACKED-but-existing file is captured at snapshot -> read returns its content (reject restores, not deletes)
+ok 453 - S006 git-baseline: a genuinely NEW file (not tracked, not captured) reads undefined -> reject removes it
+ok 454 - S006 git-baseline: snapshot uses the stash sha when non-empty, else HEAD; available reflects rev-parse
+ok 455 - isChatTabInput: true for the host-prefixed runtime form and the bare view type
+ok 456 - isChatTabInput: false for other webviews, near-misses, and non-webview inputs
+ok 457 - locks once on the immediate attempt when the panel is active and the chat is the active tab
+ok 458 - view-state event first with a non-chat tab does not lock; a later tab change locks
+ok 459 - tab change first while the panel is not active does not lock; a later view-state change locks
+ok 460 - a non-active restored panel does not lock at attach and locks on its first activation
+ok 461 - does not lock while another webview is the active tab, even though the panel reports active
+ok 462 - never locks while disabled; locks at the next event after the setting is turned on
+ok 463 - events that land while the command is still in flight do not issue it again
+ok 464 - a panel disposed before locking disposes both subscriptions and never locks
+ok 465 - a rejecting lock command is reported via warn, does not throw, and is not retried
+ok 466 - a synchronously throwing lock command is reported via warn, does not throw, and is not retried
+ok 467 - a throwing tab subscription is reported via warn, does not throw, and leaves no listener behind
+ok 468 - a throwing enabled() is reported via warn and a later event retries and locks
+ok 469 - a throwing activeTabInput() is reported via warn and a later event retries and locks
+ok 470 - live: a real claude turn yields a terminal sc2 event # SKIP
+ok 471 - live: a real codex turn yields a terminal sc2 event # SKIP
+ok 472 - live: claude review mode surfaces an approval-request the host can answer via decide() # SKIP
+ok 473 - live: claude auto mode runs a tool prompt without blocking (bypass flag accepted) # SKIP
+ok 474 - markerFor maps every sc2 status phase to the right class + label
+ok 475 - markerFor(tool-call): bare ev.tool with no mcp, `${server} · ${name}` with mcp (ac2)
+ok 476 - markerFor: file-edit/done(ok true+false)/error map to the right class + label
+ok 477 - markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)
+ok 478 - S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)
+ok 479 - S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)
+ok 480 - S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)
+ok 481 - S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)
+ok 482 - every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems
+ok 483 - parity: eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample (drift fails build)
+ok 484 - markerWebviewSource() is CSP-safe: only the five marker classes, no import/remote/asWebviewUri/vscode
+ok 485 - mock round-trip: each mock's <style> equals renderTerminalStyle(terminalTheme) byte-for-byte
+ok 486 - mock files are up to date with the generator (regenerating produces no diff)
+ok 487 - mock coverage: exactly five surfaces, each referencing its surfaceClass root class
+ok 488 - VS-Code-webview-only: mock files reference no remote origin / asWebviewUri (ac2)
+ok 489 - anti-chat-bubble: mock markup uses the terminal vocabulary and no bubble constructs (ac1)
+ok 490 - design-tokens.ts is vscode-free (source scan)
+ok 491 - WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)
+ok 492 - a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field
+ok 493 - every existing WebviewToHost message still constructs with its original shape (no drift, k2)
+ok 494 - S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)
+ok 495 - S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)
+ok 496 - S004 (ux polish): a selection-decision message typechecks with requestId + selected ids
+ok 497 - S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode
+ok 498 - renderRow dispatches to a registered renderer for its kind
+ok 499 - renderRow falls back to line() for an unmapped kind (incl. the reserved 'approval-request')
+ok 500 - the fallback renderer applies the vm cssClass (byte-identical to line(s,cls))
+ok 501 - a renderer that throws is caught and the row falls back to line() (per-row isolation)
+ok 502 - collapsible: default-collapsed wraps with the collapsed class + a ▸ icon-only chevron
+ok 503 - collapsible: clicking the chevron toggles collapsed<->expanded and swaps ▸/▾
+ok 504 - collapsible: defaultCollapsed=false starts expanded with a ▾ chevron
+ok 505 - renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked
+ok 506 - RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview
+ok 507 - toViewModel maps transcript rows: user/assistant/marker to the right kind + role
+ok 508 - toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)
+ok 509 - toViewModel is total: an unrecognised event maps to a fallback row
+ok 510 - parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)
+ok 511 - integration: an assistant multi-step turn renders each step's actual text (ac2)
+ok 512 - integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)
+ok 513 - the tool-command renderer never wraps its content in the collapse primitive (k6 d)
+ok 514 - lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row
+ok 515 - lc1: distinct keys render distinct rows (two identical prompts -> two rows)
+ok 516 - lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)
+ok 517 - appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)
+ok 518 - S003 ac1: the user and assistant-text renderers emit distinct role tones
+ok 519 - S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not
+ok 520 - S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse
+ok 521 - S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)
+ok 522 - S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML
+ok 523 - S001 (bugfix): plain prose renders as a paragraph (marked), text preserved
+ok 524 - S001 (bugfix): malformed JSON does not throw — it renders as markdown text
+ok 525 - S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)
+ok 526 - S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption
+ok 527 - S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)
+ok 528 - S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output
+ok 529 - S001 (ux polish): a command-less tool-result renders no command line but still collapses the output
+ok 530 - S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines
+ok 531 - S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line
+ok 532 - S001 (ux polish): a short assistant row still renders in full, uncollapsed
+ok 533 - ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows
+ok 534 - S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent
+ok 535 - S004 t6: card buttons invoke the registered decision sink with (requestId, decision)
+ok 536 - S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element
+ok 537 - S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element
+ok 538 - S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)
+ok 539 - S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)
+ok 540 - S003 t1: a rejected permission-outcome reuses the red deny tint
+ok 541 - S004 t6: an approval card with no decision sink registered does not throw on click
+ok 542 - S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes
+ok 543 - S001 (bugfix): a table-only response still renders as a table (marked GFM)
+ok 544 - S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)
+ok 545 - S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)
+ok 546 - S004 (ux polish): the selection-request renderer draws radio controls for single-select
+ok 547 - S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select
+ok 548 - S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id
+ok 549 - S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)
+ok 550 - S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing
+ok 551 - S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable
+ok 552 - S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm
+ok 553 - S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels
+ok 554 - S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface
+ok 555 - ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE
+ok 556 - ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row
+ok 557 - ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row
+ok 558 - ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline
+ok 559 - ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command
+ok 560 - ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row
+ok 561 - ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone
+ok 562 - ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream
+ok 563 - ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it
+ok 564 - ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns
+ok 565 - draft(): an in-memory session NOT persisted until saved (no empty chats in history)
+ok 566 - round-trip: create/append/save then get/list reflect it
+ok 567 - corrupt/missing entry degrades to undefined / [] (no throw)
+ok 568 - append to a missing session is a no-op (never throws)
+ok 569 - k3: writes go ONLY to the injected memento, under the insrc.chat.* namespace
+ok 570 - list sorts by updatedAt descending
+ok 571 - S005: save() with maxSessions=N keeps at most N; oldest evicted, blob gone
+ok 572 - S005: eviction never removes the id being saved / active session even when oldest
+ok 573 - S005: unset maxSessions preserves the unbounded S003 behaviour
+ok 574 - S005: an updated (first-prompt) title round-trips through get()/list()
+ok 575 - S005: maxSessions <= 0 is treated as unbounded (never wipes the active session)
+ok 576 - S008: a marker row cssClass round-trips through append/save -> get() (ac2)
+ok 577 - S008: an older session whose marker rows lack cssClass still validates + restores unchanged (ac3, no migration)
+ok 578 - S008: user/assistant rows never carry a cssClass
+ok 579 - S001 (ux polish): a tool-result row (command + output) round-trips through the memento store intact
+ok 580 - S001 (ux polish): a command-less tool-result row round-trips (command absent) in the in-memory store
+ok 581 - S001 (ux polish): a tool-result row does not disturb a mixed transcript replay (order + other rows intact)
+ok 582 - S003 (ux polish): a permission-outcome row (toolName + decision) round-trips through the memento store intact
+ok 583 - S003 (ux polish): a rejected permission-outcome round-trips through the in-memory store
+ok 584 - S003 (ux polish): a permission-outcome row does not disturb a mixed transcript replay (order intact)
+ok 585 - S004 (ux polish): a selection-outcome row (chosen labels) round-trips through the memento store intact
+ok 586 - S004 (ux polish): a single-choice selection-outcome round-trips through the in-memory store
+ok 587 - S004 (ux polish): a selection-outcome row does not disturb a mixed transcript replay (order intact)
+ok 588 - S006: editMode defaults to auto on create and a review update round-trips through save()/get()
+ok 589 - clampSessionTitle: a name longer than 32 chars -> 32 chars + a trailing ellipsis (ac4)
+ok 590 - clampSessionTitle: a name of exactly 32 chars is unchanged (no ellipsis)
+ok 591 - clampSessionTitle: a short name is unchanged
+ok 592 - parity: eval(clampSessionTitleWebviewSource()) equals clampSessionTitle for every sample (drift fails build)
+ok 593 - clampSessionTitleWebviewSource() is CSP-safe: no import/remote/vscode
+ok 594 - TURN_EVENT_KINDS reserves 'approval-request' alongside every prior kind (additive)
+ok 595 - ToolCallEvent accepts an optional command; a command-less tool-call is still valid (additive)
+ok 596 - every existing TurnEvent kind still constructs with its original shape (no shape drift, k2)
+ok 597 - S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved kind + correlation fields
+ok 598 - S001 (bugfix): ApprovalRequestEvent admits an optional command field; other kinds unaffected
+ok 599 - S001 (ux polish): 'tool-result' is reserved in TURN_EVENT_KINDS alongside every prior kind (additive)
+ok 600 - S001 (ux polish): ToolResultEvent constructs with output + optional command/exitCode
+ok 601 - declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)
+not ok 602 - each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'
+ok 603 - applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey
+ok 604 - applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason
+ok 605 - applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot
+ok 606 - pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)
+ok 607 - pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing
+ok 608 - per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath
+ok 609 - the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show
+ok 610 - the per-role key-map + engine + gateway modules import no 'vscode'
+ok 611 - the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)
+ok 612 - buildPerRoleKeyMap returns one entry per taxonomy role with the right shape
+ok 613 - a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)
+ok 614 - the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision
+ok 615 - declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)
+ok 616 - each per-role key is a machine-scoped enum with default = the role's defaultTier
+ok 617 - no sc8 config core module imports 'vscode' (only extension.ts may)
+ok 618 - the ConfigGateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)
+ok 619 - extension.ts wires the activation pull + the onDidChangeConfiguration('insrc') listener to applyChanges
+ok 620 - pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path
+ok 621 - pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing
+ok 622 - pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op
+ok 623 - pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)
+ok 624 - applyChanges on a valid change maps native key -> path and writes exactly once
+ok 625 - applyChanges rejects an invalid enum value without calling writeKey and reports a reason
+ok 626 - applyChanges rejects a wrong-typed number without writing
+ok 627 - applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot
+ok 628 - applyChanges on a writeKey rejection reports a rejected write without throwing
+ok 629 - applyChanges ignores an unknown native key (drift-safe) — no write, no notify
+ok 630 - applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op
+ok 631 - applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value
+ok 632 - applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot
+ok 633 - applyChanges on a daemon-unreachable write (rpc reject) reverts and never throws
+ok 634 - the revert is a loop-suppressed idempotent no-op: re-applying the reverted value writes nothing
+ok 635 - a rejected key with NO last-synced value reverts to option.default and pre-sets the snapshot (no unintended write)
+ok 636 - the revert's own settings.write failure is swallowed (applyChanges never throws)
+ok 637 - pullFromDaemon reconciles: it republishes the daemon value over a stale local value + re-captures the snapshot
+ok 638 - a Refresh (pullFromDaemon) while the daemon is unreachable notifies, changes nothing, and does not throw
+ok 639 - package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands
+ok 640 - the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon
+ok 641 - insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later story)
+ok 642 - the config engine still imports no vscode and calls only config.catalog/config.write/config.show
+ok 643 - the bundled installer asset byte-matches scripts/insrc-daemon-install.sh (no drift)
+ok 644 - the asset is produced by a repeatable copy step, not a one-off manual copy
+ok 645 - the five daemon commands are declared in contributes.commands so they are Command-Palette reachable (k6)
+ok 646 - extension.ts wires the daemon controller (real runner + DaemonPaths from extensionPath) + the Install offer
+ok 647 - registers exactly the five insrc.daemon.* commands
+ok 648 - the install command asks sc4 and calls install() ONLY on accepted
+ok 649 - each lifecycle command runs the action (no gate) and pushes the resulting state into sc2
+ok 650 - a failing action pushes errored + the mapped message into the status surface
+ok 651 - run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0
+ok 652 - run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws
+ok 653 - run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning
+ok 654 - install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason
+ok 655 - install() with a missing bundled installer returns errored/reinstall WITHOUT spawning
+ok 656 - isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws
+ok 657 - source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+ok 658 - startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'Update'
+ok 659 - startup-check drift: Dismiss (and closed→undefined) does NOT call update()
+ok 660 - skip paths: unreachable / installedCommit==="" / up-to-date / ls-remote fail → no notify, no update
+ok 661 - self-update: current!==lastSeen + drift → update() with NO prompt (notify-after), setLastSeen recorded
+ok 662 - first-ever activation (lastSeen undefined) is treated as self-update when there is drift
+ok 663 - self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)
+ok 664 - an undeterminable current version ("") falls back to the prompt path, never auto-updates
+ok 665 - reconnect-and-confirm success: updateOutcome().state==="succeeded" → success notify
+ok 666 - reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2
+ok 667 - a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides
+ok 668 - failure: update() rejects → exactly ONE failure notify with the raw error, no retry
+ok 669 - failure: updateOutcome().state==="failed" (fresh) → one failure notify carrying the raw error
+ok 670 - failure: commit never advances within the budget → one failure notify, no second update()
+ok 671 - launched:false → a single failure notify, no confirm loop
+ok 672 - never-throws: a throwing seam is swallowed; runDaemonFreshnessCheck resolves; setLastSeen still runs
+ok 673 - setLastSeen(current) is recorded on the skip path too (self-update fires once)
+ok 674 - post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action
+ok 675 - post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once
+ok 676 - post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()
+ok 677 - post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes
+ok 678 - post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves
+ok 679 - post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)
+ok 680 - post-update nudge: NO nudge on a no-op update (already current) or a failed update
+ok 681 - extension.ts fires runDaemonFreshnessCheck WITHOUT await (fire-and-forget)
+ok 682 - extension.ts wires the notify seam to showInformationMessage(message, {}, ...actions) (no modal, k7)
+ok 683 - extension.ts wires the versionState seam over globalState + packageJSON.version
+ok 684 - extension.ts wires gitLsRemote to a child_process git ls-remote (no pull, k1)
+ok 685 - extension.ts consumes the daemon-owned sc1 IPC (client), never a controller.run('update') shell-out (k2)
+ok 686 - extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)
+ok 687 - the new globalState key constant is defined and referenced for lastSeen persistence
+ok 688 - extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces
+ok 689 - the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist
+ok 690 - contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)
+ok 691 - sync-assets bundles the canonical steering block so the steering body ships with the extension
+ok 692 - detectPresent: by-extension-id → getExtension; by-editor-env → appName/uriScheme; never throws (indeterminate → false)
+ok 693 - wire writes BOTH the mcpServers.insrc entry + the steering block; skips the mcp entry (steering only) when the launch target is absent
+ok 694 - unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)
+ok 695 - wire-then-unwire when insrc CREATED the files leaves an empty mcpServers + empty steering (documented reversibility edge, matches the JetBrains reference)
+ok 696 - AiHostRegistry.detectPresent returns only present adapters and omits a throwing one; adapters() returns the full set
+ok 697 - createHostAdapter builds an adapter from a data-only HostSpec (ac3): a new HostSpec plugs in with no existing-adapter change
+ok 698 - registerHostCommands registers the insrc.hosts.wire command into the registry
+ok 699 - the wire command asks ONE combined consent (items = detected displayNames) and wires NONE until accepted
+ok 700 - on accepted every detected adapter.wire() runs; a failing adapter does not abort the others; the outcome is pushed to sc2
+ok 701 - no supported host present → the command sets a "no hosts detected" status and wires nothing
+ok 702 - source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ shared local modules) — no daemon internals/indexer/storage, no cloud/HTTP (k5)
+ok 703 - writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent
+ok 704 - writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)
+ok 705 - removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent
+ok 706 - SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op
+ok 707 - SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist
+ok 708 - both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)
+ok 709 - composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)
+ok 710 - happy path: default core provider -> lists cli-claude models, picking one writes models.tiers.core.model once
+ok 711 - dropdown-only (k4): the model items are exactly the daemon list (+ Refresh), no free-text entry
+ok 712 - available:false -> no-models + Refresh, NO write (saved model untouched)
+ok 713 - Refresh re-invokes listModels then a model can be picked + written
+ok 714 - available:true + models:[] -> same no-models + Refresh, no write
+ok 715 - saved model PRESENT in the list -> marked (current), not duplicated; re-picking it is an idempotent no-op
+ok 716 - saved model ABSENT from the list -> a non-selectable (current, not in catalog) entry; picking a real model writes the new id
+ok 717 - picking the (current, not in catalog) entry is a no-op (non-selectable), no write
+ok 718 - provider changed mid-flow -> model cleared, listModels re-queried for the NEW provider, runner + model both written
+ok 719 - a tier runner outside the enum -> unrecognised notify + provider-selection offered; the bad value never reaches listModels
+ok 720 - listModels rejection (daemon unreachable) -> notify, treated as empty, no write, no throw
+ok 721 - catalog() rejection -> notify + clean abort (no list, no write, no throw)
+ok 722 - writeKeyPath refusal ({ok:false, reason}) -> the reason is surfaced, no throw
+ok 723 - writeKeyPath REJECTION (daemon down at write time) -> notify, no throw (never-throw guard, HIGH)
+ok 724 - provider switch: runner write OK then model write REFUSES -> the partial state is surfaced (MED)
+ok 725 - an unconfigured default model (no override) that is not in the list is NOT flagged current-not-in-catalog (LOW)
+ok 726 - a runner-write refusal on a provider switch aborts before the model write
+ok 727 - cancel at the tier step -> clean no-op (no catalog read, no list, no write)
+ok 728 - cancel at the provider step -> no list, no write
+ok 729 - cancel at the model step -> no write
+ok 730 - source-scan: model-tier-picker.ts imports no vscode and no cloud/HTTP client
+ok 731 - extension.ts calls runOnboarding exactly ONCE (guarded fire-and-forget) and NO LONGER fires the three separate offer IIFEs
+ok 732 - package.json declares scripts["vscode:uninstall"] = "node ./out/uninstall.js" (the ac3 hook)
+ok 733 - the S002/S003/S004 durable commands remain in contributes.commands (subset check, k6)
+ok 734 - source-scan: vscode-plugin/src/onboarding/ imports only node builtins + the shipped daemon/hosts/workspace command modules + the s1 surfaces (k5)
+ok 735 - runOnboarding awaits the three offers IN ORDER install->register->wire, then markOnboarded(root)
+ok 736 - runOnboarding no-ops (no offer runs, no prompt) when the workspace is already onboarded
+ok 737 - a step that internally no-ops is silently skipped while the needed steps still run
+ok 738 - one step throwing does NOT abort the sequence; the later steps still run; runOnboarding never throws
+ok 739 - no workspace folder open -> register is skipped and markOnboarded is NOT set, while global install/wire still run
+ok 740 - an accepted-but-register-FAILS first run does NOT mark onboarded (retryable) — a transient failure never permanently suppresses the register prompt
+ok 741 - a DECLINED register (persisted dismissal) DOES settle the workspace as onboarded (no infinite re-prompt)
+ok 742 - each step keeps its OWN sc4 consent (no mega-consent): declining install still offers register + wire (k4)
+ok 743 - status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)
+ok 744 - status() rejects GatewayReadError when daemon.status fails
+ok 745 - registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)
+ok 746 - mcpClients() tolerates a debug-status payload with no clients (empty view, not an error)
+ok 747 - workflowChain() returns empty rows when artifactsRoot is undefined (valid empty state)
+ok 748 - workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError
+ok 749 - scanOrphans() maps the injected scan and rejects GatewayReadError on failure (and never kills)
+ok 750 - source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)
+ok 751 - renderDebugTab: lists gateway.mcpClients() host/wired rows; empty client list renders an explicit empty-state (ac1)
+ok 752 - renderDebugTab: orphan list EXCLUDES the managed pid; managed-only scan -> empty orphan list, no Clean-up button
+ok 753 - renderDebugTab: the Clean-up button shows ONLY with >=1 non-managed orphan and posts {type:'action',action:'cleanupOrphans'}
+ok 754 - renderDebugTab: body includes an empty <pre id="insrc-log">; every mcp/orphan value escaped; a gateway rejection propagates
+ok 755 - createDebugTabController: onActivate arms exactly ONE logTail.follow -> postMessage appendLog per emit; returned dispose is idempotent
+ok 756 - createDebugTabController: a follow-arm throw is caught (never-throw) and degrades to no ticker
+ok 757 - action handler: >=1 non-managed orphan -> consent.ask; kill on 'accepted' with exactly those pids; kill NEVER on 'declined'/'dismissed' (k4)
+ok 758 - action handler: managed pid filtered before prompting; zero non-managed orphans -> NO prompt, NO kill
+ok 759 - action handler: any action !== 'cleanupOrphans' is a no-op (no scan, no consent, no kill)
+ok 760 - source-scan: debug-renderer.ts imports no vscode, no cloud
+ok 761 - source-scan: the sc9 types amendment is ADDITIVE — new S006 members added, no S004/S005 member removed
+ok 762 - renderDaemonTab renders state + detail (ac1); a missing detail renders just the state
+ok 763 - renderWorkflowsTab groups rows by slug with stage+status lines (ac2)
+ok 764 - renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)
+ok 765 - both renderers HTML-escape every daemon-derived value (no <script> break-out)
+ok 766 - both renderers include a Refresh control that posts {type:'refresh'}
+ok 767 - a renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade
+ok 768 - source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP (only the injected gateway) — ac4/k2
+ok 769 - source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)
+ok 770 - follow emits the maxLines-bounded initial tail then follows appended lines on a watch event
+ok 771 - a rotation (active segment roll) is tracked — appends emit from the new segment without drop/duplicate
+ok 772 - dispose() is idempotent and guarantees no onLines fires after dispose
+ok 773 - a missing dir / readLines throw / watch throw is swallowed — follow never throws
+ok 774 - source-scan: log-tail.ts imports no vscode, no cloud, and NOT the daemon-side src/cli/services/debug.ts (k5)
+ok 775 - a live pid -> SIGTERM->SIGKILL 'forced'; a pid dying on SIGTERM -> 'terminated'
+ok 776 - the managed daemon pid is never signalled even if passed in ('not-found'); only non-managed pids targeted
+ok 777 - a per-pid kill throw is caught as 'error', the others proceed, the fn never throws
+ok 778 - non-POSIX no-ops/reports 'error'; readManagedPid parses to number|undefined and never throws
+ok 779 - source-scan: orphan-kill.ts imports no vscode, no cloud, and is NOT a gateway method
+ok 780 - parseOrphans keeps only insrc daemon/mcp lines, drops self, and captures pid + command
+ok 781 - parseOrphans ignores blank/malformed lines
+ok 782 - source-scan: process-scan.ts imports no vscode and never kills (read-only ps)
+ok 783 - renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none
+ok 784 - renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath].tiers (NOT raw JSON); missing entry -> all-defaults
+ok 785 - renderRepoConfig: an unregistered selected repo falls back to picker-only
+ok 786 - renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates
+ok 787 - createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)
+ok 788 - createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent
+ok 789 - createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws
+ok 790 - source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)
+ok 791 - source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed
+ok 792 - showStatusMenu offers EXACTLY two items and routes each choice to the matching panel (ac1)
+ok 793 - Cancel path: a dismissed menu (undefined) opens no panel (ac1)
+ok 794 - openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)
+ok 795 - Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws
+ok 796 - a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw
+ok 797 - single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh
+ok 798 - openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)
+ok 799 - S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)
+ok 800 - S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)
+ok 801 - S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)
+ok 802 - S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)
+ok 803 - S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op
+ok 804 - S005: a late switchTab/refresh after the panel was disposed is skipped
+ok 805 - S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script
+ok 806 - S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)
+ok 807 - S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)
+ok 808 - S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)
+ok 809 - S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent
+ok 810 - S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op
+ok 811 - S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)
+ok 812 - S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged
+ok 813 - S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged
+ok 814 - S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite
+ok 815 - S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)
+ok 816 - S007: the empty selectRepo option clears the selection back to picker-only
+ok 817 - S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught
+ok 818 - source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)
+ok 819 - StatusSurface renders each DaemonUiState and current() tracks the last snapshot
+ok 820 - CommandRegistry registers into the subscriptions sink and rejects a duplicate id
+ok 821 - ConsentGate maps the modal choice to accepted / declined / dismissed and has no side effect
+ok 822 - extension.ts constructs the WorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and wires registerWorkspaceCommands with the s1 surfaces
+ok 823 - the activation-time workspace register runs through the guarded runOnboarding sequence (S005 coalescing; S001 never-throws)
+ok 824 - contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)
+ok 825 - S004 sc9: extension.ts wires the status-bar click + both panels as first-class commands (ac1/ac3)
+ok 826 - S004 sc9: both panel commands are palette-reachable (k6) and the menu command is not
+ok 827 - S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge
+ok 828 - S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)
+ok 829 - S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway
+ok 830 - registerWorkspaceCommands registers the insrc.workspace.register command into the registry
+ok 831 - offerWorkspaceRegistration shows NO prompt when no root is open, when already registered, or when previously dismissed (lc1)
+ok 832 - on accepted offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set
+ok 833 - on declined/dismissed it calls markDismissed(root), NEVER registers, and writes nothing to the registry (k4)
+ok 834 - on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status
+ok 835 - the durable command offers even when previously dismissed (k6 — a dismissed prompt stays actionable)
+ok 836 - source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+ok 837 - state(root) returns registered:true iff a repo.list row path equals the normalized root; false otherwise
+ok 838 - state(root) returns registered:false (never throws) when repo.list rejects or returns a non-array
+ok 839 - state(root) normalizes both sides so a trailing-slash / "." difference still matches a registered row
+ok 840 - register(root) calls rpc(repo.add, { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }
+ok 841 - register(root) surfaces the error (does not mark registered) when repo.add rejects

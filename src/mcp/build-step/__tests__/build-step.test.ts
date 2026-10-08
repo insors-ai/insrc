@@ -1344,7 +1344,8 @@ test('validate runs the checks before the judge and overwrites testsPassed and t
 		assert.equal(verdict['testsPassed'], true);
 		assert.equal(verdict['typecheckClean'], true);
 		assert.equal(out['passed'], true);
-		assert.deepEqual(verdict['evidence'], PASSING_CHECKS);
+		// The evidence is the daemon's results, and now also names the Story's test record.
+		assert.deepEqual(verdict['evidence'], { ...PASSING_CHECKS, testRecord: 'docs/epics/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md' });
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });
@@ -1514,5 +1515,461 @@ test('implement and validate return merge-in-progress while a merge is uncommitt
 		git('commit', '-qm', 'merge upstream');
 		const after = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', repo }));
 		assert.equal(after['next'], 'implement', 'once the merge is committed the turn runs');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// The builder's mapping and the Story's test record at the validate turn
+// (LLD-9b4a74dc-S001, tasks t8 to t10)
+// ---------------------------------------------------------------------------
+
+const FILTER_TEST = 'src/a/__tests__/filter.test.ts';
+const OTHER_TEST = 'src/a/__tests__/other.test.ts';
+const T_UNIT = 'the filter narrows results by tag';
+const T_LIVE = 'the filter works against the running daemon';
+const TR_ROOT = 'docs/epics/tag-filtering-E20260718a3f4b8c9/S001';
+
+/** A plan-driven Story in a git repo: Task t1 names one unit and one live test
+ *  in prose, and two test files are tracked. */
+function mappedRepo(tests: readonly { level: string; name: string }[] = [{ level: 'unit', name: T_UNIT }, { level: 'live', name: T_LIVE }]): string {
+	const repo = mkRepo();
+	seedDef(repo);
+	seedLld(repo);
+	const json = join(artifactsDir(repo), `${planArtifactId(HASH, 's1')}.json`);
+	writeFileSync(json, JSON.stringify({
+		meta: { workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz' },
+		body: { tasks: [
+			{ id: 't1', title: 'Wire the filter', summary: 's', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['a'], derivedFrom: ['c1'], tests },
+			{ id: 't2', title: 'Another', summary: 's', size: 'S', order: 2, dependsOn: ['t1'], acceptanceChecks: ['a'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'the second task works' }] },
+		] },
+		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
+	}, null, 2));
+	approveArtifactByJsonPath(json);
+	for (const [rel, body] of [
+		[FILTER_TEST, "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\ntest('narrows by one tag', () => {});\ntest('narrows by two tags', () => {});\ntest('breaks on an empty tag', () => { assert.fail('boom'); });\n"],
+		[OTHER_TEST, "import { test } from 'node:test';\ntest('another case', () => {});\n"],
+	] as const) {
+		mkdirSync(dirname(join(repo, rel)), { recursive: true });
+		writeFileSync(join(repo, rel), body);
+	}
+	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+	git('init', '-q');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	git('add', '.');
+	git('commit', '-qm', 'baseline');
+	return repo;
+}
+
+/** Results as the real runner would give for a plan, every mapped case with `result`. */
+function resultsFor(plan: ValidationCheckPlan, result: 'pass' | 'fail' = 'pass'): ValidationCheckResults {
+	const namedTests = plan.namedTests.map(n => ({
+		name: n.name, ...(n.level !== undefined ? { level: n.level } : {}), source: n.source,
+		cases: n.cases.map(c => ({ ...c, result })), files: n.source === 'mapping' ? [] : [...n.files],
+		...(n.reported !== undefined ? { reported: n.reported } : {}),
+	}));
+	const ok = result === 'pass' && plan.unresolvedTests.length === 0;
+	return {
+		typecheck: PASSING_CHECKS.typecheck,
+		tests: {
+			ok, command: plan.testFiles.map(f => `run ${f}`).join('\n'), exitCode: ok ? 0 : 1, timedOut: false, durationMs: 5, outputTail: '',
+			files: plan.testFiles.map(file => ({ file, command: `run ${file}`, exitCode: result === 'pass' ? 0 : 1, timedOut: false, durationMs: 5, titles: plan.namedTests.flatMap(n => n.cases.filter(c => c.file === file).map(c => ({ title: c.title, depth: 0, result }))) })),
+			namedTests,
+		},
+	};
+}
+
+interface Turn { out: Record<string, unknown>; plans: ValidationCheckPlan[]; judged: number }
+/** One validate turn of Task t1 (or `target`), recording the plans the runner was given and the judge calls. */
+async function turn(repo: string, input: Record<string, unknown>, opts: { result?: 'pass' | 'fail'; judge?: () => unknown; runner?: (repo: string, plan: ValidationCheckPlan) => Promise<ValidationCheckResults> } = {}): Promise<Turn> {
+	const plans: ValidationCheckPlan[] = [];
+	let judged = 0;
+	_setBuildValidateProviderForTests({
+		async runReviewSession<T>() { judged += 1; return (opts.judge !== undefined ? opts.judge() : judgeVerdict({ passed: true })) as T; },
+	});
+	try {
+		const out = await withChecks(
+			async (r, plan) => { plans.push(plan); return opts.runner !== undefined ? opts.runner(r, plan) : resultsFor(plan, opts.result ?? 'pass'); },
+			async () => outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo, ...input } as never)),
+		);
+		return { out, plans, judged };
+	} finally { _setBuildValidateProviderForTests(undefined); }
+}
+
+const testsJson = (repo: string): string => join(artifactsDir(repo), `TESTS-${HASH}-s1.json`);
+const readTests = (repo: string): { meta: Record<string, unknown>; body: { tasks: { taskId: string; commit?: string; ranAt: string; testsPassed: boolean; tests: { name: string; source: string; cases: { file: string; title: string; result: string }[]; reported?: unknown }[] }[] } } =>
+	JSON.parse(readFileSync(testsJson(repo), 'utf8')) as never;
+const GOOD_MAPPING = [
+	{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 'narrows by one tag' }, { file: FILTER_TEST, title: 'narrows by two tags' }] },
+	{ name: T_LIVE, reported: { result: 'pass', evidence: 'run 12, in the build record' } },
+];
+
+test("a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record", async () => {
+	const repo = mappedRepo();
+	try {
+		const { out, plans, judged } = await turn(repo, { tests: [
+			{ name: 'not a test of this Task', cases: [{ file: FILTER_TEST, title: 't' }] },
+			{ name: T_UNIT, cases: [{ file: 'src/a/__tests__/untracked.test.ts', title: 't' }] },
+			{ name: T_UNIT, reported: { result: 'pass', evidence: 'trust me' } },
+		] });
+		assert.equal(out['next'], 'error');
+		const error = out['error'] as { code: string; message: string };
+		assert.equal(error.code, 'invalid-test-mapping');
+		// Every fault is listed.
+		assert.match(error.message, /'not a test of this Task' is not a test this Task names/);
+		assert.match(error.message, /'src\/a\/__tests__\/untracked\.test\.ts' is not a tracked '\.test\.ts' file/);
+		assert.match(error.message, /'the filter narrows results by tag' is named more than once/);
+		assert.match(error.message, /only for a 'live' or 'smoke' test/);
+		assert.deepEqual([plans.length, judged], [0, 0], 'no check was run and no judge was called');
+		assert.equal(existsSync(testsJson(repo)), false);
+		assert.equal(buildRecordExists(repo), false);
+		assert.equal(existsSync(join(repo, 'docs')), false, 'no document was written either');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)', async () => {
+	const repo = mappedRepo();
+	try {
+		// With no mapping at all, the prose names resolve to nothing.
+		const bare = await turn(repo, {});
+		assert.deepEqual(bare.plans[0]!.unresolvedTests, [T_UNIT, T_LIVE]);
+		assert.deepEqual(bare.plans[0]!.testFiles, []);
+		assert.equal((bare.out['verdict'] as Record<string, unknown>)['testsPassed'], false);
+
+		const first = await turn(repo, { tests: GOOD_MAPPING });
+		assert.deepEqual(first.plans[0]!.testFiles, [FILTER_TEST]);
+		assert.deepEqual(first.plans[0]!.unresolvedTests, []);
+		assert.equal((first.out['verdict'] as Record<string, unknown>)['testsPassed'], true);
+
+		// The second turn supplies nothing, and is planned from the stored mapping.
+		const second = await turn(repo, {});
+		assert.deepEqual(second.plans[0]!.namedTests, first.plans[0]!.namedTests);
+		assert.deepEqual(second.plans[0]!.testFiles, [FILTER_TEST]);
+		assert.deepEqual(second.plans[0]!.unresolvedTests, []);
+		assert.equal((second.out['verdict'] as Record<string, unknown>)['testsPassed'], true);
+		// Another Task of the Story has no stored mapping of its own.
+		const other = await turn(repo, { target: 's1/t2' });
+		assert.deepEqual(other.plans[0]!.unresolvedTests, ['the second task works']);
+		// A supplied mapping replaces the stored one.
+		const third = await turn(repo, { tests: [{ name: T_UNIT, cases: [{ file: OTHER_TEST, title: 'another case' }] }, GOOD_MAPPING[1]] });
+		assert.deepEqual(third.plans[0]!.testFiles, [OTHER_TEST]);
+		assert.deepEqual((await turn(repo, {})).plans[0]!.testFiles, [OTHER_TEST]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused', async () => {
+	const repo = mappedRepo([{ level: 'unit', name: T_UNIT }]);
+	// The REAL runner, with node standing in for npx: the result must come from a run.
+	const { runValidationChecks } = await import('../validation-checks.js');
+	const runner = (r: string, plan: ValidationCheckPlan): Promise<ValidationCheckResults> =>
+		runValidationChecks(r, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test', '--test-force-exit'] });
+	try {
+		const mapping = [{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 'narrows by one tag' }, { file: OTHER_TEST, title: 'another case' }] }];
+		const first = await turn(repo, { tests: mapping }, { runner });
+		assert.deepEqual(readTests(repo).body.tasks[0]!.tests[0]!.cases.map(c => c.result), ['pass', 'pass']);
+		// FILTER_TEST holds a failing test outside the named cases, so its file fails the check.
+		assert.equal((first.out['verdict'] as Record<string, unknown>)['testsPassed'], false);
+
+		// The second file is deleted and the deletion committed; the next turn supplies no mapping.
+		execFileSync('git', ['rm', '-q', OTHER_TEST], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'remove a test file'], { cwd: repo, stdio: 'ignore' });
+		const second = await turn(repo, {}, { runner });
+		assert.equal(second.out['next'], 'done', 'the turn is not refused: the builder supplied nothing wrong on it');
+		assert.equal(second.judged, 1);
+		const cases = readTests(repo).body.tasks[0]!.tests[0]!.cases;
+		assert.deepEqual(cases.map(c => [c.file, c.result]), [[FILTER_TEST, 'pass'], [OTHER_TEST, 'not found']]);
+		assert.equal((second.out['verdict'] as Record<string, unknown>)['testsPassed'], false);
+		// The same mapping SUPPLIED on a turn is refused, since the file is no longer tracked.
+		const supplied = await turn(repo, { tests: mapping }, { runner });
+		assert.equal((supplied.out['error'] as { code: string }).code, 'invalid-test-mapping');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test("the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails", async () => {
+	const repo = mappedRepo();
+	try {
+		const failing = await turn(repo, { tests: GOOD_MAPPING }, { result: 'fail', judge: () => judgeVerdict({ passed: true, testsPassed: true }) });
+		const verdict = failing.out['verdict'] as Record<string, unknown>;
+		assert.equal(verdict['testsPassed'], false);
+		assert.equal(failing.out['passed'], false);
+		assert.match(String(verdict['reason']), /the daemon's checks failed: tests/);
+		// The reported pass is recorded as reported, and the record's testsPassed is the gate's.
+		const task = readTests(repo).body.tasks[0]!;
+		assert.equal(task.testsPassed, false);
+		assert.deepEqual(task.tests[1]!.reported, { result: 'pass', evidence: 'run 12, in the build record' });
+		assert.deepEqual(task.tests[1]!.cases, []);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test("the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field", async () => {
+	const { buildInsrcMcpServerWithRegistry } = await import('../../server.js');
+	const { handleInsrcSchema } = await import('../../schema/handler.js');
+	const { z } = await import('zod');
+	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
+	const shape = z.object(schemaRegistry.get('insrc_build_step')!.rawShape);
+	const call = (tests: unknown) => shape.safeParse({ phase: 'validate', target: 's1/t1', tests });
+
+	assert.equal(call(GOOD_MAPPING).success, true);
+	assert.equal(call(undefined).success, true, 'the field is optional');
+	assert.equal(call([]).success, true);
+	// A key the shape does not have, on an entry, a case and a reported result.
+	assert.equal(call([{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 't' }], mutations: [] }]).success, false);
+	assert.equal(call([{ planTest: T_UNIT, cases: [{ file: FILTER_TEST, title: 't' }] }]).success, false);
+	assert.equal(call([{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: 't', line: 3 }] }]).success, false);
+	assert.equal(call([{ name: T_LIVE, reported: { result: 'pass', evidence: 'e', by: 'me' } }]).success, false);
+	assert.equal(call([{ name: T_LIVE, reported: { result: 'maybe', evidence: 'e' } }]).success, false);
+	assert.equal(call([{ name: T_UNIT, cases: [{ file: FILTER_TEST, title: '' }] }]).success, false);
+
+	const looked = handleInsrcSchema({ tool: 'insrc_build_step', phase: 'validate' }, schemaRegistry) as { schema: { properties: Record<string, { items?: { additionalProperties?: boolean; properties?: Record<string, unknown> } }> } };
+	const field = looked.schema.properties['tests']!;
+	assert.deepEqual(Object.keys(field.items!.properties!).sort(), ['cases', 'name', 'reported']);
+	assert.equal(field.items!.additionalProperties, false);
+});
+
+test("a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path", async () => {
+	const repo = mappedRepo();
+	try {
+		// The Story's work: one staged source file, so the change log has something real in it.
+		writeFileSync(join(repo, 'src', 'filter.ts'), 'export const f = 1;\n');
+		execFileSync('git', ['add', 'src/filter.ts'], { cwd: repo });
+		const { out } = await turn(repo, { tests: GOOD_MAPPING });
+		assert.equal(out['passed'], true);
+
+		// The test record: this Task's entry, case by case, with the commit and time of the run.
+		const rec = readTests(repo);
+		assert.deepEqual([rec.meta['workflow'], rec.meta['epicHash'], rec.meta['storyId'], rec.meta['standalone']], ['tests', HASH, 's1', undefined]);
+		const task = rec.body.tasks[0]!;
+		assert.equal(task.taskId, 't1');
+		assert.match(task.commit ?? '', /^[0-9a-f]{7,}$/);
+		assert.equal(task.testsPassed, true);
+		assert.deepEqual(task.tests.map(t => [t.name, t.source, t.cases.map(c => `${c.result} ${c.title}`)]), [
+			[T_UNIT, 'mapping', ['pass narrows by one tag', 'pass narrows by two tags']],
+			[T_LIVE, 'mapping', []],
+		]);
+		const testsMd = join(repo, TR_ROOT, 'TESTS.md');
+		assert.ok(existsSync(testsMd));
+		assert.match(readFileSync(testsMd, 'utf8'), /\| pass \| narrows by one tag \| `src\/a\/__tests__\/filter\.test\.ts` \|/);
+
+		// The build record links to it, and is filed beside it.
+		const build = readBuildRecord(repo);
+		assert.deepEqual(build.body['testRecord'], { md: `${TR_ROOT}/TESTS.md` });
+		const buildMd = join(repo, TR_ROOT, 'BUILD.md');
+		assert.match(readFileSync(buildMd, 'utf8'), /\*\*Tests:\*\* \[TESTS\.md\]\(TESTS\.md\)/);
+		// The change log holds the Story's work and neither record.
+		assert.deepEqual(changeFiles(build), ['src/filter.ts']);
+
+		// The verdict's evidence: the cases with their results, and the record's path.
+		const evidence = (out['verdict'] as { evidence: { testRecord?: string; tests: { namedTests: { name: string; cases: { result: string }[] }[] } } }).evidence;
+		assert.equal(evidence.testRecord, `${TR_ROOT}/TESTS.md`);
+		assert.deepEqual(evidence.tests.namedTests[0]!.cases.map(c => c.result), ['pass', 'pass']);
+
+		// Both records are committed, as they are after a Task in a real build. The
+		// next turn rewrites all four files, so they are dirty TRACKED files: left
+		// in, they would be the change log.
+		execFileSync('git', ['add', '.insrc', 'docs'], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'the records after t1', '--', '.insrc', 'docs'], { cwd: repo, stdio: 'ignore' });
+
+		// A second Task's turn adds its entry and leaves the first as it was.
+		const t1Before = JSON.stringify(readTests(repo).body.tasks[0]);
+		await turn(repo, { target: 's1/t2', tests: [{ name: 'the second task works', cases: [{ file: OTHER_TEST, title: 'another case' }] }] });
+		assert.deepEqual(readTests(repo).body.tasks.map(t => t.taskId), ['t1', 't2']);
+		assert.equal(JSON.stringify(readTests(repo).body.tasks[0]), t1Before);
+		const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).split('\n').filter(l => l.length > 0).map(l => l.slice(3)).sort();
+		assert.deepEqual(dirty, [`.insrc/artifacts/BUILD-${HASH}-s1.json`, `.insrc/artifacts/TESTS-${HASH}-s1.json`, `${TR_ROOT}/BUILD.md`, `${TR_ROOT}/TESTS.md`, 'src/filter.ts'].sort(),
+			'precondition: all four record files are dirty tracked files');
+		assert.deepEqual(changeFiles(readBuildRecord(repo)), ['src/filter.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test("when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)", async () => {
+	const { _setBuildValidateTestRecordWriterForTests, _setBuildValidateClockForTests } = await import('../phases/validate.js');
+	const failingWriter = (): never => { throw new Error('disk full'); };
+	// First turn: nothing on disk, and the write fails.
+	const first = mappedRepo();
+	try {
+		_setBuildValidateTestRecordWriterForTests(failingWriter);
+		const { out, judged } = await turn(first, { tests: GOOD_MAPPING });
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true, 'the verdict is what it would have been');
+		assert.equal(judged, 1);
+		const evidence = (out['verdict'] as { evidence: Record<string, unknown> }).evidence;
+		assert.match(String(evidence['testRecordNote']), /the test record was not written \(disk full\)/);
+		assert.equal(evidence['testRecord'], undefined);
+		assert.equal(existsSync(testsJson(first)), false);
+		assert.ok(!('testRecord' in readBuildRecord(first).body), 'no link to a record that does not exist');
+	} finally { _setBuildValidateTestRecordWriterForTests(undefined); rmSync(first, { recursive: true, force: true }); }
+
+	// Second turn: the first run is on disk, and the second run's write fails.
+	const second = mappedRepo();
+	try {
+		_setBuildValidateClockForTests(() => '2026-03-01T10:00:00.000Z');
+		await turn(second, { tests: GOOD_MAPPING });
+		const onDisk = readFileSync(testsJson(second), 'utf8');
+		_setBuildValidateClockForTests(() => '2026-03-02T10:00:00.000Z');
+		_setBuildValidateTestRecordWriterForTests(failingWriter);
+		const { out } = await turn(second, { tests: GOOD_MAPPING }, { result: 'fail' });
+		assert.equal(out['next'], 'done');
+		assert.equal((out['verdict'] as Record<string, unknown>)['testsPassed'], false, 'the verdict is from THIS run');
+		const evidence = (out['verdict'] as { evidence: Record<string, unknown> }).evidence;
+		assert.match(String(evidence['testRecordNote']), /still shows this Task's earlier run, with that run's commit and time/);
+		// The record on disk is the first run's, untouched, with its own time and result.
+		assert.equal(readFileSync(testsJson(second), 'utf8'), onDisk);
+		assert.deepEqual([readTests(second).body.tasks[0]!.ranAt, readTests(second).body.tasks[0]!.testsPassed], ['2026-03-01T10:00:00.000Z', true]);
+		// The build record still links to it: the link carries no results, so it is still true.
+		assert.deepEqual(readBuildRecord(second).body['testRecord'], { md: `${TR_ROOT}/TESTS.md` });
+		assert.deepEqual((readBuildRecord(second).body['tasks'] as { id: string; passed: boolean }[]), [{ id: 't1', passed: false }]);
+	} finally {
+		_setBuildValidateTestRecordWriterForTests(undefined);
+		_setBuildValidateClockForTests(undefined);
+		rmSync(second, { recursive: true, force: true });
+	}
+});
+
+test("when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)", async () => {
+	for (const [thrown, code] of [
+		[new ReviewSessionTimeoutError('too slow'), 'verdict-session-timeout'],
+		[new Error('no structured_output in the reply'), 'unparseable-verdict'],
+		[new Error('the CLI exited with 1'), 'verdict-session-failed'],
+	] as const) {
+		const repo = mappedRepo();
+		try {
+			const { out, plans } = await turn(repo, { tests: GOOD_MAPPING }, { result: 'fail', judge: () => { throw thrown; } });
+			assert.equal(out['next'], 'error');
+			assert.equal((out['error'] as { code: string }).code, code);
+			assert.equal(plans.length, 1, 'the checks ran');
+			// The test record is there, with this run's results and the supplied mapping.
+			const task = readTests(repo).body.tasks[0]!;
+			assert.equal(task.testsPassed, false);
+			assert.deepEqual(task.tests[0]!.cases.map(c => `${c.result} ${c.title}`), ['fail narrows by one tag', 'fail narrows by two tags']);
+			assert.ok(existsSync(join(repo, TR_ROOT, 'TESTS.md')));
+			// The build record is not written, as before.
+			assert.equal(buildRecordExists(repo), false);
+			// A second turn needs no mapping: it is planned from the stored one.
+			const again = await turn(repo, {});
+			assert.deepEqual(again.plans[0]!.testFiles, [FILTER_TEST]);
+		} finally { rmSync(repo, { recursive: true, force: true }); }
+	}
+	// A judge answer that is not a verdict at all ends the same way.
+	const repo = mappedRepo();
+	try {
+		const { out } = await turn(repo, { tests: GOOD_MAPPING }, { judge: () => ({ nonsense: true }) });
+		assert.equal((out['error'] as { code: string }).code, 'unparseable-verdict');
+		assert.ok(existsSync(testsJson(repo)));
+		assert.equal(buildRecordExists(repo), false);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// --- the two records are filed together on every route (task t10) -----------
+
+const DAY1 = '2026-03-01T23:50:00.000Z';
+const DAY2 = '2026-03-02T09:00:00.000Z';
+const folderOf = (p: string): string => dirname(p);
+/** Every TESTS.md / BUILD.md under docs/, repo-relative. */
+function recordDocs(repo: string): string[] {
+	const out: string[] = [];
+	const walk = (rel: string): void => {
+		if (!existsSync(join(repo, rel))) return;
+		for (const name of readdirSync(join(repo, rel))) {
+			const child = `${rel}/${name}`;
+			if (name === 'TESTS.md' || name === 'BUILD.md') out.push(child);
+			else if (!name.includes('.')) walk(child);
+		}
+	};
+	walk('docs');
+	return out.sort();
+}
+/** A standalone validate turn at a given time; `judge` may throw. */
+async function standaloneTurn(repo: string, at: string, standalone: Record<string, unknown>, judge?: () => unknown): Promise<Record<string, unknown>> {
+	const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
+	_setBuildValidateClockForTests(() => at);
+	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return (judge !== undefined ? judge() : judgeVerdict({ taskId: 's1', passed: true })) as T; } });
+	try {
+		return outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: standalone as never }));
+	} finally { _setBuildValidateProviderForTests(undefined); _setBuildValidateClockForTests(undefined); }
+}
+const TRIVIAL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'a guard' };
+const failJudge = (): never => { throw new Error('the CLI exited with 1'); };
+
+test("a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)", async () => {
+	// 1. Trivial, no implement turn: nothing anchors the folder but the records themselves.
+	const bare = mkRepo();
+	try {
+		const first = await standaloneTurn(bare, DAY1, TRIVIAL, failJudge);
+		assert.equal((first['error'] as { code: string }).code, 'verdict-session-failed');
+		assert.deepEqual(recordDocs(bare).map(p => p.split('/').pop()), ['TESTS.md'], 'the first turn wrote the test record and no build record');
+		const testsDoc = recordDocs(bare)[0]!;
+		assert.match(testsDoc, /^docs\/standalone\/[^/]*E20260301a3f4b8c9\/S001\/TESTS\.md$/);
+		const createdAt = readTests(bare).meta['createdAt'];
+		assert.equal(createdAt, DAY1);
+
+		const second = await standaloneTurn(bare, DAY2, TRIVIAL);
+		assert.equal(second['next'], 'done');
+		// One folder, dated by the first turn; nothing was written to a second one.
+		assert.deepEqual(recordDocs(bare), [`${folderOf(testsDoc)}/BUILD.md`, testsDoc]);
+		assert.equal(readTests(bare).meta['createdAt'], DAY1, "the test record's createdAt does not change");
+		assert.equal(readBuildRecord(bare).meta['createdAt'], DAY1, 'the build record took it');
+		assert.equal(readBuildRecord(bare).meta['standalone'], true);
+		assert.deepEqual(readBuildRecord(bare).body['testRecord'], { md: testsDoc });
+	} finally { rmSync(bare, { recursive: true, force: true }); }
+
+	// 2. Trivial, with the implement turn first: the build record it wrote is the anchor.
+	const implemented = mkRepo();
+	try {
+		const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
+		void _setBuildValidateClockForTests;
+		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1', repo: implemented, standalone: TRIVIAL as never }));
+		assert.equal(impl['next'], 'implement');
+		const anchored = String(readBuildRecord(implemented).meta['createdAt']);
+		const buildDoc = recordDocs(implemented)[0]!;
+		assert.match(buildDoc, /BUILD\.md$/);
+		// The validate turn is dated long after it.
+		await standaloneTurn(implemented, '2031-01-01T00:00:00.000Z', TRIVIAL);
+		assert.deepEqual(recordDocs(implemented), [buildDoc, `${folderOf(buildDoc)}/TESTS.md`]);
+		assert.equal(readBuildRecord(implemented).meta['createdAt'], anchored, "the build record's anchor is not moved by the test record");
+	} finally { rmSync(implemented, { recursive: true, force: true }); }
+
+	// 3. Small standalone: the test record carries the route flag before any build record exists ...
+	const small = mkRepo();
+	try {
+		seedStandaloneLldOnly(small);
+		const SMALL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+		await standaloneTurn(small, DAY1, SMALL, failJudge);
+		assert.equal(buildRecordExists(small), false);
+		assert.equal(readTests(small).meta['standalone'], true);
+		assert.deepEqual(recordDocs(small), ['docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		// ... and the first build record, written by the COMPLETION path, lands beside it.
+		const built = await ensureBuildRecordOnCompletion(small, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.ok(built !== undefined);
+		assert.deepEqual(recordDocs(small), ['docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/BUILD.md', 'docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+	} finally { rmSync(small, { recursive: true, force: true }); }
+
+	// 4. Trivial, no implement turn, first build record written by the completion path a day later.
+	const completed = mkRepo();
+	try {
+		await standaloneTurn(completed, DAY1, TRIVIAL, failJudge);
+		const testsDoc = recordDocs(completed)[0]!;
+		const built = await ensureBuildRecordOnCompletion(completed, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.ok(built !== undefined);
+		assert.deepEqual(recordDocs(completed), [`${folderOf(testsDoc)}/BUILD.md`, testsDoc]);
+		assert.equal(readBuildRecord(completed).meta['createdAt'], DAY1);
+	} finally { rmSync(completed, { recursive: true, force: true }); }
+});
+
+test('a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)', async () => {
+	const repo = mkRepo();
+	try {
+		// An Epic's Story: the definition head exists and does not say standalone.
+		seedDef(repo);
+		seedLld(repo);
+		const DECLARED = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+		// The judge fails first, so the test record is written with no build record to follow.
+		await standaloneTurn(repo, DAY1, DECLARED, failJudge);
+		assert.deepEqual(recordDocs(repo), ['docs/epics/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		assert.ok(!('standalone' in readTests(repo).meta), 'the declaration does not relabel an Epic\'s Story');
+
+		await standaloneTurn(repo, DAY2, DECLARED);
+		assert.deepEqual(recordDocs(repo), ['docs/epics/tag-filtering-E20260718a3f4b8c9/S001/BUILD.md', 'docs/epics/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		assert.notEqual(readBuildRecord(repo).meta['standalone'], true, 'and nothing is relabelled when the build record is seeded from it');
+		assert.ok(!existsSync(join(repo, 'docs', 'standalone')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -111,12 +111,32 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		planPath:         planMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
 		typecheckCmd:     TYPECHECK_CMD,
 		testCmd:          TEST_CMD,
+		judgeNamedTestsRule: JUDGE_NAMED_TESTS_RULE,
 	};
 }
 
 /** Render the implement-task prompt. `resolvedDecisions` fills the
  *  "## Resolved design decisions" section (empty until the open-question gate
  *  populates it in stage 3). */
+/** What the judge checks about the named tests the evidence lists (LLD-9b4a74dc-S001). */
+export const JUDGE_NAMED_TESTS_RULE =
+	'Where the results list **named tests**, check for each one that the test cases listed under it do exercise ' +
+	'what its name says: a case that passes but tests something else does not carry the named test. A result ' +
+	'marked **REPORTED BY THE BUILDER** was not run by the daemon: check that the evidence it points to exists ' +
+	'and shows that result, and fail the check if it does not. A named test with nothing run for it is not met.';
+
+/** What a standalone build with a design tells the validate turn about its tests
+ *  (LLD-9b4a74dc-S001): the mapping from the design's test subjects to test cases. */
+export const STANDALONE_MAPPING_RULE =
+	'When you submit the Story to the validation gate, pass `tests`: one entry per subject of the design\'s ' +
+	'test strategy that you wrote a test for, with `name` the subject\'s text exactly as the design states it, ' +
+	'and `cases` the test cases that carry it, each a `file` (repo-relative path of the `.test.ts` file) and a ' +
+	'`title` (the test\'s title exactly as the file declares it). The daemon runs each of those files itself and ' +
+	'records a result for every case in the Story\'s test record (`TESTS.md` beside `BUILD.md`). A case that fails, ' +
+	'is skipped, or is not found in its file fails the Story. For a `live` or `smoke` subject the daemon cannot ' +
+	'run, give `reported` instead: the `result` you observed and `evidence`, where the proof is; it is recorded ' +
+	'as reported by you, not run by the gate.';
+
 /** How upstream changes enter a Story during its build (ISSUE-f9ced66a). A
  *  `--no-ff` merge committed on its own is the one form the Story's code review
  *  can separate from the Story's own work; a fast-forward or a squash cannot be. */
@@ -203,6 +223,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		`- \`${TYPECHECK_CMD}\` is clean.`,
 		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
 		'- The edit is minimal and matches the surrounding conventions.',
+		...(spec.lldMdRel !== undefined ? ['', '## Submitting the tests', '', STANDALONE_MAPPING_RULE] : []),
 		'', '## Merging upstream', '', MERGE_RULE,
 	);
 	return lines.join('\n');
@@ -250,7 +271,8 @@ export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): st
 		'## What to judge',
 		'1. **What actually changed** — read the files the build touched and confirm the change is real.',
 		'2. **Contract** — judge the change against the LLD\'s contract (or, for a trivial build, its stated scope).',
-		'3. **Tests** — confirm the tests exist and exercise what they claim. Whether they pass is the daemon\'s result above.',
+		'3. **Tests** — confirm the tests exist and exercise what they claim. Whether they pass is the daemon\'s result above. ' +
+		JUDGE_NAMED_TESTS_RULE,
 		'4. **Scope** — no changes outside the Story\'s stated surface; shared machinery untouched unless the LLD called for it.',
 		'',
 		'## Verdict — return this JSON exactly',

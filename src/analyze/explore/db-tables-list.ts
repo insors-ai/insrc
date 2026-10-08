@@ -185,8 +185,9 @@ export async function runDbTablesList(
 		connectionId: params.connectionId,
 		family,
 		tables,
-		truncated,
-		notFoundNote,
+		// A note that reports a failure or an unsupported listing is in the record;
+		// the note left here explains an empty listing that is complete.
+		notFoundNote: failure !== undefined || unsupported !== undefined ? '' : notFoundNote,
 	};
 }
 
@@ -206,7 +207,6 @@ function emptyOutput(
 		connectionId,
 		family,
 		tables:       [],
-		truncated:    false,
-		notFoundNote: note,
+		notFoundNote: '',
 	};
 }

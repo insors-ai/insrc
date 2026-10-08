@@ -57,7 +57,7 @@ export async function runDbConnectionsList(
 				basisNote: `the connection registry could not be read: ${(err as Error).message}`,
 			}),
 			connections: [],
-			notFoundNote: `Pool acquisition for repo "${ctx.repoPath}" failed: ${(err as Error).message}`,
+			notFoundNote: '',
 		};
 	}
 

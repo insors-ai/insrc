@@ -316,8 +316,6 @@ export interface UsageExampleOutput {
 	 *  the runner couldn't uniquely resolve a name to an id. */
 	readonly targetEntityId?: string;
 	readonly callers:    readonly UsageExampleHit[];
-	/** Total 1-hop callers before topK truncation. */
-	readonly totalCallers: number;
 }
 
 /** Class-hierarchy record: one class + its supertypes / subtypes /
@@ -480,7 +478,6 @@ export interface ConfigTraceOutput {
 	readonly completeness: Completeness;
 	readonly key:       string;
 	readonly hits:      readonly ConfigTraceHit[];
-	readonly truncated: boolean;
 	readonly backend:   'ripgrep' | 'node';
 	readonly root:      string;
 }
@@ -583,7 +580,6 @@ export interface DbTablesListOutput {
 	readonly connectionId: string;
 	readonly family:       'rdbms' | 'kv' | 'file';
 	readonly tables:       readonly DbTableSummary[];
-	readonly truncated:    boolean;
 	readonly notFoundNote: string;
 }
 
@@ -683,10 +679,6 @@ export interface FreeformProbeOutput {
 	 *  `meta.toolCalls` when this exploration drives the whole
 	 *  bundle. */
 	readonly toolCallCount: number;
-	/** Non-empty when the tool loop hit its `maxToolTurns` cap
-	 *  without the model settling; the synthesizer surfaces this as
-	 *  a Diagnostics note. */
-	readonly exhaustedNote: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -708,10 +700,6 @@ export interface SearchTextOutput {
 	readonly completeness: Completeness;
 	readonly pattern: string;
 	readonly hits:    readonly SearchTextHit[];
-	/** True when the underlying grep hit its result cap. Synthesizers
-	 *  should surface this in Diagnostics so the reader knows a wider
-	 *  search may exist. */
-	readonly truncated: boolean;
 	/** Which backend produced the hits -- ripgrep (fast, respects
 	 *  .gitignore) or the Node fallback (slower, no .gitignore). Kept
 	 *  for synthesizer-side transparency. */

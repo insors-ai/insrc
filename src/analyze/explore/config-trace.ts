@@ -121,7 +121,6 @@ export async function runConfigTrace(
 			}),
 			key:       params.key,
 			hits:      [],
-			truncated: false,
 			backend:   'node',
 			root,
 		};
@@ -153,7 +152,6 @@ export async function runConfigTrace(
 		completeness: textSearchCompleteness(data, limit),
 		key:       params.key,
 		hits,
-		truncated: data.truncated,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 		root:      data.root,
 	};

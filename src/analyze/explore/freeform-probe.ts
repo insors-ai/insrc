@@ -125,7 +125,6 @@ export async function runFreeformProbe(
 
 	let rawBundle: Awaited<ReturnType<typeof runShaperToolLoop>>['rawBundle'];
 	let toolCallCount = 0;
-	let exhaustedNote = '';
 	try {
 		const result = await loop({
 			runId:          ctx.runId,
@@ -155,9 +154,6 @@ export async function runFreeformProbe(
 				shaperId:  params.shaperId,
 				rawBundle: emptyRawBundle(),
 				toolCallCount: 0,
-				exhaustedNote:
-					`Tool loop exhausted its maxTurns cap without settling on a bundle; ` +
-					`the reader should refine the intent or request a specific recipe.`,
 			};
 		}
 		// Anything else (LLM unavailable, schema unrecoverable, ...) --
@@ -187,7 +183,6 @@ export async function runFreeformProbe(
 		shaperId:  params.shaperId,
 		rawBundle,
 		toolCallCount,
-		exhaustedNote,
 	};
 }
 

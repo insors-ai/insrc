@@ -42,6 +42,17 @@ import type {
 const packr   = new Packr({ useRecords: false });
 const unpackr = new Unpackr({ useRecords: false });
 
+/**
+ * The version of what a cached output holds. It is part of every cache key,
+ * so raising it leaves every row written under an older version unread: a
+ * lookup then runs again and its output is stored under the new key.
+ *
+ *   2 -- every lookup output carries a completeness record, and the
+ *        `truncated`, `totalCallers` and `exhaustedNote` fields are gone
+ *        (LLD-b9d5c5c40df5a574-s1). A row from version 1 has no record.
+ */
+export const EXPLORATION_CACHE_VERSION = 2;
+
 interface CacheRow {
 	readonly exploration: Exploration;
 	readonly output:      ExplorationOutput;
@@ -60,6 +71,7 @@ interface CacheRow {
  */
 export function hashExplorationParams(exp: Exploration): string {
 	const canonical = {
+		v:      EXPLORATION_CACHE_VERSION,
 		type:   exp.type,
 		params: canonicalise(exp.params),
 	};

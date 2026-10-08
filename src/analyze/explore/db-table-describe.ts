@@ -172,7 +172,8 @@ export async function runDbTableDescribe(
 		family,
 		columns,
 		shapeSummary,
-		notFoundNote,
+		// A note that reports a failure or an unsupported description is in the record.
+		notFoundNote: failure !== undefined || unsupported !== undefined ? '' : notFoundNote,
 	};
 }
 
@@ -194,7 +195,7 @@ function empty(
 		family,
 		columns:      [],
 		shapeSummary: '',
-		notFoundNote: note,
+		notFoundNote: '',
 	};
 }
 

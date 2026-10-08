@@ -122,7 +122,6 @@ export async function runSearchText(
 			}),
 			pattern:   params.pattern,
 			hits:      [],
-			truncated: false,
 			backend:   'node',
 			root,
 		};
@@ -155,7 +154,6 @@ export async function runSearchText(
 		completeness: textSearchCompleteness(data, limit),
 		pattern:   params.pattern,
 		hits,
-		truncated: data.truncated,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 		root:      data.root,
 	};

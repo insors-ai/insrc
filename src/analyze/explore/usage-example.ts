@@ -141,7 +141,6 @@ export async function runUsageExample(
 			completeness: graphCompleteness({ returned: 0 }),
 			subject:      params.symbolName ?? params.entityId ?? '',
 			callers:      [],
-			totalCallers: 0,
 		};
 	}
 
@@ -196,6 +195,5 @@ export async function runUsageExample(
 		subject:         params.symbolName ?? target.name,
 		targetEntityId:  target.id,
 		callers:         hits,
-		totalCallers:    callers.length,
 	};
 }

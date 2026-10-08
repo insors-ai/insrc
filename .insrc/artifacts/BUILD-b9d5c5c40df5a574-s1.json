@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s1",
     "createdAt": "2026-10-08T07:10:44.483Z",
-    "updatedAt": "2026-10-08T07:22:29.995Z",
+    "updatedAt": "2026-10-08T07:34:48.408Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -20,74 +20,239 @@
       {
         "id": "t3",
         "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
       }
     ],
-    "summary": "Task t3: the search primitive reports what it left out (skipped files and directories, shortened lines, ripgrep's per-file limit, discarded output, a failed ripgrep run, each backend's exclusion rule), throws on an unreadable root, and the search tool labels such a failure 'search-failed'. The shell helper's result gains stdoutTruncated. Eight new tests pass under Node 22 on real directories and stand-in ripgrep binaries; eight mutations each make a test fail; the daemon tools (160), analyze (860 of 952, the rest skipped) and review (93) suites pass. One test seam was added to the search options (`_backend`) so a test can choose the ripgrep binary and its time limit.",
+    "summary": "Task t4: all twenty lookup outputs carry a completeness record built in the lookup, with every count limit and its scope, the text search's omissions, the data driver's cut flag and the basis. A table test runs the real runners for all twenty types against a seeded temporary graph and repository; seven tests pass and nine mutations each make one fail; analyze, mcp and daemon tools suites pass (1,415 of 1,507, the rest skipped). Beyond the design: a third limit scope 'source' for a limit on what a result was built from; manifests.locate and test.locate count past their limit; the data lookups take the pool as a parameter for tests. Found and not yet handled: the document retrieval silently skips its vector pass when the embedding call fails (src/analyze/docs-retrieval.ts), outside the catch clauses the design counted.",
     "changeLog": [
       {
         "target": {
           "file": "src/analyze/__tests__/completeness.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/item-length.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/analyze/completeness.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/capability-reuse-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/class-hierarchy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/completeness-facts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/concept-resolve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/config-trace.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/convention-detect.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/data-model-trace.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-connections-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-table-describe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/db-tables-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/doc-constraint-enumerate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/doc-decision-trace.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/doc-mention.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/freeform-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/import-graph.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/manifests-locate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/module-profile.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/search-text.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/symbol-locate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/test-locate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/usage-example.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/analyze/item-length.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/search/grep.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/shell-helper.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:22:29.995Z"
+        "timestamp": "2026-10-08T07:34:48.408Z"
       }
     ],
-    "commit": "7a33090e"
+    "commit": "847ce5b4"
   }
 }

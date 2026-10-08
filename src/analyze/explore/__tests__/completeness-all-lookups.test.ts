@@ -280,6 +280,10 @@ test('a table test over all twenty lookup types finds a completeness record with
 		// The record was built by the builder: `complete` agrees with what it lists.
 		const leftOut = (c.limited?.length ?? 0) + (c.skipped?.length ?? 0) + (c.partlyRead?.length ?? 0);
 		if (leftOut > 0) assert.equal(c.complete, false, `${type}: lists something left out, so it is not complete`);
+		// The record is the ONE statement of completeness: the flags it replaced are gone.
+		for (const gone of ['truncated', 'totalCallers', 'exhaustedNote']) {
+			assert.equal(gone in out, false, `${type}: has no \`${gone}\` field`);
+		}
 		// Every graph-based result says what the graph itself does not establish.
 		if (row.basis === 'graph') {
 			assert.ok(c.basisNote?.startsWith(GRAPH_BASIS_NOTE), `${type}: carries the graph's coverage note`);
@@ -317,8 +321,7 @@ test('each lookup that stops at a count reports the limit with its scope', async
 	const use = await runUsageExample(exp('usage.example', { entityId: seeded['charge']!.id, topK: 2 }), ctx);
 	assert.equal(use.callers.length, 2);
 	assert.equal(limitOf(use.completeness, 'callers').scope, 'overall');
-	assert.equal(use.completeness.total, 3);
-	assert.equal(use.completeness.total, use.totalCallers);
+	assert.equal(use.completeness.total, 3, 'the number the removed `totalCallers` field held');
 
 	// usage.example by an ambiguous name: the callers of one definition are read and the other is named as skipped.
 	const amb = await runUsageExample(exp('usage.example', { symbolName: 'chargeCard' }), ctx);
@@ -451,7 +454,6 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	const tables = [{ name: 'a', kind: 'table' }, { name: 'b', kind: 'table' }];
 
 	const cut = await runDbTablesList(exp('db.tables.list', { connectionId: 'app', limit: 2 }), ctx, standInPool({ tables, truncated: true }));
-	assert.equal(cut.truncated, true, 'the old flag is still there in this task');
 	assert.deepEqual(limitOf(cut.completeness, 'tables'), {
 		what: 'tables', limit: 2, scope: 'overall', reason: 'the lookup stops at 2 tables; how many exist is not known',
 	});
@@ -468,6 +470,20 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	assert.deepEqual(missing.tables, []);
 	assert.equal(missing.completeness.complete, false);
 	assert.match(missing.completeness.basisNote ?? '', /unknown connection 'nope'/);
+	assert.equal(missing.notFoundNote, '', 'a failure is not a not-found: its reason is in the record, not in the note');
+
+	// A driver that cannot list: named as skipped in the record, and the note is left empty.
+	const noList = (async () => ({ acquire: async () => ({ family: 'rdbms', kind: 'odd' }) })) as unknown as Parameters<typeof runDbTablesList>[2];
+	const unsupported = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, noList);
+	assert.deepEqual(unsupported.completeness.skipped, [{ what: 'the listing', reason: "Driver kind 'odd' does not implement listTables." }]);
+	assert.equal(unsupported.notFoundNote, '');
+	assert.equal(unsupported.completeness.complete, false);
+
+	// A file connection has one target and no listing: that is an empty result that IS complete, and the note stays.
+	const fileConn = (async () => ({ acquire: async () => ({ family: 'file', kind: 'csv' }) })) as unknown as Parameters<typeof runDbTablesList>[2];
+	const single = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, fileConn);
+	assert.equal(single.completeness.complete, true);
+	assert.match(single.notFoundNote, /single target/);
 });
 
 // ---------------------------------------------------------------------------

@@ -4,12 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Delivery read model — shared types (E1 / S001, HLD-2ff0dfda sc1–sc3).
+ * Delivery read model — shared types (E1, HLD-2ff0dfda sc1–sc5).
  *
  * The record set (sc1), the work-item graph (sc2) and the notice shape (sc3)
  * every delivery pass reads. Type-only apart from DeliveryStoreUnreadableError,
  * so IDE clients can import the shapes without pulling in node:fs.
  */
+
+import type { ReviewVerdict } from '../review/types.js';
+
+/** The one verdict language, shared with review/ and code-review/ (sc5). */
+export type { ReviewVerdict };
 
 // ---------------------------------------------------------------------------
 // sc1 — ArtifactRecordSet
@@ -163,6 +168,65 @@ export interface StagePassResult {
 	/** Keyed by item id; stories and issues only. */
 	readonly stages:  ReadonlyMap<string, StageAnnotation>;
 	readonly notices: readonly DeliveryNotice[];
+}
+
+// ---------------------------------------------------------------------------
+// sc5 — GateAnnotation (E1 s3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Approval and review facts for one record. A design artifact's review is its
+ * meta.review; a CR record is itself a review (body.verdict / body.counts).
+ */
+export interface ArtifactGate {
+	readonly artifactId: string;
+	readonly approval:   { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly review: {
+		readonly verdict:          ReviewVerdict;
+		readonly reviewedAt:       string;
+		readonly reviewedBy:       'controller' | 'daemon' | null;
+		readonly counts:           { readonly high: number; readonly med: number; readonly low: number };
+		readonly override:         { readonly reason: string; readonly at: string | null } | null;
+		/** HIGH/MED findings with an entry in meta.reviewResolutions. */
+		readonly resolvedFindings: number;
+		readonly effectiveVerdict: ReviewVerdict;
+		/** effectiveVerdict 'block', the gate the review guards unapproved, and no override. */
+		readonly blocking:         boolean;
+	} | null;
+}
+
+export type TaskResult = 'passed' | 'failed' | 'unrecorded';
+
+export interface TaskValidation {
+	readonly taskItemId: string;
+	readonly result:     TaskResult;
+	/** False for a build-only task. */
+	readonly planned:    boolean;
+}
+
+/** 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike. */
+export type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict';
+
+export interface ItemGates {
+	readonly itemId:           string;
+	/** Sorted by taskItemId. */
+	readonly tasks:            readonly TaskValidation[];
+	readonly validation:       { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number };
+	/** A build result recorded against the story itself; not a task, never unplanned. */
+	readonly storyLevelResult: TaskResult | null;
+	/** Set when a BUILD is approved and a task result or the storyLevelResult failed. */
+	readonly conflict:         { readonly failedTaskItemIds: readonly string[]; readonly storyLevelFailed: boolean } | null;
+	readonly attentionReasons: readonly AttentionReason[];
+	/** The attention rule applied, naming any superseded pending records it excluded. */
+	readonly attentionRule:    string;
+}
+
+export interface GatePassResult {
+	/** Keyed by artifactId. */
+	readonly artifacts: ReadonlyMap<string, ArtifactGate>;
+	/** Keyed by item id; epics, stories and issues. */
+	readonly items:     ReadonlyMap<string, ItemGates>;
+	readonly notices:   readonly DeliveryNotice[];
 }
 
 // ---------------------------------------------------------------------------

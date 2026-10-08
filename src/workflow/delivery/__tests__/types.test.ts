@@ -9,7 +9,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { DeliveryStoreUnreadableError } from '../types.js';
-import type { DeliveryRoute, DeliveryStage, StageAnnotation, StagePassResult } from '../types.js';
+import type {
+	ArtifactGate, AttentionReason, DeliveryRoute, DeliveryStage, GatePassResult, ItemGates,
+	ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
+} from '../types.js';
+import type { ReviewVerdict as SourceReviewVerdict } from '../../review/types.js';
 
 test('DeliveryStoreUnreadableError carries the store path and the underlying message', () => {
 	const err = new DeliveryStoreUnreadableError('/repo/.insrc/artifacts', 'EACCES: permission denied');
@@ -39,4 +43,42 @@ test('the stage and route types list exactly the HLD members', () => {
 	const annotation: StageAnnotation = { itemId: 'E1:S001', stage: 'scoped', route: 'full-chain', reason: { text: 'no design, plan or build record', artifactIds: [] } };
 	const result: StagePassResult = { stages: new Map([[annotation.itemId, annotation]]), notices: [] };
 	assert.equal(result.stages.get('E1:S001')?.stage, 'scoped');
+});
+
+// E1 / S003 / t1 — the sc5 types.
+
+const VERDICTS: Record<ReviewVerdict, true> = { 'pass': true, 'warn': true, 'block': true };
+const TASK_RESULTS: Record<TaskResult, true> = { 'passed': true, 'failed': true, 'unrecorded': true };
+const REASONS: Record<AttentionReason, true> = {
+	'pending-decision': true, 'rejected': true, 'review-blocked': true,
+	'validation-failed': true, 'validation-conflict': true,
+};
+
+/** Compiles only while the re-exported verdict is the review module's own type. */
+type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+const SAME_VERDICT: Same<ReviewVerdict, SourceReviewVerdict> = true;
+
+test('the gate types re-export the review verdict and list exactly the sketched members', () => {
+	assert.equal(SAME_VERDICT, true);
+	assert.deepEqual(Object.keys(VERDICTS), ['pass', 'warn', 'block']);
+	assert.deepEqual(Object.keys(TASK_RESULTS), ['passed', 'failed', 'unrecorded']);
+	assert.deepEqual(Object.keys(REASONS), ['pending-decision', 'rejected', 'review-blocked', 'validation-failed', 'validation-conflict']);
+
+	const gate: ArtifactGate = {
+		artifactId: 'LLD-h-s1',
+		approval:   { state: 'pending', at: null },
+		review: {
+			verdict: 'block', reviewedAt: '2026-10-08T00:00:00.000Z', reviewedBy: 'daemon',
+			counts: { high: 0, med: 1, low: 0 }, override: null, resolvedFindings: 0,
+			effectiveVerdict: 'block', blocking: true,
+		},
+	};
+	const item: ItemGates = {
+		itemId: 'E1:S001', tasks: [{ taskItemId: 'E1:S001:T001', result: 'unrecorded', planned: true }],
+		validation: { passed: 0, failed: 0, unrecorded: 1, unplanned: 0 },
+		storyLevelResult: null, conflict: null, attentionReasons: ['review-blocked'], attentionRule: 'rule',
+	};
+	const result: GatePassResult = { artifacts: new Map([[gate.artifactId, gate]]), items: new Map([[item.itemId, item]]), notices: [] };
+	assert.equal(result.artifacts.get('LLD-h-s1')?.review?.blocking, true);
+	assert.equal(result.items.get('E1:S001')?.validation.unrecorded, 1);
 });

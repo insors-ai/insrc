@@ -1858,3 +1858,118 @@ test("when the judge session throws after the checks ran, the turn returns the s
 		assert.equal(buildRecordExists(repo), false);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// --- the two records are filed together on every route (task t10) -----------
+
+const DAY1 = '2026-03-01T23:50:00.000Z';
+const DAY2 = '2026-03-02T09:00:00.000Z';
+const folderOf = (p: string): string => dirname(p);
+/** Every TESTS.md / BUILD.md under docs/, repo-relative. */
+function recordDocs(repo: string): string[] {
+	const out: string[] = [];
+	const walk = (rel: string): void => {
+		if (!existsSync(join(repo, rel))) return;
+		for (const name of readdirSync(join(repo, rel))) {
+			const child = `${rel}/${name}`;
+			if (name === 'TESTS.md' || name === 'BUILD.md') out.push(child);
+			else if (!name.includes('.')) walk(child);
+		}
+	};
+	walk('docs');
+	return out.sort();
+}
+/** A standalone validate turn at a given time; `judge` may throw. */
+async function standaloneTurn(repo: string, at: string, standalone: Record<string, unknown>, judge?: () => unknown): Promise<Record<string, unknown>> {
+	const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
+	_setBuildValidateClockForTests(() => at);
+	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return (judge !== undefined ? judge() : judgeVerdict({ taskId: 's1', passed: true })) as T; } });
+	try {
+		return outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: standalone as never }));
+	} finally { _setBuildValidateProviderForTests(undefined); _setBuildValidateClockForTests(undefined); }
+}
+const TRIVIAL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'a guard' };
+const failJudge = (): never => { throw new Error('the CLI exited with 1'); };
+
+test("a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)", async () => {
+	// 1. Trivial, no implement turn: nothing anchors the folder but the records themselves.
+	const bare = mkRepo();
+	try {
+		const first = await standaloneTurn(bare, DAY1, TRIVIAL, failJudge);
+		assert.equal((first['error'] as { code: string }).code, 'verdict-session-failed');
+		assert.deepEqual(recordDocs(bare).map(p => p.split('/').pop()), ['TESTS.md'], 'the first turn wrote the test record and no build record');
+		const testsDoc = recordDocs(bare)[0]!;
+		assert.match(testsDoc, /^docs\/standalone\/[^/]*E20260301a3f4b8c9\/S001\/TESTS\.md$/);
+		const createdAt = readTests(bare).meta['createdAt'];
+		assert.equal(createdAt, DAY1);
+
+		const second = await standaloneTurn(bare, DAY2, TRIVIAL);
+		assert.equal(second['next'], 'done');
+		// One folder, dated by the first turn; nothing was written to a second one.
+		assert.deepEqual(recordDocs(bare), [`${folderOf(testsDoc)}/BUILD.md`, testsDoc]);
+		assert.equal(readTests(bare).meta['createdAt'], DAY1, "the test record's createdAt does not change");
+		assert.equal(readBuildRecord(bare).meta['createdAt'], DAY1, 'the build record took it');
+		assert.equal(readBuildRecord(bare).meta['standalone'], true);
+		assert.deepEqual(readBuildRecord(bare).body['testRecord'], { md: testsDoc });
+	} finally { rmSync(bare, { recursive: true, force: true }); }
+
+	// 2. Trivial, with the implement turn first: the build record it wrote is the anchor.
+	const implemented = mkRepo();
+	try {
+		const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
+		void _setBuildValidateClockForTests;
+		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1', repo: implemented, standalone: TRIVIAL as never }));
+		assert.equal(impl['next'], 'implement');
+		const anchored = String(readBuildRecord(implemented).meta['createdAt']);
+		const buildDoc = recordDocs(implemented)[0]!;
+		assert.match(buildDoc, /BUILD\.md$/);
+		// The validate turn is dated long after it.
+		await standaloneTurn(implemented, '2031-01-01T00:00:00.000Z', TRIVIAL);
+		assert.deepEqual(recordDocs(implemented), [buildDoc, `${folderOf(buildDoc)}/TESTS.md`]);
+		assert.equal(readBuildRecord(implemented).meta['createdAt'], anchored, "the build record's anchor is not moved by the test record");
+	} finally { rmSync(implemented, { recursive: true, force: true }); }
+
+	// 3. Small standalone: the test record carries the route flag before any build record exists ...
+	const small = mkRepo();
+	try {
+		seedStandaloneLldOnly(small);
+		const SMALL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+		await standaloneTurn(small, DAY1, SMALL, failJudge);
+		assert.equal(buildRecordExists(small), false);
+		assert.equal(readTests(small).meta['standalone'], true);
+		assert.deepEqual(recordDocs(small), ['docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		// ... and the first build record, written by the COMPLETION path, lands beside it.
+		const built = await ensureBuildRecordOnCompletion(small, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.ok(built !== undefined);
+		assert.deepEqual(recordDocs(small), ['docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/BUILD.md', 'docs/standalone/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+	} finally { rmSync(small, { recursive: true, force: true }); }
+
+	// 4. Trivial, no implement turn, first build record written by the completion path a day later.
+	const completed = mkRepo();
+	try {
+		await standaloneTurn(completed, DAY1, TRIVIAL, failJudge);
+		const testsDoc = recordDocs(completed)[0]!;
+		const built = await ensureBuildRecordOnCompletion(completed, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.ok(built !== undefined);
+		assert.deepEqual(recordDocs(completed), [`${folderOf(testsDoc)}/BUILD.md`, testsDoc]);
+		assert.equal(readBuildRecord(completed).meta['createdAt'], DAY1);
+	} finally { rmSync(completed, { recursive: true, force: true }); }
+});
+
+test('a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)', async () => {
+	const repo = mkRepo();
+	try {
+		// An Epic's Story: the definition head exists and does not say standalone.
+		seedDef(repo);
+		seedLld(repo);
+		const DECLARED = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+		// The judge fails first, so the test record is written with no build record to follow.
+		await standaloneTurn(repo, DAY1, DECLARED, failJudge);
+		assert.deepEqual(recordDocs(repo), ['docs/epics/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		assert.ok(!('standalone' in readTests(repo).meta), 'the declaration does not relabel an Epic\'s Story');
+
+		await standaloneTurn(repo, DAY2, DECLARED);
+		assert.deepEqual(recordDocs(repo), ['docs/epics/tag-filtering-E20260718a3f4b8c9/S001/BUILD.md', 'docs/epics/tag-filtering-E20260718a3f4b8c9/S001/TESTS.md']);
+		assert.notEqual(readBuildRecord(repo).meta['standalone'], true, 'and nothing is relabelled when the build record is seeded from it');
+		assert.ok(!existsSync(join(repo, 'docs', 'standalone')));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "createdAt": "2026-10-08T16:34:46.213Z",
+    "updatedAt": "2026-10-08T17:18:02.881Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T17:18:03.332Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-content.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/currency.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/handlers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/load.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/snapshot.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/handlers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/load.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/markdown.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/read.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/snapshot.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/pending.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/delivery-contract.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/tsconfig.delivery-contract.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T17:18:02.881Z"
+      }
+    ],
+    "commit": "84ddd615",
+    "summary": "Published the delivery read model over IPC: workflow.delivery (one snapshot of every work item) and workflow.deliveryEvidence (one record's meta, body and markdown), with the shared markdown port and docs/ containment, and the VS Code and JetBrains client mirrors."
+  }
+}

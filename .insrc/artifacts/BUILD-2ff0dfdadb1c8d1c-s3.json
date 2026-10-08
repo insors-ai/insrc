@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s3",
+    "createdAt": "2026-10-08T12:12:36.037Z",
+    "updatedAt": "2026-10-08T14:19:51.454Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T14:19:51.732Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/read.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/graph.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/load.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/read.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/resolve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T14:19:51.454Z"
+      }
+    ],
+    "commit": "2912cc33",
+    "summary": "Adds the sc5 gate types and the gate pass (gate.ts): one artifact gate per record with approval, review, effective verdict and blocking, and one item gate per epic, story and issue with task validation, the story-level result, the approved-but-failed conflict, attention reasons under the confirmed superseded-pending rule, and unplanned-task / validation-conflict notices."
+  }
+}

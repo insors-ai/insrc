@@ -703,6 +703,27 @@ async function main(): Promise<void> {
 			);
 		},
 
+		// sc7 (E1 delivery read model s5): one timestamped snapshot of every
+		// work item in the artifact store — stage, evidence, gates, currency,
+		// notices and one needs-attention flag. Reads the store once; never
+		// writes. A missing repo or unreadable store is a structured { error }.
+		'workflow.delivery': async (params) => {
+			const { handleDelivery } = await import('../workflow/delivery/handlers.js');
+			return handleDelivery(params as { repo?: string } | undefined, process.env['INSRC_REPO']);
+		},
+
+		// sc7 (E1 delivery read model s5): one record's meta, body and
+		// rendered markdown, for records the review view cannot open (a
+		// marker-less BUILD, an AMD). Id-pattern and realpath guarded under
+		// the store; markdown read under the docs/ containment rule.
+		'workflow.deliveryEvidence': async (params) => {
+			const { handleDeliveryEvidence } = await import('../workflow/delivery/handlers.js');
+			return handleDeliveryEvidence(
+				params as { repo?: string; artifactId: string } | undefined,
+				process.env['INSRC_REPO'],
+			);
+		},
+
 		// sc3 (ide-artifact-review-panel S004): record the submitted review
 		// comments against their artifact as open-question resolutions, through
 		// the EXISTING recordResolution machinery (k4/lc1 — no parallel store).

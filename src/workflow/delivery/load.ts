@@ -12,12 +12,12 @@
  * read-only ReadonlyStoreFs port, so nothing under the repository is written.
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import { storyIdToOrdinal } from '../id.js';
 import { ARTIFACTS_DIR } from '../storage.js';
+import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
 import {
 	DeliveryStoreUnreadableError,
 	type ApprovalState,
@@ -30,11 +30,13 @@ import {
 
 const log = getLogger('delivery-load');
 
-const KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
+/** Every store-file prefix the delivery read model knows. */
+export const DELIVERY_ARTIFACT_KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
 
 /** The node:fs implementation of the read-only store port. */
 export const nodeStoreFs: ReadonlyStoreFs = {
 	exists:   (path) => existsSync(path),
+	realpath: (path) => realpathSync(path),
 	listDir:  (path) => readdirSync(path),
 	readFile: (path) => readFileSync(path, 'utf8'),
 };
@@ -42,24 +44,7 @@ export const nodeStoreFs: ReadonlyStoreFs = {
 /** The kind named by a store file name's prefix, or null for an unknown prefix. */
 export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
 	const prefix = fileName.split('-')[0] ?? '';
-	return (KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
-}
-
-function asObject(v: unknown): Readonly<Record<string, unknown>> | null {
-	return typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : null;
-}
-
-function asString(v: unknown): string | null {
-	return typeof v === 'string' ? v : null;
-}
-
-function ordinalOf(storyId: string | null): number | null {
-	if (storyId === null) return null;
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
+	return (DELIVERY_ARTIFACT_KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
 }
 
 function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
@@ -107,7 +92,7 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 		artifactId, kind,
 		workItemHash:  asString(meta[hashKey]),
 		storyIdRaw,
-		storyOrdinal:  ordinalOf(storyIdRaw),
+		storyOrdinal:  storyIdRaw === null ? null : storyOrdinalOf(storyIdRaw),
 		approval:      approvalOf(meta),
 		createdAt:     asString(meta['createdAt']),
 		epicCreatedAt: asString(meta['epicCreatedAt']),
@@ -118,10 +103,6 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 
 function isFailure(r: ArtifactRecord | RecordLoadFailure): r is RecordLoadFailure {
 	return 'reason' in r;
-}
-
-function errorText(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
 }
 
 /** Read the repository's artifact store once into a sorted, immutable record set. */

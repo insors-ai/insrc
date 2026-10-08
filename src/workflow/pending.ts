@@ -183,8 +183,9 @@ function deriveTitle(
 }
 
 /** Best-effort rendered .md path under docs/. Returns '' when the meta lacks
- *  the fields needed to resolve it (the list still shows kind + title). */
-function deriveMdPath(repoPath: string, kind: PendingKind, meta: Record<string, unknown>): string {
+ *  the fields needed to resolve it (the list still shows kind + title). Also the
+ *  delivery read model's fallback when a record's work-item folder is not found. */
+export function deriveMdPath(repoPath: string, kind: ArtifactKind, meta: Readonly<Record<string, unknown>>): string {
 	const hash = str(meta['epicHash']) ?? str(meta['specHash']) ?? str(meta['issueHash']);
 	const createdAt = str(meta['epicCreatedAt']) ?? str(meta['createdAt']);
 	if (hash === undefined || createdAt === undefined) return '';
@@ -192,7 +193,7 @@ function deriveMdPath(repoPath: string, kind: PendingKind, meta: Record<string, 
 	const slug = str(meta['epicSlug']) ?? hash;
 	try {
 		const identity = deriveWorkItemIdentity(hash, createdAt, str(meta['storyId']));
-		return resolveArtifactMdPath(repoPath, identity, kind as ArtifactKind, workItemKind, slug);
+		return resolveArtifactMdPath(repoPath, identity, kind, workItemKind, slug);
 	} catch {
 		return '';
 	}

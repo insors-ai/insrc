@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "createdAt": "2026-10-08T15:18:19.070Z",
+    "updatedAt": "2026-10-08T15:41:48.874Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T15:41:49.217Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/amendments/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T15:41:48.874Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/currency.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T15:41:48.874Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T15:41:48.874Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/currency.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T15:41:48.874Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T15:41:48.874Z"
+      }
+    ],
+    "commit": "5b2807c5",
+    "summary": "Adds the sc6 currency types and the currency pass (currency.ts): each recorded review's currency from the recorded fields that can settle it (an LLD's HLD effective hash, a plan's link to its LLD), each epic's amendments counted as the existing scanner counts them, and the data-quality notices for unknown review currency, extensions the Define does not list, untitled items and unreadable-file coverage."
+  }
+}

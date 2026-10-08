@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791476559109-897ivt",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T16:28:06.025Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 326911,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s5",
+    "lldRunId": "wf-1791474528232-yf1eui",
+    "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T16:32:57.104Z",
+    "rangeBase": "47291e34f60ddbc3b0bd6d455408293b5d06cd1e"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds the published delivery types, a pure snapshot assembler that joins the graph and the three passes into one deterministic view, a markdown lookup that finds each record's rendered document through its work item's folder, and two thin daemon handlers for the snapshot and for one evidence record, registered beside workflow.pending. Two small additive exports let the handlers reuse workflow.pending's path derivation and workflow.artifactContent's docs/ containment rule. A type-only file in the VS Code plugin and a JSON sample snapshot fix the shape for the client mirrors."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Delivery IPC types",
+        "summary": "Add the sc7 types to src/workflow/delivery/types.ts exactly as the HLD sketch (DeliverySnapshotRequest, DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot, DeliveryEvidenceRequest, DeliveryEvidenceRecord, DeliveryError, DeliverySnapshotResponse, DeliveryEvidenceResponse) plus the two seams DeliveryMarkdownPort and DeliveryDeps; types.ts stays type-only apart from DeliveryStoreUnreadableError.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The sc7 types are exported with exactly the sketched fields.",
+          "DeliveryMarkdownPort and DeliveryDeps are exported as the LLD defines them.",
+          "types.ts adds no runtime code; the module compiles under the strict tsconfig."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types.test.ts: 'the delivery IPC types list exactly the sketched members'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Snapshot assembler",
+        "summary": "New src/workflow/delivery/snapshot.ts exporting the pure assembleSnapshot(recordSet, graph, stages, gates, currency, markdown): every graph item joined with its stage, evidence entries (approval, review, reviewCurrency, mdPath, openWith from the port), task results, amendments and the notices naming it; the build-without-plan incomplete-evidence notice for full-chain / feature / sized-bugfix stories; needsAttention and de-duplicated attentionReasons; store-level notices; counts with every key; schemaVersion 1; plain JSON, deterministic.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Every item of every kind appears once, sorted by id, with the fields the LLD lists; epics and tasks have stage null.",
+          "Two runs over the same inputs, including equal timestamps, are deep-equal.",
+          "needsAttention comes from an sc5 reason or an attention-true notice; attentionReasons list each entry once; notices with no itemIds appear only at the snapshot level.",
+          "A full-chain, feature or sized-bugfix story with a BUILD and no PLAN gets one incomplete-evidence notice; small, small-bugfix, trivial and unknown routes do not.",
+          "The result contains no Map, Set or undefined."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: 'every work item is joined with its stage, evidence, gates, currency and notices'"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: 'needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items'"
+          },
+          {
+            "level": "unit",
+            "name": "snapshot.test.ts: 'a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Shared markdown lookup and containment",
+        "summary": "Export pending.ts deriveMdPath with its kind parameter widened to path-scheme's ArtifactKind (workflow.pending unchanged); extract the docs/ lexical-plus-realpath containment from handleArtifactContent into an exported resolveDocsMarkdown that handleArtifactContent calls with the same error messages; add createMarkdownPort(repoPath, graph) in src/workflow/delivery/markdown.ts, which lists work-item folders once with listWorkItems, locates a record's .md through its graph item's epic segment and story folder, falls back to deriveMdPath ('' to null), checks existence and containment, and reads at most 512 bytes for the marker.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The existing pending.test.ts and artifact-content.test.ts pass unchanged.",
+          "resolveDocsMarkdown returns the same errors handleArtifactContent returned for an escaping path, a symlink escape, a non-.md path and a missing file.",
+          "A BUILD record with no epicSlug or epicCreatedAt is located under its work item's real folder; an AMD, an unresolvable record or a missing file gives null; hasMarker is true only for the record's own marker line.",
+          "The port never writes."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word'"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'a build record that stamps no epic slug or date is located through its work item's folder'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Handlers and daemon entries",
+        "summary": "New src/workflow/delivery/handlers.ts with handleDelivery (repo resolution, one store read, the four passes, assembleSnapshot with createMarkdownPort, one log line, every failure as { error }) and handleDeliveryEvidence (repo resolution, the anchored id pattern, realpath containment under the store, lift with liftStoreFile, renderedMarkdown through resolveDocsMarkdown); two new lazy-import entries 'workflow.delivery' and 'workflow.deliveryEvidence' in src/daemon/index.ts beside workflow.pending.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A request over a temporary git repository returns one snapshot stamped with the read time and changes no file under the repo, including .git.",
+          "deliveryEvidence returns the meta, body and markdown of a marker-less BUILD.",
+          "An invalid or escaping id is 'invalid artifact id', a missing one 'not found'; an unresolved repo or unreadable store is { error }; an absent store is an empty snapshot.",
+          "A 1,000-record store forming 500 work items is served within 500 ms (best of three) with the real port.",
+          "No existing handler entry changes."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched'"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'workflow.deliveryEvidence reads a marker-less build record through the daemon'"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one'"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot'"
+          },
+          {
+            "level": "integration",
+            "name": "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Client mirrors",
+        "summary": "Add vscode-plugin/src/delivery/delivery-contract.ts (type-only, importing the sc7 types by relative path) and vscode-plugin/tsconfig.delivery-contract.json (extending the plugin's tsconfig, including only that file); add src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json assembled from fixed records, a fixed time and a fixed port, kept equal to the assembler's output by a test.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "npx tsc -p vscode-plugin/tsconfig.delivery-contract.json exits 0.",
+          "The sample file parses as plain JSON and deep-equals what assembleSnapshot produces from its fixture."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+          },
+          {
+            "level": "integration",
+            "name": "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "snapshot.test.ts: 'every work item is joined with its stage, evidence, gates, currency and notices'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: 'needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshot.test.ts: 'a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'workflow.deliveryEvidence reads a marker-less build record through the daemon'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "handlers.test.ts: 'a build record that stamps no epic slug or date is located through its work item's folder'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: the sc7 types and the two seams in delivery/types.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails: assembleSnapshot and the DeliverySnapshot rules"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails: DeliveryMarkdownPort / createMarkdownPort and the shared deriveMdPath / resolveDocsMarkdown exports"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails: handleDelivery and handleDeliveryEvidence"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: the 'workflow.delivery' and 'workflow.deliveryEvidence' daemon handler entries"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails: the sc7 types' client mirrors (VS Code type-only file, JetBrains sample snapshot)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 errorPaths: repo, store, id, record and markdown failures and edge cases"
+    }
+  ]
+}

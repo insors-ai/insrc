@@ -20,12 +20,11 @@ import {
 	epicWorkflowId,
 	parseWorkflowId,
 	safeCanonical,
-	storyIdToOrdinal,
 	storyWorkflowId,
-	taskIdToOrdinal,
 	taskWorkflowId,
 } from '../id.js';
 import { makeNotice, sortNotices } from './notice.js';
+import { asObject, asString, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
 	ArtifactRecord,
 	ArtifactRecordSet,
@@ -80,12 +79,14 @@ function splitKey(key: string): { readonly hash: string; readonly storyKey: stri
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** A non-empty string, else null: an empty id or title names nothing. */
 function str(v: unknown): string | null {
-	return typeof v === 'string' && v.length > 0 ? v : null;
+	const s = asString(v);
+	return s === null || s.length === 0 ? null : s;
 }
 
 function obj(v: unknown): Readonly<Record<string, unknown>> {
-	return typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : {};
+	return asObject(v) ?? {};
 }
 
 function arr(v: unknown): readonly unknown[] {
@@ -94,22 +95,6 @@ function arr(v: unknown): readonly unknown[] {
 
 function pad(n: number): string {
 	return String(n).padStart(3, '0');
-}
-
-function storyOrdinalOf(storyId: string): number | null {
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
-}
-
-function taskOrdinalOf(taskId: string): number | null {
-	try {
-		return taskIdToOrdinal(taskId);
-	} catch {
-		return null;
-	}
 }
 
 function earliestCreatedAt(records: readonly ArtifactRecord[]): string | null {
@@ -358,6 +343,11 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 	}
 	resolveCorrectedParents(recordSet, hashes, notices);
 	attachSpecs(recordSet, drafts, notices);
+	for (const failure of recordSet.failures) {
+		notices.push(makeNotice('record-unreadable',
+			`store file ${failure.fileName} could not be loaded (${failure.reason}): ${failure.detail}`,
+			{ fileNames: [failure.fileName] }));
+	}
 
 	const items = new Map<string, WorkItemNode>();
 	for (const id of [...drafts.keys()].sort()) {
@@ -375,8 +365,8 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 /**
  * Task items from the story's PLAN tasks and BUILD task ids of the form t<n>.
  * A BUILD id equal to the story's own id (the story-level result of a small
- * or trivial build) is not a task; other non-t<n> ids are left to the
- * validation pass, which reports them against the plan.
+ * or trivial build) is not a task but the story-level result the gate pass
+ * reads; any other non-t<n> id is ignored there too.
  */
 function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {
 	const tasks = new Map<string, { title: string | null; evidence: string[] }>();

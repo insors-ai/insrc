@@ -133,6 +133,7 @@ test('an absent store yields an empty record set', () => {
 test('a store whose listDir throws raises DeliveryStoreUnreadableError', () => {
 	const fs: ReadonlyStoreFs = {
 		exists:   () => true,
+		realpath: p => p,
 		listDir:  () => { throw new Error('EACCES: permission denied'); },
 		readFile: () => { throw new Error('not reached'); },
 	};

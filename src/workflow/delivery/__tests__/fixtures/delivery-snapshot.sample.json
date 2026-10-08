@@ -1,0 +1,393 @@
+{
+  "schemaVersion": 1,
+  "repo": "/repo",
+  "takenAt": "2026-10-07T00:00:00.000Z",
+  "recordCount": 9,
+  "unreadableCount": 0,
+  "items": [
+    {
+      "id": "E20261007aaaaaaaa",
+      "kind": "epic",
+      "title": null,
+      "standalone": false,
+      "sourceIds": [],
+      "parentId": null,
+      "childIds": [
+        "E20261007aaaaaaaa:S001",
+        "E20261007aaaaaaaa:S002"
+      ],
+      "stage": null,
+      "evidence": [
+        {
+          "artifactId": "AMD-aaaaaaaaaaaaaaaa-1",
+          "kind": "AMD",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "pending",
+            "at": null
+          },
+          "review": null,
+          "reviewCurrency": null
+        },
+        {
+          "artifactId": "DEF-aaaaaaaaaaaaaaaa",
+          "kind": "DEF",
+          "mdPath": "/repo/docs/DEF-aaaaaaaaaaaaaaaa.md",
+          "openWith": "review-view",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        },
+        {
+          "artifactId": "HLD-aaaaaaaaaaaaaaaa",
+          "kind": "HLD",
+          "mdPath": "/repo/docs/HLD-aaaaaaaaaaaaaaaa.md",
+          "openWith": "review-view",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        }
+      ],
+      "tasks": [],
+      "validation": null,
+      "storyLevelResult": null,
+      "conflict": null,
+      "correctsRef": null,
+      "amendments": [
+        {
+          "amendmentId": "AMD-aaaaaaaaaaaaaaaa-1",
+          "status": "pending",
+          "type": "storyBoundary.addStory",
+          "storyId": "s3",
+          "appliesToHld": false
+        }
+      ],
+      "notices": [
+        {
+          "code": "incomplete-evidence",
+          "message": "no record gives E20261007aaaaaaaa a title",
+          "itemIds": [
+            "E20261007aaaaaaaa"
+          ],
+          "artifactIds": [
+            "AMD-aaaaaaaaaaaaaaaa-1",
+            "DEF-aaaaaaaaaaaaaaaa",
+            "HLD-aaaaaaaaaaaaaaaa"
+          ],
+          "fileNames": [],
+          "attention": false
+        }
+      ],
+      "needsAttention": true,
+      "attentionReasons": [
+        "pending-decision"
+      ]
+    },
+    {
+      "id": "E20261007aaaaaaaa:S001",
+      "kind": "story",
+      "title": "Story s1",
+      "standalone": false,
+      "sourceIds": [
+        "s1"
+      ],
+      "parentId": "E20261007aaaaaaaa",
+      "childIds": [
+        "E20261007aaaaaaaa:S001:T001"
+      ],
+      "stage": {
+        "stage": "complete",
+        "route": "full-chain",
+        "reason": {
+          "text": "BUILD-aaaaaaaaaaaaaaaa-s1 approved",
+          "artifactIds": [
+            "BUILD-aaaaaaaaaaaaaaaa-s1"
+          ]
+        }
+      },
+      "evidence": [
+        {
+          "artifactId": "BUILD-aaaaaaaaaaaaaaaa-s1",
+          "kind": "BUILD",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        },
+        {
+          "artifactId": "CR-aaaaaaaaaaaaaaaa-s1",
+          "kind": "CR",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "pending",
+            "at": null
+          },
+          "review": {
+            "verdict": "pass",
+            "reviewedAt": "2026-10-07T09:00:00.000Z",
+            "reviewedBy": null,
+            "counts": {
+              "high": 0,
+              "med": 0,
+              "low": 0
+            },
+            "override": null,
+            "resolvedFindings": 0,
+            "effectiveVerdict": "pass",
+            "blocking": false
+          },
+          "reviewCurrency": "unknown"
+        },
+        {
+          "artifactId": "LLD-aaaaaaaaaaaaaaaa-s1",
+          "kind": "LLD",
+          "mdPath": "/repo/docs/LLD-aaaaaaaaaaaaaaaa-s1.md",
+          "openWith": "review-view",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        },
+        {
+          "artifactId": "PLAN-aaaaaaaaaaaaaaaa-s1",
+          "kind": "PLAN",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        }
+      ],
+      "tasks": [
+        {
+          "taskItemId": "E20261007aaaaaaaa:S001:T001",
+          "result": "passed",
+          "planned": true
+        }
+      ],
+      "validation": {
+        "passed": 1,
+        "failed": 0,
+        "unrecorded": 0,
+        "unplanned": 0
+      },
+      "storyLevelResult": null,
+      "conflict": null,
+      "correctsRef": null,
+      "amendments": [],
+      "notices": [
+        {
+          "code": "review-currency-unknown",
+          "message": "no recorded field settles whether the review of CR-aaaaaaaaaaaaaaaa-s1 still matches its record",
+          "itemIds": [
+            "E20261007aaaaaaaa:S001"
+          ],
+          "artifactIds": [
+            "CR-aaaaaaaaaaaaaaaa-s1"
+          ],
+          "fileNames": [],
+          "attention": false
+        }
+      ],
+      "needsAttention": false,
+      "attentionReasons": []
+    },
+    {
+      "id": "E20261007aaaaaaaa:S001:T001",
+      "kind": "task",
+      "title": "Task t1",
+      "standalone": false,
+      "sourceIds": [
+        "t1"
+      ],
+      "parentId": "E20261007aaaaaaaa:S001",
+      "childIds": [],
+      "stage": null,
+      "evidence": [
+        {
+          "artifactId": "BUILD-aaaaaaaaaaaaaaaa-s1",
+          "kind": "BUILD",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        },
+        {
+          "artifactId": "PLAN-aaaaaaaaaaaaaaaa-s1",
+          "kind": "PLAN",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "approved",
+            "at": "2026-10-07T09:00:00.000Z"
+          },
+          "review": null,
+          "reviewCurrency": null
+        }
+      ],
+      "tasks": [],
+      "validation": null,
+      "storyLevelResult": null,
+      "conflict": null,
+      "correctsRef": null,
+      "amendments": [],
+      "notices": [],
+      "needsAttention": false,
+      "attentionReasons": []
+    },
+    {
+      "id": "E20261007aaaaaaaa:S002",
+      "kind": "story",
+      "title": "Story s2",
+      "standalone": false,
+      "sourceIds": [
+        "s2"
+      ],
+      "parentId": "E20261007aaaaaaaa",
+      "childIds": [],
+      "stage": {
+        "stage": "design-plan",
+        "route": "full-chain",
+        "reason": {
+          "text": "LLD-aaaaaaaaaaaaaaaa-s2 recorded; the full-chain route is ready once it has an approved plan",
+          "artifactIds": [
+            "LLD-aaaaaaaaaaaaaaaa-s2"
+          ]
+        }
+      },
+      "evidence": [
+        {
+          "artifactId": "LLD-aaaaaaaaaaaaaaaa-s2",
+          "kind": "LLD",
+          "mdPath": "/repo/docs/LLD-aaaaaaaaaaaaaaaa-s2.md",
+          "openWith": "review-view",
+          "approval": {
+            "state": "pending",
+            "at": null
+          },
+          "review": null,
+          "reviewCurrency": null
+        }
+      ],
+      "tasks": [],
+      "validation": {
+        "passed": 0,
+        "failed": 0,
+        "unrecorded": 0,
+        "unplanned": 0
+      },
+      "storyLevelResult": null,
+      "conflict": null,
+      "correctsRef": null,
+      "amendments": [],
+      "notices": [],
+      "needsAttention": true,
+      "attentionReasons": [
+        "pending-decision"
+      ]
+    },
+    {
+      "id": "E20261007bbbbbbbb",
+      "kind": "issue",
+      "title": "Issue bbbbbbbb",
+      "standalone": true,
+      "sourceIds": [],
+      "parentId": null,
+      "childIds": [],
+      "stage": {
+        "stage": "scoped",
+        "route": "small-bugfix",
+        "reason": {
+          "text": "no design, plan or build record",
+          "artifactIds": []
+        }
+      },
+      "evidence": [
+        {
+          "artifactId": "ISSUE-bbbbbbbbbbbbbbbb",
+          "kind": "ISSUE",
+          "mdPath": null,
+          "openWith": "evidence-read",
+          "approval": {
+            "state": "pending",
+            "at": null
+          },
+          "review": null,
+          "reviewCurrency": null
+        }
+      ],
+      "tasks": [],
+      "validation": null,
+      "storyLevelResult": null,
+      "conflict": null,
+      "correctsRef": {
+        "slug": "fix-it",
+        "resolvedItemId": null
+      },
+      "amendments": [],
+      "notices": [
+        {
+          "code": "unresolved-parent",
+          "message": "issue E20261007bbbbbbbb corrects 'fix-it', which is not in the store",
+          "itemIds": [
+            "E20261007bbbbbbbb"
+          ],
+          "artifactIds": [
+            "ISSUE-bbbbbbbbbbbbbbbb"
+          ],
+          "fileNames": [],
+          "attention": true
+        }
+      ],
+      "needsAttention": true,
+      "attentionReasons": [
+        "pending-decision",
+        "unresolved-parent"
+      ]
+    }
+  ],
+  "rootIds": [
+    "E20261007aaaaaaaa",
+    "E20261007bbbbbbbb"
+  ],
+  "notices": [],
+  "counts": {
+    "items": {
+      "epic": 1,
+      "story": 2,
+      "task": 1,
+      "issue": 1
+    },
+    "byStage": {
+      "scoped": 1,
+      "design-plan": 1,
+      "ready-design-approved": 0,
+      "ready-plan-approved": 0,
+      "build-recorded": 0,
+      "complete": 1
+    },
+    "needsAttention": 3
+  },
+  "attentionRule": "An item needs attention when it has a gate attention reason (a pending decision, a rejection, a blocking review, a failed validation or a validation conflict; a pending record stops counting once a later gate on its item is approved) or a notice whose code is marked for attention."
+}

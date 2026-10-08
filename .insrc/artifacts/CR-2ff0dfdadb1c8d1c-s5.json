@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791479550159-z0tru3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T17:12:30.159Z",
+    "model": "claude:opus",
+    "elapsedMs": 108366,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/delivery-handler-contract.test.ts",
+        "src/daemon/index.ts",
+        "src/workflow/artifact-content.ts",
+        "src/workflow/delivery/__tests__/contract.test.ts",
+        "src/workflow/delivery/__tests__/currency.test.ts",
+        "src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json",
+        "src/workflow/delivery/__tests__/handlers.test.ts",
+        "src/workflow/delivery/__tests__/load.test.ts",
+        "src/workflow/delivery/__tests__/snapshot.test.ts",
+        "src/workflow/delivery/__tests__/types.test.ts",
+        "src/workflow/delivery/handlers.ts",
+        "src/workflow/delivery/load.ts",
+        "src/workflow/delivery/markdown.ts",
+        "src/workflow/delivery/read.ts",
+        "src/workflow/delivery/snapshot.ts",
+        "src/workflow/delivery/types.ts",
+        "src/workflow/pending.ts",
+        "vscode-plugin/src/delivery/delivery-contract.ts",
+        "vscode-plugin/tsconfig.delivery-contract.json"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/delivery/markdown.ts:109",
+            "message": "When a record's markdown file exists, is inside docs/, and starts with a different artifact's marker, `markdownOf` returns null. The LLD says the port returns null only when the file is missing or fails containment. Otherwise it should return the path with `hasMarker` false. Because of this, the snapshot entry reports `mdPath` null for a file that does exist. It also means `workflow.deliveryEvidence` returns `renderedMarkdown` null for that record, while the LLD says it returns whatever markdown the port finds, and a file without the marker is still returned.",
+            "expectationRef": "LLD contractDetails.api DeliveryMarkdownPort: 'It returns null when the file does not exist or does not resolve ... under the repo's docs/ tree; otherwise it reads at most the first 512 bytes and sets hasMarker when the first line is <marker>'; edge case 'A record whose markdown first line is the marker of a different artifact → openWith evidence-read'; deliveryEvidence 'renderedMarkdown is the markdown the default port ... locates'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/types.ts:352",
+            "message": "The published `DeliveryMarkdownPort` seam returns `{ mdPath, realPath, hasMarker }`. The LLD and plan t1 define it as `{ readonly mdPath: string; readonly hasMarker: boolean } | null`. The extra required `realPath` field changes the seam: test ports written to the approved shape will not type-check.",
+            "expectationRef": "Plan t1 acceptance check 'DeliveryMarkdownPort and DeliveryDeps are exported as the LLD defines them'; LLD signature 'interface DeliveryMarkdownPort { markdownOf(record: ArtifactRecord): { readonly mdPath: string; readonly hasMarker: boolean } | null }'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/delivery/handlers.ts:90",
+            "message": "renderedMarkdownOf reloads and lifts the entire artifact store and rebuilds the whole WorkItemGraph just to resolve one record's markdown path for a single evidence request. That makes the cost of every evidence call grow with the size of the store. It also means a malformed sibling record can affect resolution of this record's markdown; any throw is swallowed into a warn and returns null, so the client sees 'no markdown' rather than an error. Consider building the port once from a cached or shared record set, or resolving the path from the record alone.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/handlers.ts:93",
+            "message": "The markdown body is read with a direct readFileSync, bypassing the injected deps.fs (ReadonlyStoreFs) seam that the store read in handleDeliveryEvidence goes through. A test or caller that injects deps.fs still hits the real disk for the markdown, so the 'one fs seam' contract only partly holds.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/pending.ts:95",
+            "message": "kindFromFilename splits on the first '-' to get the kind prefix. That is the same logic as the new delivery loader's kindOfFile, which also validates the prefix against DELIVERY_ARTIFACT_KINDS. Two classifiers for the same store-filename convention can drift: pending.ts accepts any prefix, while delivery rejects unknown ones.",
+            "counterpartRef": "kindOfFile (src/workflow/delivery/load.ts:45)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:202",
+            "message": "str(v) duplicates the unknown→string narrowing that delivery/read.ts exports as asString. The only difference is that str returns undefined where asString returns null.",
+            "counterpartRef": "asString (src/workflow/delivery/read.ts:28)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-content.ts:90",
+            "message": "The private ArtifactShape interface (meta/body view of a store JSON) is redeclared here and again in pending.ts. Each copy can drift separately.",
+            "counterpartRef": "ArtifactShape (src/workflow/pending.ts:89)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/__tests__/currency.test.ts:231",
+            "message": "The test helpers storeRepo, snapshotTree and walk are copied verbatim from load.test.ts, and handlers.test.ts has a near-identical repoWith/treeOf pair. A shared test fixture module would remove the triplication.",
+            "counterpartRef": "storeRepo / snapshotTree (src/workflow/delivery/__tests__/load.test.ts:22,33)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 3,
+      "low": 5
+    }
+  }
+}

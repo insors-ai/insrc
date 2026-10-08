@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791473407706-ibres0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T15:30:07.707Z",
+    "model": "claude:opus",
+    "elapsedMs": 102985,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/amendments/store.ts",
+        "src/workflow/delivery/__tests__/currency.test.ts",
+        "src/workflow/delivery/__tests__/types.test.ts",
+        "src/workflow/delivery/currency.ts",
+        "src/workflow/delivery/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/amendments/store.ts:222",
+            "message": "The Story changes an existing module the LLD does not list. listApprovedAmendments' filter-and-sort was pulled out into a newly exported approvedInApplyOrder, and currency.ts imports it from amendments/store.ts. The LLD's dataModelChanges names the exact imports deriveCurrency may use (computeHldEffectiveHash, isAmendmentRecord, read.ts, load.ts, notice.ts) and lists no change to store.ts. The helper is pure, and behaviour is unchanged because listAmendments already sorts by numeric suffix. So this is an undeclared change to the agreed set of edits, not a functional defect. The fix is to record it in the LLD/BUILD notes or accept it with a note.",
+            "expectationRef": "LLD dataModelChanges[deriveCurrency].details: 'It imports the pure computeHldEffectiveHash from src/workflow/artifacts/lld.ts and the pure isAmendmentRecord from src/workflow/amendments/types.ts, asObject / asString / storyOrdinalOf from read.ts, kindOfFile from load.ts ... and makeNotice / sortNotices from notice.ts.'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/currency.ts:313",
+            "message": "Each epic's EffectiveAmendment list is sorted with a plain string `localeCompare` on amendmentId, so 'AMD-<hash>-10' sorts before 'AMD-<hash>-2'. That matches the documented contract ('each list sorted by amendmentId'), but it differs from the numeric-suffix order that `approvedInApplyOrder` and `listAmendments` use, so a reader comparing `amendments` with the order used for the effective-HLD hash will see the two disagree once an epic has 10 or more amendments. Sorting by the numeric suffix, or saying in the type doc that the order is lexical, would avoid the confusion. This is a presentation choice, not a correctness risk.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

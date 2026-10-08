@@ -1,0 +1,944 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791474528232-yf1eui",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T16:01:44.733Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 776498,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1791360301609-41fijn",
+    "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD designs every s5 acceptance criterion in the DEF (ac1 one timestamped read-only snapshot, ac2 deterministic order and counts, ac3 marker-less build evidence through the daemon, ac4 1,000 records / 500 items within budget, ac5 existing IPC clients unchanged, ac6 shape fixed and mirrored for three clients).",
+          "evidence": "DEF-2ff0dfdadb1c8d1c.json s5 acceptanceCriteria ac1-ac6 (lines 1079-1134) match: §2.1 read-only postconditions + takenAt (ac1), §2.2 sorted items + deep-equal postcondition (ac2), §2.4 deliveryEvidence returning meta/body/marker-less markdown (ac3), 500 ms edge case (ac4), additive-only exports with existing tests unchanged (ac5), types.ts + vscode mirror + JSON sample (ac6). The DEF functionalRequirements (changes to existing IPC only additive) are respected by §3.3/§3.4.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The snapshot fields the LLD assembles are exactly the HLD sc7 interface sketch (DeliveryItem with attentionReasons typed (AttentionReason | NoticeCode)[], DeliveryEvidenceEntry with mdPath/openWith, DeliverySnapshot with schemaVersion 1, counts, attentionRule; DeliveryEvidenceRecord with meta/body/renderedMarkdown).",
+          "evidence": "HLD-2ff0dfdadb1c8d1c.json sc7 interfaceSketch (line 318) lists the same fields, the same error mapping (absent store -> empty snapshot, unreadable -> error, id regex -> 'invalid artifact id', missing -> 'not found'), and the same response unions.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "handleWorkflowPending takes (params, repoEnv), resolves repo from non-empty params.repo else repoEnv, and returns { error: 'workflow.pending: `repo` is required' } — the idiom the new handlers copy.",
+          "evidence": "src/workflow/pending.ts:67-80: `export function handleWorkflowPending(params: { repo?: string } | undefined, repoEnv: string | undefined)` ... `if (repoPath.length === 0) return { error: 'workflow.pending: `repo` is required' }` with a try/catch mapping to `workflow.pending: ${message}`.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "handleArtifactContent today holds an inline lexical-plus-realpath docs/ containment check that can be extracted into resolveDocsMarkdown with the same error messages.",
+          "evidence": "src/workflow/artifact-content.ts:114-154: lexical `relative(docsRoot, absMd)` check, `.md` check, `realpathSync(absMd)` / `realpathSync(docsRoot)` with 'resolves outside docs/ via a symlink' error, then readFileSync. All messages are prefixed 'workflow.artifactContent:' and include p.mdPath, so the extracted helper must take the caller's prefix/mdPath to keep them word for word, as the LLD's test requires.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Real BUILD records stamp no epicSlug or epicCreatedAt (BUILD-2ff0dfdadb1c8d1c-s1 has only epicHash, storyId, createdAt), so meta-based md-path derivation cannot locate them.",
+          "evidence": ".insrc/artifacts/BUILD-2ff0dfdadb1c8d1c-s1.json meta: workflow, epicHash, storyId 's1', createdAt, updatedAt, authoredBy, approvedAt — no epicSlug/epicCreatedAt. pending.ts:187-198 deriveMdPath falls back to meta.createdAt and slug=hash, which would give a wrong folder; hence the graph + listWorkItems lookup.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused delivery functions exist with the stated shapes: loadArtifactRecordSet(repo, fs?, now?), liftStoreFile(fileName, parsed) -> ArtifactRecord | RecordLoadFailure, buildWorkItemGraph(recordSet), deriveStages/deriveGates/deriveCurrency(graph, recordSet), makeNotice, sortNotices, DeliveryStoreUnreadableError.",
+          "evidence": "load.ts:63 liftStoreFile, :111 loadArtifactRecordSet(repoPath, fs = nodeStoreFs, now) throwing DeliveryStoreUnreadableError when listDir fails and returning an empty set when the dir is absent; graph.ts:191 buildWorkItemGraph; stage.ts:239, gate.ts:362, currency.ts:295 each (graph, recordSet); notice.ts:44 makeNotice, :73 sortNotices; types.ts:278 DeliveryStoreUnreadableError.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "deriveMdPath is a private function in pending.ts taking PendingKind, and widening it to path-scheme's ArtifactKind is additive; listWorkItems exists and lists docs/epics and docs/standalone folders.",
+          "evidence": "pending.ts:187 `function deriveMdPath(repoPath, kind: PendingKind, meta)` (not exported) already casts `kind as ArtifactKind`; PENDING_KINDS (SPEC, DEF, HLD, LLD, PLAN, ISSUE, CR) ⊂ ArtifactKind (path-scheme.ts:46). path-scheme.ts:201 listWorkItems returns { kind, root: 'docs/<top>/<name>' } — repo-relative, so the port must join it with repoPath to report an absolute mdPath as the LLD states. ArtifactKind has no AMD, consistent with AMD -> null.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc7 types and new modules (snapshot.ts, handlers.ts, the two IPC methods) do not already exist.",
+          "evidence": "Glob src/workflow/delivery/**/*.ts lists notice, stage, read, load, gate, graph, types, currency only; types.ts has no Delivery* sc7 types; src/daemon/index.ts has 'workflow.pending' (686) and 'workflow.artifactContent' (698) but no 'workflow.delivery'.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon handler map registers workflow.* methods as lazy-import closures passing (params, process.env['INSRC_REPO']), so two new entries beside 'workflow.pending' are the complete daemon change.",
+          "evidence": "src/daemon/index.ts:686-703: `'workflow.pending': async (params) => { const { handleWorkflowPending } = await import('../workflow/pending.js'); return handleWorkflowPending(params as ..., process.env['INSRC_REPO']); }` and the same shape for 'workflow.artifactContent'.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The VS Code mirror can import src/workflow/delivery/types.ts by relative path and type-check under the plugin's tsconfig, as docs-review-client imports pending.ts.",
+          "evidence": "vscode-plugin/tsconfig.json: nodenext, strict, exactOptionalPropertyTypes, noEmit, include 'src/**/*.ts' (so delivery-contract.ts is also covered by the existing build, not only by the new tsconfig.delivery-contract.json). types.ts imports only '../review/types.js', which has no imports itself, and stays type-only apart from DeliveryStoreUnreadableError.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older and flat stored shapes are handled: flat AMD records lift as meta (all top-level fields but amendment) + body (amendment), and marker-less BUILD.md files remain readable through deliveryEvidence.",
+          "evidence": "load.ts:70-83 liftStoreFile for AMD: `const { amendment, ...meta } = top; ... meta, body: amendment`. The LLD reuses liftStoreFile and returns marker-less markdown with openWith 'evidence-read'. No stored shape is written or migrated (read-only), and schemaVersion 1 versions the published shape per HLD sc7.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD stays inside s5: it consumes sc1-sc6 without re-deriving identity, routes, gates or currency, and the build-without-plan completeness notice it adds is the half s4's boundary hands to s5.",
+          "evidence": "s4 boundary text: 'the build-without-plan half is tested in s5'; NoticeCode in types.ts:127 already declares `'incomplete-evidence' // s4 / s5`. The LLD reads routes from sc4 StageAnnotation.route, attention reasons from sc5 ItemGates, currency/amendments from sc6, and only merges notices via makeNotice/sortNotices.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An absent store yields an empty snapshot while an unlistable store is detectable as a thrown DeliveryStoreUnreadableError that the handler maps to { error }.",
+          "evidence": "load.ts:118 `if (!fs.exists(dir)) return { repo, readAt, records: [], failures: [] }`; :121-125 listDir failure throws `new DeliveryStoreUnreadableError(dir, ...)` whose message names the store path (types.ts:282).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The deliveryEvidence id pattern admits every real artifact id shape, including AMD-<hash>-<n> and story-suffixed ids, while excluding separators and '..'.",
+          "evidence": "Pattern ^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|ISSUE|EXT|AMD)-[0-9a-f]{16}(-[A-Za-z0-9]+)?$ matches 'BUILD-2ff0dfdadb1c8d1c-s1', 'DEF-2ff0dfdadb1c8d1c', and 'AMD-<hash>-1' (EffectiveAmendment.amendmentId doc in types.ts:249); the suffix class has no '/', '.' or '\\'. Identical to the HLD sc7 error-path sketch.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each ac maps to a named test, and the ac4 fixture really yields 1,000 records and 500 work items; the ac5 regression tests exist.",
+          "evidence": "§6 acceptance mapping covers ac1-ac6. Fixture arithmetic: 100 epics × (DEF+HLD) = 200 records + 400 stories × (LLD+PLAN) = 800 records = 1,000; items 100 epics + 400 stories = 500 (empty-task PLANs mint no task items). src/workflow/__tests__/pending.test.ts and artifact-content.test.ts exist for the 'unchanged' ac5 mapping.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 500 ms budget for ac4 can be met with the real markdown port (one listWorkItems plus up to 1,000 realpath + 512-byte reads) on the reference environment.",
+          "evidence": "No benchmark of loadArtifactRecordSet + the four passes + per-record realpath/read exists in the repo to compare against; the DEF says only 'the agreed time budget', and I did not find where 500 ms was agreed. Timing depends on the machine running the test.",
+          "action": "Confirm 500 ms is the agreed k6 budget, and keep the best-of-three timing so the test is not flaky on slow CI.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T16:16:58.718Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T16:22:36.806Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story publishes the delivery read model. One workflow.delivery request reads the artifact store once, runs the graph, stage, gate and currency passes, and returns one timestamped snapshot: every work item with its stage, evidence, task results, amendments, notices and a single needs-attention flag, plus store-level notices and counts, in a fixed order. workflow.deliveryEvidence returns any one record's metadata, body and rendered markdown through the daemon, including records whose markdown the review view cannot open. Both are new daemon handler entries; no existing handler changes, and the response types are fixed for the VS Code plugin, the JetBrains plugin and the insrc-ide fork."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A stateless, read-only projection pipeline in a new src/workflow/delivery module, beside pending.ts and artifact-content.ts. One request performs one read of every JSON record under the artifact store into an immutable record set (sc1), keeping unreadable files as load failures instead of throwing. The identity pass (s1) turns that record set into a work-item graph (sc2) of epics, stories, tasks and issues under the canonical work-item identity, with every item's evidence records attached. Three passes then run independently over the same graph and record set, each producing an annotation keyed by work-item or artifact id: route-aware stage with its reason (s2, sc4), gate signals and the gate-based attention reasons (s3, sc5), and record currency, amendment/extension checks and data-quality notices (s4, sc6). All three report problems through the one notice shape s1 owns (sc3). The snapshot step (s5) merges graph and annotations into the published response (sc7), computes counts and the final Needs-attention flag, sorts everything deterministically, and stamps the read time. The daemon exposes it as two new handler-map entries that lazy-import the module, following the workflow.pending idiom; no existing handler changes.",
+      "ownedContracts": [
+        {
+          "id": "sc7",
+          "name": "Delivery IPC contract (workflow.delivery, workflow.deliveryEvidence)",
+          "purpose": "The published, mirrored request and response shapes for the snapshot and for reading one evidence record. This is the shape E2 and E3 depend on; it is fixed here and versioned by schemaVersion.",
+          "ownedByStory": "s5",
+          "consumedByStories": [],
+          "assumptions": [
+            "c19",
+            "c20",
+            "c21"
+          ],
+          "interfaceSketch": "// method 'workflow.delivery'\ninterface DeliverySnapshotRequest { readonly repo?: string }\n\ninterface DeliveryEvidenceEntry {\n  readonly artifactId: string;\n  readonly kind: DeliveryArtifactKind;\n  readonly mdPath: string | null;           // rendered markdown under docs/ when one exists\n  readonly openWith: 'review-view' | 'evidence-read';  // review-view when the markdown carries the artifact marker\n  readonly approval: { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };\n  readonly review: ArtifactGate['review'];\n  readonly reviewCurrency: ReviewCurrency | null;\n}\n\ninterface DeliveryItem {\n  readonly id: string;\n  readonly kind: DeliveryItemKind;\n  readonly title: string | null;\n  readonly standalone: boolean;\n  readonly sourceIds: readonly string[];\n  readonly parentId: string | null;\n  readonly childIds: readonly string[];\n  readonly stage: { readonly stage: DeliveryStage; readonly route: DeliveryRoute; readonly reason: { readonly text: string; readonly artifactIds: readonly string[] } } | null; // null for epics and tasks\n  readonly evidence: readonly DeliveryEvidenceEntry[];   // sorted by artifactId\n  readonly tasks: readonly TaskValidation[];             // stories only\n  readonly validation: ItemGates['validation'] | null;\n  readonly storyLevelResult: ItemGates['storyLevelResult'];\n  readonly conflict: ItemGates['conflict'];\n  readonly correctsRef: WorkItemNode['correctsRef'];\n  readonly amendments: readonly EffectiveAmendment[];    // epics only; empty otherwise\n  readonly notices: readonly DeliveryNotice[];\n  readonly needsAttention: boolean;\n  readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];\n}\n\ninterface DeliverySnapshot {\n  readonly schemaVersion: 1;\n  readonly repo: string;\n  readonly takenAt: string;                 // ISO time the store was read\n  readonly recordCount: number;\n  readonly unreadableCount: number;\n  readonly items: readonly DeliveryItem[];  // sorted by id\n  readonly rootIds: readonly string[];\n  readonly notices: readonly DeliveryNotice[];  // store-level, sorted by code then artifactIds\n  readonly counts: {\n    readonly items: Readonly<Record<DeliveryItemKind, number>>;\n    readonly byStage: Readonly<Record<DeliveryStage, number>>;\n    readonly needsAttention: number;\n  };\n  readonly attentionRule: string;\n}\n\n// method 'workflow.deliveryEvidence'\ninterface DeliveryEvidenceRequest { readonly repo?: string; readonly artifactId: string }\n\ninterface DeliveryEvidenceRecord {\n  readonly artifactId: string;\n  readonly kind: DeliveryArtifactKind;\n  readonly meta: Readonly<Record<string, unknown>>;\n  readonly body: unknown;\n  readonly renderedMarkdown: string | null;\n}\n\ninterface DeliveryError { readonly error: string }\n\n// Error paths:\n//   repo unresolved                       -> { error }\n//   artifact store directory absent       -> a snapshot with recordCount 0 and no items (success, as workflow.pending treats an absent store)\n//   artifact store present but unreadable -> { error }\n//   deliveryEvidence: id not matching ^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|ISSUE|EXT|AMD)-[0-9a-f]{16}(-[A-Za-z0-9]+)?$\n//                     -> { error: 'invalid artifact id' }; a matching id is joined under the artifact store and must still\n//                     realpath-resolve inside it, else the same error\n//   deliveryEvidence: well-formed id with no record           -> { error: 'not found' }\n\ntype DeliverySnapshotResponse = DeliverySnapshot | DeliveryError;\ntype DeliveryEvidenceResponse = DeliveryEvidenceRecord | DeliveryError;"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactRecordSet",
+          "purpose": "One immutable reading of the artifact store: every parsed record with the facts all passes share, plus every file that could not be read. The single source every later layer reads, so no pass re-reads the disk and all passes see the same records.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c18",
+            "c4"
+          ],
+          "interfaceSketch": "type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';\n\ntype ApprovalState = 'approved' | 'rejected' | 'pending';\n\ninterface ArtifactRecord {\n  readonly artifactId: string;              // file stem, e.g. 'LLD-<hash>-s1'\n  readonly kind: DeliveryArtifactKind;\n  readonly workItemHash: string | null;     // meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC; top-level epicHash for an AMD\n  readonly storyIdRaw: string | null;       // meta.storyId exactly as written\n  readonly storyOrdinal: number | null;     // canonical ordinal of storyIdRaw, null when absent or unparseable\n  readonly approval: { readonly state: ApprovalState; readonly approvedAt: string | null; readonly rejectedAt: string | null };\n                                            // meta.approvedAt / meta.rejectedAt; for an AMD, top-level approvedAt / rejectedAt / status\n  readonly createdAt: string | null;        // meta.createdAt; top-level proposedAt for an AMD\n  readonly epicCreatedAt: string | null;    // meta.epicCreatedAt when stamped\n  readonly meta: Readonly<Record<string, unknown>>;   // the record's meta; for a flat AMD, every top-level field except `amendment`\n  readonly body: unknown;                             // the record's body; for a flat AMD, its `amendment` object\n}\n\n// Per-kind lift: every kind except AMD is read as { meta, body }; AMD records are flat\n// ({ id, epicHash, amendment, status, approvedAt?, rejectedAt?, ... }) and are lifted as described above.\n// A non-AMD file without meta is a 'missing-meta' load failure.\n\ninterface RecordLoadFailure {\n  readonly fileName: string;\n  readonly reason: 'unreadable' | 'invalid-json' | 'missing-meta' | 'unknown-kind';\n  readonly detail: string;\n}\n\ninterface ArtifactRecordSet {\n  readonly repo: string;\n  readonly readAt: string;                  // ISO time the directory was listed\n  readonly records: readonly ArtifactRecord[];   // sorted by artifactId\n  readonly failures: readonly RecordLoadFailure[]; // sorted by fileName\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "WorkItemGraph",
+          "purpose": "The identity and hierarchy of all work: each epic, story, task and issue exactly once under its canonical id, with parent/child links, the source ids it was joined from, and the artifacts that are its evidence.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ],
+          "interfaceSketch": "type DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue';\n\ninterface WorkItemNode {\n  readonly id: string;                      // canonical work-item id, e.g. 'E20261007<hash8>:S001', ':T002' for tasks; issue id for an issue\n                                            // Records are grouped by workItemHash + storyOrdinal BEFORE the id is minted. The id's date segment\n                                            // is the work item's anchor date: the definition head's (DEF-/ISSUE-<hash>) createdAt when one exists;\n                                            // otherwise workItemAnchorCreatedAt (meta.epicCreatedAt ?? meta.createdAt, storage.ts:181) of the\n                                            // group's earliest-created design head (LLD, else SPEC or BUILD for routes without one). The minted id\n                                            // must equal deriveWorkItemIdentity's output and the work item's existing path-scheme folder whenever\n                                            // those can be derived. Only when no record of the group has any createdAt is the id\n                                            // 'H<workItemHash>[:S<nnn>]', with an 'identity-anchor-missing' notice.\n  readonly kind: DeliveryItemKind;\n  readonly title: string | null;            // null when no record names it\n  readonly workItemHash: string | null;\n  readonly standalone: boolean;\n  readonly sourceIds: readonly string[];    // every raw id joined into this item, e.g. ['s1', 'S001']\n  readonly parentId: string | null;\n  readonly childIds: readonly string[];     // sorted\n  readonly evidenceArtifactIds: readonly string[]; // sorted; artifacts whose identity resolves to this item\n  readonly plannedTaskIds: readonly string[];      // stories only: task ids from the PLAN\n                                                   // Task items are minted only from t<n> ids (taskIdToOrdinal); a build task id equal to the\n                                                   // story's own id is a story-level result, creates no task item and raises no notice\n  readonly correctsRef: { readonly epicHash?: string; readonly storyId?: string; readonly slug?: string; readonly resolvedItemId: string | null } | null;\n                                            // issues only, from meta.parentRef; resolved by epicHash, else by slug against records' meta.epicSlug,\n                                            // EXCLUDING records that share the issue's own hash (the issue and its fix stories). A parentRef that\n                                            // names only the issue itself means 'no corrected parent': correctsRef is null and no notice is raised.\n  readonly seededFromSpecId: string | null; // 'SPEC-' + meta.seededFromSpec (which holds the bare 16-char spec hash); matched against\n                                            // the SPEC record's artifactId, and that SPEC is then in this item's evidence\n}\n\ninterface WorkItemGraph {\n  readonly items: ReadonlyMap<string, WorkItemNode>;\n  readonly rootIds: readonly string[];      // epics, standalone stories, issues; sorted\n  readonly notices: readonly DeliveryNotice[];  // identity notices (sc3)\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "DeliveryNotice",
+          "purpose": "The one shape every pass uses to report missing, malformed, ambiguous or contradictory evidence, so notices from identity, stage, gate and currency passes can be merged, sorted and counted uniformly. Owned at the root story because s2, s3 and s4 sit on separate branches and all emit notices.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "type NoticeCode =\n  | 'record-unreadable'          // s1: a file in the store could not be loaded\n  | 'identity-ambiguous'         // s1: records the canonical rule cannot settle as same or different\n  | 'unresolved-parent'          // s1: an issue's corrected parent, or a record's epic, is not in the store\n  | 'identity-anchor-missing'    // s1: no recorded date at all to mint the canonical id; hash form used\n  | 'unattached-spec'            // s1: a SPEC that no work item names as its seededFromSpec (store-level, attention false)\n  | 'unknown-route'              // s2: no recorded route for an item that needs one\n  | 'review-without-build'       // s2: a code review exists with no build record\n  | 'unplanned-task'             // s3: a build task with no matching planned task\n  | 'validation-conflict'        // s3: completion approved while a task failed\n  | 'incomplete-evidence'        // s4 (missing fields), s5 (a plan missing on a route that requires one): expected evidence absent\n  | 'review-currency-unknown'    // s4: no recorded field settles whether a review is current\n  | 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing\n\ninterface DeliveryNotice {\n  readonly code: NoticeCode;\n  readonly message: string;\n  readonly itemIds: readonly string[];      // sorted; empty for store-level notices\n  readonly artifactIds: readonly string[];  // sorted\n  readonly fileNames: readonly string[];    // sorted; for unreadable files that have no artifact id\n  readonly attention: boolean;              // true when this notice alone makes an item need attention\n}\n\n// attention by code (fixed): true for 'record-unreadable', 'identity-ambiguous', 'unresolved-parent', 'validation-conflict';\n// false for 'identity-anchor-missing', 'unattached-spec', 'unknown-route', 'review-without-build', 'unplanned-task',\n// 'incomplete-evidence', 'review-currency-unknown', 'base-predates-extension'. Unresolved references therefore count toward\n// Needs attention (S003:FR005); informational notices stay visible without flooding the filter."
+        },
+        {
+          "id": "sc4",
+          "name": "StageAnnotation",
+          "purpose": "Each story's and issue's derived stage, the route that decided its ready gate, and the reason naming the evidence behind it.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c12"
+          ],
+          "interfaceSketch": "type DeliveryStage =\n  | 'scoped'\n  | 'design-plan'\n  | 'ready-design-approved'\n  | 'ready-plan-approved'\n  | 'build-recorded'\n  | 'complete';\n\ntype DeliveryRoute = 'full-chain' | 'feature' | 'small' | 'small-bugfix' | 'sized-bugfix' | 'trivial' | 'unknown';\n\ninterface StageAnnotation {\n  readonly itemId: string;\n  readonly stage: DeliveryStage;\n  readonly route: DeliveryRoute;\n  readonly reason: { readonly text: string; readonly artifactIds: readonly string[] };\n}\n\ninterface StagePassResult {\n  readonly stages: ReadonlyMap<string, StageAnnotation>;  // keyed by itemId; stories and issues only\n  readonly notices: readonly DeliveryNotice[];\n}"
+        },
+        {
+          "id": "sc5",
+          "name": "GateAnnotation",
+          "purpose": "Per-artifact approval and review facts, per-task validation results, the approved-but-failed conflict, and the gate-based attention reasons with the attention rule that was applied.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c13"
+          ],
+          "interfaceSketch": "type ReviewVerdict = 'pass' | 'warn' | 'block';\n\n// Per-kind review read: DEF/HLD/LLD/PLAN/SPEC/ISSUE/EXT use meta.review (+ meta.reviewResolutions, meta.reviewOverride);\n// a CR record is itself a review and uses body.verdict, body.counts and meta.reviewedBy. A CR is its own evidence entry\n// on its story; a BUILD's entry does not absorb the CR verdict.\ninterface ArtifactGate {\n  readonly artifactId: string;\n  readonly approval: { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };\n  readonly review: {\n    readonly verdict: ReviewVerdict;\n    readonly reviewedAt: string;          // meta.review.reviewedAt for design artifacts; meta.createdAt for a CR record\n    readonly reviewedBy: 'controller' | 'daemon' | null;\n    readonly counts: { readonly high: number; readonly med: number; readonly low: number };\n    readonly override: { readonly reason: string; readonly at: string | null } | null;   // meta.reviewOverride\n    readonly resolvedFindings: number;    // HIGH/MED findings with an entry in meta.reviewResolutions\n    readonly effectiveVerdict: ReviewVerdict;  // design artifacts: 'block' when effectiveReviewVerdict(meta.review, meta.reviewResolutions)\n                                               //   (review/resolve.ts) returns 'block', otherwise the recorded meta.review.verdict, so a recorded\n                                               //   'warn' stays 'warn'; CR records: body.verdict (no per-finding resolutions)\n    readonly blocking: boolean;           // effectiveVerdict === 'block' AND artifact unapproved AND no override\n  } | null;\n}\n\ntype TaskResult = 'passed' | 'failed' | 'unrecorded';\n\ninterface TaskValidation {\n  readonly taskItemId: string;\n  readonly result: TaskResult;\n  readonly planned: boolean;               // false for a build-only task\n}\n\ntype AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict';\n// 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike.\n\ninterface ItemGates {\n  readonly itemId: string;\n  readonly tasks: readonly TaskValidation[];     // sorted by taskItemId\n  readonly validation: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number };\n  readonly storyLevelResult: TaskResult | null;  // a build result recorded against the story itself (body.tasks[].id equal to the\n                                                 //   story id, as standalone builds without a plan record it); not a task, not unplanned\n  readonly conflict: { readonly failedTaskItemIds: readonly string[]; readonly storyLevelFailed: boolean } | null;\n                                                 // set when the BUILD is approved and any task result OR the storyLevelResult is 'failed'\n  readonly attentionReasons: readonly AttentionReason[];\n  readonly attentionRule: string;          // the rule applied, e.g. superseded pending artifacts excluded\n}\n\ninterface GatePassResult {\n  readonly artifacts: ReadonlyMap<string, ArtifactGate>;   // keyed by artifactId\n  readonly items: ReadonlyMap<string, ItemGates>;          // keyed by itemId\n  readonly notices: readonly DeliveryNotice[];\n}"
+        },
+        {
+          "id": "sc6",
+          "name": "CurrencyAnnotation",
+          "purpose": "Whether each recorded review is known to still match its artifact, which record applies where several could, each epic's amendments with their status and whether they count toward the effective HLD, and the data-quality notices for missing evidence and extensions newer than their epic framing.",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c23"
+          ],
+          "interfaceSketch": "type ReviewCurrency = 'current' | 'stale' | 'unknown';\n\ninterface ArtifactCurrency {\n  readonly artifactId: string;\n  readonly reviewCurrency: ReviewCurrency | null;   // null when the artifact has no review\n  readonly basis: string | null;                    // the recorded field that settled it, null when unknown\n}\n\ninterface EffectiveAmendment {\n  readonly amendmentId: string;                     // e.g. 'AMD-<hash>-1'\n  readonly status: 'pending' | 'approved' | 'rejected';\n  readonly type: string | null;                     // the amendment's recorded type, e.g. 'storyBoundary.addStory'\n  readonly storyId: string | null;\n  readonly appliesToHld: boolean;                   // approved and counted in the epic's effective HLD\n}\n\ninterface CurrencyPassResult {\n  readonly artifacts: ReadonlyMap<string, ArtifactCurrency>;  // keyed by artifactId\n  readonly amendments: ReadonlyMap<string, readonly EffectiveAmendment[]>;  // keyed by epic itemId; sorted by amendmentId\n  readonly notices: readonly DeliveryNotice[];\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Private to s5: running the load, graph and three annotation passes in order for one request; joining annotations onto items; deciding needsAttention as any sc5 attention reason or any notice with attention true; computing counts over the full item set; the deterministic sort of items and notices; choosing openWith from whether an artifact's markdown carries its marker; the two daemon handler-map entries and their repo resolution and error mapping; the artifact-id validation that keeps evidence reads inside the artifact store; and the 1,000-artifact performance fixture. Also private: the error-path mapping (absent store is an empty snapshot; unreadable store, invalid or unknown evidence id is { error }). Also private: the determinism test (two snapshots over the same fixture are identical) and the regression check that the existing workflow.pending and workflow.artifactContent tests pass unchanged. Its LLD maps each of s5 ac1-ac6 to a named test: ac1 asserts the store is byte-identical after a request, ac3 reads a marker-less BUILD through workflow.deliveryEvidence, and ac6 is a type-level check that the VS Code plugin compiles against the published types plus a fixture the JetBrains mirror parses. Also private: the one route-dependent completeness check, raising an 'incomplete-evidence' notice for a story whose sc4 route requires a plan (full-chain, feature, sized-bugfix) but which has a build and no plan; small and small-bugfix routes never get it. Its LLD also owns the test for the build-without-plan half of s4 ac4: a full-chain story with a build and no plan gets the incomplete-evidence notice, and small and small-bugfix stories with a build and no plan do not."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Private to s1: how the store directory is listed and each file parsed; how a record's kind, work-item hash and raw story id are lifted from its file name and meta; the use of the canonical ordinal rule to join s1/S1/S001 and the decision of when two records are ambiguous rather than the same; sourcing story membership from the Define's story list and from accepted extension records; attaching fix stories to an issue through the shared work-item hash and resolving meta.parentRef; nesting tasks by plan and build task ids; and the sort order of records, failures and child lists. No other story reads the files or re-derives identity. Also private: the per-kind lift, including reading flat amendment records; the anchor-date rule for minting canonical ids after grouping by hash and ordinal, which must reproduce deriveWorkItemIdentity and the existing path-scheme folder for every work item those can identify; attaching each SPEC to the item that names it in meta.seededFromSpec; resolving a slug-only parentRef through records' meta.epicSlug. Its LLD maps each of s1 ac1-ac6 to a named test, including ac3 (an ambiguity notice naming the other record), ac4 (two fix stories under one issue) and ac6 (colliding short task ids in two stories). Task items are minted only from t<n> build and plan task ids; a build task id equal to the story's id is left for s3 as a story-level result, with a fixture of that shape. Slug resolution of an issue's parentRef excludes records sharing the issue's own hash; a parentRef that names only the issue itself yields no corrected parent and no notice. Fixtures cover both real shapes: a self-slug parentRef (for example ISSUE-0855311b6b32eb72) and an outward slug (for example ISSUE-2d9e9e694a94116b)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s2: the mapping from a work item's recorded route fields to a DeliveryRoute, read in this order of precedence: ISSUE meta.magnitude for an issue and for every fix story whose work-item hash is that issue's hash (small-bugfix or sized-bugfix, ahead of any BUILD stamp such as 'trivial'); the story's LLD meta.sizeClass; the standalone BUILD record's meta.sizeClass (the only place a trivial route is recorded); and, for a story under a non-standalone epic with none of these, the full chain; including treating any value that is not a SizeClass member (such as a scope letter 'M') or a missing stamp as unknown; a non-standalone BUILD's sizeClass is never read; the first-match-wins precedence that picks the stage; which gate counts as the ready gate for each route; and the wording of stage reasons. It reads approval state only through sc1 and never consults gate or currency annotations. Its LLD maps each of s2 ac1-ac7 to a named test over fabricated records."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: deciding review currency only from recorded fields (for example the framework's existing story-design staleness against its high-level design) and reporting unknown otherwise, never from file modification time; comparing accepted extension records with their epic framing; and detecting expected-but-missing fields, such as an artifact with no title. It never decides route-dependent gaps, which need s2's route. It reports through notices and never adds or removes work items. Also private: deriving each epic's amendments, and any story design's staleness against its high-level design, from the AMD, HLD and LLD records already in sc1, reusing only pure helpers such as computeHldEffectiveHash and never the amendments module's disk-reading listers, so the pass adds no second read and one malformed amendment cannot fail the snapshot. Staleness hashes the epic's approved amendments in rising approvedAt order, the order the existing scanner uses, which is separate from sc6's presentation sort by amendmentId. Its LLD maps each of s4 ac1-ac5 to a named test, including ac5 asserting that no file in the store changes. Its ac4 test covers the missing-field half (an artifact with no title); the build-without-plan half is tested in s5."
+        }
+      ],
+      "rolloutPhase": "Phase C — snapshot assembly and the two IPC methods",
+      "nonFunctional": {
+        "performance": "workflow.delivery returns a full snapshot for a fixture of 1,000 artifact records forming 500 work items within 500 ms of daemon-side time on the reference environment, leaving the client its PRD budget of one second to first render. The store is read once per request; passes are linear in records plus items. No LLM provider is called anywhere in the pipeline.",
+        "security": "Read-only by construction: the module opens files for reading only and has no write path. workflow.deliveryEvidence accepts an artifact id, never a path; the id must match the artifact-id pattern and resolve inside the artifact store, and rendered markdown is read only through the existing docs/ containment rule. Artifact content is returned as data and never evaluated. Clients never read the store themselves.",
+        "observability": "Each request logs, through the module's own logger, the repository, record count, unreadable count, item count, notice count by code, and elapsed time. Unreadable records appear both in the log and as notices in the response, so a thin view is never silent.",
+        "durability": "Nothing is persisted or cached. Artifact files are written by tmp-then-rename, so a concurrent read sees each file either before or after a write, never half-written; a work item whose JSON and markdown are mid-update is reported from its JSON and marked openWith 'evidence-read' if the markdown cannot be resolved."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "workflow.delivery (DeliverySnapshotRequest -> DeliverySnapshotResponse)",
+          "signature": "export function handleDelivery(params: DeliverySnapshotRequest | undefined, repoEnv: string | undefined, deps?: DeliveryDeps): DeliverySnapshotResponse",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "DeliverySnapshotRequest | undefined",
+              "purpose": "{ repo? }; the repository to read.",
+              "optional": true
+            },
+            {
+              "name": "repoEnv",
+              "type": "string | undefined",
+              "purpose": "process.env['INSRC_REPO'], the fallback when params.repo is absent or empty, as handleWorkflowPending takes it.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "DeliveryDeps",
+              "purpose": "{ fs?: ReadonlyStoreFs; now?: () => string; markdown?: DeliveryMarkdownPort } for tests; defaults read the real store and docs/ tree.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DeliverySnapshotResponse",
+            "meaning": "repo = params.repo when a non-empty string, else repoEnv; neither gives { error: 'workflow.delivery: `repo` is required' }. One loadArtifactRecordSet over the repo (an absent store directory gives an empty record set and so a snapshot with recordCount 0 and no items), then buildWorkItemGraph, deriveStages, deriveGates and deriveCurrency over that one record set, then assembleSnapshot with createMarkdownPort(repo, graph). A DeliveryStoreUnreadableError, or any other error thrown on the way, maps to { error: 'workflow.delivery: <message>' }; the handler never throws. One info log line per request names the repo, record count, unreadable count, item count, notice count by code and elapsed milliseconds."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Read-only: no file under the repo, its artifact store, docs/ or .git is written.",
+            "No LLM provider is called."
+          ]
+        },
+        {
+          "name": "DeliverySnapshot (assembleSnapshot)",
+          "signature": "export function assembleSnapshot(recordSet: ArtifactRecordSet, graph: WorkItemGraph, stages: StagePassResult, gates: GatePassResult, currency: CurrencyPassResult, markdown: DeliveryMarkdownPort): DeliverySnapshot",
+          "parameters": [
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "sc1, read once for this request.",
+              "optional": false
+            },
+            {
+              "name": "graph",
+              "type": "WorkItemGraph",
+              "purpose": "sc2 over recordSet.",
+              "optional": false
+            },
+            {
+              "name": "stages",
+              "type": "StagePassResult",
+              "purpose": "sc4.",
+              "optional": false
+            },
+            {
+              "name": "gates",
+              "type": "GatePassResult",
+              "purpose": "sc5.",
+              "optional": false
+            },
+            {
+              "name": "currency",
+              "type": "CurrencyPassResult",
+              "purpose": "sc6.",
+              "optional": false
+            },
+            {
+              "name": "markdown",
+              "type": "DeliveryMarkdownPort",
+              "purpose": "Reports each record's rendered markdown path and whether it starts with that record's marker.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliverySnapshot",
+            "meaning": "schemaVersion 1; repo and takenAt = recordSet.repo and recordSet.readAt; recordCount and unreadableCount = the record and failure counts. items: one DeliveryItem per graph item of every kind, sorted by id. Each item: id, kind, title, standalone, sourceIds, parentId, childIds and correctsRef from the graph; stage = the item's sc4 annotation (stories and issues), null for epics and tasks; evidence = one DeliveryEvidenceEntry per evidence id that has a record, sorted by artifactId, with approval and review from the sc5 ArtifactGate, reviewCurrency from sc6, and mdPath / openWith from the markdown port (mdPath null and openWith 'evidence-read' when the port finds no file; openWith 'review-view' only when the file's first line is exactly '<!-- insrc:artifact <artifactId> -->'); tasks, validation, storyLevelResult and conflict from the sc5 ItemGates for stories (tasks [], validation null, storyLevelResult null, conflict null otherwise); amendments = the sc6 list for an epic, [] otherwise; notices = every notice from the graph and the three passes, plus this step's completeness notices, whose itemIds include the item, sorted with sortNotices; needsAttention = the item has an sc5 attention reason or a notice with attention true; attentionReasons = the sc5 reasons in their declared order, then, in code order, the codes of the item's attention-true notices that are not already in the list, so each entry appears once ('validation-conflict' is both an sc5 reason and an attention-true notice code and is listed once). Completeness (the build-without-plan half of the s4 criterion): a story whose sc4 route is full-chain, feature or sized-bugfix and that holds a BUILD and no PLAN gets one incomplete-evidence notice naming the story and its BUILDs; small, small-bugfix, trivial and unknown routes never do. rootIds from the graph. notices = every notice with no itemIds, sorted with sortNotices. counts.items per item kind (all four keys present), counts.byStage per stage over stories and issues (all six keys present), counts.needsAttention = items with needsAttention. attentionRule = one fixed sentence stating that an item needs attention when it has a gate attention reason (a pending decision, a rejection, a blocking review, a failed validation or a validation conflict, a pending record no longer counting once a later gate on its item is approved) or a notice whose code is marked for attention."
+          },
+          "errors": [],
+          "preconditions": [
+            "graph and the three annotations were derived from recordSet."
+          ],
+          "postconditions": [
+            "Pure and deterministic given its inputs: the same inputs give a deep-equal snapshot, whatever the record timestamps.",
+            "Plain JSON: arrays and objects only, no Map, Set or undefined."
+          ]
+        },
+        {
+          "name": "DeliveryMarkdownPort",
+          "signature": "interface DeliveryMarkdownPort { markdownOf(record: ArtifactRecord): { readonly mdPath: string; readonly hasMarker: boolean } | null }; export function createMarkdownPort(repoPath: string, graph: WorkItemGraph): DeliveryMarkdownPort",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryMarkdownPort",
+            "meaning": "The default port is created once per request from the repo and the graph. It lists the work-item folders once with path-scheme listWorkItems (docs/epics and docs/standalone, each folder named <slug>-<epicSegment>) and locates a record's markdown from the graph, not from the record's own meta, because most BUILD and CR records stamp no epicSlug or epicCreatedAt (BUILD-2ff0dfdadb1c8d1c-s1 has only epicHash, storyId and createdAt): the item that holds the record (a story for LLD, PLAN, BUILD, CR and EXT; the epic or issue for SPEC, DEF, HLD and ISSUE) gives the epic segment (the canonical id before any ':') and, for a story, its S<nnn> folder; the folder whose name ends in '-<epicSegment>' is the root, and the path is <root>/[S<nnn>/]<KIND>.md, absolute, as workflow.pending reports mdPath. Only when no folder matches (for example an H-form id) does it fall back to deriveMdPath from the record's meta, exported from pending.ts with its kind parameter widened to path-scheme's ArtifactKind, mapping '' to null. AMD records give null. It returns null when the file does not exist or does not resolve, lexically and by realpath, under the repo's docs/ tree; otherwise it reads at most the first 512 bytes and sets hasMarker when the first line is '<!-- insrc:artifact <artifactId> -->'. A read error gives null. It never writes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "workflow.deliveryEvidence (DeliveryEvidenceRequest -> DeliveryEvidenceResponse)",
+          "signature": "export function handleDeliveryEvidence(params: DeliveryEvidenceRequest | undefined, repoEnv: string | undefined, deps?: DeliveryDeps): DeliveryEvidenceResponse",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "DeliveryEvidenceRequest | undefined",
+              "purpose": "{ repo?, artifactId }.",
+              "optional": true
+            },
+            {
+              "name": "repoEnv",
+              "type": "string | undefined",
+              "purpose": "The INSRC_REPO fallback.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "DeliveryDeps",
+              "purpose": "Test seams, as for handleDelivery.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DeliveryEvidenceResponse",
+            "meaning": "repo resolved as for handleDelivery, else { error: 'workflow.deliveryEvidence: `repo` is required' }. artifactId must be a string matching ^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|ISSUE|EXT|AMD)-[0-9a-f]{16}(-[A-Za-z0-9]+)?$, else { error: 'invalid artifact id' }. The file <artifactId>.json is joined under the repo's artifact store; a path that does not exist gives { error: 'not found' }, and one whose realpath falls outside the store's realpath gives { error: 'invalid artifact id' }. The file is parsed and lifted with load.ts liftStoreFile, so an AMD reads as meta (every top-level field except amendment) and body (the amendment); a file that cannot be read, parsed or lifted gives { error: 'workflow.deliveryEvidence: <artifactId> cannot be read: <detail>' }. renderedMarkdown is the markdown the default port (createMarkdownPort over a graph built from one store read) locates for the record, read through the same docs/ containment rule as workflow.artifactContent (resolveDocsMarkdown, shared with it), or null when there is none; a marker-less file is still returned. kind from the lifted record. Never throws, never writes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Only files under the repo's artifact store and docs/ tree are read."
+          ]
+        },
+        {
+          "name": "DeliveryItem / DeliveryEvidenceEntry / DeliveryEvidenceRecord / DeliveryError (the sc7 types)",
+          "signature": "type DeliverySnapshotResponse = DeliverySnapshot | DeliveryError; type DeliveryEvidenceResponse = DeliveryEvidenceRecord | DeliveryError",
+          "parameters": [],
+          "returns": {
+            "type": "sc7",
+            "meaning": "Exactly the HLD sc7 sketch: DeliverySnapshotRequest, DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot, DeliveryEvidenceRequest, DeliveryEvidenceRecord, DeliveryError and the two response unions, in src/workflow/delivery/types.ts, which stays type-only apart from DeliveryStoreUnreadableError so the VS Code plugin imports it as it imports pending.ts. The mirror: vscode-plugin/src/delivery/delivery-contract.ts imports these types by relative path and is compiled by vscode-plugin/tsconfig.delivery-contract.json (extending the plugin's tsconfig, including only that file); src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json is a plain-JSON snapshot the JetBrains plugin's Gson parser reads by field name and the insrc-ide fork can copy; a test keeps the sample equal to what assembleSnapshot produces from its fixture. The Kotlin parse test itself belongs to the JetBrains client epic (E3)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "schemaVersion is 1; a breaking change to the shape raises it."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DeliverySnapshotRequest, DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot, DeliveryEvidenceRequest, DeliveryEvidenceRecord, DeliveryError, DeliverySnapshotResponse, DeliveryEvidenceResponse, DeliveryMarkdownPort, DeliveryDeps",
+        "change": "new",
+        "details": "The sc7 types and the two seams, added to src/workflow/delivery/types.ts beside sc1-sc6.",
+        "callSites": [
+          "src/workflow/delivery/types.ts"
+        ]
+      },
+      {
+        "entity": "assembleSnapshot, handleDelivery, handleDeliveryEvidence, createMarkdownPort",
+        "change": "new",
+        "details": "New modules src/workflow/delivery/snapshot.ts (the pure assembler) and src/workflow/delivery/handlers.ts (the two handlers, createMarkdownPort and the request log line through getLogger('delivery')). They import loadArtifactRecordSet / liftStoreFile, buildWorkItemGraph, deriveStages, deriveGates, deriveCurrency, makeNotice / sortNotices, listWorkItems from path-scheme.ts, deriveMdPath from pending.ts and resolveDocsMarkdown from artifact-content.ts.",
+        "callSites": []
+      },
+      {
+        "entity": "deriveMdPath (pending.ts), resolveDocsMarkdown (artifact-content.ts)",
+        "change": "new",
+        "details": "Additive exports so the delivery handlers reuse, not copy, the md-path derivation and the docs/ containment rule. deriveMdPath is the existing private function, exported with its kind parameter widened from PendingKind to path-scheme's ArtifactKind (an additive change: every PendingKind is an ArtifactKind, so workflow.pending's calls are unchanged); the delivery port uses it only as a fallback. resolveDocsMarkdown is the lexical-plus-realpath containment check now inside handleArtifactContent, extracted into an exported helper that handleArtifactContent calls with the same error messages, so workflow.pending and workflow.artifactContent behave exactly as before.",
+        "callSites": [
+          "src/workflow/pending.ts",
+          "src/workflow/artifact-content.ts"
+        ]
+      },
+      {
+        "entity": "'workflow.delivery' and 'workflow.deliveryEvidence' handler entries",
+        "change": "new",
+        "details": "Two entries in the daemon handler map in src/daemon/index.ts, beside 'workflow.pending', each lazy-importing ../workflow/delivery/handlers.js and passing (params, process.env['INSRC_REPO']). No existing entry changes.",
+        "callSites": [
+          "src/daemon/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "Defines and serves both IPC methods and their types."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reads the store once per snapshot request through loadArtifactRecordSet; lifts one evidence file with liftStoreFile."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Items, root ids, evidence and graph notices."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Merges and sorts every pass's notices and raises the completeness incomplete-evidence notice through makeNotice."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Each story's and issue's stage and route; the route decides the completeness check."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Per-record approval and review, per-item task results, conflict and attention reasons."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Per-record review currency and each epic's amendments."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Neither params.repo nor INSRC_REPO names a repository.",
+          "detection": "The resolved repo string is empty.",
+          "response": "{ error: 'workflow.delivery: `repo` is required' } (or the workflow.deliveryEvidence equivalent).",
+          "userImpact": "The client shows the daemon's message, as for workflow.pending.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The artifact store directory exists but cannot be listed.",
+          "detection": "loadArtifactRecordSet throws DeliveryStoreUnreadableError.",
+          "response": "{ error: 'workflow.delivery: <message>' } naming the store path; never an empty snapshot.",
+          "userImpact": "The view says the store cannot be read instead of showing nothing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pass or the assembler throws unexpectedly.",
+          "detection": "A try/catch around the whole request in handleDelivery.",
+          "response": "{ error: 'workflow.delivery: <message>' }; the handler never throws to the socket.",
+          "userImpact": "A structured error instead of a dropped connection.",
+          "recoverable": true
+        },
+        {
+          "scenario": "workflow.deliveryEvidence receives an id that is not a string, does not match the artifact-id pattern, or contains path separators or '..'.",
+          "detection": "The anchored pattern test before any path is built.",
+          "response": "{ error: 'invalid artifact id' }; no file is opened.",
+          "userImpact": "No path outside the store can be named.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A matching id whose JSON does not exist, or whose realpath leaves the store (a symlink).",
+          "detection": "realpathSync throws ENOENT, or the realpath is not under the store's realpath.",
+          "response": "{ error: 'not found' } for a missing file; { error: 'invalid artifact id' } for an escape.",
+          "userImpact": "The client can tell a missing record from a refused one.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The evidence JSON cannot be read, parsed or lifted.",
+          "detection": "readFileSync / JSON.parse throws, or liftStoreFile returns a RecordLoadFailure.",
+          "response": "{ error: 'workflow.deliveryEvidence: <artifactId> cannot be read: <detail>' }.",
+          "userImpact": "The client shows why the record cannot be opened.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A record's markdown is missing, unreadable, or resolves outside docs/.",
+          "detection": "The port's existence, lexical and realpath containment checks, and a caught read error.",
+          "response": "The snapshot entry gets mdPath null and openWith 'evidence-read'; deliveryEvidence returns renderedMarkdown null with the record.",
+          "userImpact": "The record is still readable through deliveryEvidence; nothing invented.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo whose artifact store directory does not exist.",
+          "expected": "A snapshot with recordCount 0, unreadableCount 0, no items, all count keys present with 0."
+        },
+        {
+          "input": "The same store requested twice with the same now, including two work items whose records share one createdAt.",
+          "expected": "Deep-equal snapshots: same items in the same order, same notices, same counts."
+        },
+        {
+          "input": "A BUILD whose BUILD.md has no insrc:artifact marker (the older shape).",
+          "expected": "Its evidence entry has openWith 'evidence-read' and its mdPath; deliveryEvidence returns its meta, body and the marker-less markdown."
+        },
+        {
+          "input": "A record whose markdown first line is the marker of a different artifact.",
+          "expected": "openWith 'evidence-read'."
+        },
+        {
+          "input": "An AMD record.",
+          "expected": "mdPath null, openWith 'evidence-read'; deliveryEvidence returns the flat record lifted as meta and body."
+        },
+        {
+          "input": "A full-chain (or feature, or sized-bugfix) story with a BUILD and no PLAN.",
+          "expected": "One incomplete-evidence notice on the story naming its BUILD."
+        },
+        {
+          "input": "A small, small-bugfix or trivial story with a BUILD and no PLAN.",
+          "expected": "No completeness notice."
+        },
+        {
+          "input": "A notice naming two items.",
+          "expected": "It appears in both items' notices; a notice naming no item appears only in the snapshot's store-level notices."
+        },
+        {
+          "input": "An item whose only attention signal is an identity-ambiguous notice naming it (record-unreadable is store-level and names no item).",
+          "expected": "needsAttention true; attentionReasons ['identity-ambiguous']."
+        },
+        {
+          "input": "A task item.",
+          "expected": "stage null, tasks [], validation null; needsAttention only from notices naming it."
+        },
+        {
+          "input": "A store of 1,000 records forming 500 work items.",
+          "expected": "handleDelivery with the real markdown port returns within 500 ms (best of three runs)."
+        },
+        {
+          "input": "A real-shaped BUILD record with only epicHash, storyId and createdAt (no epicSlug, no epicCreatedAt) under an epic whose folder is docs/epics/<slug>-E<date><hash8>/.",
+          "expected": "Its mdPath is <folder>/S<nnn>/BUILD.md, found through the graph and listWorkItems; deliveryEvidence returns that file's markdown."
+        },
+        {
+          "input": "A story with an approved BUILD and a failed task (an sc5 validation-conflict reason and a validation-conflict notice naming it).",
+          "expected": "attentionReasons ['validation-failed', 'validation-conflict'], each once."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (node:assert/strict), over fabricated records from src/workflow/delivery/__tests__/fixtures.ts and real temporary repositories",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pure assembler.",
+          "subjects": [
+            "snapshot.test.ts: 'every work item is joined with its stage, evidence, gates, currency and notices'",
+            "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'",
+            "snapshot.test.ts: 'needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items'",
+            "snapshot.test.ts: 'a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not'"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The two handlers over real temporary repositories.",
+          "subjects": [
+            "handlers.test.ts: 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched'",
+            "handlers.test.ts: 'workflow.deliveryEvidence reads a marker-less build record through the daemon'",
+            "handlers.test.ts: 'workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one'",
+            "handlers.test.ts: 'an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot'",
+            "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'",
+            "artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged",
+            "handlers.test.ts: 'resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word'",
+            "handlers.test.ts: 'a build record that stamps no epic slug or date is located through its work item's folder'"
+          ],
+          "fixturesNeeded": [
+            "A temporary git repository with an artifact store, rendered markdown under docs/ (one BUILD.md without a marker) and one commit, snapshotted by path, size, mtime and content hash, including .git, before and after a request.",
+            "A generated store, read through the real markdown port, of 100 epics (DEF and HLD) with four stories each (LLD and an empty-task PLAN): 1,000 records, 500 work items."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The published shape for the client mirrors.",
+          "subjects": [
+            "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'",
+            "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'"
+          ],
+          "fixturesNeeded": [
+            "vscode-plugin/src/delivery/delivery-contract.ts and vscode-plugin/tsconfig.delivery-contract.json, compiled with npx tsc -p.",
+            "src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json, assembled from fixed records, a fixed time and a fixed markdown port."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "handlers.test.ts: 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched'",
+            "snapshot.test.ts: 'every work item is joined with its stage, evidence, gates, currency and notices'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "handlers.test.ts: 'workflow.deliveryEvidence reads a marker-less build record through the daemon'",
+            "handlers.test.ts: 'a build record that stamps no epic slug or date is located through its work item's folder'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged",
+            "handlers.test.ts: 'resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'",
+            "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure snapshot assembler plus two thin handlers",
+        "oneLineSummary": "A pure assembleSnapshot joins the record set, graph and three annotations; handleDelivery and handleDeliveryEvidence resolve the repo, read the store once, map errors, and are registered as two lazy-import handler-map entries.",
+        "approach": "The sc7 types join types.ts. A new src/workflow/delivery/snapshot.ts exports assembleSnapshot(recordSet, graph, stages, gates, currency, markdown): DeliverySnapshot, where markdown is a read-only port that maps an artifact to its rendered .md path and says whether the file starts with its insrc:artifact marker. It joins annotations onto every item, adds the route-dependent incomplete-evidence notice (full-chain / feature / sized-bugfix story with a BUILD and no PLAN), decides needsAttention from sc5 reasons and attention-true notices, counts, and sorts. A new src/workflow/delivery/handlers.ts exports handleDelivery(params, repoEnv) and handleDeliveryEvidence(params, repoEnv) following handleWorkflowPending: repo from params else INSRC_REPO, one loadArtifactRecordSet, the four passes, the assembler, a log line, and { error } for an unresolved repo or an unreadable store; the evidence handler validates the id pattern, realpath-checks the JSON under the store, and reads the markdown through the same docs/ containment rule as workflow.artifactContent. Two entries in src/daemon/index.ts lazy-import handlers.ts. The ac6 mirror is a type-only consumer file under vscode-plugin/src compiled by its existing tsc build, and a JSON snapshot fixture the JetBrains plugin can parse.",
+        "pros": [
+          "Every rule is testable without a socket, as pending and artifactContent are.",
+          "The store is read once per request; the markdown port keeps the docs reads separate and injectable.",
+          "No existing handler changes: two new entries only."
+        ],
+        "cons": [
+          "The md-path derivation used by pending.ts is private there and must be shared or mirrored."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Inline handlers in the daemon",
+        "oneLineSummary": "Assemble the snapshot directly inside the two daemon handler entries.",
+        "approach": "Put repo resolution, the passes and the join inside the 'workflow.delivery' and 'workflow.deliveryEvidence' closures in src/daemon/index.ts.",
+        "pros": [
+          "No new handler module."
+        ],
+        "cons": [
+          "Untestable without a socket, unlike the workflow.pending idiom the HLD names.",
+          "Grows the daemon entry with domain logic."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Untestable outside the daemon; departs from the named idiom."
+      },
+      {
+        "id": "a3",
+        "name": "Cached snapshot invalidated by the file watcher",
+        "oneLineSummary": "Keep the last snapshot per repo and rebuild it when the artifact store changes.",
+        "approach": "Hold a per-repo snapshot in daemon memory and invalidate it from the existing file watcher on writes under .insrc/artifacts.",
+        "pros": [
+          "Cheaper repeat requests."
+        ],
+        "cons": [
+          "Contradicts the HLD durability rule (nothing persisted or cached) and risks serving a stale view after a missed event.",
+          "Couples the read model to the watcher's delivery guarantees."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates the HLD durability rule (nothing cached)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts",
+      "quotedText": "export function handleWorkflowPending("
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts",
+      "quotedText": "export function handleArtifactContent("
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/index.ts",
+      "quotedText": "'workflow.pending': async (params) => {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/delivery/load.ts",
+      "quotedText": "export function loadArtifactRecordSet("
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts",
+      "quotedText": "export function resolveArtifactMdPath("
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts",
+      "quotedText": "import type { PendingArtifact } from '../../../src/workflow/pending.js';"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "HLD-2ff0dfdadb1c8d1c sc7 Delivery IPC contract and the s5 story boundary"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/path-scheme.ts",
+      "quotedText": "export function listWorkItems(repoPath: string): readonly WorkItemLocation[] {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": ".insrc/artifacts/BUILD-2ff0dfdadb1c8d1c-s1.json",
+      "quotedText": "\"storyId\": \"s1\""
+    }
+  ]
+}

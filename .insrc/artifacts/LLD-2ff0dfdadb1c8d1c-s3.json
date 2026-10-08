@@ -1,0 +1,824 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791458944705-ro00q5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T11:39:26.580Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 621869,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1791360301609-41fijn",
+    "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every s3 acceptance criterion (ac1–ac7) and the lc1 stakeholder policy in the DEF is designed; no non-goal (stage change, config read) is built.",
+          "evidence": "DEF-2ff0dfdadb1c8d1c s3 lists ac1–ac7 plus lc1 ('a pending artifact superseded by downstream approval ... stops counting toward Needs attention'). The LLD covers approval states (ac1), approved-build-with-failed-task conflict while the stage stays complete (ac2), unrecorded tasks (ac3), unplanned tasks (ac4), unapproved block → review-blocked with the stage kept (ac5), approved or overridden block → not blocking but still shown (ac6), and the superseded-pending rule with attentionRule (ac7, lc1 recorded as confirmed 2026-10-08). The FR's 'unresolved references' come from s1 notices (sc3 'unresolved-parent' is attention true), which s5 joins in. Nothing here changes a stage. [files: .insrc/artifacts/DEF-2ff0dfdadb1c8d1c.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ArtifactGate/ItemGates shapes match the HLD sc5 interface sketch, and the departures from it are stated as stakeholder-confirmed readings.",
+          "evidence": "The HLD sc5 interfaceSketch has the same ArtifactGate fields, the same TaskValidation, ItemGates (storyLevelResult, conflict {failedTaskItemIds, storyLevelFailed}, attentionReasons, attentionRule) and GatePassResult maps. The sketch says effectiveVerdict is 'otherwise the recorded verdict' and that blocking means 'artifact unapproved'. The LLD refines both: a fully resolved block reads 'pass', and a CR's guarded gate is its story's BUILD. Both are called out in its 2.2 postconditions as readings confirmed on 2026-10-08. [files: .insrc/artifacts/HLD-2ff0dfdadb1c8d1c.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "effectiveReviewVerdict returns 'block' whenever any HIGH/MED finding has no resolution entry, regardless of the recorded verdict, and the approval gate uses exactly that, so a recorded 'warn' carrying an unresolved MED is effectively a block.",
+          "evidence": "resolve.ts:57-64 checks `report.findings.some(f => BLOCKING.has(f.severity) && res[f.claimId] === undefined)` and returns 'block' or 'pass'. gates.ts:581 refuses approval when `effectiveReviewVerdict(review, artifact.meta.reviewResolutions) === 'block'`. verdict.ts:44-50 computeVerdict gives 'warn' for a MED that blockOn excluded. A template review's could-not-verify finding is LOW (severityForOutcome), so it never blocks. [files: src/workflow/review/resolve.ts, src/workflow/gates.ts, src/workflow/review/verdict.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "reviewerPartyOf reads reviewedBy first, then the model label ('client' → controller, any other label → daemon, none → unknown).",
+          "evidence": "party.ts:63-71 matches this. The live CR-2ff0dfdadb1c8d1c-s2 meta carries reviewedBy 'daemon' and model 'claude:opus', so passing the CR's meta works. [files: src/workflow/review/party.ts, .insrc/artifacts/CR-2ff0dfdadb1c8d1c-s2.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "codeReview.enforce defaults off, and code-review/gate.ts then demotes a CR block to an advisory warn, so CR blocking is an attention signal, not the enforced gate.",
+          "evidence": "code-review/gate.ts:102-112: when enforce is false it returns `{ status: 'warn', advisory: true, ... }`. readEnforceFlag (gate.ts:144-151) returns false when the config file or the key is missing. [files: src/workflow/code-review/gate.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ArtifactRecord.approval already gives state approved/rejected/pending with approvedAt/rejectedAt, and approved wins over rejected.",
+          "evidence": "load.ts:66-72 sets state 'approved' when approvedAt is set or status is 'approved', else 'rejected' when rejectedAt is set or status is 'rejected', else 'pending'. types.ts:33-37 carries approvedAt and rejectedAt, both nullable. An AMD approved only through status has approvedAt null, which the `at: string | null` type allows. [files: src/workflow/delivery/load.ts, src/workflow/delivery/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "taskIdToOrdinal and storyIdToOrdinal throw on unparseable ids; graph.ts already wraps them in null-returning helpers; and their patterns do not overlap, so a 't3' entry can never be read as a story-level result.",
+          "evidence": "id.ts:119-126: storyIdToOrdinal matches /^[sS](\\d+)$/ and throws otherwise. id.ts:132-136: taskIdToOrdinal matches /^t(\\d+)$/ and throws otherwise. graph.ts:99-113 defines the storyOrdinalOf and taskOrdinalOf try/catch wrappers, but they are module-private (not exported), so gate.ts needs its own copies, as the LLD says. [files: src/workflow/id.ts, src/workflow/delivery/graph.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc5 types and gate.ts are new; ReviewVerdict is reused from review/types.ts; makeNotice/sortNotices and the 'unplanned-task' / 'validation-conflict' notice codes already exist with the stated attention values.",
+          "evidence": "The delivery directory has no gate.ts and types.ts has no ArtifactGate. review/types.ts:43 has `export type ReviewVerdict = 'pass' | 'warn' | 'block'`, and code-review/gate.ts:32 already imports it as a type. types.ts:120-121 includes the 'unplanned-task' and 'validation-conflict' NoticeCodes. notice.ts:17-30 sets 'validation-conflict': true and 'unplanned-task': false, and makeNotice (notice.ts:44) takes `{ itemIds, artifactIds }` refs. [files: src/workflow/delivery/types.ts, src/workflow/delivery/notice.ts, src/workflow/review/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc2 fields the pass consumes (evidenceArtifactIds, childIds, sourceIds, plannedTaskIds) exist. Task items are minted only from t<n> ids, and a story-id BUILD entry is left as no task item, so storyLevelResult can be derived without colliding with a task.",
+          "evidence": "types.ts:77-98 WorkItemNode has sourceIds, childIds, evidenceArtifactIds and plannedTaskIds. graph.ts:381-398 addTasks skips any entry where `taskOrdinalOf(taskId) === null`, so 'S001' becomes no task. Live BUILD-0855311b6b32eb72-S001 has its only entry as `id: \"S001\", passed: false` with approvedAt set, and fixtures.ts:150 already includes it. [files: src/workflow/delivery/types.ts, src/workflow/delivery/graph.ts, src/workflow/delivery/__tests__/fixtures.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A CR record lands in its story's evidence (it carries meta.epicHash and meta.storyId), so the CR's 'guarded gate' (the story's BUILD) can be found among the same item's records.",
+          "evidence": "CR-2ff0dfdadb1c8d1c-s2.json meta has epicHash '2ff0dfdadb1c8d1c' and storyId 's2'. graph.ts groupKeyOf (lines 43-51) keys records by hash and story ordinal, so the CR and the BUILD of the same story share evidenceArtifactIds. The CR id is `CR-${epicHash}-${storyId}` (storage.ts:173). [files: .insrc/artifacts/CR-2ff0dfdadb1c8d1c-s2.json, src/workflow/delivery/graph.ts, src/workflow/storage.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older review stamps without reviewedBy, CRs without counts or with non-number counts, and findings stored in the ReviewReport shape are all read without throwing. The pass writes nothing.",
+          "evidence": "ReviewReport (review/types.ts:144-161) has reviewedBy optional ('Absent on reviews stamped before the field existed — read it through reviewerPartyOf'). code-review/gate.ts normalizeCounts (155-159) already reads non-number counts as 0, which the LLD mirrors. effectiveReviewVerdict reads f.severity on every finding, so the LLD's pre-filter of findings to well-formed entries is needed and specified. deriveGates is pure, with no store write. [files: src/workflow/review/types.ts, src/workflow/code-review/gate.ts, src/workflow/review/resolve.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s3 stays inside sc5: it reads no stage (sc4) or currency (sc6) annotation, raises only its own notice codes, adds no items, and leaves joining needsAttention and the incomplete-evidence check to s5.",
+          "evidence": "The LLD postcondition says it 'reads no stage (sc4) or currency (sc6) annotation'. deriveStages is imported only in tests to assert ac2/ac5. The notices are limited to 'unplanned-task' and 'validation-conflict', which types.ts:120-121 marks '// s3'. The needsAttention join and incomplete-evidence are explicitly owned by s5 in the adjacent-scope list. deriveStages(graph, recordSet) exists at stage.ts:239 with that signature. [files: src/workflow/delivery/types.ts, src/workflow/delivery/stage.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every malformed input (non-object review, unknown verdict, malformed findings array or entries, malformed CR body/counts, malformed or unparseable task entries, dangling evidence ids) is detected with a stated, non-throwing response.",
+          "evidence": "Section 5 lists detection and response for each case. These match the real failure points. effectiveReviewVerdict throws on a null finding because it dereferences f.severity (resolve.ts:62), and the LLD filters findings first. taskIdToOrdinal and storyIdToOrdinal throw (id.ts:124,134), and the LLD wraps them. records/evidence lookups can miss, and the LLD skips those ids. Each case has an edge-case row and is covered by the 'malformed ... never throws' test. [files: src/workflow/review/resolve.ts, src/workflow/id.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1–ac7 maps to at least one named gate.test.ts test over fixtures.ts, and the stage halves of ac2 and ac5 are asserted with deriveStages.",
+          "evidence": "The acceptance-mapping table covers ac1–ac7, each with named tests. ac2 and ac5 import deriveStages (stage.ts:239) to assert that the stage is unchanged. The fixtures module src/workflow/delivery/__tests__/fixtures.ts exists and already has the real-shape BUILD-0855311b6b32eb72-S001 record (line 150) used for the story-level conflict test. [files: src/workflow/delivery/__tests__/fixtures.ts, src/workflow/delivery/stage.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T12:01:03.608Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T12:02:57.548Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story adds the gate pass to the delivery read model. For every record it reports the approval state and, where the record carries one, its review: verdict, counts, override, resolved findings, the effective verdict and whether it still blocks. For every epic, story and issue it reports each task's validation result (passed, failed or unrecorded, and whether the task was planned), any result recorded against the story itself, the conflict when a completion approval coexists with a failed result, and the attention reasons with the rule applied. A pending artifact stops counting toward Needs attention once a later gate on the same work item is approved; the stage is never changed."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A stateless, read-only projection pipeline in a new src/workflow/delivery module, beside pending.ts and artifact-content.ts. One request performs one read of every JSON record under the artifact store into an immutable record set (sc1), keeping unreadable files as load failures instead of throwing. The identity pass (s1) turns that record set into a work-item graph (sc2) of epics, stories, tasks and issues under the canonical work-item identity, with every item's evidence records attached. Three passes then run independently over the same graph and record set, each producing an annotation keyed by work-item or artifact id: route-aware stage with its reason (s2, sc4), gate signals and the gate-based attention reasons (s3, sc5), and record currency, amendment/extension checks and data-quality notices (s4, sc6). All three report problems through the one notice shape s1 owns (sc3). The snapshot step (s5) merges graph and annotations into the published response (sc7), computes counts and the final Needs-attention flag, sorts everything deterministically, and stamps the read time. The daemon exposes it as two new handler-map entries that lazy-import the module, following the workflow.pending idiom; no existing handler changes.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "GateAnnotation",
+          "purpose": "Per-artifact approval and review facts, per-task validation results, the approved-but-failed conflict, and the gate-based attention reasons with the attention rule that was applied.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c13"
+          ],
+          "interfaceSketch": "type ReviewVerdict = 'pass' | 'warn' | 'block';\n\n// Per-kind review read: DEF/HLD/LLD/PLAN/SPEC/ISSUE/EXT use meta.review (+ meta.reviewResolutions, meta.reviewOverride);\n// a CR record is itself a review and uses body.verdict, body.counts and meta.reviewedBy. A CR is its own evidence entry\n// on its story; a BUILD's entry does not absorb the CR verdict.\ninterface ArtifactGate {\n  readonly artifactId: string;\n  readonly approval: { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };\n  readonly review: {\n    readonly verdict: ReviewVerdict;\n    readonly reviewedAt: string;          // meta.review.reviewedAt for design artifacts; meta.createdAt for a CR record\n    readonly reviewedBy: 'controller' | 'daemon' | null;\n    readonly counts: { readonly high: number; readonly med: number; readonly low: number };\n    readonly override: { readonly reason: string; readonly at: string | null } | null;   // meta.reviewOverride\n    readonly resolvedFindings: number;    // HIGH/MED findings with an entry in meta.reviewResolutions\n    readonly effectiveVerdict: ReviewVerdict;  // design artifacts: 'block' when effectiveReviewVerdict(meta.review, meta.reviewResolutions)\n                                               //   (review/resolve.ts) returns 'block', otherwise the recorded meta.review.verdict, so a recorded\n                                               //   'warn' stays 'warn'; CR records: body.verdict (no per-finding resolutions)\n    readonly blocking: boolean;           // effectiveVerdict === 'block' AND artifact unapproved AND no override\n  } | null;\n}\n\ntype TaskResult = 'passed' | 'failed' | 'unrecorded';\n\ninterface TaskValidation {\n  readonly taskItemId: string;\n  readonly result: TaskResult;\n  readonly planned: boolean;               // false for a build-only task\n}\n\ntype AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict';\n// 'validation-failed' is raised by a failed task result or a failed storyLevelResult alike.\n\ninterface ItemGates {\n  readonly itemId: string;\n  readonly tasks: readonly TaskValidation[];     // sorted by taskItemId\n  readonly validation: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number };\n  readonly storyLevelResult: TaskResult | null;  // a build result recorded against the story itself (body.tasks[].id equal to the\n                                                 //   story id, as standalone builds without a plan record it); not a task, not unplanned\n  readonly conflict: { readonly failedTaskItemIds: readonly string[]; readonly storyLevelFailed: boolean } | null;\n                                                 // set when the BUILD is approved and any task result OR the storyLevelResult is 'failed'\n  readonly attentionReasons: readonly AttentionReason[];\n  readonly attentionRule: string;          // the rule applied, e.g. superseded pending artifacts excluded\n}\n\ninterface GatePassResult {\n  readonly artifacts: ReadonlyMap<string, ArtifactGate>;   // keyed by artifactId\n  readonly items: ReadonlyMap<string, ItemGates>;          // keyed by itemId\n  readonly notices: readonly DeliveryNotice[];\n}"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactRecordSet",
+          "purpose": "One immutable reading of the artifact store: every parsed record with the facts all passes share, plus every file that could not be read. The single source every later layer reads, so no pass re-reads the disk and all passes see the same records.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c18",
+            "c4"
+          ],
+          "interfaceSketch": "type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';\n\ntype ApprovalState = 'approved' | 'rejected' | 'pending';\n\ninterface ArtifactRecord {\n  readonly artifactId: string;              // file stem, e.g. 'LLD-<hash>-s1'\n  readonly kind: DeliveryArtifactKind;\n  readonly workItemHash: string | null;     // meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC; top-level epicHash for an AMD\n  readonly storyIdRaw: string | null;       // meta.storyId exactly as written\n  readonly storyOrdinal: number | null;     // canonical ordinal of storyIdRaw, null when absent or unparseable\n  readonly approval: { readonly state: ApprovalState; readonly approvedAt: string | null; readonly rejectedAt: string | null };\n                                            // meta.approvedAt / meta.rejectedAt; for an AMD, top-level approvedAt / rejectedAt / status\n  readonly createdAt: string | null;        // meta.createdAt; top-level proposedAt for an AMD\n  readonly epicCreatedAt: string | null;    // meta.epicCreatedAt when stamped\n  readonly meta: Readonly<Record<string, unknown>>;   // the record's meta; for a flat AMD, every top-level field except `amendment`\n  readonly body: unknown;                             // the record's body; for a flat AMD, its `amendment` object\n}\n\n// Per-kind lift: every kind except AMD is read as { meta, body }; AMD records are flat\n// ({ id, epicHash, amendment, status, approvedAt?, rejectedAt?, ... }) and are lifted as described above.\n// A non-AMD file without meta is a 'missing-meta' load failure.\n\ninterface RecordLoadFailure {\n  readonly fileName: string;\n  readonly reason: 'unreadable' | 'invalid-json' | 'missing-meta' | 'unknown-kind';\n  readonly detail: string;\n}\n\ninterface ArtifactRecordSet {\n  readonly repo: string;\n  readonly readAt: string;                  // ISO time the directory was listed\n  readonly records: readonly ArtifactRecord[];   // sorted by artifactId\n  readonly failures: readonly RecordLoadFailure[]; // sorted by fileName\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "WorkItemGraph",
+          "purpose": "The identity and hierarchy of all work: each epic, story, task and issue exactly once under its canonical id, with parent/child links, the source ids it was joined from, and the artifacts that are its evidence.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ],
+          "interfaceSketch": "type DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue';\n\ninterface WorkItemNode {\n  readonly id: string;                      // canonical work-item id, e.g. 'E20261007<hash8>:S001', ':T002' for tasks; issue id for an issue\n                                            // Records are grouped by workItemHash + storyOrdinal BEFORE the id is minted. The id's date segment\n                                            // is the work item's anchor date: the definition head's (DEF-/ISSUE-<hash>) createdAt when one exists;\n                                            // otherwise workItemAnchorCreatedAt (meta.epicCreatedAt ?? meta.createdAt, storage.ts:181) of the\n                                            // group's earliest-created design head (LLD, else SPEC or BUILD for routes without one). The minted id\n                                            // must equal deriveWorkItemIdentity's output and the work item's existing path-scheme folder whenever\n                                            // those can be derived. Only when no record of the group has any createdAt is the id\n                                            // 'H<workItemHash>[:S<nnn>]', with an 'identity-anchor-missing' notice.\n  readonly kind: DeliveryItemKind;\n  readonly title: string | null;            // null when no record names it\n  readonly workItemHash: string | null;\n  readonly standalone: boolean;\n  readonly sourceIds: readonly string[];    // every raw id joined into this item, e.g. ['s1', 'S001']\n  readonly parentId: string | null;\n  readonly childIds: readonly string[];     // sorted\n  readonly evidenceArtifactIds: readonly string[]; // sorted; artifacts whose identity resolves to this item\n  readonly plannedTaskIds: readonly string[];      // stories only: task ids from the PLAN\n                                                   // Task items are minted only from t<n> ids (taskIdToOrdinal); a build task id equal to the\n                                                   // story's own id is a story-level result, creates no task item and raises no notice\n  readonly correctsRef: { readonly epicHash?: string; readonly storyId?: string; readonly slug?: string; readonly resolvedItemId: string | null } | null;\n                                            // issues only, from meta.parentRef; resolved by epicHash, else by slug against records' meta.epicSlug,\n                                            // EXCLUDING records that share the issue's own hash (the issue and its fix stories). A parentRef that\n                                            // names only the issue itself means 'no corrected parent': correctsRef is null and no notice is raised.\n  readonly seededFromSpecId: string | null; // 'SPEC-' + meta.seededFromSpec (which holds the bare 16-char spec hash); matched against\n                                            // the SPEC record's artifactId, and that SPEC is then in this item's evidence\n}\n\ninterface WorkItemGraph {\n  readonly items: ReadonlyMap<string, WorkItemNode>;\n  readonly rootIds: readonly string[];      // epics, standalone stories, issues; sorted\n  readonly notices: readonly DeliveryNotice[];  // identity notices (sc3)\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "DeliveryNotice",
+          "purpose": "The one shape every pass uses to report missing, malformed, ambiguous or contradictory evidence, so notices from identity, stage, gate and currency passes can be merged, sorted and counted uniformly. Owned at the root story because s2, s3 and s4 sit on separate branches and all emit notices.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "type NoticeCode =\n  | 'record-unreadable'          // s1: a file in the store could not be loaded\n  | 'identity-ambiguous'         // s1: records the canonical rule cannot settle as same or different\n  | 'unresolved-parent'          // s1: an issue's corrected parent, or a record's epic, is not in the store\n  | 'identity-anchor-missing'    // s1: no recorded date at all to mint the canonical id; hash form used\n  | 'unattached-spec'            // s1: a SPEC that no work item names as its seededFromSpec (store-level, attention false)\n  | 'unknown-route'              // s2: no recorded route for an item that needs one\n  | 'review-without-build'       // s2: a code review exists with no build record\n  | 'unplanned-task'             // s3: a build task with no matching planned task\n  | 'validation-conflict'        // s3: completion approved while a task failed\n  | 'incomplete-evidence'        // s4 (missing fields), s5 (a plan missing on a route that requires one): expected evidence absent\n  | 'review-currency-unknown'    // s4: no recorded field settles whether a review is current\n  | 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing\n\ninterface DeliveryNotice {\n  readonly code: NoticeCode;\n  readonly message: string;\n  readonly itemIds: readonly string[];      // sorted; empty for store-level notices\n  readonly artifactIds: readonly string[];  // sorted\n  readonly fileNames: readonly string[];    // sorted; for unreadable files that have no artifact id\n  readonly attention: boolean;              // true when this notice alone makes an item need attention\n}\n\n// attention by code (fixed): true for 'record-unreadable', 'identity-ambiguous', 'unresolved-parent', 'validation-conflict';\n// false for 'identity-anchor-missing', 'unattached-spec', 'unknown-route', 'review-without-build', 'unplanned-task',\n// 'incomplete-evidence', 'review-currency-unknown', 'base-predates-extension'. Unresolved references therefore count toward\n// Needs attention (S003:FR005); informational notices stay visible without flooding the filter."
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Private to s1: how the store directory is listed and each file parsed; how a record's kind, work-item hash and raw story id are lifted from its file name and meta; the use of the canonical ordinal rule to join s1/S1/S001 and the decision of when two records are ambiguous rather than the same; sourcing story membership from the Define's story list and from accepted extension records; attaching fix stories to an issue through the shared work-item hash and resolving meta.parentRef; nesting tasks by plan and build task ids; and the sort order of records, failures and child lists. No other story reads the files or re-derives identity. Also private: the per-kind lift, including reading flat amendment records; the anchor-date rule for minting canonical ids after grouping by hash and ordinal, which must reproduce deriveWorkItemIdentity and the existing path-scheme folder for every work item those can identify; attaching each SPEC to the item that names it in meta.seededFromSpec; resolving a slug-only parentRef through records' meta.epicSlug. Its LLD maps each of s1 ac1-ac6 to a named test, including ac3 (an ambiguity notice naming the other record), ac4 (two fix stories under one issue) and ac6 (colliding short task ids in two stories). Task items are minted only from t<n> build and plan task ids; a build task id equal to the story's id is left for s3 as a story-level result, with a fixture of that shape. Slug resolution of an issue's parentRef excludes records sharing the issue's own hash; a parentRef that names only the issue itself yields no corrected parent and no notice. Fixtures cover both real shapes: a self-slug parentRef (for example ISSUE-0855311b6b32eb72) and an outward slug (for example ISSUE-2d9e9e694a94116b)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s2: the mapping from a work item's recorded route fields to a DeliveryRoute, read in this order of precedence: ISSUE meta.magnitude for an issue and for every fix story whose work-item hash is that issue's hash (small-bugfix or sized-bugfix, ahead of any BUILD stamp such as 'trivial'); the story's LLD meta.sizeClass; the standalone BUILD record's meta.sizeClass (the only place a trivial route is recorded); and, for a story under a non-standalone epic with none of these, the full chain; including treating any value that is not a SizeClass member (such as a scope letter 'M') or a missing stamp as unknown; a non-standalone BUILD's sizeClass is never read; the first-match-wins precedence that picks the stage; which gate counts as the ready gate for each route; and the wording of stage reasons. It reads approval state only through sc1 and never consults gate or currency annotations. Its LLD maps each of s2 ac1-ac7 to a named test over fabricated records."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: deciding review currency only from recorded fields (for example the framework's existing story-design staleness against its high-level design) and reporting unknown otherwise, never from file modification time; comparing accepted extension records with their epic framing; and detecting expected-but-missing fields, such as an artifact with no title. It never decides route-dependent gaps, which need s2's route. It reports through notices and never adds or removes work items. Also private: deriving each epic's amendments, and any story design's staleness against its high-level design, from the AMD, HLD and LLD records already in sc1, reusing only pure helpers such as computeHldEffectiveHash and never the amendments module's disk-reading listers, so the pass adds no second read and one malformed amendment cannot fail the snapshot. Staleness hashes the epic's approved amendments in rising approvedAt order, the order the existing scanner uses, which is separate from sc6's presentation sort by amendmentId. Its LLD maps each of s4 ac1-ac5 to a named test, including ac5 asserting that no file in the store changes. Its ac4 test covers the missing-field half (an artifact with no title); the build-without-plan half is tested in s5."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private to s5: running the load, graph and three annotation passes in order for one request; joining annotations onto items; deciding needsAttention as any sc5 attention reason or any notice with attention true; computing counts over the full item set; the deterministic sort of items and notices; choosing openWith from whether an artifact's markdown carries its marker; the two daemon handler-map entries and their repo resolution and error mapping; the artifact-id validation that keeps evidence reads inside the artifact store; and the 1,000-artifact performance fixture. Also private: the error-path mapping (absent store is an empty snapshot; unreadable store, invalid or unknown evidence id is { error }). Also private: the determinism test (two snapshots over the same fixture are identical) and the regression check that the existing workflow.pending and workflow.artifactContent tests pass unchanged. Its LLD maps each of s5 ac1-ac6 to a named test: ac1 asserts the store is byte-identical after a request, ac3 reads a marker-less BUILD through workflow.deliveryEvidence, and ac6 is a type-level check that the VS Code plugin compiles against the published types plus a fixture the JetBrains mirror parses. Also private: the one route-dependent completeness check, raising an 'incomplete-evidence' notice for a story whose sc4 route requires a plan (full-chain, feature, sized-bugfix) but which has a build and no plan; small and small-bugfix routes never get it. Its LLD also owns the test for the build-without-plan half of s4 ac4: a full-chain story with a build and no plan gets the incomplete-evidence notice, and small and small-bugfix stories with a build and no plan do not."
+        }
+      ],
+      "rolloutPhase": "Phase B — stage, gate and currency passes",
+      "nonFunctional": {
+        "performance": "workflow.delivery returns a full snapshot for a fixture of 1,000 artifact records forming 500 work items within 500 ms of daemon-side time on the reference environment, leaving the client its PRD budget of one second to first render. The store is read once per request; passes are linear in records plus items. No LLM provider is called anywhere in the pipeline.",
+        "security": "Read-only by construction: the module opens files for reading only and has no write path. workflow.deliveryEvidence accepts an artifact id, never a path; the id must match the artifact-id pattern and resolve inside the artifact store, and rendered markdown is read only through the existing docs/ containment rule. Artifact content is returned as data and never evaluated. Clients never read the store themselves.",
+        "observability": "Each request logs, through the module's own logger, the repository, record count, unreadable count, item count, notice count by code, and elapsed time. Unreadable records appear both in the log and as notices in the response, so a thin view is never silent.",
+        "durability": "Nothing is persisted or cached. Artifact files are written by tmp-then-rename, so a concurrent read sees each file either before or after a write, never half-written; a work item whose JSON and markdown are mid-update is reported from its JSON and marked openWith 'evidence-read' if the markdown cannot be resolved."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "GatePassResult (deriveGates)",
+          "signature": "export function deriveGates(graph: WorkItemGraph, recordSet: ArtifactRecordSet): GatePassResult",
+          "parameters": [
+            {
+              "name": "graph",
+              "type": "WorkItemGraph",
+              "purpose": "The s1 graph; its epics, stories and issues get ItemGates from their evidence, task children and plannedTaskIds.",
+              "optional": false
+            },
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "The s1 record set; every record gets an ArtifactGate.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "GatePassResult",
+            "meaning": "artifacts: one ArtifactGate per record, keyed by artifactId. items: one ItemGates per epic, story and issue, keyed by item id (tasks have none). notices: unplanned-task and validation-conflict, sorted with sortNotices."
+          },
+          "errors": [],
+          "preconditions": [
+            "graph was built from recordSet."
+          ],
+          "postconditions": [
+            "Never throws: a missing record, a malformed review or a field of the wrong type yields review null, an unrecorded result or no reason.",
+            "Pure and deterministic; reads no stage (sc4) or currency (sc6) annotation and never changes a stage."
+          ]
+        },
+        {
+          "name": "ArtifactGate",
+          "signature": "interface ArtifactGate { readonly artifactId: string; readonly approval: { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null }; readonly review: { readonly verdict: ReviewVerdict; readonly reviewedAt: string; readonly reviewedBy: 'controller' | 'daemon' | null; readonly counts: { readonly high: number; readonly med: number; readonly low: number }; readonly override: { readonly reason: string; readonly at: string | null } | null; readonly resolvedFindings: number; readonly effectiveVerdict: ReviewVerdict; readonly blocking: boolean } | null }",
+          "parameters": [],
+          "returns": {
+            "type": "ArtifactGate",
+            "meaning": "approval: ArtifactRecord.approval.state, with at = approvedAt when approved, rejectedAt when rejected, else null. review for DEF, HLD, LLD, PLAN, SPEC, ISSUE and EXT: from meta.review when it is an object whose verdict is pass, warn or block (else null); reviewedAt = meta.review.reviewedAt (record createdAt, else '', when absent); reviewedBy = reviewerPartyOf(meta.review) (src/workflow/review/party.ts: reviewedBy wins, else the stored model label decides), with 'unknown' mapped to null; counts from meta.review.counts (a non-number reads 0); override = meta.reviewOverride when its reason is a string; resolvedFindings = HIGH/MED findings with an entry in meta.reviewResolutions; effectiveVerdict = 'block' when effectiveReviewVerdict(meta.review with its findings filtered to well-formed entries, meta.reviewResolutions when a plain object) returns 'block', 'pass' when the recorded verdict is 'block' but every HIGH/MED finding is resolved, otherwise the recorded verdict. A recorded 'warn' stays 'warn' unless it carries an unresolved HIGH/MED finding (a MED that blockOn chose not to block on, verdict.ts), in which case effectiveVerdict is 'block', matching the approval gate (gates.ts). review for a CR: null unless body.verdict is pass, warn or block; verdict = body.verdict, reviewedAt = record createdAt, reviewedBy = reviewerPartyOf(meta) with 'unknown' mapped to null (a CR stamped model 'client' without reviewedBy reads 'controller'), counts read per field from body.counts (absent, non-object or non-number fields read 0), resolvedFindings 0, effectiveVerdict = body.verdict, override = the CR's own meta.reviewOverride or the reviewed BUILD's. BUILD and AMD records have review null. blocking = effectiveVerdict 'block' AND the gate the review guards is unapproved AND no override: for a design artifact the guarded gate is the artifact itself; for a CR it is its story's BUILD, so a CR blocks only while its story has no approved BUILD. CR blocking is an attention signal, not the enforced completion gate: it is reported the same whatever codeReview.enforce is set to (code-review/gate.ts treats a block as advisory when enforce is off, the default), and deriveGates reads no config. A CR's own approval stamp (a few live CRs carry meta.approvedAt) is reported in approval unchanged but is not the gate its review guards and plays no part in blocking."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The recorded verdict and override are always reported unchanged, whatever blocking says.",
+            "Stakeholder-confirmed readings of the sc5 sketch (2026-10-08), refining it for s5 and the IDE mirrors: (1) a recorded 'block' whose every HIGH/MED finding is resolved has effectiveVerdict 'pass', matching effectiveReviewVerdict and the approval gate (gates.ts); (2) for a CR record the 'artifact unapproved' term of blocking means its story's BUILD is unapproved, since a story's completion gate is its BUILD approval; the CR's own approval stamp is reported but does not lift its block."
+          ]
+        },
+        {
+          "name": "ItemGates",
+          "signature": "interface ItemGates { readonly itemId: string; readonly tasks: readonly TaskValidation[]; readonly validation: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number }; readonly storyLevelResult: TaskResult | null; readonly conflict: { readonly failedTaskItemIds: readonly string[]; readonly storyLevelFailed: boolean } | null; readonly attentionReasons: readonly AttentionReason[]; readonly attentionRule: string }",
+          "parameters": [],
+          "returns": {
+            "type": "ItemGates",
+            "meaning": "tasks (stories only): one TaskValidation per task child, sorted by taskItemId. planned = the task's ordinal (taskIdToOrdinal over its sourceIds) matches a plannedTaskId's ordinal. result over the story's BUILD records' body.tasks entries with that task ordinal: 'failed' when any has passed false, else 'passed' when any has passed true, else 'unrecorded'; a non-boolean passed is ignored. validation counts passed, failed and unrecorded over tasks, and unplanned = tasks with planned false. storyLevelResult: from BUILD entries whose id is a story id (storyIdToOrdinal) equal to the story's ordinal, the same failed/passed rule, null when none; never a task, never unplanned. conflict: when some BUILD of the story is approved and a task result or the storyLevelResult is 'failed', listing the failed task item ids and whether the story-level result failed; else null. attentionReasons (sorted in declaration order), over the item's evidence records minus the superseded ones (a superseded pending record contributes no reason at all, neither 'pending-decision' nor 'review-blocked', though its ArtifactGate still reports its review and blocking flag): 'pending-decision' when an evidence record other than a CR is pending (a CR never raises it, whatever its own stamp); 'rejected' when an evidence record is rejected; 'review-blocked' when an evidence record's gate is blocking; 'validation-failed' when a task result or the storyLevelResult is failed; 'validation-conflict' when conflict is set. attentionRule states the superseded-pending rule and lists the pending records it excluded on this item."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Epics and issues have tasks [], zeroed validation, storyLevelResult null and conflict null."
+          ]
+        },
+        {
+          "name": "AttentionReason (superseded-pending rule)",
+          "signature": "type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict'",
+          "parameters": [],
+          "returns": {
+            "type": "AttentionReason",
+            "meaning": "Stakeholder-confirmed policy (lc1, 2026-10-08): a pending record stops counting toward Needs attention once a later gate on the same work item is approved. 'Later' follows each item's gate chain: SPEC < DEF < HLD on an epic; SPEC < LLD < PLAN < BUILD on a story (a SPEC is attached to whichever item names it in meta.seededFromSpec, which can be a standalone story). ISSUE, EXT and AMD records are on no chain and are never superseded. The superseded record still reports approval 'pending' in its ArtifactGate."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A rejected record is never superseded and never shown as pending."
+          ]
+        },
+        {
+          "name": "DeliveryNotice (gate-pass notices)",
+          "signature": "makeNotice('unplanned-task' | 'validation-conflict', message, { itemIds, artifactIds })",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryNotice",
+            "meaning": "unplanned-task: one per task with planned false, naming the task and its story and the BUILD records holding its result (attention false). validation-conflict: one per story whose conflict is set, naming the story, the approved BUILD and the failed task items (attention true)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ArtifactGate, TaskResult, TaskValidation, AttentionReason, ItemGates, GatePassResult",
+        "change": "new",
+        "details": "The sc5 types, added to src/workflow/delivery/types.ts beside sc1-sc4, as sketched in the HLD. ReviewVerdict is not redeclared: types.ts imports it with `import type { ReviewVerdict } from '../review/types.js'` and re-exports it, so the delivery model shares the one verdict language code-review/types.ts already reuses.",
+        "callSites": [
+          "src/workflow/delivery/types.ts",
+          "src/workflow/review/types.ts"
+        ]
+      },
+      {
+        "entity": "deriveGates",
+        "change": "new",
+        "details": "New module src/workflow/delivery/gate.ts. It imports effectiveReviewVerdict from src/workflow/review/resolve.ts, reviewerPartyOf from src/workflow/review/party.ts, taskIdToOrdinal and storyIdToOrdinal from src/workflow/id.ts (which throw on an unparseable id, so gate.ts calls them only through private null-returning try/catch wrappers, as graph.ts's storyOrdinalOf / taskOrdinalOf do), and makeNotice / sortNotices from notice.ts; it has no caller yet (s5 will call it).",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Defines the sc5 types and produces GatePassResult."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reads approval, meta.review, meta.reviewResolutions, meta.reviewOverride, meta.reviewedBy and body (verdict, counts, tasks) of each record."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Uses evidenceArtifactIds, childIds, sourceIds and plannedTaskIds; adds no items."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Raises unplanned-task and validation-conflict through makeNotice."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "meta.review is present but malformed (not an object, no recognised verdict, findings not an array, or a findings array holding null, non-object entries or entries without a string claimId and severity).",
+          "detection": "A typeof check on meta.review and a membership check of its verdict; Array.isArray on findings, then a per-entry filter keeping only plain objects whose claimId and severity are strings; meta.reviewResolutions is used only when it is a plain object. effectiveReviewVerdict (which dereferences each finding's severity) is called only with a report whose findings are the filtered entries, and resolvedFindings counts the same filtered entries.",
+          "response": "review is null when the verdict is unrecognised; with a recognised verdict, malformed finding entries are dropped before effectiveReviewVerdict runs and before resolvedFindings is counted; with no findings array, effectiveVerdict is the recorded verdict and resolvedFindings 0.",
+          "userImpact": "The artifact shows no review rather than an invented one; nothing throws.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A CR record's body.verdict is missing or not pass/warn/block, or body.counts is absent, not an object, or holds non-number fields.",
+          "detection": "A membership check of body.verdict; typeof checks on body.counts and on each of high, med and low.",
+          "response": "review is null when the verdict is not a ReviewVerdict; otherwise each missing or non-number count reads 0.",
+          "userImpact": "The CR shows no review rather than an invented one, or zero counts where none were recorded; nothing throws.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A body.tasks entry is malformed (not an object, id not a string, passed not a boolean).",
+          "detection": "typeof checks on each entry.",
+          "response": "The entry is ignored for every result.",
+          "userImpact": "The task reads unrecorded instead of a guessed result.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An item's evidence names an id with no record.",
+          "detection": "The record-set index lookup returns undefined.",
+          "response": "The id is skipped.",
+          "userImpact": "None beyond s1's own report.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A body.tasks entry id parses as neither a t<n> task id nor the story's own id (for example 'x9', or another story's id).",
+          "detection": "The null-returning ordinal wrappers return null for the task form, and the story form is null or a different ordinal.",
+          "response": "The entry is ignored for every result.",
+          "userImpact": "No task or story-level result is invented; nothing throws.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Three LLDs: one approved, one rejected, one with neither stamp.",
+          "expected": "approved, rejected and pending; the rejected one never reads pending and is never superseded."
+        },
+        {
+          "input": "An approved BUILD with one task passed false.",
+          "expected": "conflict lists the failed task item; validation-failed and validation-conflict reasons; a validation-conflict notice; the BUILD's approval is still 'approved'."
+        },
+        {
+          "input": "The BUILD-0855311b6b32eb72-S001 shape: an approved standalone build whose only entry is the story's own id with passed false.",
+          "expected": "storyLevelResult 'failed', no task items, unplanned 0, conflict with storyLevelFailed true."
+        },
+        {
+          "input": "A planned task t2 with no BUILD entry.",
+          "expected": "result 'unrecorded', counted in unrecorded only."
+        },
+        {
+          "input": "A BUILD entry t3 with no PLAN task t3.",
+          "expected": "A task with its result and planned false; unplanned 1; an unplanned-task notice."
+        },
+        {
+          "input": "An unapproved LLD with review verdict block and no override.",
+          "expected": "blocking true; review-blocked reason."
+        },
+        {
+          "input": "An approved LLD whose review is block.",
+          "expected": "verdict and effectiveVerdict still block; blocking false; no review-blocked reason."
+        },
+        {
+          "input": "An unapproved LLD whose block carries meta.reviewOverride.",
+          "expected": "override reported; blocking false; no review-blocked reason."
+        },
+        {
+          "input": "A recorded block whose every HIGH/MED finding has a reviewResolutions entry.",
+          "expected": "effectiveVerdict 'pass', resolvedFindings counted, blocking false."
+        },
+        {
+          "input": "A CR with verdict block on a story whose BUILD is approved.",
+          "expected": "CR blocking false: the gate it guards is approved."
+        },
+        {
+          "input": "A CR with verdict block on a story with an unapproved BUILD, or no BUILD.",
+          "expected": "CR blocking true; review-blocked on the story."
+        },
+        {
+          "input": "A pending LLD on a story whose PLAN is approved.",
+          "expected": "Superseded: no pending-decision reason; the LLD still reads pending; attentionRule names it."
+        },
+        {
+          "input": "A pending DEF on an epic whose HLD is approved.",
+          "expected": "Superseded the same way on the epic."
+        },
+        {
+          "input": "A pending ISSUE, EXT or AMD.",
+          "expected": "pending-decision; never superseded."
+        },
+        {
+          "input": "A story with only a CR (no approval stamp on the CR).",
+          "expected": "The CR does not raise pending-decision."
+        },
+        {
+          "input": "A superseded pending LLD (its story's PLAN is approved) whose review is an unresolved block with no override.",
+          "expected": "The LLD's ArtifactGate still reports blocking true; the story gets neither pending-decision nor review-blocked from it; attentionRule names it."
+        },
+        {
+          "input": "A CR carrying meta.approvedAt with verdict block, on a story whose BUILD is unapproved.",
+          "expected": "approval 'approved' and blocking true on the CR; review-blocked on the story; no pending-decision from the CR."
+        },
+        {
+          "input": "A pending SPEC attached to a standalone story whose LLD is approved.",
+          "expected": "Superseded: no pending-decision from the SPEC; attentionRule names it."
+        },
+        {
+          "input": "A CR with meta.model 'client' and no meta.reviewedBy.",
+          "expected": "reviewedBy 'controller'."
+        },
+        {
+          "input": "A recorded block whose findings array holds null, a string and one valid unresolved MED finding.",
+          "expected": "No throw; the two malformed entries are dropped; effectiveVerdict 'block' from the valid MED; resolvedFindings 0."
+        },
+        {
+          "input": "A recorded 'warn' review carrying an unresolved MED finding (blockOn excluded MED).",
+          "expected": "verdict 'warn', effectiveVerdict 'block'; blocking true while the artifact is unapproved with no override."
+        },
+        {
+          "input": "A CR whose body is { verdict: 'block' } with no counts.",
+          "expected": "review present with counts { high: 0, med: 0, low: 0 }."
+        },
+        {
+          "input": "A CR with verdict block on a story with an unapproved BUILD, under the default codeReview.enforce off.",
+          "expected": "CR blocking true and review-blocked on the story, the same as with enforce on; no config is read."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (node:assert/strict), over fabricated records from src/workflow/delivery/__tests__/fixtures.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Artifact gates: approval and review facts.",
+          "subjects": [
+            "gate.test.ts: 'approved, rejected and unstamped artifacts read approved, rejected and pending'",
+            "gate.test.ts: 'an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review'",
+            "gate.test.ts: 'an approved historical block and an overridden block do not block and still show the verdict and the override'",
+            "gate.test.ts: 'a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block'",
+            "gate.test.ts: 'a code review blocks only while its story has no approved build'",
+            "gate.test.ts: 'a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented'",
+            "gate.test.ts: 'the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block'"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Item gates: task validation, conflict, attention.",
+          "subjects": [
+            "gate.test.ts: 'an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete'",
+            "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'",
+            "gate.test.ts: 'a planned task with no recorded result is unrecorded and counted as neither passed nor failed'",
+            "gate.test.ts: 'a build task with no planned task keeps its result and is marked unplanned'",
+            "gate.test.ts: 'a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated'",
+            "gate.test.ts: 'every epic, story and issue in the real-shape fixtures gets item gates, deterministically'"
+          ],
+          "fixturesNeeded": [
+            "The ac2 and ac5 tests import deriveStages from stage.ts (test-only; gate.ts itself never consults the stage) to assert the stage half of those criteria."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "gate.test.ts: 'approved, rejected and unstamped artifacts read approved, rejected and pending'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "gate.test.ts: 'an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete'",
+            "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "gate.test.ts: 'a planned task with no recorded result is unrecorded and counted as neither passed nor failed'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "gate.test.ts: 'a build task with no planned task keeps its result and is marked unplanned'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "gate.test.ts: 'an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review'",
+            "gate.test.ts: 'a code review blocks only while its story has no approved build'",
+            "gate.test.ts: 'the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "gate.test.ts: 'an approved historical block and an overridden block do not block and still show the verdict and the override'",
+            "gate.test.ts: 'a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block'"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "gate.test.ts: 'a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two-layer pass: artifact gates, then item gates over them",
+        "oneLineSummary": "Compute one ArtifactGate per record first, then each item's task validation, conflict and attention reasons from its evidence's gates.",
+        "approach": "A new src/workflow/delivery/gate.ts exports deriveGates(graph, recordSet): GatePassResult, with the sc5 types beside the other contract types in types.ts. Layer 1 builds an ArtifactGate for every record: approval from ArtifactRecord.approval; review from meta.review (+ meta.reviewResolutions, meta.reviewOverride) for design kinds, from body.verdict/body.counts/meta.reviewedBy for a CR; effectiveVerdict via effectiveReviewVerdict; blocking when the effective verdict is block, the gate the review guards is unapproved, and no override is recorded (for a CR the guarded gate is its story's BUILD). Layer 2 builds ItemGates for every epic, story and issue: task validation from the story's task items, plannedTaskIds and its BUILD records' body.tasks; the story-level result; the conflict when a BUILD is approved and any result failed; and the attention reasons from the item's evidence gates, applying the superseded-pending rule. Notices: unplanned-task and validation-conflict.",
+        "pros": [
+          "Artifact facts are computed once and reused by every item that holds them as evidence.",
+          "Each attention reason traces to a specific artifact gate or task result.",
+          "Matches the sc5 sketch one-to-one."
+        ],
+        "cons": [
+          "The CR's guarded-gate rule needs the story's BUILD, so CR blocking is decided with item context."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Item-first pass",
+        "oneLineSummary": "Walk each item and derive its artifacts' gates inline as needed.",
+        "approach": "For each item, read each evidence record's approval and review on the fly and accumulate attention reasons; build the artifacts map as a by-product.",
+        "pros": [
+          "One loop."
+        ],
+        "cons": [
+          "A record that is evidence of several items is evaluated several times, risking divergent results.",
+          "Records that are evidence of no item (store-level) get no ArtifactGate."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Leaves store-level records without a gate."
+      },
+      {
+        "id": "a3",
+        "name": "Gates folded into the BUILD entry",
+        "oneLineSummary": "Attach the CR verdict and task results to the BUILD's ArtifactGate and skip a separate CR entry.",
+        "approach": "Treat the BUILD as the single gate of the build phase, with the CR verdict and task results stored on it.",
+        "pros": [
+          "Fewer entries."
+        ],
+        "cons": [
+          "Contradicts sc5: a CR is its own evidence entry and a BUILD's entry does not absorb the CR verdict."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates sc5."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/resolve.ts",
+      "quotedText": "export function effectiveReviewVerdict("
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/types.ts",
+      "quotedText": "readonly reviewOverride?: { readonly reason: string; readonly at: string };"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "export interface WorkItemNode {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/id.ts",
+      "quotedText": "export function taskIdToOrdinal(taskId: string): number {"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "design.story/s1 data-model.trace: recorded review fields and build task results in the live store"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD-2ff0dfdadb1c8d1c sc5 GateAnnotation and the s3 story boundary"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review/party.ts",
+      "quotedText": "export function reviewerPartyOf(review: unknown): PartyOrUnknown {"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "function taskOrdinalOf(taskId: string): number | null {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/review/types.ts",
+      "quotedText": "export type ReviewVerdict = 'pass' | 'warn' | 'block';"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/review/verdict.ts",
+      "quotedText": "computeVerdict"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/code-review/gate.ts",
+      "quotedText": "verdict"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/code-review/gate.ts",
+      "quotedText": "return raw.codeReview?.enforce === true;"
+    }
+  ]
+}

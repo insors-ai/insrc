@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791472210310-trbtxh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T15:15:18.693Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 308380,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s4",
+    "lldRunId": "wf-1791469340249-owagol",
+    "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T15:16:13.523Z",
+    "rangeBase": "3afe78dc659ba5788f3867839538ab1e04efd496"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds the sc6 currency types to the delivery module's types, then one new currency.ts holding the currency pass: each recorded review's currency from the fields that can settle it (the story design's HLD hash, a plan's link to its design), each epic's amendments counted exactly as the existing scanner counts them, and the data-quality notices for unknown currency, extensions the epic framing does not list, untitled items and unreadable files. Everything is tested over fabricated records in one new currency.test.ts, including a run over a real temporary store that must change no file."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Currency annotation types",
+        "summary": "Add ReviewCurrency, ArtifactCurrency, EffectiveAmendment and CurrencyPassResult to src/workflow/delivery/types.ts as the HLD sc6 sketch.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The sc6 types are exported from types.ts with exactly the sketched members and fields.",
+          "The module compiles under the repo's strict tsconfig."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types.test.ts: 'the currency types list exactly the sketched members'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Review currency and amendments",
+        "summary": "New src/workflow/delivery/currency.ts exporting deriveCurrency(graph, recordSet). One ArtifactCurrency per record: null without a review; stale when reviewedAt precedes createdAt; an LLD (the only one on its story, not standalone, epic HLD in the set) current or stale against computeHldEffectiveHash over the HLD runId and the epic's counted amendments in scanner order (numeric suffix, then stable approvedAt), with basis hld-rerun, the first missing amendment, or the unexplained-hash case; a PLAN (the only one, single LLD on its story) against lldRunId / lldEffectiveHash; everything else, every CR included, unknown. One EffectiveAmendment list per epic item, sorted by amendmentId, with appliesToHld from isAmendmentRecord plus meta.status 'approved' plus a string approvedAt. Tests pass epicSlug, hldBaseRunId, rationale, citations and proposedBy through amdRecord's fields for a counted amendment; no fixture change is needed. Returns an empty notice list until t3.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "current and stale appear only where the LLD or PLAN rule's recorded fields settle it; DEF, HLD, SPEC, ISSUE, EXT and CR reviews read unknown; BUILD, AMD and review-less records read null.",
+          "An LLD reads stale with basis hld-rerun, with the missing amendment, or with the unexplained-hash basis, and current when the hashes match; a stale-acknowledged LLD stays stale.",
+          "Approved amendments are hashed in numeric-suffix then approvedAt order; a malformed approved AMD has appliesToHld false and is not hashed; the list is sorted by amendmentId.",
+          "Two LLDs on one story, a standalone LLD and an epic with no HLD read unknown; malformed fields never throw."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'a review is current or stale only where a recorded field settles it, and unknown otherwise'"
+          },
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'amendments are hashed in approvedAt order and listed in amendmentId order with their status'"
+          },
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'a review stamped before its record, a standalone design and malformed fields never throw and invent no currency'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Data-quality notices",
+        "summary": "Add the pass's notices: review-currency-unknown per epic, story or issue with unknown-currency records (saying so when several LLDs or PLANs sit on one story) plus one store-level notice for unheld ones; base-predates-extension per approved EXT whose added story its epic DEF's body.stories does not list; incomplete-evidence per epic, story or issue with no title, and per load failure naming the file, reason, detail and the items its file name's kind, hash and story imply. Never raises record-unreadable, which the graph builder raises since the merged ISSUE-34b6a247 fix (ca780fe1); t3 changes no graph.ts code. Sorted with sortNotices.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "An EXT story stays in the graph; an EXT whose story the DEF lists raises no notice, and one whose story the DEF omits raises base-predates-extension naming the EXT, DEF, epic and story.",
+          "An untitled item stays in the graph with one incomplete-evidence notice naming it and its evidence.",
+          "A malformed file leaves every other item in place; this pass raises one incomplete-evidence notice naming the file and the items it leaves uncovered, the graph raises exactly one record-unreadable notice for it (from the ISSUE-34b6a247 fix), and the pass raises none.",
+          "Producing the annotation over a real temporary store (with a malformed file and an s1/S001 LLD pair) changes no file's bytes or mtime.",
+          "The real-shape fixtures give every record a currency entry, deterministically."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'an extension story stays in the view and its extension newer than the epic framing is reported'"
+          },
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'an item no record gives a title stays in the view with an incomplete-evidence notice'"
+          },
+          {
+            "level": "unit",
+            "name": "currency.test.ts: 'the real-shape fixtures give every record a currency entry, deterministically'"
+          },
+          {
+            "level": "integration",
+            "name": "currency.test.ts: 'a malformed file leaves every other item in place and is named with the coverage it leaves unknown'"
+          },
+          {
+            "level": "integration",
+            "name": "currency.test.ts: 'producing the currency annotation changes no file in the artifact store'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "currency.test.ts: 'a review is current or stale only where a recorded field settles it, and unknown otherwise'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'amendments are hashed in approvedAt order and listed in amendmentId order with their status'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'a review stamped before its record, a standalone design and malformed fields never throw and invent no currency'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'an extension story stays in the view and its extension newer than the epic framing is reported'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'an item no record gives a title stays in the view with an incomplete-evidence notice'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'the real-shape fixtures give every record a currency entry, deterministically'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'a malformed file leaves every other item in place and is named with the coverage it leaves unknown'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "currency.test.ts: 'producing the currency annotation changes no file in the artifact store'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 dataModelChanges: the sc6 types in delivery/types.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails: ArtifactCurrency rules (review presence, LLD and PLAN currency, CR unknown, applicable record)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails: EffectiveAmendment and the scanner's amendment set and order"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails: currency-pass notices (review-currency-unknown, base-predates-extension, incomplete-evidence)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths: malformed fields, amendments, unparseable file names and missing records"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy: integration over a store (malformed file; no file changes)"
+    }
+  ]
+}

@@ -213,8 +213,16 @@ export function listApprovedAmendments(
 	repoPath: string,
 	epicHash: string,
 ): readonly AmendmentRecord[] {
-	return listAmendments(repoPath, epicHash)
+	return approvedInApplyOrder(listAmendments(repoPath, epicHash));
+}
+
+/** The approved amendments among `records` in the order the applier and the
+ *  effective-HLD hash use them: numeric id suffix, then a stable sort by rising
+ *  approvedAt. Pure; shared with readers that hold the records in memory. */
+export function approvedInApplyOrder(records: readonly AmendmentRecord[]): AmendmentRecord[] {
+	return records
 		.filter(a => a.status === 'approved' && typeof a.approvedAt === 'string')
+		.sort((a, b) => amendmentSuffixNum(a.id) - amendmentSuffixNum(b.id))
 		.sort((a, b) => (a.approvedAt ?? '').localeCompare(b.approvedAt ?? ''));
 }
 

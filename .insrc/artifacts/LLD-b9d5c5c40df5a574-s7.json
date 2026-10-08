@@ -248,6 +248,13 @@
         "choice": "Try larger sizes first, then fall back",
         "rationale": "Stakeholder took the recommendation on 2026-10-08: only size S has been tried live, so run the planner live at larger sizes (infra or data, which complete today) to look for a nested plan; if none appears, the integration test over the real walk is the proof for ac2, with the sizes tried recorded.",
         "resolvedAt": "2026-10-08T14:12:53.720Z"
+      },
+      "q376f16ef": {
+        "question": "Back-flow to the HLD: the HLD's text on run records says the daemon keeps the set of run ids it is executing and that three readers apply the abandoned rule, the resume check among them. This design keeps a count of runs per id, so that two runs under one id cannot make each other look abandoned, and has two readers rewrite, since the resume check cannot find its own id not live and a new run replaces the record anyway. The HLD's text should be brought in line.",
+        "status": "resolved",
+        "choice": "Amend the HLD in parallel with plan",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: the design's count of runs per id and two rewriting readers stand; the HLD's run-records wording is corrected through a tracked amendment that does not hold up planning and must be approved before the Story's build completes.",
+        "resolvedAt": "2026-10-08T14:14:01.831Z"
       }
     }
   },

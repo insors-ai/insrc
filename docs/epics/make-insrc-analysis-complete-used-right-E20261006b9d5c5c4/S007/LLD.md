@@ -443,6 +443,8 @@ Scope: the three per-family functions stay, each rewritten to call resolveScope 
 
 - `q99631ac2` — A nested plan (ac2) was not planned by any live run at size S. If no size makes the planner emit a planner-kind task on this repository, is the integration test over a nested plan, with the real walk and stand-in runtimes, accepted as the proof?
   - **resolved**: Try larger sizes first, then fall back — Stakeholder took the recommendation on 2026-10-08: only size S has been tried live, so run the planner live at larger sizes (infra or data, which complete today) to look for a nested plan; if none appears, the integration test over the real walk is the proof for ac2, with the sizes tried recorded. _(2026-10-08T14:12:53.720Z)_
+- `q376f16ef` — Back-flow to the HLD: the HLD's text on run records says the daemon keeps the set of run ids it is executing and that three readers apply the abandoned rule, the resume check among them. This design keeps a count of runs per id, so that two runs under one id cannot make each other look abandoned, and has two readers rewrite, since the resume check cannot find its own id not live and a new run replaces the record anyway. The HLD's text should be brought in line.
+  - **resolved**: Amend the HLD in parallel with plan — Stakeholder took the recommendation on 2026-10-08: the design's count of runs per id and two rewriting readers stand; the HLD's run-records wording is corrected through a tracked amendment that does not hold up planning and must be approved before the Story's build completes. _(2026-10-08T14:14:01.831Z)_
 
 ## Citations
 

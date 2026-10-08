@@ -30,12 +30,27 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
-import { _setBuildValidateProviderForTests } from '../phases/validate.js';
+import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
+import type { ValidationCheckResults } from '../validation-checks.js';
 import { approveArtifactByJsonPath, approveWorkflowTarget } from '../../../workflow/gates.js';
 import { ARTIFACTS_DIR, buildArtifactId, codeReviewArtifactId, lldArtifactId, planArtifactId } from '../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../workflow/runners/build/completion-record.js';
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { stampOtherPartyReview } from '../../../workflow/__tests__/helpers/other-party-review.js';
+
+/** The judge's structured verdict, with the fields a test does not care about filled in. */
+function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
+	return { taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok', ...over };
+}
+
+/** Both daemon checks passing, so a verdict follows the judge unless a test says otherwise. */
+const PASSING_CHECKS: ValidationCheckResults = {
+	typecheck: { ok: true, command: 'npx tsc --noEmit', exitCode: 0, timedOut: false, durationMs: 1, outputTail: '' },
+	tests:     { ok: true, command: 'npx tsx --test --test-force-exit x.test.ts', exitCode: 0, timedOut: false, durationMs: 1, outputTail: '' },
+};
+// No test in this file spawns a real typecheck or test runner.
+_setBuildValidateCheckRunnerForTests(async () => PASSING_CHECKS);
+
 
 const HASH = 'b7c8d9e0f1a2b3c4';
 const CREATED_AT = '2026-07-18T00:00:00.000Z';
@@ -119,7 +134,7 @@ async function implement(fx: Fx, target: string): Promise<Record<string, unknown
 /** Run the validate phase with a canned passing (or failing) verdict. */
 async function validate(fx: Fx, target: string, taskId: string, passed = true): Promise<void> {
 	_setBuildValidateProviderForTests({
-		async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId, passed }) + '\n```' }; },
+		async runReviewSession<T>() { return judgeVerdict({ taskId, passed }) as T; },
 	});
 	try {
 		assert.equal(out(await handleBuildStep({ phase: 'validate', target, repo: fx.repo }))['next'], 'done');
@@ -378,7 +393,7 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 		assert.equal(readFileSync(stampFile(fx, 's1'), 'utf8'), bytes, 'the task-less record must not trigger a re-stamp or a skip');
 
 		// The Trivial route had no base before; with the stamp it records its work.
-		_setBuildValidateProviderForTests({ async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; } });
+		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(changeLog(fx, 's1'), ['trivial-work.ts']);
 	} finally { fx.cleanup(); }
@@ -448,7 +463,7 @@ test('T38: no resolvable base and a clean tree -> validate writes an EMPTY chang
 	try {
 		work(fx, 'unrelated.ts', 'everything');
 		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), undefined, 'fixture precondition: no stamp, no upstream artifact');
-		_setBuildValidateProviderForTests({ async runEditSession() { return { text: '```json\n' + JSON.stringify({ taskId: 's1', passed: true }) + '\n```' }; } });
+		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.equal(buildRecord(fx, 's1').body['changeLog'], undefined);
 	} finally { fx.cleanup(); }

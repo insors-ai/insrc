@@ -301,8 +301,17 @@ const PROMPT_PATHS: Readonly<Record<SynthesizerPromptKey, string>> = {
 	infra:      SYNTHESIZE_INFRA_PROMPT_REL,
 };
 
+/** Test hook: prompt paths that stand in for the registered ones. */
+const promptPathOverrides = new Map<SynthesizerPromptKey, string>();
+
+/** Test hook: point one answer prompt at another path; `undefined` restores the registered one. */
+export function _setSynthesizerPromptPathForTest(target: SynthesizerPromptKey, path: string | undefined): void {
+	if (path === undefined) promptPathOverrides.delete(target);
+	else promptPathOverrides.set(target, path);
+}
+
 function loadPromptFile(target: keyof typeof PROMPT_PATHS): string {
-	const rel = PROMPT_PATHS[target];
+	const rel = promptPathOverrides.get(target) ?? PROMPT_PATHS[target];
 	if (rel === undefined) {
 		throw new SynthesizerPromptMissingError(`no synthesizer prompt for target '${target}'`);
 	}

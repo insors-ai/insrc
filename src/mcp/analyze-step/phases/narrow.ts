@@ -30,7 +30,7 @@ import type { Exploration, ExplorationOutput } from '../../../analyze/explore/in
 import { putCachedExploration } from '../../../db/exploration-cache.js';
 import { getLogger } from '../../../shared/logger.js';
 import { stepScope } from '../scope.js';
-import { prepareSynthesize } from '../../../analyze/context/synthesizer.js';
+import { prepareAnswerTurn } from '../answer-turn.js';
 
 import {
 	assertStage,
@@ -41,6 +41,7 @@ import {
 	type StepStatePayload,
 } from '../state.js';
 import type {
+	StepErrorData,
 	StepInputNarrow,
 	StepOutputEmitBundle,
 	StepOutputEmitNarrow,
@@ -252,11 +253,15 @@ export async function handleNarrow(
 
 	// step.kind === 'done' -- emit_bundle
 	const executed = step.executed;
-	const prepared = prepareSynthesize({
+	// A missing answer prompt is reported with what the lookups found, not thrown.
+	const turn = prepareAnswerTurn({
 		intent:   state.intent,
 		executed,
 		target:   state.synthesizerKey,
 	});
+	// Not retryable: the file will still be missing on the next call.
+	if (!turn.ok) return errorResult(turn.code, turn.message, false, turn.data);
+	const prepared = turn.prepared;
 
 	const nextState: StepStatePayload = {
 		version:        STATE_VERSION,
@@ -296,9 +301,10 @@ export async function handleNarrow(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function errorResult(code: string, message: string, retryable: boolean): StepOutputError {
+/** `data` is set by one error only: a missing answer prompt after the lookups ran. */
+function errorResult(code: string, message: string, retryable: boolean, data?: StepErrorData): StepOutputError {
 	return {
 		next:  'error',
-		error: { code, message, retryable },
+		error: data !== undefined ? { code, message, retryable, data } : { code, message, retryable },
 	};
 }

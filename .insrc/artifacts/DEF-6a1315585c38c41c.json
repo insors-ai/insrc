@@ -571,9 +571,9 @@
       },
       {
         "id": "k10",
-        "text": "The existing review pane (Epic bfe98ff7) is opened for evidence but not modified.",
+        "text": "The existing review pane (Epic bfe98ff7) gains one additive entry point that opens a given artifact by id, read-only when it is not pending; its list, rendering and approval behaviour are otherwise unchanged, and the board opens evidence through that entry point.",
         "type": "stakeholder",
-        "source": "c2"
+        "source": "c24"
       },
       {
         "id": "k11",
@@ -1263,6 +1263,12 @@
       "kind": "doc",
       "ref": "docs/insrc-delivery-board-prd.html",
       "quotedText": "Accessibility: keyboard navigation, visible focus, screen-reader labels, and text labels for every color-coded state. Card selection and refresh results are announced without excessive chatter."
+    },
+    {
+      "id": "c24",
+      "kind": "stakeholder",
+      "ref": "Stakeholder decision in chat, 2026-10-09: option A, add an open-this-artifact entry to the review pane",
+      "quotedText": "go with A"
     }
   ]
 }

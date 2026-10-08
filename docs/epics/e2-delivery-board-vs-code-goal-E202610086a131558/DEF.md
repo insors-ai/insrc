@@ -91,7 +91,7 @@ Developers, reviewers and delivery leads who work in VS Code still cannot see de
 | `k7` | stakeholder | After data arrives, the initial board renders within one second for a 1,000-artifact, 500-item fixture, and each local filter change responds within 150 ms. | [[c13]] |
 | `k8` | convention | The board's webview follows the plugin's existing pattern of a restrictive Content-Security-Policy on every webview document. | [[c14]] |
 | `k9` | invariant | The same snapshot and filters always produce the same order and counts. | [[c15]] |
-| `k10` | stakeholder | The existing review pane (Epic bfe98ff7) is opened for evidence but not modified. | [[c2]] |
+| `k10` | stakeholder | The existing review pane (Epic bfe98ff7) gains one additive entry point that opens a given artifact by id, read-only when it is not pending; its list, rendering and approval behaviour are otherwise unchanged, and the board opens evidence through that entry point. | [[c24]] |
 | `k11` | invariant | Every colour-coded state also has a text label, every control and evidence entry is reachable by keyboard with visible focus, card selection and refresh results are announced without excessive chatter, and a narrow pane keeps every item and warning reachable. | [[c23]] |
 
 ## 6. Stories
@@ -212,6 +212,7 @@ Every reader, including keyboard-only and screen-reader users and those working 
 - **[[c21]]** `doc` `docs/insrc-delivery-board-prd.html` — "Show a navigable relationship when resolvable; otherwise show an unresolved reference and retain the issue."
 - **[[c22]]** `doc` `docs/insrc-delivery-board-prd.html` — "Its stage is unchanged by the CR; the card shows an unledgered-code-review notice and the CR appears in its evidence."
 - **[[c23]]** `doc` `docs/insrc-delivery-board-prd.html` — "Accessibility: keyboard navigation, visible focus, screen-reader labels, and text labels for every color-coded state. Card selection and refresh results are announced without excessive chatter."
+- **[[c24]]** `stakeholder` `Stakeholder decision in chat, 2026-10-09: option A, add an open-this-artifact entry to the review pane` — "go with A"
 
 <!-- insrc:review -->
 

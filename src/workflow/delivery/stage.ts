@@ -85,9 +85,13 @@ function evidenceOf(ctx: PassContext, item: WorkItemNode): ArtifactRecord[] {
 /** Appended to a reason when the route is unknown. */
 const UNKNOWN_ROUTE_SUFFIX = ' (route unknown, so no ready gate applies)';
 
-/** The ISSUE that shares the item's work-item hash: the issue's own, or a fix story's. */
+/** The ISSUE behind an issue item, or behind a fix story (a story whose parent the
+ *  graph made an issue). A story under an epic never reads an ISSUE, even when its
+ *  hash also has one: the graph chose the Define as that hash's head. */
 function issueOf(ctx: PassContext, item: WorkItemNode): ArtifactRecord | undefined {
-	return item.workItemHash !== null ? ctx.issueByHash.get(item.workItemHash) : undefined;
+	if (item.workItemHash === null) return undefined;
+	const isFixStory = item.kind === 'story' && item.parentId !== null && ctx.graph.items.get(item.parentId)?.kind === 'issue';
+	return item.kind === 'issue' || isFixStory ? ctx.issueByHash.get(item.workItemHash) : undefined;
 }
 
 /** A route and the records whose route fields were read to settle it. */
@@ -195,7 +199,7 @@ function issueAnnotation(ctx: PassContext, issueItem: WorkItemNode, stories: Rea
 		return {
 			annotation: {
 				itemId: issueItem.id, stage: least.stage, route,
-				reason: { text: `least advanced fix story ${least.itemId}: ${least.reason.text}`, artifactIds: least.reason.artifactIds },
+				reason: { text: `least advanced fix story ${least.itemId}: ${least.reason.text}${suffix}`, artifactIds: least.reason.artifactIds },
 			},
 			consulted,
 		};

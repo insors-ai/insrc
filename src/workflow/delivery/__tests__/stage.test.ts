@@ -104,6 +104,14 @@ test("the issue magnitude decides a fix story's route ahead of its build stamp",
 	assert.equal(storyStage(sized, ISSUE, 1).route, 'sized-bugfix');
 });
 
+test('a story under an epic never takes its route from an ISSUE that shares its hash', () => {
+	// The graph makes the Define the head of a hash that also has an ISSUE.
+	const out = run([...epic(), issueRecord(EPIC, undefined, { magnitude: 'small', ...APPROVED }), lldRecord(EPIC, 's1', APPROVED)]);
+	const a = storyStage(out, EPIC, 1);
+	assert.equal(a.route, 'full-chain');
+	assert.equal(a.stage, 'design-plan', 'an approved design on the full chain waits for its plan');
+});
+
 test('a non-standalone build stamp is never read and an epic story is full-chain', () => {
 	const out = run([...epic(), lldRecord(EPIC, 's1', APPROVED), planRecord(EPIC, 's1', ['t1'], APPROVED),
 		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }], { standalone: false, sizeClass: 'M' })]);
@@ -232,6 +240,12 @@ test('an issue takes the least advanced stage of its fix stories', () => {
 	assert.equal(issue.stage, 'design-plan');
 	assert.deepEqual(issue.reason.artifactIds, s2.reason.artifactIds);
 	assert.match(issue.reason.text, new RegExp(`least advanced fix story ${s2.itemId}`));
+
+	// An issue whose route is unknown says so whichever branch placed it.
+	const unknownIssue = issueStage(run([issueRecord(ISSUE, undefined, { magnitude: undefined }),
+		buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: true })]), ISSUE);
+	assert.equal(unknownIssue.route, 'unknown');
+	assert.match(unknownIssue.reason.text, /route unknown, so no ready gate applies/);
 });
 
 test('missing evidence records and wrongly typed fields never throw', () => {

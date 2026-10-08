@@ -68,6 +68,16 @@ export interface Completeness {
 	readonly basisNote?:  string | undefined;
 }
 
+/** True for a value with the shape `buildCompleteness` returns. */
+export function isCompletenessRecord(v: unknown): v is Completeness {
+	if (typeof v !== 'object' || v === null) return false;
+	const r = v as Record<string, unknown>;
+	return typeof r['complete'] === 'boolean'
+		&& typeof r['returned'] === 'number'
+		&& (r['total'] === null || typeof r['total'] === 'number')
+		&& typeof r['basis'] === 'string';
+}
+
 export interface WithCompleteness {
 	readonly completeness: Completeness;
 }

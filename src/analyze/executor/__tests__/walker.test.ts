@@ -97,11 +97,15 @@ function mkNode(plan: PlanTask, children = new Map<string, PlanTreeNode>()): Pla
 	return { plan, children, childErrors: new Map() };
 }
 
+/** A stand-in runtime's record: it returns everything it has. */
+const WHOLE = buildCompleteness({ returned: 1, basis: 'graph' });
+
 function stubRuntime(templateId: string, outputs: Record<string, unknown>): TemplateRuntime {
 	return {
 		templateId,
 		execute: async () => ({
 			outputs: new Map(Object.entries(outputs)),
+			completeness: WHOLE,
 		}),
 	};
 }
@@ -451,6 +455,7 @@ test('purgeTaskOutput on a missing slot is a silent no-op', () => {
 // ---------------------------------------------------------------------------
 
 import type { TaskExecutionEvent } from '../types.js';
+import { buildCompleteness } from '../../completeness.js';
 
 test('onTaskEvent: 2-task happy path emits started+completed per task in plan order', async () => {
 	_resetRuntimeRegistryForTests();
@@ -632,14 +637,14 @@ test('SINGLE-PASS: child plan tasks execute exactly once (regression for the exe
 		templateId: 'child.discovery',
 		execute: async () => {
 			discoveryCallCount++;
-			return { outputs: new Map([['items', ['x']]]) };
+			return { outputs: new Map([['items', ['x']]]), completeness: WHOLE };
 		},
 	});
 	registerTemplateRuntime({
 		templateId: 'child.aggregator',
 		execute: async () => {
 			aggregatorCallCount++;
-			return { outputs: new Map([['report', { r: 'child' }]]) };
+			return { outputs: new Map([['report', { r: 'child' }]]), completeness: WHOLE };
 		},
 	});
 	registerTemplateRuntime(stubRuntime('root.aggregator', { report: 'root' }));
@@ -685,6 +690,56 @@ test('SINGLE-PASS: child plan tasks execute exactly once (regression for the exe
 		const childResult = result.children.get('t02');
 		assert.ok(childResult);
 		assert.equal(childResult!.root.tasksCompleted, 2);
+	} finally {
+		purgeAllTaskOutputs(runId);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// Completeness: the walk copies the runtime's record; a result without one fails
+// ---------------------------------------------------------------------------
+
+test('the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed', async () => {
+	_resetRuntimeRegistryForTests();
+	const record = buildCompleteness({
+		returned: 3, basis: 'filesystem',
+		limited: [{ what: 'files walked', limit: 5000, scope: 'source', reason: 'the walk stopped' }],
+	});
+	registerTemplateRuntime({
+		templateId: 'x.with-record',
+		execute: async () => ({ outputs: new Map<string, unknown>([['items', [1, 2, 3]]]), completeness: record }),
+	});
+	// A runtime as one was written before the change. It no longer compiles as a
+	// TemplateRuntime, but a stand-in or a plug-in can still behave this way.
+	registerTemplateRuntime({
+		templateId: 'x.without-record',
+		execute: async () => ({ outputs: new Map<string, unknown>([['other', [1]]]) }),
+	} as unknown as TemplateRuntime);
+	registerTemplateRuntime(stubRuntime('x.aggregate', { report: 'r' }));
+
+	const runId = uniqueRunId('completeness');
+	const plan = mkPlan([
+		mkTask({ taskId: 't01', template: 'x.with-record',    produces: ['items'] }),
+		mkTask({ taskId: 't02', template: 'x.without-record', produces: ['other'] }),
+		mkTask({ taskId: 't03', template: 'x.aggregate',      produces: ['report'], consumes: ['items'] }),
+	]);
+	try {
+		const result = await runExecutor({ tree: mkNode(plan), intent: SAMPLE_INTENT, runId });
+		const t01 = result.root.perTask.get('t01')!;
+		const t02 = result.root.perTask.get('t02')!;
+
+		assert.equal(t01.status, 'ok');
+		assert.deepEqual(t01.completeness, record, "the runtime's record is on the task record");
+		// ...and in the record written for the run, which is what a later reader has.
+		assert.deepEqual(readTaskOutput(runId, 't01')?.completeness, record);
+
+		assert.equal(t02.status, 'failed', 'a result that does not state its completeness is not counted as complete');
+		assert.match(t02.error ?? '', /^no-completeness-record: /);
+		assert.equal(t02.completeness, undefined);
+		assert.equal(t02.outputs, undefined, 'its outputs are not passed on');
+		assert.deepEqual(result.root.tasksFailed.map(f => f.taskId), ['t02']);
+
+		assert.deepEqual(result.root.perTask.get('t03')!.completeness, WHOLE);
 	} finally {
 		purgeAllTaskOutputs(runId);
 	}

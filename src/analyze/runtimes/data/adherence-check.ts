@@ -125,6 +125,7 @@ export const dataAdherenceCheckRuntime: TemplateRuntime = {
 				contradictions: result.contradictions,
 				diagnostics:    result.diagnostics,
 			}]]),
+			completeness: result.completeness,
 		};
 	},
 };

@@ -52,9 +52,11 @@ export const docsDecisionTraceRuntime: TemplateRuntime = {
 
 		// Strip the type discriminator so the template output shape
 		// matches the pre-refactor contract (planner-visible schema).
-		const { type: _type, ...templateShape } = output;
+		// The shared lookup built the record; it is the task's record, not part of its output.
+		const { type: _type, completeness, ...templateShape } = output;
 		return {
 			outputs: new Map<string, unknown>([['decision-trace', templateShape]]),
+			completeness,
 		};
 	},
 };

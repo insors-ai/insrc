@@ -21,7 +21,6 @@
  *       charts: Array<{ path, name?, version?, appVersion?, type?,
  *                       dependencies: Array<{name, version?, repository?}>,
  *                       templateFileCount, valuesKeys: string[] }>,
- *       truncated: boolean
  *     } }
  *
  * Deterministic. All lists sorted.
@@ -40,6 +39,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 	type WalkedFile,
 } from './_shared.js';
@@ -135,12 +135,15 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 
 		charts.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
-		const inventory = { charts, truncated };
+		const inventory = { charts };
 		log.info(
 			{ runId: args.runId, taskId: args.task.taskId, repoPath, chartCount: charts.length, truncated },
 			'infra.inventory.helm: enumerated',
 		);
-		return { outputs: new Map<string, unknown>([['helm-inventory', inventory]]) };
+		return {
+			outputs: new Map<string, unknown>([['helm-inventory', inventory]]),
+			completeness: fileWalkCompleteness(charts.length, truncated),
+		};
 	},
 };
 

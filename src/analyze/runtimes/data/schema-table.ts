@@ -32,7 +32,6 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { acquirePool } from '../../../daemon/db/index.js';
 
 import type {
 	FileDriver,
@@ -46,10 +45,13 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
+	acquireDataPool,
 	optionalStringParam,
 	requireStringParam,
 	resolveRepoPathFromIntent,
 } from './_shared.js';
+import { buildCompleteness } from '../../completeness.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'data.schema.table';
 const log = getLogger('analyze:runtimes:data:schema-table');
@@ -64,12 +66,13 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 		const depthOpt     = optionalStringParam(args, 'depth',       TEMPLATE_ID);
 		const deep         = depthOpt === 'deep';
 
-		const pool   = await acquirePool(repoPath);
+		const pool   = await acquireDataPool(repoPath);
 		await pool.reload();
 		const driver = await pool.acquire(connectionId);
 
 		let schema: SchemaDescription;
 		let indexes: IndexListing | undefined = undefined;
+		const skipped: SkippedItem[] = [];
 
 		switch (driver.family) {
 			case 'rdbms': {
@@ -86,6 +89,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 							  err: (err as Error).message },
 							'listIndexes failed; omitting indexes from deep schema',
 						);
+						skipped.push({ what: `the indexes of ${table}`, reason: `the driver could not list them (${(err as Error).message})` });
 					}
 				}
 				break;
@@ -134,6 +138,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['table-schema', result]]),
+			completeness: buildCompleteness({ returned: schema.columns.length, skipped, basis: 'data-source' }),
 		};
 	},
 };

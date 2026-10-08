@@ -806,9 +806,13 @@ test('inventory.helm: enumerates charts with metadata + deps + templateFileCount
 	const result = await infraInventoryHelmRuntime.execute(ciArgs('infra.inventory.helm', ciFixtureRoot, 'helm-1'));
 	const inv = result.outputs.get('helm-inventory') as {
 		charts: Array<{ path: string; name?: string; version?: string; appVersion?: string; type?: string; dependencies: Array<{ name: string; version?: string; repository?: string }>; templateFileCount: number; valuesKeys: string[] }>;
-		truncated: boolean;
 	};
-	assert.equal(inv.truncated, false);
+	// The inventory no longer has its own `truncated` flag: a walk that stops at
+	// its cap is a limit in the task's completeness record.
+	assert.equal('truncated' in inv, false);
+	assert.equal(result.completeness.limited, undefined);
+	assert.equal(result.completeness.complete, true);
+	assert.equal(result.completeness.basis, 'filesystem');
 	// sorted by path: charts/bare before charts/web
 	assert.deepEqual(inv.charts.map(c => c.path), ['charts/bare/Chart.yaml', 'charts/web/Chart.yaml']);
 
@@ -872,9 +876,11 @@ test('inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (r
 test('inventory runtimes: empty scope yields well-formed empty inventories, no throw', async () => {
 	const emptyRoot = mkdtempSync(join(tmpdir(), 'infra-empty-'));
 	try {
-		const helm = (await infraInventoryHelmRuntime.execute(ciArgs('infra.inventory.helm', emptyRoot, 'e1'))).outputs.get('helm-inventory') as { charts: unknown[]; truncated: boolean };
+		const helmResult = await infraInventoryHelmRuntime.execute(ciArgs('infra.inventory.helm', emptyRoot, 'e1'));
+		const helm = helmResult.outputs.get('helm-inventory') as { charts: unknown[] };
 		assert.deepEqual(helm.charts, []);
-		assert.equal(helm.truncated, false);
+		assert.equal('truncated' in helm, false);
+		assert.deepEqual([helmResult.completeness.complete, helmResult.completeness.returned], [true, 0]);
 		const docker = (await infraInventoryDockerRuntime.execute(ciArgs('infra.inventory.docker', emptyRoot, 'e2'))).outputs.get('docker-inventory') as { dockerfiles: unknown[]; composeFiles: unknown[] };
 		assert.deepEqual(docker.dockerfiles, []);
 		assert.deepEqual(docker.composeFiles, []);

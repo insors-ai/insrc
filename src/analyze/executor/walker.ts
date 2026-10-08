@@ -37,6 +37,7 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
+import { isCompletenessRecord } from '../completeness.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
@@ -239,6 +240,15 @@ async function executeLeafTask(
 		return failedRecord(task, `output-shape-mismatch: ${shapeError.message}`);
 	}
 
+	// Every result states its own completeness. A runtime that returns none
+	// cannot be counted as complete by default: the task is recorded as failed.
+	const completeness = (result as { completeness?: unknown }).completeness;
+	if (!isCompletenessRecord(completeness)) {
+		const reason = 'no-completeness-record: the runtime returned a result that does not state its completeness';
+		log.warn({ runId, taskId: task.taskId, template: task.template }, reason);
+		return failedRecord(task, reason);
+	}
+
 	const outputsObj: Record<string, unknown> = {};
 	for (const [k, v] of result.outputs.entries()) {
 		outputsObj[k] = v;
@@ -252,6 +262,7 @@ async function executeLeafTask(
 		status:      'ok',
 		outputs:     outputsObj,
 		completedAt: nowIso(),
+		completeness,
 	};
 }
 

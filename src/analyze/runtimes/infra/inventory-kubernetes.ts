@@ -15,7 +15,6 @@
  *   { 'k8s-inventory': {
  *       files:     Array<{ path, resourceCount, kinds }>,
  *       resources: Array<{ file, apiVersion, kind, name, namespace?, labels? }>,
- *       truncated: boolean
  *     } }
  *
  * Files that fail YAML parsing are skipped + logged. The
@@ -37,6 +36,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 } from './_shared.js';
 
@@ -123,7 +123,6 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 		const inventory = {
 			files:     filesSummary,
 			resources,
-			truncated,
 		};
 
 		log.info(
@@ -141,6 +140,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['k8s-inventory', inventory]]),
+			completeness: fileWalkCompleteness(resources.length, truncated),
 		};
 	},
 };

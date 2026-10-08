@@ -37,6 +37,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import { readScopeRef, resolveRepoPath } from '../code/_shared.js';
+import { buildCompleteness } from '../../completeness.js';
 
 const TEMPLATE_ID = 'docs.discovery.inventory';
 const log = getLogger('analyze:runtimes:docs:discovery-inventory');
@@ -156,6 +157,8 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['docs-inventory', output]]),
+			// Every document, section and config entity of the index is listed.
+			completeness: buildCompleteness({ returned: inventory.length, basis: 'doc-index' }),
 		};
 	},
 };

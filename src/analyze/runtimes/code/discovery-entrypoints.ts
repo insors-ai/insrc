@@ -39,6 +39,7 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 } from './_shared.js';
+import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.discovery.entrypoints';
 const log = getLogger('analyze:runtimes:code:discovery-entrypoints');
@@ -94,6 +95,8 @@ export const codeDiscoveryEntrypointsRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['entrypoints', entrypoints]]),
+			// Every exported function, method and class of the graph is listed.
+			completeness: graphCompleteness({ returned: entrypoints.length }),
 		};
 	},
 };

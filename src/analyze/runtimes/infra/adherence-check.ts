@@ -114,6 +114,7 @@ export const infraAdherenceCheckRuntime: TemplateRuntime = {
 				contradictions: result.contradictions,
 				diagnostics:    result.diagnostics,
 			}]]),
+			completeness: result.completeness,
 		};
 	},
 };

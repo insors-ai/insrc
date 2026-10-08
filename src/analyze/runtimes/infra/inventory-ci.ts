@@ -21,7 +21,6 @@
  *   { 'ci-inventory': {
  *       githubWorkflows: Array<{ path, name?, triggers: string[], jobs: Array<{id, stepUses: string[]}> }>,
  *       gitlabCi: Array<{ path, stages: string[], jobs: string[] }>,
- *       truncated: boolean
  *     } }
  */
 
@@ -38,6 +37,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 } from './_shared.js';
 
@@ -144,11 +144,14 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 		githubWorkflows.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 		gitlabCi.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
-		const inventory = { githubWorkflows, gitlabCi, truncated };
+		const inventory = { githubWorkflows, gitlabCi };
 		log.info(
 			{ runId: args.runId, taskId: args.task.taskId, repoPath, githubWorkflows: githubWorkflows.length, gitlabCi: gitlabCi.length, truncated },
 			'infra.inventory.ci: enumerated',
 		);
-		return { outputs: new Map<string, unknown>([['ci-inventory', inventory]]) };
+		return {
+			outputs: new Map<string, unknown>([['ci-inventory', inventory]]),
+			completeness: fileWalkCompleteness(githubWorkflows.length + gitlabCi.length, truncated),
+		};
 	},
 };

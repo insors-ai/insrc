@@ -21,7 +21,6 @@
  *   { 'docker-inventory': {
  *       dockerfiles: Array<{ path, froms: Array<{image, stage?}>, exposedPorts: string[] }>,
  *       composeFiles: Array<{ path, services: Array<{name, image?, ports: string[]}> }>,
- *       truncated: boolean
  *     } }
  */
 
@@ -38,6 +37,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 } from './_shared.js';
 
@@ -150,11 +150,14 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 		dockerfiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 		composeFiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
-		const inventory = { dockerfiles, composeFiles, truncated };
+		const inventory = { dockerfiles, composeFiles };
 		log.info(
 			{ runId: args.runId, taskId: args.task.taskId, repoPath, dockerfiles: dockerfiles.length, composeFiles: composeFiles.length, truncated },
 			'infra.inventory.docker: enumerated',
 		);
-		return { outputs: new Map<string, unknown>([['docker-inventory', inventory]]) };
+		return {
+			outputs: new Map<string, unknown>([['docker-inventory', inventory]]),
+			completeness: fileWalkCompleteness(dockerfiles.length + composeFiles.length, truncated),
+		};
 	},
 };

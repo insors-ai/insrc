@@ -42,6 +42,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import { compareEntitiesByLocation, modulePrefixOf } from './_shared.js';
+import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.surface.functional';
 const log = getLogger('analyze:runtimes:code:surface-functional');
@@ -141,6 +142,8 @@ export const codeSurfaceFunctionalRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['functional-surface', surface]]),
+			// Every surface symbol under the module's path is listed.
+			completeness: graphCompleteness({ returned: exports.length + internalHelpers.length }),
 		};
 	},
 };

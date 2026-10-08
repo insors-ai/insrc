@@ -117,6 +117,7 @@ export const codeAdherenceCheckRuntime: TemplateRuntime = {
 				contradictions: result.contradictions,
 				diagnostics:    result.diagnostics,
 			}]]),
+			completeness: result.completeness,
 		};
 	},
 };

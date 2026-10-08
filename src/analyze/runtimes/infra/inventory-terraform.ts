@@ -36,7 +36,6 @@
  *       providers:   Array<{ file, name }>,
  *       variables:   Array<{ file, name }>,
  *       outputs:     Array<{ file, name }>,
- *       truncated:   boolean
  *     } }
  *
  * Deterministic. All lists sorted.
@@ -55,6 +54,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 } from './_shared.js';
 
@@ -219,7 +219,6 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 			providers,
 			variables,
 			outputs,
-			truncated,
 		};
 
 		log.info(
@@ -241,6 +240,10 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['tf-inventory', inventory]]),
+			completeness: fileWalkCompleteness(
+				resources.length + dataRefs.length + modules.length + providers.length + variables.length + outputs.length,
+				truncated,
+			),
 		};
 	},
 };

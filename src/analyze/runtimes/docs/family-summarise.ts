@@ -29,6 +29,7 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
+import { buildCompleteness } from '../../completeness.js';
 
 const TEMPLATE_ID = 'docs.family.summarise';
 const log = getLogger('analyze:runtimes:docs:family-summarise');
@@ -76,6 +77,9 @@ interface FamilySummaryOutput {
 	readonly supersededCount:   number;
 	readonly placeholderCount:  number;
 }
+
+/** How many subjects the roll-up names. */
+const TOP_SUBJECTS = 20;
 
 export const docsFamilySummariseRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
@@ -159,7 +163,7 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 
 		const topSubjects: FamilySubjectRollup[] = Array.from(subjectCounts.entries())
 			.sort((a, b) => b[1] - a[1])
-			.slice(0, 20)
+			.slice(0, TOP_SUBJECTS)
 			.map(([subject, docCount]) => ({ subject, docCount }));
 
 		const output: FamilySummaryOutput = {
@@ -188,6 +192,14 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['family-summary', output]]),
+			completeness: buildCompleteness({
+				returned: documents.length,
+				// The subject roll-up is a second list, cut to its own length.
+				limited:  subjectCounts.size > TOP_SUBJECTS
+					? [{ what: 'top subjects', limit: TOP_SUBJECTS, scope: 'per-group', reason: `${subjectCounts.size} subjects were found and ${TOP_SUBJECTS} are kept` }]
+					: [],
+				basis:    'doc-index',
+			}),
 		};
 	},
 };

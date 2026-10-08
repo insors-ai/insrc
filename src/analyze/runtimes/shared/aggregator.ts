@@ -21,6 +21,8 @@
  *   - schema-unrecoverable: provider.completeStructured retries exhausted
  */
 
+import { buildCompleteness } from '../../completeness.js';
+import type { Completeness } from '../../completeness.js';
 import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,6 +65,21 @@ export interface RunAggregatorArgs {
 	readonly focus?: string;
 	/** Optional provider override (tests only -- production uses analyze config). */
 	readonly provider?: LLMProvider;
+}
+
+/**
+ * The completeness record of an aggregate-report task. The report is a
+ * summary a model wrote from the other tasks' results: it has no findings of
+ * its own, so it can neither be incomplete nor vouch for the tasks it
+ * summarises. The answer report is derived from THEIR records and leaves
+ * this task out.
+ */
+export function aggregateReportCompleteness(): Completeness {
+	return buildCompleteness({
+		returned:  1,
+		basis:     'model-directed',
+		basisNote: "a summary written by a model from the other tasks' results; its completeness is that of the tasks it summarises",
+	});
 }
 
 /**

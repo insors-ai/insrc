@@ -49,9 +49,11 @@ export const docsConstraintEnumerateRuntime: TemplateRuntime = {
 			logContext: `template:${args.task.taskId}`,
 		});
 
-		const { type: _type, ...templateShape } = output;
+		// The shared lookup built the record; it is the task's record, not part of its output.
+		const { type: _type, completeness, ...templateShape } = output;
 		return {
 			outputs: new Map<string, unknown>([['constraints', templateShape]]),
+			completeness,
 		};
 	},
 };

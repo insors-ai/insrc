@@ -43,6 +43,7 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
 	walkFiles,
 	type WalkedFile,
 } from './_shared.js';
@@ -86,6 +87,8 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 			}
 		}
 
+		let mostFilesInAFamily = 0;
+		for (const paths of buckets.values()) mostFilesInAFamily = Math.max(mostFilesInAFamily, paths.length);
 		const families: FamilyRecord[] = Array.from(buckets.entries())
 			.map(([name, paths]): FamilyRecord => ({
 				name,
@@ -108,6 +111,15 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['families', families]]),
+			completeness: fileWalkCompleteness(families.length, truncated, {
+				// Each family names a sample of its files; fileCount holds the full number.
+				limited: mostFilesInAFamily > SAMPLE_CAP_PER_FAMILY
+					? [{
+						what: 'sample files per family', limit: SAMPLE_CAP_PER_FAMILY, scope: 'per-group',
+						reason: `a family has ${mostFilesInAFamily} files and ${SAMPLE_CAP_PER_FAMILY} are named for each; fileCount holds the full number`,
+					}]
+					: [],
+			}),
 		};
 	},
 };

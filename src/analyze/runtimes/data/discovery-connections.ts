@@ -25,7 +25,7 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { acquirePool, familyOf } from '../../../daemon/db/index.js';
+import { familyOf } from '../../../daemon/db/index.js';
 
 import type {
 	TemplateExecuteArgs,
@@ -33,9 +33,11 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
+	acquireDataPool,
 	optionalStringParam,
 	resolveRepoPathFromIntent,
 } from './_shared.js';
+import { buildCompleteness } from '../../completeness.js';
 
 const TEMPLATE_ID = 'data.discovery.connections';
 const log = getLogger('analyze:runtimes:data:discovery-connections');
@@ -57,7 +59,7 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 		const explicit = optionalStringParam(args, 'scopeRefValue', TEMPLATE_ID);
 		const repoPath = explicit ?? resolveRepoPathFromIntent(args, TEMPLATE_ID);
 
-		const pool = await acquirePool(repoPath);
+		const pool = await acquireDataPool(repoPath);
 		// reload() is idempotent + cheap; ensures we see edits made to
 		// db-connections.json after the pool was first acquired.
 		await pool.reload();
@@ -89,6 +91,8 @@ export const dataDiscoveryConnectionsRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['connections', connections]]),
+			// Every connection in the repository's registry is listed.
+			completeness: buildCompleteness({ returned: connections.length, basis: 'data-source' }),
 		};
 	},
 };

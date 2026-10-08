@@ -54,6 +54,7 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 } from './_shared.js';
+import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.structure.module-tree';
 const log = getLogger('analyze:runtimes:code:structure-module-tree');
@@ -159,6 +160,10 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['module-tree', tree]]),
+			completeness: graphCompleteness({
+				returned: moduleNodes.length,
+				rule:     'A file that lies under no module is not part of the tree, and neither are its imports.',
+			}),
 		};
 	},
 };

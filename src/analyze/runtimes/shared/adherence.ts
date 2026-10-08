@@ -34,7 +34,10 @@ import type {
 } from '../../../shared/types.js';
 
 import { assembleLiveProjectContext } from '../../context/live-project-context.js';
+import { buildCompleteness } from '../../completeness.js';
+import type { Completeness, ReachedLimit } from '../../completeness.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from '../../explore/completeness-facts.js';
 
 const log = getLogger('analyze:runtimes:shared:adherence');
 
@@ -79,6 +82,8 @@ export interface AdherenceResult {
 		readonly constraintCount:   number;
 		readonly excerptCount:      number;
 	};
+	/** What the check read and what it left out; the runtime returns it as the task's record. */
+	readonly completeness:   Completeness;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +214,12 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		);
 	}
 
+	// The excerpts are the check's sources. The lookup stops at maxExcerpts and
+	// does not say how many more entities match the subject.
+	const limited: ReachedLimit[] = excerpts.length >= maxExcerpts
+		? [reachedLimit('source excerpts', maxExcerpts, 'source', null)]
+		: [];
+
 	const cfg = loadAnalyzeConfig();
 	const provider = resolveRoleProvider('analyze.adherence', cfg);
 	const promptContent = loadPromptFile(promptRelPath);
@@ -253,6 +264,10 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 				constraintCount: constraints.length,
 				excerptCount:    excerpts.length,
 			},
+			completeness: buildCompleteness({
+				returned: 0, basis: 'graph', notEstablished: true,
+				basisNote: `${GRAPH_BASIS_NOTE}. The model call that judges adherence failed: ${(err as Error).message}`,
+			}),
 		};
 	}
 
@@ -285,6 +300,10 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 			constraintCount: constraints.length,
 			excerptCount:    excerpts.length,
 		},
+		completeness: graphCompleteness({
+			returned: matches.length + drifts.length + missingImpl.length + contradictions.length,
+			limited,
+		}),
 	};
 }
 

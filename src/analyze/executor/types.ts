@@ -24,6 +24,7 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
+import type { Completeness } from '../completeness.js';
 import type {
 	ClassifiedIntent,
 	PlanTask,
@@ -59,6 +60,12 @@ export interface TemplateExecuteArgs {
 export interface TemplateExecuteResult {
 	/** Map of produces-name -> output value. Must cover every name in template.produces. */
 	readonly outputs: ReadonlyMap<string, unknown>;
+	/**
+	 * What the task's result holds and what it left out (shared contract sc1).
+	 * Built by the runtime, at the place it applies a limit, skips something or
+	 * cuts content. The walk copies it to the task's record.
+	 */
+	readonly completeness: Completeness;
 }
 
 /**
@@ -144,6 +151,12 @@ export interface TaskExecutionRecord {
 	readonly outputs?:     Readonly<Record<string, unknown>>;
 	readonly error?:       string;
 	readonly completedAt?: string;
+	/**
+	 * The runtime's completeness record, for a task that ran. Absent on a
+	 * failed or skipped task, and on a planner-kind task: that one has no
+	 * findings of its own, and its child plan's tasks stand in for it.
+	 */
+	readonly completeness?: Completeness | undefined;
 }
 
 /** Top-level result: root plan execution + every recursive subtree's. */

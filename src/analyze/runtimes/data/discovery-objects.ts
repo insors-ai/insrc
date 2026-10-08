@@ -29,7 +29,6 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
-import { acquirePool } from '../../../daemon/db/index.js';
 import { listFilesForConnection } from '../../../daemon/db/list-files.js';
 
 import type {
@@ -43,10 +42,13 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
+	acquireDataPool,
 	optionalStringParam,
 	requireStringParam,
 	resolveRepoPathFromIntent,
 } from './_shared.js';
+import { buildCompleteness } from '../../completeness.js';
+import type { ReachedLimit } from '../../completeness.js';
 
 const TEMPLATE_ID = 'data.discovery.objects';
 const log = getLogger('analyze:runtimes:data:discovery-objects');
@@ -64,6 +66,14 @@ interface ObjectRecord {
 	readonly schema?: string;
 }
 
+/** The limit a driver reached on its own listing; `listed` is how many it returned. */
+function driverCut(what: string, listed: number): ReachedLimit {
+	return {
+		what, limit: listed, scope: 'source',
+		reason: `the driver stopped its listing at ${listed} ${what}; how many more exist is not known`,
+	};
+}
+
 export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 	templateId: TEMPLATE_ID,
 
@@ -72,11 +82,13 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 		const connectionId = requireStringParam(args, 'connectionId', TEMPLATE_ID);
 		const kindFilter   = optionalStringParam(args, 'kind', TEMPLATE_ID);
 
-		const pool = await acquirePool(repoPath);
+		const pool = await acquireDataPool(repoPath);
 		await pool.reload();
 		const driver = await pool.acquire(connectionId);
 
 		const objects: ObjectRecord[] = [];
+		// A listing the driver or the file walk cut short, for the completeness record.
+		const limited: ReachedLimit[] = [];
 		switch (driver.family) {
 			case 'rdbms': {
 				const r = driver as RdbmsDriver;
@@ -93,6 +105,8 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 						...(t.schema !== undefined ? { schema: t.schema } : {}),
 					});
 				}
+				// The driver's own cut flag: it stopped at its default limit.
+				if (listing.truncated) limited.push(driverCut('tables', listing.tables.length));
 				break;
 			}
 			case 'kv': {
@@ -106,6 +120,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 				for (const ns of listing.namespaces) {
 					objects.push({ kind: 'namespace', name: ns.name });
 				}
+				if (listing.truncated) limited.push(driverCut('namespaces', listing.namespaces.length));
 				break;
 			}
 			case 'file': {
@@ -130,6 +145,10 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 					});
 				}
 				if (result.truncated) {
+					limited.push({
+						what: 'files', limit: FILE_LIST_LIMIT, scope: 'source',
+						reason: `the file listing stops at ${FILE_LIST_LIMIT} files; how many more the connection holds is not known`,
+					});
 					log.warn(
 						{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT },
 						'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set',
@@ -169,6 +188,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['objects', filtered]]),
+			completeness: buildCompleteness({ returned: filtered.length, limited, basis: 'data-source' }),
 		};
 	},
 };

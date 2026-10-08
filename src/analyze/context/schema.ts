@@ -37,7 +37,15 @@ import type { AnalyzeContextBundle, BundleLayerName } from './types.js';
  * Bumping this constant invalidates every cached bundle. Coordinate
  * with the cache layer (P4) when changing.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+/*
+ * Version history:
+ *   1 -- seven layers and meta.
+ *   2 -- the optional `report` (LLD-b9d5c5c40df5a574-s1). The version is part
+ *        of the bundle cache key, so a bundle cached at version 1, which has
+ *        no report, is not served.
+ */
 
 /**
  * Layer names the validator accepts in meta.emptyLayers. Kept in sync
@@ -141,8 +149,77 @@ export const ANALYZE_CONTEXT_BUNDLE_SCHEMA = {
 				},
 			},
 		},
+		// The answer report. Derived by code; see MODEL_FACING_BUNDLE_SCHEMA.
+		report: {
+			type:                 'object',
+			additionalProperties: false,
+			required:             ['completeness'],
+			properties: {
+				completeness: {
+					type:                 'object',
+					additionalProperties: false,
+					required:             ['complete', 'incomplete', 'failed'],
+					properties: {
+						complete:   { type: 'boolean' },
+						incomplete: { type: 'array', items: { $ref: '#/definitions/sourceNote' } },
+						failed:     { type: 'array', items: { $ref: '#/definitions/sourceNote' } },
+						basisNotes: { type: 'array', items: { type: 'string' } },
+					},
+				},
+				answerFailure: { type: 'string' },
+				// Typed by Stories s2 and s3.
+				measure:  {},
+				handling: {},
+			},
+		},
+	},
+	definitions: {
+		sourceNote: {
+			type:                 'object',
+			additionalProperties: false,
+			required:             ['sourceId', 'sourceKind', 'reason'],
+			properties: {
+				sourceId:   { type: 'string', minLength: 1 },
+				sourceKind: { type: 'string', enum: ['lookup', 'plan-task'] },
+				reason:     { type: 'string' },
+			},
+		},
 	},
 } as const;
+
+/**
+ * The schema a MODEL is given for the bundle it writes: the stored schema
+ * without `report`. The report is derived by code from the lookups' records,
+ * so a model must not be able to write one. The schema rejects unknown
+ * fields, so a model's answer that carries a `report` fails validation
+ * inside the provider and is retried, like any other unknown field.
+ *
+ * `withMeta: false` also drops `meta`, for the answer-writing call, which
+ * writes the seven layers only.
+ *
+ * Each form is built once and kept: the provider compiles a schema once per
+ * object, and a second object with the same `$id` would be refused.
+ */
+const modelFacing: { withMeta?: Record<string, unknown>; layersOnly?: Record<string, unknown> } = {};
+
+export function modelFacingBundleSchema(opts: { readonly withMeta: boolean }): Record<string, unknown> {
+	const key = opts.withMeta ? 'withMeta' : 'layersOnly';
+	const kept = modelFacing[key];
+	if (kept !== undefined) return kept;
+
+	const cloned = JSON.parse(JSON.stringify(ANALYZE_CONTEXT_BUNDLE_SCHEMA)) as Record<string, unknown>;
+	const props = cloned['properties'] as Record<string, unknown>;
+	delete props['report'];
+	delete cloned['definitions'];   // used by `report` only
+	if (!opts.withMeta) {
+		delete props['meta'];
+		cloned['required'] = (cloned['required'] as string[]).filter(k => k !== 'meta');
+	}
+	// Its own identity: not the stored schema's `$id`.
+	delete cloned['$id'];
+	modelFacing[key] = cloned;
+	return cloned;
+}
 
 // ---------------------------------------------------------------------------
 // Validator (compiled lazily so test runs that only inspect the schema

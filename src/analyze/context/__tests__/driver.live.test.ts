@@ -63,6 +63,7 @@ import type {
 	ShapeOpts,
 } from '../types.js';
 import type { ClassifiedIntent, AnalyzeScopeRef } from '../../../shared/analyze-types.js';
+import { SCHEMA_VERSION } from '../schema.js';
 
 const GATE = process.env['INSRC_LIVE_TESTS'] === '1';
 if (!GATE) {
@@ -156,7 +157,7 @@ test('runShaper produces a schema-valid bundle from a minimal prompt', { skip: !
 		assert.equal(bundle.meta.mode,          'classification');
 		assert.equal(bundle.meta.shaper,        'classification');
 		assert.equal(bundle.meta.modelId,       CFG.shaperModel);
-		assert.equal(bundle.meta.schemaVersion, 1);
+		assert.equal(bundle.meta.schemaVersion, SCHEMA_VERSION);
 		assert.ok(Array.isArray(bundle.meta.emptyLayers));
 		assert.ok(bundle.meta.emptyLayers.includes('structure'));
 		assert.ok(bundle.meta.emptyLayers.includes('surface'));

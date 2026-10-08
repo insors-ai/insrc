@@ -18,9 +18,9 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
-import type { AnalyzeContextBundle } from '../analyze/context/types.js';
+import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
 
-const LAYER_HEADINGS: Readonly<Record<keyof Omit<AnalyzeContextBundle, 'meta'>, string>> = {
+const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
 	system:    '## System',
 	focus:     '## Focus',
 	summary:   '## Summary',
@@ -30,7 +30,7 @@ const LAYER_HEADINGS: Readonly<Record<keyof Omit<AnalyzeContextBundle, 'meta'>, 
 	upstream:  '## Upstream',
 };
 
-const LAYER_ORDER: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[] = [
+const LAYER_ORDER: readonly BundleLayerName[] = [
 	'system', 'focus', 'summary', 'structure', 'surface', 'artefacts', 'upstream',
 ];
 
@@ -40,7 +40,7 @@ const LAYER_ORDER: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[] = [
 
 export interface RenderBundleOpts {
 	/** Which layers to include. Defaults to every non-empty layer. */
-	readonly layers?: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[];
+	readonly layers?: readonly BundleLayerName[];
 	/** Whether to prefix the output with the meta-summary line.
 	 *  Default: true. */
 	readonly includeMeta?: boolean;

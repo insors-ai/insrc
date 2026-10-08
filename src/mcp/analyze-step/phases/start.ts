@@ -27,6 +27,7 @@ import { pickSynthesizerKey } from '../synthesizer-key.js';
 import type { StepInputStart, StepOutputDone, StepOutputEmitPlan } from '../types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { getLogger } from '../../../shared/logger.js';
+import { SCHEMA_VERSION } from '../../../analyze/context/schema.js';
 
 const log = getLogger('mcp:analyze-step:start');
 
@@ -87,7 +88,7 @@ export async function handleStart(
 				toolCalls:     0,
 				modelId:       'client',
 				emptyLayers:   [],
-				schemaVersion: 1,
+				schemaVersion: SCHEMA_VERSION,
 			},
 		};
 	}

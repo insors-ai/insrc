@@ -13,6 +13,7 @@
 
 import type { ExplorationPlan } from '../../analyze/explore/index.js';
 import type { BundleMeta } from '../../analyze/context/types.js';
+import type { AnswerReport } from '../../analyze/completeness.js';
 
 // ---------------------------------------------------------------------------
 // Input phases
@@ -118,6 +119,8 @@ export interface StepOutputDone {
 	readonly next:     'done';
 	readonly markdown: string;
 	readonly meta:     BundleMeta;
+	/** The answer report the tool derived from the lookups it executed. Absent only on the cached-bundle path. */
+	readonly report?:  AnswerReport | undefined;
 }
 
 /** Retryable / non-retryable failure. */

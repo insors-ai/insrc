@@ -14,6 +14,7 @@ import { ModelCallFailedError } from '../../../agent/providers/model-call-error.
 import type { LoadedConnections } from '../../../daemon/db/config.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
+import { buildCompleteness } from '../../completeness.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import {
 	DecomposerLlmUnavailableError,
@@ -41,6 +42,7 @@ import {
 	SynthesizerPromptMissingError,
 	SynthesizerSchemaUnrecoverable,
 } from '../synthesizer.js';
+import { SCHEMA_VERSION } from '../schema.js';
 import { resolveScope, type ResolvedScope, type ScopeDeps } from '../scope.js';
 import type { AnalyzeContextBundle } from '../types.js';
 
@@ -67,6 +69,18 @@ const RAW: RawBundle = {
 	system: 'code-shaper: how-does-it-work', focus: 'Intent focus: how does settlement work',
 	summary: 's', structure: 'st', surface: 'su', artefacts: 'a', upstream: 'u',
 };
+
+/** A stand-in lookup's record: it returned everything it has. */
+const WHOLE = buildCompleteness({ returned: 1, basis: 'graph' });
+/** The record of a free-form lookup, which is never established complete. */
+const UNSETTLED = buildCompleteness({ returned: 0, basis: 'model-directed', notEstablished: true });
+/** What a stand-in bundle outcome carries for one complete lookup. */
+const FOUND_NOTHING_LEFT_OUT = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
+
+/** The parts of a bundle outcome that existed before it carried what the lookups found. */
+function core(o: PipelineOutcome): unknown {
+	return o.kind === 'bundle' ? { kind: o.kind, raw: o.raw, explorationCount: o.explorationCount } : o;
+}
 
 const EMPTY_LAYERS = { system: '', focus: '', summary: '', structure: '', surface: '', artefacts: '', upstream: '' };
 
@@ -98,9 +112,10 @@ function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 					// A free-form lookup that did not settle (all layers
 					// empty) is NOT short-circuited: the answer-writing
 					// step still runs, as for any other lookup.
+					// Every lookup output states its completeness; so do the stand-ins.
 					output: (e.type === 'freeform.probe'
-						? { type: e.type, rawBundle: EMPTY_LAYERS, toolCallCount: 0 }
-						: { type: e.type }) as never,
+						? { type: e.type, rawBundle: EMPTY_LAYERS, toolCallCount: 0, completeness: UNSETTLED }
+						: { type: e.type, completeness: WHOLE }) as never,
 					cached: false,
 					elapsedMs: 0,
 				})),
@@ -150,7 +165,7 @@ function stamp(raw: RawBundle, explorationCount: number): AnalyzeContextBundle {
 		...raw,
 		meta: {
 			mode: 'run', shaper: 'code', toolCalls: explorationCount, modelId: 'm',
-			emptyLayers: [], schemaVersion: 1,
+			emptyLayers: [], schemaVersion: SCHEMA_VERSION,
 		},
 	} as unknown as AnalyzeContextBundle;
 }
@@ -161,7 +176,11 @@ function stamp(raw: RawBundle, explorationCount: number): AnalyzeContextBundle {
 
 test('focused request on a repo: stand-in arguments and bundle equal the recorded baseline', async () => {
 	const { outcome, calls } = await run();
-	assert.deepEqual(outcome, { kind: 'bundle', raw: RAW, explorationCount: 1 });
+	assert.deepEqual(core(outcome), { kind: 'bundle', raw: RAW, explorationCount: 1 });
+	// The outcome also carries the executed lookups and the report derived from them.
+	assert.ok(outcome.kind === 'bundle');
+	assert.equal(outcome.found.results.length, 1);
+	assert.deepEqual(outcome.found.report, { completeness: { complete: true, incomplete: [], failed: [] } });
 	// The baseline is what each step received before the outcome type
 	// existed, taken from the call sites as they stood (the pipeline had
 	// no seam then, so it could not be recorded by running it; the three
@@ -267,7 +286,7 @@ test('pipeline returns a bundle for an unfocused intent on a repo, a module and 
 		const value = kind === 'module' ? `${REPO}/src/billing` : REPO;
 		const unfocused = { ...INTENT, focused: false, focus: undefined, scopeRef: { kind, value } } as unknown as ClassifiedIntent;
 		const { outcome, calls } = await run({}, unfocused);
-		assert.deepEqual(outcome, { kind: 'bundle', raw: RAW, explorationCount: 1 }, kind);
+		assert.deepEqual(core(outcome), { kind: 'bundle', raw: RAW, explorationCount: 1 }, kind);
 		// The planning call was made, and it received the unfocused intent as it is.
 		assert.equal(calls.decompose.length, 1, kind);
 		const planned = calls.decompose[0] as { intent: ClassifiedIntent };
@@ -454,7 +473,7 @@ test("runShaper throws ShaperAnswerInvalidError with stage 'bundle validation' f
 	const broken = { ...RAW } as Record<string, unknown>;
 	delete broken['summary'];
 	assert.throws(
-		() => settlePipelineOutcome({ kind: 'bundle', raw: broken as unknown as RawBundle, explorationCount: 2 }, stamp),
+		() => settlePipelineOutcome({ kind: 'bundle', raw: broken as unknown as RawBundle, explorationCount: 2, found: FOUND_NOTHING_LEFT_OUT }, stamp),
 		(err: unknown) => {
 			assert.ok(err instanceof ShaperAnswerInvalidError, `got ${(err as Error).name}`);
 			assert.equal(err.stage, 'bundle validation');
@@ -468,7 +487,7 @@ test("runShaper throws ShaperAnswerInvalidError with stage 'bundle validation' f
 });
 
 test('settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error', () => {
-	const ok = settlePipelineOutcome({ kind: 'bundle', raw: RAW, explorationCount: 3 }, stamp);
+	const ok = settlePipelineOutcome({ kind: 'bundle', raw: RAW, explorationCount: 3, found: FOUND_NOTHING_LEFT_OUT }, stamp);
 	assert.equal(ok?.explorationCount, 3);
 	assert.equal(ok?.bundle.summary, 's');
 	assert.equal(ok?.bundle.meta.toolCalls, 3);

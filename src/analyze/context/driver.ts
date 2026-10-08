@@ -79,7 +79,7 @@ import { freshnessPathOf, resolveScope } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 import {
-	ANALYZE_CONTEXT_BUNDLE_SCHEMA,
+	modelFacingBundleSchema,
 	SCHEMA_VERSION,
 	validateBundleWithErrors,
 } from './schema.js';
@@ -87,8 +87,9 @@ import { getReadOnlyTools } from './tool-surface.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
-import type { ExplorationPlan } from '../explore/index.js';
-import type { PartialFinding } from '../completeness.js';
+import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
+import type { AnswerReport, PartialFinding } from '../completeness.js';
+import { reportFromLookups } from '../explore/answer-report.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
@@ -302,8 +303,10 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// pipeline does not serve (classification, task) continues to the
 	// tool loop below. A run-mode request never does: its fallback is
 	// the pipeline's own freeform.probe, which drives the same loop.
-	const pipelineBundle = settlePipelineOutcome(outcome, (raw, explorationCount) => ({
+	const pipelineBundle = settlePipelineOutcome(outcome, (raw, explorationCount, report) => ({
 		...raw,
+		// Derived from the lookups' own records. Never taken from the model's answer.
+		report,
 		meta: {
 			mode:          invocationMode,
 			shaper:        shaperId,
@@ -817,7 +820,8 @@ async function runFinalStructuredEmit(
 	try {
 		const raw = await provider.completeStructured<AnalyzeContextBundle>(
 			finalMessages,
-			ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,
+			// The stored schema without `report`: the report is derived by code.
+			modelFacingBundleSchema({ withMeta: true }),
 			{
 				maxAttempts:     structuredOutputRetries,
 				// Critical for qwen3.6 -- without `think: false` the model
@@ -1089,8 +1093,23 @@ export const PIPELINE_CAUSES = [
 ] as const;
 export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
 
+/** What the lookups returned, and the answer report derived from it. */
+export interface AnswerStepFound {
+	readonly results: readonly ExecutedExploration[];
+	readonly report:  AnswerReport;
+}
+
+/** The seven layers a model writes: a bundle without the two parts code adds. */
+export type BundleLayers = Omit<AnalyzeContextBundle, 'meta' | 'report'>;
+
 export type PipelineOutcome =
-	| { readonly kind: 'bundle'; readonly raw: Omit<AnalyzeContextBundle, 'meta'>; readonly explorationCount: number }
+	| {
+		readonly kind: 'bundle';
+		readonly raw:  BundleLayers;
+		readonly explorationCount: number;
+		/** The executed lookups and the report derived from them; the report goes on the bundle. */
+		readonly found: AnswerStepFound;
+	}
 	/** Not run mode: the caller continues to its tool loop. */
 	| { readonly kind: 'not-applicable' }
 	| {
@@ -1153,13 +1172,13 @@ export function errorForPipelineCause(
  */
 export function settlePipelineOutcome(
 	outcome: PipelineOutcome,
-	stamp:   (raw: Omit<AnalyzeContextBundle, 'meta'>, explorationCount: number) => AnalyzeContextBundle,
+	stamp:   (raw: BundleLayers, explorationCount: number, report: AnswerReport) => AnalyzeContextBundle,
 ): { bundle: AnalyzeContextBundle; explorationCount: number } | null {
 	if (outcome.kind === 'not-applicable') return null;
 	if (outcome.kind === 'did-not-proceed') {
 		throw errorForPipelineCause(outcome.cause, outcome.message, outcome.promptPath);
 	}
-	const bundle = stamp(outcome.raw, outcome.explorationCount);
+	const bundle = stamp(outcome.raw, outcome.explorationCount, outcome.found.report);
 	const v = validateBundleWithErrors(bundle);
 	if (!v.ok) {
 		throw errorForPipelineCause('bundle-invalid', v.errors.join('; '));
@@ -1302,6 +1321,12 @@ async function tryExplorationPipeline(
 		scope:            args.scope,
 	});
 
+	// (c.0) The answer report, derived from the lookups' own records before any
+	// answer is written. It does not depend on the answer, and a lookup output
+	// that states nothing about its completeness is a defect of that lookup:
+	// it surfaces here as its own error, not as a failed answer step.
+	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results) };
+
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE
 	// exploration is `freeform.probe`, the runner already emitted a
 	// complete 7-layer bundle via the target's legacy tool loop. There
@@ -1324,6 +1349,8 @@ async function tryExplorationPipeline(
 			kind:             'bundle',
 			raw:              freeformOnly.rawBundle,
 			explorationCount: freeformOnly.toolCallCount,
+			// One source: the free-form lookup, whose record is never complete.
+			found,
 		};
 	}
 
@@ -1361,6 +1388,7 @@ async function tryExplorationPipeline(
 			kind:             'bundle',
 			raw,
 			explorationCount: executed.results.length,
+			found,
 		};
 	} catch (err) {
 		if (err instanceof SynthesizerLlmUnavailableError) {
@@ -1486,6 +1514,7 @@ function extractSoleFreeformResult(
  * stability without re-implementing the algorithm.
  */
 export const _stableStringifyForTest = stableStringify;
+export const _computeCacheKeyForTest = computeCacheKey;
 export const _classifyOllamaErrorForTest = classifyOllamaError;
 export const _deriveEmptyLayersForTest = deriveEmptyLayers;
 export const _resolveRepoLastIndexedAtForTest = resolveRepoLastIndexedAt;

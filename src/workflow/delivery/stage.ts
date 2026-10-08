@@ -16,7 +16,11 @@
  * The stage is the first rule that matches: an approved BUILD (complete); any
  * BUILD (build-recorded); the route's ready gate (an approved PLAN for the
  * full-chain, feature and sized-bugfix routes; an approved LLD for small; an
- * approved ISSUE for small-bugfix); any LLD or PLAN (design-plan); else scoped.
+ * approved ISSUE for small-bugfix); any LLD or PLAN, or an approved ISSUE on the
+ * sized-bugfix route, whose design comes next (design-plan); else scoped. An issue
+ * takes its least advanced fix story's stage, or, with none, these rules over its
+ * own ISSUE. An ISSUE's magnitude is read only for the issue itself and for its fix
+ * stories (stories the graph parents under it), never for a story under an epic.
  * Approval is read only from ArtifactRecord.approval; task results, review
  * verdicts and the other passes' annotations are never consulted. Pure: no I/O.
  */

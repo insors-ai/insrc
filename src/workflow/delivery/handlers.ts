@@ -26,6 +26,7 @@ import { deriveGates } from './gate.js';
 import { buildWorkItemGraph } from './graph.js';
 import { DELIVERY_ARTIFACT_KINDS, liftStoreFile, loadArtifactRecordSet, nodeStoreFs } from './load.js';
 import { createMarkdownPort } from './markdown.js';
+import { errorText } from './read.js';
 import { assembleSnapshot } from './snapshot.js';
 import { deriveStages } from './stage.js';
 import type {
@@ -40,10 +41,6 @@ import type {
 const log = getLogger('delivery');
 
 const ARTIFACT_ID_RE = new RegExp(`^(${DELIVERY_ARTIFACT_KINDS.join('|')})-[0-9a-f]{16}(-[A-Za-z0-9]+)?$`);
-
-function errorText(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
-}
 
 /** The request's repo when a non-empty string, else the daemon's INSRC_REPO, else null. */
 function repoOf(params: { readonly repo?: string | undefined } | undefined, repoEnv: string | undefined): string | null {

@@ -19,6 +19,11 @@ export function asObject(value: unknown): Readonly<Record<string, unknown>> | nu
 	return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
+/** An error's message, or the thrown value as text. */
+export function errorText(err: unknown): string {
+	return err instanceof Error ? err.message : String(err);
+}
+
 /** The value when it is a string, else null. */
 export function asString(value: unknown): string | null {
 	return typeof value === 'string' ? value : null;

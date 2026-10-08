@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
-import { asObject, asString, storyOrdinalOf } from './read.js';
+import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
 import {
 	DeliveryStoreUnreadableError,
 	type ApprovalState,
@@ -102,10 +102,6 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 
 function isFailure(r: ArtifactRecord | RecordLoadFailure): r is RecordLoadFailure {
 	return 'reason' in r;
-}
-
-function errorText(err: unknown): string {
-	return err instanceof Error ? err.message : String(err);
 }
 
 /** Read the repository's artifact store once into a sorted, immutable record set. */

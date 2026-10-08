@@ -45,6 +45,7 @@ import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, t
 import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
+import { completenessHeadLine } from '../analyze/completeness.js';
 
 const log = getLogger('daemon:workflow-rpc');
 
@@ -557,12 +558,19 @@ function classifiedIntent(intent: WorkflowIntent): ClassifiedIntent {
 	};
 }
 
-/** Flatten the non-empty prose layers of an analyze bundle for injection. */
+/**
+ * Flatten the non-empty prose layers of an analyze bundle for injection into
+ * a workflow step's prompt. A bundle with a report leads with its
+ * completeness line, so a step grounded on incomplete findings is told so;
+ * a bundle with none gets nothing added.
+ */
 function flattenBundle(b: AnalyzeContextBundle): string {
-	return [b.system, b.focus, b.summary, b.structure, b.surface, b.artefacts]
+	return [completenessHeadLine(b.report, 'nothing'), b.system, b.focus, b.summary, b.structure, b.surface, b.artefacts]
 		.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
 		.join('\n\n');
 }
+
+export const _flattenBundleForTest = flattenBundle;
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the
  *  chosen provider along the chain: per-repo override > explicit config >

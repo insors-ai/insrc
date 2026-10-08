@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildCompleteness } from '../../analyze/completeness.js';
+import { buildCompleteness, renderCompletenessLine } from '../../analyze/completeness.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../analyze/explore/types.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 import { handleBundle } from '../analyze-step/phases/bundle.js';
@@ -65,6 +65,13 @@ test("the step tool's bundle phase attaches the report it derives from its state
 	});
 	assert.equal(out.meta.schemaVersion, 2);
 	assert.equal(out.meta.toolCalls, 3);
+
+	// The text the agent is handed starts with the completeness line, which
+	// names both the limited and the failed lookup.
+	const firstLine = out.markdown.split('\n')[0] ?? '';
+	assert.equal(firstLine, renderCompletenessLine(out.report!));
+	assert.match(firstLine, /search\.text \[e2\]/);
+	assert.match(firstLine, /symbol\.locate \[e3\]/);
 
 	// Every lookup complete: the report says so.
 	const whole = await handleBundle({ phase: 'bundle', bundle: LAYERS, state: awaitingBundle([WHOLE]) } as StepInputBundle) as StepOutputDone;

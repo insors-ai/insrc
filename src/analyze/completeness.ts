@@ -284,3 +284,21 @@ export function renderCompletenessLine(report: AnswerReport): string {
 	}
 	return `Incomplete: ${parts.join('. ')}.${notes}`;
 }
+
+/** Written at the head of an answer that carries no report: one built before the report existed. */
+export const COMPLETENESS_NOT_RECORDED = 'Completeness was not recorded for this answer.';
+
+/**
+ * The first line of an answer's text form.
+ *
+ * With a report it is the completeness line. Without one, a text an agent or
+ * a person reads says that completeness was not recorded; a text that goes
+ * into a model's prompt gets nothing, so no such sentence enters a prompt.
+ */
+export function completenessHeadLine(
+	report: AnswerReport | undefined,
+	whenAbsent: 'say-not-recorded' | 'nothing',
+): string | undefined {
+	if (report !== undefined) return renderCompletenessLine(report);
+	return whenAbsent === 'say-not-recorded' ? COMPLETENESS_NOT_RECORDED : undefined;
+}

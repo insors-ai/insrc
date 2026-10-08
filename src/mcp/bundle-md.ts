@@ -18,6 +18,7 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
+import { completenessHeadLine } from '../analyze/completeness.js';
 import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
 
 const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
@@ -58,6 +59,10 @@ export function renderBundleAsMarkdown(
 	const requestedLayers = opts?.layers ?? LAYER_ORDER;
 
 	const parts: string[] = [];
+	// The completeness line is first, before anything a model wrote: an agent
+	// or a person reads it before the findings. A bundle with no report (one
+	// built before the report existed) says that completeness was not recorded.
+	parts.push(completenessHeadLine(bundle.report, 'say-not-recorded')!);
 	if (includeMeta) parts.push(renderMetaLine(bundle));
 
 	for (const layer of requestedLayers) {

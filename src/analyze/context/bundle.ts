@@ -35,6 +35,7 @@ import type {
 	AnalyzeContextBundle,
 	BundleLayerName,
 } from './types.js';
+import { completenessHeadLine } from '../completeness.js';
 
 /** Render order. Drives both the assembled Markdown and any caller
  *  that needs to walk layers deterministically. */
@@ -87,6 +88,13 @@ export function omitEmpty(label: string, body: string): string {
 export function assembleMarkdown(bundle: AnalyzeContextBundle): string {
 	const emptyLayers = new Set<BundleLayerName>(bundle.meta?.emptyLayers ?? []);
 	const sections: string[] = [];
+
+	// This text goes into a model's prompt (the classifier's, the planner's).
+	// A bundle with a report leads with its completeness line, so the model is
+	// told what the findings below leave out. A bundle with none gets nothing:
+	// no "not recorded" sentence enters a prompt.
+	const head = completenessHeadLine(bundle.report, 'nothing');
+	if (head !== undefined) sections.push(head);
 
 	for (const layer of RENDER_ORDER) {
 		const body = bundle[layer];

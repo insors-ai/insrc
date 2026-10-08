@@ -683,6 +683,8 @@ The executor and the plan walk attach a completeness record to each result after
 
 - `q44c66b5d` — Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.
   - **resolved**: Amend the HLD wording to match the LLD rule — Stakeholder took the recommendation on 2026-10-08: a catch that handles a named, expected condition stays and says so in its record; only a swallowed error becomes the failed output. _(2026-10-08T06:56:36.987Z)_
+- `q4ab107ec` — Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.
+  - **resolved**: Amend the HLD to name the value — Stakeholder took the recommendation on 2026-10-08: sc1 is read by other Stories, so its basis values are stated in the HLD. _(2026-10-08T06:57:30.431Z)_
 
 ## Citations
 

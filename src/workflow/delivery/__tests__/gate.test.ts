@@ -349,3 +349,14 @@ test('every epic, story and issue in the real-shape fixtures gets item gates, de
 		}
 	}
 });
+
+test('a story built without a plan has no planned tasks but raises no unplanned-task notice', () => {
+	const { graph, result } = run([
+		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', ...APPROVED }),
+		buildRecord(SOLO, 'S001', [{ id: 't1', passed: true }], { standalone: true }),
+	]);
+	const gates = itemOf(result, holder(graph, `BUILD-${SOLO}-S001`, 'story').id);
+	assert.deepEqual(gates.tasks.map(t => [t.result, t.planned]), [['passed', false]]);
+	assert.equal(gates.validation.unplanned, 1);
+	assert.equal(result.notices.some(n => n.code === 'unplanned-task'), false);
+});

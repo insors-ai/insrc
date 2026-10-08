@@ -31,7 +31,8 @@ import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js'
 
 const log = getLogger('review');
 
-const BLOCKING: ReadonlySet<Severity> = new Set<Severity>(['HIGH', 'MED']);
+/** The severities that block approval while unresolved. */
+export const BLOCKING: ReadonlySet<Severity> = new Set<Severity>(['HIGH', 'MED']);
 
 export type ReviewAction = 'apply' | 'accept' | 'override' | 'defer';
 

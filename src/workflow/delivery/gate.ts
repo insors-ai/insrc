@@ -33,7 +33,7 @@
  */
 
 import { reviewerPartyOf } from '../review/party.js';
-import { effectiveReviewVerdict } from '../review/resolve.js';
+import { BLOCKING, effectiveReviewVerdict } from '../review/resolve.js';
 import type { Finding, ReviewReport } from '../review/types.js';
 import type { ReviewResolution } from '../types.js';
 import { makeNotice, sortNotices } from './notice.js';
@@ -57,7 +57,6 @@ import type {
 type Review = NonNullable<ArtifactGate['review']>;
 
 const VERDICTS: ReadonlySet<string> = new Set<ReviewVerdict>(['pass', 'warn', 'block']);
-const BLOCKING_SEVERITIES: ReadonlySet<string> = new Set(['HIGH', 'MED']);
 
 function asVerdict(value: unknown): ReviewVerdict | null {
 	return typeof value === 'string' && VERDICTS.has(value) ? value as ReviewVerdict : null;
@@ -117,7 +116,7 @@ function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
 		const effective = effectiveReviewVerdict(report, resolutions ?? undefined);
 		if (effective === 'block') effectiveVerdict = 'block';
 		else if (verdict === 'block') effectiveVerdict = 'pass';
-		resolvedFindings = findings.filter(f => BLOCKING_SEVERITIES.has(f.severity) && resolutions?.[f.claimId] !== undefined).length;
+		resolvedFindings = findings.filter(f => BLOCKING.has(f.severity) && resolutions?.[f.claimId] !== undefined).length;
 	}
 
 	return {
@@ -250,9 +249,15 @@ interface StoryValidation {
 	readonly notices:          DeliveryNotice[];
 }
 
+/**
+ * Without a PLAN (`hasPlan` false) no task is planned, but none is reported as
+ * missing from a plan that does not exist; a route that needs a plan is reported
+ * once by the snapshot's incomplete-evidence check (s5).
+ */
 function storyValidation(
 	story: WorkItemNode,
 	builds: readonly ArtifactRecord[],
+	hasPlan: boolean,
 	graph: WorkItemGraph,
 ): StoryValidation {
 	const storyOrdinal = firstOrdinal(story.sourceIds, storyOrdinalOf);
@@ -283,7 +288,7 @@ function storyValidation(
 		const slot = taskOrdinal === null ? undefined : byTask.get(taskOrdinal);
 		const isPlanned = taskOrdinal !== null && planned.has(taskOrdinal);
 		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned });
-		if (!isPlanned) {
+		if (!isPlanned && hasPlan) {
 			notices.push(makeNotice('unplanned-task',
 				`Task ${child.id} has a build result but no planned task in ${story.id}'s plan.`,
 				{ itemIds: [child.id, story.id], artifactIds: [...(slot?.buildIds ?? [])] }));
@@ -320,7 +325,7 @@ function itemGates(
 	const counted = evidence.filter(r => !superseded.includes(r.artifactId));
 
 	const validation = item.kind === 'story'
-		? storyValidation(item, evidence.filter(r => r.kind === 'BUILD').sort((a, b) => a.artifactId.localeCompare(b.artifactId)), graph)
+		? storyValidation(item, evidence.filter(r => r.kind === 'BUILD').sort((a, b) => a.artifactId.localeCompare(b.artifactId)), evidence.some(r => r.kind === 'PLAN'), graph)
 		: { tasks: [], storyLevelResult: null, conflict: null, notices: [] };
 
 	const reasons = new Set<AttentionReason>();

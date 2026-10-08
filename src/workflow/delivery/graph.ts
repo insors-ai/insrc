@@ -358,8 +358,8 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 /**
  * Task items from the story's PLAN tasks and BUILD task ids of the form t<n>.
  * A BUILD id equal to the story's own id (the story-level result of a small
- * or trivial build) is not a task; other non-t<n> ids are left to the
- * validation pass, which reports them against the plan.
+ * or trivial build) is not a task but the story-level result the gate pass
+ * reads; any other non-t<n> id is ignored there too.
  */
 function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {
 	const tasks = new Map<string, { title: string | null; evidence: string[] }>();

@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each of the Define's four acceptance criteria for Story s7 (ac1 final report, ac2 nested plans, ac3 stopped run records where and why, ac4 completed run resumes) has a designed mechanism.",
-          "evidence": "DEF.md \u00a76.7 (lines 233-236) lists ac1-ac4. The design covers ac1 with the aggregate task running on existing inputs (\u00a72.2), ac2 with the same rule in child plans, ac3 with the uncaught-error handler plus the abandoned rule (\u00a72.3-2.5, \u00a73.3), ac4 with the unchanged resume path (driver.ts:133-143). ac1 is only partly met: the design itself says the docs family still stops at the aggregate task and the code family only returns a report naming failed tasks (open questions 2 and 3). I could not read the HLD's own boundary text for s7 (HLD.md line 39 is one long line the search tool omitted), so the design's claim that the boundary does not name the aggregate rule and the empty-prompt rule is unchecked.",
-          "action": "Get the stakeholder's answer to open questions 2 and 3 before approval, since ac1 as written in the Define is not met for docs.",
+          "premise": "Each of the Define's four acceptance criteria for Story s7 (ac1 final report, ac2 nested plans, ac3 stopped run recorded, ac4 stored result returned) has a designed mechanism.",
+          "evidence": "DEF.md:233-236 states ac1-ac4. The design covers ac1 with the aggregate-on-partial rule plus scope widening, ac2 with the same rule in child plans (walker.ts:297-303 today fails the planner task when the child has no finalReport), ac3 with the uncaught-error handler and the abandoned rule, ac4 with the unchanged resume check (driver.ts:133-143). ac1 is knowingly not met for the docs family (recorded exception c10) and for code only as 'a report that names the failed tasks'; both are stated in the design, not hidden. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md, src/analyze/executor/walker.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "None for the design. Keep the docs exception visible on Story s3 so it is closed there.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,8 +48,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today one missing input makes the aggregate task skip and the run fail with 'executor-aggregator-failed'.",
-          "evidence": "walker.ts:133-157 skips any task whose unmetDependencies is non-null, the aggregator included; unmetDependencies (walker.ts:329-346) returns the first consumed name not in outputs. driver.ts:385-404 fails the run with 'executor-aggregator-failed' when rootPlan.finalReport is undefined.",
+          "premise": "Today one missing input makes the aggregate task skip, and the run then fails with 'executor-aggregator-failed'.",
+          "evidence": "walker.ts:133-157: any unmet consume name gives status 'skipped-dependency-unavailable' for every task including the last; unmetDependencies (329-346) returns the first name not in outputs. driver.ts:385-404: `if (rootPlan.finalReport === undefined)` fails the run with code 'executor-aggregator-failed'. [files: src/analyze/executor/walker.ts, src/analyze/orchestrator/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -60,8 +60,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today an uncaught error leaves the run record 'in-progress', and the daemon handler always reports stage 'classify'.",
-          "evidence": "driver.ts:154-156 writes status 'in-progress'; runExecutor at driver.ts:359 and writeTaskOutput at walker.ts:144 and :176 are in no try. analyze-rpc.ts:542-562 catches, sends stage: 'classify' with 'internal-error', and writes no record.",
+          "premise": "Plan tasks accept fewer scope kinds than TARGET_TO_KINDS through three copies of one function, and five tasks use the scope's value as a repo path directly.",
+          "evidence": "code/_shared.ts:58-69 accepts repo, manifest-dir; infra/_shared.ts:49-61 adds workspace; data/_shared.ts:26-42 accepts workspace, repo, manifest-dir (no connection). All throw a plain Error '... not supported'. Direct readers: docs/family-summarise.ts:131, docs/constraint-enumerate.ts:45, docs/decision-trace.ts:46, shared/adherence.ts:219 and :376, data/discovery-connections.ts:59-60. docs/discovery-inventory.ts:39 imports the code family's resolveRepoPath. TARGET_TO_KINDS rows (classifier/validate.ts:54-60) match the design's list. [files: src/analyze/runtimes/code/_shared.ts, src/analyze/runtimes/infra/_shared.ts, src/analyze/runtimes/data/_shared.ts, src/analyze/classifier/validate.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -72,23 +72,11 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today code and docs tasks accept repo and manifest-dir only, infra adds workspace, and data accepts no connection.",
-          "evidence": "runtimes/code/_shared.ts:58-69 accepts 'repo' and 'manifest-dir'; docs/discovery-inventory.ts:39 imports that function. runtimes/infra/_shared.ts:49-61 adds 'workspace'. runtimes/data/_shared.ts:26-42 accepts workspace, repo, manifest-dir and throws a plain Error for anything else.",
+          "premise": "An uncaught error leaves the run record 'in-progress', the daemon handler always reports stage 'classify', nothing tracks live runs, and an empty prompt is refused even with a stated source.",
+          "evidence": "driver.ts:359 calls runExecutor with no try, and walker.ts:144/176 call writeTaskOutput unguarded, so a write failure rejects runAnalyze with the record still at status 'in-progress' (driver.ts:154). analyze-rpc.ts:542-562 catches and sends `stage: 'classify'` with 'internal-error' and writes no record. No isRunLive or live set exists (grep: no match). 'run-abandoned' appears only in the two code lists (orchestrator/types.ts:296, analyze-rpc.ts:151, 960). analyze-rpc.ts:1066 uses requireString for userPrompt, which throws on length 0 (1284-1288) before targetHint is read. [files: src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts, src/analyze/executor/walker.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "A data task 'reads the stored graph or the document index', so a data scope with no registered repo should fail with 'scope-not-indexed'; such tasks today 'treat an unregistered scope as an empty repository'.",
-          "evidence": "Data tasks do not read the graph. runtimes/data/_shared.ts:26-42 returns sr.value and :90 calls acquirePool(repoPath); pool-cache.ts:28 keys the pool by path and pool.ts:60 calls loadConnections(this.repoPath), with no registry check. context/driver.ts:374-380 says the indexed check is skipped for non-code sources because they 'produce reasonable bundles via the filesystem + DB-driver fallbacks even without graph state'. As designed, a data task on an unregistered directory, or on a workspace directory above several repos (resolveScope gives repoPath null, scope.ts:85-91 and :139-148), fails where it works today. Also, for a manifest-dir inside a registered repo, reading the repo from `repoPath` switches the pool from the directory's connections file to the containing repo's. [files: src/analyze/runtimes/data/_shared.ts, src/daemon/db/pool-cache.ts, src/daemon/db/pool.ts, src/analyze/context/driver.ts]",
-          "action": "Drop data from the families that raise ScopeNotIndexedError, and state which path a data task passes to the pool for repo, manifest-dir and workspace scopes (today: the scope's value). Add a test for a data task on an unregistered directory.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -96,8 +84,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "resolveScope, ResolvedScope, ScopeDeps and the three typed scope errors exist with the shape the design reuses, and both mapping functions already map them.",
-          "evidence": "context/scope.ts:43-60 ResolvedScope has repoPath (string|null), lookupPath, filePath, entityId, connectionId; :63-68 ScopeDeps; :77 resolveScope(ref, deps). invariants.ts:49, :57, :67 declare the three errors; ScopeKindTargetMismatchError takes (kind, target, allowed). Mappings: orchestrator/driver.ts:606, :628, :629 and analyze-rpc.ts:900, :933, :936.",
+          "premise": "The reused pieces exist with the stated shape: resolveScope, ResolvedScope, ScopeDeps, ensureNonEmptyClosure with its leniency, and the three typed scope errors.",
+          "evidence": "context/scope.ts:43-60 ResolvedScope has repoPath (string|null), lookupPath, filePath, entityId, connectionId; ScopeDeps at 63-68; resolveScope(ref, deps) at 77. invariants.ts:108-186: ensureNonEmptyClosure returns undefined when listRepos throws (125-138) or the registry is empty (145-151), throws ScopeNotIndexedError when no repo contains the path or the repo has zero entities. The three error classes are at invariants.ts:49, 57, 67, and both mapping functions already map them (driver.ts:606, 628-629; analyze-rpc.ts:900, 933-937). [files: src/analyze/context/scope.ts, src/analyze/context/invariants.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -107,24 +95,24 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "'run-abandoned' is declared in both code lists and raised nowhere; no liveness tracking (isRunLive) exists.",
-          "evidence": "The only matches for 'run-abandoned' are orchestrator/types.ts:296, analyze-rpc.ts:151 and :960 (CAUSE_CODES_IN_BOTH_LISTS). A search for isRunLive in src finds nothing.",
-          "action": "None.",
+          "severity": "MED",
+          "premise": "The scope function for plan tasks (check the kind against the family's row of TARGET_TO_KINDS, then call resolveScope) is new.",
+          "evidence": "The same two-step function already exists twice. src/mcp/analyze-step/scope.ts:31-33: `throw new ScopeKindTargetMismatchError(kind, intent.target, TARGET_TO_KINDS[intent.target]);` then `return deps !== undefined ? resolveScope(intent.scopeRef, deps) : resolveScope(intent.scopeRef);`. src/analyze/context/driver.ts:1111-1114 has the same body. resolveTaskScope would be a third copy of the pairing check; the design names neither. [files: src/mcp/analyze-step/scope.ts, src/analyze/context/driver.ts]",
+          "action": "Say in the design whether resolveTaskScope calls the existing check-and-resolve function in context/driver.ts (adding only the indexed check and the family argument) or why a third copy is needed.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.1",
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The inventory of scope readers is complete: three per-family functions and five direct readers of the scope's value (adherence in two places).",
-          "evidence": "Search for resolveRepoPath, resolveRepoPathFromIntent and scopeRef.value under src/analyze (tests excluded) finds exactly: code/_shared.ts:58, infra/_shared.ts:49, data/_shared.ts:26; and direct reads at docs/family-summarise.ts:131, docs/constraint-enumerate.ts:45, docs/decision-trace.ts:46, shared/adherence.ts:219 and :376, data/discovery-connections.ts:59-60. A reader that destructures the value without writing 'scopeRef.value' would not show in this search. The five aggregate-report runtimes are code, docs, infra, data and generic (runAggregator callers).",
-          "action": "None.",
+          "severity": "MED",
+          "premise": "A code or docs task whose registry cannot be read, or holds no repo, is not refused and goes on with the scope's own path, for every kind in its row.",
+          "evidence": "True for the directory and file kinds (scope.ts:139-148 catches the registry error and returns null). Not true for a symbol scope, which is in the code row: scope.ts:168 calls `await deps.listRepos()` with no catch, so an unreadable registry throws a raw error (recorded as uncoded 'runtime-threw'), and an empty registry reaches scope.ts:170-172 `throw new ScopeNotIndexedError(filePath, undefined, 'no registered repo contains the scope path')`. The design's edge-case row and its unit test ('a code and a docs scope are not refused') are stated without this exception. [files: src/analyze/context/scope.ts]",
+          "action": "State that the leniency applies to the path kinds only and that a symbol scope fails with 'scope-not-indexed' (or uncoded) in those two registry states; scope the unit test accordingly.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.2",
@@ -132,11 +120,35 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "The walk can set the task's code 'from the same mapping the run uses for those classes' with the listed call sites.",
-          "evidence": "The run's mapping is classifyShaperError, a module-private function in orchestrator/driver.ts:605, and driver.ts imports runExecutor from the walker (driver.ts:359). The walker cannot import it without an import cycle, and the daemon has a second private copy (analyze-rpc.ts:899). The design names no shared home for the mapping of the three classes. [files: src/analyze/orchestrator/driver.ts, src/analyze/executor/walker.ts]",
-          "action": "Name where the class-to-code mapping for the three scope errors lives (for example beside the errors in context/invariants.ts) and have both the walker and the two mapping functions use it.",
+          "premise": "The listed change sites are enough for a docs task to keep to the directory or file its scope names.",
+          "evidence": "Two of the three docs tasks hand retrieval to shared runners that take only a repo path. docs/constraint-enumerate.ts:43-50 calls runSharedDocConstraintEnumerate({ subject, repoPath, db, ... }); its argument type (src/analyze/explore/doc-constraint-enumerate.ts:96-105) has `repoPath: string` and no area field. docs/decision-trace.ts:44-46 calls runSharedDocDecisionTrace the same way. family-summarise.ts:134-135 reads listDocSummariesForRepo(db, repoPath) for the whole repo. Neither src/analyze/explore/ file is in the design's postconditions or migration step 4, and those runners are also used by the lookup pipeline (doc-constraint-enumerate.ts:343). [files: src/analyze/runtimes/docs/constraint-enumerate.ts, src/analyze/explore/doc-constraint-enumerate.ts, src/analyze/runtimes/docs/decision-trace.ts, src/analyze/runtimes/docs/family-summarise.ts]",
+          "action": "Add the two shared runners in src/analyze/explore/ (and their argument types) to the change sites, with how an area filter is passed and that the lookup pipeline's callers are unaffected; or state that the filter is applied after retrieval and what that does to the completeness record.",
           "fixability": "manual",
           "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Removing the three per-family functions is fully inventoried.",
+          "evidence": "Existing tests import and assert the removed functions and their old wording, and the design lists none of them. code/discovery-modules.ts:97 exports `resolveRepoPath as _resolveRepoPathForTest`; code/__tests__/discovery-modules.test.ts:114-124 and :332 assert `/not supported yet.*repo, manifest-dir/`. data/__tests__/data-runtimes.test.ts:54, 101-127 imports resolveRepoPathFromIntent and tests it; infra/__tests__/infra-runtimes.test.ts has 4 references. These fail after steps 3 and 4, which conflicts with the smoke level's 'no test that passed before ... fails after'. tsc does not compile __tests__, so only a run shows it. The four non-test callers of the code function (discovery-modules, discovery-entrypoints, structure-module-tree, docs/discovery-inventory) and the six infra callers are otherwise as the design implies. [files: src/analyze/runtimes/code/discovery-modules.ts, src/analyze/runtimes/code/__tests__/discovery-modules.test.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts, src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts]",
+          "action": "List the test hook export and the three test files as change sites, and say the smoke rule excludes tests of the removed functions, which are replaced by the table test.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "There are five aggregate-report runtimes that pass arguments straight to runAggregator, and the tasksFailed entry type lives in the files the design lists.",
+          "evidence": "runAggregator is called from code, docs, infra, data and generic aggregate-report.ts (one call each); code/aggregate-report.ts:41-48 only forwards promptRelPath, target, scope, runId, upstreamOutputs, focus. RunAggregatorArgs is at shared/aggregator.ts:52-68. The `{ taskId; reason }` entry type is at executor/types.ts:142, orchestrator/types.ts:233 and :325, daemon/analyze-rpc.ts:212, and walker.ts:104, all in the design's call-site lists. [files: src/analyze/runtimes/shared/aggregator.ts, src/analyze/executor/types.ts, src/analyze/orchestrator/types.ts, src/daemon/analyze-rpc.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -144,9 +156,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Run and task records written before the change are read as they are, and a completed run still resumes from its stored record.",
-          "evidence": "readRunRecord (persistence.ts:35-44) parses JSON with no shape check; resumedResult (driver.ts:514-527) reads cached.tasksFailed ?? [] and requires no code field. The resume short-circuit (driver.ts:134-143) applies only to status 'ok' at stage 'done', which the abandoned rule does not touch. Note: a run that now ends 'ok' with failed tasks is stored as done, so asking again under the same id returns the partial report and does not retry.",
-          "action": "State in the daemon guide that a partial run is returned from its record on resume.",
+          "premise": "Older run and task records are read as they are, no stored shape needs rewriting, and only the daemon process can know which runs are live.",
+          "evidence": "Records are plain JSON read with a cast (persistence.ts:35-44; executor/cache.ts:57-61), so an optional `code` and an unchanged RunRecord need no migration. The resume check (driver.ts:133-143) returns only for status 'ok' and stage 'done', so a record rewritten as failed lets a new run start. runAnalyze has one non-test caller, analyze-rpc.ts:541, and writeRunRecord is called only from orchestrator/driver.ts; the status and purge handlers run in the same daemon process (daemon/index.ts:1754-1764). purgeRun's only non-test caller is analyze-rpc.ts:801, so an optional `isLive` leaves other callers unchanged. [files: src/analyze/orchestrator/persistence.ts, src/analyze/orchestrator/driver.ts, src/daemon/analyze-rpc.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,9 +168,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design adds no code to either list and no mapping case: every code it raises already exists in the orchestrator's list and the daemon's.",
-          "evidence": "orchestrator/types.ts:296-300 has 'run-abandoned', 'aborted', 'internal-error'; analyze-rpc.ts:151-167 has 'run-abandoned', 'run-in-progress', 'internal-error'. The three scope codes are mapped at driver.ts:606-629 and analyze-rpc.ts:900-937. resolveScope (Story s6) is called, not changed.",
-          "action": "None.",
+          "premise": "The design adds no code, stage or failure field to shared contract sc6, and 'run-abandoned' is already declared in both lists by Story s6.",
+          "evidence": "'run-abandoned' is in RunErrorCode (orchestrator/types.ts:296), in the daemon's union (analyze-rpc.ts:151) and in CAUSE_CODES_IN_BOTH_LISTS (analyze-rpc.ts:957-961); HLD.md:184 says it is 'raised by Story s7'. The three scope codes already map in both functions. One note: the design makes both mapping functions, which the s6 boundary text says s6 owns, call a new shared function; ScopeNotIndexedError's mapping also carries `data: { scopePath, registeredAs }` in both (driver.ts:606-611, analyze-rpc.ts:900-908), which the shared function must keep. [files: src/analyze/orchestrator/types.ts, src/daemon/analyze-rpc.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "State that the extracted mapping function returns the same payload (including the data for 'scope-not-indexed') so s6's two functions are unchanged in behaviour.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -168,69 +180,57 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Only the daemon starts runs, so liveness kept in the daemon process is enough.",
-          "evidence": "The only non-test caller of runAnalyze is src/daemon/analyze-rpc.ts:541; readRunRecord is called only from driver.ts:133, analyze-rpc.ts:762 and purgeRun (persistence.ts:94), which are the three readers the design names.",
-          "action": "None.",
+          "premise": "Running the aggregate task on partial inputs and accepting an empty prompt with a stated source are inside this Story's boundary.",
+          "evidence": "HLD.md:237 (Story S007 boundary) names scope widening, the uncaught-error handler 'in the plan walk and in the daemon's request', the live set, the three readers and the task code. It names neither the aggregate rule nor the prompt rule; it does say 'finding and correcting what stops it at each stage', which could cover both. The design says so itself (open question 1) and cites a stakeholder decision of 2026-10-08 (c7, 'go with A'), which is not in any file I could read. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md]",
+          "action": "File the back-flow amendment to the HLD boundary text before approval, or record the stakeholder decision where a reviewer can read it.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.1",
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "`repoPath` being null in the resolved scope reliably detects 'the scope lies in no registered repo'.",
-          "evidence": "containingRepoOrNull (scope.ts:139-148) also returns null when the registry cannot be read: 'registry read failed; repo unknown'. The existing indexed check deliberately does not fail in that case or with an empty registry (invariants.ts:124-151: 'We do NOT throw ScopeNotIndexedError here'; 'registry pristine; skipping invariant'). As designed, a registry read failure or an empty registry makes every code and docs task fail with 'scope-not-indexed' and a message telling the user to run `insrc repo add`. [files: src/analyze/context/scope.ts, src/analyze/context/invariants.ts]",
-          "action": "Say what resolveTaskScope does when the registry is unreadable or empty (a different failure, or the same leniency as ensureNonEmptyClosure), and test it.",
+          "severity": "LOW",
+          "premise": "With a failed task and a running aggregate task, the final report's first line names every failed and skipped task, including a child plan's by path, written by code.",
+          "evidence": "executor/plan-sources.ts:67-69: a record whose status is not 'ok' becomes a failed source with `record.error ?? record.status`; :71-80 recurses into an 'ok' planner task's child with `sourceId` as the parent path; the aggregate task is left out by position (:55-58). driver.ts:449-460 derives the report from these and puts renderCompletenessLine(report) at the head of the summary. This runs only when finalReport exists, which the new rule provides. [files: src/analyze/executor/plan-sources.ts, src/analyze/orchestrator/driver.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "error-paths.2",
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An absent aggregate input is detectable from the walk's state, and failed or skipped tasks already reach the answer report by path, including a child plan's.",
-          "evidence": "The walk holds outputs, perTask and each task's produces (walker.ts:101-105, :135-147), enough to find a missing name's producer and reason. projectUpstream (walker.ts:354-365) already passes only the outputs that exist. plan-sources.ts:67-69 lists every non-'ok' task as a failed source and :79 recurses into a child plan with its path; executePlannerTask (walker.ts:299-317) is 'ok' when the child has a final report. headFinalReport (driver.ts:433-438) puts the line at the head of `summary`.",
-          "action": "None.",
+          "severity": "MED",
+          "premise": "Every failure of the new handlers is detectable and its handling is stated.",
+          "evidence": "The design's own example of an uncaught error is 'a full disk while a record is written'. Both new handlers respond by writing the run record (the catch in runAnalyze, then the daemon handler 'writes it as failed'). writeRunRecord (persistence.ts:46-54, atomicWriteJson 122-128) throws in that same state. Today the daemon catch (analyze-rpc.ts:542-562) only sends the result frame and the 'done' frame; if a record write is added before those sends and throws, neither frame is sent and the client waits. The design does not say what happens when the handler's own write fails. [files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/persistence.ts]",
+          "action": "State that each handler guards its record write: on failure it logs, still returns or sends the 'internal-error' result and the 'done' frame, and leaves the record to the abandoned rule (the run is no longer live). Add a test with a failing record write.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.3",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The empty-prompt refusal is where the design says, and an empty prompt with a stated source already gives an unfocused intent.",
-          "evidence": "parseRunStartParams uses requireString(obj, 'userPrompt') (analyze-rpc.ts:1066), which throws on length 0 (:1284-1290). hintedIntentBase (driver.ts:553-556) builds { focused: false } for a prompt that trims to empty. With no scopeHint the scope picker is still called with the empty prompt (driver.ts:218-223) and falls back to 'M' if it throws.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "Every acceptance criterion maps to a test that can fail.",
-          "evidence": "ac2, ac3 and ac4 map to integration tests with named mutations. ac1 in the Define reads 'it completes every stage and returns a final report'. For the docs family the only mapped proof is 'live: the docs request, recorded as it comes out', which the design expects to stop at the aggregate task; it cannot fail and does not show ac1. No test covers a data task on an unregistered directory or a task run with an unreadable or empty registry, the two cases where the scope design changes behaviour. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md]",
-          "action": "Either narrow ac1 in the Define to the families this Story can complete, or record the docs case as an accepted exception with the stakeholder's decision; add the two missing scope tests.",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion maps to a test that can be written against existing seams, and existing walker tests stay valid under the new aggregate rule.",
+          "evidence": "The acceptance table maps ac1-ac4 to named integration, unit and live tests. The walker's tests already use stand-in runtimes in the registry (executor/__tests__/walker.test.ts:217-226). The two existing cases where the aggregate task is skipped have a single failed producer (walker.test.ts:223-246 and 406-430), so under 'no input at all, skipped' they still pass. Limits the design states itself: ac1 has no proving test for the docs family (accepted exception), and ac2's live proof is conditional on the planner emitting a planner-kind task, with the nested integration test as fallback (open question 3). [files: src/analyze/executor/__tests__/walker.test.ts]",
+          "action": "Get open question 3 answered before the build, so ac2's proof is fixed.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 1,
-        "med": 3,
-        "low": 12,
-        "unverified": 0
+        "high": 0,
+        "med": 5,
+        "low": 11,
+        "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-08T12:11:02.313Z",
+      "reviewedAt": "2026-10-08T12:23:01.749Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -352,7 +352,7 @@
       "api": [
         {
           "name": "resolveRepoPath",
-          "signature": "// replaces the three copies of resolveRepoPath (code, infra) and resolveRepoPathFromIntent (data)\nfunction resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | 'infra' | 'data', templateLabel: string, deps?: ScopeDeps): Promise<ResolvedScope>",
+          "signature": "// replaces the three copies of resolveRepoPath (code, infra) and resolveRepoPathFromIntent (data)\nfunction resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | 'infra' | 'data', templateLabel: string, deps?: ScopeDeps): Promise<ResolvedScope>\n\n// the pairing check and the resolution it is built on: one function beside resolveScope in src/analyze/context/scope.ts,\n// taking over the body that prepareScope (context/driver.ts) and stepScope (mcp/analyze-step/scope.ts) each hold today\nfunction resolveScopeForTarget(ref: AnalyzeScopeRef, target: AnalyzeTarget, deps?: ScopeDeps): Promise<ResolvedScope>",
           "parameters": [
             {
               "name": "scopeRef",
@@ -398,9 +398,11 @@
             }
           ],
           "preconditions": [
-            "TARGET_TO_KINDS is the one table of kinds per family (src/analyze/classifier/validate.ts); this function reads it and holds no list of its own"
+            "TARGET_TO_KINDS is the one table of kinds per family (src/analyze/classifier/validate.ts); this function reads it and holds no list of its own",
+            "The check of a kind against a row of the table, followed by resolveScope, exists twice today with the same body: in prepareScope (src/analyze/context/driver.ts) and in stepScope (src/mcp/analyze-step/scope.ts). A third copy is not written"
           ],
           "postconditions": [
+            "The pairing check and the resolution become one function, resolveScopeForTarget, beside resolveScope. prepareScope and stepScope call it in place of their own copies, with no change in what they accept, refuse or return; resolveTaskScope calls it with the task's family and adds only the indexed check for the code and docs families",
             "Lives in one new file under src/analyze/runtimes/shared/ and is the only place a plan task turns a scope into a repo, a path, an entity or a connection",
             "The three per-family functions are removed: resolveRepoPath in runtimes/code/_shared.ts (also imported by the docs inventory task), its copy in runtimes/infra/_shared.ts, and resolveRepoPathFromIntent in runtimes/data/_shared.ts. readScopeRef, which only reads the task's parameter, stays",
             "The five direct readers of the scope's value call it: docs/family-summarise.ts, docs/constraint-enumerate.ts, docs/decision-trace.ts, shared/adherence.ts (two places) and data/discovery-connections.ts, whose optional scopeRefValue parameter still takes precedence as a repo path",
@@ -408,7 +410,10 @@
             "A data task passes the connection pool the same path as today for a repo, a manifest directory and a workspace scope: the scope's value, whether or not that directory is a registered repo, and not the repo that contains it (a manifest directory inside a registered repo keeps its own connections file). Only a connection scope, which is new for the data tasks, uses the resolved connection's repo, and the task then works on that connection alone",
             "The mapping from the three scope error classes to their codes becomes one exported function beside the classes in src/analyze/context/invariants.ts. The plan walk and both existing mapping functions (the plan tree's in orchestrator/driver.ts and the daemon's in daemon/analyze-rpc.ts) call it, so the walk imports nothing from the run driver, which itself imports the walk",
             "Kinds accepted per family after the change are exactly the table's rows: code: repo, module, file, symbol, manifest-dir, workspace; docs: repo, module, file, workspace; infra: repo, manifest-dir, workspace; data: connection, repo, manifest-dir, workspace. Today code and docs accept repo and manifest-dir only, and data accepts no connection",
-            "What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story"
+            "What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story",
+            "A docs task keeps to a module or file scope at the point its documents are selected, not after. The two shared runners the constraint and decision tasks call (runSharedDocConstraintEnumerate in src/analyze/explore/doc-constraint-enumerate.ts and runSharedDocDecisionTrace in src/analyze/explore/doc-decision-trace.ts) take a repo path only; their argument types gain an optional area (a directory or a file), which they pass to retrieveDocSections in src/analyze/docs-retrieval.ts, so that ranking and limits apply within the area and the completeness record counts within it. The lookup pipeline's callers of those runners pass no area and are unaffected. The family-summary task keeps only the document summaries whose file lies in the area",
+            "The leniency of the indexed check holds for the kinds that are paths (repo, module, file, manifest directory, workspace). A symbol scope is resolved by Story s6's resolveScope, which reads the registry itself: with a registry that holds no repo it throws ScopeNotIndexedError, and with one that cannot be read the reader's own error passes through and the task fails with no code. That behaviour is Story s6's and is not changed here",
+            "Existing tests of the removed functions are replaced, not kept: the test hook `_resolveRepoPathForTest` exported from runtimes/code/discovery-modules.ts and its assertions on the 'not supported yet' wording (runtimes/code/__tests__/discovery-modules.test.ts), the tests of resolveRepoPathFromIntent (runtimes/data/__tests__/data-runtimes.test.ts) and the infra copy's (runtimes/infra/__tests__/infra-runtimes.test.ts). The table test over families and kinds covers what they covered"
           ]
         },
         {
@@ -470,7 +475,8 @@
           "postconditions": [
             "A run record is 'in-progress' only while its run is live in the process that started it, or when that process stopped without returning",
             "The plan walk turns an error raised while it handles one task outside the task's runtime (writing the task's record, reporting its progress) into that task's failure and goes on; an error it cannot attribute to a task reaches this function's handler",
-            "A completed run resumes from its stored record exactly as today"
+            "A completed run resumes from its stored record exactly as today",
+            "The handler's own write of the run record is guarded. If it fails (the disk is full, which may be the very cause of the first error), the failure is logged and the function still returns the 'internal-error' result and fires 'done'. The record is then left as it was; the run is no longer live, so the abandoned rule corrects it when it is next read"
           ]
         },
         {
@@ -500,7 +506,8 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "The daemon's request for a run's status and its request to purge a run both treat a record that is 'in-progress' with no live run as abandoned (see RunRecord)"
+            "The daemon's request for a run's status and its request to purge a run both treat a record that is 'in-progress' with no live run as abandoned (see RunRecord)",
+            "The daemon handler's write of the run record for an escaped error is guarded in the same way: whether or not it succeeds, the result frame and the 'done' frame are sent, so the client never waits on a handler that failed while reporting a failure"
           ]
         },
         {
@@ -565,6 +572,19 @@
           "src/analyze/orchestrator/driver.ts",
           "src/analyze/orchestrator/persistence.ts",
           "src/daemon/analyze-rpc.ts"
+        ]
+      },
+      {
+        "entity": "RunDocConstraintEnumerateArgs, RunDocDecisionTraceArgs, DocsRetrievalArgs",
+        "change": "field-add",
+        "details": "Each gains an optional area: a directory, or one file, that the documents considered must lie in. Absent, the whole repository is considered, as today. Set only by the docs plan tasks for a module or file scope.",
+        "callSites": [
+          "src/analyze/explore/doc-constraint-enumerate.ts",
+          "src/analyze/explore/doc-decision-trace.ts",
+          "src/analyze/docs-retrieval.ts",
+          "src/analyze/runtimes/docs/constraint-enumerate.ts",
+          "src/analyze/runtimes/docs/decision-trace.ts",
+          "src/analyze/runtimes/docs/family-summarise.ts"
         ]
       }
     ],
@@ -646,6 +666,13 @@
           "response": "Refused with 'invalid-params' and a message that a request with no prompt must state a kind of source.",
           "userImpact": "The caller is told what to add, where today the message only says the prompt must not be empty.",
           "recoverable": true
+        },
+        {
+          "scenario": "The run record cannot be written while a handler is recording an uncaught error (a full disk, a directory removed).",
+          "detection": "A try around the record write inside runAnalyze's handler and inside the daemon's handler.",
+          "response": "The write's failure is logged. runAnalyze still returns the 'internal-error' result and fires 'done'; the daemon's handler still sends the result frame and the 'done' frame. The record on disk keeps its last state; since the run is no longer live, the first reader rewrites it as 'run-abandoned'.",
+          "userImpact": "The caller gets the failure and is not left waiting; the record is corrected the first time it is read.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -702,7 +729,7 @@
           "expected": "It has no `code`; nothing reads one as required."
         },
         {
-          "input": "A code or docs task when the registry cannot be read, or holds no repo at all",
+          "input": "A code or docs task with a path scope (repo, module, file, manifest directory, workspace) when the registry cannot be read, or holds no repo at all",
           "expected": "Not refused: the indexed check does not evaluate in that state, as it does not for the run context today. The task uses the scope's own path as the repo path and reports what the graph holds for it."
         },
         {
@@ -712,6 +739,14 @@
         {
           "input": "A data task with a manifest-directory scope inside a registered repo",
           "expected": "The pool is opened at the manifest directory, as today, not at the repo that contains it."
+        },
+        {
+          "input": "A code task with a symbol scope when the registry holds no repo, or cannot be read",
+          "expected": "Fails: Story s6's resolveScope reads the registry to resolve a symbol. With no repo it throws ScopeNotIndexedError and the task has the code 'scope-not-indexed'; with an unreadable registry the reader's error passes through and the task fails with no code. Unchanged by this Story."
+        },
+        {
+          "input": "A docs constraint or decision task with a module scope",
+          "expected": "Only sections of documents under that directory are retrieved and ranked; the record's counts are within the area. The same lookup run by the lookup pipeline, which passes no area, is unchanged."
         }
       ],
       "invariantsToPreserve": [
@@ -753,8 +788,9 @@
             "a module, a file, a symbol and a connection scope resolve to the registered repo and the area (directory, file, entity id, connection id)",
             "a scope in no registered repo throws ScopeNotIndexedError for code and docs when the registry is readable and holds repos, and resolves for infra and data",
             "the three per-family functions are gone and no runtime file reads `scopeRef.value` to use as a repo path (a check over the runtime sources)",
-            "with a registry that cannot be read, and with one that holds no repo, a code and a docs scope are not refused and the task's repo path is the scope's own path (mutation: treat a null repo as not indexed)",
-            "one function maps the three scope error classes to their codes, and the plan tree's and the daemon's mapping functions return the same codes through it"
+            "with a registry that cannot be read, and with one that holds no repo, a code and a docs scope of a path kind are not refused and the task's repo path is the scope's own path; a symbol scope fails in both states, as resolveScope decides (mutation: treat a null repo as not indexed)",
+            "one function maps the three scope error classes to their codes, and the plan tree's and the daemon's mapping functions return the same codes through it",
+            "prepareScope and stepScope accept, refuse and return exactly what they did, through resolveScopeForTarget (their existing tests, unchanged)"
           ],
           "fixturesNeeded": [
             "stand-ins for resolveScope's readers (ScopeDeps)"
@@ -767,7 +803,8 @@
             "a code task and a docs task with a module scope use only the entities and documents under that directory, and with a file scope only that file's",
             "a data task with a connection scope works on that connection only",
             "the three docs tasks, the adherence check and the connection-listing task give the same result for a repo scope as before the change",
-            "a data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change (mutation: open it at the containing repo)"
+            "a data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change (mutation: open it at the containing repo)",
+            "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory, and their records count within it; the same two runners called without an area return what they did before (mutation: filter after the limit is applied)"
           ],
           "fixturesNeeded": [
             "a temporary graph store with a registered repo holding two directories of entities and documents",
@@ -803,7 +840,8 @@
             "a record 'in-progress' for a run that is live is returned unchanged by the status request and refused by purgeRun",
             "starting a run under the id of an abandoned record rewrites the record and runs",
             "a completed run asked for again returns its stored result and its report, and no reader changes a record that is 'ok' or 'failed'",
-            "a writing failure while the walk handles one task fails that task and the walk goes on"
+            "a writing failure while the walk handles one task fails that task and the walk goes on",
+            "with a run record that cannot be written, runAnalyze's handler still returns 'internal-error' and fires 'done' once, and the daemon's handler still sends the result frame and the 'done' frame (mutation: let the write's error escape)"
           ],
           "fixturesNeeded": [
             "run records written through the real store under a temporary run id",
@@ -838,7 +876,7 @@
           "level": "smoke",
           "purpose": "Nothing that worked stops working.",
           "subjects": [
-            "the analyze, mcp, daemon and workflow suites have no test that passed before the Story's first task and fails after its last"
+            "the analyze, mcp, daemon and workflow suites have no test that passed before the Story's first task and fails after its last, other than the tests of the three removed scope functions, which are listed in the contract and replaced by the table test"
           ]
         }
       ],
@@ -880,7 +918,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the one scope function for plan tasks in a new file under the shared runtimes, with its table test over the four families and seven kinds. Nothing calls it yet.",
+          "action": "Move the pairing check and resolution that prepareScope and stepScope each hold into one function beside resolveScope and have both call it; their existing tests are the check. Add the one scope function for plan tasks on top of it in a new file under the shared runtimes, with its table test over the four families and seven kinds. No task calls it yet.",
           "rollbackable": true
         },
         {
@@ -890,7 +928,7 @@
         },
         {
           "order": 3,
-          "action": "Move the infra and data tasks to the scope function and remove their two per-family functions; add the connection case for the data tasks. These two families complete today, so their live runs are the check that nothing moved.",
+          "action": "Move the infra and data tasks to the scope function and remove their two per-family functions; add the connection case for the data tasks. These two families complete today, so their live runs are the check that nothing moved. Replace the existing tests of the two removed functions.",
           "rollbackable": true,
           "prerequisiteFlags": [
             "step 1",
@@ -899,7 +937,7 @@
         },
         {
           "order": 4,
-          "action": "Move the code and docs tasks to the scope function, remove the code family's function, move the five direct readers of the scope's value, and make each task keep to the area a module, file or symbol scope names.",
+          "action": "Move the code and docs tasks to the scope function, remove the code family's function, move the five direct readers of the scope's value, and make each task keep to the area a module, file or symbol scope names. Add the optional area to the two shared document runners and to document retrieval, passed by the docs tasks only. Remove the code function's test hook and replace its tests.",
           "rollbackable": true,
           "prerequisiteFlags": [
             "step 1",

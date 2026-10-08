@@ -47,6 +47,10 @@ A broad analysis of infrastructure or data already runs to a final report; a bro
 ```typescript
 // replaces the three copies of resolveRepoPath (code, infra) and resolveRepoPathFromIntent (data)
 function resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | 'infra' | 'data', templateLabel: string, deps?: ScopeDeps): Promise<ResolvedScope>
+
+// the pairing check and the resolution it is built on: one function beside resolveScope in src/analyze/context/scope.ts,
+// taking over the body that prepareScope (context/driver.ts) and stepScope (mcp/analyze-step/scope.ts) each hold today
+function resolveScopeForTarget(ref: AnalyzeScopeRef, target: AnalyzeTarget, deps?: ScopeDeps): Promise<ResolvedScope>
 ```
 
 **Parameters:**
@@ -64,8 +68,10 @@ function resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | '
 
 **Preconditions:**
 - TARGET_TO_KINDS is the one table of kinds per family (src/analyze/classifier/validate.ts); this function reads it and holds no list of its own
+- The check of a kind against a row of the table, followed by resolveScope, exists twice today with the same body: in prepareScope (src/analyze/context/driver.ts) and in stepScope (src/mcp/analyze-step/scope.ts). A third copy is not written
 
 **Postconditions:**
+- The pairing check and the resolution become one function, resolveScopeForTarget, beside resolveScope. prepareScope and stepScope call it in place of their own copies, with no change in what they accept, refuse or return; resolveTaskScope calls it with the task's family and adds only the indexed check for the code and docs families
 - Lives in one new file under src/analyze/runtimes/shared/ and is the only place a plan task turns a scope into a repo, a path, an entity or a connection
 - The three per-family functions are removed: resolveRepoPath in runtimes/code/_shared.ts (also imported by the docs inventory task), its copy in runtimes/infra/_shared.ts, and resolveRepoPathFromIntent in runtimes/data/_shared.ts. readScopeRef, which only reads the task's parameter, stays
 - The five direct readers of the scope's value call it: docs/family-summarise.ts, docs/constraint-enumerate.ts, docs/decision-trace.ts, shared/adherence.ts (two places) and data/discovery-connections.ts, whose optional scopeRefValue parameter still takes precedence as a repo path
@@ -74,6 +80,9 @@ function resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | '
 - The mapping from the three scope error classes to their codes becomes one exported function beside the classes in src/analyze/context/invariants.ts. The plan walk and both existing mapping functions (the plan tree's in orchestrator/driver.ts and the daemon's in daemon/analyze-rpc.ts) call it, so the walk imports nothing from the run driver, which itself imports the walk
 - Kinds accepted per family after the change are exactly the table's rows: code: repo, module, file, symbol, manifest-dir, workspace; docs: repo, module, file, workspace; infra: repo, manifest-dir, workspace; data: connection, repo, manifest-dir, workspace. Today code and docs accept repo and manifest-dir only, and data accepts no connection
 - What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story
+- A docs task keeps to a module or file scope at the point its documents are selected, not after. The two shared runners the constraint and decision tasks call (runSharedDocConstraintEnumerate in src/analyze/explore/doc-constraint-enumerate.ts and runSharedDocDecisionTrace in src/analyze/explore/doc-decision-trace.ts) take a repo path only; their argument types gain an optional area (a directory or a file), which they pass to retrieveDocSections in src/analyze/docs-retrieval.ts, so that ranking and limits apply within the area and the completeness record counts within it. The lookup pipeline's callers of those runners pass no area and are unaffected. The family-summary task keeps only the document summaries whose file lies in the area
+- The leniency of the indexed check holds for the kinds that are paths (repo, module, file, manifest directory, workspace). A symbol scope is resolved by Story s6's resolveScope, which reads the registry itself: with a registry that holds no repo it throws ScopeNotIndexedError, and with one that cannot be read the reader's own error passes through and the task fails with no code. That behaviour is Story s6's and is not changed here
+- Existing tests of the removed functions are replaced, not kept: the test hook `_resolveRepoPathForTest` exported from runtimes/code/discovery-modules.ts and its assertions on the 'not supported yet' wording (runtimes/code/__tests__/discovery-modules.test.ts), the tests of resolveRepoPathFromIntent (runtimes/data/__tests__/data-runtimes.test.ts) and the infra copy's (runtimes/infra/__tests__/infra-runtimes.test.ts). The table test over families and kinds covers what they covered
 
 ### 2.2 `unmetDependencies`
 
@@ -128,6 +137,7 @@ function isRunLive(runId: string): boolean
 - A run record is 'in-progress' only while its run is live in the process that started it, or when that process stopped without returning
 - The plan walk turns an error raised while it handles one task outside the task's runtime (writing the task's record, reporting its progress) into that task's failure and goes on; an error it cannot attribute to a task reaches this function's handler
 - A completed run resumes from its stored record exactly as today
+- The handler's own write of the run record is guarded. If it fails (the disk is full, which may be the very cause of the first error), the failure is logged and the function still returns the 'internal-error' result and fires 'done'. The record is then left as it was; the run is no longer live, so the abandoned rule corrects it when it is next read
 
 ### 2.4 `runStart`
 
@@ -146,6 +156,7 @@ function runStart(params: unknown, send: (msg: IpcStreamMessage) => void, signal
 
 **Postconditions:**
 - The daemon's request for a run's status and its request to purge a run both treat a record that is 'in-progress' with no live run as abandoned (see RunRecord)
+- The daemon handler's write of the run record for an escaped error is guarded in the same way: whether or not it succeeds, the result frame and the 'done' frame are sent, so the client never waits on a handler that failed while reporting a failure
 
 ### 2.5 `purgeRun`
 
@@ -202,6 +213,18 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 - `src/analyze/orchestrator/persistence.ts`
 - `src/daemon/analyze-rpc.ts`
 
+### 3.4 `RunDocConstraintEnumerateArgs, RunDocDecisionTraceArgs, DocsRetrievalArgs` — field-add
+
+Each gains an optional area: a directory, or one file, that the documents considered must lie in. Absent, the whole repository is considered, as today. Set only by the docs plan tasks for a module or file scope.
+
+**Call sites:**
+- `src/analyze/explore/doc-constraint-enumerate.ts`
+- `src/analyze/explore/doc-decision-trace.ts`
+- `src/analyze/docs-retrieval.ts`
+- `src/analyze/runtimes/docs/constraint-enumerate.ts`
+- `src/analyze/runtimes/docs/decision-trace.ts`
+- `src/analyze/runtimes/docs/family-summarise.ts`
+
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
@@ -252,6 +275,10 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
   - Detection: The daemon's parser for the run request checks `targetHint` when `userPrompt` is empty.
   - Response: Refused with 'invalid-params' and a message that a request with no prompt must state a kind of source.
   - User impact: The caller is told what to add, where today the message only says the prompt must not be empty.
+- **The run record cannot be written while a handler is recording an uncaught error (a full disk, a directory removed).** (recoverable)
+  - Detection: A try around the record write inside runAnalyze's handler and inside the daemon's handler.
+  - Response: The write's failure is logged. runAnalyze still returns the 'internal-error' result and fires 'done'; the daemon's handler still sends the result frame and the 'done' frame. The record on disk keeps its last state; since the run is no longer live, the first reader rewrites it as 'run-abandoned'.
+  - User impact: The caller gets the failure and is not left waiting; the record is corrected the first time it is read.
 
 **Edge cases**
 
@@ -270,9 +297,11 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 | purgeRun called with no `isLive` on an 'in-progress' record | Refused with 'run-in-progress', exactly as today. |
 | A run record with status 'ok' or 'failed' | No reader changes it; a completed run resumes from it as today, with its report. |
 | A task record written before the change | It has no `code`; nothing reads one as required. |
-| A code or docs task when the registry cannot be read, or holds no repo at all | Not refused: the indexed check does not evaluate in that state, as it does not for the run context today. The task uses the scope's own path as the repo path and reports what the graph holds for it. |
+| A code or docs task with a path scope (repo, module, file, manifest directory, workspace) when the registry cannot be read, or holds no repo at all | Not refused: the indexed check does not evaluate in that state, as it does not for the run context today. The task uses the scope's own path as the repo path and reports what the graph holds for it. |
 | A data task with a repo or workspace scope whose directory is not a registered repo | Works as today: the connection pool is opened at that directory. No indexed check applies to a data task. |
 | A data task with a manifest-directory scope inside a registered repo | The pool is opened at the manifest directory, as today, not at the repo that contains it. |
+| A code task with a symbol scope when the registry holds no repo, or cannot be read | Fails: Story s6's resolveScope reads the registry to resolve a symbol. With no repo it throws ScopeNotIndexedError and the task has the code 'scope-not-indexed'; with an unreadable registry the reader's error passes through and the task fails with no code. Unchanged by this Story. |
+| A docs constraint or decision task with a module scope | Only sections of documents under that directory are retrieved and ranked; the record's counts are within the area. The same lookup run by the lookup pipeline, which passes no area, is unchanged. |
 
 **Invariants to preserve**
 
@@ -290,16 +319,16 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 **Test levels**
 
 - **unit** — The one scope function: each family accepts exactly its row and refuses the rest with the typed error.
-  - Subjects: `a table test over the four families and the seven kinds of scope: each pairing in TARGET_TO_KINDS resolves, each pairing outside it throws ScopeKindTargetMismatchError naming the kinds allowed (mutation: give a family a kind outside its row)`, `the function reads TARGET_TO_KINDS and holds no list of its own: a kind added to a row in a stand-in table is accepted`, `a module, a file, a symbol and a connection scope resolve to the registered repo and the area (directory, file, entity id, connection id)`, `a scope in no registered repo throws ScopeNotIndexedError for code and docs when the registry is readable and holds repos, and resolves for infra and data`, `the three per-family functions are gone and no runtime file reads `scopeRef.value` to use as a repo path (a check over the runtime sources)`, `with a registry that cannot be read, and with one that holds no repo, a code and a docs scope are not refused and the task's repo path is the scope's own path (mutation: treat a null repo as not indexed)`, `one function maps the three scope error classes to their codes, and the plan tree's and the daemon's mapping functions return the same codes through it`
+  - Subjects: `a table test over the four families and the seven kinds of scope: each pairing in TARGET_TO_KINDS resolves, each pairing outside it throws ScopeKindTargetMismatchError naming the kinds allowed (mutation: give a family a kind outside its row)`, `the function reads TARGET_TO_KINDS and holds no list of its own: a kind added to a row in a stand-in table is accepted`, `a module, a file, a symbol and a connection scope resolve to the registered repo and the area (directory, file, entity id, connection id)`, `a scope in no registered repo throws ScopeNotIndexedError for code and docs when the registry is readable and holds repos, and resolves for infra and data`, `the three per-family functions are gone and no runtime file reads `scopeRef.value` to use as a repo path (a check over the runtime sources)`, `with a registry that cannot be read, and with one that holds no repo, a code and a docs scope of a path kind are not refused and the task's repo path is the scope's own path; a symbol scope fails in both states, as resolveScope decides (mutation: treat a null repo as not indexed)`, `one function maps the three scope error classes to their codes, and the plan tree's and the daemon's mapping functions return the same codes through it`, `prepareScope and stepScope accept, refuse and return exactly what they did, through resolveScopeForTarget (their existing tests, unchanged)`
   - Fixtures: `stand-ins for resolveScope's readers (ScopeDeps)`
 - **integration** — Plan tasks keep to the area their scope names, through their real runtimes against a temporary graph.
-  - Subjects: `a code task and a docs task with a module scope use only the entities and documents under that directory, and with a file scope only that file's`, `a data task with a connection scope works on that connection only`, `the three docs tasks, the adherence check and the connection-listing task give the same result for a repo scope as before the change`, `a data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change (mutation: open it at the containing repo)`
+  - Subjects: `a code task and a docs task with a module scope use only the entities and documents under that directory, and with a file scope only that file's`, `a data task with a connection scope works on that connection only`, `the three docs tasks, the adherence check and the connection-listing task give the same result for a repo scope as before the change`, `a data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change (mutation: open it at the containing repo)`, `a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory, and their records count within it; the same two runners called without an area return what they did before (mutation: filter after the limit is applied)`
   - Fixtures: `a temporary graph store with a registered repo holding two directories of entities and documents`, `a stand-in data pool with two connections`
 - **integration** — The plan walk: a refused scope is a coded failure, and the aggregate task runs on what exists.
   - Subjects: `a runtime that throws each of the three typed scope errors is recorded as failed with that error's code and a message without the 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)`, `the plan's and the run's tasksFailed carry the code`, `a plan in which one of three producers failed: the aggregate task runs, receives the two outputs that exist and `absentInputs` naming the third with its producer and reason, and the plan has a final report (mutation: skip the aggregate task as before)`, `a plan in which every producer failed: the aggregate task is skipped and the plan has no final report`, `a task other than the aggregate task with a missing input is still skipped`, `a nested plan in which one child task failed: the child's aggregate task runs, the planner-kind task is 'ok', the root has a final report, and the run's answer report names the child's failed task by its path`, `the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent`
   - Fixtures: `stand-in runtimes registered in the runtime registry, as the walk's existing tests use`, `a stand-in model provider for the aggregator`
 - **integration** — A run that stops says where and why, and a record with no live run is abandoned.
-  - Subjects: `an error thrown from inside a stage that has no handler: runAnalyze returns a failure with code 'internal-error' at that stage, the record on disk says the same, the 'done' event fires once, and the run is no longer live (mutation: remove the handler)`, `a run is live from before its first record until it returns, and not after it throws`, `the daemon's handler, given a runAnalyze that throws, writes the record as failed and sends the record's stage, not 'classify'`, `a record left 'in-progress' with no live run: the status request returns it rewritten as failed with 'run-abandoned' at its stage, and the file on disk is rewritten (mutation: return the record as read)`, `the same record: purgeRun with liveness supplied purges it without force; purgeRun with no liveness refuses it as today`, `a record 'in-progress' for a run that is live is returned unchanged by the status request and refused by purgeRun`, `starting a run under the id of an abandoned record rewrites the record and runs`, `a completed run asked for again returns its stored result and its report, and no reader changes a record that is 'ok' or 'failed'`, `a writing failure while the walk handles one task fails that task and the walk goes on`
+  - Subjects: `an error thrown from inside a stage that has no handler: runAnalyze returns a failure with code 'internal-error' at that stage, the record on disk says the same, the 'done' event fires once, and the run is no longer live (mutation: remove the handler)`, `a run is live from before its first record until it returns, and not after it throws`, `the daemon's handler, given a runAnalyze that throws, writes the record as failed and sends the record's stage, not 'classify'`, `a record left 'in-progress' with no live run: the status request returns it rewritten as failed with 'run-abandoned' at its stage, and the file on disk is rewritten (mutation: return the record as read)`, `the same record: purgeRun with liveness supplied purges it without force; purgeRun with no liveness refuses it as today`, `a record 'in-progress' for a run that is live is returned unchanged by the status request and refused by purgeRun`, `starting a run under the id of an abandoned record rewrites the record and runs`, `a completed run asked for again returns its stored result and its report, and no reader changes a record that is 'ok' or 'failed'`, `a writing failure while the walk handles one task fails that task and the walk goes on`, `with a run record that cannot be written, runAnalyze's handler still returns 'internal-error' and fires 'done' once, and the daemon's handler still sends the result frame and the 'done' frame (mutation: let the write's error escape)`
   - Fixtures: `run records written through the real store under a temporary run id`, `a seam to make one stage throw`
 - **unit** — The run request's prompt rule.
   - Subjects: `an empty prompt with a stated kind of source is accepted and gives an unfocused intent`, `an empty prompt with no stated source is refused with 'invalid-params' and a message that a kind of source must be stated`, `a prompt of only white space is treated as empty`
@@ -307,7 +336,7 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
   - Subjects: `an infra request and a data request each complete with a final report, as on 2026-10-08`, `a code request returns a final report whose first line names the failed functional-surface tasks, where on 2026-10-08 it returned none`, `a request with an empty prompt and a stated kind of source completes`, `a request sized so that its plan holds a planner-kind task: the child plan runs and its tasks appear by path in the run's answer report; if no size makes the planner emit one on this repository, that is recorded and the nested integration test stands as the proof`, `a docs request, run and recorded but not a proof of ac1: it is expected to stop at the aggregate task with 'Prompt is too long'. This is the accepted exception of 2026-10-08, to be closed by Story s3`
   - Fixtures: `the installed daemon running this Story's code`, `INSRC_LIVE_TESTS=1 and a model provider with quota`
 - **smoke** — Nothing that worked stops working.
-  - Subjects: `the analyze, mcp, daemon and workflow suites have no test that passed before the Story's first task and fails after its last`
+  - Subjects: `the analyze, mcp, daemon and workflow suites have no test that passed before the Story's first task and fails after its last, other than the tests of the three removed scope functions, which are listed in the contract and replaced by the table test`
 
 **Acceptance mapping**
 
@@ -328,10 +357,10 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 
 **Steps**
 
-1. Add the one scope function for plan tasks in a new file under the shared runtimes, with its table test over the four families and seven kinds. Nothing calls it yet. — ↩ rollbackable
+1. Move the pairing check and resolution that prepareScope and stepScope each hold into one function beside resolveScope and have both call it; their existing tests are the check. Add the one scope function for plan tasks on top of it in a new file under the shared runtimes, with its table test over the four families and seven kinds. No task calls it yet. — ↩ rollbackable
 2. Add the optional code to the failed-task record and to the entries of tasksFailed, and make the plan walk set it for the three typed scope errors. — ↩ rollbackable
-3. Move the infra and data tasks to the scope function and remove their two per-family functions; add the connection case for the data tasks. These two families complete today, so their live runs are the check that nothing moved. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
-4. Move the code and docs tasks to the scope function, remove the code family's function, move the five direct readers of the scope's value, and make each task keep to the area a module, file or symbol scope names. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
+3. Move the infra and data tasks to the scope function and remove their two per-family functions; add the connection case for the data tasks. These two families complete today, so their live runs are the check that nothing moved. Replace the existing tests of the two removed functions. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
+4. Move the code and docs tasks to the scope function, remove the code family's function, move the five direct readers of the scope's value, and make each task keep to the area a module, file or symbol scope names. Add the optional area to the two shared document runners and to document retrieval, passed by the docs tasks only. Remove the code function's test hook and replace its tests. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
 5. Add the absent-inputs argument to the task arguments and the aggregator's arguments, write the absent inputs into the aggregator's prompt after the outputs that exist, and pass the argument through the five aggregate-report runtimes. — ↩ rollbackable
 6. Change the plan walk's rule for the aggregate-report task: run it when at least one of its inputs exists, with the absent ones named. From this step a run with a failed task returns a report. — ↩ rollbackable _(needs: `step 5`)_
 7. Add the set of live runs and mark a run live for the length of runAnalyze; add the handler for an uncaught error in runAnalyze and the walk's handling of a failure outside a task's runtime. — ↩ rollbackable

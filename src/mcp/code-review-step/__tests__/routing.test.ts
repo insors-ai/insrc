@@ -284,9 +284,9 @@ for (const [failure, error, retryable] of FAILURES) {
 	});
 }
 
-test('T11 the tool waits 10 minutes: with a daemon that never answers it fails when that limit fires', async () => {
+test('T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires', async () => {
 	reset();
-	assert.equal(DAEMON_CODE_REVIEW_WAIT_MS, 10 * MIN);
+	assert.equal(DAEMON_CODE_REVIEW_WAIT_MS, 30 * MIN);
 	const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
 	const sockets: Socket[] = [];
 	let requests = 0;
@@ -311,13 +311,13 @@ test('T11 the tool waits 10 minutes: with a daemon that never answers it fails w
 		let settled = false;
 		pending.then(() => { settled = true; }, () => { settled = true; });
 		while (requests === 0) await new Promise(r => setImmediate(r));
-		assert.deepEqual(armed, [10 * MIN], 'the 10 minute limit is the one armed');
+		assert.deepEqual(armed, [30 * MIN], 'the 30 minute limit is the one armed');
 		assert.equal(settled, false, 'still waiting before the limit');
 		fire?.();
 		const out = await pending;
 		assert.ok(out.next === 'error');
 		assert.equal(out.error.code, 'daemon-review-timeout');
-		assert.match(out.error.message, /within 10 minutes/);
+		assert.match(out.error.message, /within 30 minutes/);
 		assert.equal(out.error.retryable, true);
 	} finally {
 		for (const s of sockets) s.destroy();

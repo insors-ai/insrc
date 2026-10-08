@@ -90,12 +90,12 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
 	{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
 	// Design-review template (src/workflow/review/template.ts). Provisional defaults —
-	// no design review may exceed 10 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
+	// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
 	{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
 	{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 240000, desc: 'time limit (ms) for the whole review of a design that answers an ISSUE; capped at 10 minutes', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 360000, desc: 'time limit (ms) for the whole review of a standalone feature design; capped at 10 minutes', group: 'Workflow & review' },
-	{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 480000, desc: 'time limit (ms) for the whole review of a design under an Epic; capped at 10 minutes', group: 'Workflow & review' },
+	{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
+	{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
+	{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
 
 	// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 	// A (runner, model) pair is named ONLY here. The shaper + summariser providers

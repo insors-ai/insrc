@@ -59,13 +59,13 @@ export interface DesignReviewSettings {
 // ---------------------------------------------------------------------------
 
 /** No design review may run longer than this, whatever a setting says. */
-export const HARD_REVIEW_DEADLINE_MS = 10 * 60_000;
+export const HARD_REVIEW_DEADLINE_MS = 30 * 60_000;
 
 /** Provisional defaults (LLD-f2f08ccf89f8ab25-S001); each is a setting under
  *  `designReview.*` so it can be corrected from real timings without a code change. */
 export const DEFAULT_DESIGN_REVIEW_SETTINGS: DesignReviewSettings = Object.freeze({
 	premises:    Object.freeze({ issue: 8, spec: 16 }),
-	timeLimitMs: Object.freeze({ issue: 4 * 60_000, feature: 6 * 60_000, epic: 8 * 60_000 }),
+	timeLimitMs: Object.freeze({ issue: 12 * 60_000, feature: 18 * 60_000, epic: 24 * 60_000 }),
 });
 
 /** Read `designReview.*` from `~/.insrc/config.json`. Fail-safe: a missing file,

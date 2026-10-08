@@ -661,8 +661,9 @@ function authorOf(repo: string, epicHash: string, storyId: string, deps: CodeRev
 }
 
 /** How long the tool waits for the daemon's code review. Daemon code reviews
- *  have taken up to about two and a half minutes. */
-export const DAEMON_CODE_REVIEW_WAIT_MS = 10 * 60_000;
+ *  have taken up to about two and a half minutes. Tripled from 10 minutes on
+ *  2026-10-08 with every other review limit. */
+export const DAEMON_CODE_REVIEW_WAIT_MS = 30 * 60_000;
 
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE_DAEMON_FAILURES: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);

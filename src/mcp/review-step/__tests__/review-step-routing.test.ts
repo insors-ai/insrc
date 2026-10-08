@@ -136,13 +136,13 @@ test('T9 an older artifact with no author field is routed by its attribution lab
 
 // --- T11: the wait limit, and a failed daemon review ----------------------------
 
-test('T11 the tool waits 11 minutes for a design (HLD, LLD) and 30 minutes for a DEF', async () => {
+test('T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF', async () => {
 	_clearReviewStateStoreForTests();
-	assert.equal(DESIGN_REVIEW_WAIT_MS, 11 * MIN);
-	// 30, not 10: a real DEF review measured 777 s (t12), so 10 minutes cut it off.
-	assert.equal(PIPELINE_REVIEW_WAIT_MS, 30 * MIN);
+	assert.equal(DESIGN_REVIEW_WAIT_MS, 31 * MIN);
+	// A real DEF review measured 777 s (t12), so the first limit of 10 minutes cut it off; 30, then tripled to 90.
+	assert.equal(PIPELINE_REVIEW_WAIT_MS, 90 * MIN);
 	assert.ok(PIPELINE_REVIEW_WAIT_MS > 777_000 * 2, 'room for a DEF about twice the measured one');
-	for (const [workflow, limit] of [['design.story', 11 * MIN], ['design.epic', 11 * MIN], ['define', 30 * MIN]] as const) {
+	for (const [workflow, limit] of [['design.story', 31 * MIN], ['design.epic', 31 * MIN], ['define', 90 * MIN]] as const) {
 		const fx = fixture(workflow, 'controller');
 		try {
 			const d = fakeDaemon();
@@ -212,7 +212,7 @@ test('T11 against an older daemon (a plain unknown-method line, socket kept open
 			}),
 		};
 		const out = await start(fx, deps);
-		assert.deepEqual(armedMs, [11 * MIN], 'the 11 minute wait limit was armed, and it never fired');
+		assert.deepEqual(armedMs, [31 * MIN], 'the 31 minute wait limit was armed, and it never fired');
 		assert.equal(out['next'], 'error');
 		const err = out['error'] as { code: string; message: string };
 		assert.equal(err.code, 'daemon-review-unknown-method');

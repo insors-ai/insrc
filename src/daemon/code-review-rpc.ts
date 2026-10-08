@@ -42,7 +42,7 @@ type CodeReviewSubjectResolution = Awaited<ReturnType<typeof resolveCodeReviewSu
 /** CLI-provider subprocess timeout for a code-review run — a full four-judge
  *  pass over a large changed set can run several minutes; the CLI default
  *  (120 s) SIGKILLs it. Ollama ignores this. Matches workflow-rpc's generosity. */
-const CODE_REVIEW_CLI_TIMEOUT_MS = 900_000;
+const CODE_REVIEW_CLI_TIMEOUT_MS = 2_700_000;
 
 interface CodeReviewRunParams {
 	readonly repo?:     string;

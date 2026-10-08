@@ -122,19 +122,21 @@ export async function handleStart(
 
 
 /** How long the tool waits for the daemon's review of a design (HLD / LLD).
- *  That review is one reviewer session with a hard limit of 10 minutes, so the
+ *  That review is one reviewer session with a hard limit of 30 minutes, so the
  *  tool waits one minute longer and never gives up on a review that is about to
  *  finish. */
-export const DESIGN_REVIEW_WAIT_MS = 11 * 60_000;
+export const DESIGN_REVIEW_WAIT_MS = 31 * 60_000;
 
 /** How long the tool waits for the daemon's review of any other artifact (a
  *  DEF). That review goes through the older extract, probe and verify pipeline,
  *  which has no time limit of its own and runs TWICE when the first pass applies
  *  a fix. Measured on 2026-10-05 on a real DEF: 777 s (399 s for the first pass
  *  over 19 premises, then 378 s for the re-review over 21). The 10 minutes this
- *  started at was therefore too short; 30 minutes leaves room for a DEF about
- *  twice that size. The pipeline itself is deliberately not changed here. */
-export const PIPELINE_REVIEW_WAIT_MS = 30 * 60_000;
+ *  started at was therefore too short, and 30 minutes left room for a DEF about
+ *  twice that size. Tripled to 90 on 2026-10-08 with every other review limit:
+ *  a review cut off at its limit costs more than a longer wait. The pipeline
+ *  itself is deliberately not changed here. */
+export const PIPELINE_REVIEW_WAIT_MS = 90 * 60_000;
 
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);

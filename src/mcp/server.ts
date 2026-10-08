@@ -613,7 +613,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
 				'call phase=\'start\' and the tool routes it.\n\n' +
 				'When the daemon is the reviewer, phase=\'start\' itself asks the daemon, waits ' +
-				'(up to about 11 minutes for an HLD or LLD; up to 30 for a DEF, whose review ' +
+				'(up to about 31 minutes for an HLD or LLD; up to 90 for a DEF, whose review ' +
 				'has measured about 13) and returns { next: \'done\', verdict, counts, report, ' +
 				'applied, pending, reviewedBy: \'daemon\' } — there is no further turn. If the ' +
 				'daemon is not running, is too old to know the request, fails, or passes the ' +
@@ -708,7 +708,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'CR-<epic>-<story>, and completing the Story (approving its BUILD record) ' +
 				'REQUIRES one, done by the other party.\n\n' +
 				'When the daemon is the reviewer, phase=\'start\' asks the daemon, waits (up to ' +
-				'10 minutes) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
+				'30 minutes) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
 				'reviewedBy: \'daemon\', groundingMode }. A stale index first returns ' +
 				'{ next: \'confirm_wait\', staleFiles, state }: ask the user, then call ' +
 				'phase=\'start\' again with that state and `proceed` (true = wait for a fresh ' +

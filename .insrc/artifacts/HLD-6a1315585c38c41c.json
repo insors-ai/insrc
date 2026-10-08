@@ -1,0 +1,758 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1791485029499-gnjvqz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T18:50:43.757Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 414256,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every S004 acceptance criterion has a designed home: ac1 (tasks with dependsOn/acceptanceChecks and Passed/Failed/Unrecorded/unplanned), ac2 (stage reason plus cited records), ac3 (conflict), ac4 (rejected vs pending, original verdict plus override), ac5 (two open paths) and ac6 (the review-without-build notice).",
+          "evidence": "sc6 ItemDetailsViewModel carries tasks[] (resultLabel, planned, dependsOn, acceptanceChecks), taskCounts {passed, failed, unrecorded, unplanned}, stageReason {text, artifactIds}, conflict, evidence[] (approvalLabel, reviewLabel, overrideLabel, opensIn) and notices[]. The daemon side backs each field: types.ts:198 TaskResult 'passed'|'failed'|'unrecorded'; :214 validation counts; :164 reason {text, artifactIds}; :189 review.override; :280 approval.state 'approved'|'rejected'|'pending'; :124 NoticeCode 'review-without-build'.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD's additive change to the review pane does not build a DEF non-goal.",
+          "evidence": "DEF §3 still lists the non-goal 'Changing the existing VS Code document review pane … does not alter it' (DEF.md:68). Constraint k10 (DEF.md:94, amended by commit 62392461 from a 2026-10-09 stakeholder decision, c24) explicitly allows 'one additive entry point that opens a given artifact by id, read-only when it is not pending'. sc7 stays inside k10: it adds openArtifact and leaves open() and dispose() unchanged. The DEF's own non-goal text is now stale against k10, which is a wording issue in the DEF, not in the HLD.",
+          "action": "Optionally reword the DEF non-goal so it reads 'beyond the one k10 entry point', keeping the DEF and the HLD consistent.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared IPC client sets no timeout of its own, so the delivery client has to race a deadline.",
+          "evidence": "rpc() (ipc-client.ts:46-84) returns a Promise that settles only on a 'data' line or a socket 'error'. It has no setTimeout and no socket.setTimeout. createIpcClient (:115-120) passes rpc through unchanged. [files: src/shared/ipc-client.ts]",
+          "action": "none. When the deadline wins, the LLD should also say whether the dangling socket is left open or destroyed. rpc exposes no handle, so it is left open.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The daemon returns delivery failures as a structured { error } result arm, and socket-level failures reject, so the client can tell 'daemon-unavailable' apart from 'read-failed'.",
+          "evidence": "handleDelivery and handleDeliveryEvidence never throw. They return { error: ... } as the result (handlers.ts:58, 83, 107, 109, 117, 124, 132, 135). rpc rejects with 'daemon is not running — start it with: insrc daemon start' on ENOENT/ECONNREFUSED (ipc-client.ts:77-78), and rejects with the raw error on any other socket error. [files: src/workflow/delivery/handlers.ts, src/shared/ipc-client.ts]",
+          "action": "The LLD should name the rule that classifies a rejection: the 'daemon is not running' prefix maps to daemon-unavailable, and other socket errors map to read-failed or unavailable.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The review pane is created only when insrc.chat.enabled is on, so the board may have no pane to open.",
+          "evidence": "extension.ts:424-425 `const chatEnabled = ... get<boolean>('insrc.chat.enabled') === true; if (chatEnabled) {` and the docsReviewHost is created at :607 inside that block, with its command at :631. [files: vscode-plugin/src/extension.ts]",
+          "action": "The board's wiring in extension.ts needs a nullable handle to docsReviewHost. Today it is a block-scoped const inside the if.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reused shapes exist as stated: Envelope<T> {v:1, payload}, DocsReviewHost {open, dispose} with a deps-injected factory and ChatPanelLogger, and the delivery-contract mirror typing both methods without callers.",
+          "evidence": "protocol.ts:38-40 `export interface Envelope<T> { readonly v: 1; readonly payload: T;`; docs-review-panel.ts:39-42 `export interface DocsReviewHost { open(): void; dispose(): void; }`, :30-37 DocsReviewHostDeps with `logger?: ChatPanelLogger`, :45 NOOP_LOGGER {warn, error}; delivery-contract.ts:39-42 DeliveryMethods for both methods. [files: vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The six enum types sc4 imports (DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict) are not yet in the mirror, so they must be added. They are exported from src/workflow/delivery/types.ts.",
+          "evidence": "The mirror re-exports only DeliveryError…DeliverySnapshotResponse (delivery-contract.ts:26-36). types.ts exports ReviewVerdict (:17, a re-export from review/types), ApprovalState (:25), NoticeCode (:117), DeliveryStage (:148), TaskResult (:198) and AttentionReason (:208). tsconfig.delivery-contract.json compiles src/delivery/delivery-contract.ts. [files: vscode-plugin/src/delivery/delivery-contract.ts, src/workflow/delivery/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc7's openArtifact({artifactId, mdPath}) can be served by the pane's existing read path, because the pane reads content by mdPath and the delivery entry supplies an mdPath that resolves the same way.",
+          "evidence": "The client resolves id->mdPath from a map that only pending() fills (docs-review-client.ts:74-77, 88), then calls workflow.artifactContent {mdPath} (:97-100). For a non-pending artifact the id is not in that map, so passing mdPath explicitly is required, as sc7 does. The delivery mdPath comes from the same resolveDocsMarkdown/deriveMdPath (markdown.ts:99-110) that handleArtifactContent uses (artifact-content.ts:155). It is non-null whenever openWith is 'review-view' (snapshot.ts:102-103). [files: vscode-plugin/src/chat/docs-review-client.ts, src/workflow/artifact-content.ts, src/workflow/delivery/markdown.ts]",
+          "action": "none. Note for s4: the pane's client sends no `repo`, so content() falls back to the daemon's INSRC_REPO, while the board sends the workspace root. The LLD should state that this mismatch is accepted or handled.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The board host takes the plugin's ChatPanelLogger and logs through error() and warn(), wired from extension.ts.",
+          "evidence": "ChatPanelLogger has warn and error (docs-review-panel.ts:45 NOOP_LOGGER). The only shared logger instance in extension.ts is `const panelLog = { warn: ... }` (extension.ts:255), which has no error(). The docsReviewHost is created without a logger (:607-630). I did not open ChatPanelLogger's declaration to see whether error is optional, so I could not confirm that extension.ts can hand the board a ChatPanelLogger without a new adapter. [files: vscode-plugin/src/extension.ts]",
+          "action": "s1's LLD should name the logger instance the board host receives in extension.ts. If ChatPanelLogger.error is required, it should add an error sink.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The PLAN-join rule works on stored records: a snapshot task item's sourceIds contain the PLAN task id ('t1'…), and PlanTask carries id, dependsOn and acceptanceChecks.",
+          "evidence": "graph.ts addTasks (:371-416) reads body.tasks[].id from PLAN/BUILD records, keeps only ids of the t<n> form, and builds the task item with `sourceIds: [taskId]` (:411), adding to it when the same id repeats (:401). plan.ts:63-70 PlanTask has `id` ('t1','t2'...), `dependsOn: readonly string[]` and `acceptanceChecks: readonly string[]`. deliveryEvidence returns `body: record.body` unchanged (handlers.ts:142), so the board reads the same body.tasks. [files: src/workflow/delivery/graph.ts, src/workflow/artifacts/plan.ts]",
+          "action": "none. The defensive read stated in the risk table covers older PLANs that lack these fields.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The board handles snapshot versioning (schemaVersion 1) and the DEF's additive-only evolution of the delivery contract.",
+          "evidence": "DeliverySnapshot.schemaVersion is the literal 1 (types.ts:311). The HLD never states what the client does if a response carries a different schemaVersion, or whether unknown additive fields are ignored. The type-level mirror pins compile-time drift (delivery-contract.ts:9-11), but runtime handling is not described anywhere in the HLD.",
+          "action": "sc1 should state the runtime check: reject a schemaVersion other than 1 as 'read-failed' with a clear message, and ignore unknown fields.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD leaves E1's daemon contract (sc7) unchanged and consumes it as published; the PLAN detail is read through the existing workflow.deliveryEvidence without any daemon change.",
+          "evidence": "handleDeliveryEvidence accepts any artifact id that matches `^(SPEC|DEF|HLD|LLD|PLAN|BUILD|...)-[0-9a-f]{16}(-…)?$` (handlers.ts:42, 109), not only evidence-read records. It returns meta, body and renderedMarkdown for any store record (:138-144), so a PLAN can be read with no daemon change. index.ts:719-724 registers it. [files: src/workflow/delivery/handlers.ts, src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure has a detectable signal and a stated handling: no workspace, daemon down, {error} arm, timeout, superseded response, PLAN read failure, pane unavailable.",
+          "evidence": "sc1 sends 'no-workspace' without calling the daemon. Socket failures and the {error} result arm (handlers.ts never throw) map to DeliveryFailureKind. Timeouts come from a deadline race, because rpc has none (ipc-client.ts:46-84). sc2 maps unavailable/no-workspace to 'unavailable' and read-failed/timed-out to 'failed', each keeping `last`. requestSeq drops stale responses. sc6.planNotice covers a failed PLAN read. When the pane is absent, the record falls back to the read-only deliveryEvidence path (risk table plus s4 boundary text).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Acceptance criteria map to named tests that can run under the plugin's existing suite, including s1 ac4 (out-of-order fakes), s1 ac6 (temporary git repo), s4 ac5 (both open paths with the pane's tests unchanged) and s5 ac5 (measured fixture).",
+          "evidence": "vscode-plugin/package.json:770 `\"test\": \"tsx --test 'src/**/__tests__/*.test.ts'\"`. The host and client are deps-injected and vscode-free (the rpc and repo deps in sc1), so fakes can drive ac4. The HLD's §6 story boundaries name the ac4, ac6 and ac5 tests explicitly and require every AC to map to a named LLD test. ac6 can call the read-only handlers (handlers.ts, 'neither writes') against a temp repo. [files: vscode-plugin/package.json]",
+          "action": "none. s1's LLD should say whether ac6 calls handleDelivery directly or goes through a live daemon.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T18:56:24.018Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T19:10:22.083Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "The delivery board is a read-only editor tab in the VS Code plugin. The extension side fetches the daemon's delivery snapshot, keeps the reader's filters and selection, and works out what each view shows; the tab itself only draws what it is sent and passes the reader's clicks and keys back. Records open in the existing review pane through one new open-this-record entry, or are shown read-only from the daemon when that pane cannot open them.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+    "architectureShape": "Three layers inside vscode-plugin/src, plus one entry point on the review pane. (1) Data: a delivery client over createIpcClient().rpc, typed by the existing type mirror vscode-plugin/src/delivery/delivery-contract.ts (which s1 extends additively with the enum types the display labels need), exposing snapshot() and evidence(artifactId) for the open workspace's repo, bounding each call with a deadline, and turning the daemon's { error } arm and socket failures into typed load failures. (2) Host: a board host created by the extension entry point and registered behind a new 'open delivery board' command; it owns the load status (loading, ready, empty, unavailable, failed, each with the last successful snapshot when there is one), drops any response older than the latest request, keeps the selection (view, scope, search, attention filter, selected item, density) across refreshes, and builds view models through pure functions: board columns and counts, epic rollup, issue view and item details. Item details for a story with a PLAN evidence entry trigger one workflow.deliveryEvidence read of that PLAN, cached per snapshot. (3) View: a webview panel in an editor tab whose single nonce'd script renders the latest view model it receives and posts intents (refresh, set view, set scope, set search, toggle attention, select item, close details, open evidence, set density); it never receives raw records, only host-built strings and ids. Evidence opening goes host-side: a review-view entry is passed to the review pane's new openArtifact entry point; an evidence-read entry is fetched through workflow.deliveryEvidence and shown in the board's details as preformatted text. The daemon is unchanged, and E1's sc7 types are consumed as published.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Delivery client",
+        "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c3"
+        ],
+        "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+      },
+      {
+        "id": "sc2",
+        "name": "Board state: load status and selection",
+        "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c10"
+        ],
+        "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+      },
+      {
+        "id": "sc3",
+        "name": "Board webview message protocol",
+        "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [],
+        "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;"
+      },
+      {
+        "id": "sc4",
+        "name": "Display labels",
+        "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c11"
+        ],
+        "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+      },
+      {
+        "id": "sc5",
+        "name": "Board view model",
+        "purpose": "What the board view shows for a snapshot and selection: six columns in the daemon's order, the cards in each with their badges, and counts over the whole selection.",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s5"
+        ],
+        "assumptions": [],
+        "interfaceSketch": "import type { DeliveryStage } from './delivery-contract.js';\n\ninterface BadgeView {\n  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';\n  /** Text from sc4; always present. */\n  readonly label: string;\n  readonly tone: 'neutral' | 'warning' | 'danger' | 'success';\n}\n\ninterface CardView {\n  readonly itemId: string;\n  readonly kind: 'story' | 'issue';\n  readonly title: string;\n  readonly standalone: boolean;\n  readonly epicTitle: string | null;\n  readonly badges: readonly BadgeView[];\n  readonly needsAttention: boolean;\n  /** One line naming every badge, for screen readers. */\n  readonly accessibleLabel: string;\n}\n\ninterface ColumnView {\n  readonly stage: DeliveryStage;\n  readonly label: string;\n  /** Matches in the selection, including cards behind show-more. */\n  readonly total: number;\n  readonly cards: readonly CardView[];\n  readonly hiddenCount: number;\n}\n\ninterface BoardViewModel {\n  readonly columns: readonly ColumnView[];\n  readonly totals: { readonly items: number; readonly needsAttention: number };\n  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];\n  readonly emptySelection: boolean;\n}"
+      },
+      {
+        "id": "sc6",
+        "name": "Item details view model and evidence opening",
+        "purpose": "What a selected item's details show, including tasks with dependencies, checks and results, the stage reason and its cited records, and how each evidence entry opens.",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5"
+        ],
+        "assumptions": [
+          "c4",
+          "c17"
+        ],
+        "interfaceSketch": "/**\n * Join rule: a PLAN task (PlanTask.id, e.g. 't1') belongs to the snapshot task item whose sourceIds contain that id;\n * a PLAN task with no such item is not shown as a task row. dependsOn ids are shown by the matched item's title,\n * or as the raw plan id when no item matches.\n * Opened-record text: renderedMarkdown when present, otherwise meta and body pretty-printed as JSON (two-space indent);\n * always inserted as textContent.\n */\ninterface TaskRowView {\n  readonly taskItemId: string;\n  readonly title: string | null;\n  /** Result label from sc4, or the unplanned label. */\n  readonly resultLabel: string;\n  readonly planned: boolean;\n  /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */\n  readonly dependsOn: readonly string[] | null;\n  readonly acceptanceChecks: readonly string[] | null;\n}\n\ninterface EvidenceRowView {\n  readonly artifactId: string;\n  readonly kindLabel: string;\n  readonly approvalLabel: string;\n  readonly reviewLabel: string | null;\n  readonly overrideLabel: string | null;\n  readonly opensIn: 'review-pane' | 'read-only';\n}\n\ninterface ItemDetailsViewModel {\n  readonly itemId: string;\n  readonly title: string;\n  readonly stageLabel: string | null;\n  readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;\n  readonly tasks: readonly TaskRowView[];\n  readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;\n  readonly conflict: string | null;\n  readonly evidence: readonly EvidenceRowView[];\n  readonly notices: readonly string[];\n  readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];\n  readonly sourceIds: readonly string[];\n  /** Set when the PLAN read failed; the rest of the details still render. */\n  readonly planNotice: string | null;\n  /** The read-only text of an evidence-read record the reader opened, rendered as preformatted text. */\n  readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;\n}"
+      },
+      {
+        "id": "sc7",
+        "name": "Review pane open-by-artifact entry point",
+        "purpose": "The one additive entry point on the existing review pane (amended k10): open the pane on a given artifact, read-only when it is not pending.",
+        "ownedByStory": "s4",
+        "consumedByStories": [],
+        "assumptions": [
+          "c24"
+        ],
+        "interfaceSketch": "/** Added to the existing DocsReviewHost (vscode-plugin/src/chat/docs-review-panel.ts); open() and dispose() are unchanged. */\ninterface DocsReviewHostOpenArtifact {\n  /**\n   * Open the pane on one artifact by id and its docs/ markdown path. When the artifact is not\n   * in the pane's pending list, it is shown without approve or request-changes actions.\n   */\n  openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void;\n}"
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc6",
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+      "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+      "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+      "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — board shell and shared contracts",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns sc1-sc4 (client, board state, message protocol, display labels) that every later story consumes, and gives a usable board with refresh and recovery states.",
+          "backwardCompat": "No existing command, panel or setting changes; the board adds one new command and one new webview view type.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — board columns, and item details with evidence",
+          "includesStories": [
+            "s2",
+            "s4"
+          ],
+          "rationale": "s2 and s4 each depend only on s1 and can be built in parallel; s2 owns the board view model (sc5) that s3 and s5 need, and s4 owns the details model (sc6) and the review pane entry point (sc7).",
+          "backwardCompat": "The review pane's open() command, pending list, rendering and approve or request-changes flow must behave exactly as before; openArtifact is additive and its tests must include the pane's existing ones unchanged.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — epic rollup and issue view",
+          "includesStories": [
+            "s3"
+          ],
+          "rationale": "s3 depends on s1 and s2 and builds its views from the same selection as sc5.",
+          "backwardCompat": "",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase D — narrow pane, accessibility, density and performance",
+          "includesStories": [
+            "s5"
+          ],
+          "rationale": "s5 depends on s2, s3 and s4 and applies across all three views, including the measured 500-item timings.",
+          "backwardCompat": "",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Owners land before consumers: s1 (sc1-sc4) first; s2 (sc5) and s4 (sc6, sc7) next because each needs only s1; s3 after s2 because it reuses sc5's selection; s5 last because it depends on s2, s3 and s4. This is exactly the Epic's dependsOn graph.",
+      "riskyBits": [
+        {
+          "area": "Filter latency (k7)",
+          "why": "Every filter or search change rebuilds the view model on the host and posts it to the webview; for 500 items this may exceed 150 ms if cards are rebuilt from scratch or the posted model is large.",
+          "mitigation": "s2 keeps column paging so only visible cards are serialized, and s5 measures best-of-three on the 500-item fixture; if the budget is missed, rebuild only changed columns before considering a webview-side model."
+        },
+        {
+          "area": "Review pane entry point (k10)",
+          "why": "openArtifact lives inside a 109 KB panel owned by another epic, and the pane is only created when the chat feature is enabled, so the board may have no pane to open.",
+          "mitigation": "s4 adds openArtifact with the pane's existing tests kept unchanged and new tests for the read-only state; when the pane is unavailable the board shows the record read-only through workflow.deliveryEvidence instead."
+        },
+        {
+          "area": "PLAN shape coupling",
+          "why": "Task dependencies and checks are read from the PLAN body, a shape outside the published delivery view, so a PLAN format change could silently drop them.",
+          "mitigation": "s4 reads only tasks[].id, dependsOn and acceptanceChecks defensively, shows a plan notice instead of failing when they are missing, and the HLD records the additive sc7 field (alternative a3) as the follow-up if the shape becomes unstable."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-side board model with a thin webview renderer",
+        "oneLineSummary": "The extension host owns the snapshot, refresh sequencing, filters, selection and counts as pure vscode-free functions; the webview only renders view models it is sent and posts user intents back.",
+        "approach": "A delivery client in the plugin wraps workflow.delivery and workflow.deliveryEvidence over the shared IPC client, the way docs-review-client.ts wraps the review methods. A board host, built like the existing deps-injected panel hosts, keeps the last good snapshot, sequences refreshes so a superseded response is dropped, and holds the reader's selection (view, epic or standalone scope, search, attention filter, selected item, density). A pure board model turns snapshot plus selection into a view model: visible cards per stage column in the daemon's order, counts over the whole selection, the epic rollup and the issue view, and the stage-id to label map. The host posts that view model to the webview in a versioned envelope, as the chat and review panels do.\n\nThe webview is one CSP-locked inline script that renders the view model as text-only DOM and posts intents (set filter, select item, open evidence, refresh, toggle density) back to the host. Item details are a second view model the host builds when an item is selected; for a story with a plan, the host reads the PLAN through workflow.deliveryEvidence once per selection to show task dependencies and acceptance checks next to the daemon's task results. Evidence opens through the review pane's new open-by-artifact entry point when the daemon marks it review-view, and otherwise as a read-only record the host fetches through workflow.deliveryEvidence.",
+        "pros": [
+          "All filtering, counting and selection logic is plain TypeScript tested with fakes under the plugin's existing tsx --test suite, the same way webview-host and docs-review-client are tested.",
+          "The webview never sees raw artifact bodies it would have to interpret; it renders strings the host has already chosen, which keeps k2 and k4 easy to check.",
+          "Snapshot sequencing lives in one place (the host), so k5's drop-the-superseded-response rule is a single testable function.",
+          "No change to E1's published contract: the PLAN is read through the existing workflow.deliveryEvidence method."
+        ],
+        "cons": [
+          "Every filter change is a host-to-webview round trip; for 500 items the view model must be built and posted within the 150 ms budget of k7, which needs a measured fixture.",
+          "Opening a story's details costs one extra IPC call to read its PLAN.",
+          "The client reads one field of the PLAN body (tasks with dependsOn and acceptanceChecks), which couples the board to the PLAN record's shape outside the delivery view."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c3",
+          "c4",
+          "c9",
+          "c10"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Webview-side board model",
+        "oneLineSummary": "The host fetches the snapshot and posts it to the webview once; filtering, counting, selection and rendering all run inside the webview script.",
+        "approach": "The host keeps only the delivery client, refresh sequencing and the command that opens the board. After a successful refresh it posts the whole snapshot to the webview, which holds it in memory and computes columns, counts, the rollup, the issue view and item details locally as the reader filters and selects. Evidence requests and PLAN reads are posted back to the host, which calls the daemon and returns the result.\n\nBecause the plugin's webviews run one inline nonce'd script built from strings, the board's model and renderer would live in that script, or in a generated string module like the embedded marked library, and would be exercised mainly through webview-level tests.",
+        "pros": [
+          "A filter change never leaves the webview, so it avoids a host round trip per keystroke.",
+          "The host stays very small."
+        ],
+        "cons": [
+          "The filtering and counting rules that must agree across views (k9) would live in string-built browser script, which the plugin today tests only through source-text assertions, so they would be far harder to test than host-side TypeScript.",
+          "The whole snapshot, including record titles and notice text from artifacts, is handed to the webview, widening what the webview must render safely under k4.",
+          "Selection and filters are lost whenever VS Code disposes and rebuilds the webview unless separately persisted, which works against keeping the selection across refreshes (s1 ac5)."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c3",
+          "c4",
+          "c9",
+          "c10"
+        ],
+        "reasonRejected": "Strongest on k7, but k4, k5 and k9 are only partial because the rules that must agree and the snapshot handling move into string-built browser script the plugin can barely test, and the full snapshot is handed to the webview."
+      },
+      {
+        "id": "a3",
+        "name": "Host-side board model plus additive task detail in the delivery view",
+        "oneLineSummary": "As a1, but E1's delivery view gains optional per-task dependsOn and acceptanceChecks so the board never reads a PLAN body.",
+        "approach": "The board is built exactly as in a1: a delivery client, a board host with snapshot sequencing and selection, a pure board model and a thin renderer, with evidence opened through the review pane's new entry point. The difference is where task detail comes from. E1's sc7 gains optional fields on each task entry, its dependencies and acceptance checks, filled by the daemon's gate pass from the story's PLAN, allowed by E1's rule that only additive optional fields may change after approval.\n\nItem details then come entirely from the snapshot already on the host, with no per-selection IPC call, and the board keeps a single data source. The cost moves to the daemon: E1's types, gate pass, contract mirrors and the JetBrains sample snapshot all change, which is an amendment to E1's approved HLD.",
+        "pros": [
+          "Details need no extra IPC call, so opening a story is bounded only by rendering.",
+          "The board interprets no record body at all; every fact it shows comes from the delivery view, the strictest reading of k1 and k2.",
+          "The JetBrains board (E3) gets task detail for free from the same snapshot."
+        ],
+        "cons": [
+          "Requires an amendment to E1's approved HLD and changes to daemon code, its contract test, the VS Code type mirror and the JetBrains sample, widening this Epic beyond the plugin.",
+          "Every snapshot carries task detail for every story, growing the payload for a 500-item store even when no details are opened."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c3",
+          "c4",
+          "c9",
+          "c10"
+        ],
+        "reasonRejected": "Scores as well as a1 on every constraint and better on k7 for details, but it requires amending E1's approved HLD and changing daemon code, its contract test and both client mirrors, which this Epic's scope and E1's additive-change rule make a separate decision rather than a default."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "board-refresh-and-evidence",
+      "participants": [
+        {
+          "id": "reader",
+          "label": "Reader"
+        },
+        {
+          "id": "webview",
+          "label": "Board webview"
+        },
+        {
+          "id": "host",
+          "label": "Board host"
+        },
+        {
+          "id": "client",
+          "label": "Delivery client"
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon"
+        },
+        {
+          "id": "pane",
+          "label": "Review pane"
+        }
+      ],
+      "messages": [
+        {
+          "from": "reader",
+          "to": "webview",
+          "label": "Refresh",
+          "kind": "call"
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "refresh intent",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "client",
+          "label": "snapshot() with request n",
+          "kind": "call"
+        },
+        {
+          "from": "client",
+          "to": "daemon",
+          "label": "workflow.delivery",
+          "kind": "call"
+        },
+        {
+          "from": "daemon",
+          "to": "client",
+          "label": "DeliverySnapshot or { error }",
+          "kind": "return"
+        },
+        {
+          "from": "client",
+          "to": "host",
+          "label": "result",
+          "kind": "return",
+          "note": "dropped if a newer request was sent"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "status + board view model",
+          "kind": "call"
+        },
+        {
+          "from": "reader",
+          "to": "webview",
+          "label": "Select a story",
+          "kind": "call"
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "select-item",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "daemon",
+          "label": "workflow.deliveryEvidence (PLAN)",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "webview",
+          "label": "details view model",
+          "kind": "call"
+        },
+        {
+          "from": "reader",
+          "to": "webview",
+          "label": "Open an evidence record",
+          "kind": "call"
+        },
+        {
+          "from": "webview",
+          "to": "host",
+          "label": "open-evidence",
+          "kind": "call"
+        },
+        {
+          "from": "host",
+          "to": "pane",
+          "label": "openArtifact (review-view)",
+          "kind": "call",
+          "note": "evidence-read records are fetched through workflow.deliveryEvidence and shown read-only instead"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly tasks:            readonly TaskValidation[];"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Placement: a dedicated editor tab is the leading candidate for a wide board; validate against a tool-window entry point."
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly openWith:       'review-view' | 'evidence-read';"
+    },
+    {
+      "id": "c24",
+      "kind": "stakeholder",
+      "ref": "Stakeholder decision in chat, 2026-10-09: option A, add an open-this-artifact entry to the review pane",
+      "quotedText": "go with A"
+    },
+    {
+      "id": "c25",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: vscode-plugin/src daemon IPC client, webview panel host and command registry",
+      "quotedText": "delivery/delivery-contract.ts types the two delivery methods (:40-41) but nothing calls them; a board adds a delivery client, a board panel and renderer, and an entry command."
+    },
+    {
+      "id": "c26",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: how the docs review panel is opened and how the plugin sends IPC and webview messages",
+      "quotedText": "no exported function or command opens it on a given artifact"
+    },
+    {
+      "id": "c27",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts",
+      "quotedText": "export interface DocsReviewHost {\n  open(): void;\n  dispose(): void;\n}"
+    },
+    {
+      "id": "c28",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-client.ts",
+      "quotedText": "export function createDocsReviewClient(client: IpcClient): DocsReviewClient {"
+    },
+    {
+      "id": "c29",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "export function createIpcClient(connect?: () => Socket): IpcClient {"
+    },
+    {
+      "id": "c30",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/delivery-contract.ts",
+      "quotedText": "readonly 'workflow.delivery':         { readonly request: DeliverySnapshotRequest; readonly response: DeliverySnapshotResponse };"
+    },
+    {
+      "id": "c31",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/webview-host.ts",
+      "quotedText": "export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost {"
+    },
+    {
+      "id": "c32",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts",
+      "quotedText": "export interface Envelope<T> {"
+    },
+    {
+      "id": "c33",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/plan.ts",
+      "quotedText": "readonly dependsOn:        readonly string[];    // other PlanTask ids in this Story"
+    },
+    {
+      "id": "c34",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "export interface TaskValidation {"
+    },
+    {
+      "id": "c38",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts",
+      "quotedText": "commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {"
+    }
+  ]
+}

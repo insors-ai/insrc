@@ -21,7 +21,12 @@
     "epicSlug": "bug-plan-tree-analysis-cannot-plan",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T11:27:27.401Z",
+    "parentRef": {
+      "slug": "make-insrc-analysis-complete-used-right",
+      "storyId": "s6"
+    }
   },
   "body": {
     "title": "The plan tree cannot plan through the claude CLI, and a failed model call does not say why",

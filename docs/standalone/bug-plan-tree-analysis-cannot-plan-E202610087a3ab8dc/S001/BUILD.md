@@ -1,0 +1,27 @@
+<!-- insrc:artifact BUILD-7a3ab8dc4b9d39ea-S001 -->
+
+# Build (standalone trivial) — Story S001
+
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-08T11:27:46.514Z  ·  **Updated:** 2026-10-08T11:34:17.052Z
+
+**Commit:** b7584edd
+
+## Scope
+
+Fix ISSUE-7a3ab8dc4b9d39ea: (1) give the planner's, the classifier's and the bundle's schema an identifier that is valid in JSON Schema draft 2020-12 and still carries the schema's version; (2) make the planner's, the classifier's and the scope picker's failed-model-call messages name the call that failed and no provider; (3) make a failed claude CLI call report the CLI's own error text in full, read from the CLI's envelope when its output is one, never cut; an output too long for a message is written whole to a temporary file whose path the message names.
+
+## Triage rationale
+
+Bugfix, small: three local corrections with one obvious approach each, about seven files in two areas.
+
+## Summary
+
+Fixed in commit b7584edd. (1) The planner's, the classifier's and the bundle's schema carry their version as a path segment of the identifier ('…/plan-task/v1'); an identifier with a fragment is not valid JSON Schema draft 2020-12 and the API rejected every planning call made through the claude CLI. A new test checks eleven schemas handed to a model against the 2020-12 meta-schema. (2) The planner's, the classifier's and the scope picker's failed-call messages name the call and no provider. (3) A CLI that exits non-zero reports its own error text first and in full, read from the claude CLI's envelope; its output is never cut, and an output over 2,000 characters is written whole to a temporary file the message names (the same for codex). Also: the API's refusal of a request (a 4xx other than 408 and 429) is no longer retried as transient. Nine tests in two new files and one updated; ten mutations each make a test fail. Suites on 2026-10-08: analyze 950 pass / 0 fail, agent 84 pass, mcp 390 pass, workflow 1,560 pass, daemon 755 pass with the one SqliteDriver failure that predates this work. LIVE, 2026-10-08 11:31 UTC, in a separate process with the committed schemas and the claude CLI as provider: the request 'Give me an overview of this codebase.' on this repository built its run context in 63 s and had a plan of 13 tasks accepted 24 s later, where before the fix it stopped at planning with the API's 400. The run then stopped at stage 'execute' with 'executor-aggregator-failed', the next known defect, which belongs to Story s7 and the Story on what the code tasks treat as a module. NOT yet done: the same run through the installed daemon, which needs this commit pushed and the daemon updated.
+
+## Tasks validated
+
+- ✓ `S001`
+
+## Changes
+
+- `.insrc/artifacts/ISSUE-7a3ab8dc4b9d39ea.json` — **insrc-build** (2026-10-08T11:34:17.052Z)

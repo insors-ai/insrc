@@ -55,12 +55,12 @@ function resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | '
 - `templateLabel: string` — The template's id, for the message of a refusal.
 - `deps: ScopeDeps` _(optional)_ — The readers resolveScope needs; a test supplies stand-ins.
 
-**Returns:** `Promise<ResolvedScope>` — Story s6's resolved scope, unchanged in shape: the registered repo that contains the scope (or a connection's repo), the directory lookups run in, and for a file or a symbol the file path and entity id, for a connection its id. A task reads the repo from `repoPath` and the area it must keep to from `lookupPath`, `filePath`, `entityId` or `connectionId`.
+**Returns:** `Promise<ResolvedScope>` — Story s6's resolved scope, unchanged in shape: the registered repo that contains the scope (or a connection's repo), the directory lookups run in, and for a file or a symbol the file path and entity id, for a connection its id. A code or docs task reads the stored graph for `repoPath`; where that is null because the registry could not be read or holds no repo, it uses the scope's own path, as today. It keeps to the area named by `lookupPath`, `filePath` or `entityId`. An infra task walks `lookupPath`. A data task opens its connection pool at the scope's own path for a repo, a manifest directory and a workspace scope, exactly as today, and at the connection's repo for a connection scope.
 
 **Errors:**
 - `ScopeKindTargetMismatchError` when the scope's kind is not in the family's row of TARGET_TO_KINDS; its message names the kinds allowed, and it maps to the existing code 'scope-ref-kind-target-mismatch'
 - `ScopeRefUnresolvedError` when resolveScope cannot resolve the value (a symbol that matches no stored entity, a connection registered in no repo); maps to the existing code 'scope-ref-unresolved'
-- `ScopeNotIndexedError` when a task that reads the stored graph or the document index is given a scope with no registered repo (`repoPath` is null); maps to the existing code 'scope-not-indexed'. The infra tasks read the file system and do not raise it
+- `ScopeNotIndexedError` when a code or docs task whose scope fails the existing indexed check, ensureNonEmptyClosure in src/analyze/context/invariants.ts: the registry was read, it holds repos, and none contains the scope, or the one that does has no stored entities. Maps to the existing code 'scope-not-indexed'. The check keeps its leniency: when the registry cannot be read, or holds no repo at all, it does not throw and the task goes on with the scope's own path. Infra tasks read the file system and data tasks open a connection pool at a path; neither reads the graph and neither raises this error
 
 **Preconditions:**
 - TARGET_TO_KINDS is the one table of kinds per family (src/analyze/classifier/validate.ts); this function reads it and holds no list of its own
@@ -69,7 +69,9 @@ function resolveTaskScope(scopeRef: AnalyzeScopeRef, family: 'code' | 'docs' | '
 - Lives in one new file under src/analyze/runtimes/shared/ and is the only place a plan task turns a scope into a repo, a path, an entity or a connection
 - The three per-family functions are removed: resolveRepoPath in runtimes/code/_shared.ts (also imported by the docs inventory task), its copy in runtimes/infra/_shared.ts, and resolveRepoPathFromIntent in runtimes/data/_shared.ts. readScopeRef, which only reads the task's parameter, stays
 - The five direct readers of the scope's value call it: docs/family-summarise.ts, docs/constraint-enumerate.ts, docs/decision-trace.ts, shared/adherence.ts (two places) and data/discovery-connections.ts, whose optional scopeRefValue parameter still takes precedence as a repo path
-- A task keeps to the area the scope names. For a module scope a code or docs task uses only the entities or documents whose file lies under the scope's directory; for a file scope, only that file's; for a symbol scope, the one entity. For a connection scope a data task uses the connection's repo and only that connection. For a repo, a manifest directory and a workspace the area is the directory, as today
+- A code or docs task keeps to the area the scope names: for a module scope only the entities or documents whose file lies under the scope's directory; for a file scope, only that file's; for a symbol scope, the one entity. For a repo, a manifest directory and a workspace the area is the directory, as today
+- A data task passes the connection pool the same path as today for a repo, a manifest directory and a workspace scope: the scope's value, whether or not that directory is a registered repo, and not the repo that contains it (a manifest directory inside a registered repo keeps its own connections file). Only a connection scope, which is new for the data tasks, uses the resolved connection's repo, and the task then works on that connection alone
+- The mapping from the three scope error classes to their codes becomes one exported function beside the classes in src/analyze/context/invariants.ts. The plan walk and both existing mapping functions (the plan tree's in orchestrator/driver.ts and the daemon's in daemon/analyze-rpc.ts) call it, so the walk imports nothing from the run driver, which itself imports the walk
 - Kinds accepted per family after the change are exactly the table's rows: code: repo, module, file, symbol, manifest-dir, workspace; docs: repo, module, file, workspace; infra: repo, manifest-dir, workspace; data: connection, repo, manifest-dir, workspace. Today code and docs accept repo and manifest-dir only, and data accepts no connection
 - What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story
 
@@ -166,7 +168,7 @@ function purgeRun(runId: string, opts?: { readonly force?: boolean; readonly isL
 
 ### 3.1 `TaskExecutionRecord` — field-add
 
-Gains an optional `code`: the error code of a failure the walk can name. The walk sets it when a runtime throws one of the three typed scope errors (ScopeKindTargetMismatchError, ScopeRefUnresolvedError, ScopeNotIndexedError), from the same mapping the run uses for those classes; `error` keeps the message, without the 'runtime-threw:' prefix for these. The entries of the plan's and the run's `tasksFailed` gain the same optional `code`. A record written before the change has none, and nothing requires one.
+Gains an optional `code`: the error code of a failure the walk can name. The walk sets it when a runtime throws one of the three typed scope errors (ScopeKindTargetMismatchError, ScopeRefUnresolvedError, ScopeNotIndexedError), from the one function in src/analyze/context/invariants.ts that maps those classes to their codes, which the run's two mapping functions also call; `error` keeps the message, without the 'runtime-threw:' prefix for these. The entries of the plan's and the run's `tasksFailed` gain the same optional `code`. A record written before the change has none, and nothing requires one.
 
 ```
 interface TaskExecutionRecord { /* as today */ readonly code?: string | undefined }
@@ -179,6 +181,7 @@ interface TaskExecutionRecord { /* as today */ readonly code?: string | undefine
 - `src/analyze/orchestrator/types.ts`
 - `src/analyze/orchestrator/driver.ts`
 - `src/daemon/analyze-rpc.ts`
+- `src/analyze/context/invariants.ts`
 
 ### 3.2 `TemplateExecuteArgs` — field-add
 
@@ -217,9 +220,9 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
   - Detection: resolveScope (Story s6) throws ScopeRefUnresolvedError; resolveTaskScope lets it pass; the walk checks the class.
   - Response: The task fails with code 'scope-ref-unresolved'. Normally the run does not get this far: classification's validator and the run context's build apply the same resolution before planning and stop the run there. It can still happen for a task whose own parameters carry a scope the planner wrote.
   - User impact: The task is named as failed with the reason in the report.
-- **A task that reads the stored graph or the document index is given a scope that lies in no registered repo.** (recoverable)
-  - Detection: resolveTaskScope finds `repoPath` null in the resolved scope and throws ScopeNotIndexedError for a family that needs the index (code, docs, data).
-  - Response: The task fails with code 'scope-not-indexed'. Today such a task uses the scope's value as if it were a repo path, finds no entities and returns an empty result that reads as complete.
+- **A code or docs task is given a scope that lies in no registered repo, or in one with no stored entities, while the registry is readable and holds repos.** (recoverable)
+  - Detection: resolveTaskScope runs the existing indexed check (ensureNonEmptyClosure) on the resolved scope for the code and docs families; the check throws ScopeNotIndexedError.
+  - Response: The task fails with code 'scope-not-indexed'. Today such a task uses the scope's value as if it were a repo path, finds no entities and returns an empty result that reads as complete. The run context's build applies the same check before planning, so this is reached only by a task whose own parameters carry a different scope.
   - User impact: An empty result that was silently wrong becomes a failed task with a reason.
 - **A task before the aggregate-report task failed or was skipped, so one of the names the aggregate task consumes was never produced.** (recoverable)
   - Detection: The walk compares the aggregate task's `consumes` list with the outputs produced; for each missing name it finds the task whose `produces` holds it and reads that task's recorded status and reason.
@@ -267,6 +270,9 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 | purgeRun called with no `isLive` on an 'in-progress' record | Refused with 'run-in-progress', exactly as today. |
 | A run record with status 'ok' or 'failed' | No reader changes it; a completed run resumes from it as today, with its report. |
 | A task record written before the change | It has no `code`; nothing reads one as required. |
+| A code or docs task when the registry cannot be read, or holds no repo at all | Not refused: the indexed check does not evaluate in that state, as it does not for the run context today. The task uses the scope's own path as the repo path and reports what the graph holds for it. |
+| A data task with a repo or workspace scope whose directory is not a registered repo | Works as today: the connection pool is opened at that directory. No indexed check applies to a data task. |
+| A data task with a manifest-directory scope inside a registered repo | The pool is opened at the manifest directory, as today, not at the repo that contains it. |
 
 **Invariants to preserve**
 
@@ -284,10 +290,10 @@ A record with status 'in-progress' means a run is live. Three readers apply the 
 **Test levels**
 
 - **unit** — The one scope function: each family accepts exactly its row and refuses the rest with the typed error.
-  - Subjects: `a table test over the four families and the seven kinds of scope: each pairing in TARGET_TO_KINDS resolves, each pairing outside it throws ScopeKindTargetMismatchError naming the kinds allowed (mutation: give a family a kind outside its row)`, `the function reads TARGET_TO_KINDS and holds no list of its own: a kind added to a row in a stand-in table is accepted`, `a module, a file, a symbol and a connection scope resolve to the registered repo and the area (directory, file, entity id, connection id)`, `a scope in no registered repo throws ScopeNotIndexedError for code, docs and data and resolves for infra`, `the three per-family functions are gone and no runtime file reads `scopeRef.value` to use as a repo path (a check over the runtime sources)`
+  - Subjects: `a table test over the four families and the seven kinds of scope: each pairing in TARGET_TO_KINDS resolves, each pairing outside it throws ScopeKindTargetMismatchError naming the kinds allowed (mutation: give a family a kind outside its row)`, `the function reads TARGET_TO_KINDS and holds no list of its own: a kind added to a row in a stand-in table is accepted`, `a module, a file, a symbol and a connection scope resolve to the registered repo and the area (directory, file, entity id, connection id)`, `a scope in no registered repo throws ScopeNotIndexedError for code and docs when the registry is readable and holds repos, and resolves for infra and data`, `the three per-family functions are gone and no runtime file reads `scopeRef.value` to use as a repo path (a check over the runtime sources)`, `with a registry that cannot be read, and with one that holds no repo, a code and a docs scope are not refused and the task's repo path is the scope's own path (mutation: treat a null repo as not indexed)`, `one function maps the three scope error classes to their codes, and the plan tree's and the daemon's mapping functions return the same codes through it`
   - Fixtures: `stand-ins for resolveScope's readers (ScopeDeps)`
 - **integration** — Plan tasks keep to the area their scope names, through their real runtimes against a temporary graph.
-  - Subjects: `a code task and a docs task with a module scope use only the entities and documents under that directory, and with a file scope only that file's`, `a data task with a connection scope works on that connection only`, `the three docs tasks, the adherence check and the connection-listing task give the same result for a repo scope as before the change`
+  - Subjects: `a code task and a docs task with a module scope use only the entities and documents under that directory, and with a file scope only that file's`, `a data task with a connection scope works on that connection only`, `the three docs tasks, the adherence check and the connection-listing task give the same result for a repo scope as before the change`, `a data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change (mutation: open it at the containing repo)`
   - Fixtures: `a temporary graph store with a registered repo holding two directories of entities and documents`, `a stand-in data pool with two connections`
 - **integration** — The plan walk: a refused scope is a coded failure, and the aggregate task runs on what exists.
   - Subjects: `a runtime that throws each of the three typed scope errors is recorded as failed with that error's code and a message without the 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)`, `the plan's and the run's tasksFailed carry the code`, `a plan in which one of three producers failed: the aggregate task runs, receives the two outputs that exist and `absentInputs` naming the third with its producer and reason, and the plan has a final report (mutation: skip the aggregate task as before)`, `a plan in which every producer failed: the aggregate task is skipped and the plan has no final report`, `a task other than the aggregate task with a missing input is still skipped`, `a nested plan in which one child task failed: the child's aggregate task runs, the planner-kind task is 'ok', the root has a final report, and the run's answer report names the child's failed task by its path`, `the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent`

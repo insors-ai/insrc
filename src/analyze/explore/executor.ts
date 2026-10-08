@@ -31,6 +31,7 @@ import type { StructuredSchema } from '../../shared/types.js';
 import { createRepoIgnoreFilter } from '../context/repo-ignore-filter.js';
 
 import {
+	CAPABILITY_VERDICTS_SCHEMA,
 	prepareCapabilityReuseCheck,
 	finalizeCapabilityReuseCheck,
 	runCapabilityReuseCheck,
@@ -44,11 +45,13 @@ import { runDbConnectionsList } from './db-connections-list.js';
 import { runDbTableDescribe } from './db-table-describe.js';
 import { runDbTablesList } from './db-tables-list.js';
 import {
+	DOC_CONSTRAINTS_SCHEMA,
 	prepareDocConstraintEnumerate,
 	finalizeDocConstraintEnumerate,
 	runDocConstraintEnumerate,
 } from './doc-constraint-enumerate.js';
 import {
+	DOC_DECISIONS_SCHEMA,
 	prepareDocDecisionTrace,
 	finalizeDocDecisionTrace,
 	runDocDecisionTrace,
@@ -299,12 +302,26 @@ export type NarrowPrepareResult =
 interface NarrowRunnerEntry {
 	readonly prepare:  (exp: Exploration, ctx: ExplorationRunnerContext) => Promise<NarrowPrepareResult>;
 	readonly finalize: (prepared: unknown, raw: unknown, runId?: string) => ExplorationOutput;
+	/**
+	 * The schema of the answer `finalize` takes. On the step tool's path the
+	 * answer comes from an agent, and the narrow phase checks it against this
+	 * BEFORE calling finalize: an answer that does not fit is the agent's to
+	 * correct, and is not a failure of the lookup. It lives on the entry and
+	 * not in the step state, so a state minted before it existed still works.
+	 */
+	readonly schema:   StructuredSchema;
+	/**
+	 * True when no answer at all (null or absent) is one finalize accepts on
+	 * purpose. Such an answer is passed through unchecked.
+	 */
+	readonly acceptsNoAnswer?: boolean | undefined;
 }
 
 /** Registry of the three narrow-LLM runners' prepare/finalize splits.
  *  Order-agnostic: keyed by exploration type. */
 const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 	'doc.decision.trace': {
+		schema: DOC_DECISIONS_SCHEMA,
 		async prepare(exp, ctx) {
 			const params = exp.params as Record<string, unknown>;
 			const topic = typeof params['topic'] === 'string' ? params['topic'] : '';
@@ -327,6 +344,7 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 		},
 	},
 	'doc.constraint.enumerate': {
+		schema: DOC_CONSTRAINTS_SCHEMA,
 		async prepare(exp, ctx) {
 			const params = exp.params as Record<string, unknown>;
 			const subject = typeof params['subject'] === 'string' ? params['subject'] : '';
@@ -349,6 +367,10 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 		},
 	},
 	'capability.reuse-check': {
+		schema: CAPABILITY_VERDICTS_SCHEMA,
+		// No verdicts at all is accepted: finalize shows every candidate as
+		// 'unrelated' and its record says none was judged.
+		acceptsNoAnswer: true,
 		async prepare(exp, ctx) {
 			return prepareCapabilityReuseCheck(exp, ctx);
 		},
@@ -356,10 +378,12 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 			// Prepare uses no llmSkipReason because the outer LLM is the
 			// only source. If raw is absent, tag it as "outer LLM
 			// returned nothing" so the finalize can emit the placeholder.
-			const skip = raw === null || raw === undefined ? 'outer LLM returned no verdict payload' : undefined;
+			const noAnswer = raw === null || raw === undefined;
+			const skip = noAnswer ? 'outer LLM returned no verdict payload' : undefined;
 			return finalizeCapabilityReuseCheck(
 				prepared as Parameters<typeof finalizeCapabilityReuseCheck>[0],
-				raw as Parameters<typeof finalizeCapabilityReuseCheck>[1],
+				// finalize takes `undefined` for "no verdicts"; a null from the agent is the same thing.
+				(noAnswer ? undefined : raw) as Parameters<typeof finalizeCapabilityReuseCheck>[1],
 				skip,
 				runId,
 			);
@@ -495,8 +519,22 @@ export async function stepPlan(
 					ignoreFilter,
 					scope:        args.scope,
 				};
-				const prep = await narrow.prepare(exp, ctx);
-				if (prep.kind === 'short-circuit') {
+				// The same conversion as every other lookup: a prepare that throws is
+				// a lookup that could not run. It becomes the failed output for THIS
+				// lookup and the plan goes on; it does not abort the step call.
+				let prep: NarrowPrepareResult | undefined;
+				try {
+					prep = await narrow.prepare(exp, ctx);
+				} catch (err) {
+					log.warn(
+						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
+						'multi-turn exploration failed in prepare',
+					);
+					output = failedOutput(exp, err);   // never cached
+				}
+				if (prep === undefined) {
+					// failed above: fall through to record the output
+				} else if (prep.kind === 'short-circuit') {
 					output = prep.shortCircuit;
 					await putCachedExploration(
 						args.repoPath, args.repoLastIndexedAtMs, exp, output,

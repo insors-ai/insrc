@@ -17,7 +17,7 @@
  * hands them to executePlan; the synthesizer reads the results.
  */
 
-export { executePlan, stepPlan, getNarrowRunner, NARROW_LLM_TYPES } from './executor.js';
+export { executePlan, failedOutput, stepPlan, getNarrowRunner, NARROW_LLM_TYPES } from './executor.js';
 export type {
 	ExecutePlanArgs,
 	NarrowPrepareResult,

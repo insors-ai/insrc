@@ -68,7 +68,8 @@ const MAX_LIMIT     = 12;
 // Structured-output schema
 // ---------------------------------------------------------------------------
 
-const VERDICTS_SCHEMA: StructuredSchema = {
+/** The answer the model (or the agent, on the step tool's path) must give this lookup. */
+export const CAPABILITY_VERDICTS_SCHEMA: StructuredSchema = {
 	type:                 'object',
 	additionalProperties: false,
 	required:             ['capability', 'verdicts'],
@@ -139,7 +140,7 @@ export async function runCapabilityReuseCheck(
 				{ role: 'system', content: prepared.systemPrompt },
 				{ role: 'user',   content: prepared.userTurn     },
 			],
-			VERDICTS_SCHEMA,
+			CAPABILITY_VERDICTS_SCHEMA,
 			{
 				maxAttempts:     cfg.shaper.structuredOutputRetries,
 				disableThinking: true,
@@ -298,7 +299,7 @@ export async function prepareCapabilityReuseCheck(
 		kind:         'narrow-llm',
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
-		schema:       VERDICTS_SCHEMA,
+		schema:       CAPABILITY_VERDICTS_SCHEMA,
 		prepared: {
 			capability,
 			profiles,

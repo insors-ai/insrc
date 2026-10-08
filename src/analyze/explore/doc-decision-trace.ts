@@ -64,7 +64,8 @@ const PROMPT_REL = 'prompts/analyze/docs.decision-trace.system.md';
 // Structured-output schema (mirrors the template runtime's schema)
 // ---------------------------------------------------------------------------
 
-const DECISIONS_SCHEMA: StructuredSchema = {
+/** The answer the model (or the agent, on the step tool's path) must give this lookup. */
+export const DOC_DECISIONS_SCHEMA: StructuredSchema = {
 	type:                 'object',
 	additionalProperties: false,
 	required:             ['topic', 'decisions', 'notFoundNote'],
@@ -137,7 +138,7 @@ export async function runSharedDocDecisionTrace(
 				{ role: 'system', content: prepared.systemPrompt },
 				{ role: 'user',   content: prepared.userTurn     },
 			],
-			DECISIONS_SCHEMA,
+			DOC_DECISIONS_SCHEMA,
 			{
 				maxAttempts:     cfg.shaper.structuredOutputRetries,
 				disableThinking: true,
@@ -277,7 +278,7 @@ export async function prepareDocDecisionTrace(
 		kind:         'narrow-llm',
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
-		schema:       DECISIONS_SCHEMA,
+		schema:       DOC_DECISIONS_SCHEMA,
 		retrieved:    hydrated.map(h => ({ source: `${h.file} § ${h.heading}`, content: h.body })),
 		prepared: {
 			topic,
@@ -299,7 +300,7 @@ export async function prepareDocDecisionTrace(
 /**
  * Finalize the LLM output: apply the citation faithfulness filter
  * against the retrieved entity set. `raw` is the JSON the outer LLM
- * emitted against DECISIONS_SCHEMA.
+ * emitted against DOC_DECISIONS_SCHEMA.
  */
 export function finalizeDocDecisionTrace(
 	prepared:   DocDecisionTracePrepared,

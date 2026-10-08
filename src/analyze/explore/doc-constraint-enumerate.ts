@@ -62,7 +62,8 @@ const CONSTRAINT_KIND_ENUM = [
 // Structured-output schema
 // ---------------------------------------------------------------------------
 
-const CONSTRAINTS_SCHEMA: StructuredSchema = {
+/** The answer the model (or the agent, on the step tool's path) must give this lookup. */
+export const DOC_CONSTRAINTS_SCHEMA: StructuredSchema = {
 	type:                 'object',
 	additionalProperties: false,
 	required:             ['subject', 'constraints', 'notFoundNote'],
@@ -130,7 +131,7 @@ export async function runSharedDocConstraintEnumerate(
 				{ role: 'system', content: prepared.systemPrompt },
 				{ role: 'user',   content: prepared.userTurn     },
 			],
-			CONSTRAINTS_SCHEMA,
+			DOC_CONSTRAINTS_SCHEMA,
 			{
 				maxAttempts:     cfg.shaper.structuredOutputRetries,
 				disableThinking: true,
@@ -262,7 +263,7 @@ export async function prepareDocConstraintEnumerate(
 		kind:         'narrow-llm',
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
-		schema:       CONSTRAINTS_SCHEMA,
+		schema:       DOC_CONSTRAINTS_SCHEMA,
 		retrieved:    hydrated.map(h => ({ source: `${h.file} § ${h.heading}`, content: h.body })),
 		prepared: {
 			subject,

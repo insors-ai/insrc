@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { hldMdRel, lldMdRel, planMdRel } from '../../workflow/storage.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../workflow/artifacts/plan.js';
+import type { BuildStepError } from './types.js';
 
 const IMPLEMENT_TEMPLATE_REL = 'prompts/build/implement-task.md';
 const VALIDATE_TEMPLATE_REL  = 'prompts/build/validate-task.md';
@@ -116,12 +117,34 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 /** Render the implement-task prompt. `resolvedDecisions` fills the
  *  "## Resolved design decisions" section (empty until the open-question gate
  *  populates it in stage 3). */
+/** How upstream changes enter a Story during its build (ISSUE-f9ced66a). A
+ *  `--no-ff` merge committed on its own is the one form the Story's code review
+ *  can separate from the Story's own work; a fast-forward or a squash cannot be. */
+export const MERGE_RULE =
+	'If upstream changes must come in during this Story, merge them with `git merge --no-ff` ' +
+	'(or `git pull --no-rebase --no-ff`) and commit the merge on its own, before any further ' +
+	'Story change. Never squash-merge or fast-forward upstream into the Story. While a merge ' +
+	'is uncommitted the build refuses to run.';
+
+/** The refusal both build phases return while a merge is uncommitted. Retryable:
+ *  committing the merge on its own clears it. */
+export function mergeInProgressError(phase: 'implement' | 'validate'): BuildStepError {
+	return {
+		next: 'error',
+		error: {
+			code: 'merge-in-progress',
+			message: `insrc_build_step[${phase}]: a merge is in progress in this repository. Commit the merge on its own (nothing else in that commit), then retry. ${MERGE_RULE}`,
+			retryable: true,
+		},
+	};
+}
+
 export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resolvedDecisions: string): string {
 	const template = loadTemplate(IMPLEMENT_TEMPLATE_REL);
 	const decisions = resolvedDecisions.trim().length > 0
 		? resolvedDecisions
 		: '_No design decisions were resolved for this Task; use your judgment within the stated scope._';
-	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions });
+	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE });
 }
 
 /** Shown in a validate prompt's check-results section when no evidence was given. */
@@ -180,6 +203,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		`- \`${TYPECHECK_CMD}\` is clean.`,
 		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
 		'- The edit is minimal and matches the surrounding conventions.',
+		'', '## Merging upstream', '', MERGE_RULE,
 	);
 	return lines.join('\n');
 }

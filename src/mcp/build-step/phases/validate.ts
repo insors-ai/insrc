@@ -20,10 +20,11 @@ import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/c
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { StructuredSchema } from '../../../shared/types.js';
-import { renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
+import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
 import { buildStartRelPath, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
+import { mergeInProgress } from '../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
@@ -142,6 +143,9 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[validate]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}
+	// A merge must be committed on its own before the next round of Story work
+	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
+	if (mergeInProgress(repoPath)) return mergeInProgressError('validate');
 
 	// S002: standalone (no-plan) validate — a triage-routed Small story. Resolve the
 	// story identity from the standalone context (mirroring handleStandaloneImplement)

@@ -1468,3 +1468,51 @@ test('plan-driven and standalone validate each hand the check runner the plan fo
 		for (const r of [planDriven, small, trivial]) rmSync(r, { recursive: true, force: true });
 	}
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-f9ced66a (LLD-f9ced66a-s1, task t7): no build turn runs on top of an
+// uncommitted merge.
+// ---------------------------------------------------------------------------
+
+test('implement and validate return merge-in-progress while a merge is uncommitted', async () => {
+	const repo = mkRepo();
+	const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+	try {
+		git('init', '-q', '-b', 'main');
+		git('config', 'user.email', 'test@insrc.local');
+		git('config', 'user.name', 'insrc-test');
+		git('config', 'commit.gpgsign', 'false');
+		writeFileSync(join(repo, 'base.ts'), 'export const v = 0;\n');
+		git('add', 'base.ts'); git('commit', '-qm', 'base');
+		git('checkout', '-q', '-b', 'upstream');
+		writeFileSync(join(repo, 'upstream.ts'), 'export const u = 1;\n');
+		git('add', 'upstream.ts'); git('commit', '-qm', 'upstream work');
+		git('checkout', '-q', 'main');
+		seedDef(repo);
+		seedLld(repo);
+		seedPlan(repo, true);
+		git('merge', '-q', '--no-ff', '--no-commit', 'upstream');
+
+		const calls: ReadonlyArray<{ readonly phase: string; readonly [k: string]: unknown }> = [
+			{ phase: 'implement', target: 's1/t1', repo },
+			{ phase: 'validate',  target: 's1/t1', repo },
+			{ phase: 'implement', target: 'standalone', repo, standalone: { standalone: true, sizeClass: 'trivial', focus: 'x' } },
+			{ phase: 'validate',  target: 'standalone', repo, standalone: { standalone: true, sizeClass: 'trivial', focus: 'x' } },
+		];
+		for (const call of calls) {
+			const out = outputOf(await handleBuildStep(call));
+			assert.equal(out['next'], 'error', `${call.phase} refuses: ${JSON.stringify(out)}`);
+			const error = out['error'] as { code: string; retryable: boolean; message: string };
+			assert.equal(error.code, 'merge-in-progress');
+			assert.equal(error.retryable, true);
+			assert.match(error.message, /Commit the merge on its own/);
+		}
+		// Nothing was written while refusing: no build-start stamp, no BUILD record.
+		assert.equal(existsSync(join(repo, '.insrc', 'build-start')), false);
+		assert.equal(readdirSync(artifactsDir(repo)).some(f => f.startsWith('BUILD-')), false);
+
+		git('commit', '-qm', 'merge upstream');
+		const after = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', repo }));
+		assert.equal(after['next'], 'implement', 'once the merge is committed the turn runs');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

@@ -24,11 +24,12 @@ import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../work
 import { renderResolvedDecisions } from '../../../workflow/questions.js';
 import { admitBuild, admitStandaloneBuild } from '../../../workflow/runners/build/admission.js';
 import { stampBuildStart } from '../../../workflow/runners/build/range-base.js';
+import { mergeInProgress } from '../../../workflow/runners/build/story-commits.js';
 import {
 	persistStandaloneBuildRecord,
 	standaloneEpicHashFromFocus,
 } from '../../../workflow/runners/build/standalone-record.js';
-import { renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
+import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
 	BuildStandaloneContext,
 	BuildStepError,
@@ -46,6 +47,9 @@ export async function handleImplement(
 	if (repoPath === undefined) {
 		return err('no-repo', `insrc_build_step[implement]: no repo. Pass \`repo\` or set INSRC_REPO.`);
 	}
+	// A merge must be committed on its own before the next round of Story work
+	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
+	if (mergeInProgress(repoPath)) return mergeInProgressError('implement');
 
 	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
 	// (build only) feature. Bypasses task/tracker resolution; the spec is the

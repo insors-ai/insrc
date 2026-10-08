@@ -87,3 +87,18 @@ test('both validate prompts place the given evidence text in an evidence section
 		assert.match(prompt, /No check results were supplied/);
 	}
 });
+
+test('the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own', () => {
+	const prompts = [
+		renderImplementPrompt('/repo', TASK, ''),
+		renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' }),
+		renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
+	];
+	for (const prompt of prompts) {
+		assert.ok(prompt.includes('## Merging upstream'), 'has the merge section');
+		assert.match(prompt, /git merge --no-ff/);
+		assert.match(prompt, /commit the merge on its own, before any further\s+Story change/);
+		assert.match(prompt, /Never squash-merge or fast-forward upstream/);
+		assert.equal(prompt.includes('{{mergeRule}}'), false, 'the placeholder is filled');
+	}
+});

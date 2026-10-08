@@ -17,7 +17,7 @@ import { getEntity } from '../../db/entities.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { Entity } from '../../shared/types.js';
 import type { PartlyReadItem } from '../completeness.js';
-import { measureItem, partlyReadEntry } from '../item-length.js';
+import { INDEXER_CUT_MARKER, measureItem, partlyReadEntry } from '../item-length.js';
 import type { ItemMeasure, MeasuredEntity } from '../item-length.js';
 
 /** What is needed of an entity to measure it: its pointer, its stored body and its repo. */
@@ -36,6 +36,21 @@ export interface ItemMeasurer {
 	 * made only when one of the first two holds.
 	 */
 	partlyRead(what: string, entity: StoredItem, readChars: number): Promise<PartlyReadItem | undefined>;
+}
+
+/**
+ * The `partlyRead` entry for a document whose SUMMARY is being used. The
+ * summariser gives the model the first `summariserCut` characters of the
+ * stored body, so a longer document was summarised from that much of it.
+ * Undefined when the summary rests on the whole document.
+ */
+export function summarisedFrom(
+	measurer:      ItemMeasurer,
+	entity:        StoredItem,
+	summariserCut: number,
+): Promise<PartlyReadItem | undefined> {
+	const stored = entity.body.endsWith(INDEXER_CUT_MARKER) ? entity.body.length - INDEXER_CUT_MARKER.length : entity.body.length;
+	return measurer.partlyRead(entity.file, entity, Math.min(summariserCut, stored));
 }
 
 /** One measurer per lookup run. `entities`, when the lookup already holds the repo's entities, saves the graph reads. */

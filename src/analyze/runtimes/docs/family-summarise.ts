@@ -21,7 +21,7 @@
 import { getLogger } from '../../../shared/logger.js';
 import { getDb } from '../../../db/client.js';
 import { listDocSummariesForRepo, listDocSummaryEntityIdsForRepo } from '../../../db/doc-summaries.js';
-import { getEntity } from '../../../db/entities.js';
+import { getEntity, listEntitiesByKinds } from '../../../db/entities.js';
 import type { DocSummary, DocFamily } from '../../../shared/analyze-types.js';
 
 import type {
@@ -30,6 +30,11 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import { buildCompleteness } from '../../completeness.js';
+import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
+import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
+import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
+import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
+import { inferDocFamily } from '../../summariser/family.js';
 
 const TEMPLATE_ID = 'docs.family.summarise';
 const log = getLogger('analyze:runtimes:docs:family-summarise');
@@ -78,6 +83,30 @@ interface FamilySummaryOutput {
 	readonly placeholderCount:  number;
 }
 
+/** One `skipped` entry naming every file that shares a reason, or none when there are no files. */
+export function countedSkip(files: readonly string[], reason: string): SkippedItem[] {
+	if (files.length === 0) return [];
+	const sorted = [...files].sort();
+	return [{ what: `${sorted.length} document${sorted.length === 1 ? '' : 's'}: ${sorted.join(', ')}`, reason }];
+}
+
+/** The files of the family's documents and sections that have no summary row at all. */
+async function unsummarised(
+	db:         Awaited<ReturnType<typeof getDb>>,
+	repoPath:   string,
+	family:     DocFamily,
+	summarised: ReadonlySet<string>,
+): Promise<string[]> {
+	const docs = await listEntitiesByKinds(db, ['document', 'section'], { repo: repoPath });
+	const files = new Set<string>();
+	for (const e of docs) {
+		if (summarised.has(e.id)) continue;
+		if (inferDocFamily(e.file) !== family) continue;
+		files.add(e.kind === 'section' ? `${e.file} § ${e.name}` : e.file);
+	}
+	return [...files];
+}
+
 /** How many subjects the roll-up names. */
 const TOP_SUBJECTS = 20;
 
@@ -113,14 +142,22 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 		let draftCount       = 0;
 		let supersededCount  = 0;
 		let placeholderCount = 0;
+		// For the completeness record: summaries that rest on part of their
+		// document, and documents of the family that have no usable summary.
+		const measurer = createItemMeasurer(db);
+		const partlyRead: PartlyReadItem[] = [];
+		const failedSummaries: string[] = [];
+		const summarisedIds = new Set<string>();
 
 		for (let i = 0; i < zipLen; i++) {
 			const s: DocSummary = summaries[i]!;
 			const entityId = summaryEntityIds[i]!;
 			if (s.family !== familyKey) continue;
 
+			summarisedIds.add(entityId);
 			if (s.errorCode !== undefined) {
 				placeholderCount += 1;
+				failedSummaries.push((await getEntity(db, entityId))?.file ?? s.title);
 				continue;
 			}
 
@@ -128,6 +165,11 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			// file on the summary row itself. Cheap point lookup.
 			const entity = await getEntity(db, entityId);
 			const file = entity?.file ?? '';
+			// The summariser reads the first part of a long document.
+			if (entity !== null) {
+				const cut = await summarisedFrom(measurer, entity, SUMMARISER_BODY_CHARS);
+				if (cut !== undefined) partlyRead.push(cut);
+			}
 
 			documents.push({
 				entityId,
@@ -194,6 +236,12 @@ export const docsFamilySummariseRuntime: TemplateRuntime = {
 			outputs: new Map<string, unknown>([['family-summary', output]]),
 			completeness: buildCompleteness({
 				returned: documents.length,
+				partlyRead,
+				skipped:  [
+					...countedSkip(failedSummaries, 'summarising failed for them, so they are not in this roll-up'),
+					...countedSkip(await unsummarised(db, repoPath, familyKey, summarisedIds), 'they have no summary yet, so they are not in this roll-up'),
+				],
+				basisNote: DOC_INDEX_RULE,
 				// The subject roll-up is a second list, cut to its own length.
 				limited:  subjectCounts.size > TOP_SUBJECTS
 					? [{ what: 'top subjects', limit: TOP_SUBJECTS, scope: 'per-group', reason: `${subjectCounts.size} subjects were found and ${TOP_SUBJECTS} are kept` }]

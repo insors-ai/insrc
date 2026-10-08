@@ -386,6 +386,8 @@ The plan workflow's test-strategy step asks for the file-name prefix on every te
 
 - `qbb3f9575` — A mapped test case that the test runner reports as skipped (for example a test that runs only when an environment variable is set): does it satisfy the named test? The design as written lets it pass the check. The alternative is that a skipped case fails the check unless the named test's level is live, where the builder reports the result instead. Recommended: a skipped case does not satisfy a unit or integration test.
   - **resolved**: A skipped case fails a unit or integration test — Stakeholder took the recommendation on 2026-10-08: a skipped test proves nothing, and a pass that is green because it was skipped is the hollow pass this record exists to expose. The design's rule for the tests check and its tests were changed to match. _(2026-10-08T17:03:46.877Z)_
+- `qdf77614f` — A live or smoke test that the gate cannot run (it needs a model, a running daemon or a person): the design accepts a result reported by the builder, with where the evidence is, records it as reported and not run by the gate, and shows it to the judge. The alternative is that such a test always fails the gate's test step. Recommended: accept the reported result, shown apart from the results the gate produced.
+  - **resolved**: Accept the builder's reported result — Stakeholder took the recommendation on 2026-10-08: for a live or smoke test the gate cannot run, the builder reports the result and where the evidence is; it is recorded as reported by the builder and not run by the gate, shown apart from the results the gate produced, and shown to the judge. The design already says this; nothing in it changes. _(2026-10-08T17:05:43.787Z)_
 
 ## Citations
 

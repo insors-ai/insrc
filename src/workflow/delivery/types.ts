@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Delivery read model — shared types (E1, HLD-2ff0dfda sc1–sc6).
+ * Delivery read model — shared types (E1, HLD-2ff0dfda sc1–sc7).
  *
  * The record set (sc1), the work-item graph (sc2) and the notice shape (sc3)
  * every delivery pass reads. Type-only apart from DeliveryStoreUnreadableError,
@@ -261,6 +261,98 @@ export interface CurrencyPassResult {
 	/** Keyed by epic item id; each list sorted by amendmentId. */
 	readonly amendments: ReadonlyMap<string, readonly EffectiveAmendment[]>;
 	readonly notices:    readonly DeliveryNotice[];
+}
+
+// ---------------------------------------------------------------------------
+// sc7 — Delivery IPC contract (E1 s5): workflow.delivery, workflow.deliveryEvidence
+// ---------------------------------------------------------------------------
+
+/** method 'workflow.delivery'. */
+export interface DeliverySnapshotRequest { readonly repo?: string | undefined }
+
+export interface DeliveryEvidenceEntry {
+	readonly artifactId:     string;
+	readonly kind:           DeliveryArtifactKind;
+	/** Rendered markdown under docs/ when one exists. */
+	readonly mdPath:         string | null;
+	/** review-view when the markdown carries the artifact marker. */
+	readonly openWith:       'review-view' | 'evidence-read';
+	readonly approval:       { readonly state: 'approved' | 'rejected' | 'pending'; readonly at: string | null };
+	readonly review:         ArtifactGate['review'];
+	readonly reviewCurrency: ReviewCurrency | null;
+}
+
+export interface DeliveryItem {
+	readonly id:               string;
+	readonly kind:             DeliveryItemKind;
+	readonly title:            string | null;
+	readonly standalone:       boolean;
+	readonly sourceIds:        readonly string[];
+	readonly parentId:         string | null;
+	readonly childIds:         readonly string[];
+	/** Null for epics and tasks. */
+	readonly stage:            { readonly stage: DeliveryStage; readonly route: DeliveryRoute; readonly reason: { readonly text: string; readonly artifactIds: readonly string[] } } | null;
+	/** Sorted by artifactId. */
+	readonly evidence:         readonly DeliveryEvidenceEntry[];
+	/** Stories only. */
+	readonly tasks:            readonly TaskValidation[];
+	readonly validation:       ItemGates['validation'] | null;
+	readonly storyLevelResult: ItemGates['storyLevelResult'];
+	readonly conflict:         ItemGates['conflict'];
+	readonly correctsRef:      WorkItemNode['correctsRef'];
+	/** Epics only; empty otherwise. */
+	readonly amendments:       readonly EffectiveAmendment[];
+	readonly notices:          readonly DeliveryNotice[];
+	readonly needsAttention:   boolean;
+	readonly attentionReasons: readonly (AttentionReason | NoticeCode)[];
+}
+
+export interface DeliverySnapshot {
+	readonly schemaVersion:   1;
+	readonly repo:            string;
+	/** ISO time the store was read. */
+	readonly takenAt:         string;
+	readonly recordCount:     number;
+	readonly unreadableCount: number;
+	/** Sorted by id. */
+	readonly items:           readonly DeliveryItem[];
+	readonly rootIds:         readonly string[];
+	/** Store-level, sorted by code then artifactIds. */
+	readonly notices:         readonly DeliveryNotice[];
+	readonly counts: {
+		readonly items:          Readonly<Record<DeliveryItemKind, number>>;
+		readonly byStage:        Readonly<Record<DeliveryStage, number>>;
+		readonly needsAttention: number;
+	};
+	readonly attentionRule:   string;
+}
+
+/** method 'workflow.deliveryEvidence'. */
+export interface DeliveryEvidenceRequest { readonly repo?: string | undefined; readonly artifactId: string }
+
+export interface DeliveryEvidenceRecord {
+	readonly artifactId:       string;
+	readonly kind:             DeliveryArtifactKind;
+	readonly meta:             Readonly<Record<string, unknown>>;
+	readonly body:             unknown;
+	readonly renderedMarkdown: string | null;
+}
+
+export interface DeliveryError { readonly error: string }
+
+export type DeliverySnapshotResponse = DeliverySnapshot | DeliveryError;
+export type DeliveryEvidenceResponse = DeliveryEvidenceRecord | DeliveryError;
+
+/** Locates a record's rendered markdown and whether it starts with that record's marker. */
+export interface DeliveryMarkdownPort {
+	markdownOf(record: ArtifactRecord): { readonly mdPath: string; readonly hasMarker: boolean } | null;
+}
+
+/** Test seams for the two handlers; the defaults read the real store and docs/ tree. */
+export interface DeliveryDeps {
+	readonly fs?:       ReadonlyStoreFs | undefined;
+	readonly now?:      (() => string) | undefined;
+	readonly markdown?: DeliveryMarkdownPort | undefined;
 }
 
 // ---------------------------------------------------------------------------

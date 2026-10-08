@@ -10,7 +10,9 @@ import assert from 'node:assert/strict';
 
 import { DeliveryStoreUnreadableError } from '../types.js';
 import type {
-	ArtifactCurrency, ArtifactGate, AttentionReason, CurrencyPassResult, DeliveryRoute, DeliveryStage, EffectiveAmendment,
+	ArtifactCurrency, ArtifactGate, AttentionReason, CurrencyPassResult, DeliveryDeps, DeliveryError, DeliveryEvidenceEntry,
+	DeliveryEvidenceRecord, DeliveryEvidenceRequest, DeliveryEvidenceResponse, DeliveryItem, DeliveryMarkdownPort,
+	DeliveryRoute, DeliverySnapshot, DeliverySnapshotRequest, DeliverySnapshotResponse, DeliveryStage, EffectiveAmendment,
 	GatePassResult, ItemGates, ReviewCurrency, ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
 } from '../types.js';
 import type { ReviewVerdict as SourceReviewVerdict } from '../../review/types.js';
@@ -104,3 +106,57 @@ test('the currency types list exactly the sketched members', () => {
 	assert.equal(result.artifacts.get('BUILD-h-s1')?.reviewCurrency, null);
 	assert.equal(result.amendments.get('E1')?.[0]?.appliesToHld, true);
 });
+
+// E1 / S005 / t1 — the sc7 types.
+
+const OPEN_WITH: Record<DeliveryEvidenceEntry['openWith'], true> = { 'review-view': true, 'evidence-read': true };
+
+/** The response unions narrow on `error`. */
+function isError(r: DeliverySnapshotResponse | DeliveryEvidenceResponse): r is DeliveryError {
+	return 'error' in r;
+}
+
+test('the delivery IPC types list exactly the sketched members', () => {
+	assert.deepEqual(Object.keys(OPEN_WITH), ['review-view', 'evidence-read']);
+
+	const entry: DeliveryEvidenceEntry = {
+		artifactId: 'BUILD-h-s1', kind: 'BUILD', mdPath: null, openWith: 'evidence-read',
+		approval: { state: 'approved', at: '2026-10-08T00:00:00.000Z' }, review: null, reviewCurrency: null,
+	};
+	const item: DeliveryItem = {
+		id: 'E1:S001', kind: 'story', title: 'One', standalone: false, sourceIds: ['s1'], parentId: 'E1', childIds: [],
+		stage: { stage: 'complete', route: 'full-chain', reason: { text: 'approved build', artifactIds: ['BUILD-h-s1'] } },
+		evidence: [entry], tasks: [], validation: { passed: 0, failed: 0, unrecorded: 0, unplanned: 0 },
+		storyLevelResult: null, conflict: null, correctsRef: null, amendments: [], notices: [],
+		needsAttention: false, attentionReasons: [],
+	};
+	const snapshot: DeliverySnapshot = {
+		schemaVersion: 1, repo: '/repo', takenAt: '2026-10-08T00:00:00.000Z', recordCount: 1, unreadableCount: 0,
+		items: [item], rootIds: [], notices: [],
+		counts: {
+			items:   { epic: 0, story: 1, task: 0, issue: 0 },
+			byStage: { 'scoped': 0, 'design-plan': 0, 'ready-design-approved': 0, 'ready-plan-approved': 0, 'build-recorded': 0, 'complete': 1 },
+			needsAttention: 0,
+		},
+		attentionRule: 'rule',
+	};
+	const request: DeliverySnapshotRequest = { repo: '/repo' };
+	const evidenceRequest: DeliveryEvidenceRequest = { artifactId: 'BUILD-h-s1' };
+	const record: DeliveryEvidenceRecord = { artifactId: 'BUILD-h-s1', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: null };
+	const port: DeliveryMarkdownPort = { markdownOf: () => null };
+	const deps: DeliveryDeps = { now: () => '2026-10-08T00:00:00.000Z', markdown: port };
+
+	const responses: (DeliverySnapshotResponse | DeliveryEvidenceResponse)[] = [snapshot, record, { error: 'x' }];
+	assert.deepEqual(responses.map(isError), [false, false, true]);
+	assert.equal(request.repo, '/repo');
+	assert.equal(evidenceRequest.artifactId, 'BUILD-h-s1');
+	assert.equal(deps.markdown?.markdownOf(recordStub()), null);
+	assert.equal(JSON.parse(JSON.stringify(snapshot)).items[0].evidence[0].openWith, 'evidence-read', 'plain JSON');
+});
+
+function recordStub(): Parameters<DeliveryMarkdownPort['markdownOf']>[0] {
+	return {
+		artifactId: 'BUILD-h-s1', kind: 'BUILD', workItemHash: 'h', storyIdRaw: 's1', storyOrdinal: 1,
+		approval: { state: 'pending', approvedAt: null, rejectedAt: null }, createdAt: null, epicCreatedAt: null, meta: {}, body: {},
+	};
+}

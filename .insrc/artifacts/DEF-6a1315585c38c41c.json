@@ -1,0 +1,1268 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1791482132125-ylppny",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T18:04:18.693Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 526568,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/delivery/types.ts declares a delivery-view task list field `readonly tasks: readonly TaskValidation[];` carrying each task's validation result.",
+          "evidence": "The grep for /readonly tasks:\\s+readonly TaskValidation\\[\\]/ matched the source file twice: src/workflow/delivery/types.ts:213 and src/workflow/delivery/types.ts:298, both reading `readonly tasks:            readonly TaskValidation[];`. The element type exists at src/workflow/delivery/types.ts:200 as `export interface TaskValidation {`. No conflicting `type TaskValidation` alias was found (0 matches). The upstream HLD (docs/epics/e1-.../HLD.md:258, :344) describes the same field, commenting it as \"sorted by taskItemId\" and \"stories only\". The direct read of src/workflow/delivery/types.ts returned NOT FOUND, which looks like a path-resolution problem in the read probe. It does not count against the premise, because two independent greps match real lines in that same file. The premise's quoted text has a single space after `tasks:`, but the source has extra alignment spaces. That only affects whitespace, not what the field means.",
+          "action": "None needed; the evidence confirms the premise. Optionally, add line anchors (types.ts:213 / :298) and the TaskValidation declaration (types.ts:200) to the citation so later probes resolve it directly.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Grep matches at src/workflow/delivery/types.ts:200, :213 and :298 confirm the premise. The two differences (whitespace alignment in the quote, and the field being declared twice) do not change what gets built, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "Assumptions/c4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The delivery view's TaskValidation type carries only a task's validation result and does NOT carry the task's dependencies or acceptance checks, so showing them requires the plan record via the daemon or an additive field.",
+          "evidence": "The interface exists: grep finds `src/workflow/delivery/types.ts:200: export interface TaskValidation {`, and it is consumed at types.ts:213 and types.ts:298 (`readonly tasks: readonly TaskValidation[];`) and built in gate.ts:250/282. But the direct read of src/workflow/delivery/types.ts came back NOT FOUND, so the interface's field list was never shown. The only indirect description of its fields is S003/LLD.md:79: \"one TaskValidation per task child, sorted by taskItemId. planned = the task's ordinal ... matches a plannedTaskId's ordinal. result over the story's BUILD records' body.tasks entries ... 'failed' ... 'passed' ... 'unrecorded'\". That suggests the fields are taskItemId, planned and result, which fits the premise that it carries only validation state. However, the `dependsOn|dependencies|acceptance` grep was cut off at 50 matches and none of the shown matches is in src/workflow/delivery/. So the evidence can neither confirm nor rule out that types.ts:200–212 includes a dependsOn or acceptance field. The premise is consistent with the design docs but has not been checked against the actual interface body.",
+          "action": "Read src/workflow/delivery/types.ts lines 200–212 and confirm TaskValidation has no dependsOn, dependency or acceptance-check field. If that holds, the assumption stands as written. If it has such a field, rewrite c4 and drop the extra plan-record or additive-field path for whatever the field already covers.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchor and type are real (types.ts:200), and the LLD's description of the fields (taskItemId / planned / result) matches the premise. Only the actual field list is missing from the evidence, so no text correction can be derived from it. Someone needs to read the interface body to confirm.",
+            "options": [
+              "Confirm by reading types.ts:200-212. If the fields are only taskItemId, planned and result, keep c4 unchanged.",
+              "If TaskValidation already carries dependsOn or acceptance data, reword c4 to say which fields exist and remove the requirement to fetch the plan record for them.",
+              "Pin c4 to the exact anchor (src/workflow/delivery/types.ts:200) and list the fields it carries, so the claim can be checked later."
+            ]
+          }
+        },
+        {
+          "claimId": "p3",
+          "ref": "c17 / s4 lc1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "src/workflow/delivery/types.ts types a record's open-with value as exactly the union `'review-view' | 'evidence-read'`, which S004 lc1 uses to decide between the existing review pane and a daemon read.",
+          "evidence": "grep finds `src/workflow/delivery/types.ts:279: readonly openWith: 'review-view' | 'evidence-read';`, which is exactly the two-member union the premise names. Other code agrees with it. The producer `src/workflow/delivery/snapshot.ts:103` sets `openWith: md?.hasMarker === true ? 'review-view' : 'evidence-read'`, so it only ever emits those two values. `src/workflow/delivery/__tests__/types.test.ts:112,120` defines `Record<DeliveryEvidenceEntry['openWith'], true>` and asserts that its keys are exactly `['review-view', 'evidence-read']`. TypeScript requires every union member as a key in that Record, so this proves the union is closed. `contract.test.ts:75` asserts that the snapshot fixture contains exactly those two values. On the consumer side, `vscode-plugin/src/delivery/delivery-contract.ts:49` picks `'openWith'` from `DeliveryEvidenceEntry`, so S004 lc1 gets the same typed union. One small wording point: the field belongs to the evidence entry type (`DeliveryEvidenceEntry`), not to the record itself. The anchor and the decision built on it are still correct. The direct read of `src/workflow/delivery/types.ts` came back NOT FOUND, but the grep hit at line 279 of that same path shows the file exists, so the failed read looks like a path-resolution problem in the read probe.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms that `DeliveryEvidenceEntry.openWith` is the closed union `'review-view' | 'evidence-read'` (types.ts:279), and a type-level test enforces that it stays closed. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "c14",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "vscode-plugin/src/panels/webview-host.ts emits a `<meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">` tag in its webview document.",
+          "evidence": "grep /http-equiv=\"Content-Security-Policy\"/ matched vscode-plugin/src/panels/webview-host.ts:420: \"return `<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><meta http-equiv=\\\"Content-Security-Policy\\\" content=\\\"${csp}\\\"><style>\". That is the exact tag the premise describes, built into the webview document template. The paired test vscode-plugin/src/panels/__tests__/webview-host.test.ts:327 also extracts this meta's content (/Content-Security-Policy\" content=\"([^\"]*)\"/). The separate read probe returned NOT FOUND, most likely because the citation has no line number, so the reader had nothing to resolve. The grep hit shows the file exists and contains the claimed line. Sibling webviews follow the same pattern (chat-panel.ts:510 and docs-review-panel.ts:1694, which wrap the value in attr(csp)), which supports convention k8.",
+          "action": "None needed; the premise is verified. Optionally add the line number to the anchor (webview-host.ts:420) so the read probe can resolve it.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified by the grep hit at vscode-plugin/src/panels/webview-host.ts:420. The read probe returned NOT FOUND only because the anchor has no line number, which does not affect what gets built. No edit is required."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "k8",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "Every webview document in the VS Code plugin carries a restrictive Content-Security-Policy (the plugin's existing convention k8 follows).",
+          "evidence": "The source tree has exactly three webview HTML sinks: `grep /webview\\.html\\s*=/` matches only vscode-plugin/src/extension.ts:327, :503 and :613 (the 4th match is a doc). The plugin also has exactly three HTML generators, and each one emits a CSP meta tag:\n- vscode-plugin/src/panels/webview-host.ts:420 (`<meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">`)\n- vscode-plugin/src/chat/chat-panel.ts:510\n- vscode-plugin/src/chat/docs-review-panel.ts:1694\n\nTests check that the CSP is restrictive:\n- webview-host.test.ts:327 and chat-panel.test.ts:317/363/1485 parse the CSP content.\n- docs-review-panel.test.ts:367 asserts `script-src 'nonce-NONCE123'`, which pins scripts to a single nonce.\n\nThe evidence does not show which generator feeds each extension.ts sink. Still, three sinks match three CSP-bearing renderers, and no CSP-less HTML source shows up in vscode-plugin/src, so the \"every webview document\" claim holds. The anchor, webview-host.ts, does carry the cited CSP meta tag (DEF citation c14). Either way the prescribed change is the same: the board's webview should ship a restrictive CSP.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed. All three webview.html sinks in the plugin have matching renderers that emit a CSP meta tag, and tests check that the CSP is restrictive (nonce-pinned script-src). No edit is needed. Optional cleanup: cite the nonce-pinned script-src idiom (webview-host.test.ts:327 / docs-review-panel.test.ts:367) so the board's webview copies it exactly."
+          }
+        },
+        {
+          "claimId": "p6",
+          "ref": "c16",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "A delivery contract file (delivery/delivery-contract.ts under vscode-plugin/src) types the two delivery IPC methods at lines 40-41.",
+          "evidence": "The read of vscode-plugin/src/delivery/delivery-contract.ts:40 returned `readonly 'workflow.delivery': { readonly request: DeliverySnapshotRequest; readonly response: DeliverySnapshotResponse };`. The read of line 41 returned `readonly 'workflow.deliveryEvidence': { readonly request: DeliveryEvidenceRequest; readonly response: DeliveryEvidenceResponse };`. Line 8 of the same file describes it as the contract for \"workflow.delivery and workflow.deliveryEvidence. Type-only\". The daemon side registers both methods at src/daemon/index.ts:710 and :719, which matches. The file exists, and both anchors point to the two delivery IPC method types the premise names.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the citation: lines 40 and 41 of delivery-contract.ts are the type entries for 'workflow.delivery' and 'workflow.deliveryEvidence'. No edit needed."
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "c16 / S001 Extends",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Nothing in the VS Code plugin currently calls the two delivery IPC methods (workflow.delivery, workflow.deliveryEvidence); the only reference is the contract type file.",
+          "evidence": "Both greps (/workflow\\.delivery/ and /deliveryEvidence/) hit the 50-match cap and were truncated before reaching any path under vscode-plugin/src. Every match shown is in docs/epics/e1-…/{HLD,S001–S005 LLD,PLAN,BUILD,CR}.md, docs/epics/e2-…/DEF.md:75, src/daemon/index.ts:710/719 (the handler-map entries), src/daemon/__tests__/delivery-handler-contract.test.ts:7-35, src/workflow/delivery/handlers.ts:11-132 and src/workflow/delivery/__tests__/handlers.test.ts. One match supports part of the premise: docs/epics/e1-…/S005/BUILD.md:11 says S005 shipped \"the VS Code and JetBrains client mirrors\", so a VS Code contract-type mirror probably exists. But no match shows that file's path, and no match shows whether any other file under vscode-plugin/src calls the methods. The evidence can't confirm or rule out the claim that nothing in the plugin calls them yet.",
+          "action": "Run a grep limited to vscode-plugin/src for `workflow.delivery` and `deliveryEvidence`, without truncation. Confirm that the only hit is the contract-type mirror file, and cite that file by its path in the premise. If any client, service or view code already calls either method, change S001's Extends inventory to list those callers so the LLD extends them instead of building a duplicate client.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The premise is plausible: BUILD.md:11 suggests only a type mirror was added to the VS Code client. But the truncated grep never reached vscode-plugin/src, so I can't propose an edit backed by evidence. A human needs to re-run a scoped probe and then pick the matching wording.",
+            "options": [
+              "Re-run the probe scoped to vscode-plugin/src; if the only hit is the contract-type mirror, keep the premise and add that mirror's exact file path as the anchor.",
+              "If the scoped probe finds existing callers such as an RPC client or service method, rewrite the premise to list them. S001 would then extend those callers rather than add new IPC calls.",
+              "If the scoped probe finds no reference at all, not even a type mirror, reword the premise to say the plugin has no reference yet. S001 must then also add the contract-type mirror, as BUILD.md:11 implies it should exist."
+            ]
+          }
+        },
+        {
+          "claimId": "p8",
+          "ref": "Assumptions/c3",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The E1 delivery view is published by the daemon via exactly two IPC methods, workflow.delivery and workflow.deliveryEvidence, versioned at schemaVersion 1, with only additive optional fields allowed after approval.",
+          "evidence": "The evidence confirms the core of the contract. The daemon registers exactly these two handler entries: src/daemon/index.ts:710 `'workflow.delivery': async (params) =>` and src/daemon/index.ts:719 `'workflow.deliveryEvidence': async (params) =>`. They delegate to handleDelivery and handleDeliveryEvidence (src/workflow/delivery/handlers.ts:80; source-scan test src/daemon/__tests__/delivery-handler-contract.test.ts:35). The shared types tag them at src/workflow/delivery/types.ts:270 and :330. The consumer mirror vscode-plugin/src/delivery/delivery-contract.ts:40-41 lists exactly these two methods, and no other `workflow.delivery*` method appears in any match. The version is confirmed by HLD.md:356 `readonly schemaVersion: 1;`, but the sampled src/ matches do not show a delivery-specific schemaVersion literal, and the gathered match list was truncated at 50. The direct read of the HLD came back NOT FOUND, even though grep matched lines 321, 356 and 372 in it. As a result, the governance clause \"only additive optional fields allowed after approval\" has no evidence either way: no matched line states or enforces it.",
+          "action": "Keep the premise. The two-method surface and schemaVersion 1 are verified. Before relying on the evolution rule, re-read HLD.md near lines 321–372 to find where the additive-only rule is stated. Also check that the snapshot response type in src/workflow/delivery/types.ts carries `schemaVersion: 1`, and consider adding a contract test that pins the version so the rule is enforced and not only documented.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The concrete contract (two IPC methods, schemaVersion 1 in the HLD) is grounded. Only the additive-only evolution policy is unverifiable from the gathered evidence. Nothing gets built differently because of that gap, so this is MED and not HIGH. No evidence supports a text edit.",
+            "options": [
+              "Cite the HLD line that states the additive-only evolution rule, so the clause is anchored",
+              "Add a contract test that asserts schemaVersion === 1 on the delivery and deliveryEvidence responses and fails on removed or required-field changes",
+              "Narrow the premise to the verified surface (two methods, schemaVersion 1) and move the evolution rule to a separate constraint"
+            ]
+          }
+        },
+        {
+          "claimId": "p9",
+          "ref": "c3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The E1 HLD at docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md states: fix sc7, version it with schemaVersion, allow only additive optional fields after approval, breaking changes via HLD amendment.",
+          "evidence": "The grep for /allow only additive optional fields/ matches docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md:476, in the risk row \"Contract churn after E2 starts (s5, sc7)\". Its mitigation reads: \"Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it.\" That matches the premise on all four points: fix sc7, version it with schemaVersion, allow only additive optional fields after approval, and route breaking changes through an HLD amendment. The E2 DEF.md:194 citation [[c3]] quotes the same sentence verbatim. The direct read of HLD.md returned NOT FOUND, but the grep found the file at that path with this content, so the anchor resolves. The failed read looks like a read-step problem, not a missing file.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Grep confirms the premise at HLD.md:476 and the E2 DEF citation quotes it verbatim, so no artifact edit is needed. Optionally, look into why the read of the anchor returned NOT FOUND when grep matched the same file."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "s2/ac1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The daemon's delivery view defines exactly six stages in workflow order, labelled Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded and Complete, and assigns each story/issue to exactly one.",
+          "evidence": "The six-stage closed union is confirmed in source, but the human labels are not. `src/workflow/delivery/types.ts:148` declares `export type DeliveryStage =`. `src/workflow/delivery/stage.ts:42` (`STAGE_ORDER`) and `src/workflow/delivery/snapshot.ts:41` (`STAGES`) both list exactly six ids in workflow order: 'scoped', 'design-plan', 'ready-design-approved', 'ready-plan-approved', 'build-recorded', 'complete'. `types.ts:161` (`readonly stage: DeliveryStage`) and `types.ts:294` give each item a single stage, which supports \"exactly one\". `types.ts:324` (`byStage: Readonly<Record<DeliveryStage, number>>`) is keyed by the same six. The display labels (\"Build recorded\", \"Ready · design approved\", \"Ready · plan approved\") match only in docs (E1 DEF.md:43, E2 DEF.md:130, the delivery-board PRD) and never under src/. So the daemon defines six kebab-case stage ids, not the labelled strings. The direct read of `src/workflow/delivery/types.ts` came back NOT FOUND, which looks like a probe glitch: grep hits that same file at lines 148/161/294/324.",
+          "action": "Reword the premise: the daemon defines six stage ids in workflow order, and the board maps each id to its display label. That way the build doesn't look for label strings in the daemon contract. Label mapping belongs to the board (E2).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The closed six-member union and its order are verified (STAGE_ORDER / STAGES / DeliveryStage). The only gap is that the labels are a presentation concern that does not appear in daemon source. The prescribed board change (six columns, each item exactly once) still holds, so this is MED rather than HIGH. It needs a premise reword, not a redesign.",
+            "options": [
+              "Reword to: 'The daemon's DeliveryStage union (src/workflow/delivery/types.ts:148) defines exactly six stage ids in workflow order — scoped, design-plan, ready-design-approved, ready-plan-approved, build-recorded, complete — and assigns each story/issue exactly one; the board maps them to the labels Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded and Complete.'",
+              "Keep the premise as written and add a board-side task that owns an exhaustive Record<DeliveryStage, string> label map, so a new stage fails to compile."
+            ]
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "s4/ac1",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "A planned task's recorded result is one of Passed, Failed or Unrecorded, and a build-only task is classified unplanned; Unrecorded is counted as neither passed nor failed.",
+          "evidence": "The direct read of the anchor `src/workflow/delivery/types.ts` came back NOT FOUND, so the `TaskValidation` declaration itself was not shown. The probe most likely treated the combined anchor string \"src/workflow/delivery/types.ts, TaskValidation\" as a single path. The grep matches still confirm every part of the premise:\n\n(1) The union is closed at exactly three members. `src/workflow/delivery/__tests__/types.test.ts:53` declares `const TASK_RESULTS: Record<TaskResult, true> = { 'passed': true, 'failed': true, 'unrecorded': true }`. An exhaustive Record would not compile if TaskResult had a fourth member. `types.test.ts:66` also asserts the keys are exactly `['passed', 'failed', 'unrecorded']`. This matches `HLD.md:245`: `type TaskResult = 'passed' | 'failed' | 'unrecorded'`.\n\n(2) The producer only ever returns those three values. `src/workflow/delivery/gate.ts:232` is `return passes.includes(false) ? 'failed' : passes.includes(true) ? 'passed' : 'unrecorded';`.\n\n(3) Unrecorded is counted separately from passed and failed. `gate.ts:350` gives `unrecorded: validation.tasks.filter(t => t.result === 'unrecorded').length`. `gate.test.ts:263-271` ('a planned task with no recorded result is unrecorded and counted as neither passed nor failed') asserts `validation` equals `{ passed: 1, failed: 0, unrecorded: 1, unplanned: 0 }`.\n\n(4) A build-only task is marked unplanned and keeps its result. `gate.test.ts:275-292` asserts `unplanned[0]?.result === 'passed'`, `gates.validation.unplanned === 1`, and an 'unplanned-task' notice. `gate.test.ts:353-364` covers a story built without a plan.\n\nThe display wording in the premise (Passed / Failed / Unrecorded, unplanned) maps one-to-one onto these daemon values. `docs/insrc-delivery-board-prd.html:177` confirms that Unrecorded is a board label for a planned task with no BUILD entry, and that build-only tasks are shown as unplanned.",
+          "action": "none — verified sound. Optionally, fix the review probe so it splits the anchor into its path (`src/workflow/delivery/types.ts`) and its symbol (`TaskValidation`); then the declaration can be read directly instead of being inferred from the exhaustive Record in types.test.ts:53.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise matches the evidence. TaskResult is a closed union of three members, enforced by an exhaustive Record in types.test.ts:53 and asserted at :66. gate.ts:232 produces only those three values. gate.ts:350 and gate.test.ts:263-271 count unrecorded separately from passed and failed, and gate.test.ts:275-292 marks a build-only task unplanned while keeping its result. The NOT FOUND read is a problem with how the probe parsed the anchor, not a flaw in the artifact, so no artifact edit is needed."
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "k2 / s2-s4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The daemon's delivery view publishes the attention decision, conflict facts (validation conflict on approved build with failed tasks, review-blocked unapproved design, unresolved issue parent, unledgered code review), stage reason and cited records, so the board needs no client-side derivation.",
+          "evidence": "The evidence only partly supports this premise, and the anchor itself could not be checked.\n\n1. **Anchor read failed.** `read src/workflow/delivery/types.ts` returned NOT FOUND. Yet a grep hit shows the file exists: `src/workflow/delivery/types.ts:124: | 'review-without-build' // s2: a code review exists with no build record`. So the anchor is not missing, but none of its view or response shape was available to check.\n\n2. **The design describes the parts the premise names, in the E1 HLD.**\n   - Conflict facts: `HLD.md:262` `readonly conflict: { readonly failedTaskItemIds ...; readonly storyLevelFailed: boolean } | null`, repeated at `HLD.md:347`.\n   - Attention reasons: `HLD.md:253` `type AttentionReason = 'pending-decision' | 'rejected' | 'review-blocked' | 'validation-failed' | 'validation-conflict'`; `HLD.md:352` `readonly attentionReasons`; `HLD.md:369` `readonly attentionRule`.\n   - Daemon owns the decision: `HLD.md:434` says s5 decides \"needsAttention as any sc5 attention reason or any notice with attention true\" and computes counts and sort. `HLD.md:537` rejects client-side computation because it would break \"k1's rule that the daemon owns interpretation\".\n   - Unresolved parent: `HLD.md:152` 'unresolved-parent', with attention true (`HLD.md:172`).\n   - S003 BUILD.md:11 confirms the gate pass was built with the conflict, attention reasons and validation-conflict notices.\n\n3. **Built code exists for parts of this.** `notice.ts:25` `'review-without-build': false`; `stage.ts:227` raises it; `stage.test.ts:183` tests it. `S002/BUILD.md:11` says the stage pass gives \"a reason naming its records\".\n\n4. **Imprecision.** The premise groups the \"unledgered code review\" with the conflict facts. In the evidence it is a `review-without-build` notice with attention **false** (`notice.ts:25`, `HLD.md:173`, `E2 DEF.md:168`). It is informational, not a conflict and not an attention trigger. Likewise, \"review-blocked unapproved design\" is an `AttentionReason`, not a conflict notice.\n\n5. **Unverified.** No code evidence shows the assembled s5 view (`needsAttention`, joined `conflict`, stage `reason`, evidence ids) in `types.ts` or a handler, because the anchor read failed.\n\nNo build-breaking failure can be stated. The fields the board relies on are designed in the HLD and partly built. The defects are an unverifiable anchor and a mislabelled notice category.",
+          "action": "1. Re-run the anchor read for `src/workflow/delivery/types.ts`. The grep hit at line 124 shows the file exists. Confirm that the s5 per-item view type exposes `needsAttention`, `attentionReasons`, `attentionRule`, `conflict`, the stage `reason` and the evidence artifact ids, as `HLD.md:347-369` sketches.\n2. Re-cite the premise to that view type's `file:line` and to the handler that publishes it.\n3. Reword the premise so the unledgered code review is a `review-without-build` notice with attention false, shown in item details. It is not a conflict fact and does not trigger Needs attention.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The premise is substantively supported by the E1 HLD (sc5/s5 fields, daemon-owned needsAttention, HLD.md:537) and partly by built code (notice.ts:25, stage.ts:227). However, the anchored file's view shape was not readable. The premise also miscategorizes 'unledgered code review' (review-without-build, attention false per notice.ts:25) as a conflict fact. Rewording needs a human OK, and the anchor needs a re-check against the real view type.",
+            "options": [
+              "Reword the premise to separate the facts: the attention decision (needsAttention, attentionReasons, attentionRule); the validation-conflict on an approved build with failed tasks; review-blocked as an attention reason; unresolved-parent as an attention notice; review-without-build (unledgered code review) as an informational notice with attention false; plus the stage reason and evidence records.",
+              "Keep the wording but re-anchor it to the actual s5 view type and handler in src/workflow/delivery (re-verify the types.ts read), and add HLD.md:347-369 and HLD.md:434 as design citations.",
+              "Do both: reword the notice categories and re-anchor to the verified view type."
+            ]
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "s4/ac4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Evidence entries in the delivery view distinguish rejected from pending approval and carry both the original review verdict and any override, including a historical blocking review on an approved record.",
+          "evidence": "The only anchor, `read src/workflow/delivery/types.ts`, came back NOT FOUND, so no delivery-view type, evidence-entry shape or status field could be checked. The three greps (/rejected/, /override/, /verdict/) were truncated at the cap. All the hits they returned are in unrelated docs and prior epics. For example, `docs/epics/add-plan-workflow-.../S002/LLD.md:34` uses meta.rejectedAt in requireApprovedLld. `docs/epics/add-daemon-driven-code-review-stage-.../S007/LLD.md:71/79` defines the CodeReviewGateResult union, whose 'overridden' variant carries verdict:'block' plus overrideReason and at. That LLD (:38, :140) also says the gate is read-only and 'the override is returned to the caller, not stamped onto the record'. That matters here: the CR record itself may not keep the override, so a delivery view showing 'the original review verdict and any override … on an approved record' needs a persisted override source that this evidence never shows. None of the hits mention a delivery view, evidence entries, or a rejected-vs-pending status split. The evidence neither confirms nor contradicts the premise. It may simply describe a file this Story creates, so no concrete build failure can be named.",
+          "action": "Confirm whether src/workflow/delivery/types.ts is a file this Story creates. If it is, mark the anchor as new/to-be-created in the artifact. If it is not, point the anchor at the real module. Also name the persisted source the delivery view reads the override from, for both the design-review override (meta.review / approveArtifactByJsonPath overrideReview) and the code-review override. The S007 code-review gate returns the override to the caller and does not stamp it on the CR record, so either cite where the BUILD-approval path persists it or add that persistence to this Story's scope. Without that source, ac4's 'carry any override on an approved record' has nothing to read from.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor file is missing and the gathered evidence says nothing about the delivery view, so the premise is unverifiable. The S007 LLD shows that code-review overrides are returned to the caller rather than persisted on the CR record. That makes it uncertain where the 'any override' data for an approved record would come from. Fixing this needs a human decision; there is no safe mechanical edit.",
+            "options": [
+              "Mark src/workflow/delivery/types.ts as a new file created by this Story, and cite the existing persisted sources for the review verdict and the override (meta.review plus the approval/override stamp written by approveArtifactByJsonPath / approveWorkflowTarget).",
+              "Re-anchor the premise to the existing module that already holds the approval/rejection/review state (e.g. src/workflow/gates.ts and the CR artifact storage) instead of a nonexistent delivery/types.ts.",
+              "Add to this Story's scope the persistence of the code-review override reason and timestamp at BUILD approval, because the S007 gate does not stamp it on the CR record and the delivery view could not otherwise show it."
+            ]
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "s3/ac3-ac4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "An issue in the delivery view can link to more than one fix story, and its parent relationship can be unresolved while the issue is still listed.",
+          "evidence": "The anchor `src/workflow/delivery/types.ts` was read and came back NOT FOUND, so the delivery view's type model could not be checked. The `/fixStories|fixStory/` grep found only 2 matches, both in a test: `src/workflow/delivery/__tests__/stage.test.ts:211` (`const fixStory = storyStage(fix, ISSUE, 1);`) and `:212` (a notice lookup by `fixStory.itemId`). Neither shows an issue type that holds more than one fix-story link, such as a `fixStories: …[]` field. The `/parent/` grep hit its 50-match cap. None of the returned matches is in `src/workflow/delivery/`. They come from camon, design docs and the bugfix DEF, and none shows a delivery-view issue whose parent can be unresolved while the issue is still listed. The `src/workflow/delivery/__tests__/` directory does exist, so the module is real. Neither half of the premise is confirmed or contradicted by this evidence.",
+          "action": "Ground the premise. Either point the anchor at the file that actually declares the delivery view's issue and story row types (or note that `types.ts` is a new file this Story creates), or cite the real field names. Then state where AC3 (an issue linking to many fix stories) and AC4 (an issue listed while its parent is unresolved) are shown, for example a test in `src/workflow/delivery/__tests__/stage.test.ts` that builds an issue with two or more fix stories and one with no resolved parent.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor file does not exist and no match shows a fix-story list or an optional parent on a delivery-view issue. Nothing in the evidence says what the anchor should be, so the replacement anchor and field names need a human to supply them; no auto-edit is safe.",
+            "options": [
+              "Re-anchor the premise to the existing file that declares the delivery view's item and issue types, and cite the field that holds the issue's fix stories as a list and the optional or unresolved parent field.",
+              "Mark `src/workflow/delivery/types.ts` as a file this Story creates, and spell out in the LLD the planned issue shape: fix stories as an array and the parent ref as optional or unresolved.",
+              "Ground AC3 and AC4 in behavior instead of types: cite or add `stage.test.ts` cases that list an issue with more than one fix story, and an issue whose parent is not resolved."
+            ]
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "E202610086a131558:FR004",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "As of 2026-10-08, 69 of the 93 build-record markdown files lack the `insrc:artifact` marker that the existing review viewer uses to locate a record.",
+          "evidence": "The grep `/<!-- insrc:artifact BUILD-/` returned 27 matches. 3 of them are test fixtures (src/mcp/build-step/__tests__/build-step.test.ts:1237, src/workflow/runners/build/__tests__/build-record.test.ts:172 and :748). That leaves exactly 24 BUILD.md files under docs/ with the marker on line 1. 10 are under docs/epics, e.g. e1-delivery-read-model-daemon-from-E202610072ff0dfda/S001–S005, frame-epic-new-pre-workflow-brainstorm…/S010 and make-insrc-analysis-complete-used-right…/S001, S006, S007. 14 are under docs/standalone, e.g. add-insrc-icon-vs-code-activity…/S001 and story-code-review-reviews-wrong-code-E20261007f9ced66a/S001. The premise implies 93 − 69 = 24 marked files, which matches. The evidence does not establish the total of 93 build-record files or the 69 without the marker: no probe listed every BUILD.md file. The second grep (`insrc:artifact`) stopped at 50 matches and covers only DEF/HLD/LLD/PLAN/CR files, so it says nothing about unmarked BUILD files. Two side notes: the marker suffix uses both `-s1` and `-S001` forms, and the marker is always on line 1. Neither changes the count.",
+          "action": "The marked count of 24 is confirmed. Check the total by listing every build-record markdown file (e.g. `fd -g 'BUILD.md' docs` or `rg --files -g 'BUILD.md' docs | wc -l`). If the total isn't 93, change both numbers so the unmarked count equals total − 24. Also state whether \"build-record markdown files\" counts only `BUILD.md`, or also slug-named or legacy build records stored under other filenames.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The marked side (24) is confirmed by the evidence and matches 93 − 69. The total (93) can't be checked from the probes, so no value can be edited automatically from the evidence. The prescribed work (handle the build records that lack the marker) holds whatever the exact total is, so this is MED, not HIGH.",
+            "options": [
+              "Keep the premise as written after a file listing confirms there are 93 BUILD.md records (24 marked, 69 unmarked).",
+              "Restate the premise as '24 build-record files carry the `insrc:artifact` marker; the rest lack it'. This is the part the evidence supports, and it avoids a total that hasn't been checked.",
+              "Recount with an explicit file-listing probe and update both numbers (total and unmarked = total − 24)."
+            ]
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "Problem / k10",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The existing VS Code document review pane (Epic bfe98ff7) shows one pending document at a time and locates records by the insrc:artifact marker.",
+          "evidence": "The evidence doesn't settle the premise. The marker part holds: grep /insrc:artifact/ shows the `<!-- insrc:artifact <ID> -->` marker on line 1 of every DEF/HLD/LLD/PLAN/CR .md (for example docs/epics/add-build-workflow-insrc-5th-stage-E20260717185807ba/DEF.md:1). docs/artifact-document-template-review.md:30 calls it the comment \"that lets a slug-named `.md` resolve back to its hash-named `.json`\", and :103 says gates.ts:807 and migrate-docs-tree.ts:112 read it from a head slice. That resolution happens in the daemon, though. Nothing shows the VS Code pane doing it. The Epic bfe98ff7 docs describe the pane reading through IPC: \"The pane already reads through workflow.pending / workflow.artifactContent\" (bfe98ff7 DEF.md:63, k2 at :83), which returns ArtifactReviewView {artifactId, kind, renderedMarkdown, openQuestions, approvable, blockReason?} (DEF.md:72, S001/PLAN.md:201). The client code cited is vscode-plugin/src/chat/docs-review-client.ts (S002/LLD.md:390), not vscode-plugin/src/panels. No match supports the \"one pending document at a time\" claim, and no match comes from the anchored vscode-plugin/src/panels path.",
+          "action": "Re-ground k10 against the real VS Code review client (vscode-plugin/src/chat/docs-review-client.ts and the docs-review panel/webview it feeds). Confirm two things: (a) whether the pane shows one pending document at a time; (b) whether it finds records by artifactId through workflow.pending / workflow.artifactContent, with the daemon resolving the insrc:artifact marker. If it does, reword k10 to name the IPC read path as the lookup mechanism and fix the anchor to the actual file. A design that assumes the pane itself scans .md files for the marker would add a parallel read surface, which k2 of Epic bfe98ff7 forbids.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The marker exists and the daemon resolves it, but the evidence shows the VS Code pane reading by artifactId over workflow.pending / workflow.artifactContent rather than finding records by the marker itself. The one-at-a-time claim and the vscode-plugin/src/panels anchor aren't covered by any evidence. Rewording needs a human to confirm the pane's actual behaviour, so no artifactEdits are proposed.",
+            "options": [
+              "Reword k10: the existing VS Code review pane (Epic bfe98ff7) reads pending documents by artifactId through workflow.pending / workflow.artifactContent (ArtifactReviewView). The daemon resolves slug .md files to hash .json through the insrc:artifact marker. Re-anchor to vscode-plugin/src/chat/docs-review-client.ts.",
+              "Keep the one-at-a-time claim only after reading the pane's open/refresh logic (docs-review-client.ts and its webview host) and citing the exact path:line that shows a single active document.",
+              "Drop the marker clause from k10 if nothing downstream depends on it, and keep only the read-path claim that the bfe98ff7 DEF/HLD already ground."
+            ]
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "c2 / c11",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "docs/plans/delivery-board-epics.md frames E2 as new with bfe98ff7 as an adjacent boundary, and records 'Keep \"Complete\"; test it in E2's usability session' against E2 S2.",
+          "evidence": "Both quoted claims show up in the source doc. First, grep /adjacent boundary/ matches docs/plans/delivery-board-epics.md:118 \"`bfe98ff7` as an adjacent boundary.\", which is the end of the sentence the DEF quotes at DEF.md:193 (\"E2 opens evidence *in* that pane but does not change it, so it should be framed as **new**, with `bfe98ff7` as an adjacent boundary.\"). Second, grep /Completion wording/ matches docs/plans/delivery-board-epics.md:172 '| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |', word for word the same as the c11 quote at DEF.md:202. The PRD (docs/insrc-delivery-board-prd.html:236) also lists completion wording as an open decision, so the decision has a real source. The direct read of docs/plans/delivery-board-epics.md came back NOT FOUND. That conflicts with the grep hits at :118 and :172, so the file exists and the read probe most likely failed because the anchor had no line number. Only the tail of the \"framed as new\" sentence (line 118) appears in the evidence. The earlier part of that sentence, presumably on line 117, has no match, but it is consistent with the DEF quote.",
+          "action": "None needed; the premise is verified. As an optional cleanup, add a line number to the anchor (docs/plans/delivery-board-epics.md:118 and :172) so the read probe finds the lines.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is confirmed by grep matches at docs/plans/delivery-board-epics.md:118 and :172. The NOT FOUND read is a probe-anchoring problem, not a defect in the artifact, so no edit is required."
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "References",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "docs/insrc-delivery-board-prd.html contains the quoted PRD rules cited as c1, c5-c10, c12, c13, c15, c18-c23 (product principle, IPC-only, FR-09 read-only, safe rendering, concurrency, placement, refresh, freshness, 1s/150ms targets, determinism, accessibility).",
+          "evidence": "The gathered evidence supports this premise for the citations it covers and contradicts none of them. Grep found these quotes verbatim in docs/insrc-delivery-board-prd.html:\n- c1 (product principle): line 32, \"A convenient status label must not conceal contradictory evidence\".\n- c8 (concurrency, \"Drop superseded responses\"): line 213. The line is truncated in the output but is still a match.\n- c13 (\"within 150 ms\"): line 213.\n- c15 (\"stable identity tie-breaker\"): line 213.\n- c23 (accessibility, \"without excessive chatter\"): line 213. The visible text matches the DEF.md:214 quote word for word.\n- c22 (\"unledgered-code-review\"): line 230, inside the AC table.\nLine 213 also shows the start of \"Safe rendering: render artifact text as data. Never ex…\", so a safe-rendering rule is there, but the excerpt does not show which c-id it belongs to.\n\nThe evidence does not check the remaining citations: c5, c6, c7, c9, c10, c12 and c18–c21 (IPC-only, FR-09 read-only, placement, refresh, freshness and the rest). No probe searched for their quoted text. The direct read of docs/insrc-delivery-board-prd.html returned NOT FOUND, even though grep matched the same path, so the full text of the PRD was not available. About 6 of the 17 cited references are confirmed, and the other 11 cannot be verified from this evidence.",
+          "action": "Confirm that the unverified quotes appear verbatim in docs/insrc-delivery-board-prd.html. These are c5, c6, c7, c9, c10, c12 and c18–c21, the quotes for IPC-only, FR-09 read-only, safe rendering, placement, refresh and freshness. Grep for a unique phrase from each quote in DEF.md's References section. Fix any quote that does not match, and point any c-id that is in the wrong place at the PRD line where the text actually appears. Also find out why the direct read of the PRD returned NOT FOUND (probably a path or size issue) so later reviews can read it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Nothing in the evidence contradicts the premise. Every quote that was checked matches the PRD verbatim. Most citations were never probed, though, and the direct read failed, so the full premise cannot be confirmed. This is MED because it is unverifiable, not wrong. No artifact edit can be justified from this evidence.",
+            "options": [
+              "Run a grep for each remaining citation (c5, c6, c7, c9, c10, c12, c18–c21) against the PRD, then mark the premise verified if all match.",
+              "Narrow the premise to the citations that were verified (c1, c8, c13, c15, c22, c23) and list the rest as pending verification.",
+              "Correct any citation whose quoted text turns out to differ from the PRD so it matches the PRD's exact wording."
+            ]
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "Stories",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story dependencies: s2 depends on s1; s3 on s1 and s2; s4 on s1; s5 on s2, s3 and s4; s1 has no dependency and the graph is acyclic.",
+          "evidence": "No probes ran for this premise, so there are no ripgrep matches or path:line reads to check it against. The premise says the Story dependency graph is s2→s1; s3→s1,s2; s4→s1; s5→s2,s3,s4, that s1 is the only root, and that the graph is acyclic. Taken at face value, these edges do give a valid topological order (s1, s2, s4, s3, s5) with no cycle. But no evidence shows that the artifact's Stories section, or the Stories' own dependsOn fields, actually record these edges. That makes the premise UNVERIFIABLE.",
+          "action": "Check the stated edges against each Story's own declared dependencies (its dependsOn/blockedBy field in the Define or HLD Stories section). Confirm that every listed edge appears there and no extra one does. In particular, check whether s4 really depends only on s1 and whether s5 really needs all three of s2, s3 and s4. Then re-run the review with a probe that reads the Stories section, so this premise has real grounding.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "There was no evidence to derive a correction from. The stated edges are internally consistent and acyclic (topological order s1, s2, s4, s3, s5), so the only remaining risk is a mismatch with the per-Story dependency declarations, and a person needs to check that against the artifact.",
+            "options": [
+              "Confirm the edges match each Story's declared dependencies, and keep the premise unchanged",
+              "If a Story's declared dependencies differ, rewrite this ordering premise to match those declarations",
+              "Add a probe that reads the artifact's Stories section, so ordering premises are checked deterministically in future reviews"
+            ]
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "Assumptions/c11",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The Completion-wording usability test is assigned to E2 S2 in the epics plan, while this Define's assumption c11 and stories place no explicit usability-session AC on any story (internal-consistency check).",
+          "evidence": "The first half of the premise is confirmed. `docs/plans/delivery-board-epics.md:172` reads `| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |`, and the Define quotes that row verbatim as its assumption c11 (`DEF.md:202`). `docs/insrc-delivery-board-prd.html:236` also lists Completion wording as an open decision, which supports testing it with users. The second half cannot be checked. The evidence contains no story list and no acceptance criteria from DEF.md, so nothing shows whether any story, S2 in particular, has an AC for a usability session. The direct read of `docs/plans/delivery-board-epics.md` returned NOT FOUND, though grep matched the file at line 172, so the anchor resolves and the read failure looks like a tooling problem. Either way, the missing link is a traceability gap, not something that would break the build: S2 would still be built correctly if the usability test were not written down as an AC.",
+          "action": "Check the stories in DEF.md for an AC on S2 that mentions a usability session or Completion wording. If there is none, close the gap: either add an AC to S2 requiring the usability session to test whether users read \"Complete\" (shown with approval evidence) as approval or as validation, or narrow c11 to say the test is tracked outside this Define.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The epics plan (line 172) gives the Completion-wording test to E2 S2, and the Define cites that row in c11. The evidence can't show whether any story carries a matching AC, so the fix needs a person to look at S2's ACs and choose how to resolve it. No safe text edit can be derived because the story text wasn't in the evidence.",
+            "options": [
+              "Add an acceptance criterion to S2: 'The E2 usability session tests the \"Complete\" wording with approval evidence and records whether users mistake it for validation; the outcome decides between keeping \"Complete\" and using \"Completion approved\".'",
+              "Change c11 to say the Completion-wording usability test is tracked in the epics plan (E2 S2) and is deliberately not an AC of this Define.",
+              "Leave it as is if S2 already has a usability-session AC (check DEF.md first)."
+            ]
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "Constraints",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The board's constraints k1-k11 are each operationalized by at least one story AC (k10 by s4/ac5, k7 by s5/ac5, k8 by s2/ac6), and every story FR traces to a PRD FR/AC.",
+          "evidence": "The engine ran no probes for this premise, so there is no evidence to check it against. There were no ripgrep matches and no `path:line` reads. The premise makes three claims. First, each of the board's constraints k1–k11 is operationalized by at least one story acceptance criterion (AC). Second, three specific mappings hold: k10→s4/ac5, k7→s5/ac5 and k8→s2/ac6. Third, every story functional requirement (FR) traces to a PRD FR/AC. None of these were checked against the artifact or the source. This is a traceability/inventory claim. If it were wrong, constraints would go unenforced, but no evidence shows that it is wrong.",
+          "action": "Re-run with probes that read the Constraints section (k1–k11) and every story's AC list. Build the k→AC mapping and confirm each constraint has at least one AC. Then confirm the three named mappings: s4/ac5 must reference k10, s5/ac5 must reference k7, and s2/ac6 must reference k8. Also check that every story FR cites an existing PRD FR or AC. If any constraint has no AC, add an AC to the owning story. If a named mapping turns out wrong, correct the citation.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "There is no evidence, so no edit can be proposed from it. Whether the premise holds depends on a coverage check across the artifact.",
+            "options": [
+              "Re-run the review with probes over the Constraints section and all story AC/FR lists to verify k1–k11 coverage and the three named mappings",
+              "Ask the author to add an explicit constraint→AC traceability table (k1–k11 → story/ac) to the artifact so the claim can be checked directly",
+              "Accept with a note that the traceability is author-asserted and was not verified"
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 13,
+        "low": 8
+      },
+      "reviewedAt": "2026-10-08T18:13:40.731Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p2": {
+        "findingId": "p2",
+        "status": "resolved",
+        "note": "Verified: src/workflow/delivery/types.ts:200-205 declares TaskValidation as { taskItemId, result: TaskResult, planned: boolean } only, and `grep dependsOn|acceptanceChecks src/workflow/delivery/*.ts` finds nothing. The assumption stands; the HLD chooses between reading the PLAN through workflow.deliveryEvidence and an additive field.",
+        "resolvedAt": "2026-10-08T18:20:51.303Z"
+      },
+      "p7": {
+        "findingId": "p7",
+        "status": "resolved",
+        "note": "Verified with a probe scoped to vscode-plugin/src: `grep -rl workflow.delivery vscode-plugin/src` returns only vscode-plugin/src/delivery/delivery-contract.ts (the type-only mirror E1 s5 added). No client calls either method yet.",
+        "resolvedAt": "2026-10-08T18:20:51.305Z"
+      },
+      "p8": {
+        "findingId": "p8",
+        "status": "resolved",
+        "note": "Verified: the additive-only rule is stated at docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md:476, and DeliverySnapshot carries `readonly schemaVersion: 1;` at src/workflow/delivery/types.ts:311.",
+        "resolvedAt": "2026-10-08T18:20:51.306Z"
+      },
+      "p10": {
+        "findingId": "p10",
+        "status": "resolved",
+        "note": "Accepted with a note: the daemon publishes six stage ids (src/workflow/delivery/types.ts DeliveryStage; STAGE_ORDER at stage.ts:42), and the board maps each id to the PRD's display label. s2 ac1 describes what the reader sees, so the labels belong there; the id-to-label map is board work for the HLD.",
+        "resolvedAt": "2026-10-08T18:20:51.308Z"
+      },
+      "p12": {
+        "findingId": "p12",
+        "status": "resolved",
+        "note": "Verified and clarified: needsAttention, attentionReasons and attentionRule are on DeliveryItem (types.ts:306-307, snapshot.ts), the conflict on approved-with-failed builds at types.ts:218 and gate.ts:310, unresolved-parent at graph.ts:238, and the stage reason with cited artifactIds on the stage annotation. review-without-build (stage.ts:227) has attention false (notice.ts:25); s4 ac6 now names it as the informational notice it is, not a conflict.",
+        "resolvedAt": "2026-10-08T18:20:51.309Z"
+      },
+      "p13": {
+        "findingId": "p13",
+        "status": "resolved",
+        "note": "Verified: ApprovalState is 'approved' | 'rejected' | 'pending' (types.ts:25), and each evidence entry's review carries verdict, effectiveVerdict and `override: { reason, at } | null` (types.ts:181-192), read by E1 s3 from meta.review and meta.reviewResolutions. No new persistence is needed for the board.",
+        "resolvedAt": "2026-10-08T18:20:51.310Z"
+      },
+      "p14": {
+        "findingId": "p14",
+        "status": "resolved",
+        "note": "Verified: graph.ts:315 ('an issue's stories are its fix stories') makes every fix story a child of its issue in childIds, so an issue may hold several; an unresolved parentRef keeps the issue and raises unresolved-parent (graph.ts:238; graph.test.ts covers both).",
+        "resolvedAt": "2026-10-08T18:20:51.312Z"
+      },
+      "p15": {
+        "findingId": "p15",
+        "status": "resolved",
+        "note": "Verified by listing: `find docs -name BUILD.md` gives 93 files, 24 of which carry the marker in their first 200 bytes. The rationale now says 24 of 93, and that the viewer finds records through workflow.artifactContent, which reads the marker.",
+        "resolvedAt": "2026-10-08T18:20:51.313Z"
+      },
+      "p16": {
+        "findingId": "p16",
+        "status": "resolved",
+        "note": "Accepted and corrected: the review pane reads by artifact id through workflow.pending and workflow.artifactContent (vscode-plugin/src/chat/docs-review-client.ts:82, :99); the daemon resolves the marker (src/workflow/artifact-content.ts:173). FR004's rationale now says so. The pane lists pending documents and opens one at a time, which is what the problem statement says.",
+        "resolvedAt": "2026-10-08T18:20:51.315Z"
+      },
+      "p18": {
+        "findingId": "p18",
+        "status": "resolved",
+        "note": "Verified: every PRD quote (c1, c5-c10, c12, c13, c15, c18-c23) appears in docs/insrc-delivery-board-prd.html, verbatim in the raw HTML or after stripping table-cell tags.",
+        "resolvedAt": "2026-10-08T18:20:51.316Z"
+      },
+      "p19": {
+        "findingId": "p19",
+        "status": "resolved",
+        "note": "Verified against the artifact: s1 has no dependencies, s2 -> s1, s3 -> s1, s2, s4 -> s1, s5 -> s2, s3, s4; acyclic, order s1, s2, s4, s3, s5.",
+        "resolvedAt": "2026-10-08T18:20:51.317Z"
+      },
+      "p20": {
+        "findingId": "p20",
+        "status": "resolved",
+        "note": "Accepted and corrected: the assumption now says the completion-wording usability test is assigned to S2 by the epics plan and tracked outside this Define's acceptance criteria.",
+        "resolvedAt": "2026-10-08T18:20:51.318Z"
+      },
+      "p21": {
+        "findingId": "p21",
+        "status": "resolved",
+        "note": "Verified against the artifact: k1-k11 are each operationalized by at least one criterion (k1 x2, k2 x12, k3, k4 x2, k5, k6 x2, k7, k8, k9 x4, k10, k11 x4); k10 by s4/ac5, k7 by s5/ac5, k8 by s2/ac6. Every story FR names its PRD FR/AC in its rationale.",
+        "resolvedAt": "2026-10-08T18:20:51.319Z"
+      }
+    },
+    "approvedAt": "2026-10-08T18:24:07.115Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Epic gives VS Code users a read-only delivery board: one place to see every epic, story, task and issue, the stage each has reached and why, and the separate approval, review and validation evidence behind it. A reader can find work that needs a decision, follow an epic down to a task and the record that supports it, and see contradictory or incomplete evidence plainly instead of having it hidden behind a single status label. The board changes nothing; it only reads what the workflow has already recorded.",
+      "audience": "product"
+    },
+    "flavor": "new-capability",
+    "problem": "Developers, reviewers and delivery leads who work in VS Code still cannot see delivery as a whole. The daemon now assembles every epic, story, task and issue, with its stage, its evidence and its approval, review and validation signals, into one coherent view, but nothing in the editor shows it. To learn what is ready, what needs a decision or why an item looks finished, a reader must still open and cross-read individual documents one at a time, and the facts that matter most are the ones that are easiest to miss that way: a build that was approved although some of its task checks failed, a review that blocks an unapproved design, a defect whose parent cannot be found, or a record that could not be read at all. Because the view is reachable only as raw data, its distinctions between workflow progress, human approval, automated review and task validation are lost on the way to the reader, and the only document surface in the editor shows one pending document at a time, so it cannot answer questions that span many items or show completed and in-progress work side by side.",
+    "nonGoals": [
+      {
+        "text": "Creating, approving, rejecting or editing any work item or record from the board, or moving work between stages.",
+        "rationale": "The first release is read-only by the PRD's scope (FR-09); controlled actions need their own interaction and workflow design."
+      },
+      {
+        "text": "Deriving stages, routes, identities, attention or conflicts in the editor.",
+        "rationale": "The daemon owns interpretation (PRD §07); a second derivation in the client would drift from the first and from the JetBrains board that follows."
+      },
+      {
+        "text": "Changing the existing VS Code document review pane.",
+        "rationale": "That pane belongs to Epic bfe98ff7; the board opens evidence in it but does not alter it."
+      },
+      {
+        "text": "The JetBrains board.",
+        "rationale": "Deferred to E3, a parity pass after this Epic settles the interaction decisions."
+      },
+      {
+        "text": "Automatic refresh, live agent activity, review annotations or agent handoff.",
+        "rationale": "The daemon sends nothing unsolicited, live activity cannot be inferred from records, and annotations are an unframed follow-on (PRD §02, §10)."
+      },
+      {
+        "text": "Assignees, sprints, due dates, priorities, estimates or external tracker synchronisation.",
+        "rationale": "Out of scope for the first release per PRD §02."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The delivery view published by E1 (workflow.delivery and workflow.deliveryEvidence, schemaVersion 1) is the board's only data source, and later changes to it are additive optional fields.",
+        "confidence": "high",
+        "source": "c3"
+      },
+      {
+        "text": "A dedicated editor tab is the right primary placement, to be checked against a sidebar entry in the first story.",
+        "confidence": "med",
+        "source": "c9"
+      },
+      {
+        "text": "Manual refresh is enough for the first release.",
+        "confidence": "high",
+        "source": "c10"
+      },
+      {
+        "text": "The delivery view does not carry a task's dependencies or acceptance checks, only its validation result, so showing them needs either the plan record read through the daemon or an additive field in the delivery view; which one is a design decision for the HLD.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "\"Complete\" stays as the final stage's label; whether readers take it for validation success is tested in a usability session that the epics plan assigns to S2, outside this Define's acceptance criteria.",
+        "confidence": "med",
+        "source": "c11"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "The board reads delivery data only through the daemon's IPC; it never opens the daemon's databases or reads the artifact store's files itself.",
+        "type": "contract",
+        "source": "c5"
+      },
+      {
+        "id": "k2",
+        "text": "The board displays the stage, route, attention and conflict facts the daemon publishes and does not derive or override them.",
+        "type": "contract",
+        "source": "c5"
+      },
+      {
+        "id": "k3",
+        "text": "No navigation, filter, expansion or refresh changes any artifact, approval, source file or Git state.",
+        "type": "invariant",
+        "source": "c6"
+      },
+      {
+        "id": "k4",
+        "text": "Artifact text is rendered as data: embedded HTML or scripts are never executed, and file navigation goes only through the host's existing authorised viewer, never to arbitrary paths taken from artifact content.",
+        "type": "invariant",
+        "source": "c7"
+      },
+      {
+        "id": "k5",
+        "text": "Only one coherent snapshot is applied at a time; a superseded response is dropped and never merged with a newer one.",
+        "type": "invariant",
+        "source": "c8"
+      },
+      {
+        "id": "k6",
+        "text": "A failed refresh keeps the last successful view with a stale or error notice, and an empty workspace, an unavailable daemon and a failed read are distinct states.",
+        "type": "invariant",
+        "source": "c12"
+      },
+      {
+        "id": "k7",
+        "text": "After data arrives, the initial board renders within one second for a 1,000-artifact, 500-item fixture, and each local filter change responds within 150 ms.",
+        "type": "stakeholder",
+        "source": "c13"
+      },
+      {
+        "id": "k8",
+        "text": "The board's webview follows the plugin's existing pattern of a restrictive Content-Security-Policy on every webview document.",
+        "type": "convention",
+        "source": "c14"
+      },
+      {
+        "id": "k9",
+        "text": "The same snapshot and filters always produce the same order and counts.",
+        "type": "invariant",
+        "source": "c15"
+      },
+      {
+        "id": "k10",
+        "text": "The existing review pane (Epic bfe98ff7) is opened for evidence but not modified.",
+        "type": "stakeholder",
+        "source": "c2"
+      },
+      {
+        "id": "k11",
+        "text": "Every colour-coded state also has a text label, every control and evidence entry is reachable by keyboard with visible focus, card selection and refresh results are announced without excessive chatter, and a narrow pane keeps every item and warning reachable.",
+        "type": "invariant",
+        "source": "c23"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Open the board, refresh it, and see why it is empty, unavailable or incomplete",
+        "userValue": "A reader can open the delivery board in an editor tab, refresh it when they choose, and always know whether what they see is current, stale, empty or only partly readable, so they never mistake missing data for missing work.",
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a workspace whose daemon is running",
+            "when": "the user opens the delivery board",
+            "then": "the board opens in an editor tab showing the work items of one snapshot and the time that snapshot was taken",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the board is showing a snapshot",
+            "when": "the user refreshes and the refresh fails",
+            "then": "the last successful board stays visible with a notice that names the failure and the time of the last successful refresh",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a workspace with no recorded work, a daemon that cannot be reached, a read that fails, and a snapshot that reports unreadable records",
+            "when": "the board is opened in each case",
+            "then": "each case shows its own distinct state and message, and the partly readable case still shows every readable item",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "two refreshes are requested in quick succession",
+            "when": "the response to the earlier request arrives after the later one",
+            "then": "only the later snapshot is shown and nothing from the earlier snapshot is mixed into it",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the user has a filter applied and an item selected",
+            "when": "a refresh succeeds and the item still exists",
+            "then": "the filter and the selection are kept; if the item no longer exists the selection is cleared and the user is told",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a repository under version control with recorded workflow artifacts",
+            "when": "the user opens the board and refreshes it repeatedly",
+            "then": "no artifact, approval, source file or Git state changes",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "The editor-tab placement is checked against a sidebar entry point before this Story completes, and the decision is recorded.",
+            "type": "stakeholder",
+            "source": "c9"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The user can open the delivery board from a command and refresh it on demand.",
+            "rationale": "FR-07; refresh is manual in the first release."
+          },
+          {
+            "statement": "The board shows when its current data was taken and, after a failed refresh, the failure and the time of the last success.",
+            "rationale": "FR-07 and the PRD's freshness rule."
+          },
+          {
+            "statement": "The board distinguishes an empty workspace, an unavailable daemon, a failed read and partially readable data.",
+            "rationale": "FR-08 / AC-10."
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c16"
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "See every work item in its stage column, with its signals, and narrow the board",
+        "userValue": "A reader can scan the whole delivery picture by stage, see at a glance which items carry an approval, review, validation or conflict signal, and narrow the board to one epic, to standalone work, to a search or to what needs attention, with every count agreeing with what they see.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a snapshot with stories and issues at every stage",
+            "when": "the board renders",
+            "then": "it shows six columns in workflow order, Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded and Complete, and each story or issue appears exactly once, in the column the snapshot assigns it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a story whose build record is approved but holds failed task results",
+            "when": "the board renders",
+            "then": "its card sits in Complete and carries a validation-conflict badge with a text label",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an unapproved design whose review blocks it",
+            "when": "the user turns on the Needs attention filter",
+            "then": "the card shows a review-blocked badge, matches the filter, and stays in its own stage column",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user selects one epic and enters a search",
+            "when": "the board updates",
+            "then": "the cards, column counts and totals all agree with each other, including cards hidden behind a show-more control, and clearing the search and the scope restores the previous set",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the same snapshot loaded twice with the same filters, including items with equal timestamps",
+            "when": "the board renders each time",
+            "then": "the order of cards and every count are identical",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a work item title or notice that contains markup or script text",
+            "when": "its card renders",
+            "then": "the text is shown literally and nothing in it runs",
+            "operationalizes": [
+              "k4",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Each card shows the item's title, kind, whether it is standalone, and text-labelled badges for approval, review, validation, conflict and data-quality notices.",
+            "rationale": "FR-02; colour is never the only signal."
+          },
+          {
+            "statement": "The user can search, scope to one epic or to standalone work, and filter to items that need attention, using the daemon's attention decision.",
+            "rationale": "FR-04."
+          },
+          {
+            "statement": "Every displayed count reflects the current selection, including items not yet shown on screen.",
+            "rationale": "FR-04 / AC-09."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "See progress per epic and follow defects to the work that fixes them",
+        "userValue": "A delivery lead can see how far each epic has progressed with counts that say what they count, keep standalone work separate from epic work, and follow each defect to its fix stories, including defects whose parent cannot be found.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an epic with five stories of which two are complete",
+            "when": "the user opens the epic rollup",
+            "then": "the epic shows a completion count that names its denominator, such as 2 of 5 stories complete, and its stories grouped by stage",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "standalone stories and standalone issues alongside epics",
+            "when": "the epic rollup renders",
+            "then": "standalone work is shown in its own group and is not counted towards any epic",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an issue that links to a story, and another issue whose parent cannot be resolved",
+            "when": "the user opens the issue view",
+            "then": "the first shows a relationship the user can follow to the story, and the second is still listed with an unresolved-parent notice",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "an issue with more than one fix story",
+            "when": "the user opens the issue view",
+            "then": "the issue shows each fix story as a distinct child with its own stage",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a search or epic scope applied on the board",
+            "when": "the user switches to the epic rollup or the issue view",
+            "then": "the same selection applies and the counts agree with the board",
+            "operationalizes": [
+              "k9"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The epic rollup shows each epic's progress with counts that name what they count, and keeps standalone work separate.",
+            "rationale": "FR-03."
+          },
+          {
+            "statement": "The issue view lists every issue with its fix stories and its parent relationship, or a notice when the parent cannot be resolved.",
+            "rationale": "FR-03 / AC-08, AC-13."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Open a work item to see its tasks, why it is in its stage, and the records behind it",
+        "userValue": "A developer or reviewer can open any item and see its tasks with their dependencies, checks and recorded results, the reason for its stage, and every supporting record with its approval and review, then open each record to read it, so they can explain an item's state without searching the records by hand.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a story whose plan lists tasks and whose build record has results for some of them",
+            "when": "the user opens the story's details",
+            "then": "each planned task shows its dependencies and acceptance checks and is labelled Passed, Failed or Unrecorded, a task present only in the build record is labelled unplanned, and Unrecorded tasks are not counted as passed or failed",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "any work item",
+            "when": "the user opens its details",
+            "then": "the details show the daemon's stated reason for the item's stage and the records that reason cites",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a story whose build is approved although some task results failed",
+            "when": "the user opens its details",
+            "then": "the approval and the failed results are shown together with an explanation of the conflict, and neither is hidden",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a rejected record, a record with a review override, and an approved record with a historical blocking review",
+            "when": "the user reads their evidence entries",
+            "then": "the rejection is labelled rejected, not pending, and the original review verdict is shown together with any override",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "an evidence record the existing document viewer can open, and a build record that viewer cannot open",
+            "when": "the user opens each",
+            "then": "the first opens in the existing review pane and the second is shown read-only from the daemon, with its text rendered as data",
+            "operationalizes": [
+              "k1",
+              "k4",
+              "k10"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a story that has a code review but no build record",
+            "when": "the user opens its details",
+            "then": "its stage is unchanged, a review-without-build notice (the PRD's unledgered code review) explains the situation, and the code review is listed in its evidence",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Whether a record opens in the existing review pane or is read through the daemon follows the open-with value the daemon publishes for that record.",
+            "type": "contract",
+            "source": "c17"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Item details show nested tasks with dependencies, acceptance checks and recorded results, linked issues and full source identity.",
+            "rationale": "FR-05."
+          },
+          {
+            "statement": "Item details explain the stage and let the user open each supporting record.",
+            "rationale": "FR-06."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Use the board in a narrow pane, with the keyboard alone, and at either density",
+        "userValue": "Every reader, including keyboard-only and screen-reader users and those working in a narrow pane, can reach the same work, warnings and evidence, and a large workspace stays responsive.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the board open in a narrow pane",
+            "when": "it renders",
+            "then": "columns become a grouped list by stage and every card, badge and warning remains available",
+            "operationalizes": [
+              "k11"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a user who uses only the keyboard",
+            "when": "they move through the views, open an item's details and close them again",
+            "then": "every control and evidence entry is reachable with visible focus, and closing the details returns focus to where they were",
+            "operationalizes": [
+              "k11"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a screen reader",
+            "when": "the user moves between cards and refreshes",
+            "then": "every colour-coded state has a text label, and card selection and the refresh result are announced once",
+            "operationalizes": [
+              "k11"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user switches between compact and comfortable density",
+            "when": "the board re-renders",
+            "then": "no warning, badge or accessibility label is hidden at either density",
+            "operationalizes": [
+              "k11"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a fixture of 1,000 records forming 500 work items on the reference environment",
+            "when": "the snapshot arrives and the user then changes a filter",
+            "then": "the initial board renders within one second and each filter change responds within 150 ms",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The board adapts to a narrow pane by grouping items by stage without dropping information.",
+            "rationale": "PRD §08 responsive layout / mock E."
+          },
+          {
+            "statement": "The board is fully operable by keyboard and screen reader.",
+            "rationale": "AC-14 and the PRD's accessibility rule."
+          },
+          {
+            "statement": "The user can choose compact or comfortable card density.",
+            "rationale": "FR-10."
+          },
+          {
+            "statement": "The board meets the agreed render and filter response targets for a large workspace.",
+            "rationale": "AC-18, client half."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E202610086a131558:FR001",
+          "statement": "The board shows every work item in the delivery view in exactly one stage column, with its approval, review, validation and conflict signals shown as separate facts.",
+          "scope": "doc",
+          "rationale": "The PRD's product principle: a convenient status label must not conceal contradictory evidence."
+        },
+        {
+          "id": "E202610086a131558:FR002",
+          "statement": "The board offers a board view, an epic rollup view and an issue view over the same delivery view, and every count shown agrees with the cards the current selection contains.",
+          "scope": "doc",
+          "rationale": "FR-03 and FR-04 / AC-09."
+        },
+        {
+          "id": "E202610086a131558:FR003",
+          "statement": "A reader can search, scope to one epic or to standalone work, and filter to items that need attention, and clearing a filter restores the previous set.",
+          "scope": "doc",
+          "rationale": "FR-04."
+        },
+        {
+          "id": "E202610086a131558:FR004",
+          "statement": "A reader can open any work item's details, see its tasks and the reason for its stage, and open each supporting record in the editor's existing document viewer, or read it through the daemon when that viewer cannot open it.",
+          "scope": "doc",
+          "rationale": "FR-05 and FR-06; the existing viewer reads a record by artifact id through workflow.artifactContent, which finds the record from the insrc:artifact marker in its markdown, and on 2026-10-08 only 24 of the 93 build-record markdown files carried that marker."
+        },
+        {
+          "id": "E202610086a131558:FR005",
+          "statement": "The board refreshes only when the reader asks, keeps the last successful view when a refresh fails, and tells an empty workspace, an unavailable daemon, a failed read and partially readable data apart.",
+          "scope": "doc",
+          "rationale": "FR-07, FR-08 and the PRD's freshness rule."
+        },
+        {
+          "id": "E202610086a131558:FR006",
+          "statement": "Using the board never changes any record, approval, source file or Git state.",
+          "scope": "doc",
+          "rationale": "FR-09 / AC-11."
+        },
+        {
+          "id": "E202610086a131558:FR007",
+          "statement": "The board is usable with the keyboard alone, labels every colour-coded state in text, and works in a narrow pane as well as a wide editor tab.",
+          "scope": "doc",
+          "rationale": "AC-14 and the PRD's accessibility and responsive-layout rules."
+        },
+        {
+          "id": "E202610086a131558:S001:FR001",
+          "statement": "The user can open the delivery board from a command and refresh it on demand.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "FR-07; refresh is manual in the first release."
+        },
+        {
+          "id": "E202610086a131558:S001:FR002",
+          "statement": "The board shows when its current data was taken and, after a failed refresh, the failure and the time of the last success.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "FR-07 and the PRD's freshness rule."
+        },
+        {
+          "id": "E202610086a131558:S001:FR003",
+          "statement": "The board distinguishes an empty workspace, an unavailable daemon, a failed read and partially readable data.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "FR-08 / AC-10."
+        },
+        {
+          "id": "E202610086a131558:S002:FR001",
+          "statement": "Each card shows the item's title, kind, whether it is standalone, and text-labelled badges for approval, review, validation, conflict and data-quality notices.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "FR-02; colour is never the only signal."
+        },
+        {
+          "id": "E202610086a131558:S002:FR002",
+          "statement": "The user can search, scope to one epic or to standalone work, and filter to items that need attention, using the daemon's attention decision.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "FR-04."
+        },
+        {
+          "id": "E202610086a131558:S002:FR003",
+          "statement": "Every displayed count reflects the current selection, including items not yet shown on screen.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "FR-04 / AC-09."
+        },
+        {
+          "id": "E202610086a131558:S003:FR001",
+          "statement": "The epic rollup shows each epic's progress with counts that name what they count, and keeps standalone work separate.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "FR-03."
+        },
+        {
+          "id": "E202610086a131558:S003:FR002",
+          "statement": "The issue view lists every issue with its fix stories and its parent relationship, or a notice when the parent cannot be resolved.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "FR-03 / AC-08, AC-13."
+        },
+        {
+          "id": "E202610086a131558:S004:FR001",
+          "statement": "Item details show nested tasks with dependencies, acceptance checks and recorded results, linked issues and full source identity.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "FR-05."
+        },
+        {
+          "id": "E202610086a131558:S004:FR002",
+          "statement": "Item details explain the stage and let the user open each supporting record.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "FR-06."
+        },
+        {
+          "id": "E202610086a131558:S005:FR001",
+          "statement": "The board adapts to a narrow pane by grouping items by stage without dropping information.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "PRD §08 responsive layout / mock E."
+        },
+        {
+          "id": "E202610086a131558:S005:FR002",
+          "statement": "The board is fully operable by keyboard and screen reader.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "AC-14 and the PRD's accessibility rule."
+        },
+        {
+          "id": "E202610086a131558:S005:FR003",
+          "statement": "The user can choose compact or comfortable card density.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "FR-10."
+        },
+        {
+          "id": "E202610086a131558:S005:FR004",
+          "statement": "The board meets the agreed render and filter response targets for a large workspace.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "AC-18, client half."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Product principle: preserve the difference between workflow progress, human approval, automated review, and task validation. A convenient status label must not conceal contradictory evidence."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "E2 opens evidence *in* that pane but does not change it, so it should be framed as **new**, with `bfe98ff7` as an adjacent boundary."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly tasks:            readonly TaskValidation[];"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "The production IDE client obtains a normalized read model through daemon IPC; it does not open the daemon’s databases or independently interpret artifact files."
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Safe rendering: render artifact text as data. Never execute embedded HTML/scripts or follow arbitrary file paths from artifact content. File navigation must use the host’s existing authorized viewer."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Concurrency: apply one coherent snapshot at a time. Drop superseded responses; do not combine half of an old snapshot with half of a newer one."
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Placement: a dedicated editor tab is the leading candidate for a wide board; validate against a tool-window entry point."
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Freshness: a failed refresh keeps the last successful view with a stale/error notice. An empty workspace, unavailable daemon, and failed read are different states."
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "The initial board renders within one second of data arrival; each local filter change responds within 150 ms."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/webview-host.ts",
+      "quotedText": "<meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">"
+    },
+    {
+      "id": "c15",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Determinism: the same snapshot and filters produce the same order and counts. Use recorded timestamps with a stable identity tie-breaker."
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: vscode-plugin/src daemon IPC client, webview panel host and command registry",
+      "quotedText": "delivery/delivery-contract.ts types the two delivery methods (:40-41) but nothing calls them; a board adds a delivery client, a board panel and renderer, and an entry command."
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly openWith:       'review-view' | 'evidence-read';"
+    },
+    {
+      "id": "c18",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "It appears in Complete with a conflict badge; detail shows approval and failed results together."
+    },
+    {
+      "id": "c19",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Cards, counts, and rollups agree; clearing the filter restores the scoped set."
+    },
+    {
+      "id": "c20",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "All evidence and navigation remain accessible; closing details restores the prior context."
+    },
+    {
+      "id": "c21",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Show a navigable relationship when resolvable; otherwise show an unresolved reference and retain the issue."
+    },
+    {
+      "id": "c22",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Its stage is unchanged by the CR; the card shows an unledgered-code-review notice and the CR appears in its evidence."
+    },
+    {
+      "id": "c23",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Accessibility: keyboard navigation, visible focus, screen-reader labels, and text labels for every color-coded state. Card selection and refresh results are announced without excessive chatter."
+    }
+  ]
+}

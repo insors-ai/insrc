@@ -24,7 +24,192 @@
     "hldBaseRunId": "wf-1791349476498-tih4l4",
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Define's Story s1 has six acceptance criteria (ac1 to ac6) and the design covers each one, while leaving every limit and content cut at its present value.",
+          "evidence": "DEF.md:123-128 lists ac1 (each result states completeness, counts and why), ac2 (a lookup that cannot run is failed, never empty), ac3 (partly read item named with how much was read), ac4 (files a text lookup left out, and why or by what rule), ac5 (every answer states completeness on either path), ac6 (answer-step failure reported with what the lookups found). The design answers these with: 2.1/3.1/3.8 (record on lookups and plan tasks), 3.3/3.15/2.3 (catch clauses rethrow, four conversion sites), 3.4/3.12 (partlyRead and measureItem), 2.2/3.9 (search `omitted`), 2.4/2.6/2.7 (report and completeness line on both paths), 2.5 (answer-step-failed with `found`). No limit value is changed; removal of limits stays with Story s4 (DEF.md:177-182).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The executor converts a thrown lookup error to the failed output at exactly two places today, and stepPlan's prepare for a lookup that pauses for a model call is unguarded.",
+          "evidence": "src/analyze/explore/executor.ts:203-230 (executePlan: runner and cache put inside the try, catch builds `type: 'failed'`), :540-565 (stepPlan deterministic branch, same shape). :502 `const prep = await narrow.prepare(exp, ctx);` has no try, and :505 stores the short-circuit output. plan.ts:111 and narrow.ts:174 call stepPlan outside any try; the only catch above them is handler.ts:107-110, which returns `errorResult('internal', msg, false)`, so the executed results are lost as the design says. [files: src/analyze/explore/executor.ts, src/mcp/analyze-step/handler.ts]",
+          "action": "None. The design could note that the throw surfaces today as the non-retryable 'internal' error rather than an uncaught abort; it does not change the fix.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The text search silently drops unreadable directories and files, files over 2 MB and line tails past 500 characters, falls back to the Node backend on any ripgrep failure, and the search tool labels every thrown error 'bad regex'.",
+          "evidence": "src/daemon/tools/builtins/search/grep.ts:91 `try { entries = await fs.readdir(...) } catch { return; }`; :95 skips dot-named and ignore-list entries; :98 `if (!entry.isFile()) { continue; }`; :102 size skip; :107 and :193 `.slice(0, 500)`; :111 `catch { /* skip binary / permission-denied */ }`; :178 `-m limit` and :200 `hits.slice(0, opts.limit)`; :182-183 return null on spawn error or any exit code other than 0 or 1; :162-164 catch returns `error: 'bad regex'`. shell-helper.ts:86-89 stops appending past maxBytes with no flag, and ShellResult (:15-26) has no field for it. [files: src/daemon/tools/builtins/search/grep.ts, src/daemon/tools/shell-helper.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The pipeline's 'bundle' outcome carries only the raw bundle and a count, the cause table takes a prompt path as its third parameter, and the three causes after the lookups ran map to interim errors with nothing the lookups found.",
+          "evidence": "src/analyze/context/driver.ts:1079 `{ kind: 'bundle'; raw; explorationCount }`; :1105-1109 `errorForPipelineCause(cause, message, promptPath?: string)`; :1118-1123 map answer-model-failed to ShaperLlmUnavailableError and answer-invalid / bundle-invalid to ShaperAnswerInvalidError; :1146 and :1151 are the two calls; the bundle outcome is returned at :1309-1313 and :1346-1350; :1357, :1364, :1371 return the three post-lookup causes plus answer-prompt-missing with only a message. daemon/analyze-rpc.ts:904-905 and :930-931 map them to 'shaper-llm-unavailable' and 'shaper-schema-unrecoverable', matching the backward-compat paragraph. [files: src/analyze/context/driver.ts, src/daemon/analyze-rpc.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The indexer cuts a stored body to a fixed length with a marker line and stamps a content hash on the file entity, so a full length can be measured from the file and checked against that hash without storing anything new.",
+          "evidence": "src/indexer/parser/artifact.ts:298-300 `truncate(text)` returns `text.slice(0, MAX_BODY) + '\\n… (truncated)'`, applied at :287 `body: truncate(source)`. src/indexer/index.ts:753 `const hash = contentHash(source);` and :781-782 `if (fileEntity) fileEntity.hash = hash;`. src/analyze/context/live-project-context.ts:164-191 stops at maxDecisions / maxConstraints with a bare `break` and reports nothing, as 3.12 says. [files: src/indexer/parser/artifact.ts, src/indexer/index.ts, src/analyze/context/live-project-context.ts]",
+          "action": "None. measureItem must use the same contentHash function as the indexer; name it in the plan.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The code 'answer-step-failed' is already declared in both lists and raised nowhere, and the daemon's error payload already has a `data` member the new error can use.",
+          "evidence": "A search of src outside tests finds 'answer-step-failed' only at src/analyze/orchestrator/types.ts:279 and src/daemon/analyze-rpc.ts:148, :944 (the two lists and CAUSE_CODES_IN_BOTH_LISTS); no error class maps to it. analyze-rpc.ts:895-902 already returns `data: { scopePath, registeredAs }` for scope-not-indexed, so the payload shape has room for { reason, results, report }. The comment at :928-929 says the interim mapping stands 'until the answer-step failure (with the lookup results) replaces it'. [files: src/daemon/analyze-rpc.ts, src/analyze/orchestrator/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The answer schemas of the three lookups that pause for a model call are static private constants, so a `schema` member on the runner entry can hold them; the entry exposes only prepare and finalize today.",
+          "evidence": "src/analyze/explore/executor.ts:303-306 NarrowRunnerEntry has `prepare` and `finalize` only; :299 the schema is on the prepare result. doc-decision-trace.ts:56 `const DECISIONS_SCHEMA`, doc-constraint-enumerate.ts:54 `const CONSTRAINTS_SCHEMA`, capability-reuse-check.ts:65 `const VERDICTS_SCHEMA` are unexported module constants, each returned unchanged from prepare (:255, :240, :271). None is built per call, so reading it from the entry gives the same schema the client was sent. executor.ts:359-363 is the null-answer exemption for capability.reuse-check. [files: src/analyze/explore/executor.ts, src/analyze/explore/doc-decision-trace.ts, src/analyze/explore/doc-constraint-enumerate.ts, src/analyze/explore/capability-reuse-check.ts]",
+          "action": "None. The build must export the three constants (or have each lookup file export an accessor).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The lookups hold twenty-five catch clauses in twelve files (the executor's two apart), and the plan-task runtimes hold fifteen in eleven files at the lines listed.",
+          "evidence": "A search for catch openings under src/analyze/explore gives 27 in 13 files: capability-reuse-check 2, concept-resolve 2, config-trace 1, db-connections-list 1, db-table-describe 5, db-tables-list 4, doc-constraint-enumerate 1, doc-decision-trace 1, freeform-probe 1, manifests-locate 1, module-profile 5, search-text 1, executor 2. That is the design's 25 in 12 plus the executor's two. Under src/analyze/runtimes, outside tests: structure-module-tree.ts:121, schema-table.ts:81, _shared.ts:119, discovery-families.ts:183, inventory-ci.ts:135, inventory-docker.ts:138 and :144, inventory-helm.ts:110 and :157, inventory-kubernetes.ts:85, inventory-terraform.ts:154 and :173, adherence.ts:229, aggregator.ts:100 and :214. Fifteen in eleven files, line for line as 3.15 lists; the daemon review's count of eighteen is not reproduced. [files: src/analyze/explore, src/analyze/runtimes]",
+          "action": "None. The fifteen stands; the build's recount should confirm it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Twenty-six files return a plan task's result, split code 6, data 5, docs 5, generic 1, infra 8 and the shared aggregator.",
+          "evidence": "The files under src/analyze/runtimes/*/ other than index.ts, _shared.ts, aggregate-types.ts and shared/adherence.ts are: code (adherence-check, aggregate-report, discovery-entrypoints, discovery-modules, structure-module-tree, surface-functional), data (adherence-check, aggregate-report, discovery-connections, discovery-objects, schema-table), docs (aggregate-report, constraint-enumerate, decision-trace, discovery-inventory, family-summarise), generic (aggregate-report), infra (adherence-check, aggregate-report, discovery-families, inventory-ci, -docker, -helm, -kubernetes, -terraform), shared/aggregator.ts. That is 26 and equals the list in 3.8. walker.ts:294-302 builds the planner-kind record from `childResult.root.finalReport` with no runtime, as stated. [files: src/analyze/runtimes, src/analyze/executor/walker.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every reader and writer of the fields this Story removes (`truncated` on three lookup outputs and five infra inventories, `totalCallers`, `exhaustedNote`) is in a change-site list, including the answer-writing prompts.",
+          "evidence": "Outside tests, `totalCallers` is at usage-example.ts:141, :172, :184, types.ts:303 and prompts adherence:24, capability:24, code:46; `exhaustedNote` at freeform-probe.ts:127, :153, :179, types.ts:650 and prompt code:79; lookup `truncated` at search-text.ts:116, :139, :148, config-trace.ts:115, :137, :146, db-tables-list.ts:113, :130, :182, types.ts:458, :553, :673 and prompts adherence:25, :28, :56, data:19, :46, :68, code:73. Inventory `truncated` is at inventory-kubernetes.ts:126, -helm.ts:138, -docker.ts:153, -ci.ts:147, -terraform.ts:222, asserted at infra-runtimes.test.ts:811 and :877. All are named in 3.1, 3.4, 3.6 or 3.7. runGrepSearch has four callers (search-text.ts:100, config-trace.ts:100, review/probe.ts:62, grep.ts:153), as stated. Two small gaps: 3.6 says 'Five prompts' but names four files, and four is what the search finds; and infra/__tests__/aggregate-report.live.test.ts:57, :75 builds inventory fixtures with `truncated: false` and is not named. [files: src/prompts/analyze/synthesize.code.system.md, src/analyze/runtimes/infra/__tests__/aggregate-report.live.test.ts]",
+          "action": "Correct 'Five prompts' to four in 3.6, and add aggregate-report.live.test.ts to the tests that change with the inventories' `truncated` field.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored before the change can be served as if it had a record: the lookup cache key has no version today and can take one, the bundle schema version is in the bundle cache key, and the run-level resume rebuilds the result field by field.",
+          "evidence": "src/db/exploration-cache.ts:14-18 and :86-97: the key is repoId, lastIndexedAt and 8 bytes of the param hash, with no version; :61-69 hashExplorationParams is where a version can be folded in without changing the repoId prefix that deleteCachedExplorationsForRepo ranges over (:151-158). :124-125 says only successful outputs are cached, yet narrow.ts:128-138 stores whatever finalize returned, as the design notes. src/analyze/context/schema.ts:40 `SCHEMA_VERSION = 1`, :89 `additionalProperties: false`; driver.ts:440 `h.update(String(SCHEMA_VERSION))` puts it in the bundle cache key. orchestrator/driver.ts:132-140 builds the resumed result as a literal of seven named fields, so `report` must be added there or a new record resumes without it. start.ts:90 has the literal `schemaVersion: 1`. [files: src/db/exploration-cache.ts, src/analyze/context/schema.ts, src/analyze/orchestrator/driver.ts, src/mcp/analyze-step/phases/start.ts]",
+          "action": "None. Fold the cache version into the hashed part of the key, not the prefix, so deletion by repo keeps working.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story owns sc1 and sc2 and only consumes sc6; its three departures from the HLD's sketch of sc1 are recorded as back-flows, and it leaves the limits, the size measure, the handling report and the layouts to their owning Stories.",
+          "evidence": "HLD.md:184 `**Owns:** sc1, sc2` for this Story, with later Stories depending on them (:192, :199, :205, :212). HLD.md:68-73 sketches `complete` and `partlyRead` with `totalChars: number`; the design's nullable totalChars, the list-valued `limited` and the 'model-directed' basis are each listed in section 10 as a back-flow to the HLD. `measure` and `handling` are declared `unknown` for Stories s2 and s3. For sc6 the design adds one error class and its case in both mapping functions; both lists already declare the code (analyze-rpc.ts:942-946) and the mapping function's own comment (:928-929) expects this Story to replace the interim case. No limit value changes, which keeps Story s4's scope (DEF.md:177-182) untouched. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md]",
+          "action": "None. The three back-flows need the HLD amended before Stories s2 to s5 are designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "On the step tool's path, a missing answer prompt after the lookups ran loses the executed results today, the error output has no place for data, and a finalize throw is a retryable 'narrow-finalize' error whose output is then cached whatever it is.",
+          "evidence": "plan.ts:178 and narrow.ts:225 call prepareSynthesize outside any try; synthesizer.ts:189 loads the prompt there and :319, :326 throw SynthesizerPromptMissingError, which only handler.ts:107-110 catches, as 'internal' with no state. types.ts:124-131 StepOutputError.error has code, message and retryable only; the helpers at plan.ts:226 and narrow.ts:269 take those three. narrow.ts:100-126 returns retryable 'narrow-finalize' on any finalize throw, and :128-138 stores the finalized output unconditionally. The one-shot tool at mcp/server.ts:1338-1341 prints `result.error.code` and `.message` and drops any data. freeform-probe.ts:140-156 returns an empty bundle with a note at the turn limit instead of failing. Each of these has a stated detection and response in section 5 or 2.5. [files: src/mcp/analyze-step/phases/plan.ts, src/mcp/analyze-step/phases/narrow.ts, src/mcp/analyze-step/types.ts, src/mcp/server.ts, src/analyze/explore/freeform-probe.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1 to ac6 maps to at least one named test, and the existing tests the design says must change are where it says they are.",
+          "evidence": "The acceptance mapping gives every criterion in DEF.md:123-128 between four and eight proving tests, on both paths for ac1 and ac5 (lookup table test and plan-task runtime table test; runShaper bundle and plan-tree integration run). The behaviour-guarding checks name a mutation (restore the swallowing catch, remove the conversion, store before the check, leave `report` out of the resume literal). The existing assertions on the removed inventory field are at src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts:811 `assert.equal(inv.truncated, false)` and :877 `assert.equal(helm.truncated, false)`, as 3.4 states. The stripped schema is cached in a module variable (synthesizer.ts:282-301), which is what the test 'on the first call and on a later one' guards.",
+          "action": "None. I did not run any suite; this confirms the mapping and the cited test sites only.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T06:25:59.216Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {
@@ -161,7 +346,7 @@
           "internal": "Widening the plan tasks of each family (code, docs, infra, data) to exactly the kinds of scope the corrected table gives it, with the scope check the docs tasks share with the code tasks taking the family's row as an argument, and every task that reads the scope's value directly (three docs tasks, the shared adherence task, the task that lists data connections) moved to the resolution function Story s6 defines, including a data connection for the data tasks, and refusing any other pairing with the existing code for it. Running a broad analysis through classification, the run context, planning, the plan walk with its nested plans, and the aggregator, to a final report; finding and correcting what stops it at each stage. A stop the run catches is already recorded; what is added is a handler for an error nothing catches, in the plan walk and in the daemon's request, that writes the run record, and the rule that a record still in progress with no live run behind it is abandoned: the daemon's in-memory set of running ids, the three readers that apply it, and the rewrite of the record as failed with the code 'run-abandoned', which Story s6 declares and this Story raises. Making a task's refusal of a scope a typed error the plan walk recognises, with an optional code on the failed-task record. Its design begins by running one and recording how far it gets; if what is found is more than one Story, it is brought back to be split."
         }
       ],
-      "rolloutPhase": "Phase B \u2014 say when a result is incomplete",
+      "rolloutPhase": "Phase B — say when a result is incomplete",
       "nonFunctional": {
         "performance": "A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.",
         "observability": "Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.",
@@ -541,7 +726,7 @@
       {
         "entity": "An item's full length, measured from its file and not from the stored body",
         "change": "invariant-change",
-        "details": "The index stores, for each entity, a pointer (its file, start line and end line) and a body. For a non-code file the indexer cuts the body to 8,192 characters and appends a marker line, '\u2026 (truncated)' (src/indexer/parser/artifact.ts:92, :298-300, applied at :182, :250 for sections, :287 for documents and :355). Every reader in the analyzer measures the stored body today, so a 100,000-character section cut again to 2,000 by a document lookup would be reported as 2,000 of about 8,206, and a document cut only by the indexer would read as whole. The stored body is a snippet; the item is in the file. Nothing is added to what the index stores (the Define's non-goal stands). Wherever this Story reports a partly read item, the full length is measured from the file on disk at the entity's pointer, by one new function, measureItem, in a new module src/analyze/item-length.ts: for a document or a file entity, the file's length; for a section, the length of its lines from start line to end line. It returns the full length and whether the stored body was cut by the indexer (the full length exceeds the stored body's, or the body ends with the marker). If the file has changed since it was indexed, its lines may no longer be the entity's: measureItem compares the file's content hash with the hash the indexer recorded on the file entity (src/indexer/index.ts:753-782) and, when they differ or the file is gone, returns the full length as not established, with the reason. partlyRead's totalChars is then null and the result is not complete. Who uses it: the two document lookups, for their 2,000-character cut, measured in prepare; module.profile, for its 4,096; the three adherence checks, for their 1,200; and every lookup or plan task that passes a stored body on uncut reports it as partly read when measureItem says the indexer cut it. The summariser needs no change and its stored summary no new field: it reads the stored body, so a summary rests on the first 8,192 characters of its document, and the summariser's cut is exported as a named constant for the readers. Three plan-task paths turn stored summaries into a result and report it: docs family-summarise and docs discovery-inventory measure each summarised document and add a partlyRead entry, with the document's file, 8,192 and the full length, for each one longer than the cut; a document with no summary yet, and one whose summary is the failure placeholder (errorCode set), are listed under skipped with that reason. The third reads summaries indirectly: the adherence check's constraint inputs come from assembleLiveProjectContext, called with a limit of 500 decisions and 500 constraints (src/analyze/runtimes/shared/adherence.ts:340-352), which stops silently at each limit (src/analyze/context/live-project-context.ts:162-191). That function's result gains two additive fields, which of its limits were reached and the entity ids of the documents its decisions and constraints came from; the adherence check reads the first into limited and measures the second for partlyRead. Its other caller, the docs tool exposed to agents (src/daemon/tools/builtins/docs/index.ts:190), ignores the new fields. This Story reports the cut and reads no more of an item than is read today; having the analyzer read the item itself from its file where the item matters to the answer is the removal of the content cuts, which is Story s4's, and the indexer's cut is a ninth site for it (see the open questions). Current behaviour that changes: a length reported for an item was the stored body's.",
+        "details": "The index stores, for each entity, a pointer (its file, start line and end line) and a body. For a non-code file the indexer cuts the body to 8,192 characters and appends a marker line, '… (truncated)' (src/indexer/parser/artifact.ts:92, :298-300, applied at :182, :250 for sections, :287 for documents and :355). Every reader in the analyzer measures the stored body today, so a 100,000-character section cut again to 2,000 by a document lookup would be reported as 2,000 of about 8,206, and a document cut only by the indexer would read as whole. The stored body is a snippet; the item is in the file. Nothing is added to what the index stores (the Define's non-goal stands). Wherever this Story reports a partly read item, the full length is measured from the file on disk at the entity's pointer, by one new function, measureItem, in a new module src/analyze/item-length.ts: for a document or a file entity, the file's length; for a section, the length of its lines from start line to end line. It returns the full length and whether the stored body was cut by the indexer (the full length exceeds the stored body's, or the body ends with the marker). If the file has changed since it was indexed, its lines may no longer be the entity's: measureItem compares the file's content hash with the hash the indexer recorded on the file entity (src/indexer/index.ts:753-782) and, when they differ or the file is gone, returns the full length as not established, with the reason. partlyRead's totalChars is then null and the result is not complete. Who uses it: the two document lookups, for their 2,000-character cut, measured in prepare; module.profile, for its 4,096; the three adherence checks, for their 1,200; and every lookup or plan task that passes a stored body on uncut reports it as partly read when measureItem says the indexer cut it. The summariser needs no change and its stored summary no new field: it reads the stored body, so a summary rests on the first 8,192 characters of its document, and the summariser's cut is exported as a named constant for the readers. Three plan-task paths turn stored summaries into a result and report it: docs family-summarise and docs discovery-inventory measure each summarised document and add a partlyRead entry, with the document's file, 8,192 and the full length, for each one longer than the cut; a document with no summary yet, and one whose summary is the failure placeholder (errorCode set), are listed under skipped with that reason. The third reads summaries indirectly: the adherence check's constraint inputs come from assembleLiveProjectContext, called with a limit of 500 decisions and 500 constraints (src/analyze/runtimes/shared/adherence.ts:340-352), which stops silently at each limit (src/analyze/context/live-project-context.ts:162-191). That function's result gains two additive fields, which of its limits were reached and the entity ids of the documents its decisions and constraints came from; the adherence check reads the first into limited and measures the second for partlyRead. Its other caller, the docs tool exposed to agents (src/daemon/tools/builtins/docs/index.ts:190), ignores the new fields. This Story reports the cut and reads no more of an item than is read today; having the analyzer read the item itself from its file where the item matters to the answer is the removal of the content cuts, which is Story s4's, and the indexer's cut is a ninth site for it (see the open questions). Current behaviour that changes: a length reported for an item was the stored body's.",
         "callSites": [
           "src/indexer/parser/artifact.ts",
           "src/indexer/index.ts",

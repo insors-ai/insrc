@@ -678,3 +678,21 @@ The executor and the plan walk attach a completeness record to each result after
 - Back-flow to the HLD: the completeness record's `limited` is a list of reached limits, each with a scope, where the HLD's sketch of sc1 shows a single limit; several results reach more than one.
 - Back-flow to the Define and the HLD, for Story s4 (stakeholder direction, 2026-10-07): the index is a pointer, and the analyzer should read an item from its file where the item matters to the answer, not rely on the stored body. The indexer's own cut of a stored body to 8,192 characters (src/indexer/parser/artifact.ts:92, :298-300) is a ninth place an item's content is cut; the Define lists eight and Story s4 removes them. This Story only reports that cut, with the item's real length. Story s4's design should read the item from the file at its pointer at each of the nine sites.
 - Back-flow to the HLD: in the completeness record, partlyRead's totalChars is `number | null` with an optional totalNote, where the HLD's sketch of sc1 shows a number. A consuming Story must read a nullable length. The builder also takes a `notEstablished` input for a result that cannot know whether it is complete; it sets complete to false and adds no field to the record.
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-08T06:25:59.216Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

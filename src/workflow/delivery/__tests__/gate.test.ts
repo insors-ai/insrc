@@ -139,3 +139,27 @@ test("the reviewer party is read through reviewerPartyOf, and a code review's ow
 	assert.equal(gateOf(result, `LLD-${EPIC}-s2`).review?.reviewedBy, 'daemon', 'reviewedBy wins over the model label');
 	assert.equal(gateOf(result, `CR-${EPIC}-s2`).review?.reviewedBy, null, 'no reviewedBy and no model is unknown');
 });
+
+test('a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented', () => {
+	const { result } = run([
+		defRecord(EPIC, ['s1', 's2', 's3', 's4', 's5']),
+		lldRecord(EPIC, 's1', { review: 'not an object' }),
+		lldRecord(EPIC, 's2', { review: review('maybe' as 'pass', []) }),
+		lldRecord(EPIC, 's3', { review: { ...review('block', []), findings: [null, 'x', 7, MED('q1')] }, reviewResolutions: ['not', 'a', 'map'] }),
+		lldRecord(EPIC, 's4', { review: { ...review('warn', []), findings: 'none', counts: { high: 'one', med: null } } }),
+		crRecord(EPIC, 's5', 'nope' as 'pass'),
+	]);
+
+	assert.equal(gateOf(result, `LLD-${EPIC}-s1`).review, null, 'a non-object review is no review');
+	assert.equal(gateOf(result, `LLD-${EPIC}-s2`).review, null, 'an unrecognised verdict is no review');
+
+	const dropped = gateOf(result, `LLD-${EPIC}-s3`).review;
+	assert.equal(dropped?.effectiveVerdict, 'block', 'malformed findings are dropped; the valid MED still blocks');
+	assert.equal(dropped?.resolvedFindings, 0);
+
+	const noFindings = gateOf(result, `LLD-${EPIC}-s4`).review;
+	assert.equal(noFindings?.effectiveVerdict, 'warn', 'no findings array keeps the recorded verdict');
+	assert.deepEqual(noFindings?.counts, { high: 0, med: 0, low: 0 });
+
+	assert.equal(gateOf(result, `CR-${EPIC}-s5`).review, null, 'a code review with no recognised verdict is no review');
+});

@@ -343,6 +343,11 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 	}
 	resolveCorrectedParents(recordSet, hashes, notices);
 	attachSpecs(recordSet, drafts, notices);
+	for (const failure of recordSet.failures) {
+		notices.push(makeNotice('record-unreadable',
+			`store file ${failure.fileName} could not be loaded (${failure.reason}): ${failure.detail}`,
+			{ fileNames: [failure.fileName] }));
+	}
 
 	const items = new Map<string, WorkItemNode>();
 	for (const id of [...drafts.keys()].sort()) {

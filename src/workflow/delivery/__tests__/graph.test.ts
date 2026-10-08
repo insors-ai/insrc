@@ -376,3 +376,36 @@ test('the same record set built twice gives a deep-equal graph', () => {
 	assert.deepEqual(a.notices, b.notices);
 	assert.deepEqual(item(a, `${EPIC_ID}:S001`).plannedTaskIds, ['t1', 't2']);
 });
+
+// ISSUE-34b6a247a4828d49 — load failures are reported, never silent.
+
+const FAILURES = [
+	{ fileName: 'LLD-aaaaaaaaaaaaaaaa-s2.json', reason: 'invalid-json' as const, detail: 'Unexpected token } in JSON at position 3' },
+	{ fileName: 'BUILD-aaaaaaaaaaaaaaaa-s1.json', reason: 'unreadable' as const, detail: 'EACCES: permission denied' },
+];
+
+test('every load failure is one store-level record-unreadable notice naming the file, reason and detail', () => {
+	const graph = buildWorkItemGraph(recordSet([defRecord(EPIC, ['s1', 's2'])], FAILURES));
+	const unreadable = graph.notices.filter(n => n.code === 'record-unreadable');
+	assert.equal(unreadable.length, 2);
+	for (const f of FAILURES) {
+		const n = unreadable.find(x => x.fileNames.includes(f.fileName));
+		assert.ok(n, `a notice for ${f.fileName}`);
+		assert.deepEqual(n.fileNames, [f.fileName]);
+		assert.deepEqual(n.itemIds, [], 'store-level');
+		assert.deepEqual(n.artifactIds, []);
+		assert.equal(n.attention, true);
+		assert.match(n.message, new RegExp(f.reason));
+		assert.ok(n.message.includes(f.detail), 'the detail is in the message');
+	}
+});
+
+test('items, rootIds and every other notice are the same with and without an unreadable file', () => {
+	const records = [defRecord(EPIC, ['s1', 's2']), lldRecord(EPIC, 's1'), buildRecord('bbbbbbbbbbbbbbbb', 'S001', [{ id: 'S001', passed: true }], { standalone: true })];
+	const clean = buildWorkItemGraph(recordSet(records));
+	const failing = buildWorkItemGraph(recordSet(records, FAILURES));
+	assert.deepEqual([...failing.items.entries()], [...clean.items.entries()]);
+	assert.deepEqual(failing.rootIds, clean.rootIds);
+	assert.deepEqual(failing.notices.filter(n => n.code !== 'record-unreadable'), clean.notices);
+	assert.equal(clean.notices.some(n => n.code === 'record-unreadable'), false);
+});

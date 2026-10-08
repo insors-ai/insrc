@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Completeness } from '../completeness.js';
+import type { Completeness, PartialFinding } from '../completeness.js';
 import type { ResolvedScope } from '../context/scope.js';
 
 /**
@@ -723,6 +723,8 @@ export interface FailedExplorationOutput {
 	readonly requested: ExplorationType;
 	readonly errorCode: string;
 	readonly message:   string;
+	/** What the lookup had found before it failed. Absent when it had found nothing. */
+	readonly partial?:  readonly PartialFinding[] | undefined;
 }
 
 export type ExplorationOutput =

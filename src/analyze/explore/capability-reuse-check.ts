@@ -34,6 +34,7 @@ import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import type {
 	LLMMessage,
+	LLMProvider,
 	StructuredSchema,
 } from '../../shared/types.js';
 
@@ -50,6 +51,7 @@ import { buildCompleteness } from '../completeness.js';
 import type { ReachedLimit, SkippedItem } from '../completeness.js';
 import { carriedCompleteness, GRAPH_BASIS_NOTE, reachedLimit } from './completeness-facts.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
+import { errorMessage, LookupFailedError } from './lookup-failed.js';
 
 const log = getLogger('analyze:explore:capability-reuse-check');
 
@@ -118,18 +120,20 @@ function parseParams(exp: Exploration): CapabilityReuseCheckParams {
 export async function runCapabilityReuseCheck(
 	exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The model that judges the candidates; a test passes a stand-in. */
+	narrowProvider?: LLMProvider,
 ): Promise<CapabilityReuseCheckOutput> {
 	const prepared = await prepareCapabilityReuseCheck(exp, ctx);
 	if (prepared.kind === 'short-circuit') return prepared.shortCircuit;
 
-	// LLM narrow pass -- daemon-side shaperProvider. Skips gracefully
-	// on unavailable Ollama / missing prompt: finalizer merges with
-	// verdicts=undefined and emits `unrelated` placeholders.
-	let raw: CapabilityReuseCheckLLMOutput | undefined;
-	let llmSkipReason: string | undefined;
+	// LLM narrow pass -- daemon-side shaperProvider. When the model cannot be
+	// called the lookup could not run: no candidate was judged, and showing
+	// every one as `unrelated` would read as a judgement. It throws, with the
+	// candidates it had found, and the executor reports the lookup as failed.
+	let raw: CapabilityReuseCheckLLMOutput;
 	try {
 		const cfg = loadAnalyzeConfig();
-		const provider = resolveRoleProvider('analyze.narrow', cfg);
+		const provider = narrowProvider ?? resolveRoleProvider('analyze.narrow', cfg);
 		raw = await provider.completeStructured<CapabilityReuseCheckLLMOutput>(
 			[
 				{ role: 'system', content: prepared.systemPrompt },
@@ -151,14 +155,19 @@ export async function runCapabilityReuseCheck(
 			'capability.reuse-check: LLM verdicts received',
 		);
 	} catch (err) {
-		llmSkipReason = (err as Error).message;
-		log.info(
-			{ runId: ctx.runId, capability: prepared.prepared.capability, err: llmSkipReason },
-			'capability.reuse-check: LLM verdict pass skipped',
+		throw new LookupFailedError(
+			`capability.reuse-check: the model call that judges the candidates failed: ${errorMessage(err)}`,
+			prepared.prepared.profiles.map(p => ({
+				source:  p.path,
+				content: p.profile !== undefined
+					? `candidate module, not judged; exports: ${p.profile.exports.slice(0, 8).join(', ') || '(none)'}`
+					: 'candidate module, not judged; its profile could not be read',
+			})),
+			{ cause: err },
 		);
 	}
 
-	return finalizeCapabilityReuseCheck(prepared.prepared, raw, llmSkipReason, ctx.runId);
+	return finalizeCapabilityReuseCheck(prepared.prepared, raw, undefined, ctx.runId);
 }
 
 // ---------------------------------------------------------------------------

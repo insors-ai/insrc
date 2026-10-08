@@ -31,6 +31,19 @@ export const GRAPH_BASIS_NOTE =
 export const DOC_INDEX_RULE =
 	'A document or section longer than 8,192 characters is indexed, and so searched, by its first 8,192 characters only.';
 
+/**
+ * The `skipped` entry for a document retrieval whose vector pass did not run.
+ * Expected when the embedding service is down: the keyword pass still ran,
+ * so the result is returned, and it says that sections matching by meaning
+ * alone are not in it.
+ */
+export function vectorPassSkipped(reason: string | undefined): SkippedItem[] {
+	return reason === undefined ? [] : [{
+		what:   "the document index's search by meaning",
+		reason: `${reason}; only sections that contain the query's words are included`,
+	}];
+}
+
 /** A count limit that was reached: `kept` items were returned out of `found`. */
 export function reachedLimit(
 	what:  string,

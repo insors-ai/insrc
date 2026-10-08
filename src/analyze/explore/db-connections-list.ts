@@ -41,25 +41,10 @@ export async function runDbConnectionsList(
 	/** The connection pool's source; a test passes a stand-in. */
 	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbConnectionsListOutput> {
-	let pool;
-	try {
-		pool = await acquire(ctx.repoPath);
-	} catch (err) {
-		log.info(
-			{ runId: ctx.runId, repoPath: ctx.repoPath, err: (err as Error).message },
-			'db.connections.list: pool acquisition failed; treating as no-connections',
-		);
-		return {
-			type:        'db.connections.list',
-			// The registry could not be read, so whether connections exist is not known.
-			completeness: buildCompleteness({
-				returned: 0, basis: 'data-source', notEstablished: true,
-				basisNote: `the connection registry could not be read: ${(err as Error).message}`,
-			}),
-			connections: [],
-			notFoundNote: '',
-		};
-	}
+	// A registry that cannot be read is a lookup that could not run: it throws,
+	// and the executor reports it as failed. "No connections" is said only when
+	// the registry was read and holds none.
+	const pool = await acquire(ctx.repoPath);
 
 	const list = pool.list();
 	const connections: DbConnectionSummary[] = list.map(c => {

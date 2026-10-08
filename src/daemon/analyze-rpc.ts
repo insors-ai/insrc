@@ -905,7 +905,8 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 		return { code: 'shaper-llm-unavailable', message: err.message };
 	}
 	if (err instanceof ShaperToolLoopExhausted) {
-		return { code: 'shaper-tool-loop-exhausted', message: err.message };
+		// What the tools returned before the limit is not lost with the failure.
+		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
 	}
 	if (err instanceof ShaperSchemaUnrecoverable) {
 		return { code: 'shaper-schema-unrecoverable', message: err.message };

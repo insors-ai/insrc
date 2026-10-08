@@ -88,6 +88,7 @@ import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError 
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
 import type { ExplorationPlan } from '../explore/index.js';
+import type { PartialFinding } from '../completeness.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
@@ -161,9 +162,13 @@ export class ShaperLlmUnavailableError extends Error {
 }
 
 export class ShaperToolLoopExhausted extends Error {
-	constructor(turns: number) {
+	/** Every tool call the loop made before it reached the limit, with what the tool returned. */
+	readonly toolResults: readonly PartialFinding[];
+
+	constructor(turns: number, toolResults: readonly PartialFinding[] = []) {
 		super(`Shaper tool-loop exceeded maxToolTurns=${turns}`);
 		this.name = 'ShaperToolLoopExhausted';
+		this.toolResults = toolResults;
 	}
 }
 
@@ -636,6 +641,9 @@ interface ToolLoopResult {
 	readonly toolCallCount: number;
 }
 
+/** Exported for tests; production reaches it through runShaper and runShaperToolLoop. */
+export const _runToolLoopForTest = (...a: Parameters<typeof runToolLoop>): ReturnType<typeof runToolLoop> => runToolLoop(...a);
+
 async function runToolLoop(
 	provider:     LLMProvider,
 	messages:     LLMMessage[],
@@ -646,6 +654,8 @@ async function runToolLoop(
 	let toolCallCount = 0;
 	const tools = getReadOnlyTools();
 	const convo: LLMMessage[] = [...messages];
+	// What the tools returned, kept so that reaching the turn limit does not lose it.
+	const gathered: PartialFinding[] = [];
 
 	for (let turn = 0; turn < maxToolTurns; turn++) {
 		let response: LLMResponse;
@@ -725,11 +735,15 @@ async function runToolLoop(
 				content:      result.output,
 				isError:      result.success === false,
 			});
+			gathered.push({
+				source:  `${call.name}(${previewToolArgs(call.input)})`,
+				content: typeof result.output === 'string' ? result.output : JSON.stringify(result.output),
+			});
 		}
 		convo.push({ role: 'user', content: resultBlocks });
 	}
 
-	throw new ShaperToolLoopExhausted(maxToolTurns);
+	throw new ShaperToolLoopExhausted(maxToolTurns, gathered);
 }
 
 async function runFinalStructuredEmit(

@@ -378,7 +378,7 @@ test('each lookup that stops at a count reports the limit with its scope', async
 	const decs = await docDecisions(1) as { completeness: Completeness };
 	assert.equal(limitOf(decs.completeness, 'document sections').scope, 'source');
 	// With room for every section, neither reports a limit.
-	assert.equal(((await docConstraints()) as { completeness: Completeness }).completeness.complete, true);
+	assert.equal(((await docConstraints()) as { completeness: Completeness }).completeness.limited, undefined);
 
 	// capability.reuse-check: more distinct candidates match than the one checked.
 	const cap = await capability(1) as { completeness: Completeness; candidates: unknown[] };
@@ -465,12 +465,12 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	assert.equal(whole.completeness.complete, true);
 	assert.equal(whole.completeness.total, 2);
 
-	// A connection that cannot be opened: what it holds is not known, and the record says why.
-	const missing = await runDbTablesList(exp('db.tables.list', { connectionId: 'nope' }), ctx, standInPool({ tables, truncated: false }));
-	assert.deepEqual(missing.tables, []);
-	assert.equal(missing.completeness.complete, false);
-	assert.match(missing.completeness.basisNote ?? '', /unknown connection 'nope'/);
-	assert.equal(missing.notFoundNote, '', 'a failure is not a not-found: its reason is in the record, not in the note');
+	// A connection that cannot be opened is a lookup that could not run: it throws
+	// (the executor reports it as failed), where it used to return an empty listing.
+	await assert.rejects(
+		runDbTablesList(exp('db.tables.list', { connectionId: 'nope' }), ctx, standInPool({ tables, truncated: false })),
+		/unknown connection 'nope'/,
+	);
 
 	// A driver that cannot list: named as skipped in the record, and the note is left empty.
 	const noList = (async () => ({ acquire: async () => ({ family: 'rdbms', kind: 'odd' }) })) as unknown as Parameters<typeof runDbTablesList>[2];

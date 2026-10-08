@@ -47,6 +47,12 @@ export interface PartlyReadItem {
 	readonly totalNote?: string | undefined;
 }
 
+/** Something a lookup had found before it failed: where it came from, and what it was. */
+export interface PartialFinding {
+	readonly source:  string;
+	readonly content: string;
+}
+
 export type CompletenessBasis =
 	| 'text' | 'graph' | 'doc-index' | 'data-source' | 'filesystem' | 'model-directed';
 

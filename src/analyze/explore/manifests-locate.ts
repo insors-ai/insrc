@@ -34,7 +34,7 @@ import type {
 	ManifestHit,
 	ManifestsLocateOutput,
 } from './types.js';
-import type { PartlyReadItem } from '../completeness.js';
+import type { PartlyReadItem, SkippedItem } from '../completeness.js';
 import { INDEXER_CUT_MARKER, partlyReadEntry } from '../item-length.js';
 import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 import { createItemMeasurer } from './item-measure.js';
@@ -98,6 +98,7 @@ export async function runManifestsLocate(
 	let found = 0;
 	const measurer = createItemMeasurer(db, all);
 	const partlyRead: PartlyReadItem[] = [];
+	const skipped: SkippedItem[] = [];
 	// A file has several entities (the file itself, the document, its
 	// sections). The one whose stored body the indexer cut says the index
 	// holds only part of the file, whichever entity the loop below meets first.
@@ -136,6 +137,11 @@ export async function runManifestsLocate(
 		// to the filename heuristic when the body is empty / unparseable.
 		const resourceKind = resourceKindFromBody(e.file, family, e.body)
 			?? inferResourceKind(e.file, family);
+		// Expected: a stored body that is not valid YAML (a template, or a body
+		// the indexer cut mid-document). The kind is then the file name's guess.
+		if (manifestBodyUnparsable(family, e.body)) {
+			skipped.push({ what: e.file, reason: "its stored content is not valid YAML, so its kind is a guess from the file name" });
+		}
 		// The kind is read from the STORED body. A manifest the indexer cut was
 		// read in part, so its kind may be the file name's guess.
 		const cutEntity = cutEntityByFile.get(e.file);
@@ -169,6 +175,7 @@ export async function runManifestsLocate(
 			found,
 			limited:  found > topK ? [reachedLimit('manifests', topK, 'overall', found)] : [],
 			partlyRead,
+			skipped,
 		}),
 		hits,
 		families:  familyCounts,
@@ -300,4 +307,12 @@ export function resourceKindFromBody(file: string, family: ManifestFamily, body:
 		if (typeof kind === 'string') return kind;
 	}
 	return undefined;
+}
+
+/** True when a kubernetes or helm body is present and does not parse as YAML. */
+export function manifestBodyUnparsable(family: ManifestFamily, body: string): boolean {
+	if (body.length === 0) return false;
+	if (family !== 'kubernetes' && family !== 'helm') return false;
+	try { loadAll(body); return false; }
+	catch { return true; }
 }

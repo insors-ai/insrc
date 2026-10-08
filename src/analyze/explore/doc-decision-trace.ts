@@ -32,10 +32,12 @@ import type {
 } from '../../db/client.js';
 import type {
 	LLMMessage,
+	LLMProvider,
 	StructuredSchema,
 } from '../../shared/types.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocDecisionRecord,
 	DocDecisionTraceOutput,
@@ -43,9 +45,10 @@ import type {
 	ExplorationRunnerContext,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import type { PartlyReadItem, SkippedItem } from '../completeness.js';
-import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit } from './completeness-facts.js';
+import type { PartialFinding, PartlyReadItem, SkippedItem } from '../completeness.js';
+import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
 import { createItemMeasurer } from './item-measure.js';
+import { errorMessage, LookupFailedError } from './lookup-failed.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 /** How much of each retrieved section's stored body the model is given. */
@@ -98,6 +101,8 @@ export interface RunDocDecisionTraceArgs {
 	readonly maxSources?: number;
 	readonly runId?:      string;
 	readonly logContext?: string;
+	/** The model that reads the sections; a test passes a stand-in. */
+	readonly provider?:   LLMProvider | undefined;
 }
 
 /**
@@ -124,7 +129,7 @@ export async function runSharedDocDecisionTrace(
 
 	// Fire the LLM call against the daemon-side shaperProvider.
 	const cfg = loadAnalyzeConfig();
-	const provider = resolveRoleProvider('analyze.narrow', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.narrow', cfg);
 	let raw: DocDecisionTraceLLMOutput;
 	try {
 		raw = await provider.completeStructured(
@@ -140,24 +145,13 @@ export async function runSharedDocDecisionTrace(
 			},
 		);
 	} catch (err) {
-		log.warn(
-			{ runId: args.runId, ctx: args.logContext, err: (err as Error).message },
-			'doc.decision.trace: LLM extraction failed',
+		// The sections were retrieved and the model that reads them could not be
+		// called: the lookup could not run. What it had retrieved goes with the failure.
+		throw new LookupFailedError(
+			`doc.decision.trace: the model call that reads the retrieved sections failed: ${errorMessage(err)}`,
+			prepared.retrieved,
+			{ cause: err },
 		);
-		return {
-			type:  'doc.decision.trace',
-			// The sections were retrieved and never read by the model.
-			completeness: buildCompleteness({
-				returned: 0, basis: 'doc-index', notEstablished: true,
-				basisNote: `the model call that reads the retrieved sections failed: ${(err as Error).message}`,
-			}),
-			topic: prepared.prepared.topic,
-			decisions: [],
-			notFoundNote:
-				`LLM extraction failed for topic "${prepared.prepared.topic}": ${(err as Error).message}. ` +
-				`Retrieved ${prepared.prepared.retrievedSectionCount} sections but could not process them.`,
-			retrievedSectionCount: prepared.prepared.retrievedSectionCount,
-		};
 	}
 
 	return finalizeDocDecisionTrace(prepared.prepared, raw, args.runId, args.logContext);
@@ -204,6 +198,8 @@ export type DocDecisionTracePrepareResult =
 		readonly systemPrompt: string;
 		readonly userTurn:     string;
 		readonly schema:       StructuredSchema;
+		/** The sections prepare retrieved, for a failure after this point to report. */
+		readonly retrieved:    readonly PartialFinding[];
 		readonly prepared:     DocDecisionTracePrepared;
 	  };
 
@@ -219,8 +215,10 @@ export async function prepareDocDecisionTrace(
 		: 15;
 
 	// (1) Retrieve. V1 = repo-scoped (single-repo closure).
+	const report: DocsRetrievalReport = {};
 	const sections = await retrieveDocSections({
 		db:           args.db,
+		report,
 		query:        topic,
 		closureRepos: [args.repoPath],
 		maxResults:   maxSources,
@@ -238,7 +236,7 @@ export async function prepareDocDecisionTrace(
 			shortCircuit: {
 				type:                  'doc.decision.trace',
 				// The document index returned no section for the topic: empty, and complete.
-				completeness:          buildCompleteness({ returned: 0, basis: 'doc-index', basisNote: DOC_INDEX_RULE }),
+				completeness:          buildCompleteness({ returned: 0, skipped: vectorPassSkipped(report.vectorPassSkipped), basis: 'doc-index', basisNote: DOC_INDEX_RULE }),
 				topic,
 				decisions:             [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${topic}".`,
@@ -249,7 +247,7 @@ export async function prepareDocDecisionTrace(
 
 	// (2) Hydrate full bodies for the LLM extraction pass.
 	const hydrated: HydratedSection[] = [];
-	const skipped: SkippedItem[] = [];
+	const skipped: SkippedItem[] = vectorPassSkipped(report.vectorPassSkipped);
 	const partlyRead: PartlyReadItem[] = [];
 	const measurer = createItemMeasurer(args.db);
 	for (const s of sections) {
@@ -280,6 +278,7 @@ export async function prepareDocDecisionTrace(
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
 		schema:       DECISIONS_SCHEMA,
+		retrieved:    hydrated.map(h => ({ source: `${h.file} § ${h.heading}`, content: h.body })),
 		prepared: {
 			topic,
 			retrievedSectionCount: sections.length,

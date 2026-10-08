@@ -36,6 +36,7 @@ import type {
 	FreeformProbeOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
+import { LookupFailedError } from './lookup-failed.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -138,23 +139,19 @@ export async function runFreeformProbe(
 		toolCallCount = result.toolCallCount;
 	} catch (err) {
 		if (err instanceof ShaperToolLoopExhausted) {
-			// Exhausted -> emit an honest empty bundle + note. The
-			// synthesizer will surface the note in Diagnostics.
+			// The search did not finish. That is a lookup that could not run, not
+			// one that found nothing: it fails, and what its tool calls had
+			// returned goes with the failure.
 			log.warn(
-				{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId },
+				{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId, toolResults: err.toolResults.length },
 				'freeform.probe: tool-loop exhausted',
 			);
-			return {
-				type:      'freeform.probe',
-				completeness: buildCompleteness({
-					returned: 0, basis: 'model-directed', notEstablished: true,
-					basisNote: 'the search did not finish: the tool loop reached its turn limit before the model settled on an answer',
-				}),
-				purpose:   params.purpose,
-				shaperId:  params.shaperId,
-				rawBundle: emptyRawBundle(),
-				toolCallCount: 0,
-			};
+			throw new LookupFailedError(
+				`freeform.probe: the search did not finish: ${err.message}. ` +
+				'Refine the request or ask for a specific lookup.',
+				err.toolResults,
+				{ cause: err },
+			);
 		}
 		// Anything else (LLM unavailable, schema unrecoverable, ...) --
 		// bubble so the executor catches + emits a `failed` output.
@@ -183,17 +180,5 @@ export async function runFreeformProbe(
 		shaperId:  params.shaperId,
 		rawBundle,
 		toolCallCount,
-	};
-}
-
-function emptyRawBundle(): FreeformProbeOutput['rawBundle'] {
-	return {
-		system:    '',
-		focus:     '',
-		summary:   '',
-		structure: '',
-		surface:   '',
-		artefacts: '',
-		upstream:  '',
 	};
 }

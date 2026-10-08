@@ -512,7 +512,10 @@ function classifyShaperError(err: unknown): RunFailure {
 		};
 	}
 	if (err instanceof ShaperLlmUnavailableError) return wrap('shaper-llm-unavailable', err);
-	if (err instanceof ShaperToolLoopExhausted) return wrap('shaper-tool-loop-exhausted', err);
+	if (err instanceof ShaperToolLoopExhausted) {
+		// What the tools returned before the limit is not lost with the failure.
+		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
+	}
 	if (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);
 	if (err instanceof ShaperPromptMissingError) return wrap('shaper-prompt-missing', err);
 	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);

@@ -21,6 +21,7 @@ import { getDb } from '../../db/client.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocMentionHit,
 	DocMentionOutput,
@@ -31,7 +32,7 @@ import { getEntity } from '../../db/entities.js';
 import { buildCompleteness } from '../completeness.js';
 import type { PartlyReadItem } from '../completeness.js';
 import { partlyReadEntry } from '../item-length.js';
-import { DOC_INDEX_RULE, reachedLimit } from './completeness-facts.js';
+import { DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
 import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:doc-mention');
@@ -102,8 +103,10 @@ export async function runDocMention(
 	const db = await getDb();
 
 	const limit = params.limit ?? DEFAULT_LIMIT;
+	const report: DocsRetrievalReport = {};
 	const results = await retrieveDocSections({
 		db,
+		report,
 		query:        params.subject,
 		closureRepos: [ctx.repoPath],
 		maxResults:   limit,
@@ -150,6 +153,7 @@ export async function runDocMention(
 			returned: hits.length,
 			limited:  hits.length >= limit ? [reachedLimit('document sections', limit, 'overall', null)] : [],
 			partlyRead,
+			skipped:  vectorPassSkipped(report.vectorPassSkipped),
 			basis:    'doc-index',
 			basisNote: DOC_INDEX_RULE,
 		}),

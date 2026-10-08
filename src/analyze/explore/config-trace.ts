@@ -24,7 +24,6 @@
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
-import { buildCompleteness } from '../completeness.js';
 
 import { textSearchCompleteness } from './completeness-facts.js';
 
@@ -100,31 +99,14 @@ export async function runConfigTrace(
 
 	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
 	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
-	let data;
-	try {
-		data = await runGrepSearch({
-			pattern: literal,
-			root,
-			caseInsensitive: false,
-			limit,
-		});
-	} catch (err) {
-		log.warn(
-			{ runId: ctx.runId, key: params.key, err: (err as Error).message },
-			'config.trace: grep failed; returning empty output',
-		);
-		return {
-			type:      'config.trace',
-			completeness: buildCompleteness({
-				returned: 0, basis: 'text', notEstablished: true,
-				basisNote: `the search could not run: ${(err as Error).message}`,
-			}),
-			key:       params.key,
-			hits:      [],
-			backend:   'node',
-			root,
-		};
-	}
+	// A search that could not run throws, and the executor reports the lookup as
+	// failed. It does not return an empty result: that would read as "nothing matches".
+	const data = await runGrepSearch({
+		pattern: literal,
+		root,
+		caseInsensitive: false,
+		limit,
+	});
 
 	const hits: ConfigTraceHit[] = data.hits.map(h => {
 		const abs = h.path.startsWith('/') ? h.path : `${root}/${h.path}`;

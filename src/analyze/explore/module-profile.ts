@@ -36,7 +36,7 @@ import type {
 	ModuleProfileOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import type { PartlyReadItem } from '../completeness.js';
+import type { PartlyReadItem, SkippedItem } from '../completeness.js';
 import { createItemMeasurer } from './item-measure.js';
 import type { ItemMeasurer } from './item-measure.js';
 
@@ -154,7 +154,8 @@ export async function runModuleProfile(
 		};
 	}
 
-	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead);
+	const skipped: SkippedItem[] = [];
+	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead, skipped);
 	log.info(
 		{
 			runId:       ctx.runId,
@@ -174,6 +175,7 @@ export async function runModuleProfile(
 		completeness: buildCompleteness({
 			returned: profile.subdirs.length + profile.filesInDir.length,
 			partlyRead,
+			skipped,
 			basis:    'filesystem',
 			basisNote: ENTRYPOINT_RULE,
 		}),
@@ -191,6 +193,7 @@ async function profileDir(
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
 	measurer:   ItemMeasurer,
 	partlyRead: PartlyReadItem[],
+	skipped:    SkippedItem[],
 ): Promise<ModuleProfile> {
 	// Immediate children (subdirs + files) via filesystem.
 	const subdirs: string[] = [];
@@ -200,9 +203,9 @@ async function profileDir(
 		bytes: number;
 		kind: string;
 	}> = [];
-	let entries: string[];
-	try { entries = readdirSync(dir); }
-	catch { entries = []; }
+	// The directory was stat'd a moment ago. If it cannot be listed the lookup
+	// could not run: this throws, and the executor reports it as failed.
+	const entries: string[] = readdirSync(dir);
 	for (const name of entries) {
 		if (IGNORE_DIRS.has(name)) continue;
 		if (name.startsWith('.') && name !== '.env.example') continue;
@@ -214,7 +217,11 @@ async function profileDir(
 		if (!ignoreFilter.isIncluded(full)) continue;
 		let s;
 		try { s = statSync(full); }
-		catch { continue; }
+		catch (err) {
+			// Expected: a broken link, or an entry removed while the listing runs.
+			skipped.push({ what: full, reason: `the entry could not be read (${(err as NodeJS.ErrnoException).code ?? (err as Error).message})` });
+			continue;
+		}
 		if (s.isDirectory()) {
 			subdirs.push(full);
 		} else if (s.isFile()) {
@@ -284,7 +291,10 @@ async function profileDir(
 			if (e.file === dir || e.file.startsWith(dirWithSep)) {
 				try {
 					totalBytes += statSync(e.file).size;
-				} catch { /* file gone */ }
+				} catch {
+					// Expected: the index still holds a file that is no longer on disk.
+					skipped.push({ what: e.file, reason: 'the file is in the index and no longer on disk; totalBytes does not count it' });
+				}
 			}
 			continue;
 		}
@@ -315,10 +325,8 @@ async function profileFile(
 	measurer:   ItemMeasurer,
 	partlyRead: PartlyReadItem[],
 ): Promise<ModuleProfile> {
-	const size = (() => {
-		try { return statSync(file).size; }
-		catch { return 0; }
-	})();
+	// The file was stat'd a moment ago; if it is gone now the lookup could not run.
+	const size = statSync(file).size;
 	const fileEntity = entities.find(e => e.kind === 'file' && e.file === file);
 	const exports: string[] = [];
 	let entityCount = 0;

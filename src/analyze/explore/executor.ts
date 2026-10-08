@@ -62,6 +62,7 @@ import { runSearchText } from './search-text.js';
 import { runSymbolLocate } from './symbol-locate.js';
 import { runTestLocate } from './test-locate.js';
 import { runUsageExample } from './usage-example.js';
+import { errorMessage, LookupFailedError } from './lookup-failed.js';
 import { getDb } from '../../db/client.js';
 import type {
 	ExecutedExploration,
@@ -72,6 +73,7 @@ import type {
 	ExplorationRunner,
 	ExplorationRunnerContext,
 	ExplorationType,
+	FailedExplorationOutput,
 } from './types.js';
 
 const log = getLogger('analyze:explore:executor');
@@ -216,17 +218,11 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 						);
 					}
 				} catch (err) {
-					const msg = err instanceof Error ? err.message : String(err);
 					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: msg },
+						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'exploration failed',
 					);
-					output = {
-						type:      'failed',
-						requested: exp.type,
-						errorCode: classifyExplorationError(err),
-						message:   msg,
-					};
+					output = failedOutput(exp, err);
 				}
 			}
 		}
@@ -551,17 +547,11 @@ export async function stepPlan(
 						args.repoPath, args.repoLastIndexedAtMs, exp, output,
 					);
 				} catch (err) {
-					const msg = err instanceof Error ? err.message : String(err);
 					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: msg },
+						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
 						'multi-turn exploration failed',
 					);
-					output = {
-						type:      'failed',
-						requested: exp.type,
-						errorCode: classifyExplorationError(err),
-						message:   msg,
-					};
+					output = failedOutput(exp, err);
 				}
 			}
 		}
@@ -599,6 +589,22 @@ export async function stepPlan(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * The ONE conversion of a thrown lookup error to the `failed` output. What
+ * the lookup had found before it failed (a `LookupFailedError`'s findings)
+ * is copied to `partial`.
+ */
+export function failedOutput(exp: Exploration, err: unknown): FailedExplorationOutput {
+	const partial = err instanceof LookupFailedError ? err.partial : [];
+	return {
+		type:      'failed',
+		requested: exp.type,
+		errorCode: classifyExplorationError(err),
+		message:   errorMessage(err),
+		...(partial.length > 0 ? { partial } : {}),
+	};
+}
 
 function classifyExplorationError(err: unknown): string {
 	if (!(err instanceof Error)) return 'unknown';

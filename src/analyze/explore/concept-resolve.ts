@@ -55,7 +55,7 @@ import type {
 	ExplorationRunnerContext,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import type { Completeness } from '../completeness.js';
+import type { Completeness, SkippedItem } from '../completeness.js';
 import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:concept-resolve');
@@ -331,6 +331,8 @@ const MAX_DIR_DEPTH = 8;
 function enumerateDirs(
 	repoPath: string,
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
+	/** Directories and entries the walk could not read, for the completeness record. */
+	skipped: SkippedItem[],
 ): Candidate[] {
 	const out: Candidate[] = [];
 	function walk(dir: string, depth: number): void {
@@ -338,7 +340,11 @@ function enumerateDirs(
 		let entries: string[];
 		try {
 			entries = readdirSync(dir);
-		} catch {
+		} catch (err) {
+			// The repository root itself: the lookup could not run. A directory
+			// below it: expected on a real tree (permissions); it is named as skipped.
+			if (depth === 0) throw err;
+			skipped.push({ what: dir, reason: `the directory could not be read (${errorCode(err)})` });
 			return;
 		}
 		for (const name of entries) {
@@ -354,7 +360,11 @@ function enumerateDirs(
 			if (!ignoreFilter.isIncluded(full)) continue;
 			let s;
 			try { s = statSync(full); }
-			catch { continue; }
+			catch (err) {
+				// Expected: a broken link, or an entry removed while the walk runs.
+				skipped.push({ what: full, reason: `the entry could not be read (${errorCode(err)})` });
+				continue;
+			}
 			if (!s.isDirectory()) continue;
 			out.push({ kind: 'dir', path: full, name });
 			walk(full, depth + 1);
@@ -552,7 +562,8 @@ export async function runConceptResolve(
 
 	// Assemble the candidate pool.
 	const rawCandidates: Candidate[] = [];
-	if (includeKinds.includes('dir'))    rawCandidates.push(...enumerateDirs(ctx.repoPath, ctx.ignoreFilter));
+	const skipped: SkippedItem[] = [];
+	if (includeKinds.includes('dir'))    rawCandidates.push(...enumerateDirs(ctx.repoPath, ctx.ignoreFilter, skipped));
 	if (includeKinds.includes('file'))   rawCandidates.push(...fileCandidatesFromEntities(entities, ctx.ignoreFilter));
 	if (includeKinds.includes('entity')) rawCandidates.push(...structuralEntityCandidates(entities, ctx.ignoreFilter));
 
@@ -615,11 +626,17 @@ export async function runConceptResolve(
 			returned: hits.length,
 			found:    byKey.size,
 			limited:  byKey.size > limit ? [reachedLimit('matches', limit, 'overall', byKey.size)] : [],
+			skipped,
 			rule:     `Directories more than ${MAX_DIR_DEPTH} levels below the repository root are not candidates.`,
 		}),
 		query: params.query,
 		hits,
 	};
+}
+
+/** The system's code for a file-system error, or its message. */
+function errorCode(err: unknown): string {
+	return (err as NodeJS.ErrnoException).code ?? (err instanceof Error ? err.message : String(err));
 }
 
 /** No query could be formed from the request's words, so nothing was searched. */

@@ -24,11 +24,13 @@
  *    return emit_bundle.
  */
 
-import { getNarrowRunner, stepPlan } from '../../../analyze/explore/index.js';
+import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
+import { failedOutput, getNarrowRunner, stepPlan } from '../../../analyze/explore/index.js';
+import type { Exploration, ExplorationOutput } from '../../../analyze/explore/index.js';
 import { putCachedExploration } from '../../../db/exploration-cache.js';
 import { getLogger } from '../../../shared/logger.js';
 import { stepScope } from '../scope.js';
-import { prepareSynthesize } from '../../../analyze/context/synthesizer.js';
+import { prepareAnswerTurn } from '../answer-turn.js';
 
 import {
 	assertStage,
@@ -39,6 +41,7 @@ import {
 	type StepStatePayload,
 } from '../state.js';
 import type {
+	StepErrorData,
 	StepInputNarrow,
 	StepOutputEmitBundle,
 	StepOutputEmitNarrow,
@@ -97,7 +100,43 @@ export async function handleNarrow(
 		);
 	}
 
-	let finalizedOutput;
+	// (3a) The answer is the AGENT's. Check it against the lookup's schema
+	//      before finalize is called: an answer that does not fit is the
+	//      agent's to correct, with the same state. (No finalize checks its
+	//      input, so a malformed answer used to surface as a TypeError that
+	//      could not be told from a failure of the lookup.) A lookup that
+	//      accepts no answer at all is passed one through unchecked.
+	const noAnswer = input.narrow === null || input.narrow === undefined;
+	if (!(noAnswer && narrowRunner.acceptsNoAnswer === true)) {
+		const check = validateAgainstSchema(narrowRunner.schema, input.narrow);
+		if (!check.ok) {
+			log.warn(
+				{
+					runId:           state.runId,
+					explorationId:   state.narrow.explorationId,
+					explorationType: state.narrow.explorationType,
+					errors:          check.errors,
+				},
+				'insrc_analyze_step[narrow]: the narrow answer does not match the schema',
+			);
+			return errorResult(
+				'narrow-finalize',
+				`The narrow output for exploration '${state.narrow.explorationId}' ` +
+				`(${state.narrow.explorationType}) does not match its schema: ${check.errors.join('; ')}. ` +
+				`Emit a JSON payload matching the schema from the prior emit_narrow ` +
+				`response and retry with the SAME state.`,
+				true,
+			);
+		}
+	}
+
+	// (3b) Finalize. A throw here is the lookup failing, not the agent's
+	//      answer: it becomes the failed output for this lookup, and the run
+	//      goes on to the next one.
+	const pausedExp = state.plan.explorations.find(e => e.id === state.narrow!.explorationId);
+	const expForOutput: Exploration = pausedExp
+		?? { id: state.narrow.explorationId, type: state.narrow.explorationType, purpose: '', params: {} };
+	let finalizedOutput: ExplorationOutput;
 	try {
 		finalizedOutput = narrowRunner.finalize(
 			state.narrow.preparedBlob,
@@ -105,30 +144,22 @@ export async function handleNarrow(
 			state.runId,
 		);
 	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
 		log.warn(
 			{
 				runId:           state.runId,
 				explorationId:   state.narrow.explorationId,
 				explorationType: state.narrow.explorationType,
-				err:             msg,
+				err:             err instanceof Error ? err.message : String(err),
 			},
-			'insrc_analyze_step[narrow]: finalize threw',
+			'insrc_analyze_step[narrow]: finalize threw; the lookup is recorded as failed',
 		);
-		return errorResult(
-			'narrow-finalize',
-			`Finalize threw on narrow output for exploration ` +
-			`'${state.narrow.explorationId}' (${state.narrow.explorationType}): ${msg}. ` +
-			`Emit a JSON payload matching the schema from the prior emit_narrow ` +
-			`response and retry with the SAME state.`,
-			true,
-		);
+		finalizedOutput = failedOutput(expForOutput, err);
 	}
 
-	// (4) Cache the finalized output (same key executePlan uses).
-	//     Requires locating the paused exploration in the plan.
-	const pausedExp = state.plan.explorations.find(e => e.id === state.narrow!.explorationId);
-	if (pausedExp !== undefined) {
+	// (4) Cache the finalized output (same key executePlan uses). A failed
+	//     output is never cached: the cache holds successful outputs only, and
+	//     a stored failure would be served to every later run.
+	if (pausedExp !== undefined && finalizedOutput.type !== 'failed') {
 		try {
 			await putCachedExploration(
 				state.repoPath,
@@ -153,7 +184,7 @@ export async function handleNarrow(
 	});
 	const carriedResults = state.narrow.resumeState.results.slice();
 	carriedResults.push({
-		exploration: pausedExp ?? { id: state.narrow.explorationId, type: state.narrow.explorationType, purpose: '', params: {} },
+		exploration: expForOutput,
 		output:      finalizedOutput,
 		cached:      false,
 		elapsedMs:   0,   // pause-to-resume wall clock lives outside our timer; report 0
@@ -222,11 +253,15 @@ export async function handleNarrow(
 
 	// step.kind === 'done' -- emit_bundle
 	const executed = step.executed;
-	const prepared = prepareSynthesize({
+	// A missing answer prompt is reported with what the lookups found, not thrown.
+	const turn = prepareAnswerTurn({
 		intent:   state.intent,
 		executed,
 		target:   state.synthesizerKey,
 	});
+	// Not retryable: the file will still be missing on the next call.
+	if (!turn.ok) return errorResult(turn.code, turn.message, false, turn.data);
+	const prepared = turn.prepared;
 
 	const nextState: StepStatePayload = {
 		version:        STATE_VERSION,
@@ -266,9 +301,10 @@ export async function handleNarrow(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function errorResult(code: string, message: string, retryable: boolean): StepOutputError {
+/** `data` is set by one error only: a missing answer prompt after the lookups ran. */
+function errorResult(code: string, message: string, retryable: boolean, data?: StepErrorData): StepOutputError {
 	return {
 		next:  'error',
-		error: { code, message, retryable },
+		error: data !== undefined ? { code, message, retryable, data } : { code, message, retryable },
 	};
 }

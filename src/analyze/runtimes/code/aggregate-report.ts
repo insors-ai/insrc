@@ -24,7 +24,7 @@
  * the underlying classification in the task record's error field.
  */
 
-import { runAggregator } from '../shared/aggregator.js';
+import { aggregateReportCompleteness, runAggregator } from '../shared/aggregator.js';
 import type {
 	TemplateExecuteArgs,
 	TemplateExecuteResult,
@@ -49,6 +49,7 @@ export const codeAggregateReportRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['report', report]]),
+			completeness: aggregateReportCompleteness(),
 		};
 	},
 };

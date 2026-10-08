@@ -37,7 +37,7 @@ import type {
 } from '../../shared/types.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 
-import { ANALYZE_CONTEXT_BUNDLE_SCHEMA } from './schema.js';
+import { ANALYZE_CONTEXT_BUNDLE_SCHEMA, modelFacingBundleSchema } from './schema.js';
 import type { AnalyzeContextBundle } from './types.js';
 import type {
 	ExecutedPlan,
@@ -279,25 +279,13 @@ function buildMessages(
  *      the strip is deterministic given the input schema, so one
  *      cached value is enough.
  */
-let cachedStrippedSchema: Record<string, unknown> | null = null;
-
-function stripMetaFromSchema(schema: Record<string, unknown>): Record<string, unknown> {
-	if (cachedStrippedSchema !== null) return cachedStrippedSchema;
-	const cloned = JSON.parse(JSON.stringify(schema)) as Record<string, unknown>;
-	if (Array.isArray(cloned['required'])) {
-		cloned['required'] = (cloned['required'] as string[]).filter(k => k !== 'meta');
-	}
-	if (typeof cloned['properties'] === 'object' && cloned['properties'] !== null) {
-		const props = cloned['properties'] as Record<string, unknown>;
-		delete props['meta'];
-	}
-	// Drop the schema's $id so ajv doesn't keep the compiled
-	// validator keyed by the original id -- otherwise the second
-	// synthesize() in the same process fails with "schema with key
-	// or id ... already exists".
-	delete cloned['$id'];
-	cachedStrippedSchema = cloned;
-	return cloned;
+/**
+ * The schema the answer-writing model is given: the seven layers only. `meta`
+ * is stamped by the caller and `report` is derived by code, so neither is in
+ * it. (The argument is kept for the call sites; the schema is the bundle's.)
+ */
+function stripMetaFromSchema(_schema: Record<string, unknown>): Record<string, unknown> {
+	return modelFacingBundleSchema({ withMeta: false });
 }
 
 // ---------------------------------------------------------------------------
@@ -313,8 +301,17 @@ const PROMPT_PATHS: Readonly<Record<SynthesizerPromptKey, string>> = {
 	infra:      SYNTHESIZE_INFRA_PROMPT_REL,
 };
 
+/** Test hook: prompt paths that stand in for the registered ones. */
+const promptPathOverrides = new Map<SynthesizerPromptKey, string>();
+
+/** Test hook: point one answer prompt at another path; `undefined` restores the registered one. */
+export function _setSynthesizerPromptPathForTest(target: SynthesizerPromptKey, path: string | undefined): void {
+	if (path === undefined) promptPathOverrides.delete(target);
+	else promptPathOverrides.set(target, path);
+}
+
 function loadPromptFile(target: keyof typeof PROMPT_PATHS): string {
-	const rel = PROMPT_PATHS[target];
+	const rel = promptPathOverrides.get(target) ?? PROMPT_PATHS[target];
 	if (rel === undefined) {
 		throw new SynthesizerPromptMissingError(`no synthesizer prompt for target '${target}'`);
 	}
@@ -350,7 +347,8 @@ function classifyError(err: unknown): Error {
 // ---------------------------------------------------------------------------
 
 export const _stripMetaFromSchemaForTest = stripMetaFromSchema;
-export function _resetStrippedSchemaCacheForTest(): void { cachedStrippedSchema = null; }
+/** Kept for callers; the model-facing schema is built once in schema.ts and is not reset. */
+export function _resetStrippedSchemaCacheForTest(): void { /* nothing to reset */ }
 
 export const SYNTHESIZE_CODE_PROMPT_PATH       = SYNTHESIZE_CODE_PROMPT_REL;
 export const SYNTHESIZE_DOCS_PROMPT_PATH       = SYNTHESIZE_DOCS_PROMPT_REL;

@@ -40,7 +40,7 @@ import {
 } from '../classifier/driver.js';
 import { shaperFor } from '../context/index.js';
 import {
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
@@ -63,7 +63,16 @@ import {
 	PlanBuilderSchemaUnrecoverable,
 	runRecursivePlanner,
 } from '../planner/index.js';
-import { runExecutor } from '../executor/index.js';
+import { collectPlanSources, runExecutor } from '../executor/index.js';
+import type { ExecutorResult } from '../executor/types.js';
+import type { PlanTreeNode } from '../planner/recursive.js';
+import {
+	deriveAnswerReport,
+	mergeAnswerReports,
+	renderCompletenessLine,
+	RUN_COMPLETENESS_NOT_RECORDED,
+	type AnswerReport,
+} from '../completeness.js';
 
 import { readRunRecord, writeRunRecord } from './persistence.js';
 import type {
@@ -129,15 +138,7 @@ export async function runAnalyze(
 		&& cached.finalReport !== undefined
 	) {
 		log.info({ runId }, 'runAnalyze: resume cache hit; returning persisted RunAnalyzeOk');
-		return emitDoneAndReturn({
-			ok: true,
-			runId: cached.runId,
-			intent: cached.intent,
-			finalReport: cached.finalReport,
-			tasksCompleted: cached.tasksCompleted ?? 0,
-			tasksFailed: cached.tasksFailed ?? [],
-			durationMs: 0,
-		});
+		return emitDoneAndReturn(resumedResult(cached, cached.intent));
 	}
 
 	// (0) Stamp the initial RunRecord so observers (IDE, resume) see
@@ -402,29 +403,126 @@ export async function runAnalyze(
 	}
 
 	// ----- (done) -----
-	record = patch(record, {
+	// The answer report, derived by code from the run context's report and
+	// from each plan task's own record; its line heads the final report's text.
+	return emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, start }));
+}
+
+// ---------------------------------------------------------------------------
+// The run's answer report
+// ---------------------------------------------------------------------------
+
+/** Put before the source ids that come from the run context's report. */
+export const RUN_CONTEXT_SOURCE_PREFIX = 'run context / ';
+
+/** The report of a run context that carries none: its completeness is not known, and that is said. */
+const RUN_CONTEXT_NOT_RECORDED: AnswerReport = {
+	completeness: {
+		complete:   false,
+		incomplete: [{ sourceId: 'bundle', sourceKind: 'lookup', reason: 'completeness was not recorded for the run context' }],
+		failed:     [],
+	},
+};
+
+/**
+ * Put a line at the head of the final report's text. The final report is the
+ * aggregate-report task's output, whose text is its `summary`; a report of
+ * any other shape is returned as it is.
+ */
+function headFinalReport(finalReport: unknown, line: string): unknown {
+	if (typeof finalReport !== 'object' || finalReport === null) return finalReport;
+	const summary = (finalReport as Record<string, unknown>)['summary'];
+	if (typeof summary !== 'string') return finalReport;
+	return { ...finalReport, summary: `${line}\n\n${summary}` };
+}
+
+/**
+ * What an executed plan tree gives the run: its answer report, and its final
+ * report with the completeness line at the head of its text.
+ *
+ * The report is derived from two steps. The run context (the run's first
+ * step) has the report of its own lookups. The plan's tasks each state their
+ * completeness; collectPlanSources gathers them. The run is complete only
+ * when both are.
+ */
+export function concludeRun(
+	tree:          PlanTreeNode,
+	executed:      ExecutorResult,
+	contextReport: AnswerReport | undefined,
+): { readonly report: AnswerReport; readonly finalReport: unknown } {
+	const report = mergeAnswerReports(
+		contextReport ?? RUN_CONTEXT_NOT_RECORDED,
+		deriveAnswerReport(collectPlanSources(tree, executed)),
+		RUN_CONTEXT_SOURCE_PREFIX,
+	);
+	return { report, finalReport: headFinalReport(executed.root.finalReport, renderCompletenessLine(report)) };
+}
+
+/**
+ * The last step of a run whose plan was executed and produced a final report:
+ * derive the answer report, store the run record as done, and build the
+ * result. The record and the result carry the same report and the same final
+ * report, so a run resumed from the record returns what the run returned.
+ */
+export function completeRun(args: {
+	readonly record:        RunRecord;
+	readonly intent:        ClassifiedIntent;
+	readonly tree:          PlanTreeNode;
+	readonly executed:      ExecutorResult;
+	/** The report of the run context, the run's first step. */
+	readonly contextReport: AnswerReport | undefined;
+	/** When the run started, in milliseconds. */
+	readonly start:         number;
+}): RunAnalyzeResult {
+	const { record, intent, tree, executed } = args;
+	const rootPlan = executed.root;
+	const concluded = concludeRun(tree, executed, args.contextReport);
+	writeRunRecord(patch(record, {
 		stage: 'done',
 		status: 'ok',
-		finalReport: rootPlan.finalReport,
+		finalReport: concluded.finalReport,
+		report: concluded.report,
 		tasksCompleted: rootPlan.tasksCompleted,
 		tasksFailed: rootPlan.tasksFailed,
-	});
-	writeRunRecord(record);
-	const durationMs = Date.now() - start;
+	}));
+	const durationMs = Date.now() - args.start;
 	log.info(
-		{ runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },
+		{ runId: record.runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },
 		'runAnalyze: ok',
 	);
-
-	return emitDoneAndReturn({
+	return {
 		ok: true,
-		runId,
+		runId: record.runId,
 		intent,
-		finalReport: rootPlan.finalReport,
+		finalReport: concluded.finalReport,
 		tasksCompleted: rootPlan.tasksCompleted,
 		tasksFailed: rootPlan.tasksFailed,
 		durationMs,
-	});
+		report: concluded.report,
+	};
+}
+
+/**
+ * The result of a run resumed from its stored record.
+ *
+ * A record written since the report existed carries it, and its final
+ * report's text already starts with the completeness line. A record stored
+ * before that carries none: the run resumes with no report, none is invented
+ * for it, and the not-recorded line is put at the head of the text in its place.
+ */
+function resumedResult(cached: RunRecord, intent: ClassifiedIntent): RunAnalyzeResult {
+	return {
+		ok: true,
+		runId: cached.runId,
+		intent,
+		finalReport: cached.report !== undefined
+			? cached.finalReport
+			: headFinalReport(cached.finalReport, RUN_COMPLETENESS_NOT_RECORDED),
+		tasksCompleted: cached.tasksCompleted ?? 0,
+		tasksFailed: cached.tasksFailed ?? [],
+		durationMs: 0,
+		...(cached.report !== undefined ? { report: cached.report } : {}),
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -512,16 +610,30 @@ function classifyShaperError(err: unknown): RunFailure {
 		};
 	}
 	if (err instanceof ShaperLlmUnavailableError) return wrap('shaper-llm-unavailable', err);
-	if (err instanceof ShaperToolLoopExhausted) return wrap('shaper-tool-loop-exhausted', err);
+	if (err instanceof ShaperToolLoopExhausted) {
+		// What the tools returned before the limit is not lost with the failure.
+		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
+	}
 	if (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);
-	if (err instanceof ShaperPromptMissingError) return wrap('shaper-prompt-missing', err);
+	if (err instanceof ShaperPromptMissingError) {
+		// The answer prompt is loaded after the lookups ran: what they found goes with the failure.
+		return err.found !== undefined
+			? { code: 'shaper-prompt-missing', message: err.message, data: { results: err.found.results, report: err.found.report } }
+			: wrap('shaper-prompt-missing', err);
+	}
 	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);
 	if (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);
 	if (err instanceof ScopeRefUnresolvedError) return wrap('scope-ref-unresolved', err);
 	if (err instanceof ScopeKindTargetMismatchError) return wrap('scope-ref-kind-target-mismatch', err);
-	// An invalid answer keeps the existing schema code until the
-	// answer-step failure (with the lookup results) replaces it.
-	if (err instanceof ShaperAnswerInvalidError) return wrap('shaper-schema-unrecoverable', err);
+	// The lookups ran and the answer could not be written: the failure
+	// carries what they found, and the report says the answer step failed.
+	if (err instanceof ShaperAnswerStepFailedError) {
+		return {
+			code: 'answer-step-failed',
+			message: err.message,
+			data: { reason: err.reason, results: err.found.results, report: err.found.report },
+		};
+	}
 	return wrap('internal-error', err);
 }
 

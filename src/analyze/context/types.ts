@@ -10,6 +10,7 @@
  * See: design/analyze-context-builder.md
  */
 
+import type { AnswerReport } from '../completeness.js';
 import type {
 	AnalyzeTarget,
 	AnalyzeScopeRef,
@@ -70,6 +71,16 @@ export interface AnalyzeContextBundle {
 
 	/** Provenance + diagnostics. */
 	readonly meta?: BundleMeta;
+
+	/**
+	 * Whether the findings this answer rests on are complete, and which
+	 * lookups were cut, partly read or failed (shared contract sc2).
+	 * DERIVED by code from the lookups' own records; a model never writes
+	 * it and is never shown a schema that has it. Present on a run-mode
+	 * bundle; absent on a classification or task bundle, and on a bundle
+	 * built before the field existed.
+	 */
+	readonly report?: AnswerReport | undefined;
 }
 
 export interface BundleMeta {

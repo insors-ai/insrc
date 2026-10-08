@@ -38,6 +38,8 @@ import type {
 	ImportGraphOutput,
 	ImportGraphSummary,
 } from './types.js';
+import type { ReachedLimit } from '../completeness.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:import-graph');
 
@@ -100,6 +102,8 @@ export async function runImportGraph(
 		log.info({ runId: ctx.runId, path }, 'import.graph: no in-scope files');
 		return {
 			type: 'import.graph',
+			// No file of the graph lies under the path: an empty result, and a complete one.
+			completeness: graphCompleteness({ returned: 0 }),
 			summary: {
 				target: path,
 				topImporters:   [],
@@ -119,10 +123,11 @@ export async function runImportGraph(
 	let totalOut = 0;
 
 	const inScopePaths = new Set(inScopeFiles.map(e => e.file));
+	const noGraphNode: string[] = [];
 
 	for (const f of inScopeFiles) {
 		const u64 = await entityU64ForId(f.id);
-		if (u64 === undefined) continue;
+		if (u64 === undefined) { noGraphNode.push(f.file); continue; }
 
 		// Inbound: who imports THIS file (files outside our scope).
 		const importers = await inNeighbors(u64, { kindFilter: ['IMPORTS'] });
@@ -159,14 +164,26 @@ export async function runImportGraph(
 		}
 	}
 
+	const k = topK ?? DEFAULT_TOP_K;
 	const topImporters = Array.from(importerCount.entries())
 		.map(([file, edges]) => ({ file, edges }))
 		.sort((a, b) => b.edges - a.edges)
-		.slice(0, topK ?? DEFAULT_TOP_K);
+		.slice(0, k);
 	const topImportees = Array.from(importeeCount.entries())
 		.map(([file, edges]) => ({ file, edges }))
 		.sort((a, b) => b.edges - a.edges)
-		.slice(0, topK ?? DEFAULT_TOP_K);
+		.slice(0, k);
+
+	// Two lists, each cut to the same number: a limit on each, not on their sum.
+	const limited: ReachedLimit[] = [];
+	if (importerCount.size > k) limited.push(reachedLimit('importing files', k, 'per-group', importerCount.size));
+	if (importeeCount.size > k) limited.push(reachedLimit('imported files', k, 'per-group', importeeCount.size));
+	const completeness = graphCompleteness({
+		returned: topImporters.length + topImportees.length,
+		found:    importerCount.size + importeeCount.size,
+		limited,
+		skipped:  noGraphNode.map(file => ({ what: file, reason: 'the file has no node in the stored graph, so its imports were not read' })),
+	});
 
 	const summary: ImportGraphSummary = {
 		target:         path,
@@ -189,5 +206,5 @@ export async function runImportGraph(
 		'import.graph: complete',
 	);
 
-	return { type: 'import.graph', summary };
+	return { type: 'import.graph', completeness, summary };
 }

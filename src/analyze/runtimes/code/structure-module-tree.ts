@@ -54,6 +54,8 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
+import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.structure.module-tree';
 const log = getLogger('analyze:runtimes:code:structure-module-tree');
@@ -110,6 +112,7 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 		// module -> module edges.
 		const files = entities.filter(e => e.kind === 'file');
 		const edgeCounts = new Map<string, ModuleEdge>();  // key: from|to
+		const skipped: SkippedItem[] = [];
 
 		for (const f of files) {
 			const owningModule = moduleForFile(f.file);
@@ -119,7 +122,10 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 			try {
 				imports = await findImports(db, f.id);
 			} catch (err) {
+				// Expected for a single file: its imports are missing from the tree,
+				// and the record names it so the missing edges are not read as none.
 				log.warn({ fileId: f.id, err: (err as Error).message }, 'findImports failed -- skipping');
+				skipped.push({ what: f.file, reason: `its imports could not be read from the graph (${(err as Error).message})` });
 				continue;
 			}
 
@@ -159,6 +165,11 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['module-tree', tree]]),
+			completeness: graphCompleteness({
+				returned: moduleNodes.length,
+				skipped,
+				rule:     'A file that lies under no module is not part of the tree, and neither are its imports.',
+			}),
 		};
 	},
 };

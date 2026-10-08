@@ -37,6 +37,12 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import { readScopeRef, resolveRepoPath } from '../code/_shared.js';
+import { buildCompleteness } from '../../completeness.js';
+import type { PartlyReadItem, SkippedItem } from '../../completeness.js';
+import { DOC_INDEX_RULE } from '../../explore/completeness-facts.js';
+import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
+import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
+import { countedSkip } from './family-summarise.js';
 
 const TEMPLATE_ID = 'docs.discovery.inventory';
 const log = getLogger('analyze:runtimes:docs:discovery-inventory');
@@ -97,6 +103,12 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 		let summariesReady = 0;
 		let summariesPending = 0;
 		const inventory: InventoryEntry[] = [];
+		// For the completeness record: summaries that rest on part of their
+		// document, and entries whose summary fields are missing.
+		const measurer = createItemMeasurer(db);
+		const partlyRead: PartlyReadItem[] = [];
+		const failedSummaries: string[] = [];
+		const noSummary: string[] = [];
 		for (const e of entities) {
 			const family = inferDocFamily(e.file);
 			familyCounts[family] += 1;
@@ -105,15 +117,23 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 			// LLM failed for this doc (placeholder written); errorCode
 			// absent = ready.
 			let hasSummary = false;
+			const label = e.kind === 'section' ? `${e.file} § ${e.name}` : e.file;
 			if (s !== undefined) {
 				if (s.errorCode === undefined) {
 					summariesReady += 1;
 					hasSummary = true;
+					// The entry's title, status and counts come from the summary, and
+					// the summariser reads the first part of a long document.
+					const cut = await summarisedFrom(measurer, e, SUMMARISER_BODY_CHARS);
+					if (cut !== undefined) partlyRead.push({ ...cut, what: label });
 				} else {
 					summariesPending += 1;
+					failedSummaries.push(label);
 				}
 			} else {
 				summariesPending += 1;
+				// Only documents and sections are summarised; a config entity has none by design.
+				if (e.kind !== 'config') noSummary.push(label);
 			}
 			inventory.push({
 				entityId: e.id,
@@ -156,6 +176,17 @@ export const docsDiscoveryInventoryRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['docs-inventory', output]]),
+			// Every document, section and config entity of the index is listed.
+			completeness: buildCompleteness({
+				returned: inventory.length,
+				partlyRead,
+				skipped:  [
+					...countedSkip(failedSummaries, 'summarising failed for them, so their entries carry no status, subjects or counts'),
+					...countedSkip(noSummary, 'they have no summary yet, so their entries carry no status, subjects or counts'),
+				] satisfies SkippedItem[],
+				basis:     'doc-index',
+				basisNote: DOC_INDEX_RULE,
+			}),
 		};
 	},
 };

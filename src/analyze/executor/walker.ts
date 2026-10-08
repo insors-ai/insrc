@@ -37,6 +37,7 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
+import { isCompletenessRecord } from '../completeness.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
@@ -54,6 +55,7 @@ import {
 	type TaskExecutionRecord,
 	type TemplateExecuteResult,
 } from './types.js';
+import { taskPath } from './plan-sources.js';
 
 const log = getLogger('analyze:executor:walker');
 
@@ -239,6 +241,15 @@ async function executeLeafTask(
 		return failedRecord(task, `output-shape-mismatch: ${shapeError.message}`);
 	}
 
+	// Every result states its own completeness. A runtime that returns none
+	// cannot be counted as complete by default: the task is recorded as failed.
+	const completeness = (result as { completeness?: unknown }).completeness;
+	if (!isCompletenessRecord(completeness)) {
+		const reason = 'no-completeness-record: the runtime returned a result that does not state its completeness';
+		log.warn({ runId, taskId: task.taskId, template: task.template }, reason);
+		return failedRecord(task, reason);
+	}
+
 	const outputsObj: Record<string, unknown> = {};
 	for (const [k, v] of result.outputs.entries()) {
 		outputsObj[k] = v;
@@ -252,6 +263,7 @@ async function executeLeafTask(
 		status:      'ok',
 		outputs:     outputsObj,
 		completedAt: nowIso(),
+		completeness,
 	};
 }
 
@@ -413,11 +425,8 @@ function emit(opts: WalkOpts, event: TaskExecutionEvent): void {
  * planner-template task at level 1 sets it to its own taskId;
  * further nested levels join with '.'.
  */
-function appendTaskPath(parent: string | undefined, taskId: string): string {
-	return parent === undefined || parent.length === 0
-		? taskId
-		: `${parent}.${taskId}`;
-}
+/** One rule for a task's path, shared with the answer report's sources. */
+const appendTaskPath = taskPath;
 
 // ---------------------------------------------------------------------------
 // Test hooks

@@ -17,6 +17,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { buildCompleteness } from '../../completeness.js';
+
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import {
 	_extractSoleFreeformResultForTest,
@@ -95,7 +97,7 @@ function buildFreeformResult(overrides?: Partial<FreeformProbeOutput>): Freeform
 		purpose:      'x',
 		shaperId:     'code',
 		toolCallCount: 3,
-		exhaustedNote: '',
+		completeness: buildCompleteness({ returned: 1, basis: 'model-directed', notEstablished: true }),
 		rawBundle: {
 			system:    'S',
 			focus:     'F',

@@ -43,6 +43,8 @@ import type {
 	NamingCase,
 	TestFileConvention,
 } from './types.js';
+import type { ReachedLimit } from '../completeness.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:convention-detect');
 
@@ -108,6 +110,8 @@ export async function runConventionDetect(
 		);
 		return {
 			type:              'convention.detect',
+			// The graph holds no entity under the path: empty, and complete.
+			completeness:      graphCompleteness({ returned: 0 }),
 			path:              params.path,
 			namingSchema:      emptyNamingSchema(),
 			baseClassIdioms:   [],
@@ -122,7 +126,8 @@ export async function runConventionDetect(
 	const namingSchema = computeNamingSchema(under);
 
 	// (2) Base-class idioms via INHERITS edges
-	const baseClassIdioms = await computeBaseClassIdioms(under, db, params.path);
+	const idiomScan = await computeBaseClassIdioms(under, db, params.path);
+	const baseClassIdioms = idiomScan.idioms;
 
 	// (3) Private + dunder counts
 	let privatePrefixCount = 0;
@@ -146,8 +151,30 @@ export async function runConventionDetect(
 		'convention.detect: complete',
 	);
 
+	// The counts and the naming schema are computed over every entity under the
+	// path; the two cuts are on the base-class idioms.
+	const limited: ReachedLimit[] = [];
+	if (idiomScan.totalIdioms > MAX_BASE_CLASS_IDIOMS) {
+		limited.push(reachedLimit('base-class idioms', MAX_BASE_CLASS_IDIOMS, 'overall', idiomScan.totalIdioms));
+	}
+	if (idiomScan.mostSubclasses > MAX_REPR_SUBCLASSES) {
+		limited.push({
+			what: 'named subclasses per base', limit: MAX_REPR_SUBCLASSES, scope: 'per-group',
+			reason: `a base has ${idiomScan.mostSubclasses} subclasses and ${MAX_REPR_SUBCLASSES} are named for each; subclassCount holds the full number`,
+		});
+	}
+
 	return {
 		type:              'convention.detect',
+		completeness:      graphCompleteness({
+			returned: baseClassIdioms.length,
+			found:    idiomScan.totalIdioms,
+			limited,
+			skipped:  idiomScan.noGraphNode.map(e => ({
+				what:   `${e.name} (${e.file}:${e.startLine})`,
+				reason: 'the class has no node in the stored graph, so its base classes were not read',
+			})),
+		}),
 		path:              params.path,
 		namingSchema,
 		baseClassIdioms,
@@ -321,27 +348,39 @@ function dominantTestFile(counts: Record<TestFileConvention, number>): TestFileC
 // Base-class idioms via INHERITS edges (in-degree perspective)
 // ---------------------------------------------------------------------------
 
+/** The idioms kept, with what the two cuts and the graph left out. */
+interface BaseClassIdiomScan {
+	readonly idioms:         readonly ConventionBaseClassIdiom[];
+	/** Distinct bases found before the cut to MAX_BASE_CLASS_IDIOMS. */
+	readonly totalIdioms:    number;
+	/** The most subclasses any one base has; MAX_REPR_SUBCLASSES are named for each. */
+	readonly mostSubclasses: number;
+	/** In-module classes with no node in the stored graph: their bases were not read. */
+	readonly noGraphNode:    readonly Entity[];
+}
+
 async function computeBaseClassIdioms(
 	under: readonly Entity[],
 	db:    Awaited<ReturnType<typeof getDb>>,
 	path:  string,
-): Promise<readonly ConventionBaseClassIdiom[]> {
+): Promise<BaseClassIdiomScan> {
 	// Only classes / interfaces / types can serve as bases. Walk each
 	// entity's INHERITS-out edges; aggregate to the base + its
 	// in-module subclasses.
 	const classesInModule = under.filter(e =>
 		e.kind === 'class' || e.kind === 'interface' || e.kind === 'type',
 	);
-	if (classesInModule.length === 0) return [];
+	if (classesInModule.length === 0) return { idioms: [], totalIdioms: 0, mostSubclasses: 0, noGraphNode: [] };
 
 	const inModuleIds = new Set(classesInModule.map(e => e.id));
 
 	// Map baseName -> { baseEntityId?, subs: Entity[] }
 	const idiomMap = new Map<string, { baseEntityId?: string; subs: Entity[] }>();
 
+	const noGraphNode: Entity[] = [];
 	for (const sub of classesInModule) {
 		const u64 = await entityU64ForId(sub.id);
-		if (u64 === undefined) continue;
+		if (u64 === undefined) { noGraphNode.push(sub); continue; }
 		const inheritsOut = await outNeighbors(u64, { kindFilter: ['INHERITS'] });
 		if (inheritsOut.length === 0) continue;
 		const idMap = await entityIdsByU64s(inheritsOut);
@@ -388,7 +427,9 @@ async function computeBaseClassIdioms(
 		.sort((a, b) => b.subclassCount - a.subclassCount)
 		.slice(0, MAX_BASE_CLASS_IDIOMS);
 
-	return idioms;
+	let mostSubclasses = 0;
+	for (const slot of idiomMap.values()) mostSubclasses = Math.max(mostSubclasses, slot.subs.length);
+	return { idioms, totalIdioms: idiomMap.size, mostSubclasses, noGraphNode };
 }
 
 // ---------------------------------------------------------------------------

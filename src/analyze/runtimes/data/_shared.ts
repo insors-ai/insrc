@@ -15,6 +15,7 @@
  */
 
 import type { TemplateExecuteArgs } from '../../executor/types.js';
+import { acquirePool } from '../../../daemon/db/index.js';
 
 /**
  * Pull the active workspace path off args.intent.scopeRef. Data
@@ -76,4 +77,21 @@ export function optionalStringParam(
 		);
 	}
 	return v;
+}
+
+// ---------------------------------------------------------------------------
+// The connection pool
+// ---------------------------------------------------------------------------
+
+type PoolSource = typeof acquirePool;
+let poolSource: PoolSource = acquirePool;
+
+/** The repository's connection pool. Every data runtime takes it from here. */
+export function acquireDataPool(repoPath: string): ReturnType<PoolSource> {
+	return poolSource(repoPath);
+}
+
+/** Test seam: stand a pool in for the data runtimes; pass undefined to restore the real one. */
+export function _setDataPoolSourceForTest(source: PoolSource | undefined): void {
+	poolSource = source ?? acquirePool;
 }

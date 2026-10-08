@@ -32,16 +32,27 @@ import type {
 } from '../../db/client.js';
 import type {
 	LLMMessage,
+	LLMProvider,
 	StructuredSchema,
 } from '../../shared/types.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocDecisionRecord,
 	DocDecisionTraceOutput,
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { PartialFinding, PartlyReadItem, SkippedItem } from '../completeness.js';
+import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
+import { errorMessage, LookupFailedError } from './lookup-failed.js';
+import type { CarriedCompletenessFacts } from './completeness-facts.js';
+
+/** How much of each retrieved section's stored body the model is given. */
+const SECTION_BODY_CHARS = 2_000;
 
 const log = getLogger('analyze:explore:doc-decision-trace');
 
@@ -53,7 +64,8 @@ const PROMPT_REL = 'prompts/analyze/docs.decision-trace.system.md';
 // Structured-output schema (mirrors the template runtime's schema)
 // ---------------------------------------------------------------------------
 
-const DECISIONS_SCHEMA: StructuredSchema = {
+/** The answer the model (or the agent, on the step tool's path) must give this lookup. */
+export const DOC_DECISIONS_SCHEMA: StructuredSchema = {
 	type:                 'object',
 	additionalProperties: false,
 	required:             ['topic', 'decisions', 'notFoundNote'],
@@ -90,6 +102,8 @@ export interface RunDocDecisionTraceArgs {
 	readonly maxSources?: number;
 	readonly runId?:      string;
 	readonly logContext?: string;
+	/** The model that reads the sections; a test passes a stand-in. */
+	readonly provider?:   LLMProvider | undefined;
 }
 
 /**
@@ -116,7 +130,7 @@ export async function runSharedDocDecisionTrace(
 
 	// Fire the LLM call against the daemon-side shaperProvider.
 	const cfg = loadAnalyzeConfig();
-	const provider = resolveRoleProvider('analyze.narrow', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.narrow', cfg);
 	let raw: DocDecisionTraceLLMOutput;
 	try {
 		raw = await provider.completeStructured(
@@ -124,7 +138,7 @@ export async function runSharedDocDecisionTrace(
 				{ role: 'system', content: prepared.systemPrompt },
 				{ role: 'user',   content: prepared.userTurn     },
 			],
-			DECISIONS_SCHEMA,
+			DOC_DECISIONS_SCHEMA,
 			{
 				maxAttempts:     cfg.shaper.structuredOutputRetries,
 				disableThinking: true,
@@ -132,19 +146,13 @@ export async function runSharedDocDecisionTrace(
 			},
 		);
 	} catch (err) {
-		log.warn(
-			{ runId: args.runId, ctx: args.logContext, err: (err as Error).message },
-			'doc.decision.trace: LLM extraction failed',
+		// The sections were retrieved and the model that reads them could not be
+		// called: the lookup could not run. What it had retrieved goes with the failure.
+		throw new LookupFailedError(
+			`doc.decision.trace: the model call that reads the retrieved sections failed: ${errorMessage(err)}`,
+			prepared.retrieved,
+			{ cause: err },
 		);
-		return {
-			type:  'doc.decision.trace',
-			topic: prepared.prepared.topic,
-			decisions: [],
-			notFoundNote:
-				`LLM extraction failed for topic "${prepared.prepared.topic}": ${(err as Error).message}. ` +
-				`Retrieved ${prepared.prepared.retrievedSectionCount} sections but could not process them.`,
-			retrievedSectionCount: prepared.prepared.retrievedSectionCount,
-		};
 	}
 
 	return finalizeDocDecisionTrace(prepared.prepared, raw, args.runId, args.logContext);
@@ -161,6 +169,8 @@ export interface DocDecisionTracePrepared {
 	readonly topic:                  string;
 	readonly retrievedSectionCount:  number;
 	readonly validEntityIds:         readonly string[];
+	/** What prepare left out. Absent on a value minted before the field existed. */
+	readonly completenessFacts?:     CarriedCompletenessFacts | undefined;
 }
 
 interface HydratedSection {
@@ -189,6 +199,8 @@ export type DocDecisionTracePrepareResult =
 		readonly systemPrompt: string;
 		readonly userTurn:     string;
 		readonly schema:       StructuredSchema;
+		/** The sections prepare retrieved, for a failure after this point to report. */
+		readonly retrieved:    readonly PartialFinding[];
 		readonly prepared:     DocDecisionTracePrepared;
 	  };
 
@@ -204,8 +216,10 @@ export async function prepareDocDecisionTrace(
 		: 15;
 
 	// (1) Retrieve. V1 = repo-scoped (single-repo closure).
+	const report: DocsRetrievalReport = {};
 	const sections = await retrieveDocSections({
 		db:           args.db,
+		report,
 		query:        topic,
 		closureRepos: [args.repoPath],
 		maxResults:   maxSources,
@@ -222,6 +236,8 @@ export async function prepareDocDecisionTrace(
 			kind: 'short-circuit',
 			shortCircuit: {
 				type:                  'doc.decision.trace',
+				// The document index returned no section for the topic: empty, and complete.
+				completeness:          buildCompleteness({ returned: 0, skipped: vectorPassSkipped(report.vectorPassSkipped), basis: 'doc-index', basisNote: DOC_INDEX_RULE }),
 				topic,
 				decisions:             [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${topic}".`,
@@ -232,15 +248,25 @@ export async function prepareDocDecisionTrace(
 
 	// (2) Hydrate full bodies for the LLM extraction pass.
 	const hydrated: HydratedSection[] = [];
+	const skipped: SkippedItem[] = vectorPassSkipped(report.vectorPassSkipped);
+	const partlyRead: PartlyReadItem[] = [];
+	const measurer = createItemMeasurer(args.db);
 	for (const s of sections) {
 		const entity = await getEntity(args.db, s.entityId);
-		if (entity === null) continue;
+		if (entity === null) {
+			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
+			continue;
+		}
+		const body = (entity.body ?? '').slice(0, SECTION_BODY_CHARS);
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
 			heading:  s.heading,
-			body:     (entity.body ?? '').slice(0, 2_000),
+			body,
 		});
+		// The model reads this much of the section; say so when the section is longer.
+		const cut = await measurer.partlyRead(`${s.file} § ${s.heading}`, entity, body.length);
+		if (cut !== undefined) partlyRead.push(cut);
 	}
 
 	const promptContent = loadPromptFile();
@@ -252,11 +278,21 @@ export async function prepareDocDecisionTrace(
 		kind:         'narrow-llm',
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
-		schema:       DECISIONS_SCHEMA,
+		schema:       DOC_DECISIONS_SCHEMA,
+		retrieved:    hydrated.map(h => ({ source: `${h.file} § ${h.heading}`, content: h.body })),
 		prepared: {
 			topic,
 			retrievedSectionCount: sections.length,
 			validEntityIds:        hydrated.map(h => h.entityId),
+			completenessFacts: {
+				// The retrieval returns at most maxSources sections and does not say how many
+				// matched. The limit is on what was read, not on what is returned from it.
+				limited: sections.length >= maxSources
+					? [reachedLimit('document sections', maxSources, 'source', null)]
+					: [],
+				skipped,
+				partlyRead,
+			},
 		},
 	};
 }
@@ -264,7 +300,7 @@ export async function prepareDocDecisionTrace(
 /**
  * Finalize the LLM output: apply the citation faithfulness filter
  * against the retrieved entity set. `raw` is the JSON the outer LLM
- * emitted against DECISIONS_SCHEMA.
+ * emitted against DOC_DECISIONS_SCHEMA.
  */
 export function finalizeDocDecisionTrace(
 	prepared:   DocDecisionTracePrepared,
@@ -291,6 +327,7 @@ export function finalizeDocDecisionTrace(
 
 	return {
 		type:                  'doc.decision.trace',
+		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts, DOC_INDEX_RULE),
 		topic:                 prepared.topic,
 		decisions:             filtered,
 		notFoundNote:          filtered.length === 0 ? (raw.notFoundNote || `No decisions on "${prepared.topic}" found in the retrieved sections.`) : '',

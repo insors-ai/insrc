@@ -27,6 +27,7 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
 
 const log = getLogger('analyze:explore:db-connections-list');
 
@@ -37,21 +38,13 @@ const log = getLogger('analyze:explore:db-connections-list');
 export async function runDbConnectionsList(
 	_exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The connection pool's source; a test passes a stand-in. */
+	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbConnectionsListOutput> {
-	let pool;
-	try {
-		pool = await acquirePool(ctx.repoPath);
-	} catch (err) {
-		log.info(
-			{ runId: ctx.runId, repoPath: ctx.repoPath, err: (err as Error).message },
-			'db.connections.list: pool acquisition failed; treating as no-connections',
-		);
-		return {
-			type:        'db.connections.list',
-			connections: [],
-			notFoundNote: `Pool acquisition for repo "${ctx.repoPath}" failed: ${(err as Error).message}`,
-		};
-	}
+	// A registry that cannot be read is a lookup that could not run: it throws,
+	// and the executor reports it as failed. "No connections" is said only when
+	// the registry was read and holds none.
+	const pool = await acquire(ctx.repoPath);
 
 	const list = pool.list();
 	const connections: DbConnectionSummary[] = list.map(c => {
@@ -72,6 +65,7 @@ export async function runDbConnectionsList(
 
 	return {
 		type:        'db.connections.list',
+		completeness: buildCompleteness({ returned: connections.length, basis: 'data-source' }),
 		connections,
 		notFoundNote: connections.length === 0
 			? `No data-driver connections registered for repo "${ctx.repoPath}".`

@@ -18,9 +18,10 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
-import type { AnalyzeContextBundle } from '../analyze/context/types.js';
+import { completenessHeadLine, isAnswerReport, renderCompletenessLine } from '../analyze/completeness.js';
+import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
 
-const LAYER_HEADINGS: Readonly<Record<keyof Omit<AnalyzeContextBundle, 'meta'>, string>> = {
+const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
 	system:    '## System',
 	focus:     '## Focus',
 	summary:   '## Summary',
@@ -30,7 +31,7 @@ const LAYER_HEADINGS: Readonly<Record<keyof Omit<AnalyzeContextBundle, 'meta'>, 
 	upstream:  '## Upstream',
 };
 
-const LAYER_ORDER: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[] = [
+const LAYER_ORDER: readonly BundleLayerName[] = [
 	'system', 'focus', 'summary', 'structure', 'surface', 'artefacts', 'upstream',
 ];
 
@@ -40,7 +41,7 @@ const LAYER_ORDER: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[] = [
 
 export interface RenderBundleOpts {
 	/** Which layers to include. Defaults to every non-empty layer. */
-	readonly layers?: readonly (keyof Omit<AnalyzeContextBundle, 'meta'>)[];
+	readonly layers?: readonly BundleLayerName[];
 	/** Whether to prefix the output with the meta-summary line.
 	 *  Default: true. */
 	readonly includeMeta?: boolean;
@@ -58,6 +59,10 @@ export function renderBundleAsMarkdown(
 	const requestedLayers = opts?.layers ?? LAYER_ORDER;
 
 	const parts: string[] = [];
+	// The completeness line is first, before anything a model wrote: an agent
+	// or a person reads it before the findings. A bundle with no report (one
+	// built before the report existed) says that completeness was not recorded.
+	parts.push(completenessHeadLine(bundle.report, 'say-not-recorded')!);
 	if (includeMeta) parts.push(renderMetaLine(bundle));
 
 	for (const layer of requestedLayers) {
@@ -89,4 +94,32 @@ function renderMetaLine(bundle: AnalyzeContextBundle): string {
 		parts.push(`repoIndexedAt=${new Date(bundle.meta.repoLastIndexedAt).toISOString()}`);
 	}
 	return `<!-- insrc-analyze meta: ${parts.join(' ')} -->`;
+}
+
+// ---------------------------------------------------------------------------
+// A failed request
+// ---------------------------------------------------------------------------
+
+/**
+ * The text the one-shot tool returns for a failed request.
+ *
+ * A failure that happened after the lookups ran carries the report derived
+ * from them. Its completeness line is printed first, then the failed step's
+ * reason where there is one, then the code and the message. Any other
+ * failure prints its code and message, as before.
+ */
+export function renderAnalyzeFailure(error: {
+	readonly code:    string;
+	readonly message: string;
+	readonly data?:   Readonly<Record<string, unknown>> | undefined;
+}): string {
+	const failure = `analyze.context.buildRun failed: ${error.code} -- ${error.message}`;
+	const report = error.data?.['report'];
+	if (!isAnswerReport(report)) return failure;
+	const reason = error.data?.['reason'];
+	return [
+		renderCompletenessLine(report),
+		...(typeof reason === 'string' ? [`The answer step failed: ${reason}.`] : []),
+		failure,
+	].join('\n\n');
 }

@@ -15,9 +15,10 @@ Faithfulness matters more than completeness. If zero connections are registered,
 
 ## Exploration output shapes
 
-- **`db.connections.list`**: `{ connections: [{ id, kind, family, label, path? }], notFoundNote }`
-- **`db.tables.list`**: `{ connectionId, family, tables: [{ name, schema?, kind, rowEstimate? }], truncated, notFoundNote }`
-- **`db.table.describe`**: `{ connectionId, target, family, columns: [{ name, type, nullable?, primaryKey?, foreignKey? }], shapeSummary, notFoundNote }`
+- **`db.connections.list`**: `{ connections: [{ id, kind, family, label, path? }], completeness, notFoundNote }`
+- **`db.tables.list`**: `{ connectionId, family, tables: [{ name, schema?, kind, rowEstimate? }], completeness, notFoundNote }`
+- **`db.table.describe`**: `{ connectionId, target, family, columns: [{ name, type, nullable?, primaryKey?, foreignKey? }], shapeSummary, completeness, notFoundNote }`
+- In each of the three, `notFoundNote` explains an empty result that is complete (no connection registered, a single-target file connection). A listing or description that FAILED or is not supported by the driver is not a not-found: read `completeness` (`complete: false`, with the reason in `skipped` or `basisNote`) and report it as could-not-read, never as empty.
 - **`unsupported`** / **`failed`**: render under a `## Diagnostics` sub-section in `structure`.
 
 ## Bundle layers
@@ -43,7 +44,7 @@ Every layer is a **single JSON string**. Empty layers = `""`.
 
 - **`structure`** — markdown map with sub-sections in order:
     - `## Connections` — one bullet per connection: `- <id> (<family>/<kind>) — <label>` + optional `path`
-    - `## Tables` — grouped by `connectionId`; each group lists `<schema>.<name>` (or `<name>` for KV / file), with `rowEstimate` when present. If a connection returned `truncated: true`, append `_… truncated_` to the group heading.
+    - `## Tables` — grouped by `connectionId`; each group lists `<schema>.<name>` (or `<name>` for KV / file), with `rowEstimate` when present. If a connection's `completeness.limited` lists a reached limit, append `_… truncated_` to the group heading.
     - `## Schemas` (when `db.table.describe` outputs exist) — one sub-section per described target, listing columns as `<name>: <type>` (mark PK / FK inline)
     - `## Diagnostics` (only when `unsupported`/`failed` outputs exist)
 
@@ -65,7 +66,7 @@ Every layer is a **single JSON string**. Empty layers = `""`.
 - **No claim without an exploration output.** Every connection, table, and column MUST appear in some `db.*` output.
 - **No fabricated connections.** If `db.connections.list.connections` is empty, `## Connections` reads `_None registered_` and the bundle honestly reports zero.
 - **Preserve family labels.** `rdbms | kv | file` are load-bearing for downstream planners; do NOT reword.
-- **Truncation is a signal, not a bug.** When `db.tables.list.truncated === true`, mark it in the `## Tables` heading -- readers otherwise assume the list is exhaustive.
+- **Truncation is a signal, not a bug.** When `db.tables.list.completeness.limited` lists a reached limit, mark it in the `## Tables` heading -- readers otherwise assume the list is exhaustive.
 
 ## Output format (HARD)
 

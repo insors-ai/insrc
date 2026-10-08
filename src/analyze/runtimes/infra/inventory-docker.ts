@@ -21,7 +21,6 @@
  *   { 'docker-inventory': {
  *       dockerfiles: Array<{ path, froms: Array<{image, stage?}>, exposedPorts: string[] }>,
  *       composeFiles: Array<{ path, services: Array<{name, image?, ports: string[]}> }>,
- *       truncated: boolean
  *     } }
  */
 
@@ -38,8 +37,11 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.docker';
 const log = getLogger('analyze:runtimes:infra:inventory-docker');
@@ -125,7 +127,9 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files: walked, truncated } = await walkFiles(repoPath);
+		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
+		// Files the inventory could not read or parse, and directories the walk could not enter.
+		const skipped: SkippedItem[] = [...unreadable];
 
 		const dockerfiles: DockerfileRecord[] = [];
 		const composeFiles: ComposeRecord[]   = [];
@@ -137,12 +141,14 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 					dockerfiles.push(parseDockerfile(f.relPath, await readFile(f.absPath, 'utf8')));
 				} catch (err) {
 					log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.docker: Dockerfile read failed -- skipping');
+					skipped.push(unreadableFile(f.relPath, err));
 				}
 			} else if (COMPOSE_RE.test(base)) {
 				try {
 					composeFiles.push(parseCompose(f.relPath, load(await readFile(f.absPath, 'utf8'))));
 				} catch (err) {
 					log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.docker: compose parse failed -- skipping');
+					skipped.push(unreadableFile(f.relPath, err));
 				}
 			}
 		}
@@ -150,11 +156,14 @@ export const infraInventoryDockerRuntime: TemplateRuntime = {
 		dockerfiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 		composeFiles.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
-		const inventory = { dockerfiles, composeFiles, truncated };
+		const inventory = { dockerfiles, composeFiles };
 		log.info(
 			{ runId: args.runId, taskId: args.task.taskId, repoPath, dockerfiles: dockerfiles.length, composeFiles: composeFiles.length, truncated },
 			'infra.inventory.docker: enumerated',
 		);
-		return { outputs: new Map<string, unknown>([['docker-inventory', inventory]]) };
+		return {
+			outputs: new Map<string, unknown>([['docker-inventory', inventory]]),
+			completeness: fileWalkCompleteness(dockerfiles.length + composeFiles.length, truncated, { skipped }),
+		};
 	},
 };

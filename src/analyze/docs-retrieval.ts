@@ -65,8 +65,20 @@ export interface DocSectionResult {
 	};
 }
 
+/**
+ * What a retrieval could not do, filled in by `retrieveDocSections` when the
+ * caller passes one. The retrieval still returns: it has two passes and one
+ * of them needs the embedding service.
+ */
+export interface DocsRetrievalReport {
+	/** Why the vector pass did not run; absent when it ran. The result then holds keyword matches only. */
+	vectorPassSkipped?: string | undefined;
+}
+
 export interface DocsRetrievalArgs {
 	readonly db:             DbClient;
+	/** Filled with what the retrieval could not do. A caller that states its completeness passes one. */
+	readonly report?:        DocsRetrievalReport | undefined;
 	readonly query:          string;
 	/** Repo closure -- V1 is always a single-element array (current
 	 *  repo only). Later versions may widen to a `DEPENDS_ON` closure. */
@@ -165,6 +177,12 @@ export async function retrieveDocSections(
 			'retrieveDocSections: query embed failed; vector pass skipped',
 		);
 		queryVec = [];
+		if (args.report !== undefined) args.report.vectorPassSkipped = `the query could not be embedded (${(err as Error).message})`;
+	}
+	// The embedder returns an empty vector, without throwing, when no
+	// embedding backend is active: the vector pass does not run then either.
+	if (queryVec.length === 0 && args.report !== undefined && args.report.vectorPassSkipped === undefined) {
+		args.report.vectorPassSkipped = 'no embedding of the query is available (the embedding backend is not active)';
 	}
 	if (queryVec.length > 0) {
 		try {
@@ -191,6 +209,7 @@ export async function retrieveDocSections(
 				{ err: (err as Error).message },
 				'retrieveDocSections: vector ANN failed; falling back to keyword only',
 			);
+			if (args.report !== undefined) args.report.vectorPassSkipped = `the vector search failed (${(err as Error).message})`;
 		}
 	}
 

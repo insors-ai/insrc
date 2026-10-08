@@ -12,7 +12,7 @@
  *   - target='data' stamping in the report metadata
  */
 
-import { runAggregator } from '../shared/aggregator.js';
+import { aggregateReportCompleteness, runAggregator } from '../shared/aggregator.js';
 import type {
 	TemplateExecuteArgs,
 	TemplateExecuteResult,
@@ -37,6 +37,7 @@ export const dataAggregateReportRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['report', report]]),
+			completeness: aggregateReportCompleteness(),
 		};
 	},
 };

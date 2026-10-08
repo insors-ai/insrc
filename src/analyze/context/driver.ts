@@ -79,7 +79,7 @@ import { freshnessPathOf, resolveScope } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 import {
-	ANALYZE_CONTEXT_BUNDLE_SCHEMA,
+	modelFacingBundleSchema,
 	SCHEMA_VERSION,
 	validateBundleWithErrors,
 } from './schema.js';
@@ -87,7 +87,9 @@ import { getReadOnlyTools } from './tool-surface.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
-import type { ExplorationPlan } from '../explore/index.js';
+import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
+import type { AnswerReport, PartialFinding } from '../completeness.js';
+import { reportFromLookups } from '../explore/answer-report.js';
 import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
@@ -160,10 +162,28 @@ export class ShaperLlmUnavailableError extends Error {
 	}
 }
 
+/**
+ * A tool's output as text, for the findings kept beside the conversation.
+ * This is bookkeeping: a value that has no JSON form (undefined, a circular
+ * structure, a BigInt) is described, never thrown from here into the tool loop.
+ */
+export function toolOutputText(output: unknown): string {
+	if (typeof output === 'string') return output;
+	try {
+		return JSON.stringify(output) ?? `(the tool returned ${String(output)})`;
+	} catch (err) {
+		return `(the tool's output has no JSON form: ${err instanceof Error ? err.message : String(err)})`;
+	}
+}
+
 export class ShaperToolLoopExhausted extends Error {
-	constructor(turns: number) {
+	/** Every tool call the loop made before it reached the limit, with what the tool returned. */
+	readonly toolResults: readonly PartialFinding[];
+
+	constructor(turns: number, toolResults: readonly PartialFinding[] = []) {
 		super(`Shaper tool-loop exceeded maxToolTurns=${turns}`);
 		this.name = 'ShaperToolLoopExhausted';
+		this.toolResults = toolResults;
 	}
 }
 
@@ -178,9 +198,17 @@ export class ShaperSchemaUnrecoverable extends Error {
 }
 
 export class ShaperPromptMissingError extends Error {
-	constructor(promptPath: string) {
+	/**
+	 * Set when the missing prompt is the answer-writing one: that prompt is
+	 * loaded after the lookups ran, so what they found is carried with the
+	 * failure. A missing planning prompt is found before any lookup and has none.
+	 */
+	readonly found: AnswerStepFound | undefined;
+
+	constructor(promptPath: string, found?: AnswerStepFound) {
 		super(`Shaper prompt file missing: ${promptPath}`);
 		this.name = 'ShaperPromptMissingError';
+		this.found = found;
 	}
 }
 
@@ -201,26 +229,31 @@ export class ShaperNoPlanError extends Error {
 	}
 }
 
-/** Where an answer was found invalid: the answer-writing step's own
- *  output, or the assembled bundle's validation. */
-export type ShaperAnswerStage = 'answer writing' | 'bundle validation';
+/** Why the answer-writing step failed, after the lookups ran. */
+export type AnswerStepFailureReason = 'model-failed' | 'invalid-answer' | 'invalid-bundle';
+
+const ANSWER_STEP_FAILURE_TEXT: Readonly<Record<AnswerStepFailureReason, string>> = {
+	'model-failed':   'the model call for answer writing failed',
+	'invalid-answer': 'the answer-writing output was invalid',
+	'invalid-bundle': 'the bundle failed validation',
+};
 
 /**
- * The answer could not be produced in the required shape. Distinct
- * from ShaperSchemaUnrecoverable, whose message reports exhausted
- * structured-output retries -- which is not what happened here.
+ * The lookups ran and the answer could not be written. The request ends
+ * here: no other way of answering is tried. The error carries what the
+ * lookups returned and the report derived from them, with the report's
+ * `answerFailure` set, so the findings are not lost with the failure.
  */
-export class ShaperAnswerInvalidError extends Error {
-	readonly stage: ShaperAnswerStage;
+export class ShaperAnswerStepFailedError extends Error {
+	readonly reason: AnswerStepFailureReason;
+	readonly found:  AnswerStepFound;
 
-	constructor(stage: ShaperAnswerStage, detail: string) {
-		super(
-			stage === 'bundle validation'
-				? `The bundle failed validation: ${detail}`
-				: `The answer-writing output was invalid: ${detail}`,
-		);
-		this.name = 'ShaperAnswerInvalidError';
-		this.stage = stage;
+	constructor(reason: AnswerStepFailureReason, detail: string, found: AnswerStepFound) {
+		const failure = `${ANSWER_STEP_FAILURE_TEXT[reason]}: ${detail}`;
+		super(`The answer could not be written after ${found.results.length} lookup(s) ran -- ${failure}`);
+		this.name = 'ShaperAnswerStepFailedError';
+		this.reason = reason;
+		this.found = { results: found.results, report: { ...found.report, answerFailure: failure } };
 	}
 }
 
@@ -297,8 +330,10 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// pipeline does not serve (classification, task) continues to the
 	// tool loop below. A run-mode request never does: its fallback is
 	// the pipeline's own freeform.probe, which drives the same loop.
-	const pipelineBundle = settlePipelineOutcome(outcome, (raw, explorationCount) => ({
+	const pipelineBundle = settlePipelineOutcome(outcome, (raw, explorationCount, report) => ({
 		...raw,
+		// Derived from the lookups' own records. Never taken from the model's answer.
+		report,
 		meta: {
 			mode:          invocationMode,
 			shaper:        shaperId,
@@ -636,6 +671,9 @@ interface ToolLoopResult {
 	readonly toolCallCount: number;
 }
 
+/** Exported for tests; production reaches it through runShaper and runShaperToolLoop. */
+export const _runToolLoopForTest = (...a: Parameters<typeof runToolLoop>): ReturnType<typeof runToolLoop> => runToolLoop(...a);
+
 async function runToolLoop(
 	provider:     LLMProvider,
 	messages:     LLMMessage[],
@@ -646,6 +684,8 @@ async function runToolLoop(
 	let toolCallCount = 0;
 	const tools = getReadOnlyTools();
 	const convo: LLMMessage[] = [...messages];
+	// What the tools returned, kept so that reaching the turn limit does not lose it.
+	const gathered: PartialFinding[] = [];
 
 	for (let turn = 0; turn < maxToolTurns; turn++) {
 		let response: LLMResponse;
@@ -725,11 +765,15 @@ async function runToolLoop(
 				content:      result.output,
 				isError:      result.success === false,
 			});
+			gathered.push({
+				source:  `${call.name}(${previewToolArgs(call.input)})`,
+				content: toolOutputText(result.output),
+			});
 		}
 		convo.push({ role: 'user', content: resultBlocks });
 	}
 
-	throw new ShaperToolLoopExhausted(maxToolTurns);
+	throw new ShaperToolLoopExhausted(maxToolTurns, gathered);
 }
 
 async function runFinalStructuredEmit(
@@ -803,7 +847,8 @@ async function runFinalStructuredEmit(
 	try {
 		const raw = await provider.completeStructured<AnalyzeContextBundle>(
 			finalMessages,
-			ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,
+			// The stored schema without `report`: the report is derived by code.
+			modelFacingBundleSchema({ withMeta: true }),
 			{
 				maxAttempts:     structuredOutputRetries,
 				// Critical for qwen3.6 -- without `think: false` the model
@@ -1075,8 +1120,23 @@ export const PIPELINE_CAUSES = [
 ] as const;
 export type PipelineCause = (typeof PIPELINE_CAUSES)[number];
 
+/** What the lookups returned, and the answer report derived from it. */
+export interface AnswerStepFound {
+	readonly results: readonly ExecutedExploration[];
+	readonly report:  AnswerReport;
+}
+
+/** The seven layers a model writes: a bundle without the two parts code adds. */
+export type BundleLayers = Omit<AnalyzeContextBundle, 'meta' | 'report'>;
+
 export type PipelineOutcome =
-	| { readonly kind: 'bundle'; readonly raw: Omit<AnalyzeContextBundle, 'meta'>; readonly explorationCount: number }
+	| {
+		readonly kind: 'bundle';
+		readonly raw:  BundleLayers;
+		readonly explorationCount: number;
+		/** The executed lookups and the report derived from them; the report goes on the bundle. */
+		readonly found: AnswerStepFound;
+	}
 	/** Not run mode: the caller continues to its tool loop. */
 	| { readonly kind: 'not-applicable' }
 	| {
@@ -1085,7 +1145,17 @@ export type PipelineOutcome =
 		readonly message: string;
 		/** For the two prompt-missing causes. */
 		readonly promptPath?: string | undefined;
+		/** For the causes that arise after the lookups ran: what the lookups found. */
+		readonly found?: AnswerStepFound | undefined;
 	};
+
+/** What a cause carries besides its message. */
+export interface PipelineCauseExtra {
+	/** For the two prompt-missing causes. */
+	readonly promptPath?: string | undefined;
+	/** What the lookups returned and the report derived from them, for the causes that arise after they ran. */
+	readonly found?: AnswerStepFound | undefined;
+}
 
 /**
  * The pipeline's four steps. Production uses the real ones; a test
@@ -1103,24 +1173,36 @@ export interface PipelineSteps {
 
 /** The ONE table from a cause to its typed error. */
 export function errorForPipelineCause(
-	cause:      PipelineCause,
-	message:    string,
-	promptPath?: string,
+	cause:   PipelineCause,
+	message: string,
+	extra:   PipelineCauseExtra = {},
 ): Error {
+	// The three answer-step causes arise only after the lookups ran, so each
+	// has the lookups' results. One raised without them is a defect of the
+	// caller, reported as such and not as a failure with nothing found.
+	const answerStepFailed = (reason: AnswerStepFailureReason): Error => {
+		if (extra.found === undefined) {
+			throw new Error(`errorForPipelineCause: cause '${cause}' arises after the lookups ran and was raised without their results`);
+		}
+		return new ShaperAnswerStepFailedError(reason, message, extra.found);
+	};
 	switch (cause) {
 		case 'invalid-input':
 			return new ShaperInvalidInputError(message);
 		case 'planner-prompt-missing':
+			// Found before any lookup ran: nothing to carry.
+			return new ShaperPromptMissingError(extra.promptPath ?? message);
 		case 'answer-prompt-missing':
-			return new ShaperPromptMissingError(promptPath ?? message);
+			// A fault of the installation, named as one, with what the lookups found.
+			return new ShaperPromptMissingError(extra.promptPath ?? message, extra.found);
 		case 'planner-model-failed':
 			return new ShaperLlmUnavailableError(message, 'planning');
 		case 'answer-model-failed':
-			return new ShaperLlmUnavailableError(message, 'answer writing');
+			return answerStepFailed('model-failed');
 		case 'answer-invalid':
-			return new ShaperAnswerInvalidError('answer writing', message);
+			return answerStepFailed('invalid-answer');
 		case 'bundle-invalid':
-			return new ShaperAnswerInvalidError('bundle validation', message);
+			return answerStepFailed('invalid-bundle');
 		case 'empty-plan':
 			return new ShaperNoPlanError(message);
 		default: {
@@ -1139,22 +1221,22 @@ export function errorForPipelineCause(
  */
 export function settlePipelineOutcome(
 	outcome: PipelineOutcome,
-	stamp:   (raw: Omit<AnalyzeContextBundle, 'meta'>, explorationCount: number) => AnalyzeContextBundle,
+	stamp:   (raw: BundleLayers, explorationCount: number, report: AnswerReport) => AnalyzeContextBundle,
 ): { bundle: AnalyzeContextBundle; explorationCount: number } | null {
 	if (outcome.kind === 'not-applicable') return null;
 	if (outcome.kind === 'did-not-proceed') {
-		throw errorForPipelineCause(outcome.cause, outcome.message, outcome.promptPath);
+		throw errorForPipelineCause(outcome.cause, outcome.message, { promptPath: outcome.promptPath, found: outcome.found });
 	}
-	const bundle = stamp(outcome.raw, outcome.explorationCount);
+	const bundle = stamp(outcome.raw, outcome.explorationCount, outcome.found.report);
 	const v = validateBundleWithErrors(bundle);
 	if (!v.ok) {
-		throw errorForPipelineCause('bundle-invalid', v.errors.join('; '));
+		throw errorForPipelineCause('bundle-invalid', v.errors.join('; '), { found: outcome.found });
 	}
 	return { bundle, explorationCount: outcome.explorationCount };
 }
 
-function didNotProceed(cause: PipelineCause, message: string, promptPath?: string): PipelineOutcome {
-	return { kind: 'did-not-proceed', cause, message, promptPath };
+function didNotProceed(cause: PipelineCause, message: string, extra: PipelineCauseExtra = {}): PipelineOutcome {
+	return { kind: 'did-not-proceed', cause, message, promptPath: extra.promptPath, found: extra.found };
 }
 
 /**
@@ -1221,7 +1303,7 @@ async function tryExplorationPipeline(
 				{ runId: args.runId, err: err.message },
 				'exploration pipeline: the planning prompt is missing',
 			);
-			return didNotProceed('planner-prompt-missing', err.message, err.path);
+			return didNotProceed('planner-prompt-missing', err.message, { promptPath: err.path });
 		}
 		log.warn(
 			{ runId: args.runId, err: (err as Error).message },
@@ -1288,6 +1370,12 @@ async function tryExplorationPipeline(
 		scope:            args.scope,
 	});
 
+	// (c.0) The answer report, derived from the lookups' own records before any
+	// answer is written. It does not depend on the answer, and a lookup output
+	// that states nothing about its completeness is a defect of that lookup:
+	// it surfaces here as its own error, not as a failed answer step.
+	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results) };
+
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE
 	// exploration is `freeform.probe`, the runner already emitted a
 	// complete 7-layer bundle via the target's legacy tool loop. There
@@ -1310,6 +1398,8 @@ async function tryExplorationPipeline(
 			kind:             'bundle',
 			raw:              freeformOnly.rawBundle,
 			explorationCount: freeformOnly.toolCallCount,
+			// One source: the free-form lookup, whose record is never complete.
+			found,
 		};
 	}
 
@@ -1347,6 +1437,7 @@ async function tryExplorationPipeline(
 			kind:             'bundle',
 			raw,
 			explorationCount: executed.results.length,
+			found,
 		};
 	} catch (err) {
 		if (err instanceof SynthesizerLlmUnavailableError) {
@@ -1354,21 +1445,21 @@ async function tryExplorationPipeline(
 				{ runId: args.runId, err: err.message },
 				'exploration pipeline: the answer-writing call failed',
 			);
-			return didNotProceed('answer-model-failed', err.detail);
+			return didNotProceed('answer-model-failed', err.detail, { found });
 		}
 		if (err instanceof SynthesizerPromptMissingError) {
 			log.info(
 				{ runId: args.runId, err: err.message },
 				'exploration pipeline: the answer-writing prompt is missing',
 			);
-			return didNotProceed('answer-prompt-missing', err.message, err.path);
+			return didNotProceed('answer-prompt-missing', err.message, { promptPath: err.path, found });
 		}
 		// Anything else the answer-writing step raises (for example its
 		// output never took the required shape) is its own cause -- not
 		// a failed model call.
 		const message = err instanceof Error ? err.message : String(err);
 		log.warn({ runId: args.runId, err: message }, 'exploration pipeline: the answer-writing step failed');
-		return didNotProceed('answer-invalid', message);
+		return didNotProceed('answer-invalid', message, { found });
 	}
 }
 
@@ -1472,6 +1563,7 @@ function extractSoleFreeformResult(
  * stability without re-implementing the algorithm.
  */
 export const _stableStringifyForTest = stableStringify;
+export const _computeCacheKeyForTest = computeCacheKey;
 export const _classifyOllamaErrorForTest = classifyOllamaError;
 export const _deriveEmptyLayersForTest = deriveEmptyLayers;
 export const _resolveRepoLastIndexedAtForTest = resolveRepoLastIndexedAt;

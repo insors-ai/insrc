@@ -25,6 +25,8 @@
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
 
+import { textSearchCompleteness } from './completeness-facts.js';
+
 import type {
 	ConfigTraceHit,
 	ConfigTraceOutput,
@@ -95,28 +97,16 @@ export async function runConfigTrace(
 	// Escape regex-special chars so `foo.bar[0]`-style keys survive.
 	const literal = escapeRegex(params.key);
 
-	let data;
-	try {
-		data = await runGrepSearch({
-			pattern: literal,
-			root,
-			caseInsensitive: false,
-			limit:           params.topK ?? DEFAULT_TOP_K,
-		});
-	} catch (err) {
-		log.warn(
-			{ runId: ctx.runId, key: params.key, err: (err as Error).message },
-			'config.trace: grep failed; returning empty output',
-		);
-		return {
-			type:      'config.trace',
-			key:       params.key,
-			hits:      [],
-			truncated: false,
-			backend:   'node',
-			root,
-		};
-	}
+	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
+	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
+	// A search that could not run throws, and the executor reports the lookup as
+	// failed. It does not return an empty result: that would read as "nothing matches".
+	const data = await runGrepSearch({
+		pattern: literal,
+		root,
+		caseInsensitive: false,
+		limit,
+	});
 
 	const hits: ConfigTraceHit[] = data.hits.map(h => {
 		const abs = h.path.startsWith('/') ? h.path : `${root}/${h.path}`;
@@ -141,9 +131,9 @@ export async function runConfigTrace(
 
 	return {
 		type:      'config.trace',
+		completeness: textSearchCompleteness(data, limit),
 		key:       params.key,
 		hits,
-		truncated: data.truncated,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 		root:      data.root,
 	};

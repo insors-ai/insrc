@@ -33,6 +33,7 @@ import {
 	omitEmpty,
 	RENDER_ORDER,
 } from '../bundle.js';
+import { renderCompletenessLine, type AnswerReport } from '../../completeness.js';
 import type { AnalyzeContextBundle } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -198,4 +199,32 @@ test('assembleMarkdown with an all-empty bundle still emits contract footer', ()
 	};
 	const out = assembleMarkdown(bundle);
 	assert.equal(out.trim(), CONTRACT_FOOTER_MD.trim());
+});
+
+// ---------------------------------------------------------------------------
+// Completeness line
+// ---------------------------------------------------------------------------
+
+test('a bundle with a report leads the prompt text with its completeness line; a bundle with none is rendered as before', () => {
+	const report: AnswerReport = {
+		completeness: {
+			complete:   false,
+			incomplete: [{ sourceId: 'search.text [e2]', sourceKind: 'lookup', reason: 'limit of 30 hits reached' }],
+			failed:     [],
+		},
+	};
+	const without = assembleMarkdown(bundleWith({}));
+	const withReport = assembleMarkdown(bundleWith({ report }));
+
+	assert.equal(withReport.split('\n')[0], renderCompletenessLine(report));
+	// Nothing else changes: the rest of the text is the text of a bundle with no report.
+	assert.equal(withReport, `${renderCompletenessLine(report)}\n\n${without}`);
+
+	// With no report the classifier's and the planner's prompts are unchanged:
+	// the text starts with the system layer and has no sentence about completeness.
+	assert.ok(without.startsWith('You are a code analyst.'));
+	assert.doesNotMatch(without, /completeness|Complete\./i);
+
+	const complete: AnswerReport = { completeness: { complete: true, incomplete: [], failed: [] } };
+	assert.equal(assembleMarkdown(bundleWith({ report: complete })).split('\n')[0], 'Complete.');
 });

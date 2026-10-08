@@ -34,6 +34,7 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { graphCompleteness } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:class-hierarchy');
 
@@ -108,6 +109,8 @@ export async function runClassHierarchy(
 		);
 		return {
 			type:         'class.hierarchy',
+			// The graph holds no class or interface of this name: empty, and complete.
+			completeness: graphCompleteness({ returned: 0 }),
 			subject,
 			nodes:        [],
 			notFoundNote: `No class/interface named "${subject}" found in the repo.`,
@@ -116,9 +119,10 @@ export async function runClassHierarchy(
 
 	// (2) Traverse INHERITS + IMPLEMENTS in both directions per target.
 	const nodes: ClassHierarchyNode[] = [];
+	const noGraphNode: Entity[] = [];
 	for (const t of targets) {
 		const u64 = await entityU64ForId(t.id);
-		if (u64 === undefined) continue;
+		if (u64 === undefined) { noGraphNode.push(t); continue; }
 
 		const inheritsOut   = await outNeighbors(u64, { kindFilter: ['INHERITS'] });
 		const implementsOut = await outNeighbors(u64, { kindFilter: ['IMPLEMENTS'] });
@@ -180,6 +184,14 @@ export async function runClassHierarchy(
 
 	return {
 		type:         'class.hierarchy',
+		completeness: graphCompleteness({
+			returned: nodes.length,
+			found:    targets.length,
+			skipped:  noGraphNode.map(e => ({
+				what:   `${e.name} (${e.file}:${e.startLine})`,
+				reason: 'the class has no node in the stored graph, so its hierarchy was not read',
+			})),
+		}),
 		subject,
 		nodes,
 		notFoundNote: '',

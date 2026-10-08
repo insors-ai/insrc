@@ -47,6 +47,8 @@ import type {
 	BundleMeta,
 	ShaperId,
 } from '../../../analyze/context/types.js';
+import type { BundleLayers } from '../../../analyze/context/driver.js';
+import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
 
 const log = getLogger('mcp:analyze-step:bundle');
 
@@ -70,7 +72,7 @@ export async function handleBundle(
 	}
 
 	// (2) Validate the bundle layers.
-	let layers: Omit<AnalyzeContextBundle, 'meta'>;
+	let layers: BundleLayers;
 	try {
 		layers = finalizeSynthesize(input.bundle);
 	} catch (err) {
@@ -100,7 +102,12 @@ export async function handleBundle(
 			? { repoLastIndexedAt: state.repoIndexedAt }
 			: {}),
 	};
-	const bundle: AnalyzeContextBundle = { ...layers, meta };
+	// (3a) The answer report: derived HERE from the lookups this run executed.
+	// The agent writes the seven layers and nothing else; a bundle in which it
+	// supplied a `report` was already rejected above as 'bundle-schema',
+	// because the schema it was given has no such field.
+	const report = reportFromLookups(state.executed?.results ?? []);
+	const bundle: AnalyzeContextBundle = { ...layers, meta, report };
 
 	// (4) Render.
 	const markdown = renderBundleAsMarkdown(bundle);
@@ -125,6 +132,7 @@ export async function handleBundle(
 		next:     'done',
 		markdown,
 		meta,
+		report,
 	};
 }
 

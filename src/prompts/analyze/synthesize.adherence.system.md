@@ -21,11 +21,11 @@ The reader of this bundle is deciding whether the codebase HOLDS to a stated rul
 - **`concept.resolve`**: `{ query, hits: [{ kind, path, name, entityId?, score, diagnostics }] }`
 - **`symbol.locate`**: `{ names, hits: [{ entityId, name, kind, file, startLine, endLine, signature? }] }`
 - **`class.hierarchy`**: `{ subject, nodes: [{ entityId, name, kind, file, startLine, extendsList, implementsList, subclasses, implementers }], notFoundNote }`
-- **`usage.example`**: `{ subject, targetEntityId?, callers: [{ entityId, name, kind, file, startLine, endLine, signature? }], totalCallers }`
-- **`search.text`**: `{ pattern, hits: [{ file, line, text }], truncated, backend, root }`
+- **`usage.example`**: `{ subject, targetEntityId?, callers: [{ entityId, name, kind, file, startLine, endLine, signature? }], completeness }` — `completeness.total` is the number of callers found before the cut
+- **`search.text`**: `{ pattern, hits: [{ file, line, text }], completeness, backend, root }`
     Line-level grep hits. Each hit MUST be classified into `## Matches` / `## Drifts` / `## Contradictions` under the SAME contract as symbol.locate hits. Determine the bucket from the raw `text`: if the line contains the rule's mandated value or the enforcement construct, it's a `match`; if it contains an explicitly-forbidden value or a bypass of the rule, it's a `drift`. When ambiguous (a comment mentioning the value, a test-file reference, a doc-string quoting the rule), lean toward `drift` + note the ambiguity in the rationale — under-claiming a match is safer than over-claiming one.
 
-- **`config.trace`**: `{ key, hits: [{ file, line, text, role }], truncated, backend, root }` — same shape as `search.text` but with a per-hit `role` (`definition | usage | default | unknown`). When classifying into `## Matches` / `## Drifts`, weight the role: a `definition` hit that names the forbidden value is a stronger drift than a bare `usage` mention.
+- **`config.trace`**: `{ key, hits: [{ file, line, text, role }], completeness, backend, root }` — same shape as `search.text` but with a per-hit `role` (`definition | usage | default | unknown`). When classifying into `## Matches` / `## Drifts`, weight the role: a `definition` hit that names the forbidden value is a stronger drift than a bare `usage` mention.
 
 - **`convention.detect`**: `{ path, namingSchema, baseClassIdioms, privatePrefixCount, dunderMethodCount, totalEntities, notFoundNote }` — surfaced in the `structure` layer's `## Conventions` sub-section (see below). Do NOT invent match/drift bullets from convention data; it is context, not evidence.
 
@@ -53,7 +53,7 @@ Every layer is a **single JSON string** in your output. Use Markdown headings in
     - `Rule sources retrieved: <count of doc.constraint.enumerate.constraints + doc.decision.trace.decisions across the outputs>`
     - `Code sites inspected: <count of symbol.locate.hits + usage.example.callers + class.hierarchy.nodes + search.text.hits>`
     - Flag when the rule was retrieved from ZERO doc sections (adherence-check with no ground truth is a failure state).
-    - Flag when `search.text.truncated` is true — a fuller scan may exist beyond the cap.
+    - Flag when `search.text.completeness.complete` is false, naming what its `limited`, `skipped` and `partlyRead` list — a fuller scan may exist beyond what was read.
 
 - **`summary`** — 1-3 paragraphs:
     - Restate the rule VERBATIM in one sentence, followed by its citation.

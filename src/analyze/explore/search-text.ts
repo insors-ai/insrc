@@ -23,6 +23,8 @@
 import { getLogger } from '../../shared/logger.js';
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 
+import { textSearchCompleteness } from './completeness-facts.js';
+
 import type {
 	Exploration,
 	ExplorationRunnerContext,
@@ -95,29 +97,17 @@ export async function runSearchText(
 		? resolveScopedPath(params.path, ctx.repoPath)
 		: ctx.repoPath;
 
-	let data;
-	try {
-		data = await runGrepSearch({
-			pattern:         params.pattern,
-			root,
-			...(params.glob !== undefined ? { glob: params.glob } : {}),
-			caseInsensitive: params.caseInsensitive === true,
-			limit:           params.topK ?? DEFAULT_TOP_K,
-		});
-	} catch (err) {
-		log.warn(
-			{ runId: ctx.runId, pattern: params.pattern, err: (err as Error).message },
-			'search.text: grep failed; returning empty output',
-		);
-		return {
-			type:      'search.text',
-			pattern:   params.pattern,
-			hits:      [],
-			truncated: false,
-			backend:   'node',
-			root,
-		};
-	}
+	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
+	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
+	// A search that could not run throws, and the executor reports the lookup as
+	// failed. It does not return an empty result: that would read as "nothing matches".
+	const data = await runGrepSearch({
+		pattern:         params.pattern,
+		root,
+		...(params.glob !== undefined ? { glob: params.glob } : {}),
+		caseInsensitive: params.caseInsensitive === true,
+		limit,
+	});
 
 	const hits: SearchTextHit[] = data.hits.map(h => ({
 		// Grep returns paths relative to `root`; make absolute so
@@ -143,9 +133,9 @@ export async function runSearchText(
 
 	return {
 		type:      'search.text',
+		completeness: textSearchCompleteness(data, limit),
 		pattern:   params.pattern,
 		hits,
-		truncated: data.truncated,
 		backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 		root:      data.root,
 	};

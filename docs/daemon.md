@@ -38,9 +38,10 @@ The daemon does **not**:
 7. [Usage via Ollama (one-shot analyzer)](#usage-via-ollama)
 8. [Usage via Claude Code (MCP)](#usage-via-claude-code)
 9. [Usage via Codex CLI (MCP)](#usage-via-codex-cli)
-10. [CLI reference](#cli-reference)
-11. [Troubleshooting](#troubleshooting)
-12. [Uninstall](#uninstall)
+10. [What an answer says about its completeness](#what-an-answer-says-about-its-completeness)
+11. [CLI reference](#cli-reference)
+12. [Troubleshooting](#troubleshooting)
+13. [Uninstall](#uninstall)
 
 ---
 
@@ -579,6 +580,83 @@ the pattern.
 
 ---
 
+## What an answer says about its completeness
+
+Every answer states whether it is complete, and code writes that statement,
+never a model. Each lookup, and each task of a plan-tree run, returns a
+*completeness record* for its own result: how many items it returned, how
+many exist where that is known, every limit it reached, everything it
+skipped, every item it read only in part, and what the result is based on
+(the stored graph, a text search, the documentation index, the file system,
+a data source, or a model's own choice of what to look at). A lookup that
+cannot run is reported as **failed**, with its reason; it is not reported as
+an empty result.
+
+### The report on the bundle
+
+The bundle (`AnalyzeContextBundle`, schema version 2) carries an optional
+`report` beside its seven layers and `meta`. It is derived from the records
+of the lookups that ran for the request:
+
+```jsonc
+"report": {
+  "completeness": {
+    "complete":   false,
+    "incomplete": [{ "sourceId": "search.text [e2]", "sourceKind": "lookup",
+                     "reason": "limit of 30 hits reached (the search stops at 30 hits)" }],
+    "failed":     [{ "sourceId": "symbol.locate [e3]", "sourceKind": "lookup",
+                     "reason": "the graph store is closed" }],
+    "basisNotes": ["…"]          // optional: each distinct note of the sources, once
+  },
+  "answerFailure": "…"           // set only on a failed answer step (see below)
+}
+```
+
+- `complete` is true only when every source is complete and none failed.
+- A source is named `<lookup type> [<lookup id>]`; in a plan-tree run a task
+  is named by its path (`t02.t01` is task `t01` of the child plan of `t02`),
+  and the sources of the run's first step are prefixed `run context / `.
+- A model is never shown a schema that contains `report`, and a bundle in
+  which a model or an agent supplied one is rejected (`bundle-schema` from
+  `insrc_analyze_step`).
+- Only a run-mode bundle carries a `report`: it is the one built from
+  lookups. A classification or a task bundle has none. A run-mode bundle or
+  a run record lacks it in one case only, when it was stored before the
+  report existed. No report is invented for those.
+
+A plan-tree run (`analyze.run.start`) returns the same `report` on its result
+and stores it in the run record.
+
+### The completeness line
+
+The text form of an answer starts with one line written from the report:
+
+```
+Complete.
+Incomplete: 1 incomplete: search.text [e2] — limit of 30 hits reached (the search stops at 30 hits). 1 failed: symbol.locate [e3] — the graph store is closed.
+```
+
+It is the first line of the markdown `insrc_analyze` and `insrc_analyze_step`
+return, and the first line of a plan-tree run's final report (`summary`). Where
+there is no report, the line reads `Completeness was not recorded for this
+answer.` (or `… for this run.`). Read this line before the findings: an answer
+that starts with `Incomplete:` names what it leaves out, and a statement such
+as "X is not used anywhere" is only as strong as the lookups behind it.
+
+### Note for the IDE repository
+
+The IDE mirrors these types and is not changed from here. It needs:
+
+- the optional `report` on its mirrored bundle type, and on the result of
+  `analyze.run.start` (a mirror that rejects unknown fields rejects a
+  version-2 bundle until then);
+- `SCHEMA_VERSION` 2 for the bundle;
+- the `data` member of the error payload for `answer-step-failed` and
+  `shaper-prompt-missing` (see the error-code table under Troubleshooting);
+- the optional `error.data` on the output of `insrc_analyze_step`.
+
+---
+
 ## CLI reference
 
 All CLI subcommands live under `~/.insrc/daemon/src/insrc/`.
@@ -646,12 +724,12 @@ sampling client).
 | `scope-ref-kind-target-mismatch` | The kind of scope does not go with the kind of source (for example a code request on a data connection). The message lists the kinds allowed. |
 | `scope-ref-unresolved` | The scope does not resolve: a path that does not exist; a symbol not written as `<absolute file path>#<entity name>`, or whose name matches no stored entity (or several); a connection registered in no repo (or in several). |
 | `scope-not-indexed` | The scope's repo is not registered or has no indexed entities. A symbol scope always needs the index. |
-| `shaper-prompt-missing` | A prompt file is missing from the install. The message names the file. |
-| `shaper-schema-unrecoverable` | The answer could not be produced in the required shape. |
-| `shaper-llm-unavailable` | A model call failed. |
+| `shaper-prompt-missing` | A prompt file is missing from the install. The message names the file. When it is the answer prompt, the lookups have already run: `data` is `{ results, report }`. A missing planning prompt carries no `data`. |
+| `shaper-schema-unrecoverable` | The tool loop's structured output could not be produced in the required shape. |
+| `shaper-llm-unavailable` | The planning call to a model failed. No lookup has run. |
 | `invalid-input` | The request was built wrongly (unknown kind of source, no intent). |
 | `no-plan-for-request` | The plan for the request has no lookups. |
-| `answer-step-failed` | Declared; not raised yet. |
+| `answer-step-failed` | The lookups ran and the answer could not be written. `data` is `{ reason, results, report }`: `reason` is `model-failed` (the answer-writing call failed), `invalid-answer` (its output was not in the required shape) or `invalid-bundle` (the assembled bundle failed validation); `results` is what each lookup returned; `report` is the answer report with `answerFailure` set. No other way of answering is tried. |
 | `run-abandoned` | Declared; not raised yet. |
 
 `no-plan-for-request`, `answer-step-failed` and `run-abandoned` were added on
@@ -662,6 +740,18 @@ matches on codes: failures that used to arrive as `shaper-llm-unavailable`
 without a model having been called now arrive under their own code, and a
 plan-tree run reports the validator's own code where it used to report
 `classifier-validation-exhausted`.
+
+`answer-step-failed` is raised from 2026-10-08. Three failures changed their
+code with it: a failed answer-writing call used to arrive as
+`shaper-llm-unavailable`, and an invalid answer or an invalid bundle as
+`shaper-schema-unrecoverable`. A client that matched the old codes for those
+cases must match the new one. What the lookups found is in `data`: the
+one-shot tool prints the completeness line and the reason before the code and
+message, and a workflow run fails its step with the code, the reason and the
+report. `insrc_analyze_step` reports a missing answer prompt under its own
+code `answer-prompt-missing`, not retryable, with `error.data = { results,
+report }` and a message that starts with the completeness line; no other error
+of that tool has a `data` member.
 
 ### Ollama-backed calls hang for 30+ s
 

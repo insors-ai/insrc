@@ -34,6 +34,10 @@ import type {
 	ManifestHit,
 	ManifestsLocateOutput,
 } from './types.js';
+import type { PartlyReadItem, SkippedItem } from '../completeness.js';
+import { INDEXER_CUT_MARKER, partlyReadEntry } from '../item-length.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:manifests-locate');
 
@@ -47,6 +51,9 @@ interface ManifestsLocateParams {
 	readonly families?: readonly ManifestFamily[];
 	readonly topK?:     number;
 }
+
+/** The kinds of entity that stand for a whole manifest file. */
+const WHOLE_FILE_ENTITY_KINDS: ReadonlySet<string> = new Set(['document', 'config']);
 
 const DEFAULT_TOP_K = 200;
 const MAX_TOP_K     = 1_000;
@@ -86,6 +93,21 @@ export async function runManifestsLocate(
 		? new Set(params.families)
 		: null;
 
+	const topK = params.topK ?? DEFAULT_TOP_K;
+	// Manifests that pass every filter, counted past the limit as well.
+	let found = 0;
+	const measurer = createItemMeasurer(db, all);
+	const partlyRead: PartlyReadItem[] = [];
+	const skipped: SkippedItem[] = [];
+	// A file has several entities (the file itself, the document, its
+	// sections). The one whose stored body the indexer cut says the index
+	// holds only part of the file, whichever entity the loop below meets first.
+	const cutEntityByFile = new Map<string, Entity>();
+	for (const e of all) {
+		if (e.artifact === true && e.body.endsWith(INDEXER_CUT_MARKER) && WHOLE_FILE_ENTITY_KINDS.has(e.kind) && !cutEntityByFile.has(e.file)) {
+			cutEntityByFile.set(e.file, e);
+		}
+	}
 	const seen = new Set<string>();
 	const hits: ManifestHit[] = [];
 	const familyCounts: Record<ManifestFamily, number> = {
@@ -104,12 +126,29 @@ export async function runManifestsLocate(
 		const family = classifyFamily(e.file);
 		if (familyFilter !== null && !familyFilter.has(family)) continue;
 
+		found += 1;
+		// Past the limit a manifest is counted, so the result can say how many
+		// exist; `hits` and `families` describe the ones returned, as before.
+		if (hits.length >= topK) continue;
+
 		familyCounts[family] += 1;
 
 		// Prefer the real kind parsed from the indexed manifest body; fall back
 		// to the filename heuristic when the body is empty / unparseable.
 		const resourceKind = resourceKindFromBody(e.file, family, e.body)
 			?? inferResourceKind(e.file, family);
+		// Expected: a stored body that is not valid YAML (a template, or a body
+		// the indexer cut mid-document). The kind is then the file name's guess.
+		if (manifestBodyUnparsable(family, e.body)) {
+			skipped.push({ what: e.file, reason: "its stored content is not valid YAML, so its kind is a guess from the file name" });
+		}
+		// The kind is read from the STORED body. A manifest the indexer cut was
+		// read in part, so its kind may be the file name's guess.
+		const cutEntity = cutEntityByFile.get(e.file);
+		if (cutEntity !== undefined) {
+			const m = await measurer.measure(cutEntity);
+			partlyRead.push(partlyReadEntry(e.file, m.storedChars, m));
+		}
 
 		hits.push({
 			file:   e.file,
@@ -118,7 +157,6 @@ export async function runManifestsLocate(
 			name:     basename(e.file),
 			entityId: e.id,
 		});
-		if (hits.length >= (params.topK ?? DEFAULT_TOP_K)) break;
 	}
 
 	log.info(
@@ -132,6 +170,13 @@ export async function runManifestsLocate(
 
 	return {
 		type:      'manifests.locate',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found,
+			limited:  found > topK ? [reachedLimit('manifests', topK, 'overall', found)] : [],
+			partlyRead,
+			skipped,
+		}),
 		hits,
 		families:  familyCounts,
 		notFoundNote: hits.length === 0
@@ -262,4 +307,12 @@ export function resourceKindFromBody(file: string, family: ManifestFamily, body:
 		if (typeof kind === 'string') return kind;
 	}
 	return undefined;
+}
+
+/** True when a kubernetes or helm body is present and does not parse as YAML. */
+export function manifestBodyUnparsable(family: ManifestFamily, body: string): boolean {
+	if (body.length === 0) return false;
+	if (family !== 'kubernetes' && family !== 'helm') return false;
+	try { loadAll(body); return false; }
+	catch { return true; }
 }

@@ -43,7 +43,7 @@ You do NOT decide what to look at, run tools, or explore the repo. You do ONE th
 
 - **`usage.example`** (Phase 3):
     ```
-    { subject, targetEntityId?, callers: [{ entityId, name, kind, file, startLine, endLine, signature? }], totalCallers }
+    { subject, targetEntityId?, callers: [{ entityId, name, kind, file, startLine, endLine, signature? }], completeness }   // completeness.total = callers found before the cut
     ```
     Emitted for `how-does-it-work` recipes; each caller is a real callsite you can cite as a `code` artefact.
 
@@ -70,13 +70,13 @@ You do NOT decide what to look at, run tools, or explore the repo. You do ONE th
 
 - **`config.trace`** (Phase 4):
     ```
-    { key, hits: [{ file, line, text, role }], truncated, backend, root }
+    { key, hits: [{ file, line, text, role }], completeness, backend, root }
     ```
     Same shape as `search.text` with a per-hit `role` (`definition | usage | default | unknown`). Group hits by role in the `structure` layer when emitted.
 
 - **`unsupported`** / **`failed`**: emit the exploration's `purpose` in the bundle's `structure` layer under a `## Diagnostics` sub-section. Do NOT let a failed exploration take down the whole bundle.
 
-- **`freeform.probe`** (Phase 6, mixed-plan fallback): `{ purpose, shaperId, rawBundle: {system, focus, summary, structure, surface, artefacts, upstream}, toolCallCount, exhaustedNote }` — the escape-hatch tool loop ran alongside deterministic explorations. When present, append `rawBundle.summary` under a `## Freeform findings` sub-section in `structure` and cite `rawBundle.artefacts` in the bundle's `artefacts` layer. If `exhaustedNote` is populated, list it under `## Diagnostics`. Do NOT paraphrase the tool loop's output; it already produced a full 7-layer bundle. A freeform.probe-only plan bypasses this synthesizer entirely; you only see freeform.probe here when it's mixed with recipe steps.
+- **`freeform.probe`** (Phase 6, mixed-plan fallback): `{ purpose, shaperId, rawBundle: {system, focus, summary, structure, surface, artefacts, upstream}, toolCallCount, completeness }` — the escape-hatch tool loop ran alongside deterministic explorations. When present, append `rawBundle.summary` under a `## Freeform findings` sub-section in `structure` and cite `rawBundle.artefacts` in the bundle's `artefacts` layer. List its `completeness.basisNote` under `## Diagnostics`: a free-form search is never established complete. Do NOT paraphrase the tool loop's output; it already produced a full 7-layer bundle. A freeform.probe-only plan bypasses this synthesizer entirely; you only see freeform.probe here when it's mixed with recipe steps.
 
 ## Bundle layers
 

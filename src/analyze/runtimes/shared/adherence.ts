@@ -34,7 +34,16 @@ import type {
 } from '../../../shared/types.js';
 
 import { assembleLiveProjectContext } from '../../context/live-project-context.js';
+import type { LiveProjectContextReport } from '../../context/live-project-context.js';
+import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
+import type { ItemMeasurer } from '../../explore/item-measure.js';
+import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
+import type { Completeness, PartlyReadItem, ReachedLimit } from '../../completeness.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
+import { graphCompleteness, reachedLimit } from '../../explore/completeness-facts.js';
+
+/** How many decisions and constraints the check asks the project context for. */
+const PROJECT_CONTEXT_LIMIT = 500;
 
 const log = getLogger('analyze:runtimes:shared:adherence');
 
@@ -79,6 +88,8 @@ export interface AdherenceResult {
 		readonly constraintCount:   number;
 		readonly excerptCount:      number;
 	};
+	/** What the check read and what it left out; the runtime returns it as the task's record. */
+	readonly completeness:   Completeness;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +199,13 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		? Math.max(1, Math.min(30, params['maxSourceExcerpts'] as number))
 		: 12;
 
-	const constraints = await resolveConstraints(executeArgs, params);
+	// What the check's inputs left out, gathered where each is read.
+	const sourceLimits: ReachedLimit[] = [];
+	const partlyRead: PartlyReadItem[] = [];
+	const db = await getDb();
+	const measurer = createItemMeasurer(db);
+
+	const constraints = await resolveConstraints(executeArgs, params, { limited: sourceLimits, partlyRead, measurer });
 	if (constraints.length === 0) {
 		throw new Error(
 			`${templateId}: no constraints available. Provide one of: ` +
@@ -209,6 +226,21 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 		);
 	}
 
+	// The excerpts are the check's sources. The lookup stops at maxExcerpts and
+	// does not say how many more entities match the subject.
+	const limited: ReachedLimit[] = [...sourceLimits];
+	if (excerpts.length >= maxExcerpts) limited.push(reachedLimit('source excerpts', maxExcerpts, 'source', null));
+
+	// Each excerpt is the first part of an entity's stored body. Say so when the
+	// entity is longer than what the model is shown.
+	for (const x of excerpts) {
+		if (x.entityId === undefined) continue;
+		const entity = await getEntity(db, x.entityId);
+		if (entity === null) continue;
+		const cut = await measurer.partlyRead(`${x.file}:${x.lineStart} ${x.name}`, entity, x.body.length);
+		if (cut !== undefined) partlyRead.push(cut);
+	}
+
 	const cfg = loadAnalyzeConfig();
 	const provider = resolveRoleProvider('analyze.adherence', cfg);
 	const promptContent = loadPromptFile(promptRelPath);
@@ -227,33 +259,19 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 			},
 		);
 	} catch (err) {
+		// The model that judges adherence could not be called: the task did not
+		// do its work. It throws, and the walk records the task as failed. (It
+		// used to return every constraint as "missing implementation", which
+		// reads as a finding.)
 		log.warn(
 			{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, err: (err as Error).message },
 			`${templateId}: LLM call failed`,
 		);
-		return {
-			subject,
-			matches: [],
-			drifts:  [],
-			// Failure -> every constraint goes into missingImpl with an
-			// explicit failure note so the aggregator can render it.
-			missingImpl: constraints.map(c => ({
-				constraint:    c.constraint,
-				docCitation:   {
-					kind: 'section',
-					...(c.sourceEntityId ? { entityId: c.sourceEntityId } : {}),
-					...(c.file          ? { file:      c.file          } : {}),
-					...(c.heading       ? { heading:   c.heading       } : {}),
-				},
-				whereExpected: `(LLM adjudication failed; ${subjectLabel.toLowerCase()} adherence unknown)`,
-				rationale:     `Adherence check failed: ${(err as Error).message}`,
-			})),
-			contradictions: [],
-			diagnostics: {
-				constraintCount: constraints.length,
-				excerptCount:    excerpts.length,
-			},
-		};
+		throw new Error(
+			`${templateId}: the model call that judges adherence failed: ${(err as Error).message}. ` +
+			`${constraints.length} constraint(s) and ${excerpts.length} excerpt(s) were gathered and not judged.`,
+			{ cause: err },
+		);
 	}
 
 	const matches        = Array.isArray(raw['matches'])        ? raw['matches']        as unknown[] : [];
@@ -285,6 +303,11 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 			constraintCount: constraints.length,
 			excerptCount:    excerpts.length,
 		},
+		completeness: graphCompleteness({
+			returned: matches.length + drifts.length + missingImpl.length + contradictions.length,
+			limited,
+			partlyRead,
+		}),
 	};
 }
 
@@ -292,9 +315,17 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 // Constraint sourcing
 // ---------------------------------------------------------------------------
 
+/** Where `resolveConstraints` records what its source left out. */
+interface ConstraintSourceFacts {
+	readonly limited:    ReachedLimit[];
+	readonly partlyRead: PartlyReadItem[];
+	readonly measurer:   ItemMeasurer;
+}
+
 async function resolveConstraints(
 	args:   TemplateExecuteArgs,
 	params: Record<string, unknown>,
+	facts:  ConstraintSourceFacts,
 ): Promise<ConstraintInput[]> {
 	// Priority 1: upstream task output.
 	const source = params['constraintsSource'];
@@ -323,7 +354,7 @@ async function resolveConstraints(
 	if (Array.isArray(constraintIds) && constraintIds.length > 0) {
 		const ids = constraintIds.filter(x => typeof x === 'string' && x.length > 0) as string[];
 		if (ids.length > 0) {
-			return await hydrateFromConstraintIds(args, ids);
+			return await hydrateFromConstraintIds(args, ids, facts);
 		}
 	}
 
@@ -337,18 +368,27 @@ async function resolveConstraints(
  * title. Skips ids that don't resolve to a summarised doc.
  */
 async function hydrateFromConstraintIds(
-	args: TemplateExecuteArgs,
-	ids:  readonly string[],
+	args:  TemplateExecuteArgs,
+	ids:   readonly string[],
+	facts: ConstraintSourceFacts,
 ): Promise<ConstraintInput[]> {
 	const db = await getDb();
 	const repoPath = args.intent.scopeRef.value;
 	// Assemble the live context once to lift decisions/constraints
 	// with their citations pre-computed. This avoids per-id lookups
 	// against getDocSummary + entity hydration.
+	const report: LiveProjectContextReport = {};
 	const ctx = await assembleLiveProjectContext(db, repoPath, {
-		maxDecisions:   500,
-		maxConstraints: 500,
+		maxDecisions:   PROJECT_CONTEXT_LIMIT,
+		maxConstraints: PROJECT_CONTEXT_LIMIT,
+		report,
 	});
+	// The assembler stops at its limit. A constraint of a requested document
+	// that lies past it would be missing here without a word.
+	for (const l of report.limitsReached ?? []) {
+		if (l.what !== 'constraints') continue;
+		facts.limited.push(reachedLimit('project constraints', l.limit, 'source', l.found));
+	}
 	const idSet = new Set(ids);
 	const out: ConstraintInput[] = [];
 	// Fetch entity metadata (for `file` + `heading`) on demand, cached
@@ -361,6 +401,12 @@ async function hydrateFromConstraintIds(
 			const entity = await getEntity(db, c.sourceEntityId);
 			file = entity?.file ?? '';
 			fileByEntityId.set(c.sourceEntityId, file);
+			// The constraints come from the document's SUMMARY, and a summary of a
+			// long document rests on its first part.
+			if (entity !== null) {
+				const cut = await summarisedFrom(facts.measurer, entity, SUMMARISER_BODY_CHARS);
+				if (cut !== undefined) facts.partlyRead.push(cut);
+			}
 		}
 		out.push({
 			constraint:     c.constraint,
@@ -467,4 +513,15 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // Test hooks
 // ---------------------------------------------------------------------------
 
-export const _resolveConstraintsForTest = resolveConstraints;
+/** Test seam: resolve the constraints as the check does, with somewhere to record what the source left out. */
+export async function _resolveConstraintsForTest(
+	args:   TemplateExecuteArgs,
+	params: Record<string, unknown>,
+	facts?: { limited: ReachedLimit[]; partlyRead: PartlyReadItem[] },
+): Promise<ConstraintInput[]> {
+	return resolveConstraints(args, params, {
+		limited:    facts?.limited ?? [],
+		partlyRead: facts?.partlyRead ?? [],
+		measurer:   createItemMeasurer(await getDb()),
+	});
+}

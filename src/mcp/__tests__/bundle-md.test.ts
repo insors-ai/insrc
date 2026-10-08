@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { COMPLETENESS_NOT_RECORDED, renderCompletenessLine, type AnswerReport } from '../../analyze/completeness.js';
 import type { AnalyzeContextBundle } from '../../analyze/context/types.js';
 import { renderBundleAsMarkdown } from '../bundle-md.js';
 
@@ -34,13 +35,40 @@ function makeBundle(overrides?: Partial<AnalyzeContextBundle>): AnalyzeContextBu
 
 test('render includes the meta comment prefix by default', () => {
 	const md = renderBundleAsMarkdown(makeBundle());
-	assert.match(md, /^<!-- insrc-analyze meta: shaper=code mode=run/);
+	// The completeness line is first; the meta comment is the block after it.
+	assert.match(md.split('\n\n')[1] ?? '', /^<!-- insrc-analyze meta: shaper=code mode=run/);
 });
 
 test('meta line can be suppressed via includeMeta=false', () => {
 	const md = renderBundleAsMarkdown(makeBundle(), { includeMeta: false });
 	assert.doesNotMatch(md, /insrc-analyze meta/);
-	assert.match(md, /^## System/);
+	assert.match(md.split('\n\n')[1] ?? '', /^## System/);
+});
+
+test('the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded', () => {
+	const report: AnswerReport = {
+		completeness: {
+			complete:   false,
+			incomplete: [{ sourceId: 'search.text [e2]', sourceKind: 'lookup', reason: 'limit of 30 hits reached' }],
+			failed:     [{ sourceId: 'symbol.locate [e3]', sourceKind: 'lookup', reason: 'the graph store is closed' }],
+		},
+	};
+	for (const opts of [undefined, { includeMeta: false }]) {
+		const md = renderBundleAsMarkdown(makeBundle({ report }), opts);
+		assert.equal(md.split('\n')[0], renderCompletenessLine(report));
+		assert.match(md.split('\n')[0] ?? '', /search\.text \[e2\].*symbol\.locate \[e3\]/);
+	}
+	assert.equal(
+		renderBundleAsMarkdown(makeBundle({ report: { completeness: { complete: true, incomplete: [], failed: [] } } })).split('\n')[0],
+		'Complete.',
+	);
+
+	// A bundle built before the report existed carries none.
+	for (const opts of [undefined, { includeMeta: false }]) {
+		const md = renderBundleAsMarkdown(makeBundle(), opts);
+		assert.equal(md.split('\n')[0], 'Completeness was not recorded for this answer.');
+		assert.equal(md.split('\n')[0], COMPLETENESS_NOT_RECORDED);
+	}
 });
 
 test('render walks the seven layers in order + emits headings', () => {

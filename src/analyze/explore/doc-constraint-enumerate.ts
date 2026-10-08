@@ -28,16 +28,27 @@ import { getLogger } from '../../shared/logger.js';
 import type { DbClient } from '../../db/client.js';
 import type {
 	LLMMessage,
+	LLMProvider,
 	StructuredSchema,
 } from '../../shared/types.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocConstraintEnumerateOutput,
 	DocConstraintRecord,
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { PartialFinding, PartlyReadItem, SkippedItem } from '../completeness.js';
+import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
+import { errorMessage, LookupFailedError } from './lookup-failed.js';
+import type { CarriedCompletenessFacts } from './completeness-facts.js';
+
+/** How much of each retrieved section's stored body the model is given. */
+const SECTION_BODY_CHARS = 2_000;
 
 const log = getLogger('analyze:explore:doc-constraint-enumerate');
 
@@ -51,7 +62,8 @@ const CONSTRAINT_KIND_ENUM = [
 // Structured-output schema
 // ---------------------------------------------------------------------------
 
-const CONSTRAINTS_SCHEMA: StructuredSchema = {
+/** The answer the model (or the agent, on the step tool's path) must give this lookup. */
+export const DOC_CONSTRAINTS_SCHEMA: StructuredSchema = {
 	type:                 'object',
 	additionalProperties: false,
 	required:             ['subject', 'constraints', 'notFoundNote'],
@@ -88,6 +100,8 @@ export interface RunDocConstraintEnumerateArgs {
 	readonly maxSources?: number;
 	readonly runId?:      string;
 	readonly logContext?: string;
+	/** The model that reads the sections; a test passes a stand-in. */
+	readonly provider?:   LLMProvider | undefined;
 }
 
 /**
@@ -109,7 +123,7 @@ export async function runSharedDocConstraintEnumerate(
 	if (prepared.kind === 'short-circuit') return prepared.shortCircuit;
 
 	const cfg = loadAnalyzeConfig();
-	const provider = resolveRoleProvider('analyze.narrow', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.narrow', cfg);
 	let raw: DocConstraintEnumerateLLMOutput;
 	try {
 		raw = await provider.completeStructured(
@@ -117,7 +131,7 @@ export async function runSharedDocConstraintEnumerate(
 				{ role: 'system', content: prepared.systemPrompt },
 				{ role: 'user',   content: prepared.userTurn     },
 			],
-			CONSTRAINTS_SCHEMA,
+			DOC_CONSTRAINTS_SCHEMA,
 			{
 				maxAttempts:     cfg.shaper.structuredOutputRetries,
 				disableThinking: true,
@@ -125,19 +139,13 @@ export async function runSharedDocConstraintEnumerate(
 			},
 		);
 	} catch (err) {
-		log.warn(
-			{ runId: args.runId, subject: prepared.prepared.subject, ctx: args.logContext, err: (err as Error).message },
-			'doc.constraint.enumerate: LLM extraction failed',
+		// The sections were retrieved and the model that reads them could not be
+		// called: the lookup could not run. What it had retrieved goes with the failure.
+		throw new LookupFailedError(
+			`doc.constraint.enumerate: the model call that reads the retrieved sections failed: ${errorMessage(err)}`,
+			prepared.retrieved,
+			{ cause: err },
 		);
-		return {
-			type:                  'doc.constraint.enumerate',
-			subject:               prepared.prepared.subject,
-			constraints:           [],
-			notFoundNote:
-				`LLM extraction failed for subject "${prepared.prepared.subject}": ${(err as Error).message}. ` +
-				`Retrieved ${prepared.prepared.retrievedSectionCount} sections but could not process them.`,
-			retrievedSectionCount: prepared.prepared.retrievedSectionCount,
-		};
 	}
 
 	return finalizeDocConstraintEnumerate(prepared.prepared, raw, args.runId, args.logContext);
@@ -151,6 +159,8 @@ export interface DocConstraintEnumeratePrepared {
 	readonly subject:                string;
 	readonly retrievedSectionCount:  number;
 	readonly validEntityIds:         readonly string[];
+	/** What prepare left out. Absent on a value minted before the field existed. */
+	readonly completenessFacts?:     CarriedCompletenessFacts | undefined;
 }
 
 interface HydratedSection {
@@ -176,6 +186,8 @@ export type DocConstraintEnumeratePrepareResult =
 		readonly systemPrompt: string;
 		readonly userTurn:     string;
 		readonly schema:       StructuredSchema;
+		/** The sections prepare retrieved, for a failure after this point to report. */
+		readonly retrieved:    readonly PartialFinding[];
 		readonly prepared:     DocConstraintEnumeratePrepared;
 	  };
 
@@ -190,8 +202,10 @@ export async function prepareDocConstraintEnumerate(
 		? Math.max(1, Math.min(30, args.maxSources))
 		: 15;
 
+	const report: DocsRetrievalReport = {};
 	const sections = await retrieveDocSections({
 		db:           args.db,
+		report,
 		query:        subject,
 		closureRepos: [args.repoPath],
 		maxResults:   maxSources,
@@ -208,6 +222,8 @@ export async function prepareDocConstraintEnumerate(
 			kind: 'short-circuit',
 			shortCircuit: {
 				type:                  'doc.constraint.enumerate',
+				// The document index returned no section for the subject: empty, and complete.
+				completeness:          buildCompleteness({ returned: 0, skipped: vectorPassSkipped(report.vectorPassSkipped), basis: 'doc-index', basisNote: DOC_INDEX_RULE }),
 				subject,
 				constraints:           [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${subject}".`,
@@ -217,15 +233,25 @@ export async function prepareDocConstraintEnumerate(
 	}
 
 	const hydrated: HydratedSection[] = [];
+	const skipped: SkippedItem[] = vectorPassSkipped(report.vectorPassSkipped);
+	const partlyRead: PartlyReadItem[] = [];
+	const measurer = createItemMeasurer(args.db);
 	for (const s of sections) {
 		const entity = await getEntity(args.db, s.entityId);
-		if (entity === null) continue;
+		if (entity === null) {
+			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
+			continue;
+		}
+		const body = (entity.body ?? '').slice(0, SECTION_BODY_CHARS);
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
 			heading:  s.heading,
-			body:     (entity.body ?? '').slice(0, 2_000),
+			body,
 		});
+		// The model reads this much of the section; say so when the section is longer.
+		const cut = await measurer.partlyRead(`${s.file} § ${s.heading}`, entity, body.length);
+		if (cut !== undefined) partlyRead.push(cut);
 	}
 
 	const promptContent = loadPromptFile();
@@ -237,11 +263,21 @@ export async function prepareDocConstraintEnumerate(
 		kind:         'narrow-llm',
 		systemPrompt: systemMsg,
 		userTurn:     userMsg,
-		schema:       CONSTRAINTS_SCHEMA,
+		schema:       DOC_CONSTRAINTS_SCHEMA,
+		retrieved:    hydrated.map(h => ({ source: `${h.file} § ${h.heading}`, content: h.body })),
 		prepared: {
 			subject,
 			retrievedSectionCount: sections.length,
 			validEntityIds:        hydrated.map(h => h.entityId),
+			completenessFacts: {
+				// The retrieval returns at most maxSources sections and does not say how many
+				// matched. The limit is on what was read, not on what is returned from it.
+				limited: sections.length >= maxSources
+					? [reachedLimit('document sections', maxSources, 'source', null)]
+					: [],
+				skipped,
+				partlyRead,
+			},
 		},
 	};
 }
@@ -269,6 +305,7 @@ export function finalizeDocConstraintEnumerate(
 
 	return {
 		type:                  'doc.constraint.enumerate',
+		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts, DOC_INDEX_RULE),
 		subject:               prepared.subject,
 		constraints:           filtered,
 		notFoundNote:          filtered.length === 0 ? (raw.notFoundNote || `No constraints on "${prepared.subject}" found in the retrieved sections.`) : '',

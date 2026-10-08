@@ -1,0 +1,418 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791451721879-flgg4c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-08T09:28:41.955Z",
+    "model": "claude:opus",
+    "elapsedMs": 236709,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/analyze/__tests__/completeness.test.ts",
+        "src/analyze/__tests__/item-length.test.ts",
+        "src/analyze/completeness.ts",
+        "src/analyze/context/__tests__/bundle-report-schema.test.ts",
+        "src/analyze/context/__tests__/bundle.test.ts",
+        "src/analyze/context/__tests__/completeness.live.test.ts",
+        "src/analyze/context/__tests__/driver.live.test.ts",
+        "src/analyze/context/__tests__/freeform-fallback.test.ts",
+        "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+        "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+        "src/analyze/context/__tests__/shaper-errors.test.ts",
+        "src/analyze/context/bundle.ts",
+        "src/analyze/context/driver.ts",
+        "src/analyze/context/live-project-context.ts",
+        "src/analyze/context/schema.ts",
+        "src/analyze/context/synthesizer.ts",
+        "src/analyze/context/types.ts",
+        "src/analyze/docs-retrieval.ts",
+        "src/analyze/executor/__tests__/walker.test.ts",
+        "src/analyze/executor/index.ts",
+        "src/analyze/executor/plan-sources.ts",
+        "src/analyze/executor/types.ts",
+        "src/analyze/executor/walker.ts",
+        "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+        "src/analyze/explore/__tests__/failed-lookups.test.ts",
+        "src/analyze/explore/__tests__/partly-read.test.ts",
+        "src/analyze/explore/__tests__/removed-flags.test.ts",
+        "src/analyze/explore/answer-report.ts",
+        "src/analyze/explore/capability-reuse-check.ts",
+        "src/analyze/explore/class-hierarchy.ts",
+        "src/analyze/explore/completeness-facts.ts",
+        "src/analyze/explore/concept-resolve.ts",
+        "src/analyze/explore/config-trace.ts",
+        "src/analyze/explore/convention-detect.ts",
+        "src/analyze/explore/data-model-trace.ts",
+        "src/analyze/explore/db-connections-list.ts",
+        "src/analyze/explore/db-table-describe.ts",
+        "src/analyze/explore/db-tables-list.ts",
+        "src/analyze/explore/doc-constraint-enumerate.ts",
+        "src/analyze/explore/doc-decision-trace.ts",
+        "src/analyze/explore/doc-mention.ts",
+        "src/analyze/explore/executor.ts",
+        "src/analyze/explore/freeform-probe.ts",
+        "src/analyze/explore/import-graph.ts",
+        "src/analyze/explore/index.ts",
+        "src/analyze/explore/item-measure.ts",
+        "src/analyze/explore/lookup-failed.ts",
+        "src/analyze/explore/manifests-locate.ts",
+        "src/analyze/explore/module-profile.ts",
+        "src/analyze/explore/search-text.ts",
+        "src/analyze/explore/symbol-locate.ts",
+        "src/analyze/explore/test-locate.ts",
+        "src/analyze/explore/types.ts",
+        "src/analyze/explore/usage-example.ts",
+        "src/analyze/item-length.ts",
+        "src/analyze/orchestrator/__tests__/orchestrator-e2e.live.test.ts",
+        "src/analyze/orchestrator/__tests__/orchestrator.test.ts",
+        "src/analyze/orchestrator/__tests__/run-report.test.ts",
+        "src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts",
+        "src/analyze/orchestrator/driver.ts",
+        "src/analyze/orchestrator/types.ts",
+        "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts",
+        "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+        "src/analyze/runtimes/__tests__/partly-read-plan-tasks.test.ts",
+        "src/analyze/runtimes/code/adherence-check.ts",
+        "src/analyze/runtimes/code/aggregate-report.ts",
+        "src/analyze/runtimes/code/discovery-entrypoints.ts",
+        "src/analyze/runtimes/code/discovery-modules.ts",
+        "src/analyze/runtimes/code/structure-module-tree.ts",
+        "src/analyze/runtimes/code/surface-functional.ts",
+        "src/analyze/runtimes/data/_shared.ts",
+        "src/analyze/runtimes/data/adherence-check.ts",
+        "src/analyze/runtimes/data/aggregate-report.ts",
+        "src/analyze/runtimes/data/discovery-connections.ts",
+        "src/analyze/runtimes/data/discovery-objects.ts",
+        "src/analyze/runtimes/data/schema-table.ts",
+        "src/analyze/runtimes/docs/aggregate-report.ts",
+        "src/analyze/runtimes/docs/constraint-enumerate.ts",
+        "src/analyze/runtimes/docs/decision-trace.ts",
+        "src/analyze/runtimes/docs/discovery-inventory.ts",
+        "src/analyze/runtimes/docs/family-summarise.ts",
+        "src/analyze/runtimes/generic/aggregate-report.ts",
+        "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+        "src/analyze/runtimes/infra/_shared.ts",
+        "src/analyze/runtimes/infra/adherence-check.ts",
+        "src/analyze/runtimes/infra/aggregate-report.ts",
+        "src/analyze/runtimes/infra/discovery-families.ts",
+        "src/analyze/runtimes/infra/inventory-ci.ts",
+        "src/analyze/runtimes/infra/inventory-docker.ts",
+        "src/analyze/runtimes/infra/inventory-helm.ts",
+        "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+        "src/analyze/runtimes/infra/inventory-terraform.ts",
+        "src/analyze/runtimes/shared/adherence.ts",
+        "src/analyze/runtimes/shared/aggregator.ts",
+        "src/analyze/summariser/driver.ts",
+        "src/analyze/summariser/index.ts",
+        "src/daemon/__tests__/answer-step-failed-callers.test.ts",
+        "src/daemon/__tests__/workflow-rpc-flatten.test.ts",
+        "src/daemon/analyze-rpc.ts",
+        "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+        "src/daemon/tools/builtins/search/grep.ts",
+        "src/daemon/tools/shell-helper.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/db/exploration-cache.ts",
+        "src/mcp/__tests__/analyze-step-answer-prompt-missing.test.ts",
+        "src/mcp/__tests__/analyze-step-bundle-report.test.ts",
+        "src/mcp/__tests__/analyze-step-failed-lookup.test.ts",
+        "src/mcp/__tests__/bundle-md.test.ts",
+        "src/mcp/analyze-step/answer-turn.ts",
+        "src/mcp/analyze-step/phases/bundle.ts",
+        "src/mcp/analyze-step/phases/narrow.ts",
+        "src/mcp/analyze-step/phases/plan.ts",
+        "src/mcp/analyze-step/phases/start.ts",
+        "src/mcp/analyze-step/types.ts",
+        "src/mcp/bundle-md.ts",
+        "src/mcp/server.ts",
+        "src/prompts/analyze/synthesize.adherence.system.md",
+        "src/prompts/analyze/synthesize.capability.system.md",
+        "src/prompts/analyze/synthesize.code.system.md",
+        "src/prompts/analyze/synthesize.data.system.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/analyze/completeness.ts:33",
+            "message": "ReachedLimit.scope is declared as 'overall' | 'per-group' | 'source'. The approved record has exactly two scopes, and the LLD's recorded back-flows (limited as a list, nullable totalChars, the 'model-directed' basis) do not include a third. The 'source' value is already in use: the two document lookups' maxSources limit, capability.reuse-check's inherited inner-search limits, and the walker test's 'files walked' limit. Stories s2 to s5 read sc1 and will meet a scope the approved contract does not name. incompleteReason also renders it with its own wording ('read'). Either record it as a back-flow to the HLD/LLD or express these limits with the two approved scopes.",
+            "expectationRef": "LLD contractDetails.api Completeness: `limited?: readonly { what; limit; scope: 'overall' | 'per-group'; reason }[]`, and the postcondition that each entry says 'whether it applies to the whole result or to each group within it'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/completeness.ts:180",
+            "message": "AnswerReport.completeness gains a fourth member, `basisNotes?: readonly string[]`, which is also declared in the stored bundle schema (src/analyze/context/schema.ts) and documented in docs/daemon.md. The approved sc2 shape is `{ complete, incomplete, failed }`. The LLD does require a shared basis note to be repeated once, but it places that in renderCompletenessLine and adds no field to the report. This changes the shape of a shared contract that s2 to s5 and the IDE mirror consume, and it is not recorded as a back-flow.",
+            "expectationRef": "LLD contractDetails.api AnswerReport: `readonly completeness: { readonly complete: boolean; readonly incomplete: readonly SourceNote[]; readonly failed: readonly SourceNote[] }`; edge case 'The answer report repeats that note once, not per lookup'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/analyze/context/live-project-context.ts:95",
+            "message": "The reached limits and source document ids are not added to assembleLiveProjectContext's result. They are written into a caller-supplied mutable out-parameter (`opts.report: LiveProjectContextReport`), and LiveProjectContext itself is unchanged. The approved design says the function's result gains the two additive fields and the docs tool ignores them. The intent that the docs tool's output stays the same is met, but the mechanism differs from the one approved.",
+            "expectationRef": "LLD dataModelChanges 'An item's full length…': 'That function's result gains two additive fields, which of its limits were reached and the entity ids of the documents its decisions and constraints came from… Its other caller, the docs tool exposed to agents, ignores the new fields'; PLAN t10 'The project-context assembler's result gains which of its limits were reached and the documents behind its decisions and constraints'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "docs/daemon.md:622",
+            "message": "The guide says '`report` is absent in one case only: a bundle or a run record stored before it existed'. Under the approved design, and in the code (context/types.ts comment; the run-shaper-wiring test asserting `bundle.report === undefined` for classification), a classification or task bundle also carries no report, and renderBundleAsMarkdown writes the not-recorded line for it. The 'one case only' rule applies to the run record, not to the bundle, so the guide's description of the bundle's report is wrong for those two modes.",
+            "expectationRef": "LLD errorPaths.edgeCases: 'A bundle with no report (a classification or task bundle, which this Story does not give one)'; PLAN t17 acceptance check 'docs/daemon.md describes … the report on the bundle and the completeness line'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/live-project-context.ts:97",
+            "message": "New interface `LiveProjectContextReport` declares the optional property `limitsReached?: {...}[]` without an explicit `| undefined`. The sibling property added in the same hunk (`report?: LiveProjectContextReport | undefined`) follows the rule.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/live-project-context.ts:99",
+            "message": "New optional property `sourceEntityIds?: string[]` on `LiveProjectContextReport` is declared without an explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/docs-retrieval.ts:75",
+            "message": "New interface `DocsRetrievalReport` declares `vectorPassSkipped?: string` without an explicit `| undefined`, while the property added beside it (`report?: DocsRetrievalReport | undefined`) follows the rule.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/schema.ts:203",
+            "message": "The module-level cache `modelFacing` is typed `{ withMeta?: Record<string, unknown>; layersOnly?: Record<string, unknown> }`; both optional properties lack the explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/freeform-fallback.test.ts:18",
+            "message": "The new relative import of `buildCompleteness` is inserted between the `node:test` and `node:assert/strict` imports. The other test files in this change keep the node built-ins together, then a blank line, then relative imports.",
+            "expectationRef": "import-grouping (node built-ins first, then relative imports)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/completeness.ts:1",
+            "message": "Every changed entity in the grounding (source, test and doc files alike) has an empty testsReaching, with empty callers and callees too. The entities are file-level diff records, so the edges carry no signal either way and coverage cannot be confirmed from them. I did not report each file as a not-exercised breach, because the test diffs that are visible plainly import and exercise buildCompleteness, deriveAnswerReport, renderCompletenessLine, measureItem, modelFacingBundleSchema, settlePipelineOutcome, errorForPipelineCause, runExecutor, reportFromLookups (via runShaper) and all twenty lookup runners. Coverage of these is evidenced by test text only, not by graph edges.",
+            "expectationRef": "testsReaching edges for all changed symbols",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "docs/daemon.md:1",
+            "message": "No build record is available, so the pass-state of every promised test is unverified. The 37 promised tests whose names appear in the visible test diffs (completeness.test.ts, item-length.test.ts, completeness-all-lookups.test.ts, failed-lookups.test.ts, partly-read.test.ts, removed-flags.test.ts, bundle-report-schema.test.ts, run-shaper-wiring.test.ts, pipeline-outcome.test.ts, walker.test.ts, completeness.live.test.ts) are present but unverified. The smoke promise cannot be confirmed at all without a baseline and a post-build run.",
+            "expectationRef": "no test of the analyze, mcp and daemon suites that passed in the baseline fails after the last task",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts:1",
+            "message": "The test file is in the changed set but the grounding has no hunk text for it, so the seven promised search-primitive tests (Node backend skipped/unreadable/shortened line; ripgrep shortened lines, per-file limit, discarded output; unreadable root throws; backendFallback and outputDiscarded; 'search-failed' vs 'bad regex'; Node rule text; hits and limits unchanged for other callers) cannot be confirmed present by name. Present-file but unverified, not confirmed missing. The changes to grep.ts and shell-helper.ts are otherwise evidenced only indirectly, through search.text and config.trace in the lookup tests.",
+            "expectationRef": "the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length (and the six other grep-omitted promised tests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/__tests__/analyze-step-failed-lookup.test.ts:1",
+            "message": "No hunk text for this file. The six promised step-tool tests cannot be confirmed present by name: stepPlan with a prepare that throws; an agent answer failing the lookup schema rejected as retryable; a finalize that throws; no answer to capability.reuse-check; no cache row after a throwing finalize or prepare; a pre-change step state still resumes. The changed phases/plan.ts, phases/narrow.ts and analyze-step/types.ts have no other visible test in the grounding. Present-file but unverified.",
+            "expectationRef": "stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion) (and the five other step-tool failed-lookup promised tests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts:1",
+            "message": "No hunk text for the three runtime test files (completeness-all-runtimes.test.ts, partly-read-plan-tasks.test.ts, dropped-or-failed.test.ts) or for infra/__tests__/infra-runtimes.test.ts. The eleven promised plan-task runtime tests cannot be confirmed present by name: table test over every registered runtime; infra inventories without `truncated`; discovery-families per-group limit; object-listing cut flag; adherence checks' cut bodies; project-context assembler limits; docs plan tasks' partlyRead/skipped; docs tool unchanged; runtime catch-clause count; inventory over an unreadable directory; adherence model-call failure. About 30 changed runtime source files under src/analyze/runtimes/**, plus the report option in live-project-context.ts, have no other visible test in the grounding. Present-file but unverified.",
+            "expectationRef": "a table test over every registered plan-task runtime finds a completeness record on each result (and the ten other plan-task runtime promised tests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/orchestrator/__tests__/run-report.test.ts:1",
+            "message": "No hunk text for run-report.test.ts or orchestrator.test.ts. The four promised integration tests cannot be confirmed present by name: a run with one failed and one limited task; a nested plan naming a child task by path; a run record resuming with its report; a run record without a report giving the not-recorded line. collectPlanSources and taskPath (executor/plan-sources.ts), mergeAnswerReports and RUN_COMPLETENESS_NOT_RECORDED (completeness.ts), and the orchestrator/driver.ts and types.ts changes are exercised by no visible test text. Present-file but unverified.",
+            "expectationRef": "a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources (and the three other run-report promised tests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/__tests__/answer-step-failed-callers.test.ts:1",
+            "message": "No hunk text for answer-step-failed-callers.test.ts, orchestrator/__tests__/shaper-error-mapping.test.ts or mcp/__tests__/analyze-step-answer-prompt-missing.test.ts. Four promised tests cannot be confirmed present by name: both mapping functions returning 'answer-step-failed'; the daemon payload, one-shot message and workflow step failure carrying the report and reason; a missing answer prompt from the plan and narrow phases; the step tool's error.data. The 'answer-step-failed' mapping in daemon/analyze-rpc.ts, daemon/workflow-rpc.ts, mcp/server.ts and mcp/analyze-step/answer-turn.ts has no visible test text; only the 'shaper-tool-loop-exhausted' mapping is visibly tested, in failed-lookups.test.ts. Present-file but unverified.",
+            "expectationRef": "both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable' (and the three other answer-step-failed / answer-prompt-missing promised tests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/__tests__/analyze-step-bundle-report.test.ts:1",
+            "message": "No hunk text for analyze-step-bundle-report.test.ts. Two promised tests cannot be confirmed present by name: the bundle phase attaching its derived report and rejecting an agent-supplied one as 'bundle-schema'; and the step tool's markdown naming one failed and one limited lookup in its first line. The changes to mcp/analyze-step/phases/bundle.ts and phases/start.ts are evidenced only by a source-text regex check for `schemaVersion: SCHEMA_VERSION` in bundle-report-schema.test.ts and by finalizeSynthesize rejecting a report. Present-file but unverified.",
+            "expectationRef": "the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/__tests__/bundle-md.test.ts:1",
+            "message": "The two promised three-renderer tests cannot be confirmed under their promised names. The visible bundle.test.ts has one differently named test ('a bundle with a report leads the prompt text with its completeness line; a bundle with none is rendered as before') that covers assembleMarkdown only, for both the with-report and no-report cases. The renderBundleAsMarkdown and flattenBundle halves would live in bundle-md.test.ts and daemon/__tests__/workflow-rpc-flatten.test.ts, which have no hunk text. The 'say-not-recorded' branch of completenessHeadLine and the changes to mcp/bundle-md.ts and flattenBundle in workflow-rpc.ts have no visible non-live test. Present but unverified.",
+            "expectationRef": "renderBundleAsMarkdown, assembleMarkdown and flattenBundle write the completeness line first for a bundle with a report; for a bundle with no report the first writes the not-recorded line and the other two write nothing",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts:1",
+            "message": "The promised test 'the table test over all twenty lookup types finds no `truncated`, `totalCallers` or `exhaustedNote` field' does not exist as a separately named test. Its assertion is folded into 'a table test over all twenty lookup types finds a completeness record with its stated basis', which loops over ['truncated','totalCallers','exhaustedNote'] and asserts each is absent from every output. The behaviour is exercised but the promised name is absent, and the pass-state is unverified.",
+            "expectationRef": "the table test over all twenty lookup types finds no `truncated`, `totalCallers` or `exhaustedNote` field",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/completeness.live.test.ts:1",
+            "message": "Both promised live tests are present, but they are gated on INSRC_LIVE_TESTS=1 and skip otherwise. With no build record there is no evidence they were ever run, so they are present but unverified. They are also the only visible tests that check renderBundleAsMarkdown's first line.",
+            "expectationRef": "a focused request whose text search reaches its limit returns a bundle whose first line says it is incomplete and names that lookup; a request with a lookup made to fail returns a bundle that lists it as failed, not as empty",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/executor/plan-sources.ts:50",
+            "message": "Correctness risk: the aggregate-report task is identified purely by position (`tasks.length - 1`), not by its template or kind. If a plan's last task is not an aggregate-report task (a one-task plan, or a planner that emits a different tail), a task that actually looked something up is silently left out of the report's sources, so the run can read `Complete.` while that task was incomplete or failed. Excluding by position also hides a failed aggregate task from the report. Identify the aggregate task by its template id, or assert the invariant and fail loudly.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:754",
+            "message": "Unhandled error path / unbounded payload: `gathered` keeps the full output of every tool call for the whole loop (a second copy of what is already in `convo`) and is then attached to `ShaperToolLoopExhausted.toolResults`, which both mapping functions put verbatim into the error's `data` and send over the IPC socket and MCP output. With up to maxToolTurns turns of file reads and greps this can be many MB with no cap. Also, `JSON.stringify(result.output)` returns `undefined` for an undefined output (breaking `PartialFinding.content: string`) and throws on a circular or BigInt value, which would abort the tool loop from a bookkeeping line. Cap each entry and the total size, and guard the stringify.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:1363",
+            "message": "Unhandled error path: `reportFromLookups(executed.results)` runs outside the try/catch, and `deriveAnswerReport` throws a bare RangeError when any one lookup output has no completeness record. One defective lookup therefore fails the whole request with an untyped error (no pipeline cause, no `found` carried), discarding every other lookup's results. The plan walker handles the same condition per source (`no-completeness-record` fails only that task). The comment says this is intentional, but the two paths are inconsistent, and the RangeError has no entry in the cause-to-error table. Consider turning that lookup into a failed source instead.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/explore/answer-report.ts:34",
+            "message": "Correctness risk: a lookup's record is accepted on `completeness !== undefined` alone, while the walker validates the same thing with `isCompletenessRecord`. A malformed record (for example one arriving through the step tool's narrow phase or a carried prepared value) passes here and is read as a `Completeness` in `deriveAnswerReport`. Use the existing guard so both paths apply one rule.",
+            "counterpartRef": "isCompletenessRecord",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/analyze/completeness.ts:284",
+            "message": "Correctness risk: the completeness line is contracted to be ONE line (callers and tests take `split('\\n')[0]` as the head of the markdown), but it interpolates source reasons verbatim. Those are raw error messages (`out.message`, a CLI's stderr, a ripgrep failure detail, `record.error`), which can contain newlines. A multi-line failure reason splits the head line and pushes the rest of the `Incomplete:` statement into the body. Collapse whitespace in reasons and notes before joining.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/completeness.ts:261",
+            "message": "Correctness risk: basis notes are deduplicated by exact string match, but `graphCompleteness` builds each note as `${GRAPH_BASIS_NOTE}. ${rule}` with a per-lookup rule (concept.resolve, capability.reuse-check, the no-query path), so the shared graph-coverage sentence is repeated once per distinct suffix. The notes are then joined with a single space, and GRAPH_BASIS_NOTE has no terminal punctuation, so adjacent notes run together in the head line. Keep the shared note and the per-lookup rule as separate notes, and join with a sentence separator.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/explore/concept-resolve.ts:592",
+            "message": "Unhandled error path: `limit = params.limit ?? MAX_HITS` is passed unclamped to both `slice(0, limit)` and `reachedLimit(...)`. A planner-supplied negative limit previously still returned results; now `byKey.size > limit` is true and `buildCompleteness` throws RangeError on the negative limit, so the lookup becomes a failed output. search.text and config.trace were given a `Math.max(1, …)` clamp for this case (config.trace still lets a NaN topK through); the graph lookups shown were not. Apply one integer clamp before the limit is used.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/item-length.ts:1",
+            "message": "Duplication: `indexerFileHash` re-implements the indexer's private `contentHash` (sha256, hex, first 16 characters). If the indexer's function changes, every measure reads \"the file changed since it was indexed\" and no length is established. The only guard is a test that regex-matches the indexer's source text, which breaks on a formatting change and does not prove behavioural equality. Export the indexer's function and import it.",
+            "counterpartRef": "contentHash (src/indexer/index.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/explore/data-model-trace.ts:210",
+            "message": "Duplication: the `noGraphNode` collection and its mapping to `skipped` entries (`${e.name} (${e.file}:${e.startLine})` plus a 'has no node in the stored graph' reason) is written out three times, in class-hierarchy.ts, convention-detect.ts and data-model-trace.ts, differing only in the noun. A helper beside `graphCompleteness` in completeness-facts.ts would hold it once.",
+            "counterpartRef": "runClassHierarchy",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/explore/completeness-facts.ts:115",
+            "message": "Duplication of constants: `textSearchCompleteness` hard-codes the search primitive's limits as literals (the 500-character line cut in `Math.min(500, l.totalChars)`, '2 MB', '4 MB'). If grep.ts changes a limit, the record states the wrong `readChars` or reason, and `buildCompleteness` throws if `totalChars` falls below the stale 500. Take the values from the search module's constants or from `data.omitted`.",
+            "counterpartRef": "runGrepSearch",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/live-project-context.ts:218",
+            "message": "Correctness risk: a limit is reported as reached whenever the summaries' raw counts exceed the kept lists (`foundDecisions > decisions.length`). If the collection loop drops entries for any reason other than the limit (deduplication, empty entries, the early `break` when the other list fills), the report names a reached limit with `limit: maxDecisions` that was not in fact reached. Compare against the limit, or count in the same loop that applies it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/synthesizer.ts:287",
+            "message": "Avoidable complexity (taste): `stripMetaFromSchema` now ignores its argument, `_resetStrippedSchemaCacheForTest` is a kept no-op, and the old doc comment describing the removed cache still sits above the new one. walker.ts likewise keeps the orphaned JSDoc of the removed `appendTaskPath` above the `taskPath` alias. Remove the dead parameter, the no-op and the stale comments.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 14,
+      "low": 18
+    }
+  }
+}

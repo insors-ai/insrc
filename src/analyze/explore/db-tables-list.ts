@@ -26,6 +26,8 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:db-tables-list');
 
@@ -72,67 +74,59 @@ function parseParams(exp: Exploration): DbTablesListParams {
 export async function runDbTablesList(
 	exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The connection pool's source; a test passes a stand-in. */
+	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbTablesListOutput> {
 	const params = parseParams(exp);
 	const limit = params.limit ?? DEFAULT_LIMIT;
 
-	let pool;
-	try {
-		pool = await acquirePool(ctx.repoPath);
-	} catch (err) {
-		return emptyOutput(params.connectionId, 'file', `Pool acquisition failed: ${(err as Error).message}`);
-	}
-
-	let driver;
-	try {
-		driver = await pool.acquire(params.connectionId);
-	} catch (err) {
-		return emptyOutput(params.connectionId, 'file', (err as Error).message);
-	}
+	// The registry cannot be read, the connection cannot be opened, or the
+	// listing call fails: the lookup could not run. Each throws, and the
+	// executor reports the lookup as failed.
+	const pool = await acquire(ctx.repoPath);
+	const driver = await pool.acquire(params.connectionId);
 
 	const family = driver.family;
 	let tables: DbTableSummary[] = [];
 	let truncated = false;
 	let notFoundNote = '';
+	// A driver that cannot list is an expected condition: the result is
+	// returned and its record names the listing as skipped.
+	let unsupported: string | undefined;
 
 	if (family === 'rdbms') {
 		const rdbms = driver as RdbmsDriver;
 		if (rdbms.listTables === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement listTables.`;
+			unsupported = notFoundNote;
 		} else {
-			try {
-				const opts: { readonly schema?: string; readonly limit?: number } =
-					params.schema !== undefined ? { schema: params.schema, limit } : { limit };
-				const listing = await rdbms.listTables(opts);
-				tables = listing.tables.map(t => ({
-					name:   t.name,
-					...(t.schema !== undefined ? { schema: t.schema } : {}),
-					kind:   t.kind,
-					...(t.approxRowCount !== undefined ? { rowEstimate: t.approxRowCount } : {}),
-				}));
-				truncated = listing.truncated;
-			} catch (err) {
-				notFoundNote = `listTables failed: ${(err as Error).message}`;
-			}
+			const opts: { readonly schema?: string; readonly limit?: number } =
+				params.schema !== undefined ? { schema: params.schema, limit } : { limit };
+			const listing = await rdbms.listTables(opts);
+			tables = listing.tables.map(t => ({
+				name:   t.name,
+				...(t.schema !== undefined ? { schema: t.schema } : {}),
+				kind:   t.kind,
+				...(t.approxRowCount !== undefined ? { rowEstimate: t.approxRowCount } : {}),
+			}));
+			truncated = listing.truncated;
 		}
 	} else if (family === 'kv') {
 		const kv = driver as KvDriver;
 		if (kv.listNamespaces === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement listNamespaces.`;
+			unsupported = notFoundNote;
 		} else {
-			try {
-				const listing = await kv.listNamespaces({ limit });
-				tables = listing.namespaces.map(n => ({
-					name: n.name,
-					kind: n.kind ?? 'namespace',
-					...(n.approxCount !== undefined ? { rowEstimate: n.approxCount } : {}),
-				}));
-				truncated = listing.truncated;
-				if (!listing.supported) {
-					notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
-				}
-			} catch (err) {
-				notFoundNote = `listNamespaces failed: ${(err as Error).message}`;
+			const listing = await kv.listNamespaces({ limit });
+			tables = listing.namespaces.map(n => ({
+				name: n.name,
+				kind: n.kind ?? 'namespace',
+				...(n.approxCount !== undefined ? { rowEstimate: n.approxCount } : {}),
+			}));
+			truncated = listing.truncated;
+			if (!listing.supported) {
+				notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
+				unsupported = notFoundNote;
 			}
 		}
 	} else {
@@ -155,31 +149,23 @@ export async function runDbTablesList(
 		'db.tables.list: complete',
 	);
 
+	const completeness = buildCompleteness({
+		returned: tables.length,
+		// The driver's own cut flag: it stopped at the limit it was given.
+		limited:  truncated ? [reachedLimit(family === 'kv' ? 'namespaces' : 'tables', limit, 'overall', null)] : [],
+		skipped:  unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : [],
+		basis:    'data-source',
+		...(family === 'file' ? { basisNote: notFoundNote } : {}),
+	});
+
 	return {
 		type:         'db.tables.list',
+		completeness,
 		connectionId: params.connectionId,
 		family,
 		tables,
-		truncated,
-		notFoundNote,
-	};
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function emptyOutput(
-	connectionId: string,
-	family:       'rdbms' | 'kv' | 'file',
-	note:         string,
-): DbTablesListOutput {
-	return {
-		type:         'db.tables.list',
-		connectionId,
-		family,
-		tables:       [],
-		truncated:    false,
-		notFoundNote: note,
+		// A note that reports an unsupported listing is in the record;
+		// the note left here explains an empty listing that is complete.
+		notFoundNote: unsupported !== undefined ? '' : notFoundNote,
 	};
 }

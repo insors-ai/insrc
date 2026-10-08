@@ -11,8 +11,9 @@
  * See docs/plans/mcp-multi-turn-analyze.md for the full protocol design.
  */
 
-import type { ExplorationPlan } from '../../analyze/explore/index.js';
+import type { ExecutedExploration, ExplorationPlan } from '../../analyze/explore/index.js';
 import type { BundleMeta } from '../../analyze/context/types.js';
+import type { AnswerReport } from '../../analyze/completeness.js';
 
 // ---------------------------------------------------------------------------
 // Input phases
@@ -118,6 +119,8 @@ export interface StepOutputDone {
 	readonly next:     'done';
 	readonly markdown: string;
 	readonly meta:     BundleMeta;
+	/** The answer report the tool derived from the lookups it executed. Absent only on the cached-bundle path. */
+	readonly report?:  AnswerReport | undefined;
 }
 
 /** Retryable / non-retryable failure. */
@@ -127,7 +130,19 @@ export interface StepOutputError {
 		readonly code:      string;
 		readonly message:   string;
 		readonly retryable: boolean;
+		/**
+		 * Set by one error only: the answer prompt is missing after the lookups
+		 * ran. It holds what they returned and the report derived from it, so the
+		 * findings are not lost with the failure.
+		 */
+		readonly data?: StepErrorData | undefined;
 	};
+}
+
+/** What the lookups found before a step failed. */
+export interface StepErrorData {
+	readonly results: readonly ExecutedExploration[];
+	readonly report:  AnswerReport;
 }
 
 export type StepOutput =

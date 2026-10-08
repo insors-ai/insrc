@@ -82,6 +82,8 @@ export const codeDiscoveryModulesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['modules', modules]]),
+			// Every module entity of the graph is listed; nothing is cut by count.
+			completeness: graphCompleteness({ returned: modules.length }),
 		};
 	},
 };
@@ -94,3 +96,4 @@ export {
 	readScopeRef as _readScopeRefForTest,
 	resolveRepoPath as _resolveRepoPathForTest,
 } from './_shared.js';
+import { graphCompleteness } from '../../explore/completeness-facts.js';

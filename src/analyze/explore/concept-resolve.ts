@@ -54,6 +54,9 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { Completeness, SkippedItem } from '../completeness.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:concept-resolve');
 
@@ -328,6 +331,8 @@ const MAX_DIR_DEPTH = 8;
 function enumerateDirs(
 	repoPath: string,
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
+	/** Directories and entries the walk could not read, for the completeness record. */
+	skipped: SkippedItem[],
 ): Candidate[] {
 	const out: Candidate[] = [];
 	function walk(dir: string, depth: number): void {
@@ -335,7 +340,11 @@ function enumerateDirs(
 		let entries: string[];
 		try {
 			entries = readdirSync(dir);
-		} catch {
+		} catch (err) {
+			// The repository root itself: the lookup could not run. A directory
+			// below it: expected on a real tree (permissions); it is named as skipped.
+			if (depth === 0) throw err;
+			skipped.push({ what: dir, reason: `the directory could not be read (${errorCode(err)})` });
 			return;
 		}
 		for (const name of entries) {
@@ -351,7 +360,11 @@ function enumerateDirs(
 			if (!ignoreFilter.isIncluded(full)) continue;
 			let s;
 			try { s = statSync(full); }
-			catch { continue; }
+			catch (err) {
+				// Expected: a broken link, or an entry removed while the walk runs.
+				skipped.push({ what: full, reason: `the entry could not be read (${errorCode(err)})` });
+				continue;
+			}
 			if (!s.isDirectory()) continue;
 			out.push({ kind: 'dir', path: full, name });
 			walk(full, depth + 1);
@@ -525,7 +538,7 @@ export async function runConceptResolve(
 	const tokens = tokenise(params.query);
 	if (tokens.length === 0) {
 		log.debug({ query: params.query }, 'concept.resolve: no salient tokens');
-		return { type: 'concept.resolve', query: params.query, hits: [] };
+		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
 	const structuralBoost = tokens.some(t => STRUCTURAL_TOKENS.has(t));
@@ -539,7 +552,7 @@ export async function runConceptResolve(
 	const matchTokens = tokens.filter(t => !STRUCTURAL_TOKENS.has(t));
 	if (matchTokens.length === 0) {
 		log.debug({ query: params.query, tokens }, 'concept.resolve: no non-structural tokens; empty result');
-		return { type: 'concept.resolve', query: params.query, hits: [] };
+		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
 	const includeKinds = params.includeKinds ?? ['dir', 'file', 'entity'];
@@ -549,7 +562,8 @@ export async function runConceptResolve(
 
 	// Assemble the candidate pool.
 	const rawCandidates: Candidate[] = [];
-	if (includeKinds.includes('dir'))    rawCandidates.push(...enumerateDirs(ctx.repoPath, ctx.ignoreFilter));
+	const skipped: SkippedItem[] = [];
+	if (includeKinds.includes('dir'))    rawCandidates.push(...enumerateDirs(ctx.repoPath, ctx.ignoreFilter, skipped));
 	if (includeKinds.includes('file'))   rawCandidates.push(...fileCandidatesFromEntities(entities, ctx.ignoreFilter));
 	if (includeKinds.includes('entity')) rawCandidates.push(...structuralEntityCandidates(entities, ctx.ignoreFilter));
 
@@ -575,9 +589,11 @@ export async function runConceptResolve(
 		if (prev === undefined || s.score > prev.score) byKey.set(k, s);
 	}
 
+	// A limit below 1 is not a limit a result can be cut to: at least one hit is kept.
+	const limit = Math.max(1, Math.floor(params.limit ?? MAX_HITS));
 	const ranked = Array.from(byKey.values())
 		.sort((a, b) => b.score - a.score)
-		.slice(0, params.limit ?? MAX_HITS);
+		.slice(0, limit);
 
 	const hits: ConceptHit[] = ranked.map(r => ({
 		kind:  r.kind,
@@ -605,7 +621,31 @@ export async function runConceptResolve(
 		'concept.resolve: complete',
 	);
 
-	return { type: 'concept.resolve', query: params.query, hits };
+	return {
+		type: 'concept.resolve',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found:    byKey.size,
+			limited:  byKey.size > limit ? [reachedLimit('matches', limit, 'overall', byKey.size)] : [],
+			skipped,
+			rule:     `Directories more than ${MAX_DIR_DEPTH} levels below the repository root are not candidates.`,
+		}),
+		query: params.query,
+		hits,
+	};
+}
+
+/** The system's code for a file-system error, or its message. */
+function errorCode(err: unknown): string {
+	return (err as NodeJS.ErrnoException).code ?? (err instanceof Error ? err.message : String(err));
+}
+
+/** No query could be formed from the request's words, so nothing was searched. */
+function noQueryCompleteness(): Completeness {
+	return buildCompleteness({
+		returned: 0, basis: 'graph', notEstablished: true,
+		basisNote: `${GRAPH_BASIS_NOTE}. The query held no distinctive word to match, so no search was made`,
+	});
 }
 
 // ---------------------------------------------------------------------------

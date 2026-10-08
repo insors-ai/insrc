@@ -21,12 +21,19 @@ import { getDb } from '../../db/client.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocMentionHit,
 	DocMentionOutput,
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { getEntity } from '../../db/entities.js';
+import { buildCompleteness } from '../completeness.js';
+import type { PartlyReadItem } from '../completeness.js';
+import { partlyReadEntry } from '../item-length.js';
+import { DOC_INDEX_RULE, reachedLimit, vectorPassSkipped } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:doc-mention');
 
@@ -95,11 +102,14 @@ export async function runDocMention(
 	const params = parseParams(exp);
 	const db = await getDb();
 
+	const limit = params.limit ?? DEFAULT_LIMIT;
+	const report: DocsRetrievalReport = {};
 	const results = await retrieveDocSections({
 		db,
+		report,
 		query:        params.subject,
 		closureRepos: [ctx.repoPath],
-		maxResults:   params.limit ?? DEFAULT_LIMIT,
+		maxResults:   limit,
 		minScore:     params.minScore ?? 0,
 		previewChars: params.previewChars ?? DEFAULT_PREVIEW_CHARS,
 		...(params.filenameHint !== undefined ? { filenameHint: params.filenameHint } : {}),
@@ -115,17 +125,38 @@ export async function runDocMention(
 		...(r.bodyPreview !== undefined && r.bodyPreview.length > 0 ? { preview: r.bodyPreview } : {}),
 	}));
 
+	// A hit whose stored body the indexer cut was matched on that much of it.
+	const measurer = createItemMeasurer(db);
+	const partlyRead: PartlyReadItem[] = [];
+	for (const r of results) {
+		const entity = await getEntity(db, r.entityId);
+		if (entity === null) continue;
+		const m = await measurer.measure(entity);
+		if (m.cutByIndexer) partlyRead.push(partlyReadEntry(`${r.file} § ${r.heading}`, m.storedChars, m));
+	}
+
 	log.info(
 		{
 			runId:    ctx.runId,
 			subject:  params.subject,
 			returned: hits.length,
+			partlyRead: partlyRead.length,
 		},
 		'doc.mention: complete',
 	);
 
 	return {
 		type:    'doc.mention',
+		// The retrieval returns at most `limit` sections and does not say how many
+		// matched, so a full page means more may exist.
+		completeness: buildCompleteness({
+			returned: hits.length,
+			limited:  hits.length >= limit ? [reachedLimit('document sections', limit, 'overall', null)] : [],
+			partlyRead,
+			skipped:  vectorPassSkipped(report.vectorPassSkipped),
+			basis:    'doc-index',
+			basisNote: DOC_INDEX_RULE,
+		}),
 		subject: params.subject,
 		hits,
 	};

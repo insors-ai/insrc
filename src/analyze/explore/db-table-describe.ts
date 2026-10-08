@@ -22,6 +22,9 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { ReachedLimit } from '../completeness.js';
+import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:db-table-describe');
 
@@ -51,71 +54,68 @@ function parseParams(exp: Exploration): DbTableDescribeParams {
 export async function runDbTableDescribe(
 	exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The connection pool's source; a test passes a stand-in. */
+	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbTableDescribeOutput> {
 	const params = parseParams(exp);
 
-	let pool;
-	try {
-		pool = await acquirePool(ctx.repoPath);
-	} catch (err) {
-		return empty(params, 'file', `Pool acquisition failed: ${(err as Error).message}`);
-	}
-
-	let driver;
-	try {
-		driver = await pool.acquire(params.connectionId);
-	} catch (err) {
-		return empty(params, 'file', (err as Error).message);
-	}
+	// The registry cannot be read, the connection cannot be opened, or the
+	// describe call fails: the lookup could not run. Each throws, and the
+	// executor reports the lookup as failed.
+	const pool = await acquire(ctx.repoPath);
+	const driver = await pool.acquire(params.connectionId);
 
 	const family = driver.family;
 	let columns: DbColumnSummary[] = [];
 	let shapeSummary = '';
 	let notFoundNote = '';
+	// For the completeness record: this driver cannot describe (an expected
+	// condition, named as skipped), or the key-value summary kept fewer
+	// fields or keys than exist.
+	let unsupported: string | undefined;
+	let returned = 0;
+	const limited: ReachedLimit[] = [];
 
 	if (family === 'rdbms') {
-		try {
-			const schema = await (driver as RdbmsDriver).describe(params.target);
-			columns = schema.columns.map(c => ({
-				name:      c.name,
-				type:      c.type,
-				...(c.nullable   !== undefined ? { nullable:   c.nullable   } : {}),
-				...(c.primaryKey !== undefined ? { primaryKey: c.primaryKey } : {}),
-				...(c.foreignKey !== undefined ? { foreignKey: {
-					table:  c.foreignKey.table,
-					column: c.foreignKey.column,
-				} } : {}),
-			}));
-		} catch (err) {
-			notFoundNote = `rdbms describe failed: ${(err as Error).message}`;
-		}
+		const schema = await (driver as RdbmsDriver).describe(params.target);
+		columns = schema.columns.map(c => ({
+			name:      c.name,
+			type:      c.type,
+			...(c.nullable   !== undefined ? { nullable:   c.nullable   } : {}),
+			...(c.primaryKey !== undefined ? { primaryKey: c.primaryKey } : {}),
+			...(c.foreignKey !== undefined ? { foreignKey: {
+				table:  c.foreignKey.table,
+				column: c.foreignKey.column,
+			} } : {}),
+		}));
 	} else if (family === 'kv') {
 		const kv = driver as KvDriver;
 		if (kv.describeNamespace === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement describeNamespace.`;
+			unsupported = notFoundNote;
 		} else {
-			try {
-				const desc = await kv.describeNamespace(params.target);
-				shapeSummary = summariseKvDescription(desc);
-			} catch (err) {
-				notFoundNote = `describeNamespace failed: ${(err as Error).message}`;
+			const desc = await kv.describeNamespace(params.target);
+			shapeSummary = summariseKvDescription(desc);
+			returned = Math.min(desc.fields.length, KV_SUMMARY_FIELDS);
+			if (desc.fields.length > KV_SUMMARY_FIELDS) {
+				limited.push(reachedLimit('fields', KV_SUMMARY_FIELDS, 'overall', desc.fields.length));
+			}
+			if (desc.sampleKeys.length > KV_SUMMARY_KEYS) {
+				limited.push(reachedLimit('sample keys', KV_SUMMARY_KEYS, 'source', desc.sampleKeys.length));
 			}
 		}
 	} else if (family === 'file') {
 		const fd = driver as FileDriver;
 		if (fd.describe === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement describe.`;
+			unsupported = notFoundNote;
 		} else {
-			try {
-				const schema = await fd.describe(params.target);
-				columns = schema.columns.map(c => ({
-					name: c.name,
-					type: c.type,
-					...(c.nullable !== undefined ? { nullable: c.nullable } : {}),
-				}));
-			} catch (err) {
-				notFoundNote = `file describe failed: ${(err as Error).message}`;
-			}
+			const schema = await fd.describe(params.target);
+			columns = schema.columns.map(c => ({
+				name: c.name,
+				type: c.type,
+				...(c.nullable !== undefined ? { nullable: c.nullable } : {}),
+			}));
 		}
 	}
 
@@ -130,32 +130,31 @@ export async function runDbTableDescribe(
 		'db.table.describe: complete',
 	);
 
+	if (family !== 'kv') returned = columns.length;
+	const completeness = buildCompleteness({
+		returned,
+		limited,
+		skipped: unsupported !== undefined ? [{ what: 'the description', reason: unsupported }] : [],
+		basis:   'data-source',
+		...(family === 'kv' ? { basisNote: 'a key-value namespace is described from a sample of its keys, not from every key' } : {}),
+	});
+
 	return {
 		type:         'db.table.describe',
+		completeness,
 		connectionId: params.connectionId,
 		target:       params.target,
 		family,
 		columns,
 		shapeSummary,
-		notFoundNote,
+		// A note that reports an unsupported description is in the record.
+		notFoundNote: unsupported !== undefined ? '' : notFoundNote,
 	};
 }
 
-function empty(
-	params: DbTableDescribeParams,
-	family: 'rdbms' | 'kv' | 'file',
-	note:   string,
-): DbTableDescribeOutput {
-	return {
-		type:         'db.table.describe',
-		connectionId: params.connectionId,
-		target:       params.target,
-		family,
-		columns:      [],
-		shapeSummary: '',
-		notFoundNote: note,
-	};
-}
+/** How many fields and sample keys a key-value namespace's summary names. */
+const KV_SUMMARY_FIELDS = 8;
+const KV_SUMMARY_KEYS   = 5;
 
 function summariseKvDescription(desc: {
 	name:        string;
@@ -172,13 +171,13 @@ function summariseKvDescription(desc: {
 	if (desc.fields.length > 0) {
 		parts.push(
 			`fields: ${desc.fields
-				.slice(0, 8)
+				.slice(0, KV_SUMMARY_FIELDS)
 				.map(f => `${f.path}:${f.types.join('|')}`)
 				.join(', ')}`,
 		);
 	}
 	if (desc.sampleKeys.length > 0) {
-		parts.push(`sampleKeys: ${desc.sampleKeys.slice(0, 5).join(', ')}`);
+		parts.push(`sampleKeys: ${desc.sampleKeys.slice(0, KV_SUMMARY_KEYS).join(', ')}`);
 	}
 	if (!desc.supported) parts.push('(unsupported)');
 	return parts.join(' | ');

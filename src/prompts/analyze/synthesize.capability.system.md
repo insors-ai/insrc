@@ -21,7 +21,7 @@ The reader is deciding whether to REUSE existing code or add new. A missed reuse
 - **`concept.resolve`**: `{ query, hits: [{ kind, path, name, entityId?, score, diagnostics }] }`
 - **`module.profile`**: `{ profile: { path, kind, subdirs, filesInDir, exports, entrypoints, entityCount, totalBytes } }`
 - **`symbol.locate`**: `{ names, hits: [{ entityId, name, kind, file, startLine, endLine, signature? }] }`
-- **`usage.example`**: `{ subject, targetEntityId?, callers, totalCallers }`
+- **`usage.example`**: `{ subject, targetEntityId?, callers, completeness }` — `completeness.total` is the number of callers found before the cut
 - **`convention.detect`**: `{ path, namingSchema, baseClassIdioms, ... }` — surfaced in the winning candidate's `## Conventions` sub-section so the reader integrates against the module's own idioms.
 
 ## Verdict handling

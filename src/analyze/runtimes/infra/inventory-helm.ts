@@ -21,7 +21,6 @@
  *       charts: Array<{ path, name?, version?, appVersion?, type?,
  *                       dependencies: Array<{name, version?, repository?}>,
  *                       templateFileCount, valuesKeys: string[] }>,
- *       truncated: boolean
  *     } }
  *
  * Deterministic. All lists sorted.
@@ -40,9 +39,12 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 	type WalkedFile,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.helm';
 const log = getLogger('analyze:runtimes:infra:inventory-helm');
@@ -97,7 +99,9 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files: walked, truncated } = await walkFiles(repoPath);
+		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
+		// Files the inventory could not read or parse, and directories the walk could not enter.
+		const skipped: SkippedItem[] = [...unreadable];
 		const byPath = new Map<string, WalkedFile>(walked.map(f => [f.relPath, f]));
 
 		const chartFiles = walked.filter(f => HELM_CHART_RE.test(f.relPath));
@@ -109,6 +113,7 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 				doc = load(await readFile(f.absPath, 'utf8'));
 			} catch (err) {
 				log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.helm: Chart.yaml parse failed -- skipping');
+				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
 			const meta = doc !== null && typeof doc === 'object' ? (doc as Record<string, unknown>) : {};
@@ -119,7 +124,7 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 				w.relPath.startsWith(templatesPref) && YAML_EXT_RE.test(w.relPath),
 			).length;
 
-			const valuesKeys = await readTopLevelKeys(byPath, chartDir);
+			const valuesKeys = await readTopLevelKeys(byPath, chartDir, skipped);
 
 			charts.push({
 				path:              f.relPath,
@@ -135,18 +140,21 @@ export const infraInventoryHelmRuntime: TemplateRuntime = {
 
 		charts.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
-		const inventory = { charts, truncated };
+		const inventory = { charts };
 		log.info(
 			{ runId: args.runId, taskId: args.task.taskId, repoPath, chartCount: charts.length, truncated },
 			'infra.inventory.helm: enumerated',
 		);
-		return { outputs: new Map<string, unknown>([['helm-inventory', inventory]]) };
+		return {
+			outputs: new Map<string, unknown>([['helm-inventory', inventory]]),
+			completeness: fileWalkCompleteness(charts.length, truncated, { skipped }),
+		};
 	},
 };
 
 /** Top-level keys of the chart's adjacent `values.yaml` (or `.yml`), sorted;
  *  `[]` when absent or unparseable. */
-async function readTopLevelKeys(byPath: Map<string, WalkedFile>, chartDir: string): Promise<string[]> {
+async function readTopLevelKeys(byPath: Map<string, WalkedFile>, chartDir: string, skipped: SkippedItem[]): Promise<string[]> {
 	const prefix = chartDir === '' ? '' : `${chartDir}/`;
 	const values = byPath.get(`${prefix}values.yaml`) ?? byPath.get(`${prefix}values.yml`);
 	if (values === undefined) return [];
@@ -154,7 +162,9 @@ async function readTopLevelKeys(byPath: Map<string, WalkedFile>, chartDir: strin
 		const doc = load(await readFile(values.absPath, 'utf8'));
 		if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return [];
 		return Object.keys(doc as Record<string, unknown>).sort();
-	} catch {
+	} catch (err) {
+		// Expected: a values file that does not parse. The chart is still listed, with no keys.
+		skipped.push(unreadableFile(values.relPath, err));
 		return [];
 	}
 }

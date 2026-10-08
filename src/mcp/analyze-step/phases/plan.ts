@@ -30,7 +30,7 @@ import {
 	finalizeDecompose,
 	DecomposerSchemaUnrecoverable,
 } from '../../../analyze/context/decomposer.js';
-import { prepareSynthesize } from '../../../analyze/context/synthesizer.js';
+import { prepareAnswerTurn } from '../answer-turn.js';
 import { stepPlan } from '../../../analyze/explore/index.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -45,6 +45,7 @@ import {
 import { stepScope } from '../scope.js';
 import { refineSynthesizerKey } from '../synthesizer-key.js';
 import type {
+	StepErrorData,
 	StepInputPlan,
 	StepOutputEmitBundle,
 	StepOutputEmitNarrow,
@@ -175,11 +176,15 @@ export async function handlePlan(
 	const executed = step.executed;
 
 	// (5) Load synthesizer prompt + schema.
-	const prepared = prepareSynthesize({
+	// A missing answer prompt is reported with what the lookups found, not thrown.
+	const turn = prepareAnswerTurn({
 		intent:   state.intent,
 		executed,
 		target:   synthesizerKey,
 	});
+	// Not retryable: the file will still be missing on the next call.
+	if (!turn.ok) return errorResult(turn.code, turn.message, false, turn.data);
+	const prepared = turn.prepared;
 
 	// (6) Update state.
 	const nextState: StepStatePayload = {
@@ -223,9 +228,10 @@ export async function handlePlan(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function errorResult(code: string, message: string, retryable: boolean): StepOutputError {
+/** `data` is set by one error only: a missing answer prompt after the lookups ran. */
+function errorResult(code: string, message: string, retryable: boolean, data?: StepErrorData): StepOutputError {
 	return {
 		next:  'error',
-		error: { code, message, retryable },
+		error: data !== undefined ? { code, message, retryable, data } : { code, message, retryable },
 	};
 }

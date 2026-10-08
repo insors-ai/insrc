@@ -35,6 +35,10 @@ import type {
 	ModuleProfile,
 	ModuleProfileOutput,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { PartlyReadItem, SkippedItem } from '../completeness.js';
+import { createItemMeasurer } from './item-measure.js';
+import type { ItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:module-profile');
 
@@ -66,6 +70,18 @@ const INDEX_FILENAMES = new Set([
  * HTTP handler, CLI main, service registration, etc. Matched
  * against the file body's first 4 KB.
  */
+/** How much of a file's stored body is scanned for an entry-point marker. */
+const ENTRYPOINT_SCAN_CHARS = 4096;
+
+/**
+ * What the entry-point list rests on. The index stores no content for a
+ * source file's own entity, so for those files only the name is checked; the
+ * markers are looked for where a stored body exists.
+ */
+const ENTRYPOINT_RULE =
+	'Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; ' +
+	'the index stores no content for a source file itself, so such a file is recognised by name only.';
+
 const ENTRYPOINT_MARKERS: readonly RegExp[] = [
 	/if\s+__name__\s*==\s*['"]__main__['"]/,
 	/@app\.(get|post|put|delete|patch|route)\b/,   // FastAPI / Flask
@@ -120,16 +136,26 @@ export async function runModuleProfile(
 	const db = await getDb();
 	const entities = await listEntitiesForRepo(db, ctx.repoPath);
 
+	// Entry points are looked for in the first 4,096 characters of a file's
+	// stored body. A longer file in which none was found was read in part.
+	const measurer = createItemMeasurer(db, entities);
+	const partlyRead: PartlyReadItem[] = [];
+
 	if (stat.isFile()) {
-		const profile = await profileFile(path, entities);
+		const profile = await profileFile(path, entities, measurer, partlyRead);
 		log.info(
 			{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount },
 			'module.profile: file profiled',
 		);
-		return { type: 'module.profile', profile };
+		return {
+			type: 'module.profile',
+			completeness: buildCompleteness({ returned: 1, partlyRead, basis: 'filesystem', basisNote: ENTRYPOINT_RULE }),
+			profile,
+		};
 	}
 
-	const profile = await profileDir(path, entities, ctx.ignoreFilter);
+	const skipped: SkippedItem[] = [];
+	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead, skipped);
 	log.info(
 		{
 			runId:       ctx.runId,
@@ -143,7 +169,18 @@ export async function runModuleProfile(
 		},
 		'module.profile: dir profiled',
 	);
-	return { type: 'module.profile', profile };
+	return {
+		type: 'module.profile',
+		// Every immediate child of the directory is listed; nothing is cut by count.
+		completeness: buildCompleteness({
+			returned: profile.subdirs.length + profile.filesInDir.length,
+			partlyRead,
+			skipped,
+			basis:    'filesystem',
+			basisNote: ENTRYPOINT_RULE,
+		}),
+		profile,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +191,9 @@ async function profileDir(
 	dir:      string,
 	entities: readonly Entity[],
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
+	measurer:   ItemMeasurer,
+	partlyRead: PartlyReadItem[],
+	skipped:    SkippedItem[],
 ): Promise<ModuleProfile> {
 	// Immediate children (subdirs + files) via filesystem.
 	const subdirs: string[] = [];
@@ -163,9 +203,9 @@ async function profileDir(
 		bytes: number;
 		kind: string;
 	}> = [];
-	let entries: string[];
-	try { entries = readdirSync(dir); }
-	catch { entries = []; }
+	// The directory was stat'd a moment ago. If it cannot be listed the lookup
+	// could not run: this throws, and the executor reports it as failed.
+	const entries: string[] = readdirSync(dir);
 	for (const name of entries) {
 		if (IGNORE_DIRS.has(name)) continue;
 		if (name.startsWith('.') && name !== '.env.example') continue;
@@ -177,7 +217,11 @@ async function profileDir(
 		if (!ignoreFilter.isIncluded(full)) continue;
 		let s;
 		try { s = statSync(full); }
-		catch { continue; }
+		catch (err) {
+			// Expected: a broken link, or an entry removed while the listing runs.
+			skipped.push({ what: full, reason: `the entry could not be read (${(err as NodeJS.ErrnoException).code ?? (err as Error).message})` });
+			continue;
+		}
 		if (s.isDirectory()) {
 			subdirs.push(full);
 		} else if (s.isFile()) {
@@ -219,13 +263,20 @@ async function profileDir(
 			continue;
 		}
 		const bodyMatchEntity = entities.find(e => e.file === f.file && e.kind === 'file');
-		const body = (bodyMatchEntity?.body ?? '').slice(0, 4096);
+		const body = (bodyMatchEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
 		if (body.length === 0) continue;
+		let found = false;
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) {
 				entrypoints.push(f.file);
+				found = true;
 				break;
 			}
+		}
+		// A marker past the scanned part would have been missed.
+		if (!found && bodyMatchEntity !== undefined) {
+			const cut = await measurer.partlyRead(f.file, bodyMatchEntity, body.length);
+			if (cut !== undefined) partlyRead.push(cut);
 		}
 	}
 
@@ -240,7 +291,10 @@ async function profileDir(
 			if (e.file === dir || e.file.startsWith(dirWithSep)) {
 				try {
 					totalBytes += statSync(e.file).size;
-				} catch { /* file gone */ }
+				} catch {
+					// Expected: the index still holds a file that is no longer on disk.
+					skipped.push({ what: e.file, reason: 'the file is in the index and no longer on disk; totalBytes does not count it' });
+				}
 			}
 			continue;
 		}
@@ -265,11 +319,14 @@ async function profileDir(
 // File profile
 // ---------------------------------------------------------------------------
 
-async function profileFile(file: string, entities: readonly Entity[]): Promise<ModuleProfile> {
-	const size = (() => {
-		try { return statSync(file).size; }
-		catch { return 0; }
-	})();
+async function profileFile(
+	file:       string,
+	entities:   readonly Entity[],
+	measurer:   ItemMeasurer,
+	partlyRead: PartlyReadItem[],
+): Promise<ModuleProfile> {
+	// The file was stat'd a moment ago; if it is gone now the lookup could not run.
+	const size = statSync(file).size;
 	const fileEntity = entities.find(e => e.kind === 'file' && e.file === file);
 	const exports: string[] = [];
 	let entityCount = 0;
@@ -281,12 +338,17 @@ async function profileFile(file: string, entities: readonly Entity[]): Promise<M
 		if (e.isExported === true) exports.push(e.name);
 	}
 	exports.sort();
-	const body = (fileEntity?.body ?? '').slice(0, 4096);
+	const body = (fileEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
 	const entrypoints: string[] = [];
 	if (INDEX_FILENAMES.has(basename(file))) entrypoints.push(file);
 	else {
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) { entrypoints.push(file); break; }
+		}
+		// A marker past the scanned part would have been missed.
+		if (entrypoints.length === 0 && fileEntity !== undefined && body.length > 0) {
+			const cut = await measurer.partlyRead(file, fileEntity, body.length);
+			if (cut !== undefined) partlyRead.push(cut);
 		}
 	}
 	return {

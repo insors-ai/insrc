@@ -87,7 +87,21 @@ export interface LiveProjectContext {
 // Options
 // ---------------------------------------------------------------------------
 
+/**
+ * What the assembler left out, filled in when the caller passes one. It is
+ * kept beside the context and not in it, so what the context holds, and what
+ * the docs tool returns from it, is unchanged.
+ */
+export interface LiveProjectContextReport {
+	/** Each list that stopped at its limit, with how many entries the summaries hold. */
+	limitsReached?: { what: 'decisions' | 'constraints'; limit: number; found: number }[] | undefined;
+	/** The documents the returned decisions and constraints came from, once each. */
+	sourceEntityIds?: string[] | undefined;
+}
+
 export interface AssembleLiveProjectContextOpts {
+	/** Filled with what the assembler left out. A caller that states its completeness passes one. */
+	readonly report?: LiveProjectContextReport | undefined;
 	/** Max decisions to include. Default 100. */
 	readonly maxDecisions?: number;
 	/** Max constraints to include. Default 100. */
@@ -189,6 +203,22 @@ export async function assembleLiveProjectContext(
 			});
 		}
 		if (constraints.length >= maxConstraints) break;
+	}
+
+	if (opts.report !== undefined) {
+		// How many the summaries hold, counted past the limits.
+		let foundDecisions = 0;
+		let foundConstraints = 0;
+		for (const { summary } of pairs) {
+			if (summary.errorCode !== undefined) continue;
+			foundDecisions   += summary.keyDecisions.length;
+			foundConstraints += summary.keyConstraints.length;
+		}
+		const limitsReached: NonNullable<LiveProjectContextReport['limitsReached']> = [];
+		if (foundDecisions > decisions.length)     limitsReached.push({ what: 'decisions',   limit: maxDecisions,   found: foundDecisions });
+		if (foundConstraints > constraints.length) limitsReached.push({ what: 'constraints', limit: maxConstraints, found: foundConstraints });
+		opts.report.limitsReached = limitsReached;
+		opts.report.sourceEntityIds = [...new Set([...decisions, ...constraints].map(x => x.sourceEntityId))];
 	}
 
 	// Top subjects: tally, sort by count desc.

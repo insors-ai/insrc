@@ -43,9 +43,12 @@ import type {
 import {
 	readScopeRef,
 	resolveRepoPath,
+	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 	type WalkedFile,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.discovery.families';
 const log = getLogger('analyze:runtimes:infra:discovery-families');
@@ -65,7 +68,8 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files, truncated } = await walkFiles(repoPath);
+		const { files, truncated, unreadable } = await walkFiles(repoPath);
+		const skipped: SkippedItem[] = [...unreadable];
 		if (truncated) {
 			log.warn(
 				{ runId: args.runId, taskId: args.task.taskId, repoPath },
@@ -81,11 +85,13 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 		};
 
 		for (const f of files) {
-			for (const fam of await classifyFile(f)) {
+			for (const fam of await classifyFile(f, skipped)) {
 				push(fam, f.relPath);
 			}
 		}
 
+		let mostFilesInAFamily = 0;
+		for (const paths of buckets.values()) mostFilesInAFamily = Math.max(mostFilesInAFamily, paths.length);
 		const families: FamilyRecord[] = Array.from(buckets.entries())
 			.map(([name, paths]): FamilyRecord => ({
 				name,
@@ -108,6 +114,16 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['families', families]]),
+			completeness: fileWalkCompleteness(families.length, truncated, {
+				skipped,
+				// Each family names a sample of its files; fileCount holds the full number.
+				limited: mostFilesInAFamily > SAMPLE_CAP_PER_FAMILY
+					? [{
+						what: 'sample files per family', limit: SAMPLE_CAP_PER_FAMILY, scope: 'per-group',
+						reason: `a family has ${mostFilesInAFamily} files and ${SAMPLE_CAP_PER_FAMILY} are named for each; fileCount holds the full number`,
+					}]
+					: [],
+			}),
 		};
 	},
 };
@@ -135,7 +151,7 @@ const PEEK_BYTES = 4096;
 const APIVERSION_RE = /^\s*apiVersion\s*:/m;
 const KIND_RE       = /^\s*kind\s*:/m;
 
-async function classifyFile(f: WalkedFile): Promise<readonly string[]> {
+async function classifyFile(f: WalkedFile, skipped: SkippedItem[] = []): Promise<readonly string[]> {
 	const out: string[] = [];
 	const rel = f.relPath;
 	const base = baseName(rel);
@@ -164,7 +180,9 @@ async function classifyFile(f: WalkedFile): Promise<readonly string[]> {
 	// chart metadata isn't a k8s resource).
 	if (YAML_EXT_RE.test(rel) && !HELM_CHART_RE.test(rel)) {
 		const isK8s = await peekIsKubernetes(f.absPath);
-		if (isK8s) out.push('kubernetes');
+		if (isK8s === true) out.push('kubernetes');
+		// Expected: a YAML file that cannot be read. Whether it is a manifest is not known.
+		else if (isK8s !== false) skipped.push(unreadableFile(f.relPath, isK8s));
 	}
 
 	return out;
@@ -175,13 +193,14 @@ function baseName(relPath: string): string {
 	return idx < 0 ? relPath : relPath.slice(idx + 1);
 }
 
-async function peekIsKubernetes(absPath: string): Promise<boolean> {
+/** True or false when the file was read; the error when it could not be. */
+async function peekIsKubernetes(absPath: string): Promise<boolean | Error> {
 	try {
 		const handle = await readFile(absPath, { encoding: 'utf8' });
 		const peek = handle.slice(0, PEEK_BYTES);
 		return APIVERSION_RE.test(peek) && KIND_RE.test(peek);
-	} catch {
-		return false;
+	} catch (err) {
+		return err instanceof Error ? err : new Error(String(err));
 	}
 }
 

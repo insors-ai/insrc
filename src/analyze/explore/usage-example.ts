@@ -27,6 +27,7 @@ import type {
 	UsageExampleHit,
 	UsageExampleOutput,
 } from './types.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:usage-example');
 
@@ -136,9 +137,10 @@ export async function runUsageExample(
 		);
 		return {
 			type:         'usage.example',
+			// Nothing in the graph carries this name or id: an empty result, and a complete one.
+			completeness: graphCompleteness({ returned: 0 }),
 			subject:      params.symbolName ?? params.entityId ?? '',
 			callers:      [],
-			totalCallers: 0,
 		};
 	}
 
@@ -178,9 +180,20 @@ export async function runUsageExample(
 
 	return {
 		type:            'usage.example',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found:    callers.length,
+			limited:  callers.length > topK ? [reachedLimit('callers', topK, 'overall', callers.length)] : [],
+			// Several entities carry the name and the callers of only one were read.
+			skipped:  ambiguousCandidates > 1
+				? [{
+					what:   `${ambiguousCandidates - 1} other ${ambiguousCandidates - 1 === 1 ? 'entity' : 'entities'} named ${params.symbolName ?? target.name}`,
+					reason: `the name is ambiguous and only the callers of ${target.file}:${target.startLine} were read`,
+				}]
+				: [],
+		}),
 		subject:         params.symbolName ?? target.name,
 		targetEntityId:  target.id,
 		callers:         hits,
-		totalCallers:    callers.length,
 	};
 }

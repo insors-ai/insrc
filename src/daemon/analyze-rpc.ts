@@ -65,7 +65,7 @@ import {
 } from '../analyze/classifier/driver.js';
 import type { ClassifyInput, ClassifyOpts } from '../analyze/classifier/types.js';
 import {
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
@@ -107,6 +107,7 @@ import type {
 	ClassifiedIntent,
 	PlannedTask,
 } from '../shared/analyze-types.js';
+import type { AnswerReport } from '../analyze/completeness.js';
 
 const log = getLogger('analyze-rpc');
 
@@ -209,6 +210,8 @@ export interface RunStartRpcOk {
 	readonly tasksCompleted: number;
 	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string }>;
 	readonly durationMs: number;
+	/** The run's answer report. Absent only for a run resumed from a record stored before the report existed. */
+	readonly report?: AnswerReport | undefined;
 }
 
 export interface RunStartRpcErr {
@@ -712,6 +715,8 @@ function shapeTerminalFrame(result: RunAnalyzeResult): RunStartRpcResponse {
 			tasksCompleted: result.tasksCompleted,
 			tasksFailed: result.tasksFailed,
 			durationMs: result.durationMs,
+			// Absent only for a run resumed from a record stored before the report existed.
+			...(result.report !== undefined ? { report: result.report } : {}),
 		};
 	}
 	const payload: AnalyzeRpcErrorPayload = {
@@ -905,13 +910,17 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 		return { code: 'shaper-llm-unavailable', message: err.message };
 	}
 	if (err instanceof ShaperToolLoopExhausted) {
-		return { code: 'shaper-tool-loop-exhausted', message: err.message };
+		// What the tools returned before the limit is not lost with the failure.
+		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
 	}
 	if (err instanceof ShaperSchemaUnrecoverable) {
 		return { code: 'shaper-schema-unrecoverable', message: err.message };
 	}
 	if (err instanceof ShaperPromptMissingError) {
-		return { code: 'shaper-prompt-missing', message: err.message };
+		// The answer prompt is loaded after the lookups ran: what they found goes with the failure.
+		return err.found !== undefined
+			? { code: 'shaper-prompt-missing', message: err.message, data: { results: err.found.results, report: err.found.report } }
+			: { code: 'shaper-prompt-missing', message: err.message };
 	}
 	if (err instanceof ShaperInvalidInputError) {
 		return { code: 'invalid-input', message: err.message };
@@ -925,10 +934,14 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 	if (err instanceof ScopeKindTargetMismatchError) {
 		return { code: 'scope-ref-kind-target-mismatch', message: err.message };
 	}
-	// An invalid answer keeps the existing schema code until the
-	// answer-step failure (with the lookup results) replaces it.
-	if (err instanceof ShaperAnswerInvalidError) {
-		return { code: 'shaper-schema-unrecoverable', message: err.message };
+	// The lookups ran and the answer could not be written: the failure
+	// carries what they found, and the report says the answer step failed.
+	if (err instanceof ShaperAnswerStepFailedError) {
+		return {
+			code: 'answer-step-failed',
+			message: err.message,
+			data: { reason: err.reason, results: err.found.results, report: err.found.report },
+		};
 	}
 	const message = err instanceof Error ? err.message : String(err);
 	return { code: 'internal-error', message };
@@ -947,6 +960,15 @@ export const CAUSE_CODES_IN_BOTH_LISTS = [
 
 /** Test hook: the daemon's shaper-error mapping. */
 export const _classifyShaperErrorForTest = classifyShaperError;
+
+/** Test hook: the daemon's planner-error mapping, used by the plan-tree entry. */
+export const _classifyPlannerErrorForTest = classifyPlannerError;
+
+/** Test hook: the run's result as the daemon's terminal response. */
+export const _shapeTerminalFrameForTest = shapeTerminalFrame;
+
+/** Test hook: the wrapper that turns a context handler's error into its response. */
+export const _invokeForTest = invoke;
 
 function invalidParams(err: unknown): AnalyzeRpcErr {
 	const message = err instanceof Error ? err.message : String(err);

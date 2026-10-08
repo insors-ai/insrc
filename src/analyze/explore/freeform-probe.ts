@@ -35,6 +35,8 @@ import type {
 	ExplorationRunnerContext,
 	FreeformProbeOutput,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import { LookupFailedError } from './lookup-failed.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -124,7 +126,6 @@ export async function runFreeformProbe(
 
 	let rawBundle: Awaited<ReturnType<typeof runShaperToolLoop>>['rawBundle'];
 	let toolCallCount = 0;
-	let exhaustedNote = '';
 	try {
 		const result = await loop({
 			runId:          ctx.runId,
@@ -138,22 +139,19 @@ export async function runFreeformProbe(
 		toolCallCount = result.toolCallCount;
 	} catch (err) {
 		if (err instanceof ShaperToolLoopExhausted) {
-			// Exhausted -> emit an honest empty bundle + note. The
-			// synthesizer will surface the note in Diagnostics.
+			// The search did not finish. That is a lookup that could not run, not
+			// one that found nothing: it fails, and what its tool calls had
+			// returned goes with the failure.
 			log.warn(
-				{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId },
+				{ runId: ctx.runId, purpose: params.purpose, shaperId: params.shaperId, toolResults: err.toolResults.length },
 				'freeform.probe: tool-loop exhausted',
 			);
-			return {
-				type:      'freeform.probe',
-				purpose:   params.purpose,
-				shaperId:  params.shaperId,
-				rawBundle: emptyRawBundle(),
-				toolCallCount: 0,
-				exhaustedNote:
-					`Tool loop exhausted its maxTurns cap without settling on a bundle; ` +
-					`the reader should refine the intent or request a specific recipe.`,
-			};
+			throw new LookupFailedError(
+				`freeform.probe: the search did not finish: ${err.message}. ` +
+				'Refine the request or ask for a specific lookup.',
+				err.toolResults,
+				{ cause: err },
+			);
 		}
 		// Anything else (LLM unavailable, schema unrecoverable, ...) --
 		// bubble so the executor catches + emits a `failed` output.
@@ -172,22 +170,15 @@ export async function runFreeformProbe(
 
 	return {
 		type:      'freeform.probe',
+		// The answer rests on a search a model chose, call by call. Nothing shows
+		// that the search covered everything relevant, so it is never complete.
+		completeness: buildCompleteness({
+			returned: 1, basis: 'model-directed', notEstablished: true,
+			basisNote: `a model chose what to search, in ${toolCallCount} tool call${toolCallCount === 1 ? '' : 's'}; what it did not look at is not known`,
+		}),
 		purpose:   params.purpose,
 		shaperId:  params.shaperId,
 		rawBundle,
 		toolCallCount,
-		exhaustedNote,
-	};
-}
-
-function emptyRawBundle(): FreeformProbeOutput['rawBundle'] {
-	return {
-		system:    '',
-		focus:     '',
-		summary:   '',
-		structure: '',
-		surface:   '',
-		artefacts: '',
-		upstream:  '',
 	};
 }

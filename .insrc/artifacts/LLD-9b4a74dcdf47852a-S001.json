@@ -38,9 +38,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The Story is a standalone feature with no parent definition or HLD and no upstream acceptance criteria, so the stakeholder request (c6) is the only intent to cover.",
-          "evidence": "The only artifact for this work item in .insrc/artifacts is LLD-9b4a74dcdf47852a-S001.json (no DEF, ISSUE, SPEC or HLD for 9b4a74dc); its meta carries \"standalone\": true and \"sizeClass\": \"feature\". The design covers both halves of the quoted request: a per-Story record of tests with their results (3.4) and the gate using it (2.1-2.4). No non-goal is stated upstream, so none can be built. The design itself raises the missing acceptance criteria as an open question. [files: .insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json]",
-          "action": "None. Answer the open question on whether the request is the acceptance criterion before plan.",
+          "premise": "The Story has no upstream definition with acceptance criteria; the only intent is the stakeholder request (a new artifact listing tests with their execution status, used by the gate), and the design covers it.",
+          "evidence": ".insrc/artifacts holds only LLD-9b4a74dcdf47852a-S001.json for this hash (no DEF/ISSUE/SPEC). Its meta is standalone:true, sizeClass:'feature', and the triage rationale names the same scope: 'where the record lives..., how the builder states the mapping at the validate turn, how the gate tells one test title's result from a file's, and how the three check plans ... use it'. Sections 2.1-2.4 and 3.4 design each of those. The request's original wording is not stored anywhere I could read, so the comparison is against the triage rationale. [files: .insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json]",
+          "action": "None. Settle open question 3 (is the request the acceptance criterion) before plan, since ac1 is the only criterion the plan will inherit.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -50,8 +50,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today the gate finds a Task's tests only through a leading '<file>.test.ts:' prefix, runs all files in one command, and reads only the exit code; an unresolved name fails the check; a small standalone design with no prefixed subject gets 'the LLD names no test file'.",
-          "evidence": "validation-checks.ts: LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/; runValidationChecks calls runOne(repoPath, [...plan.testCommand, ...plan.testFiles], plan.testTimeoutMs, deps) once and returns ok: r.exitCode === 0; unresolved names force ok: false; smallStandaloneCheckPlan returns noTests { ok: false, note: 'the LLD names no test file' } when no subject matches the prefix; trivialCheckPlan returns noTests ok: true. [files: src/mcp/build-step/validation-checks.ts]",
+          "premise": "Today the gate finds a Task's tests only through a leading '<file>.test.ts:' prefix, runs all files in one command, reads only the exit code, and fails a name that resolves to nothing.",
+          "evidence": "validation-checks.ts: LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/; runValidationChecks calls runOne(repoPath, [...plan.testCommand, ...plan.testFiles], ...) once and sets ok: r.exitCode === 0; unresolved names force ok:false with 'named tests matched no test file'. planTaskCheckPlan sets noTests {ok:false} when the Task names no tests; smallStandaloneCheckPlan returns 'the LLD names no test file' when no subject has a prefix; trivialCheckPlan is ok:true with no touched test file. [files: src/mcp/build-step/validation-checks.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -62,8 +62,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The two stamping functions stamp any json that has a meta; approveOne runs the code-review gate before approveArtifactByJsonPath for any json whose meta has an Epic and a Story; the batch matches only DEF, HLD, LLD, PLAN and BUILD; the TUI service calls the two functions directly and its caller shows the error message.",
-          "evidence": "gates.ts approveArtifactByJsonPath and rejectArtifactByJsonPath only check `typeof artifact.meta !== 'object'` before writing. approveOne: `if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) { const gate = enforceCodeReviewGate(...)` runs before the approve call, and only ReviewBlockedError is routed to skipped[] (any other error is rethrown, so the design's separate kind check in approveOne is needed). pendingArtifactJsonPaths: `^(DEF|HLD|LLD|PLAN|BUILD)-${epicHash}(-.*)?\\.json$`. cli/services/workflow.ts approve() and reject() call the two functions with no catch; WorkflowsPane.tsx catches and toasts err.message. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/cli/panes/WorkflowsPane.tsx]",
+          "premise": "When the judge session fails, the validate turn returns an error before the BUILD record is written, so a test record written after the checks and before the judge survives a judge failure while the BUILD record keeps what it had.",
+          "evidence": "validate.ts runValidateSession: results are computed at line 237 before runWithRoutingContext; the catch around provider.runReviewSession returns err('verdict-session-timeout' | 'unparseable-verdict' | 'verdict-session-failed') and judgeShapeError returns 'unparseable-verdict', all before the persistBuildRecord block at lines 285-381. [files: src/mcp/build-step/phases/validate.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -74,23 +74,11 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "The docs-tree migration only moves documents from the old flat layout, where no test record ever existed, so leaving TESTS out of its kind pattern and story-scoped list is safe.",
-          "evidence": "migrate-docs-tree.ts also converges documents that are ALREADY nested: indexNestedMd walks every work-item folder (\"a misplaced nested artifact is precisely what a forked folder contains ... emit the convergence moves\"), and the plan moves BUILD.md, LLD.md etc. between nested folders. In that pass a TESTS.md is moved by nothing: parseArtifactId returns null for a TESTS id (`/^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE)-.../`, \"if (parsed === null) continue\"), the companion move skips it (`if (name.endsWith('.md')) continue;   // md is already handled`), and the orphaned-companion pass skips its folder (`if (files.some(f => f.endsWith('.md'))) continue;       // not orphaned`). So when a Story's folder is converged, BUILD.md moves and TESTS.md stays behind in the old folder, which is then kept alive; the record is no longer beside BUILD.md. [files: src/workflow/migrate-docs-tree.ts]",
-          "action": "Either add TESTS to the migration's kind pattern and story-scoped list so a nested TESTS.md converges with its Story, or state the stranded-file case and why it is accepted; add a test of a converged Story folder that holds a TESTS.md.",
+          "premise": "The BUILD record has two writers, the validate turn and ensureBuildRecordOnCompletion, and both stamp the current time on a first write.",
+          "evidence": "There is a third writer. implement.ts:159, on the trivial standalone route, calls persistStandaloneBuildRecord(repoPath, { meta: { workflow:'build', standalone:true, sizeClass, epicHash, storyId, createdAt: new Date().toISOString(), ... }, body: { focus, producesLld:false } }) at the implement turn, before any validate turn. It funnels through persistBuildRecord and mergeWithPrior, so the proposed seeding still reaches it. But on the normal trivial route a BUILD record already exists when the first validate turn runs, so the section 4 edge case (trivial build, judge fails on first turn, no BUILD record yet) only arises when validate is called without a prior implement turn. [files: src/mcp/build-step/phases/implement.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Add the implement turn's trivial write to the writer inventory in 3.4. State that on the trivial route the BUILD record normally pre-exists and anchors the test record. Make the build-step.test.ts day-later test call validate with no prior implement turn, otherwise its mutation (anchor BUILD on its own time) cannot fail.",
           "fixability": "manual",
           "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The change-set derivation returns the working tree's files as soon as any is dirty, and both change-log writers (the validate turn and ensureBuildRecordOnCompletion) list the files to leave out by hand: the build record's json and md and the build-start file.",
-          "evidence": "changed-files.ts changedFiles: `const kept = keep(working); if (kept.length > 0) return kept;` before the committed-range fallback. validate.ts: `exclude: [own.json, own.md, buildStartRelPath(epicHash, storyId)]`. completion-record.ts: `exclude: [own.json, own.md, buildStartRelPath(ref.epicHash, ref.storyId)]`. A dirty TESTS json or TESTS.md left out of either list would be returned as the whole change set. (The code review's own derivation already leaves both out through LEDGER_EXCLUDE_GLOBS: '.insrc/artifacts/*.json', 'docs/epics/**', 'docs/standalone/**'.) [files: src/workflow/runners/build/changed-files.ts, src/mcp/build-step/phases/validate.ts, src/workflow/runners/build/completion-record.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -98,9 +86,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "storyRecordFolderArgs has one caller today (the code-review writer); the BUILD writer does not go through it but through pathsForMerged on the merged record's createdAt; both BUILD writers and buildRecordPathsFor meet at mergeWithPrior, and both stamp the current time on a first write.",
-          "evidence": "The only non-test caller of storyRecordFolderArgs is src/workflow/code-review/subject-paths.ts:32. standalone-record.ts: persistBuildRecord and buildRecordPathsFor both call mergeWithPrior(jsonPath, ...) then pathsForMerged, which calls buildRecordFolderArgs(..., standalone, merged.meta.createdAt); mergeWithPrior returns `rec` unchanged when there is no prior. validate.ts and completion-record.ts both set `createdAt: now`. storyRecordFolderArgs uses `build.createdAt ?? fallback.ownCreatedAt`, so with no BUILD record it falls to the caller's clock as the design says. Note for the build: mergeWithPrior takes (jsonPath, rec) and no repoPath, so the test record must be located from the json path's directory or the signature extended. [files: src/workflow/storage.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/code-review/subject-paths.ts]",
-          "action": "None. State in the plan how mergeWithPrior locates the test record (sibling of jsonPath).",
+          "premise": "storyRecordFolderArgs exists in src/workflow/storage.ts, anchors on the persisted BUILD record's createdAt and standalone flag, and the code-review writer is its only caller; the BUILD writer goes through pathsForMerged instead.",
+          "evidence": "storage.ts:445 reads readArtifactCore(buildArtifactId) and returns buildRecordFolderArgs(..., standalone, build.createdAt ?? fallback.ownCreatedAt). The only non-test reference outside storage.ts is code-review/subject-paths.ts:32. standalone-record.ts pathsForMerged calls buildRecordFolderArgs directly with merged.meta.createdAt. buildRecordFolderArgs uses ownCreatedAt only as the last fallback (after the LLD's epicCreatedAt, upstream.createdAt and head.createdAt), so the own-clock anchor matters only for a Story with no head and no LLD. [files: src/workflow/storage.ts, src/workflow/code-review/subject-paths.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -110,21 +98,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Plan test levels and the standalone design's test-strategy levels are as the design states: 'live' and 'smoke' exist on both routes, and 'contract' may appear on a standalone design.",
-          "evidence": "runners/plan/schemas.ts: `level: { enum: ['unit', 'integration', 'live', 'smoke'] }`, required ['level','name']. runners/design-story/schemas.ts: `level: { enum: ['unit', 'integration', 'live', 'smoke', 'contract'] }`. The resolved Task's tests carry `{ level: string; name: string }` (runners/tracker/schemas.ts:116), so the level is available to planTaskCheckPlan. [files: src/workflow/runners/plan/schemas.ts, src/workflow/runners/design-story/schemas.ts, src/workflow/runners/tracker/schemas.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The captured TAP sample exists and shows what the design says the parser relies on.",
-          "evidence": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample.tap: starts 'TAP version 13'; 'ok 3 - skipped by option # SKIP', 'ok 4 - skipped with reason # SKIP needs env', 'ok 5 - todo one # TODO'; 'ok 6 - has \\# hash and \\\\ backslash and \"double\" and 'single' quotes'; duplicated 'dup title' as ok 7 and not ok 8; four spaces per depth ('    ok 1 - nested pass', '        not ok 1 - deep fail'); a suite printed after its children as 'not ok 9 - outer suite'. sample-source.txt is beside it. [files: docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample.tap]",
-          "action": "None.",
+          "premise": "The TAP capture in the Story's tap-sample folder shows what section 3.3 says: one ok/not ok line per test and suite, four spaces per depth, '# SKIP' with optional reason, '# TODO', '#' as '\\#', backslash as '\\\\', quotes unchanged, parents printed after children.",
+          "evidence": "sample.tap: 'ok 3 - skipped by option # SKIP', 'ok 4 - skipped with reason # SKIP needs env', 'ok 5 - todo one # TODO', 'ok 6 - has \\# hash and \\\\ backslash and \"double\" and 'single' quotes', 'ok 7 - dup title' then 'not ok 8 - dup title', '    ok 1 - nested pass', '        not ok 1 - deep fail', then '    not ok 2 - inner suite' and 'not ok 9 - outer suite' after their children. sample-source.txt declares the matching tests. Note for the parser: YAML diagnostic blocks sit between result lines at the same indent plus two, and free-text 'error:' values could in principle contain a line that looks like a result line. [files: docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample.tap, docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample-source.txt]",
+          "action": "None required. Consider a parser test for a failure message that contains text shaped like 'ok 1 - x'.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -134,8 +110,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The build tool's input shape is declared in src/mcp/server.ts; src/mcp/build-step/handler.ts only dispatches on the phase and declares no shape, so a `tests` field added to the registered shape and to BuildStepInputValidate reaches handleValidate.",
-          "evidence": "server.ts registers 'insrc_build_step' with a zod inputSchema of phase, target, repo, epicHash, standalone, summary and calls handleBuildStep(rawArgs). handler.ts: `const step = input as BuildStepInput; switch (step.phase) { ... case 'validate': return await handleValidate(step);` with no field picking. types.ts BuildStepInputValidate has target, repo, epicHash, standalone, summary and nothing about tests. The validate-phase description in server.ts still reads 'inspect tree + run tests + typecheck' and is the text to update. [files: src/mcp/server.ts, src/mcp/build-step/handler.ts, src/mcp/build-step/types.ts]",
+          "premise": "The validate turn's input shape is declared in the build tool's registered shape in src/mcp/server.ts and in BuildStepInputValidate; neither has a `tests` field today, and the level values the mapping check relies on are the ones the plan and LLD schemas use.",
+          "evidence": "server.ts:563-587 inputSchema has phase, target, repo, epicHash, standalone (a non-strict z.object) and summary only. types.ts BuildStepInputValidate has target, repo, epicHash, standalone, summary. TOOL_SCHEMA_META lists phases ['implement','validate'] and needs no change. Plan schema level enum is ['unit','integration','live','smoke'] (runners/plan/schemas.ts:30); the LLD's is ['unit','integration','live','smoke','contract'] (runners/design-story/schemas.ts:357), matching 3.1. planTaskCheckPlan's and smallStandaloneCheckPlan's only production caller is validate.ts. [files: src/mcp/server.ts, src/mcp/build-step/types.ts, src/workflow/runners/plan/schemas.ts, src/workflow/runners/design-story/schemas.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -146,9 +122,33 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The inventory of readers of the artifacts directory is complete.",
-          "evidence": "A search of src (tests excluded) for readdirSync, crossed with the files that name ARTIFACTS_DIR or '.insrc/artifacts', gives: cli/services/workflow.ts:129, workflow/questions.ts:538, tracker/resolve.ts:138, gates.ts:145 and :786, delivery/load.ts:38, pending.ts:110, path-scheme.ts:207/226/230, locate/ownership.ts:85, migrate-docs-tree.ts, amendments/store.ts:69 and :199, amendments/staleness.ts:72. Every one is in the design's list. The other directory readers (review/probe.ts, cli/services/debug.ts, daemon/backup.ts, the indexer, daemon/index.ts) read other directories. Each listed reader filters by its own prefix or tolerates the record: pending.ts `if (!PENDING_KIND_SET.has(kind)) continue`; ownership.ts `Array.isArray(parsed.citations) ? parsed.citations : []`; questions.ts keeps only the LLD prefix; resolve-comment.ts ARTIFACT_ID_RE is `^(DEF|HLD|LLD)-...` so a TESTS id yields null. [files: src/workflow/pending.ts, src/workflow/locate/ownership.ts, src/workflow/questions.ts, src/workflow/resolve-comment.ts, src/workflow/amendments/store.ts]",
-          "action": "None beyond the migration finding above.",
+          "premise": "approveArtifactByJsonPath and rejectArtifactByJsonPath stamp any json with a meta and are the only stamping functions; approveOne runs the code-review gate before approveArtifactByJsonPath for any meta with epicHash and storyId, so the kind check must come first there.",
+          "evidence": "gates.ts:565-634 and 942-960 check only existsSync and that meta is an object. Callers: gates.ts:837 (approveOne) and cli/services/workflow.ts:158 and 172. approveOne (gates.ts:813-845) reads meta, calls enforceCodeReviewGate and pushes to codeReview[] before the try around approveArtifactByJsonPath, and its catch rethrows anything that is not ReviewBlockedError, so a NotApprovableError raised only inside approveArtifactByJsonPath would surface as a thrown error after a code-review outcome was recorded. pendingArtifactJsonPaths matches only ^(DEF|HLD|LLD|PLAN|BUILD)-. [files: src/workflow/gates.ts, src/cli/services/workflow.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The inventory of readers of the artifacts directory is right about what each does with an unknown prefix: the delivery loader reports it as a failure, the others filter by their own kinds.",
+          "evidence": "delivery/load.ts:148 pushes { reason: 'unknown-kind' } for a json whose prefix is not in KINDS. pending.ts filters by PENDING_KINDS ['SPEC','DEF','HLD','LLD','PLAN','ISSUE','CR']. ownership.ts already tolerates a record with no citations (Array.isArray(parsed.citations) ? ... : []). questions.ts and amendments/staleness.ts keep only the LLD-<hash>- prefix. tracker/resolve.ts and cli/services/workflow.ts match DEF_RE / ISSUE_RE. resolve-comment.ts ARTIFACT_ID_RE is ^(DEF|HLD|LLD)-. path-scheme.ts listArtifactMdPaths collects every .md in a story folder regardless of kind, so a TESTS.md is already walked (the hand-made one in the analyzer epic's S007 folder is today). [files: src/workflow/delivery/load.ts, src/workflow/pending.ts, src/workflow/locate/ownership.ts, src/workflow/questions.ts, src/workflow/amendments/staleness.ts, src/workflow/tracker/resolve.ts, src/workflow/path-scheme.ts, src/workflow/resolve-comment.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both change-log writers list the workflow's own files by hand, and the change-set derivation returns the working tree's files as soon as any non-excluded file is dirty.",
+          "evidence": "validate.ts:368 and completion-record.ts:75 both pass exclude: [own.json, own.md, buildStartRelPath(epicHash, storyId)]. changed-files.ts changedFiles: 'const kept = keep(working); if (kept.length > 0) return kept;' before the committed-range fallback, and exclude is an exact-path filter. A dirty TESTS json or TESTS.md missing from either list would therefore be returned as the whole change set. [files: src/mcp/build-step/phases/validate.ts, src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/changed-files.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -157,12 +157,12 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A BUILD record's new optional body.testRecord is carried forward by the merge with the prior record when a write omits it, and a record without it renders byte for byte as today.",
-          "evidence": "standalone-record.ts mergeWithPrior: `const body = { ...prior.body, ...rec.body, ...(tasks !== undefined ? { tasks } : {}) }`, so a prior body key the new write omits is kept (the completion writer sends only `tasks: []` and a change log). renderBuildRecordMd builds every section as an omit-slot keyed on its own content, so an added slot that is absent adds no line. [files: src/workflow/runners/build/standalone-record.ts]",
-          "action": "None.",
+          "severity": "MED",
+          "premise": "Giving the route's declared standalone flag to both writers puts TESTS.md and BUILD.md in the same folder.",
+          "evidence": "The BUILD writer does not use the raw declaration. validate.ts:330-333: 'const noHead = Object.keys(readEpicDefinitionCore(repoPath, epicHash)).length === 0; const standaloneFlag = inheritedStoryStandalone(repoPath, epicHash, storyId, ident.standalone !== undefined && noHead ? true : undefined);' with the comment 'A head that exists and does not say `standalone` is an answer, not a silence ... a caller's declaration must not relabel it.' storyRecordFolderArgs instead computes inheritedStoryStandalone(..., build.standalone ?? fallback.standalone), which is head.standalone ?? lld.standalone ?? fallback. For a Story whose definition head exists but carries no standalone key and whose caller passes a standalone context, the BUILD record resolves to docs/epics while a test record handed the raw declared flag resolves to docs/standalone. Persisting that flag on the test record and seeding it into a later BUILD record through mergeWithPrior would then relabel the BUILD record too, which is the case the existing guard forbids. [files: src/mcp/build-step/phases/validate.ts, src/workflow/storage.ts]",
+          "action": "State that the flag handed to the test record's writer is the same resolved value the BUILD writer computes (the declaration counted only when there is no definition head), not the raw declaration, and that only that resolved value is persisted and seeded. Add a test: a standalone validate call on a Story with a silent definition head files TESTS.md beside BUILD.md under docs/epics.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "data-compatibility.2",
@@ -170,21 +170,21 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The delivery loader today reports a json whose prefix is not one of its kinds as an 'unknown-kind' load failure, so a TESTS json would add a failure unless the loader skips it first.",
-          "evidence": "delivery/load.ts: KINDS = ['SPEC','DEF','HLD','LLD','PLAN','BUILD','CR','ISSUE','EXT','AMD']; loadArtifactRecordSet: `if (kindOfFile(fileName) === null) { failures.push({ fileName, reason: 'unknown-kind', ... }); continue; }`. The same answer is given by the exported liftStoreFile, which the design does not mention; it is only reached after that branch in the loader, so skipping in the loader is enough. [files: src/workflow/delivery/load.ts]",
-          "action": "None. Older stores hold no TESTS json and BUILD records on disk are not rewritten, as the design states.",
+          "premise": "mergeWithPrior is where every BUILD writer and buildRecordPathsFor meet, so seeding createdAt there when no prior BUILD record exists makes the BUILD record land in the test record's folder.",
+          "evidence": "standalone-record.ts: buildRecordPathsFor returns pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec)) and persistBuildRecord writes mergeWithPrior(jsonPath, withCommit) then pathsForMerged(merged). mergeWithPrior returns rec unchanged when readPriorRecord is null, and otherwise forces createdAt: prior.meta.createdAt. pathsForMerged passes merged.meta.createdAt as ownCreatedAt. mergeWithPrior takes only (jsonPath, rec), but the test record's json sits in the same directory as jsonPath, so it is reachable without a signature change. Records with an existing BUILD json keep their anchor. [files: src/workflow/runners/build/standalone-record.ts]",
+          "action": "None. Note in the design that mergeWithPrior derives the test record's json path from the BUILD json's directory, since it has no repoPath.",
           "fixability": "manual",
           "outcome": "holds"
         },
         {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
+          "claimId": "data-compatibility.3",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The live step's use of another Story's folder (Story s7 of the analyzer epic) rests on real files: a hand-made TESTS.md and a tests.map.json whose `t1` array has entries of { planTest, cases, mutations } over three test files, and the plan's test names are in prose.",
-          "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007 holds LLD.md, PLAN.md, BUILD.md, tests.map.json and TESTS.md. tests.map.json: top key \"t1\", entries with \"planTest\", \"cases\" ({file,title}) and \"mutations\"; the files are src/analyze/context/__tests__/prepare-scope.test.ts, src/mcp/__tests__/analyze-step-scope.test.ts and src/analyze/context/__tests__/invariants.test.ts (three). Both planTest strings occur in .insrc/artifacts/PLAN-b9d5c5c40df5a574-s7.json (lines 56 and 60) and neither begins with a file name. No source file reads tests.map.json or TESTS.md, so replacing them touches no code of that epic. The Story has no HLD or sibling Stories, so no shared contract is redesigned. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json, .insrc/artifacts/PLAN-b9d5c5c40df5a574-s7.json]",
-          "action": "None. The design changes documents in another Epic's Story folder only at the live step; say so in the plan's Task so the commit is scoped.",
+          "premise": "The docs-tree migration keeps its own kind pattern and story-scoped list, and converges nested documents, so TESTS must join both for a nested TESTS.md to move with its Story.",
+          "evidence": "migrate-docs-tree.ts:109 parseArtifactId: /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE)-([0-9a-f]{16})(?:-(.+))?$/ and line 115 'const storyScoped = kind === 'LLD' || kind === 'PLAN' || kind === 'BUILD' || kind === 'CR' || kind === 'EXT';'. planMigration skips any json whose id does not parse (line 324), and step 2b moves only non-.md siblings as companions ('if (name.endsWith('.md')) continue;'), so an unknown TESTS.md is left in the old folder. A TESTS.md that carries the insrc:artifact marker is found through indexNestedMd's byId map, and its destination comes from resolveArtifactMdPath, which needs TESTS in path-scheme's STORY_SCOPED set as 3.5 states. [files: src/workflow/migrate-docs-tree.ts, src/workflow/path-scheme.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -194,20 +194,8 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "When the judge session fails, the validate turn returns 'verdict-session-timeout', 'unparseable-verdict' or 'verdict-session-failed' before the build record's write, so a test record must be written before the judge to survive, and the build record is not written on that turn.",
-          "evidence": "validate.ts runValidateSession: the checks run first (`const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, checks)`); the three err(...) returns and the shape-error return all sit before the `persistBuildRecord` block, which is reached only with a usable verdict. The persist is wrapped in try/catch that logs 'BUILD ledger persist failed; returning the verdict unchanged', which is the fail-open pattern the design reuses for the test record's write. [files: src/mcp/build-step/phases/validate.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A spawn failure and a timeout are reported by the process runner as results and not thrown, and the runner keeps a run's whole output, so 'could not start', 'timed out' and an uncut output file are all detectable per file.",
-          "evidence": "shared/process-group.ts runInProcessGroup 'Never rejects': `child.on('error', err => finish(-1, err.message))` sets spawnError; the timer sets timedOut and kills the group; stdout and stderr are accumulated whole (`stdout += c.toString()`) with no cap. The 4,000-character cut is applied only later, by tail() in validation-checks.ts runOne, so the runner change can write the full strings to the output file. [files: src/shared/process-group.ts, src/mcp/build-step/validation-checks.ts]",
+          "premise": "The process runner never rejects, reports spawn errors and timeouts as results, and returns the whole standard output and standard error, so 'never throws' and 'nothing is cut' are achievable on the existing runner.",
+          "evidence": "process-group.ts runInProcessGroup: 'Never rejects'; it accumulates stdout and stderr as full strings, resolves with timedOut true after SIGKILL of the group, and with spawnError on the 'error' event. Truncation happens only in validation-checks.ts tail() (OUTPUT_TAIL_CHARS = 4_000) when building outputTail. timeoutMs is per call, so a shared limit across files has to be computed by the caller as remaining time, as section 2.4 describes. [files: src/shared/process-group.ts, src/mcp/build-step/validation-checks.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -218,21 +206,33 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The test files the strategy names exist where today's prefix rule can resolve them (or are new), `render.test.ts` is the name of two tracked files, and ac1 maps to tests.",
-          "evidence": "Existing: src/mcp/build-step/__tests__/build-step.test.ts, validation-checks.test.ts and render.test.ts; src/workflow/runners/build/__tests__/build-record.test.ts and completion-record.test.ts; and src/workflow/artifacts/companion/__tests__/render.test.ts (the second render.test.ts). tap-results.test.ts, test-mapping.test.ts, test-record.test.ts and artifact-kinds.test.ts do not exist yet and are new. Today's resolver returns every tracked file of that base name under a __tests__ directory, so both render.test.ts files run. ac1 maps to two prefixed subjects and the live subject. Gaps against the error paths: no subject covers a file that could not be started (spawn failure), and none covers the migration case found above. [files: src/mcp/build-step/__tests__/validation-checks.test.ts, src/workflow/artifacts/companion/__tests__/render.test.ts]",
-          "action": "Add a validation-checks.test.ts subject for a spawn failure, and a test for a converged Story folder holding TESTS.md once the migration finding is decided.",
+          "premise": "Every unit and integration subject begins with a test file name that today's gate can resolve, the seams the integration tests need exist, and render.test.ts is the name of two tracked files.",
+          "evidence": "Existing files: src/mcp/build-step/__tests__/{build-step,render,validation-checks}.test.ts, src/workflow/runners/build/__tests__/{build-record,completion-record}.test.ts, src/workflow/__tests__/migrate-docs-tree.test.ts, and src/workflow/artifacts/companion/__tests__/render.test.ts (the second render.test.ts). tap-results, test-mapping, test-record and artifact-kinds test files do not exist yet and are new; resolveTaskTestFiles finds them once they are tracked under a __tests__ directory. validate.ts exports _setBuildValidateProviderForTests and _setBuildValidateCheckRunnerForTests; runValidationChecks and ensureBuildRecordOnCompletion take injectable deps. ac1 maps to two automated subjects and the live one. [files: src/mcp/build-step/phases/validate.ts, src/mcp/build-step/validation-checks.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The live subject's input exists with the stated shape: tests.map.json in the analyzer epic's S007 folder has an array under `t1` whose entries carry `planTest`, `cases` of { file, title } and `mutations`.",
+          "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json: { \"t1\": [ { \"planTest\": \"prepareScope and stepScope accept...\", \"cases\": [ {\"file\": \"src/analyze/context/__tests__/prepare-scope.test.ts\", \"title\": ...}, ... ], \"mutations\": [...] }, ... ] }. The cases name three files (prepare-scope.test.ts, analyze-step-scope.test.ts, invariants.test.ts), matching 'the gate runs the three test files'. The same folder holds a hand-made TESTS.md. I did not check that each `planTest` string equals a test name in that Story's PLAN exactly, which the mapping check requires. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json]",
+          "action": "Before the live Task, confirm each planTest string matches the plan's test name character for character, since an unknown name is refused with 'invalid-test-mapping'.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 1,
-        "low": 15,
+        "med": 2,
+        "low": 14,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-08T16:22:10.912Z",
+      "reviewedAt": "2026-10-08T16:26:34.922Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -476,14 +476,15 @@
       {
         "entity": "TestRecord",
         "change": "new",
-        "details": "A new record per Story, in a new module beside the build record's (src/workflow/runners/build). Its json is `TESTS-<epicHash>-<storyId>.json` in the artifacts directory and its document is `TESTS.md` in the Story's folder, resolved by the same folder derivation the BUILD record uses (storyRecordFolderArgs in src/workflow/storage.ts). That derivation anchors on the persisted BUILD record's createdAt and standalone flag, and the test record is written before the judge, when on a Story's first turn no BUILD record exists yet. So the rule for that case is stated: the validate turn takes one time and the route's declared standalone flag at its start and gives the same two to both writers; the test record persists them as its own createdAt and standalone flag on its first write and keeps them afterwards; and the derivation, when there is no BUILD record, takes a persisted test record's createdAt and flag as the record anchor before it falls back to the caller's own clock; that serves the test record's own path and the code-review writer, which is the derivation's one caller today. The BUILD record's writer does not go through that derivation: its paths come from pathsForMerged in src/workflow/runners/build/standalone-record.ts, on the merged record's own createdAt, and both of its writers (the validate turn and ensureBuildRecordOnCompletion) stamp the current time on a first write. So the seeding is put where both writers and buildRecordPathsFor already meet, the merge with the prior record (mergeWithPrior): when there is no prior BUILD record and a test record exists for the Story, the new BUILD record takes its createdAt from the test record, and its standalone flag too when the test record's is true and the write does not state one. A BUILD record first written on a later day after a judge failure, or first written by the completion path, therefore lands in the folder the test record is in. When a BUILD record already exists (every Story built before this change), it stays the anchor and the test record follows it. Shape: meta { workflow: 'tests'; epicHash; storyId; createdAt; updatedAt; standalone? } and body { tasks: { taskId; commit; ranAt; testsPassed; tests: NamedTestResult[]; files: { file; exitCode; timedOut; durationMs; otherFailures: string[] }[] }[] }. `commit` is HEAD when the gate ran and `ranAt` the time. `testsPassed` is the result of the gate's tests check for that run; it is not the verdict, which also needs the judge and the typecheck and is recorded on the build record. The record is written straight after the checks and before the judge session, because the results are facts of the run whatever the judge then says. A Task's entry is replaced when that Task is validated again; other entries are kept. The mapping of a Task is read back from its entry when a later turn supplies none. The document lists, per Task and per named test, a table of result, test title and file, then the tests reported by the builder with their evidence, then any failures in the files outside the named cases, with totals at the top. The record is not an approvable artifact: it has no approval stamps, the approval batch does not list it, and approval or rejection of its path is refused on every route: in skipped[] with a reason that begins 'not-approvable:' from the approval tool, and as a NotApprovableError from the two stamping functions. It carries the `insrc:artifact` id marker like other rendered documents.",
+        "details": "A new record per Story, in a new module beside the build record's (src/workflow/runners/build). Its json is `TESTS-<epicHash>-<storyId>.json` in the artifacts directory and its document is `TESTS.md` in the Story's folder, resolved by the same folder derivation the BUILD record uses (storyRecordFolderArgs in src/workflow/storage.ts). That derivation anchors on the persisted BUILD record's createdAt and standalone flag, and the test record is written before the judge, when on a Story's first turn no BUILD record exists yet. So the rule for that case is stated: the validate turn takes one time at its start and resolves the standalone flag once, exactly as its BUILD write resolves it today (the Story's inherited flag, with the caller's declaration counted only when the work item has no definition head at all, since a head that exists and does not say standalone is an answer and a declaration must not relabel it), and gives that time and that resolved flag to both writers, never the raw declaration; the test record persists them as its own createdAt and standalone flag on its first write and keeps them afterwards; and the derivation, when there is no BUILD record, takes a persisted test record's createdAt and flag as the record anchor before it falls back to the caller's own clock; that serves the test record's own path and the code-review writer, which is the derivation's one caller today. The BUILD record's writer does not go through that derivation: its paths come from pathsForMerged in src/workflow/runners/build/standalone-record.ts, on the merged record's own createdAt, and each of its three writers stamps the current time on a first write: the validate turn, ensureBuildRecordOnCompletion, and the implement turn of the trivial standalone route (src/mcp/build-step/phases/implement.ts), which writes the BUILD record before any validate turn. All three go through persistBuildRecord and its merge. On the trivial route the BUILD record therefore normally exists before the first test record and is the anchor; the case with no BUILD record arises there only when validate is called with no implement turn before it, and on the other routes on every first validate turn. So the seeding is put where both writers and buildRecordPathsFor already meet, the merge with the prior record (mergeWithPrior): when there is no prior BUILD record and a test record exists for the Story, the new BUILD record takes its createdAt from the test record, and its standalone flag too when the test record's is true and the write does not state one. A BUILD record first written on a later day after a judge failure, or first written by the completion path, therefore lands in the folder the test record is in. When a BUILD record already exists (every Story built before this change), it stays the anchor and the test record follows it. Shape: meta { workflow: 'tests'; epicHash; storyId; createdAt; updatedAt; standalone? } and body { tasks: { taskId; commit; ranAt; testsPassed; tests: NamedTestResult[]; files: { file; exitCode; timedOut; durationMs; otherFailures: string[] }[] }[] }. `commit` is HEAD when the gate ran and `ranAt` the time. `testsPassed` is the result of the gate's tests check for that run; it is not the verdict, which also needs the judge and the typecheck and is recorded on the build record. The record is written straight after the checks and before the judge session, because the results are facts of the run whatever the judge then says. A Task's entry is replaced when that Task is validated again; other entries are kept. The mapping of a Task is read back from its entry when a later turn supplies none. The document lists, per Task and per named test, a table of result, test title and file, then the tests reported by the builder with their evidence, then any failures in the files outside the named cases, with totals at the top. The record is not an approvable artifact: it has no approval stamps, the approval batch does not list it, and approval or rejection of its path is refused on every route: in skipped[] with a reason that begins 'not-approvable:' from the approval tool, and as a NotApprovableError from the two stamping functions. It carries the `insrc:artifact` id marker like other rendered documents.",
         "callSites": [
           "src/mcp/build-step/phases/validate.ts",
           "src/workflow/runners/build/standalone-record.ts",
           "src/workflow/runners/build/completion-record.ts",
           "src/workflow/code-review/subject-paths.ts",
           "src/workflow/storage.ts",
-          "src/workflow/path-scheme.ts"
+          "src/workflow/path-scheme.ts",
+          "src/mcp/build-step/phases/implement.ts"
         ]
       },
       {
@@ -659,8 +660,12 @@
           "expected": "The record is created with that Task's entry; the build record written on the same turn links to it."
         },
         {
-          "input": "A trivial standalone build (no definition and no design to anchor its folder) whose judge session fails on the first validate turn, validated again on a later day",
+          "input": "A trivial standalone build (no definition and no design to anchor its folder) validated with no implement turn before it, whose judge session fails on the first validate turn, validated again on a later day",
           "expected": "The first turn writes the test record with the turn's time as its createdAt. The second turn's BUILD record is seeded with that time as its createdAt by the merge, so BUILD.md is written in the folder TESTS.md is already in, and the test record's createdAt does not change. The same holds when the first BUILD record is written by the completion path."
+        },
+        {
+          "input": "A validate turn that passes a standalone context for a Story whose definition head exists and does not say standalone",
+          "expected": "The resolved flag is not standalone, as for the BUILD record today. TESTS.md is filed beside BUILD.md under docs/epics, the test record persists no standalone flag, and nothing is relabelled when a BUILD record is later seeded from it."
         }
       ],
       "invariantsToPreserve": [
@@ -754,7 +759,8 @@
             "build-step.test.ts: the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
             "completion-record.test.ts: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)",
             "build-step.test.ts: when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
-            "build-step.test.ts: a trivial standalone build whose judge fails on the first turn and passes on a turn dated a day later has its BUILD.md and TESTS.md in one folder, and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)"
+            "build-step.test.ts: a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+            "build-step.test.ts: a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)"
           ]
         },
         {

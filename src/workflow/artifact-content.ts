@@ -92,6 +92,47 @@ interface ArtifactShape {
 	readonly body?: Record<string, unknown>;
 }
 
+/** Why a markdown path was refused, in the order the checks run. */
+export type DocsMarkdownRefusal = 'outside-docs' | 'not-md' | 'unreadable' | 'symlink-escape';
+
+/**
+ * The docs/ containment rule for reading an artifact's rendered markdown:
+ * resolve the (possibly repo-relative) path, require it to sit lexically under
+ * the repo's docs/ tree and end in .md, then canonicalize both sides and
+ * re-check, so a symlink under docs/ (e.g. docs/leak -> /etc) cannot carry the
+ * read outside the tree. A missing file is 'unreadable'. Reads nothing beyond
+ * realpath; shared by workflow.artifactContent and the delivery read model.
+ */
+export function resolveDocsMarkdown(
+	repoPath: string,
+	mdPath: string,
+): { readonly realPath: string } | { readonly reason: DocsMarkdownRefusal; readonly detail: string } {
+	const absMd = resolve(isAbsolute(mdPath) ? mdPath : join(repoPath, mdPath));
+	const docsRoot = resolve(join(repoPath, 'docs'));
+	// (1) Lexical containment — fast reject of '..' escapes and absolute paths.
+	const rel = relative(docsRoot, absMd);
+	if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) return { reason: 'outside-docs', detail: '' };
+	if (!absMd.endsWith('.md')) return { reason: 'not-md', detail: '' };
+
+	// (2) Symlink-safe containment — `resolve` normalizes '..' only LEXICALLY.
+	// Canonicalize both sides and re-check containment BEFORE any read.
+	let realMd: string;
+	try {
+		realMd = realpathSync(absMd);
+	} catch (err) {
+		return { reason: 'unreadable', detail: (err as Error).message };
+	}
+	let realDocs: string;
+	try {
+		realDocs = realpathSync(docsRoot);
+	} catch {
+		return { reason: 'outside-docs', detail: '' };
+	}
+	const realRel = relative(realDocs, realMd);
+	if (realRel === '' || realRel.startsWith('..') || isAbsolute(realRel)) return { reason: 'symlink-escape', detail: '' };
+	return { realPath: realMd };
+}
+
 /**
  * Assemble the sc2 ArtifactReviewView for a pending artifact, or a structured
  * { error }. Pure over the filesystem (no daemon state, no writes). Extracted
@@ -111,40 +152,16 @@ export function handleArtifactContent(
 		return { error: 'workflow.artifactContent: `mdPath` is required' };
 	}
 
-	// Resolve the (possibly repo-relative) mdPath and GUARD it stays under
-	// docs/ — never trust a client-supplied path to read outside the tree.
-	const absMd = resolve(isAbsolute(p.mdPath) ? p.mdPath : join(repoPath, p.mdPath));
-	const docsRoot = resolve(join(repoPath, 'docs'));
-	// (1) Lexical containment — fast reject of '..' escapes and absolute paths.
-	const rel = relative(docsRoot, absMd);
-	if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
-		return { error: `workflow.artifactContent: mdPath must resolve under docs/ (got '${p.mdPath}')` };
+	const located = resolveDocsMarkdown(repoPath, p.mdPath);
+	if ('reason' in located) {
+		switch (located.reason) {
+			case 'outside-docs':   return { error: `workflow.artifactContent: mdPath must resolve under docs/ (got '${p.mdPath}')` };
+			case 'not-md':         return { error: `workflow.artifactContent: mdPath must be a workflow artifact .md (got '${p.mdPath}')` };
+			case 'unreadable':     return { error: `workflow.artifactContent: cannot read '${p.mdPath}': ${located.detail}` };
+			case 'symlink-escape': return { error: `workflow.artifactContent: mdPath resolves outside docs/ via a symlink (got '${p.mdPath}')` };
+		}
 	}
-	if (!absMd.endsWith('.md')) {
-		return { error: `workflow.artifactContent: mdPath must be a workflow artifact .md (got '${p.mdPath}')` };
-	}
-
-	// (2) Symlink-safe containment — `resolve` normalizes '..' only LEXICALLY, so
-	// a symlink under docs/ (e.g. docs/leak -> /etc) could otherwise let the read
-	// follow the link outside the tree. Canonicalize both sides and re-check
-	// containment BEFORE reading. A missing file canonicalizes to ENOENT -> the
-	// same "cannot read" error as a plain missing .md.
-	let realMd: string;
-	try {
-		realMd = realpathSync(absMd);
-	} catch (err) {
-		return { error: `workflow.artifactContent: cannot read '${p.mdPath}': ${(err as Error).message}` };
-	}
-	let realDocs: string;
-	try {
-		realDocs = realpathSync(docsRoot);
-	} catch {
-		return { error: `workflow.artifactContent: mdPath must resolve under docs/ (got '${p.mdPath}')` };
-	}
-	const realRel = relative(realDocs, realMd);
-	if (realRel === '' || realRel.startsWith('..') || isAbsolute(realRel)) {
-		return { error: `workflow.artifactContent: mdPath resolves outside docs/ via a symlink (got '${p.mdPath}')` };
-	}
+	const realMd = located.realPath;
 
 	let renderedMarkdown: string;
 	try {

@@ -28,11 +28,6 @@
         "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
-    },
-    "approvedAt": "2026-10-08T10:41:15.684Z",
-    "reviewOverride": {
-      "reason": "User-approved override, 2026-10-08. The Define was approved on 2026-10-07 and its approval was cleared by an in-place amendment the user directed: Story s4 gains the requirement that the analyzer reads an item from its file at the place the index points to (FR005, ac2), and the non-goal on the index says this does not change the index. The edits record the stakeholder direction of 2026-10-07 and the question resolution of 2026-10-08. No fresh daemon review was run on the amended text; the user chose to approve by override.",
-      "at": "2026-10-08T10:41:15.684Z"
     }
   },
   "body": {
@@ -367,6 +362,16 @@
             "operationalizes": [
               "k2"
             ]
+          },
+          {
+            "id": "ac7",
+            "given": "a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing",
+            "when": "it is run",
+            "then": "the input to the combining step is handled in parts and the analysis returns a final report",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
           }
         ],
         "functionalRequirements": [
@@ -381,6 +386,9 @@
           },
           {
             "statement": "The answer reports how the request was handled."
+          },
+          {
+            "statement": "A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts; this closes the exception accepted on Story s7 for the docs family."
           }
         ]
       },
@@ -657,7 +665,56 @@
           },
           {
             "statement": "A run that stops records where and why."
+          },
+          {
+            "statement": "Accepted exception (stakeholder, 2026-10-08): for the docs family the first criterion is not met by this Story on a repository whose combining step is handed more than one model call accepts; Story s3 closes it. For the code family it is met in full only with Story s8."
           }
+        ]
+      },
+      {
+        "id": "s8",
+        "title": "The code tasks of a broad analysis work on a repository whose graph has no modules for its directories",
+        "userValue": "As someone asking for a broad analysis of a codebase, I get its modules and what each one offers, in any language the index covers, so the report is about my code and not a list of tasks that could not run.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a repository whose stored graph holds no entity of kind 'module' for its own directories, as for a TypeScript repository today",
+            "when": "a broad code analysis lists the repository's modules and its module tree",
+            "then": "the directories that hold source are returned as its modules, and the result says what it rests on",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a plan in which the planner names a directory of the repository as the module to describe",
+            "when": "the task that describes a module's functional surface runs",
+            "then": "it returns what that directory offers, and does not fail for want of a stored module entity",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a repository whose graph does hold module entities, as for a language whose parser emits them",
+            "when": "the same tasks run",
+            "then": "they return at least what they return today",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "a module value that names nothing in the repository",
+            "when": "a task is given it",
+            "then": "the task fails with a reason that says so, and is not reported as an empty module",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "a broad code analysis of an indexed repository, once this Story and Story s7 are built",
+            "when": "it is run",
+            "then": "it returns a final report in which the functional-surface tasks succeeded",
+            "operationalizes": []
+          }
+        ],
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s7"
         ]
       }
     ],
@@ -769,6 +826,12 @@
           "itemRef": "s3"
         },
         {
+          "id": "E20261006b9d5c5c4:S003:FR005",
+          "statement": "A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts; this closes the exception accepted on Story s7 for the docs family.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
           "id": "E20261006b9d5c5c4:S004:FR001",
           "statement": "No lookup or analysis step drops results because of a fixed limit, in any kind of source the analyzer covers.",
           "scope": "item",
@@ -837,6 +900,12 @@
         {
           "id": "E20261006b9d5c5c4:S007:FR002",
           "statement": "A run that stops records where and why.",
+          "scope": "item",
+          "itemRef": "s7"
+        },
+        {
+          "id": "E20261006b9d5c5c4:S007:FR003",
+          "statement": "Accepted exception (stakeholder, 2026-10-08): for the docs family the first criterion is not met by this Story on a repository whose combining step is handed more than one model call accepts; Story s3 closes it. For the code family it is met in full only with Story s8.",
           "scope": "item",
           "itemRef": "s7"
         }
@@ -919,7 +988,7 @@
       "id": "c13",
       "kind": "code",
       "ref": "src/prompts/analyze/synthesize.code.system.md",
-      "quotedText": "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
+      "quotedText": "HARD CAP per scope: XS \u226410 exports, S \u226425, M \u226460, L \u2264120, XL \u2264250"
     },
     {
       "id": "c16",

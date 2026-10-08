@@ -24,6 +24,9 @@
 
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
 import { getLogger } from '../../shared/logger.js';
+import { buildCompleteness } from '../completeness.js';
+
+import { textSearchCompleteness } from './completeness-facts.js';
 
 import type {
 	ConfigTraceHit,
@@ -95,13 +98,14 @@ export async function runConfigTrace(
 	// Escape regex-special chars so `foo.bar[0]`-style keys survive.
 	const literal = escapeRegex(params.key);
 
+	const limit = params.topK ?? DEFAULT_TOP_K;
 	let data;
 	try {
 		data = await runGrepSearch({
 			pattern: literal,
 			root,
 			caseInsensitive: false,
-			limit:           params.topK ?? DEFAULT_TOP_K,
+			limit,
 		});
 	} catch (err) {
 		log.warn(
@@ -110,6 +114,10 @@ export async function runConfigTrace(
 		);
 		return {
 			type:      'config.trace',
+			completeness: buildCompleteness({
+				returned: 0, basis: 'text', notEstablished: true,
+				basisNote: `the search could not run: ${(err as Error).message}`,
+			}),
 			key:       params.key,
 			hits:      [],
 			truncated: false,
@@ -141,6 +149,7 @@ export async function runConfigTrace(
 
 	return {
 		type:      'config.trace',
+		completeness: textSearchCompleteness(data, limit),
 		key:       params.key,
 		hits,
 		truncated: data.truncated,

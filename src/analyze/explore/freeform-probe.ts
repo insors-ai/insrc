@@ -35,6 +35,7 @@ import type {
 	ExplorationRunnerContext,
 	FreeformProbeOutput,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -146,6 +147,10 @@ export async function runFreeformProbe(
 			);
 			return {
 				type:      'freeform.probe',
+				completeness: buildCompleteness({
+					returned: 0, basis: 'model-directed', notEstablished: true,
+					basisNote: 'the search did not finish: the tool loop reached its turn limit before the model settled on an answer',
+				}),
 				purpose:   params.purpose,
 				shaperId:  params.shaperId,
 				rawBundle: emptyRawBundle(),
@@ -172,6 +177,12 @@ export async function runFreeformProbe(
 
 	return {
 		type:      'freeform.probe',
+		// The answer rests on a search a model chose, call by call. Nothing shows
+		// that the search covered everything relevant, so it is never complete.
+		completeness: buildCompleteness({
+			returned: 1, basis: 'model-directed', notEstablished: true,
+			basisNote: `a model chose what to search, in ${toolCallCount} tool call${toolCallCount === 1 ? '' : 's'}; what it did not look at is not known`,
+		}),
 		purpose:   params.purpose,
 		shaperId:  params.shaperId,
 		rawBundle,

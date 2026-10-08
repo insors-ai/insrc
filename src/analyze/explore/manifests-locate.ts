@@ -34,6 +34,7 @@ import type {
 	ManifestHit,
 	ManifestsLocateOutput,
 } from './types.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:manifests-locate');
 
@@ -86,6 +87,9 @@ export async function runManifestsLocate(
 		? new Set(params.families)
 		: null;
 
+	const topK = params.topK ?? DEFAULT_TOP_K;
+	// Manifests that pass every filter, counted past the limit as well.
+	let found = 0;
 	const seen = new Set<string>();
 	const hits: ManifestHit[] = [];
 	const familyCounts: Record<ManifestFamily, number> = {
@@ -104,6 +108,11 @@ export async function runManifestsLocate(
 		const family = classifyFamily(e.file);
 		if (familyFilter !== null && !familyFilter.has(family)) continue;
 
+		found += 1;
+		// Past the limit a manifest is counted, so the result can say how many
+		// exist; `hits` and `families` describe the ones returned, as before.
+		if (hits.length >= topK) continue;
+
 		familyCounts[family] += 1;
 
 		// Prefer the real kind parsed from the indexed manifest body; fall back
@@ -118,7 +127,6 @@ export async function runManifestsLocate(
 			name:     basename(e.file),
 			entityId: e.id,
 		});
-		if (hits.length >= (params.topK ?? DEFAULT_TOP_K)) break;
 	}
 
 	log.info(
@@ -132,6 +140,11 @@ export async function runManifestsLocate(
 
 	return {
 		type:      'manifests.locate',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found,
+			limited:  found > topK ? [reachedLimit('manifests', topK, 'overall', found)] : [],
+		}),
 		hits,
 		families:  familyCounts,
 		notFoundNote: hits.length === 0

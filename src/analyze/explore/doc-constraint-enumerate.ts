@@ -38,6 +38,10 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { SkippedItem } from '../completeness.js';
+import { carriedCompleteness, reachedLimit } from './completeness-facts.js';
+import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:doc-constraint-enumerate');
 
@@ -131,6 +135,11 @@ export async function runSharedDocConstraintEnumerate(
 		);
 		return {
 			type:                  'doc.constraint.enumerate',
+			// The sections were retrieved and never read by the model.
+			completeness: buildCompleteness({
+				returned: 0, basis: 'doc-index', notEstablished: true,
+				basisNote: `the model call that reads the retrieved sections failed: ${(err as Error).message}`,
+			}),
 			subject:               prepared.prepared.subject,
 			constraints:           [],
 			notFoundNote:
@@ -151,6 +160,8 @@ export interface DocConstraintEnumeratePrepared {
 	readonly subject:                string;
 	readonly retrievedSectionCount:  number;
 	readonly validEntityIds:         readonly string[];
+	/** What prepare left out. Absent on a value minted before the field existed. */
+	readonly completenessFacts?:     CarriedCompletenessFacts | undefined;
 }
 
 interface HydratedSection {
@@ -208,6 +219,8 @@ export async function prepareDocConstraintEnumerate(
 			kind: 'short-circuit',
 			shortCircuit: {
 				type:                  'doc.constraint.enumerate',
+				// The document index returned no section for the subject: empty, and complete.
+				completeness:          buildCompleteness({ returned: 0, basis: 'doc-index' }),
 				subject,
 				constraints:           [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${subject}".`,
@@ -217,9 +230,13 @@ export async function prepareDocConstraintEnumerate(
 	}
 
 	const hydrated: HydratedSection[] = [];
+	const skipped: SkippedItem[] = [];
 	for (const s of sections) {
 		const entity = await getEntity(args.db, s.entityId);
-		if (entity === null) continue;
+		if (entity === null) {
+			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
+			continue;
+		}
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
@@ -242,6 +259,14 @@ export async function prepareDocConstraintEnumerate(
 			subject,
 			retrievedSectionCount: sections.length,
 			validEntityIds:        hydrated.map(h => h.entityId),
+			completenessFacts: {
+				// The retrieval returns at most maxSources sections and does not say how many
+				// matched. The limit is on what was read, not on what is returned from it.
+				limited: sections.length >= maxSources
+					? [reachedLimit('document sections', maxSources, 'source', null)]
+					: [],
+				skipped,
+			},
 		},
 	};
 }
@@ -269,6 +294,7 @@ export function finalizeDocConstraintEnumerate(
 
 	return {
 		type:                  'doc.constraint.enumerate',
+		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts),
 		subject:               prepared.subject,
 		constraints:           filtered,
 		notFoundNote:          filtered.length === 0 ? (raw.notFoundNote || `No constraints on "${prepared.subject}" found in the retrieved sections.`) : '',

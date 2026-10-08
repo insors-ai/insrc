@@ -54,6 +54,9 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { Completeness } from '../completeness.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:concept-resolve');
 
@@ -525,7 +528,7 @@ export async function runConceptResolve(
 	const tokens = tokenise(params.query);
 	if (tokens.length === 0) {
 		log.debug({ query: params.query }, 'concept.resolve: no salient tokens');
-		return { type: 'concept.resolve', query: params.query, hits: [] };
+		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
 	const structuralBoost = tokens.some(t => STRUCTURAL_TOKENS.has(t));
@@ -539,7 +542,7 @@ export async function runConceptResolve(
 	const matchTokens = tokens.filter(t => !STRUCTURAL_TOKENS.has(t));
 	if (matchTokens.length === 0) {
 		log.debug({ query: params.query, tokens }, 'concept.resolve: no non-structural tokens; empty result');
-		return { type: 'concept.resolve', query: params.query, hits: [] };
+		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
 	}
 
 	const includeKinds = params.includeKinds ?? ['dir', 'file', 'entity'];
@@ -575,9 +578,10 @@ export async function runConceptResolve(
 		if (prev === undefined || s.score > prev.score) byKey.set(k, s);
 	}
 
+	const limit = params.limit ?? MAX_HITS;
 	const ranked = Array.from(byKey.values())
 		.sort((a, b) => b.score - a.score)
-		.slice(0, params.limit ?? MAX_HITS);
+		.slice(0, limit);
 
 	const hits: ConceptHit[] = ranked.map(r => ({
 		kind:  r.kind,
@@ -605,7 +609,25 @@ export async function runConceptResolve(
 		'concept.resolve: complete',
 	);
 
-	return { type: 'concept.resolve', query: params.query, hits };
+	return {
+		type: 'concept.resolve',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found:    byKey.size,
+			limited:  byKey.size > limit ? [reachedLimit('matches', limit, 'overall', byKey.size)] : [],
+			rule:     `Directories more than ${MAX_DIR_DEPTH} levels below the repository root are not candidates.`,
+		}),
+		query: params.query,
+		hits,
+	};
+}
+
+/** No query could be formed from the request's words, so nothing was searched. */
+function noQueryCompleteness(): Completeness {
+	return buildCompleteness({
+		returned: 0, basis: 'graph', notEstablished: true,
+		basisNote: 'the query held no distinctive word to match, so no search was made',
+	});
 }
 
 // ---------------------------------------------------------------------------

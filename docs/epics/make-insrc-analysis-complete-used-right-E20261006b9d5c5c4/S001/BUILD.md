@@ -2,24 +2,28 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-08T07:10:44.483Z  ·  **Updated:** 2026-10-08T07:13:52.438Z
+**Standalone:** no  ·  **Created:** 2026-10-08T07:10:44.483Z  ·  **Updated:** 2026-10-08T07:22:29.995Z
 
-**Commit:** d7de6676
+**Commit:** 7a33090e
 
 ## Summary
 
-Task t2: added src/analyze/item-length.ts (measureItem, partlyReadEntry, the indexer's hash and cut marker as named values) and exported the summariser's cut as SUMMARISER_BODY_CHARS. Four tests pass under Node 22 against entities produced by the real artifact parser; four mutations each make a test fail. Two refinements of the design: an empty stored body is not reported as cut, and the plan's check that no file under src/indexer or src/db changes is asserted as an import check on the module, since a git comparison would pass vacuously once pushed.
+Task t3: the search primitive reports what it left out (skipped files and directories, shortened lines, ripgrep's per-file limit, discarded output, a failed ripgrep run, each backend's exclusion rule), throws on an unreadable root, and the search tool labels such a failure 'search-failed'. The shell helper's result gains stdoutTruncated. Eight new tests pass under Node 22 on real directories and stand-in ripgrep binaries; eight mutations each make a test fail; the daemon tools (160), analyze (860 of 952, the rest skipped) and review (93) suites pass. One test seam was added to the search options (`_backend`) so a test can choose the ripgrep binary and its time limit.
 
 ## Tasks validated
 
 - ✗ `t1`
 - ✗ `t2`
+- ✗ `t3`
 
 ## Changes
 
-- `src/analyze/__tests__/completeness.test.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
-- `src/analyze/__tests__/item-length.test.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
-- `src/analyze/completeness.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
-- `src/analyze/item-length.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
-- `src/analyze/summariser/driver.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
-- `src/analyze/summariser/index.ts` — **insrc-build** (2026-10-08T07:13:52.438Z)
+- `src/analyze/__tests__/completeness.test.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/analyze/__tests__/item-length.test.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/analyze/completeness.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/analyze/item-length.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/analyze/summariser/driver.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/analyze/summariser/index.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/daemon/tools/builtins/search/grep.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)
+- `src/daemon/tools/shell-helper.ts` — **insrc-build** (2026-10-08T07:22:29.995Z)

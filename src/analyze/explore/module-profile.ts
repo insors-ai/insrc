@@ -35,6 +35,7 @@ import type {
 	ModuleProfile,
 	ModuleProfileOutput,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
 
 const log = getLogger('analyze:explore:module-profile');
 
@@ -126,7 +127,11 @@ export async function runModuleProfile(
 			{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount },
 			'module.profile: file profiled',
 		);
-		return { type: 'module.profile', profile };
+		return {
+			type: 'module.profile',
+			completeness: buildCompleteness({ returned: 1, basis: 'filesystem' }),
+			profile,
+		};
 	}
 
 	const profile = await profileDir(path, entities, ctx.ignoreFilter);
@@ -143,7 +148,15 @@ export async function runModuleProfile(
 		},
 		'module.profile: dir profiled',
 	);
-	return { type: 'module.profile', profile };
+	return {
+		type: 'module.profile',
+		// Every immediate child of the directory is listed; nothing is cut by count.
+		completeness: buildCompleteness({
+			returned: profile.subdirs.length + profile.filesInDir.length,
+			basis:    'filesystem',
+		}),
+		profile,
+	};
 }
 
 // ---------------------------------------------------------------------------

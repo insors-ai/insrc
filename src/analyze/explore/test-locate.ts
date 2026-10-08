@@ -34,6 +34,8 @@ import type {
 	TestLocateHit,
 	TestLocateOutput,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:test-locate');
 
@@ -88,6 +90,11 @@ export async function runTestLocate(
 	if (fragments.length === 0) {
 		return {
 			type:         'test.locate',
+			// No query could be formed, so nothing was searched: not a search that found nothing.
+			completeness: buildCompleteness({
+				returned: 0, basis: 'graph', notEstablished: true,
+				basisNote: 'the subject held no distinctive word to match, so no search was made',
+			}),
 			subject:      params.subject,
 			hits:         [],
 			notFoundNote: `Subject "${params.subject}" contained no distinctive fragments to match against test entities.`,
@@ -139,6 +146,7 @@ export async function runTestLocate(
 
 	// Combine: entity hits first (they're more specific), then
 	// file-level hits, deduped by (file, entityId).
+	const topK = params.topK ?? DEFAULT_TOP_K;
 	const combined: TestLocateHit[] = [];
 	const seen = new Set<string>();
 	for (const list of [entityHits, Array.from(hitsByFile.values())]) {
@@ -146,11 +154,11 @@ export async function runTestLocate(
 			const key = `${h.file}::${h.entityId ?? h.name}`;
 			if (seen.has(key)) continue;
 			seen.add(key);
-			combined.push(h);
-			if (combined.length >= (params.topK ?? DEFAULT_TOP_K)) break;
+			// Past the limit the hit is still counted, so the result can say how many exist.
+			if (combined.length < topK) combined.push(h);
 		}
-		if (combined.length >= (params.topK ?? DEFAULT_TOP_K)) break;
 	}
+	const found = seen.size;
 
 	log.info(
 		{
@@ -166,6 +174,11 @@ export async function runTestLocate(
 
 	return {
 		type:         'test.locate',
+		completeness: graphCompleteness({
+			returned: combined.length,
+			found,
+			limited:  found > topK ? [reachedLimit('tests', topK, 'overall', found)] : [],
+		}),
 		subject:      params.subject,
 		hits:         combined,
 		notFoundNote: combined.length === 0

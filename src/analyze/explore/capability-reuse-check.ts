@@ -46,6 +46,10 @@ import type {
 	ExplorationRunnerContext,
 	ModuleProfile,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { ReachedLimit, SkippedItem } from '../completeness.js';
+import { carriedCompleteness, GRAPH_BASIS_NOTE, reachedLimit } from './completeness-facts.js';
+import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:capability-reuse-check');
 
@@ -169,6 +173,8 @@ export interface CapabilityReuseCheckPrepared {
 		readonly score:   number;
 	}>;
 	readonly conceptHits:   number;
+	/** What prepare left out. Absent on a value minted before the field existed. */
+	readonly completenessFacts?: CarriedCompletenessFacts | undefined;
 }
 
 interface CapabilityReuseCheckLLMOutput {
@@ -229,6 +235,8 @@ export async function prepareCapabilityReuseCheck(
 			kind: 'short-circuit',
 			shortCircuit: {
 				type:         'capability.reuse-check',
+				// The inner module search found nothing to check; its own record says whether it could look.
+				completeness: concept.completeness,
 				capability,
 				candidates:   [],
 				notFoundNote: `No modules matched "${capability}" via concept.resolve.`,
@@ -240,6 +248,7 @@ export async function prepareCapabilityReuseCheck(
 
 	// (2) module.profile each candidate serially.
 	const profiles: Array<{ path: string; profile: ModuleProfile | undefined; score: number }> = [];
+	const skipped: SkippedItem[] = [];
 	for (const h of topHits) {
 		const profileExp: Exploration = {
 			id:      `${exp.id}-inner-profile-${h.path}`,
@@ -256,7 +265,19 @@ export async function prepareCapabilityReuseCheck(
 				'capability.reuse-check: module.profile failed for candidate; keeping as unrelated placeholder',
 			);
 			profiles.push({ path: h.path, profile: undefined, score: h.score });
+			skipped.push({
+				what:   h.path,
+				reason: `its profile could not be read (${(err as Error).message}), so the model judged it without one`,
+			});
 		}
+	}
+
+	// Candidates: the inner search may have cut its matches, and only `limit` of them are checked.
+	// The inner search's own limits bound what the candidates were drawn from.
+	const limited: ReachedLimit[] = (concept.completeness.limited ?? []).map(l => ({ ...l, scope: 'source' as const }));
+	const distinctHits = new Set(concept.hits.map(h => h.path)).size;
+	if (distinctHits > topHits.length) {
+		limited.push(reachedLimit('candidate modules', limit, 'overall', distinctHits));
 	}
 
 	const promptContent = loadPromptFile();
@@ -273,6 +294,7 @@ export async function prepareCapabilityReuseCheck(
 			capability,
 			profiles,
 			conceptHits: concept.hits.length,
+			completenessFacts: { limited, skipped },
 		},
 	};
 }
@@ -325,8 +347,26 @@ export function finalizeCapabilityReuseCheck(
 		'capability.reuse-check: complete',
 	);
 
+	// A candidate the model gave no verdict for is shown as 'unrelated' by default.
+	const unjudged: SkippedItem[] = llmSkipReason !== undefined ? [] : prepared.profiles
+		.filter(p => !verdicts.has(p.path))
+		.map(p => ({ what: p.path, reason: "the model gave no verdict for it; it is shown as 'unrelated' by default" }));
+	const facts = prepared.completenessFacts;
+	const completeness = llmSkipReason !== undefined
+		? buildCompleteness({
+			returned: candidates.length, basis: 'graph', notEstablished: true,
+			basisNote: `no candidate was judged (${llmSkipReason}); every candidate is shown as 'unrelated' by default`,
+		})
+		: carriedCompleteness(
+			candidates.length,
+			'graph',
+			facts === undefined ? undefined : { ...facts, skipped: [...(facts.skipped ?? []), ...unjudged] },
+			GRAPH_BASIS_NOTE,
+		);
+
 	return {
 		type:         'capability.reuse-check',
+		completeness,
 		capability:   prepared.capability,
 		candidates,
 		notFoundNote: '',

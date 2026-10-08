@@ -42,6 +42,10 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import type { SkippedItem } from '../completeness.js';
+import { carriedCompleteness, reachedLimit } from './completeness-facts.js';
+import type { CarriedCompletenessFacts } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:doc-decision-trace');
 
@@ -138,6 +142,11 @@ export async function runSharedDocDecisionTrace(
 		);
 		return {
 			type:  'doc.decision.trace',
+			// The sections were retrieved and never read by the model.
+			completeness: buildCompleteness({
+				returned: 0, basis: 'doc-index', notEstablished: true,
+				basisNote: `the model call that reads the retrieved sections failed: ${(err as Error).message}`,
+			}),
 			topic: prepared.prepared.topic,
 			decisions: [],
 			notFoundNote:
@@ -161,6 +170,8 @@ export interface DocDecisionTracePrepared {
 	readonly topic:                  string;
 	readonly retrievedSectionCount:  number;
 	readonly validEntityIds:         readonly string[];
+	/** What prepare left out. Absent on a value minted before the field existed. */
+	readonly completenessFacts?:     CarriedCompletenessFacts | undefined;
 }
 
 interface HydratedSection {
@@ -222,6 +233,8 @@ export async function prepareDocDecisionTrace(
 			kind: 'short-circuit',
 			shortCircuit: {
 				type:                  'doc.decision.trace',
+				// The document index returned no section for the topic: empty, and complete.
+				completeness:          buildCompleteness({ returned: 0, basis: 'doc-index' }),
 				topic,
 				decisions:             [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${topic}".`,
@@ -232,9 +245,13 @@ export async function prepareDocDecisionTrace(
 
 	// (2) Hydrate full bodies for the LLM extraction pass.
 	const hydrated: HydratedSection[] = [];
+	const skipped: SkippedItem[] = [];
 	for (const s of sections) {
 		const entity = await getEntity(args.db, s.entityId);
-		if (entity === null) continue;
+		if (entity === null) {
+			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
+			continue;
+		}
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
@@ -257,6 +274,14 @@ export async function prepareDocDecisionTrace(
 			topic,
 			retrievedSectionCount: sections.length,
 			validEntityIds:        hydrated.map(h => h.entityId),
+			completenessFacts: {
+				// The retrieval returns at most maxSources sections and does not say how many
+				// matched. The limit is on what was read, not on what is returned from it.
+				limited: sections.length >= maxSources
+					? [reachedLimit('document sections', maxSources, 'source', null)]
+					: [],
+				skipped,
+			},
 		},
 	};
 }
@@ -291,6 +316,7 @@ export function finalizeDocDecisionTrace(
 
 	return {
 		type:                  'doc.decision.trace',
+		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts),
 		topic:                 prepared.topic,
 		decisions:             filtered,
 		notFoundNote:          filtered.length === 0 ? (raw.notFoundNote || `No decisions on "${prepared.topic}" found in the retrieved sections.`) : '',

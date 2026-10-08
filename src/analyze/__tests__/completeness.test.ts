@@ -113,6 +113,18 @@ test('buildCompleteness accepts several reached limits and a per-group limit bel
 	assert.equal(fields.complete, false);
 });
 
+test("a limit on a result's sources is not compared with the returned count", () => {
+	// Fifteen sections were read and forty constraints came out of them.
+	const c = buildCompleteness({
+		returned: 40, basis: 'doc-index',
+		limited: [{ what: 'document sections', limit: 15, scope: 'source', reason: 'section limit' }],
+	});
+	assert.equal(c.complete, false);
+	assert.equal(c.total, null);
+	const reason = deriveAnswerReport([{ sourceId: 'e1', sourceKind: 'lookup', completeness: c }]).completeness.incomplete[0]!.reason;
+	assert.equal(reason, 'limit of 15 document sections read reached (section limit)');
+});
+
 test('an overall limit is compared with the returned count even beside per-group limits', () => {
 	assert.throws(() => buildCompleteness({
 		returned: 48, basis: 'graph',

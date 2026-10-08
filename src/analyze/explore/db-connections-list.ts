@@ -27,6 +27,7 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
 
 const log = getLogger('analyze:explore:db-connections-list');
 
@@ -37,10 +38,12 @@ const log = getLogger('analyze:explore:db-connections-list');
 export async function runDbConnectionsList(
 	_exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The connection pool's source; a test passes a stand-in. */
+	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbConnectionsListOutput> {
 	let pool;
 	try {
-		pool = await acquirePool(ctx.repoPath);
+		pool = await acquire(ctx.repoPath);
 	} catch (err) {
 		log.info(
 			{ runId: ctx.runId, repoPath: ctx.repoPath, err: (err as Error).message },
@@ -48,6 +51,11 @@ export async function runDbConnectionsList(
 		);
 		return {
 			type:        'db.connections.list',
+			// The registry could not be read, so whether connections exist is not known.
+			completeness: buildCompleteness({
+				returned: 0, basis: 'data-source', notEstablished: true,
+				basisNote: `the connection registry could not be read: ${(err as Error).message}`,
+			}),
 			connections: [],
 			notFoundNote: `Pool acquisition for repo "${ctx.repoPath}" failed: ${(err as Error).message}`,
 		};
@@ -72,6 +80,7 @@ export async function runDbConnectionsList(
 
 	return {
 		type:        'db.connections.list',
+		completeness: buildCompleteness({ returned: connections.length, basis: 'data-source' }),
 		connections,
 		notFoundNote: connections.length === 0
 			? `No data-driver connections registered for repo "${ctx.repoPath}".`

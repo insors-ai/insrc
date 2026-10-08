@@ -27,6 +27,8 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:doc-mention');
 
@@ -95,11 +97,12 @@ export async function runDocMention(
 	const params = parseParams(exp);
 	const db = await getDb();
 
+	const limit = params.limit ?? DEFAULT_LIMIT;
 	const results = await retrieveDocSections({
 		db,
 		query:        params.subject,
 		closureRepos: [ctx.repoPath],
-		maxResults:   params.limit ?? DEFAULT_LIMIT,
+		maxResults:   limit,
 		minScore:     params.minScore ?? 0,
 		previewChars: params.previewChars ?? DEFAULT_PREVIEW_CHARS,
 		...(params.filenameHint !== undefined ? { filenameHint: params.filenameHint } : {}),
@@ -126,6 +129,13 @@ export async function runDocMention(
 
 	return {
 		type:    'doc.mention',
+		// The retrieval returns at most `limit` sections and does not say how many
+		// matched, so a full page means more may exist.
+		completeness: buildCompleteness({
+			returned: hits.length,
+			limited:  hits.length >= limit ? [reachedLimit('document sections', limit, 'overall', null)] : [],
+			basis:    'doc-index',
+		}),
 		subject: params.subject,
 		hits,
 	};

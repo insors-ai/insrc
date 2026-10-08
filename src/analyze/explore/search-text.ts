@@ -22,6 +22,9 @@
 
 import { getLogger } from '../../shared/logger.js';
 import { runGrepSearch } from '../../daemon/tools/builtins/search/grep.js';
+import { buildCompleteness } from '../completeness.js';
+
+import { textSearchCompleteness } from './completeness-facts.js';
 
 import type {
 	Exploration,
@@ -95,6 +98,7 @@ export async function runSearchText(
 		? resolveScopedPath(params.path, ctx.repoPath)
 		: ctx.repoPath;
 
+	const limit = params.topK ?? DEFAULT_TOP_K;
 	let data;
 	try {
 		data = await runGrepSearch({
@@ -102,7 +106,7 @@ export async function runSearchText(
 			root,
 			...(params.glob !== undefined ? { glob: params.glob } : {}),
 			caseInsensitive: params.caseInsensitive === true,
-			limit:           params.topK ?? DEFAULT_TOP_K,
+			limit,
 		});
 	} catch (err) {
 		log.warn(
@@ -111,6 +115,10 @@ export async function runSearchText(
 		);
 		return {
 			type:      'search.text',
+			completeness: buildCompleteness({
+				returned: 0, basis: 'text', notEstablished: true,
+				basisNote: `the search could not run: ${(err as Error).message}`,
+			}),
 			pattern:   params.pattern,
 			hits:      [],
 			truncated: false,
@@ -143,6 +151,7 @@ export async function runSearchText(
 
 	return {
 		type:      'search.text',
+		completeness: textSearchCompleteness(data, limit),
 		pattern:   params.pattern,
 		hits,
 		truncated: data.truncated,

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s1",
     "createdAt": "2026-10-08T07:10:44.483Z",
-    "updatedAt": "2026-10-08T07:13:52.438Z",
+    "updatedAt": "2026-10-08T07:22:29.995Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -16,53 +16,78 @@
       {
         "id": "t2",
         "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
       }
     ],
-    "summary": "Task t2: added src/analyze/item-length.ts (measureItem, partlyReadEntry, the indexer's hash and cut marker as named values) and exported the summariser's cut as SUMMARISER_BODY_CHARS. Four tests pass under Node 22 against entities produced by the real artifact parser; four mutations each make a test fail. Two refinements of the design: an empty stored body is not reported as cut, and the plan's check that no file under src/indexer or src/db changes is asserted as an import check on the module, since a git comparison would pass vacuously once pushed.",
+    "summary": "Task t3: the search primitive reports what it left out (skipped files and directories, shortened lines, ripgrep's per-file limit, discarded output, a failed ripgrep run, each backend's exclusion rule), throws on an unreadable root, and the search tool labels such a failure 'search-failed'. The shell helper's result gains stdoutTruncated. Eight new tests pass under Node 22 on real directories and stand-in ripgrep binaries; eight mutations each make a test fail; the daemon tools (160), analyze (860 of 952, the rest skipped) and review (93) suites pass. One test seam was added to the search options (`_backend`) so a test can choose the ripgrep binary and its time limit.",
     "changeLog": [
       {
         "target": {
           "file": "src/analyze/__tests__/completeness.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/item-length.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
       },
       {
         "target": {
           "file": "src/analyze/completeness.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
       },
       {
         "target": {
           "file": "src/analyze/item-length.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T07:13:52.438Z"
+        "timestamp": "2026-10-08T07:22:29.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:22:29.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/search/grep.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:22:29.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/shell-helper.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T07:22:29.995Z"
       }
     ],
-    "commit": "d7de6676"
+    "commit": "7a33090e"
   }
 }

@@ -25,8 +25,12 @@ export interface ReachedLimit {
 	/** What the limit counts (e.g. `hits`, `fields per target`). */
 	readonly what:   string;
 	readonly limit:  number;
-	/** `overall` bounds the whole result; `per-group` bounds each group in it. */
-	readonly scope:  'overall' | 'per-group';
+	/**
+	 * `overall` bounds the items returned; `per-group` bounds each group of
+	 * them; `source` bounds what the result was built FROM (sections read,
+	 * keys sampled), which is not counted in `returned`.
+	 */
+	readonly scope:  'overall' | 'per-group' | 'source';
 	readonly reason: string;
 }
 
@@ -83,7 +87,8 @@ export interface CompletenessFacts {
  *   caller: a negative count or limit, a total below the returned count
  *   (or not a number), an OVERALL limit below the returned count, or a
  *   partly read item whose full length is below what was read. A per-group
- *   limit is not compared with the overall count.
+ *   limit and a limit on a result's sources are not compared with the
+ *   returned count: they count something else.
  */
 export function buildCompleteness(facts: CompletenessFacts): Completeness {
 	const { returned } = facts;
@@ -181,7 +186,7 @@ const NOT_ESTABLISHED_REASON = 'completeness could not be established';
 function incompleteReason(c: Completeness): string {
 	const parts: string[] = [];
 	for (const l of c.limited ?? []) {
-		const each = l.scope === 'per-group' ? ' each' : '';
+		const each = l.scope === 'per-group' ? ' each' : l.scope === 'source' ? ' read' : '';
 		parts.push(`limit of ${l.limit} ${l.what}${each} reached (${l.reason})`);
 	}
 	const skipped = c.skipped ?? [];

@@ -26,6 +26,8 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { buildCompleteness } from '../completeness.js';
+import { reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:db-tables-list');
 
@@ -72,13 +74,15 @@ function parseParams(exp: Exploration): DbTablesListParams {
 export async function runDbTablesList(
 	exp: Exploration,
 	ctx: ExplorationRunnerContext,
+	/** The connection pool's source; a test passes a stand-in. */
+	acquire: typeof acquirePool = acquirePool,
 ): Promise<DbTablesListOutput> {
 	const params = parseParams(exp);
 	const limit = params.limit ?? DEFAULT_LIMIT;
 
 	let pool;
 	try {
-		pool = await acquirePool(ctx.repoPath);
+		pool = await acquire(ctx.repoPath);
 	} catch (err) {
 		return emptyOutput(params.connectionId, 'file', `Pool acquisition failed: ${(err as Error).message}`);
 	}
@@ -94,11 +98,16 @@ export async function runDbTablesList(
 	let tables: DbTableSummary[] = [];
 	let truncated = false;
 	let notFoundNote = '';
+	// Why the listing is not a full one, for the completeness record:
+	// the call failed, or this driver cannot list.
+	let failure: string | undefined;
+	let unsupported: string | undefined;
 
 	if (family === 'rdbms') {
 		const rdbms = driver as RdbmsDriver;
 		if (rdbms.listTables === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement listTables.`;
+			unsupported = notFoundNote;
 		} else {
 			try {
 				const opts: { readonly schema?: string; readonly limit?: number } =
@@ -113,12 +122,14 @@ export async function runDbTablesList(
 				truncated = listing.truncated;
 			} catch (err) {
 				notFoundNote = `listTables failed: ${(err as Error).message}`;
+				failure = notFoundNote;
 			}
 		}
 	} else if (family === 'kv') {
 		const kv = driver as KvDriver;
 		if (kv.listNamespaces === undefined) {
 			notFoundNote = `Driver kind '${driver.kind}' does not implement listNamespaces.`;
+			unsupported = notFoundNote;
 		} else {
 			try {
 				const listing = await kv.listNamespaces({ limit });
@@ -130,9 +141,11 @@ export async function runDbTablesList(
 				truncated = listing.truncated;
 				if (!listing.supported) {
 					notFoundNote = `Driver kind '${driver.kind}' reports listNamespaces not supported on this instance.`;
+					unsupported = notFoundNote;
 				}
 			} catch (err) {
 				notFoundNote = `listNamespaces failed: ${(err as Error).message}`;
+				failure = notFoundNote;
 			}
 		}
 	} else {
@@ -155,8 +168,20 @@ export async function runDbTablesList(
 		'db.tables.list: complete',
 	);
 
+	const completeness = buildCompleteness({
+		returned: tables.length,
+		// The driver's own cut flag: it stopped at the limit it was given.
+		limited:  truncated ? [reachedLimit(family === 'kv' ? 'namespaces' : 'tables', limit, 'overall', null)] : [],
+		skipped:  unsupported !== undefined ? [{ what: 'the listing', reason: unsupported }] : [],
+		basis:    'data-source',
+		...(failure !== undefined
+			? { notEstablished: true, basisNote: failure }
+			: family === 'file' ? { basisNote: notFoundNote } : {}),
+	});
+
 	return {
 		type:         'db.tables.list',
+		completeness,
 		connectionId: params.connectionId,
 		family,
 		tables,
@@ -176,6 +201,8 @@ function emptyOutput(
 ): DbTablesListOutput {
 	return {
 		type:         'db.tables.list',
+		// The connection could not be opened, so what it holds is not known.
+		completeness: buildCompleteness({ returned: 0, basis: 'data-source', notEstablished: true, basisNote: note }),
 		connectionId,
 		family,
 		tables:       [],

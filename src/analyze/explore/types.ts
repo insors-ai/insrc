@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { Completeness } from '../completeness.js';
 import type { ResolvedScope } from '../context/scope.js';
 
 /**
@@ -145,6 +146,8 @@ export interface ConceptHit {
 
 export interface ConceptResolveOutput {
 	readonly type:  'concept.resolve';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly query: string;
 	/** Ranked by score desc. Cap ~20. */
 	readonly hits:  readonly ConceptHit[];
@@ -178,6 +181,8 @@ export interface ModuleProfile {
 
 export interface ModuleProfileOutput {
 	readonly type:    'module.profile';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly profile: ModuleProfile;
 }
 
@@ -194,6 +199,8 @@ export interface SymbolHit {
 
 export interface SymbolLocateOutput {
 	readonly type:  'symbol.locate';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly names: readonly string[];
 	readonly hits:  readonly SymbolHit[];
 }
@@ -212,6 +219,8 @@ export interface ImportGraphSummary {
 
 export interface ImportGraphOutput {
 	readonly type:    'import.graph';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly summary: ImportGraphSummary;
 }
 
@@ -231,6 +240,8 @@ export interface DocMentionHit {
 
 export interface DocMentionOutput {
 	readonly type:    'doc.mention';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly subject: string;
 	readonly hits:    readonly DocMentionHit[];
 }
@@ -247,6 +258,8 @@ export interface DocDecisionRecord {
 
 export interface DocDecisionTraceOutput {
 	readonly type:                  'doc.decision.trace';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly topic:                 string;
 	readonly decisions:             readonly DocDecisionRecord[];
 	readonly notFoundNote:          string;
@@ -266,6 +279,8 @@ export interface DocConstraintRecord {
 
 export interface DocConstraintEnumerateOutput {
 	readonly type:                  'doc.constraint.enumerate';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly subject:               string;
 	readonly constraints:           readonly DocConstraintRecord[];
 	readonly notFoundNote:          string;
@@ -291,6 +306,8 @@ export interface UsageExampleHit {
 
 export interface UsageExampleOutput {
 	readonly type:       'usage.example';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	/** The symbol whose callers we're enumerating. Populated from
 	 *  params (name OR entityId) so the synthesizer can label the
 	 *  section without re-reading params. */
@@ -339,6 +356,8 @@ export interface ClassHierarchyNode {
 
 export interface ClassHierarchyOutput {
 	readonly type:    'class.hierarchy';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly subject: string;
 	readonly nodes:   readonly ClassHierarchyNode[];
 	/** notFoundNote is populated when the runner could not resolve
@@ -367,6 +386,8 @@ export interface CapabilityReuseCandidate {
 
 export interface CapabilityReuseCheckOutput {
 	readonly type:       'capability.reuse-check';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly capability: string;
 	readonly candidates: readonly CapabilityReuseCandidate[];
 	/** Populated when the underlying concept.resolve returned zero
@@ -421,6 +442,8 @@ export interface ConventionBaseClassIdiom {
 
 export interface ConventionDetectOutput {
 	readonly type:              'convention.detect';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly path:              string;
 	readonly namingSchema:      ConventionNamingSchema;
 	readonly baseClassIdioms:   readonly ConventionBaseClassIdiom[];
@@ -453,6 +476,8 @@ export interface ConfigTraceHit {
 
 export interface ConfigTraceOutput {
 	readonly type:      'config.trace';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly key:       string;
 	readonly hits:      readonly ConfigTraceHit[];
 	readonly truncated: boolean;
@@ -473,6 +498,8 @@ export interface TestLocateHit {
 
 export interface TestLocateOutput {
 	readonly type:    'test.locate';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly subject: string;
 	readonly hits:    readonly TestLocateHit[];
 	readonly notFoundNote: string;
@@ -502,6 +529,8 @@ export interface DataModelNode {
 
 export interface DataModelTraceOutput {
 	readonly type:         'data-model.trace';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly subject:      string;
 	readonly nodes:        readonly DataModelNode[];
 	readonly notFoundNote: string;
@@ -524,6 +553,8 @@ export interface DbConnectionSummary {
 
 export interface DbConnectionsListOutput {
 	readonly type:        'db.connections.list';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly connections: readonly DbConnectionSummary[];
 	/** Populated when no connections are registered for the active
 	 *  repo. Synthesizer renders this as an honest "0 sources"
@@ -547,6 +578,8 @@ export interface DbTableSummary {
 
 export interface DbTablesListOutput {
 	readonly type:         'db.tables.list';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly connectionId: string;
 	readonly family:       'rdbms' | 'kv' | 'file';
 	readonly tables:       readonly DbTableSummary[];
@@ -565,6 +598,8 @@ export interface DbColumnSummary {
 
 export interface DbTableDescribeOutput {
 	readonly type:         'db.table.describe';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly connectionId: string;
 	readonly target:       string;
 	readonly family:       'rdbms' | 'kv' | 'file';
@@ -602,6 +637,8 @@ export interface ManifestHit {
 
 export interface ManifestsLocateOutput {
 	readonly type:      'manifests.locate';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly hits:      readonly ManifestHit[];
 	readonly families:  Readonly<Record<ManifestFamily, number>>;
 	readonly notFoundNote: string;
@@ -624,6 +661,8 @@ export interface ManifestsLocateOutput {
  */
 export interface FreeformProbeOutput {
 	readonly type:    'freeform.probe';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly purpose: string;
 	/** Which target's legacy prompt drove the tool loop -- carried so
 	 *  the synthesizer knows which existing prompt shaped the layers. */
@@ -665,6 +704,8 @@ export interface SearchTextHit {
 
 export interface SearchTextOutput {
 	readonly type:    'search.text';
+	/** What this result holds and what it left out (shared contract sc1). */
+	readonly completeness: Completeness;
 	readonly pattern: string;
 	readonly hits:    readonly SearchTextHit[];
 	/** True when the underlying grep hit its result cap. Synthesizers

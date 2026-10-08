@@ -27,6 +27,7 @@ import type {
 	SymbolHit,
 	SymbolLocateOutput,
 } from './types.js';
+import { graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:symbol-locate');
 
@@ -135,7 +136,8 @@ export async function runSymbolLocate(
 		if (a.file !== b.file) return a.file.localeCompare(b.file);
 		return a.startLine - b.startLine;
 	});
-	const capped = matched.slice(0, params.limit ?? DEFAULT_LIMIT);
+	const limit = params.limit ?? DEFAULT_LIMIT;
+	const capped = matched.slice(0, limit);
 
 	const hits: SymbolHit[] = capped.map(e => ({
 		entityId:  e.id,
@@ -160,6 +162,11 @@ export async function runSymbolLocate(
 
 	return {
 		type:  'symbol.locate',
+		completeness: graphCompleteness({
+			returned: hits.length,
+			found:    matched.length,
+			limited:  matched.length > limit ? [reachedLimit('symbols', limit, 'overall', matched.length)] : [],
+		}),
 		names: params.names,
 		hits,
 	};

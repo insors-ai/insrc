@@ -34,7 +34,10 @@ import type {
 	ManifestHit,
 	ManifestsLocateOutput,
 } from './types.js';
+import type { PartlyReadItem } from '../completeness.js';
+import { INDEXER_CUT_MARKER, partlyReadEntry } from '../item-length.js';
 import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:manifests-locate');
 
@@ -48,6 +51,9 @@ interface ManifestsLocateParams {
 	readonly families?: readonly ManifestFamily[];
 	readonly topK?:     number;
 }
+
+/** The kinds of entity that stand for a whole manifest file. */
+const WHOLE_FILE_ENTITY_KINDS: ReadonlySet<string> = new Set(['document', 'config']);
 
 const DEFAULT_TOP_K = 200;
 const MAX_TOP_K     = 1_000;
@@ -90,6 +96,17 @@ export async function runManifestsLocate(
 	const topK = params.topK ?? DEFAULT_TOP_K;
 	// Manifests that pass every filter, counted past the limit as well.
 	let found = 0;
+	const measurer = createItemMeasurer(db, all);
+	const partlyRead: PartlyReadItem[] = [];
+	// A file has several entities (the file itself, the document, its
+	// sections). The one whose stored body the indexer cut says the index
+	// holds only part of the file, whichever entity the loop below meets first.
+	const cutEntityByFile = new Map<string, Entity>();
+	for (const e of all) {
+		if (e.artifact === true && e.body.endsWith(INDEXER_CUT_MARKER) && WHOLE_FILE_ENTITY_KINDS.has(e.kind) && !cutEntityByFile.has(e.file)) {
+			cutEntityByFile.set(e.file, e);
+		}
+	}
 	const seen = new Set<string>();
 	const hits: ManifestHit[] = [];
 	const familyCounts: Record<ManifestFamily, number> = {
@@ -119,6 +136,13 @@ export async function runManifestsLocate(
 		// to the filename heuristic when the body is empty / unparseable.
 		const resourceKind = resourceKindFromBody(e.file, family, e.body)
 			?? inferResourceKind(e.file, family);
+		// The kind is read from the STORED body. A manifest the indexer cut was
+		// read in part, so its kind may be the file name's guess.
+		const cutEntity = cutEntityByFile.get(e.file);
+		if (cutEntity !== undefined) {
+			const m = await measurer.measure(cutEntity);
+			partlyRead.push(partlyReadEntry(e.file, m.storedChars, m));
+		}
 
 		hits.push({
 			file:   e.file,
@@ -144,6 +168,7 @@ export async function runManifestsLocate(
 			returned: hits.length,
 			found,
 			limited:  found > topK ? [reachedLimit('manifests', topK, 'overall', found)] : [],
+			partlyRead,
 		}),
 		hits,
 		families:  familyCounts,

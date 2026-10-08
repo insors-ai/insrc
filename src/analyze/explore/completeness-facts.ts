@@ -23,6 +23,14 @@ import type { Completeness, PartlyReadItem, ReachedLimit, SkippedItem } from '..
 export const GRAPH_BASIS_NOTE =
 	"this result holds what the stored code graph has; the graph's own coverage of the code is not established";
 
+/**
+ * Carried by every result that rests on the document index. The index keeps
+ * the first 8,192 characters of a document or a section, so a longer one is
+ * found by, and matched on, that much of it.
+ */
+export const DOC_INDEX_RULE =
+	'A document or section longer than 8,192 characters is indexed, and so searched, by its first 8,192 characters only.';
+
 /** A count limit that was reached: `kept` items were returned out of `found`. */
 export function reachedLimit(
 	what:  string,
@@ -47,6 +55,7 @@ export function graphCompleteness(args: {
 	readonly found?:    number | null | undefined;
 	readonly limited?:  readonly ReachedLimit[] | undefined;
 	readonly skipped?:  readonly SkippedItem[] | undefined;
+	readonly partlyRead?: readonly PartlyReadItem[] | undefined;
 	/** A rule of this lookup that bounds what it looks at, added to the basis note. */
 	readonly rule?:     string | undefined;
 }): Completeness {
@@ -55,6 +64,7 @@ export function graphCompleteness(args: {
 		...(args.found   !== undefined ? { total: args.found }     : {}),
 		...(args.limited !== undefined ? { limited: args.limited } : {}),
 		...(args.skipped !== undefined ? { skipped: args.skipped } : {}),
+		...(args.partlyRead !== undefined ? { partlyRead: args.partlyRead } : {}),
 		basis:     'graph',
 		basisNote: args.rule !== undefined ? `${GRAPH_BASIS_NOTE}. ${args.rule}` : GRAPH_BASIS_NOTE,
 	});

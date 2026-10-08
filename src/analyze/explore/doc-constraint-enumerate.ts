@@ -39,9 +39,13 @@ import type {
 	ExplorationRunnerContext,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import type { SkippedItem } from '../completeness.js';
-import { carriedCompleteness, reachedLimit } from './completeness-facts.js';
+import type { PartlyReadItem, SkippedItem } from '../completeness.js';
+import { carriedCompleteness, DOC_INDEX_RULE, reachedLimit } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
 import type { CarriedCompletenessFacts } from './completeness-facts.js';
+
+/** How much of each retrieved section's stored body the model is given. */
+const SECTION_BODY_CHARS = 2_000;
 
 const log = getLogger('analyze:explore:doc-constraint-enumerate');
 
@@ -220,7 +224,7 @@ export async function prepareDocConstraintEnumerate(
 			shortCircuit: {
 				type:                  'doc.constraint.enumerate',
 				// The document index returned no section for the subject: empty, and complete.
-				completeness:          buildCompleteness({ returned: 0, basis: 'doc-index' }),
+				completeness:          buildCompleteness({ returned: 0, basis: 'doc-index', basisNote: DOC_INDEX_RULE }),
 				subject,
 				constraints:           [],
 				notFoundNote:          `No doc sections in the retrieved corpus mention "${subject}".`,
@@ -231,18 +235,24 @@ export async function prepareDocConstraintEnumerate(
 
 	const hydrated: HydratedSection[] = [];
 	const skipped: SkippedItem[] = [];
+	const partlyRead: PartlyReadItem[] = [];
+	const measurer = createItemMeasurer(args.db);
 	for (const s of sections) {
 		const entity = await getEntity(args.db, s.entityId);
 		if (entity === null) {
 			skipped.push({ what: `${s.file} § ${s.heading}`, reason: 'the section is no longer in the index' });
 			continue;
 		}
+		const body = (entity.body ?? '').slice(0, SECTION_BODY_CHARS);
 		hydrated.push({
 			entityId: s.entityId,
 			file:     s.file,
 			heading:  s.heading,
-			body:     (entity.body ?? '').slice(0, 2_000),
+			body,
 		});
+		// The model reads this much of the section; say so when the section is longer.
+		const cut = await measurer.partlyRead(`${s.file} § ${s.heading}`, entity, body.length);
+		if (cut !== undefined) partlyRead.push(cut);
 	}
 
 	const promptContent = loadPromptFile();
@@ -266,6 +276,7 @@ export async function prepareDocConstraintEnumerate(
 					? [reachedLimit('document sections', maxSources, 'source', null)]
 					: [],
 				skipped,
+				partlyRead,
 			},
 		},
 	};
@@ -294,7 +305,7 @@ export function finalizeDocConstraintEnumerate(
 
 	return {
 		type:                  'doc.constraint.enumerate',
-		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts),
+		completeness:          carriedCompleteness(filtered.length, 'doc-index', prepared.completenessFacts, DOC_INDEX_RULE),
 		subject:               prepared.subject,
 		constraints:           filtered,
 		notFoundNote:          filtered.length === 0 ? (raw.notFoundNote || `No constraints on "${prepared.subject}" found in the retrieved sections.`) : '',

@@ -36,6 +36,9 @@ import type {
 	ModuleProfileOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
+import type { PartlyReadItem } from '../completeness.js';
+import { createItemMeasurer } from './item-measure.js';
+import type { ItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:module-profile');
 
@@ -67,6 +70,18 @@ const INDEX_FILENAMES = new Set([
  * HTTP handler, CLI main, service registration, etc. Matched
  * against the file body's first 4 KB.
  */
+/** How much of a file's stored body is scanned for an entry-point marker. */
+const ENTRYPOINT_SCAN_CHARS = 4096;
+
+/**
+ * What the entry-point list rests on. The index stores no content for a
+ * source file's own entity, so for those files only the name is checked; the
+ * markers are looked for where a stored body exists.
+ */
+const ENTRYPOINT_RULE =
+	'Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; ' +
+	'the index stores no content for a source file itself, so such a file is recognised by name only.';
+
 const ENTRYPOINT_MARKERS: readonly RegExp[] = [
 	/if\s+__name__\s*==\s*['"]__main__['"]/,
 	/@app\.(get|post|put|delete|patch|route)\b/,   // FastAPI / Flask
@@ -121,20 +136,25 @@ export async function runModuleProfile(
 	const db = await getDb();
 	const entities = await listEntitiesForRepo(db, ctx.repoPath);
 
+	// Entry points are looked for in the first 4,096 characters of a file's
+	// stored body. A longer file in which none was found was read in part.
+	const measurer = createItemMeasurer(db, entities);
+	const partlyRead: PartlyReadItem[] = [];
+
 	if (stat.isFile()) {
-		const profile = await profileFile(path, entities);
+		const profile = await profileFile(path, entities, measurer, partlyRead);
 		log.info(
 			{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount },
 			'module.profile: file profiled',
 		);
 		return {
 			type: 'module.profile',
-			completeness: buildCompleteness({ returned: 1, basis: 'filesystem' }),
+			completeness: buildCompleteness({ returned: 1, partlyRead, basis: 'filesystem', basisNote: ENTRYPOINT_RULE }),
 			profile,
 		};
 	}
 
-	const profile = await profileDir(path, entities, ctx.ignoreFilter);
+	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead);
 	log.info(
 		{
 			runId:       ctx.runId,
@@ -153,7 +173,9 @@ export async function runModuleProfile(
 		// Every immediate child of the directory is listed; nothing is cut by count.
 		completeness: buildCompleteness({
 			returned: profile.subdirs.length + profile.filesInDir.length,
+			partlyRead,
 			basis:    'filesystem',
+			basisNote: ENTRYPOINT_RULE,
 		}),
 		profile,
 	};
@@ -167,6 +189,8 @@ async function profileDir(
 	dir:      string,
 	entities: readonly Entity[],
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
+	measurer:   ItemMeasurer,
+	partlyRead: PartlyReadItem[],
 ): Promise<ModuleProfile> {
 	// Immediate children (subdirs + files) via filesystem.
 	const subdirs: string[] = [];
@@ -232,13 +256,20 @@ async function profileDir(
 			continue;
 		}
 		const bodyMatchEntity = entities.find(e => e.file === f.file && e.kind === 'file');
-		const body = (bodyMatchEntity?.body ?? '').slice(0, 4096);
+		const body = (bodyMatchEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
 		if (body.length === 0) continue;
+		let found = false;
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) {
 				entrypoints.push(f.file);
+				found = true;
 				break;
 			}
+		}
+		// A marker past the scanned part would have been missed.
+		if (!found && bodyMatchEntity !== undefined) {
+			const cut = await measurer.partlyRead(f.file, bodyMatchEntity, body.length);
+			if (cut !== undefined) partlyRead.push(cut);
 		}
 	}
 
@@ -278,7 +309,12 @@ async function profileDir(
 // File profile
 // ---------------------------------------------------------------------------
 
-async function profileFile(file: string, entities: readonly Entity[]): Promise<ModuleProfile> {
+async function profileFile(
+	file:       string,
+	entities:   readonly Entity[],
+	measurer:   ItemMeasurer,
+	partlyRead: PartlyReadItem[],
+): Promise<ModuleProfile> {
 	const size = (() => {
 		try { return statSync(file).size; }
 		catch { return 0; }
@@ -294,12 +330,17 @@ async function profileFile(file: string, entities: readonly Entity[]): Promise<M
 		if (e.isExported === true) exports.push(e.name);
 	}
 	exports.sort();
-	const body = (fileEntity?.body ?? '').slice(0, 4096);
+	const body = (fileEntity?.body ?? '').slice(0, ENTRYPOINT_SCAN_CHARS);
 	const entrypoints: string[] = [];
 	if (INDEX_FILENAMES.has(basename(file))) entrypoints.push(file);
 	else {
 		for (const rx of ENTRYPOINT_MARKERS) {
 			if (rx.test(body)) { entrypoints.push(file); break; }
+		}
+		// A marker past the scanned part would have been missed.
+		if (entrypoints.length === 0 && fileEntity !== undefined && body.length > 0) {
+			const cut = await measurer.partlyRead(file, fileEntity, body.length);
+			if (cut !== undefined) partlyRead.push(cut);
 		}
 	}
 	return {

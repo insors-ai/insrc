@@ -27,8 +27,12 @@ import type {
 	Exploration,
 	ExplorationRunnerContext,
 } from './types.js';
+import { getEntity } from '../../db/entities.js';
 import { buildCompleteness } from '../completeness.js';
-import { reachedLimit } from './completeness-facts.js';
+import type { PartlyReadItem } from '../completeness.js';
+import { partlyReadEntry } from '../item-length.js';
+import { DOC_INDEX_RULE, reachedLimit } from './completeness-facts.js';
+import { createItemMeasurer } from './item-measure.js';
 
 const log = getLogger('analyze:explore:doc-mention');
 
@@ -118,11 +122,22 @@ export async function runDocMention(
 		...(r.bodyPreview !== undefined && r.bodyPreview.length > 0 ? { preview: r.bodyPreview } : {}),
 	}));
 
+	// A hit whose stored body the indexer cut was matched on that much of it.
+	const measurer = createItemMeasurer(db);
+	const partlyRead: PartlyReadItem[] = [];
+	for (const r of results) {
+		const entity = await getEntity(db, r.entityId);
+		if (entity === null) continue;
+		const m = await measurer.measure(entity);
+		if (m.cutByIndexer) partlyRead.push(partlyReadEntry(`${r.file} § ${r.heading}`, m.storedChars, m));
+	}
+
 	log.info(
 		{
 			runId:    ctx.runId,
 			subject:  params.subject,
 			returned: hits.length,
+			partlyRead: partlyRead.length,
 		},
 		'doc.mention: complete',
 	);
@@ -134,7 +149,9 @@ export async function runDocMention(
 		completeness: buildCompleteness({
 			returned: hits.length,
 			limited:  hits.length >= limit ? [reachedLimit('document sections', limit, 'overall', null)] : [],
+			partlyRead,
 			basis:    'doc-index',
+			basisNote: DOC_INDEX_RULE,
 		}),
 		subject: params.subject,
 		hits,

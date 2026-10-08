@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791454086578-3p5dfj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T10:09:29.815Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 83237,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e42ada445ffc9b72",
+    "epicSlug": "bug-story-s-code-review-change",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "A Story's code review covers commits from other work items made before its end or between its tasks",
+    "reproduction": "Build E1 story s1 (epic 2ff0dfdadb1c8d1c). Its build-start stamp records rangeBase ea6ed95. Its six task commits are 88910a7 (t1), then 896cf2c..393e80b (t2-t6). Between t1 and t2, the SQLite fix for a different issue is committed on the same branch (6fd67b18, ISSUE-8c46dd22). After t6, two more issues are built and committed on the same branch (ISSUE-f1bf0fb3, ISSUE-f9ced66a). Then call `insrc_code_review_step({ phase: 'start', epicHash: '2ff0dfdadb1c8d1c', storyId: 's1' })`. Observed: the review's change set has 48 files. Only the 11 under src/workflow/delivery/** are the Story's; the rest are the SQLite driver, the CLI provider, the build-step validate code, the code-review judges and so on. The reviewer flagged this itself ('The changed set covers more than this Story'), and its MED finding is about code-review code, not the Story. Expected: the review covers exactly the Story's own six task commits.",
+    "rootCause": "The Story's change set is everything on the first-parent line from its range base to the current HEAD. storyChangeSet (src/workflow/runners/build/story-commits.ts) lists `git rev-list --first-parent --no-merges <base>..HEAD`, minus merge content (ISSUE-f9ced66a). Two things are therefore counted as the Story's work. (1) There is no end bound: every commit made after the Story's last task is in range, so the later a Story is reviewed, the more unrelated code it covers. (2) Work items interleave on one branch: a commit for another issue made between two of the Story's tasks sits inside even a correctly bounded range. Nothing records which commits a Story produced. The BUILD record's per-task entries carry only { id, passed } (src/mcp/build-step/phases/validate.ts writes `tasks: [{ id: taskId, passed }]`), and commit messages do not identify the work item uniquely, since every Story numbers itself s1 and tasks t1, t2, ...",
+    "fixIntent": "A Story's review change set (the review subject, the diff grounding and the BUILD change log) is derived from the commits the Story's own tasks produced, as recorded when each task passes validation, so commits for other work items before, between or after the Story's tasks are never reviewed as its work. Records written before the commits were recorded keep today's range behaviour and say so, rather than failing. The protections already in place stay: merge content is still excluded, the range base still never moves forward, and ledger files stay excluded."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/story-commits.ts",
+      "quotedText": "const lines = git(repoPath, ['rev-list', '--first-parent', '--reverse', '--parents', `${base}..HEAD`])"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/build-step/phases/validate.ts",
+      "quotedText": "tasks: [{ id: taskId, passed }],"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts",
+      "quotedText": "readonly tasks?:       readonly BuildRecordTask[] | undefined;"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "CR-2ff0dfdadb1c8d1c-s1 (coverage finding: 'The changed set covers more than this Story')"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-f9ced66a0e8835b8 (merge content excluded from the Story's change set)"
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791456121710-yvwuaf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T10:45:29.310Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 207595,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s2",
+    "lldRunId": "wf-1791454582508-356km7",
+    "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T10:46:50.815Z",
+    "rangeBase": "07f65e155d8d3d2f40c59e02568a93019e6b77e6"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds the four stage-annotation types to the delivery module's types, then one new stage.ts holding the stage pass: route resolution from each item's recorded fields, the ordered stage rules with each route's ready gate, the reason text, the issue-level roll-up and the pass's two notices. Everything is tested over fabricated records in one new stage.test.ts, plus a type-level check of the new types."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Stage annotation types",
+        "summary": "Add DeliveryStage, DeliveryRoute, StageAnnotation and StagePassResult to src/workflow/delivery/types.ts exactly as the HLD sc4 sketch.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The four sc4 types are exported from types.ts with exactly the HLD members and fields.",
+          "The module compiles under the repo's strict tsconfig."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types.test.ts: 'the stage and route types list exactly the HLD members'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Stage pass for stories: route resolution, stage rules and reasons",
+        "summary": "New src/workflow/delivery/stage.ts exporting deriveStages(graph, recordSet). For each story it resolves the route by the LLD precedence (ISSUE magnitude for the hash, LLD sizeClass, agreeing standalone BUILD sizeClass, full-chain for a non-standalone epic story, else unknown), applies the five ordered stage rules with the per-route ready gate, and writes the reason text and artifact ids.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A full-chain story with an approved PLAN and no BUILD is ready-plan-approved with a reason naming the PLAN.",
+          "A story with an unapproved BUILD is build-recorded and one with an approved BUILD is complete, whatever task results or review verdicts say.",
+          "A story with no LLD, PLAN or BUILD is scoped.",
+          "The ISSUE magnitude wins over a BUILD stamp; a non-standalone BUILD's sizeClass is never read; an unknown or disagreeing stamp gives 'unknown'.",
+          "A sized-bugfix or full-chain story with an approved LLD and no PLAN is design-plan.",
+          "Approval is read only from ArtifactRecord.approval.state."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a story with an unapproved build whose tasks all passed is build-recorded'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a story with an approved build is complete whatever its task results and review verdict'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a story with no design, plan or build record is scoped'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'the issue magnitude decides a fix story's route ahead of its build stamp'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a non-standalone build stamp is never read and an epic story is full-chain'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a sized-bugfix or full-chain story with an approved design and no plan is design-plan'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'an unknown or disagreeing stamp gives the unknown route, never a guess'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Stage pass for issues and the pass's notices",
+        "summary": "Extend deriveStages: an issue with fix stories takes the least advanced child's stage, an issue with none uses its own ISSUE (small-bugfix approved is ready-design-approved, sized approved is design-plan); raise unknown-route for every story or issue with an unknown route and review-without-build for a story with a CR and no BUILD; sort the notices; never throw on missing records or wrongly typed fields.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A small story with an approved LLD and a small-bugfix issue with an approved ISSUE are both ready-design-approved, with no plan-related notice.",
+          "An issue's stage is its least advanced fix story's.",
+          "A CR with no BUILD leaves the stage unchanged and raises one review-without-build notice naming the CR.",
+          "An unknown route keeps the records' stage and raises one unknown-route notice.",
+          "Missing evidence records and wrongly typed fields never throw, and every story and issue gets exactly one stage, deterministically."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a code review with no build leaves the stage and raises review-without-build'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'an item with no recorded route keeps its records' stage and raises unknown-route'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'a story or issue with no design, plan or build is scoped'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'an issue takes the least advanced stage of its fix stories'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'missing evidence records and wrongly typed fields never throw'"
+          },
+          {
+            "level": "unit",
+            "name": "stage.test.ts: 'every story and issue in the real-shape fixtures gets exactly one stage, deterministically'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "stage.test.ts: 'a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a story with an unapproved build whose tasks all passed is build-recorded'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a story with an approved build is complete whatever its task results and review verdict'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a code review with no build leaves the stage and raises review-without-build'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'an item with no recorded route keeps its records' stage and raises unknown-route'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a story or issue with no design, plan or build is scoped'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'the issue magnitude decides a fix story's route ahead of its build stamp'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a non-standalone build stamp is never read and an epic story is full-chain'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'a sized-bugfix or full-chain story with an approved design and no plan is design-plan'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'an unknown or disagreeing stamp gives the unknown route, never a guess'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'an issue takes the least advanced stage of its fix stories'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'missing evidence records and wrongly typed fields never throw'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "stage.test.ts: 'every story and issue in the real-shape fixtures gets exactly one stage, deterministically'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 data model: DeliveryStage, DeliveryRoute, StageAnnotation, StagePassResult (sc4 types)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 DeliveryRoute (route resolution)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 DeliveryStage (stage rules) and StageAnnotation (reason)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 StagePassResult (deriveStages): approval read only through sc1"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 DeliveryNotice (stage-pass notices) and error paths"
+    }
+  ]
+}

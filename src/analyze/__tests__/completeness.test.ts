@@ -72,6 +72,21 @@ test('buildCompleteness computes complete and rejects contradictory facts with R
 		returned: 5, basis: 'text',
 		limited: [{ what: 'hits', limit: 4, scope: 'overall', reason: 'hit limit' }],
 	}), RangeError);
+	assert.throws(() => buildCompleteness({ returned: 5, total: Number.NaN, basis: 'text' }), RangeError);
+	assert.throws(() => buildCompleteness({
+		returned: 5, basis: 'graph',
+		limited: [{ what: 'fields per target', limit: -1, scope: 'per-group', reason: 'field limit' }],
+	}), RangeError);
+	assert.throws(() => buildCompleteness({
+		returned: 1, basis: 'doc-index', partlyRead: [{ what: 'a.md', readChars: -1, totalChars: 10 }],
+	}), RangeError);
+	assert.throws(() => buildCompleteness({
+		returned: 1, basis: 'doc-index', partlyRead: [{ what: 'a.md', readChars: 2_000, totalChars: 1_999 }],
+	}), /totalChars 1999 of a\.md is below the 2000 characters read/);
+	// An unknown full length is not a contradiction.
+	assert.equal(buildCompleteness({
+		returned: 1, basis: 'doc-index', partlyRead: [{ what: 'a.md', readChars: 2_000, totalChars: null }],
+	}).complete, false);
 });
 
 test('buildCompleteness accepts several reached limits and a per-group limit below the returned count', () => {

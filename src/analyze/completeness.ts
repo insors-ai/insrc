@@ -80,9 +80,10 @@ export interface CompletenessFacts {
  * limit, skipped something or cut content.
  *
  * @throws RangeError when the facts contradict each other — a bug in the
- *   caller: a negative count, a total below the returned count, or an
- *   OVERALL limit below the returned count. A per-group limit is not
- *   compared with the overall count.
+ *   caller: a negative count or limit, a total below the returned count
+ *   (or not a number), an OVERALL limit below the returned count, or a
+ *   partly read item whose full length is below what was read. A per-group
+ *   limit is not compared with the overall count.
  */
 export function buildCompleteness(facts: CompletenessFacts): Completeness {
 	const { returned } = facts;
@@ -94,6 +95,9 @@ export function buildCompleteness(facts: CompletenessFacts): Completeness {
 	const partlyRead = facts.partlyRead ?? [];
 
 	for (const l of limited) {
+		if (!Number.isFinite(l.limit) || l.limit < 0) {
+			throw new RangeError(`completeness: limit on ${l.what} must be >= 0, got ${l.limit}`);
+		}
 		if (l.scope === 'overall' && l.limit < returned) {
 			throw new RangeError(
 				`completeness: overall limit ${l.limit} on ${l.what} is below the returned count ${returned}`,
@@ -101,10 +105,21 @@ export function buildCompleteness(facts: CompletenessFacts): Completeness {
 		}
 	}
 
+	for (const p of partlyRead) {
+		if (!Number.isFinite(p.readChars) || p.readChars < 0) {
+			throw new RangeError(`completeness: readChars of ${p.what} must be >= 0, got ${p.readChars}`);
+		}
+		if (p.totalChars !== null && !(p.totalChars >= p.readChars)) {
+			throw new RangeError(
+				`completeness: totalChars ${p.totalChars} of ${p.what} is below the ${p.readChars} characters read`,
+			);
+		}
+	}
+
 	const total = facts.total !== undefined
 		? facts.total
 		: (limited.length === 0 ? returned : null);
-	if (total !== null && total < returned) {
+	if (total !== null && !(total >= returned)) {
 		throw new RangeError(`completeness: total ${total} is below the returned count ${returned}`);
 	}
 

@@ -27,7 +27,7 @@ import { writeBundle } from '../cache.js';
 import { DecomposerLlmUnavailableError } from '../decomposer.js';
 import {
 	runShaper,
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperLlmUnavailableError,
 	_realPipelineStepsForTest,
 	type PipelineSteps,
@@ -199,7 +199,7 @@ test('runShaper, run mode: a cause becomes its typed error and does NOT fall thr
 	const loop2 = forbiddenLoop();
 	await assert.rejects(
 		() => call(unfocused({ kind: 'repo', value: repo }), second.steps, loop2.provider, 'bad-bundle'),
-		(err: unknown) => err instanceof ShaperAnswerInvalidError && err.stage === 'bundle validation',
+		(err: unknown) => err instanceof ShaperAnswerStepFailedError && err.reason === 'invalid-bundle',
 	);
 	assert.equal(loop2.used(), false);
 });

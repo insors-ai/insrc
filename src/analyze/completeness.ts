@@ -187,6 +187,15 @@ export interface AnswerReport {
 	readonly handling?: unknown;
 }
 
+/** True for a value with the shape `deriveAnswerReport` returns. */
+export function isAnswerReport(v: unknown): v is AnswerReport {
+	if (typeof v !== 'object' || v === null) return false;
+	const c = (v as Record<string, unknown>)['completeness'];
+	if (typeof c !== 'object' || c === null) return false;
+	const r = c as Record<string, unknown>;
+	return typeof r['complete'] === 'boolean' && Array.isArray(r['incomplete']) && Array.isArray(r['failed']);
+}
+
 export interface ReportSource {
 	readonly sourceId:      string;
 	readonly sourceKind:    'lookup' | 'plan-task';

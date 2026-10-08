@@ -50,7 +50,7 @@ import { handleReviewStep } from './review-step/handler.js';
 import { DEFAULT_DEPS as CODE_REVIEW_STEP_DEFAULT_DEPS, handleCodeReviewStep } from './code-review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleDocgen } from './docgen/handler.js';
-import { renderBundleAsMarkdown } from './bundle-md.js';
+import { renderAnalyzeFailure, renderBundleAsMarkdown } from './bundle-md.js';
 import { makeSamplerFromMcpServer } from './sampling-bridge.js';
 import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
@@ -1336,9 +1336,9 @@ async function handleAnalyze(
 
 	const result = await rpc;
 	if (!result.ok) {
-		return errorResult(
-			`analyze.context.buildRun failed: ${result.error.code} -- ${result.error.message}`,
-		);
+		// A failure after the lookups ran carries their report: the completeness
+		// line and the failed step's reason are printed with the code and message.
+		return errorResult(renderAnalyzeFailure(result.error));
 	}
 
 	const markdown = renderBundleAsMarkdown(result.bundle);

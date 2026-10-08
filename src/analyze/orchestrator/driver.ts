@@ -40,7 +40,7 @@ import {
 } from '../classifier/driver.js';
 import { shaperFor } from '../context/index.js';
 import {
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
@@ -517,14 +517,25 @@ function classifyShaperError(err: unknown): RunFailure {
 		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
 	}
 	if (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);
-	if (err instanceof ShaperPromptMissingError) return wrap('shaper-prompt-missing', err);
+	if (err instanceof ShaperPromptMissingError) {
+		// The answer prompt is loaded after the lookups ran: what they found goes with the failure.
+		return err.found !== undefined
+			? { code: 'shaper-prompt-missing', message: err.message, data: { results: err.found.results, report: err.found.report } }
+			: wrap('shaper-prompt-missing', err);
+	}
 	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);
 	if (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);
 	if (err instanceof ScopeRefUnresolvedError) return wrap('scope-ref-unresolved', err);
 	if (err instanceof ScopeKindTargetMismatchError) return wrap('scope-ref-kind-target-mismatch', err);
-	// An invalid answer keeps the existing schema code until the
-	// answer-step failure (with the lookup results) replaces it.
-	if (err instanceof ShaperAnswerInvalidError) return wrap('shaper-schema-unrecoverable', err);
+	// The lookups ran and the answer could not be written: the failure
+	// carries what they found, and the report says the answer step failed.
+	if (err instanceof ShaperAnswerStepFailedError) {
+		return {
+			code: 'answer-step-failed',
+			message: err.message,
+			data: { reason: err.reason, results: err.found.results, report: err.found.report },
+		};
+	}
 	return wrap('internal-error', err);
 }
 

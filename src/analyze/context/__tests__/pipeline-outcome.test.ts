@@ -25,7 +25,7 @@ import {
 	errorForPipelineCause,
 	PIPELINE_CAUSES,
 	settlePipelineOutcome,
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
@@ -389,46 +389,58 @@ test('module scope: lookup path and cache key unchanged', async () => {
 // The table from cause to error
 // ---------------------------------------------------------------------------
 
-test('cause-to-error table: one case per cause, ShaperLlmUnavailableError only for the two model-failed causes', () => {
+test('cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call', () => {
 	const expected: Record<PipelineCause, new (...a: never[]) => Error> = {
 		'invalid-input':          ShaperInvalidInputError,
 		'planner-prompt-missing': ShaperPromptMissingError,
 		'planner-model-failed':   ShaperLlmUnavailableError,
 		'answer-prompt-missing':  ShaperPromptMissingError,
-		'answer-model-failed':    ShaperLlmUnavailableError,
-		'answer-invalid':         ShaperAnswerInvalidError,
+		'answer-model-failed':    ShaperAnswerStepFailedError,
+		'answer-invalid':         ShaperAnswerStepFailedError,
 		'empty-plan':             ShaperNoPlanError,
-		'bundle-invalid':         ShaperAnswerInvalidError,
+		'bundle-invalid':         ShaperAnswerStepFailedError,
 	};
 	// Every member of the cause list has a row here and a case in the table.
 	assert.deepEqual([...PIPELINE_CAUSES].sort(), Object.keys(expected).sort());
 	const modelFailed: PipelineCause[] = [];
 	for (const c of PIPELINE_CAUSES) {
-		const err = errorForPipelineCause(c, 'detail', '/p/prompt.md');
+		const err = errorForPipelineCause(c, 'detail', { promptPath: '/p/prompt.md', found: FOUND_NOTHING_LEFT_OUT });
 		assert.ok(err instanceof expected[c], `${c} -> ${err.name}`);
 		assert.equal(err.constructor, expected[c], `${c}: exactly that class`);
 		if (err instanceof ShaperLlmUnavailableError) modelFailed.push(c);
 	}
-	assert.deepEqual(modelFailed.sort(), ['answer-model-failed', 'planner-model-failed']);
+	// A failed answer-writing call is no longer reported as an unavailable model:
+	// the lookups ran, so it is a failed answer step that carries what they found.
+	assert.deepEqual(modelFailed, ['planner-model-failed']);
 });
 
 test('error messages state the cause, name the failed call, and never say retries or Ollama for another provider', () => {
 	const cli = 'claude exited with 1. stderr=overloaded';
 	assert.equal(errorForPipelineCause('planner-model-failed', cli).message, `The model call for planning failed: ${cli}`);
-	assert.equal(errorForPipelineCause('answer-model-failed', cli).message, `The model call for answer writing failed: ${cli}`);
-	assert.equal(errorForPipelineCause('bundle-invalid', '/focus must be string').message, 'The bundle failed validation: /focus must be string');
-	assert.equal(errorForPipelineCause('answer-invalid', 'no JSON').message, 'The answer-writing output was invalid: no JSON');
+	const found = { found: FOUND_NOTHING_LEFT_OUT };
+	assert.equal(
+		errorForPipelineCause('answer-model-failed', cli, found).message,
+		`The answer could not be written after 0 lookup(s) ran -- the model call for answer writing failed: ${cli}`,
+	);
+	assert.equal(
+		errorForPipelineCause('bundle-invalid', '/focus must be string', found).message,
+		'The answer could not be written after 0 lookup(s) ran -- the bundle failed validation: /focus must be string',
+	);
+	assert.equal(
+		errorForPipelineCause('answer-invalid', 'no JSON', found).message,
+		'The answer could not be written after 0 lookup(s) ran -- the answer-writing output was invalid: no JSON',
+	);
 	// The two prompt-missing causes carry the prompt file's path.
 	assert.equal(
-		errorForPipelineCause('planner-prompt-missing', 'Decomposer prompt file missing: /x/d.md', '/x/d.md').message,
+		errorForPipelineCause('planner-prompt-missing', 'Decomposer prompt file missing: /x/d.md', { promptPath: '/x/d.md' }).message,
 		'Shaper prompt file missing: /x/d.md',
 	);
 	assert.equal(
-		errorForPipelineCause('answer-prompt-missing', 'Synthesizer prompt file missing: /x/s.md', '/x/s.md').message,
+		errorForPipelineCause('answer-prompt-missing', 'Synthesizer prompt file missing: /x/s.md', { promptPath: '/x/s.md' }).message,
 		'Shaper prompt file missing: /x/s.md',
 	);
 	for (const c of PIPELINE_CAUSES) {
-		const msg = errorForPipelineCause(c, cli, '/x/p.md').message;
+		const msg = errorForPipelineCause(c, cli, { promptPath: '/x/p.md', found: FOUND_NOTHING_LEFT_OUT }).message;
 		assert.ok(!/exhausted|retries/i.test(msg), `${c}: ${msg}`);
 		assert.ok(!msg.includes('Ollama'), `${c}: ${msg}`);
 	}
@@ -450,12 +462,25 @@ test("CLI and sampling call failures give 'planner-model-failed' and 'answer-mod
 	assert.equal(cause(a2.outcome), 'answer-model-failed');
 
 	// End to end through the table: the final message names the call and no provider it did not come from.
-	for (const o of [p1.outcome, p2.outcome, a1.outcome, a2.outcome]) {
+	for (const o of [p1.outcome, p2.outcome]) {
 		assert.throws(
 			() => settlePipelineOutcome(o, stamp),
 			(err: unknown) => {
 				assert.ok(err instanceof ShaperLlmUnavailableError);
-				assert.match(err.message, /^The model call for (planning|answer writing) failed: /);
+				assert.match(err.message, /^The model call for planning failed: /);
+				assert.ok(!err.message.includes('Ollama'), err.message);
+				assert.ok(!err.message.includes('Local'), err.message);
+				return true;
+			},
+		);
+	}
+	for (const o of [a1.outcome, a2.outcome]) {
+		assert.throws(
+			() => settlePipelineOutcome(o, stamp),
+			(err: unknown) => {
+				assert.ok(err instanceof ShaperAnswerStepFailedError, `got ${(err as Error).name}`);
+				assert.equal(err.reason, 'model-failed');
+				assert.match(err.message, /the model call for answer writing failed: /);
 				assert.ok(!err.message.includes('Ollama'), err.message);
 				assert.ok(!err.message.includes('Local'), err.message);
 				return true;
@@ -468,18 +493,18 @@ test("CLI and sampling call failures give 'planner-model-failed' and 'answer-mod
 // What runShaper does with an outcome
 // ---------------------------------------------------------------------------
 
-test("runShaper throws ShaperAnswerInvalidError with stage 'bundle validation' for an invalid bundle", () => {
+test("runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle", () => {
 	// A bundle with a layer missing fails the bundle schema.
 	const broken = { ...RAW } as Record<string, unknown>;
 	delete broken['summary'];
 	assert.throws(
 		() => settlePipelineOutcome({ kind: 'bundle', raw: broken as unknown as RawBundle, explorationCount: 2, found: FOUND_NOTHING_LEFT_OUT }, stamp),
 		(err: unknown) => {
-			assert.ok(err instanceof ShaperAnswerInvalidError, `got ${(err as Error).name}`);
-			assert.equal(err.stage, 'bundle validation');
+			assert.ok(err instanceof ShaperAnswerStepFailedError, `got ${(err as Error).name}`);
+			assert.equal(err.reason, 'invalid-bundle');
 			assert.ok(!(err instanceof ShaperLlmUnavailableError));
 			assert.ok(!(err instanceof ShaperSchemaUnrecoverable));
-			assert.match(err.message, /^The bundle failed validation: /);
+			assert.match(err.message, /the bundle failed validation: /);
 			assert.match(err.message, /summary/);
 			return true;
 		},
@@ -504,4 +529,92 @@ test('settlePipelineOutcome: a valid bundle is stamped and returned; not-applica
 		),
 		(err: unknown) => err instanceof ShaperPromptMissingError && (err as Error).message.endsWith('/x/s.md'),
 	);
+});
+
+// ---------------------------------------------------------------------------
+// A failure after the lookups ran carries what they found
+// ---------------------------------------------------------------------------
+
+type DidNotProceed = Extract<PipelineOutcome, { kind: 'did-not-proceed' }>;
+
+test("the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason", async () => {
+	const broken = { ...RAW } as Record<string, unknown>;
+	delete broken['summary'];
+
+	// The two causes the pipeline itself returns.
+	const modelFailed = await run({ synthesize: async () => { throw new SynthesizerLlmUnavailableError('codex exited with 2'); } });
+	const invalid     = await run({ synthesize: async () => { throw new SynthesizerSchemaUnrecoverable(3, ['no JSON object']); } });
+	for (const [r, expectedCause, reason] of [
+		[modelFailed, 'answer-model-failed', 'model-failed'],
+		[invalid,     'answer-invalid',      'invalid-answer'],
+	] as const) {
+		assert.equal(cause(r.outcome), expectedCause);
+		const o = r.outcome as DidNotProceed;
+		// Exactly what the lookup step returned, and the report derived from it.
+		assert.equal(r.calls.executed.length, 1);
+		assert.equal(o.found?.results, r.calls.executed[0]?.results);
+		assert.equal(o.found?.results.length, 1);
+		assert.deepEqual(o.found?.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+
+		assert.throws(() => settlePipelineOutcome(o, stamp), (err: unknown) => {
+			assert.ok(err instanceof ShaperAnswerStepFailedError, `got ${(err as Error).name}`);
+			assert.equal(err.reason, reason);
+			assert.equal(err.found.results, r.calls.executed[0]?.results);
+			assert.equal(err.found.report.answerFailure?.startsWith(
+				reason === 'model-failed' ? 'the model call for answer writing failed: ' : 'the answer-writing output was invalid: ',
+			), true, err.found.report.answerFailure);
+			assert.deepEqual(err.found.report.completeness, o.found?.report.completeness);
+			return true;
+		});
+	}
+
+	// The third arises later, from a bundle outcome that fails validation.
+	const badBundle = await run({ synthesize: async () => broken as unknown as RawBundle });
+	assert.ok(badBundle.outcome.kind === 'bundle');
+	assert.throws(() => settlePipelineOutcome(badBundle.outcome, stamp), (err: unknown) => {
+		assert.ok(err instanceof ShaperAnswerStepFailedError, `got ${(err as Error).name}`);
+		assert.equal(err.reason, 'invalid-bundle');
+		assert.equal(err.found.results, badBundle.calls.executed[0]?.results);
+		assert.match(err.found.report.answerFailure ?? '', /^the bundle failed validation: .*summary/);
+		return true;
+	});
+
+	// A cause that arises after the lookups ran cannot be raised without their results.
+	for (const c of ['answer-model-failed', 'answer-invalid', 'bundle-invalid'] as const) {
+		assert.throws(() => errorForPipelineCause(c, 'detail'), /arises after the lookups ran and was raised without their results/);
+	}
+
+	// A failed planning call happened before any lookup: nothing is carried.
+	const planning = await run({ decompose: async () => { throw new DecomposerLlmUnavailableError('down'); } });
+	assert.equal(cause(planning.outcome), 'planner-model-failed');
+	assert.equal((planning.outcome as DidNotProceed).found, undefined);
+	assert.equal(planning.calls.executed.length, 0);
+});
+
+test('a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none', async () => {
+	const answer = await run({ synthesize: async () => { throw new SynthesizerPromptMissingError('/x/synth.md'); } });
+	assert.equal(cause(answer.outcome), 'answer-prompt-missing');
+	const o = answer.outcome as DidNotProceed;
+	assert.equal(o.found?.results, answer.calls.executed[0]?.results);
+	assert.deepEqual(o.found?.report, { completeness: { complete: true, incomplete: [], failed: [] } });
+	assert.throws(() => settlePipelineOutcome(o, stamp), (err: unknown) => {
+		// Its own error: a fault of the installation, not a failed answer step.
+		assert.ok(err instanceof ShaperPromptMissingError, `got ${(err as Error).name}`);
+		assert.equal(err.message, 'Shaper prompt file missing: /x/synth.md');
+		assert.equal(err.found?.results, answer.calls.executed[0]?.results);
+		assert.deepEqual(err.found?.report, o.found?.report);
+		return true;
+	});
+
+	const planning = await run({ decompose: async () => { throw new DecomposerPromptMissingError('/x/plan.md'); } });
+	assert.equal(cause(planning.outcome), 'planner-prompt-missing');
+	assert.equal((planning.outcome as DidNotProceed).found, undefined);
+	assert.throws(() => settlePipelineOutcome(planning.outcome, stamp), (err: unknown) => {
+		assert.ok(err instanceof ShaperPromptMissingError);
+		assert.equal(err.found, undefined);
+		return true;
+	});
+	// The table does not attach findings to a planning prompt even when handed some.
+	const forced = errorForPipelineCause('planner-prompt-missing', 'm', { promptPath: '/x/plan.md', found: FOUND_NOTHING_LEFT_OUT });
+	assert.equal((forced as ShaperPromptMissingError).found, undefined);
 });

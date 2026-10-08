@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-	ShaperAnswerInvalidError,
+	ShaperAnswerStepFailedError,
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
@@ -30,14 +30,20 @@ test('ShaperLlmUnavailableError message with and without a call', () => {
 	assert.equal(bare.name, 'ShaperLlmUnavailableError');
 });
 
-test('ShaperAnswerInvalidError states its stage and never reports retries', () => {
-	const bundle = new ShaperAnswerInvalidError('bundle validation', '/focus must be string');
-	assert.equal(bundle.stage, 'bundle validation');
-	assert.equal(bundle.message, 'The bundle failed validation: /focus must be string');
+test('ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries', () => {
+	const found = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
+	const bundle = new ShaperAnswerStepFailedError('invalid-bundle', '/focus must be string', found);
+	assert.equal(bundle.reason, 'invalid-bundle');
+	assert.equal(bundle.message, 'The answer could not be written after 0 lookup(s) ran -- the bundle failed validation: /focus must be string');
 
-	const answer = new ShaperAnswerInvalidError('answer writing', 'no JSON object');
-	assert.equal(answer.stage, 'answer writing');
-	assert.equal(answer.message, 'The answer-writing output was invalid: no JSON object');
+	const answer = new ShaperAnswerStepFailedError('invalid-answer', 'no JSON object', found);
+	assert.equal(answer.reason, 'invalid-answer');
+	assert.equal(answer.message, 'The answer could not be written after 0 lookup(s) ran -- the answer-writing output was invalid: no JSON object');
+
+	// The report it carries says the answer step failed; the one it was given is not changed.
+	assert.equal(answer.found.report.answerFailure, 'the answer-writing output was invalid: no JSON object');
+	assert.deepEqual(answer.found.report.completeness, found.report.completeness);
+	assert.equal('answerFailure' in found.report, false);
 
 	for (const e of [bundle, answer]) {
 		assert.ok(!/exhausted|retries/i.test(e.message), e.message);

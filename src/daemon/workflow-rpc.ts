@@ -45,7 +45,7 @@ import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, t
 import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
-import { completenessHeadLine } from '../analyze/completeness.js';
+import { completenessHeadLine, isAnswerReport, renderCompletenessLine, type AnswerReport } from '../analyze/completeness.js';
 
 const log = getLogger('daemon:workflow-rpc');
 
@@ -224,12 +224,9 @@ export async function runWorkflowServerSide(
 		let userTurn = pause.userTurn;
 		if (ANALYZE_STEP_RUNNERS.has(pause.runner)) {
 			opts.onProgress?.({ phase: 'grounding', stepId: pause.stepId, runner: pause.runner });
-			const res = await buildRun({ runId, intent: classifiedIntent(intent) });
-			if (!res.ok) {
-				throw new Error(`workflow.run: analyze grounding failed for step '${pause.runner}': ${res.error.message}`);
-			}
 			userTurn += '\n\nReal analyze context (graph-grounded — base every `analyzeBundles[]` entry on this; ' +
-				'cite ONLY paths that appear here; invent nothing):\n' + flattenBundle(res.bundle);
+				'cite ONLY paths that appear here; invent nothing):\n' +
+				await groundingFor(pause.runner, { runId, intent: classifiedIntent(intent) });
 		}
 		opts.onProgress?.({ phase: 'step-start', stepId: pause.stepId, runner: pause.runner });
 		const stepJson = await providerFor(pause.runner, pause.stepId).completeStructured<Record<string, unknown>>(msgs(pause.prompt, userTurn), pause.schema, sco(pause.stepId));
@@ -571,6 +568,51 @@ function flattenBundle(b: AnalyzeContextBundle): string {
 }
 
 export const _flattenBundleForTest = flattenBundle;
+
+/**
+ * A workflow step could not be grounded: the analyze request behind it failed.
+ *
+ * The step fails with the request's own code as its cause. When the request
+ * failed after its lookups ran, the error also carries the report derived
+ * from them and the failed step's reason, and its message starts with the
+ * report's completeness line.
+ */
+export class AnalyzeGroundingFailedError extends Error {
+	/** The analyze request's error code: the cause of the step's failure. */
+	readonly code:   string;
+	/** Why the answer step failed; set for 'answer-step-failed'. */
+	readonly reason: string | undefined;
+	/** What the lookups found before the failure; absent when none ran. */
+	readonly report: AnswerReport | undefined;
+
+	constructor(runner: string, error: { readonly code: string; readonly message: string; readonly data?: Readonly<Record<string, unknown>> | undefined }) {
+		const report = isAnswerReport(error.data?.['report']) ? error.data['report'] : undefined;
+		const failure = `workflow.run: analyze grounding failed for step '${runner}' (${error.code}): ${error.message}`;
+		super(report !== undefined ? `${renderCompletenessLine(report)}\n${failure}` : failure);
+		this.name = 'AnalyzeGroundingFailedError';
+		this.code = error.code;
+		const reason = error.data?.['reason'];
+		this.reason = typeof reason === 'string' ? reason : undefined;
+		this.report = report;
+	}
+}
+
+/**
+ * The analyze findings a workflow step is grounded on, as prompt text. A
+ * failed request fails the step with its cause and, where the lookups ran,
+ * their report.
+ */
+async function groundingFor(
+	runner: string,
+	params: Parameters<typeof buildRun>[0],
+	build:  typeof buildRun = buildRun,
+): Promise<string> {
+	const res = await build(params);
+	if (!res.ok) throw new AnalyzeGroundingFailedError(runner, res.error);
+	return flattenBundle(res.bundle);
+}
+
+export const _groundingForTest = groundingFor;
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the
  *  chosen provider along the chain: per-repo override > explicit config >

@@ -18,7 +18,7 @@
  *     drop citation blocks. The bundle's discipline is the point.
  */
 
-import { completenessHeadLine } from '../analyze/completeness.js';
+import { completenessHeadLine, isAnswerReport, renderCompletenessLine } from '../analyze/completeness.js';
 import type { AnalyzeContextBundle, BundleLayerName } from '../analyze/context/types.js';
 
 const LAYER_HEADINGS: Readonly<Record<BundleLayerName, string>> = {
@@ -94,4 +94,32 @@ function renderMetaLine(bundle: AnalyzeContextBundle): string {
 		parts.push(`repoIndexedAt=${new Date(bundle.meta.repoLastIndexedAt).toISOString()}`);
 	}
 	return `<!-- insrc-analyze meta: ${parts.join(' ')} -->`;
+}
+
+// ---------------------------------------------------------------------------
+// A failed request
+// ---------------------------------------------------------------------------
+
+/**
+ * The text the one-shot tool returns for a failed request.
+ *
+ * A failure that happened after the lookups ran carries the report derived
+ * from them. Its completeness line is printed first, then the failed step's
+ * reason where there is one, then the code and the message. Any other
+ * failure prints its code and message, as before.
+ */
+export function renderAnalyzeFailure(error: {
+	readonly code:    string;
+	readonly message: string;
+	readonly data?:   Readonly<Record<string, unknown>> | undefined;
+}): string {
+	const failure = `analyze.context.buildRun failed: ${error.code} -- ${error.message}`;
+	const report = error.data?.['report'];
+	if (!isAnswerReport(report)) return failure;
+	const reason = error.data?.['reason'];
+	return [
+		renderCompletenessLine(report),
+		...(typeof reason === 'string' ? [`The answer step failed: ${reason}.`] : []),
+		failure,
+	].join('\n\n');
 }

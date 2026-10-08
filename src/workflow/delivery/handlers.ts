@@ -108,7 +108,8 @@ export function handleDeliveryEvidence(
 	const artifactId: unknown = params?.artifactId;
 	if (typeof artifactId !== 'string' || !ARTIFACT_ID_RE.test(artifactId)) return { error: 'invalid artifact id' };
 
-	// Existence, containment and the read all go through the one fs seam.
+	// The store record's existence, containment and read all go through the store fs seam;
+	// its rendered markdown under docs/ is the markdown port's job (deps.markdown).
 	const fs = deps.fs ?? nodeStoreFs;
 	const storeDir = join(repo, ARTIFACTS_DIR);
 	const fileName = `${artifactId}.json`;

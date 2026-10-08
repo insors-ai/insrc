@@ -15,7 +15,8 @@
  * SPEC in its own folder, say) is workflow.pending's derivation from the
  * record's meta used instead. The path must exist and pass workflow.artifactContent's
  * docs/ containment rule; only its first 512 bytes are read, and the marker must
- * be the whole first line.
+ * be the whole first line. A file whose first line is another record's marker
+ * (a superseded LLD, a second BUILD for the story) is not this record's markdown.
  * Never writes, never throws.
  */
 
@@ -29,6 +30,8 @@ import type { ArtifactRecord, DeliveryMarkdownPort, WorkItemGraph, WorkItemNode 
 
 const MD_KINDS: ReadonlySet<string> = new Set<ArtifactKind>(['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'EXT', 'ISSUE']);
 const HEAD_BYTES = 512;
+/** Any record's marker line; group 1 is the artifact id it names. */
+const MARKER_RE = /^<!-- insrc:artifact (\S+) -->$/;
 
 /** '<slug>-E<yyyymmdd><hash8>' folder name -> its epic segment. */
 const FOLDER_SEGMENT_RE = /-(E\d{8}[0-9a-f]{8})$/;
@@ -102,7 +105,9 @@ export function createMarkdownPort(repoPath: string, graph: WorkItemGraph): Deli
 			if ('reason' in located) return null;
 			const line = firstLine(located.realPath);
 			if (line === null) return null;
-			return { mdPath, realPath: located.realPath, hasMarker: line === `<!-- insrc:artifact ${record.artifactId} -->` };
+			const marked = MARKER_RE.exec(line)?.[1];
+			if (marked !== undefined && marked !== record.artifactId) return null;
+			return { mdPath, realPath: located.realPath, hasMarker: marked === record.artifactId };
 		},
 	};
 }

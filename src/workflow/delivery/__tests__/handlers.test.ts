@@ -80,6 +80,9 @@ test("a build record that stamps no epic slug or date is located through its wor
 		// A marker with trailing whitespace is not the record's marker line.
 		[store(`HLD-${EPIC}.json`)]:       { meta: { epicHash: EPIC, epicSlug: 'my-epic', createdAt: CREATED, epicCreatedAt: CREATED }, body: {} },
 		[`${EPIC_FOLDER}/HLD.md`]:         `<!-- insrc:artifact HLD-${EPIC} --> \n# HLD\n`,
+		// s3's LLD.md carries another record's marker (a superseded LLD), so it is not s3's markdown.
+		[store(`LLD-${EPIC}-s3.json`)]:    { meta: { epicHash: EPIC, epicSlug: 'my-epic', storyId: 's3', createdAt: CREATED, epicCreatedAt: CREATED }, body: {} },
+		[`${EPIC_FOLDER}/S003/LLD.md`]:    `<!-- insrc:artifact LLD-${EPIC}-s9 -->\n# someone else's LLD\n`,
 	});
 	try {
 		const set = loadArtifactRecordSet(repo);
@@ -96,6 +99,7 @@ test("a build record that stamps no epic slug or date is located through its wor
 		assert.equal(port.markdownOf(rec('BUILD-cccccccccccccccc-S001')), null, 'no folder and no file: null');
 		assert.equal(port.markdownOf(rec(`LLD-${EPIC}-s2`)), null, 'a matching folder without the file does not fall back to the meta-derived path');
 		assert.deepEqual(port.markdownOf(rec(`HLD-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'HLD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'HLD.md')), hasMarker: false }, 'the marker must be the whole first line');
+		assert.equal(port.markdownOf(rec(`LLD-${EPIC}-s3`)), null, "a file carrying another record's marker is not this record's markdown");
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

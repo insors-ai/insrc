@@ -285,13 +285,14 @@ function toTestRecordTask(repoPath: string, taskId: string, ranAt: string, tests
  * an answer, and a declaration must not relabel it). Never the raw declaration.
  */
 function resolveRouteFlag(repoPath: string, ident: { readonly epicHash: string; readonly storyId: string; readonly standalone?: unknown }): boolean | undefined {
-	try {
-		const noHead = Object.keys(readEpicDefinitionCore(repoPath, ident.epicHash)).length === 0;
-		return inheritedStoryStandalone(repoPath, ident.epicHash, ident.storyId, ident.standalone !== undefined && noHead ? true : undefined);
-	} catch (e) {
-		log.warn({ storyId: ident.storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[validate]: the route flag could not be resolved');
-		return undefined;
-	}
+	const noHead = Object.keys((routeReaderOverride ?? readEpicDefinitionCore)(repoPath, ident.epicHash)).length === 0;
+	return inheritedStoryStandalone(repoPath, ident.epicHash, ident.storyId, ident.standalone !== undefined && noHead ? true : undefined);
+}
+
+/** Test seam: the reader of the work item's definition head, to make the route unresolvable. */
+let routeReaderOverride: typeof readEpicDefinitionCore | undefined;
+export function _setBuildValidateRouteReaderForTests(reader: typeof readEpicDefinitionCore | undefined): void {
+	routeReaderOverride = reader;
 }
 
 /** S002: the standalone (no-plan) validate branch. Resolves the Story identity
@@ -378,14 +379,29 @@ async function runValidateSession(
 	// ONE time and ONE resolved route flag for both of the Story's records.
 	const now = (clockOverride ?? (() => new Date().toISOString()))();
 	const identified = ident.epicHash.length > 0 && ident.storyId.length > 0;
-	const routeFlag = identified ? resolveRouteFlag(repoPath, ident) : undefined;
+	// A route that cannot be resolved writes NEITHER record on this turn: a record
+	// written with no flag could be filed under the wrong top-level folder, and a
+	// test record keeps its first write's flag. (Before the test record existed,
+	// the same failure skipped the build record's write; it still does.)
+	let routeFlag: boolean | undefined;
+	let routeError: Error | undefined;
+	if (identified) {
+		try {
+			routeFlag = resolveRouteFlag(repoPath, ident);
+		} catch (e) {
+			routeError = e instanceof Error ? e : new Error(String(e));
+			log.warn({ storyId: ident.storyId, err: routeError.message }, 'insrc_build_step[validate]: the route of the Story could not be resolved; no record is written on this turn');
+		}
+	}
 
 	// The test record is written HERE, straight after the checks and before the
 	// judge: what the run did is a fact whatever the judge then says, and whether
 	// or not the judge session ends in an error. A write failure never changes
 	// the verdict; it is noted in the verdict's evidence.
-	let testRecordNote: string | undefined;
-	if (identified) {
+	let testRecordNote: string | undefined = routeError !== undefined
+		? `the test record was not written (the route of the Story could not be resolved: ${routeError.message}); the record on disk, if there is one, still shows this Task's earlier run, with that run's commit and time`
+		: undefined;
+	if (identified && routeError === undefined) {
 		try {
 			(testRecordWriterOverride ?? persistTestRecordTask)(
 				repoPath,
@@ -502,7 +518,9 @@ async function runValidateSession(
 				// silence: that is an epic-parented Story, and a caller's declaration
 				// must not relabel it. The plan-driven branch passes no declaration, so
 				// it still never asserts a route it cannot know.
-				// (Resolved once, above, for the test record and this record alike.)
+				// (Resolved once, above, for the test record and this record alike. A
+				// route that could not be resolved skips this write, as it always has.)
+				if (routeError !== undefined) throw routeError;
 				const standaloneFlag = routeFlag;
 				// The declared size class and rationale ride with the route: they are
 				// stamped only on a record that IS standalone, so an epic-parented

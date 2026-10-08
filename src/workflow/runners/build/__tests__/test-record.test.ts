@@ -202,3 +202,37 @@ test('the stored mapping of a Task is read back as the mapping that was supplied
 		assert.deepEqual(readTestRecord(repo, HASH, 's1')!.body.tasks.map(t => t.taskId), ['t1']);
 	});
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test('when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run', async () => {
+	const { mkdirSync: mk, rmSync: rm } = await import('node:fs');
+	// First write: the document's path is taken by a directory, so its write fails.
+	await withRepo((repo) => {
+		const paths = testRecordPaths(repo, HASH, 's1', { now: T0 });
+		mk(paths.md, { recursive: true });
+		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1')));
+		assert.equal(existsSync(paths.json), false, 'no json is left behind for a record whose document was never written');
+		assert.equal(readTestRecord(repo, HASH, 's1'), null);
+		assert.equal(storedMappingFor(repo, HASH, 's1', 't1'), undefined);
+	});
+	// A later write: the first run is on disk in both files, and stays there.
+	await withRepo((repo) => {
+		const paths = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		const jsonBefore = readFileSync(paths.json, 'utf8');
+		const mdBefore = readFileSync(paths.md, 'utf8');
+		rm(paths.md);
+		mk(paths.md);
+		const other = task('t1', { ranAt: T2, testsPassed: false, tests: [{ name: 'a different mapping', source: 'mapping', files: [], cases: [{ file: Y, title: 'z', result: 'fail' }] }] });
+		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other));
+		assert.equal(readFileSync(paths.json, 'utf8'), jsonBefore, 'the json is what it was before the failed write');
+		// The stored mapping is the first run's, not the one whose write failed.
+		assert.deepEqual(storedMappingFor(repo, HASH, 's1', 't1')!.map(e => e.name), ['the first named test']);
+		rm(paths.md, { recursive: true });
+		writeFileSync(paths.md, mdBefore);
+		// And the record is whole again on the next write.
+		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other);
+		assert.equal(readTestRecord(repo, HASH, 's1')!.body.tasks[0]!.ranAt, T2);
+		assert.match(readFileSync(paths.md, 'utf8'), /a different mapping/);
+	});
+});

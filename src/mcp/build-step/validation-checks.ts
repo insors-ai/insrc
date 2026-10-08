@@ -65,6 +65,9 @@ export interface TestFileRun {
 	readonly durationMs:  number;
 	/** Every result line the file's run printed. */
 	readonly titles:      readonly TapTitle[];
+	/** False when the run's output was not understood as TAP (no version line
+	 *  and no result line): the run then proves nothing, whatever its exit code. */
+	readonly understood?: boolean | undefined;
 	/** A file holding the run's WHOLE output (stdout then stderr); absent when it could not be written. */
 	readonly outputPath?: string | undefined;
 	readonly note?:       string | undefined;
@@ -349,6 +352,7 @@ async function runTestFile(
 			timedOut:   r.timedOut,
 			durationMs: r.durationMs,
 			titles:     tap.titles,
+			...(r.spawnError === undefined && !tap.understood ? { understood: false } : {}),
 			...(outputPath !== undefined ? { outputPath } : {}),
 			...(notes.length > 0 ? { note: notes.join('; ') } : {}),
 		},
@@ -423,7 +427,10 @@ export async function runValidationChecks(
 		}
 		const results = namedResults(named, runs);
 		const badCases = results.flatMap(n => n.cases.filter(c => c.result !== 'pass').map(c => `${c.result}: '${c.title}' in ${c.file}`));
-		const failedFiles = runs.filter(r => r.exitCode !== 0 || r.timedOut);
+		// A run whose output is not TAP gave no result for any title: with no cases
+		// named (a name run by its file) nothing else would notice, and exit code 0
+		// alone would read as a pass. It fails the check like a file that failed.
+		const failedFiles = runs.filter(r => r.exitCode !== 0 || r.timedOut || r.understood === false);
 		const notes = [
 			...runs.filter(r => r.note !== undefined).map(r => `${r.file}: ${r.note}`),
 			...(badCases.length > 0 ? [`named test cases that did not pass: ${badCases.join('; ')}`] : []),
@@ -433,7 +440,7 @@ export async function runValidationChecks(
 		tests = {
 			ok: failedFiles.length === 0 && badCases.length === 0 && plan.unresolvedTests.length === 0 && reportedFail.length === 0,
 			command:    runs.map(r => r.command).join('\n'),
-			exitCode:   failedFiles.length === 0 ? 0 : failedFiles[0]!.exitCode,
+			exitCode:   failedFiles.length === 0 ? 0 : failedFiles.find(r => r.exitCode !== 0)?.exitCode ?? failedFiles[0]!.exitCode,
 			timedOut:   runs.some(r => r.timedOut),
 			durationMs: runs.reduce((sum, r) => sum + r.durationMs, 0),
 			outputTail: tail(lastOutput),

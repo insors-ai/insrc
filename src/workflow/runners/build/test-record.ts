@@ -21,7 +21,7 @@
  * because the folder of a Story with no other anchor is dated by it.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -230,8 +230,23 @@ export function persistTestRecordTask(
 		body: { tasks },
 	};
 	const paths = pathsFor(repoPath, rec);
+	// The json and its document are two files. If the document cannot be written
+	// after the json was, the json is put back as it was (or removed, when it is
+	// new): a caller told "the record was not written" must find the earlier run
+	// in BOTH files, and must not find this turn's mapping stored.
+	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
 	writeAtomic(paths.json, JSON.stringify(rec, null, 2) + '\n');
-	writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
+	try {
+		writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
+	} catch (err) {
+		try {
+			if (priorJson !== undefined) writeAtomic(paths.json, priorJson);
+			else rmSync(paths.json, { force: true });
+		} catch (undoErr) {
+			log.warn({ json: paths.json, err: undoErr instanceof Error ? undoErr.message : String(undoErr) }, 'persistTestRecordTask: the json could not be put back after the document failed to write');
+		}
+		throw err;
+	}
 	return paths;
 }
 

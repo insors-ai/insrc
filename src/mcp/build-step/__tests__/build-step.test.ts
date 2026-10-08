@@ -1973,3 +1973,30 @@ test('a standalone validate call on a Story whose definition head is silent abou
 		assert.ok(!existsSync(join(repo, 'docs', 'standalone')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test("when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn", async () => {
+	const { _setBuildValidateRouteReaderForTests } = await import('../phases/validate.js');
+	const repo = mappedRepo();
+	try {
+		_setBuildValidateRouteReaderForTests(() => { throw new Error('the definition artifact is unreadable'); });
+		const { out, judged } = await turn(repo, { tests: GOOD_MAPPING });
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true, 'the verdict is what it would have been');
+		assert.equal(judged, 1);
+		const evidence = (out['verdict'] as { evidence: Record<string, unknown> }).evidence;
+		assert.match(String(evidence['testRecordNote']), /the route of the Story could not be resolved: the definition artifact is unreadable/);
+		assert.equal(evidence['testRecord'], undefined);
+		// Neither record: one written with no route flag could be filed under the wrong folder.
+		assert.equal(existsSync(testsJson(repo)), false);
+		assert.equal(buildRecordExists(repo), false);
+		assert.equal(existsSync(join(repo, 'docs')), false);
+
+		// The next turn, with the route readable again, writes both.
+		_setBuildValidateRouteReaderForTests(undefined);
+		await turn(repo, { tests: GOOD_MAPPING });
+		assert.ok(existsSync(testsJson(repo)) && buildRecordExists(repo));
+		assert.deepEqual(readBuildRecord(repo).body['testRecord'], { md: `${TR_ROOT}/TESTS.md` });
+	} finally { _setBuildValidateRouteReaderForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});

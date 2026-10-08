@@ -19,6 +19,11 @@ export function asObject(value: unknown): Readonly<Record<string, unknown>> | nu
 	return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
+/** The value when it is a string, else null. */
+export function asString(value: unknown): string | null {
+	return typeof value === 'string' ? value : null;
+}
+
 /** The ordinal of an `s<n>` / `S<nnn>` story id, or null when it does not parse. */
 export function storyOrdinalOf(storyId: string): number | null {
 	try {

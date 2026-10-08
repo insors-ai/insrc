@@ -24,7 +24,7 @@ import {
 	taskWorkflowId,
 } from '../id.js';
 import { makeNotice, sortNotices } from './notice.js';
-import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
+import { asObject, asString, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
 	ArtifactRecord,
 	ArtifactRecordSet,
@@ -79,8 +79,10 @@ function splitKey(key: string): { readonly hash: string; readonly storyKey: stri
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** A non-empty string, else null: an empty id or title names nothing. */
 function str(v: unknown): string | null {
-	return typeof v === 'string' && v.length > 0 ? v : null;
+	const s = asString(v);
+	return s === null || s.length === 0 ? null : s;
 }
 
 function obj(v: unknown): Readonly<Record<string, unknown>> {

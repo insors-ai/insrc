@@ -350,13 +350,32 @@ test('every epic, story and issue in the real-shape fixtures gets item gates, de
 	}
 });
 
-test('a story built without a plan has no planned tasks but raises no unplanned-task notice', () => {
+test('a story built without a plan marks its tasks unplanned, and the notice says the story has no plan', () => {
 	const { graph, result } = run([
 		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', ...APPROVED }),
 		buildRecord(SOLO, 'S001', [{ id: 't1', passed: true }], { standalone: true }),
 	]);
-	const gates = itemOf(result, holder(graph, `BUILD-${SOLO}-S001`, 'story').id);
+	const story = holder(graph, `BUILD-${SOLO}-S001`, 'story');
+	const gates = itemOf(result, story.id);
 	assert.deepEqual(gates.tasks.map(t => [t.result, t.planned]), [['passed', false]]);
 	assert.equal(gates.validation.unplanned, 1);
-	assert.equal(result.notices.some(n => n.code === 'unplanned-task'), false);
+
+	const notices = result.notices.filter(n => n.code === 'unplanned-task');
+	assert.equal(notices.length, 1, 'one notice per unplanned task, as the counts say');
+	assert.match(notices[0]?.message ?? '', new RegExp(`${story.id} has no plan`));
+	assert.equal(notices[0]?.attention, false);
+});
+
+test('a recorded block with no readable blocking finding stays a block', () => {
+	const { result } = run([
+		defRecord(EPIC, ['s1', 's2', 's3']),
+		lldRecord(EPIC, 's1', { review: review('block', []) }),
+		lldRecord(EPIC, 's2', { review: review('block', [null, 'x']) }),
+		lldRecord(EPIC, 's3', { review: review('block', [{ claimId: 'q1', severity: 'high' }]), reviewResolutions: {} }),
+	]);
+	for (const s of ['s1', 's2', 's3']) {
+		const gate = gateOf(result, `LLD-${EPIC}-${s}`).review;
+		assert.equal(gate?.effectiveVerdict, 'block', `${s}: corrupt or legacy data fails closed`);
+		assert.equal(gate?.blocking, true);
+	}
 });

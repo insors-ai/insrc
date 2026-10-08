@@ -10,7 +10,7 @@
  *
  * Approval comes from ArtifactRecord.approval. A design artifact's review is its
  * meta.review: malformed findings are dropped before effectiveReviewVerdict sees
- * them, so a block whose HIGH/MED findings are all resolved is effectively 'pass'
+ * them, so a block listing HIGH/MED findings that are all resolved is effectively 'pass'
  * and a 'warn' carrying an unresolved MED is effectively 'block', as the approval
  * gate reads it. A CR record is itself a review (body.verdict, body.counts). The
  * reviewer party is read through reviewerPartyOf.
@@ -114,9 +114,12 @@ function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
 	if (findings !== null) {
 		const report = { ...review, findings } as unknown as ReviewReport;
 		const effective = effectiveReviewVerdict(report, resolutions ?? undefined);
+		const blockingFindings = findings.filter(f => BLOCKING.has(f.severity));
+		resolvedFindings = blockingFindings.filter(f => resolutions?.[f.claimId] !== undefined).length;
 		if (effective === 'block') effectiveVerdict = 'block';
-		else if (verdict === 'block') effectiveVerdict = 'pass';
-		resolvedFindings = findings.filter(f => BLOCKING.has(f.severity) && resolutions?.[f.claimId] !== undefined).length;
+		// A recorded block is lifted only by resolving the blocking findings it lists;
+		// one with none readable (empty, malformed, unknown severity) stays a block.
+		else if (verdict === 'block' && blockingFindings.length > 0) effectiveVerdict = 'pass';
 	}
 
 	return {
@@ -249,11 +252,7 @@ interface StoryValidation {
 	readonly notices:          DeliveryNotice[];
 }
 
-/**
- * Without a PLAN (`hasPlan` false) no task is planned, but none is reported as
- * missing from a plan that does not exist; a route that needs a plan is reported
- * once by the snapshot's incomplete-evidence check (s5).
- */
+/** Without a PLAN (`hasPlan` false) no task is planned; the notice says the story has no plan. */
 function storyValidation(
 	story: WorkItemNode,
 	builds: readonly ArtifactRecord[],
@@ -288,9 +287,11 @@ function storyValidation(
 		const slot = taskOrdinal === null ? undefined : byTask.get(taskOrdinal);
 		const isPlanned = taskOrdinal !== null && planned.has(taskOrdinal);
 		tasks.push({ taskItemId: child.id, result: resultOf(slot?.passes ?? []), planned: isPlanned });
-		if (!isPlanned && hasPlan) {
+		if (!isPlanned) {
 			notices.push(makeNotice('unplanned-task',
-				`Task ${child.id} has a build result but no planned task in ${story.id}'s plan.`,
+				hasPlan
+					? `Task ${child.id} has a build result but no planned task in ${story.id}'s plan.`
+					: `Task ${child.id} has a build result but ${story.id} has no plan.`,
 				{ itemIds: [child.id, story.id], artifactIds: [...(slot?.buildIds ?? [])] }));
 		}
 	}

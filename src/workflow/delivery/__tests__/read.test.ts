@@ -8,11 +8,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { asObject, storyOrdinalOf, taskOrdinalOf } from '../read.js';
+import { asObject, asString, storyOrdinalOf, taskOrdinalOf } from '../read.js';
 
-test('asObject accepts only plain objects', () => {
+test('asObject accepts only plain objects and asString only strings', () => {
 	assert.deepEqual(asObject({ a: 1 }), { a: 1 });
 	for (const v of [null, undefined, [], ['a'], 'x', 3, true]) assert.equal(asObject(v), null);
+	assert.equal(asString('x'), 'x');
+	assert.equal(asString(''), '');
+	for (const v of [null, undefined, 3, {}, ['x']]) assert.equal(asString(v), null);
 });
 
 test('the ordinal readers parse story and task ids and return null for anything else, never throwing', () => {

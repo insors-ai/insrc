@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
-import { asObject, storyOrdinalOf } from './read.js';
+import { asObject, asString, storyOrdinalOf } from './read.js';
 import {
 	DeliveryStoreUnreadableError,
 	type ApprovalState,
@@ -43,10 +43,6 @@ export const nodeStoreFs: ReadonlyStoreFs = {
 export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
 	const prefix = fileName.split('-')[0] ?? '';
 	return (KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
-}
-
-function asString(v: unknown): string | null {
-	return typeof v === 'string' ? v : null;
 }
 
 function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {

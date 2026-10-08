@@ -1,0 +1,504 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791447355687-zkvikp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T08:20:41.663Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 285973,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "epicSlug": "story-code-review-reviews-wrong-code",
+    "storyId": "s1",
+    "lldRunId": "wf-1791444418716-bg9yxv",
+    "lldEffectiveHash": "dde3c6427d60173d9bfcb1151dbd9e7860eebef8d8eb0b4db3e6d218a889d78c",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T08:23:43.307Z",
+    "rangeBase": "55a73a5bad62401df553a5952c6721b3604d888d"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds an optional working directory to the CLI provider and passes the reviewed repo from every code-review judge; adds a multi-path input to git_diff; adds a git helper that lists the Story's own change units (its own commits plus edits made inside merge commits) and detects an uncommitted merge; then points the review's changed-file set and range diff at those units, and gates the build turns on the merge check. Each piece is tested against real temporary git repositories."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "CLI provider honours an optional cwd",
+        "summary": "Add cwd?: string | undefined to CompletionOpts and readonly cwd?: string | undefined to StructuredCompletionOpts. CliProvider.complete and completeStructuredOnce pass { cwd, timeoutMs: this.timeoutMs } to runClaude/runCodex when opts.cwd is set, and no override otherwise.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "CompletionOpts and StructuredCompletionOpts declare an optional cwd.",
+          "With opts.cwd set, the claude and codex subprocesses of complete and completeStructured start in that directory.",
+          "Without opts.cwd, runClaude/runCodex are called with no ExecOverride, exactly as before."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-subprocess.test.ts: 'completeStructured and complete run the CLI in opts.cwd when it is given'"
+          },
+          {
+            "level": "unit",
+            "name": "cli-subprocess.test.ts: 'completeStructured without opts.cwd runs the CLI in the inherited working directory'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Code-review judges run in the reviewed repository",
+        "summary": "judgeAdherence, judgeConventions, judgeCoverage, judgeFunctionalCoverage and judgeQuality pass { cwd: subject.repoPath } to their completeStructured call.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Each of the five judges' completeStructured calls receives opts.cwd equal to subject.repoPath."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "code-review-cwd.test.ts: 'every code-review dimension judge passes the reviewed repoPath as cwd'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "git_diff accepts a list of paths",
+        "summary": "Add the optional paths input to gitDiffTool: validated as a non-empty array of non-empty strings, rejected together with path, emitted as ':(top,literal)<p>' pathspecs after '--' alongside the exclude pathspecs, for both the body and the numstat command.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "With paths, the diff body and file list cover only those paths, matched literally.",
+          "paths together with path, an empty paths array, or a non-string entry returns ok:false with '[git:diff] invalid-input'.",
+          "Without paths the git command line is unchanged."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "git-diff-paths.test.ts: 'git_diff limits the body and file list to the given paths, literally'"
+          },
+          {
+            "level": "unit",
+            "name": "git-diff-paths.test.ts: 'git_diff rejects paths together with path and an empty paths array'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "storyChangeSet and mergeInProgress helpers",
+        "summary": "New src/workflow/runners/build/story-commits.ts exporting StoryChangeUnit, StoryChangeSet, storyChangeSet(repoPath, base) and mergeInProgress(repoPath), as the LLD specifies: commit units from `git rev-list --first-parent --no-merges`, merge-edit units from `git merge-tree --write-tree M^1 M^2` vs M, sharedPaths and foldedPaths, an octopus merge as one whole-change merge-edit unit with a warn log, NoBuildChangesError on git failure; mergeInProgress true on MERGE_HEAD or an existing SQUASH_MSG, false (with a warn) on other git failures.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Files only a merge's merged-in side changed are absent from storyChangeSet.paths.",
+          "Edits folded into a merge commit and hand-resolved conflicts form merge-edit units and are in foldedPaths.",
+          "A deleted file and a root commit's files are included.",
+          "An octopus merge yields one merge-edit unit over M^1..M instead of an error.",
+          "An unresolvable base throws NoBuildChangesError.",
+          "mergeInProgress is true while MERGE_HEAD exists or SQUASH_MSG exists, false otherwise.",
+          "Neither helper changes refs, the index or the working tree.",
+          "The known limits are pinned: upstream commits brought in by fast-forward or a committed squash merge are counted as Story work."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet records Story edits folded into a merge commit as a merge-edit unit'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet records a hand-resolved conflict as a merge-edit unit'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet includes a file the Story deleted and a root commit's files'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet is empty when the range holds only a clean merge'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'storyChangeSet throws NoBuildChangesError for an unresolvable base'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work'"
+          },
+          {
+            "level": "unit",
+            "name": "story-commits.test.ts: 'an octopus merge becomes one merge-edit unit over its whole change instead of a failure'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "changedFiles reports only the Story's own files",
+        "summary": "In changedFiles' committed-range branch, keep the existing git_diff {from: base, exclude} call and intersect its paths with storyChangeSet(repoPath, base).paths before the keep filter. The BUILD changeLog narrows through collectBuildChangeLog as an intended effect.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A clean tree with a base after a mid-build merge reports only the Story's own files.",
+          "A committed ledger file stays out of the range result after a mid-build merge.",
+          "collectBuildChangeLog with a base lists only the Story's own files.",
+          "Without a base the derivation is unchanged."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "changed-files.test.ts: 'a clean tree with a base reports only the Story's own files, not files a merge brought in'"
+          },
+          {
+            "level": "unit",
+            "name": "changed-files.test.ts: 'without a base the derivation is unchanged'"
+          },
+          {
+            "level": "unit",
+            "name": "changed-files.test.ts: 'collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge'"
+          },
+          {
+            "level": "unit",
+            "name": "changed-files.test.ts: 'a committed ledger file stays out of the range result after a mid-build merge'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The review's range diff carries only the Story's hunks",
+        "summary": "Add DiffResult.hunksByFile; buildDiffSymbols prefers it. realDiffGroundingDeps.rangeDiff computes storyChangeSet: one net git_diff {from: base, paths, exclude} for paths no merge touched, per-unit git_diff {from, to, paths, exclude} for shared paths, sections appended per file in unit order, folded paths prefixed '[edited inside merge commit <short sha>]', empty change set returns an empty DiffResult without calling git_diff.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Story files carry full hunks and merged-in files are absent.",
+          "A file changed by both a Story commit and the merge carries only the Story's own hunks.",
+          "A shared path touched by two Story commits keeps both sections; a folded marker stays on its own file.",
+          "Every git_diff call carries the exclusions.",
+          "An empty change set gives an empty grounding without calling git_diff.",
+          "Without hunksByFile buildDiffSymbols splits the body as before.",
+          "A truncated call still marks the grounding as truncated, and a storyChangeSet failure surfaces as DiffUnavailableError so the assembler steps down as before."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'the range diff carries full hunks for the Story files and none for merged-in files'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'a file changed by both a Story commit and the merge carries only the Story's own hunks'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'edits folded into a merge commit are reviewed and marked'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'a range with no Story change gives an empty grounding without calling git_diff'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'without hunksByFile buildDiffSymbols splits the body as before'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'the range diff applies the exclusions to every per-unit call'"
+          },
+          {
+            "level": "unit",
+            "name": "diff-grounding.test.ts: 'a truncated per-unit call marks the grounding truncated and a storyChangeSet failure steps down'"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Build turns refuse on an uncommitted merge; prompts state the merge rule",
+        "summary": "handleImplement and handleValidate return { next: 'error', error: { code: 'merge-in-progress', retryable: true } } right after resolving repoPath when mergeInProgress(repoPath). implement-task.md and renderStandaloneImplementPrompt gain the rule: merge upstream with `git merge --no-ff` (or `git pull --no-rebase --no-ff`), commit the merge on its own before further Story changes, never squash-merge or fast-forward upstream into the Story.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "implement and validate return merge-in-progress while a merge is uncommitted, before any other work.",
+          "Both implement prompts state the --no-ff merge rule and that the merge is committed on its own."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "build-step.test.ts: 'implement and validate return merge-in-progress while a merge is uncommitted'"
+          },
+          {
+            "level": "unit",
+            "name": "render.test.ts: 'the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet records Story edits folded into a merge commit as a merge-edit unit'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet records a hand-resolved conflict as a merge-edit unit'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet includes a file the Story deleted and a root commit's files'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet is empty when the range holds only a clean merge'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'storyChangeSet throws NoBuildChangesError for an unresolvable base'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "story-commits.test.ts: 'an octopus merge becomes one merge-edit unit over its whole change instead of a failure'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "changed-files.test.ts: 'a clean tree with a base reports only the Story's own files, not files a merge brought in'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "changed-files.test.ts: 'without a base the derivation is unchanged'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "changed-files.test.ts: 'collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'the range diff carries full hunks for the Story files and none for merged-in files'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'a file changed by both a Story commit and the merge carries only the Story's own hunks'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'edits folded into a merge commit are reviewed and marked'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'a range with no Story change gives an empty grounding without calling git_diff'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-diff-paths.test.ts: 'git_diff limits the body and file list to the given paths, literally'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-diff-paths.test.ts: 'git_diff rejects paths together with path and an empty paths array'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'without hunksByFile buildDiffSymbols splits the body as before'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "changed-files.test.ts: 'a committed ledger file stays out of the range result after a mid-build merge'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff-grounding.test.ts: 'the range diff applies the exclusions to every per-unit call'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-subprocess.test.ts: 'completeStructured and complete run the CLI in opts.cwd when it is given'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "cli-subprocess.test.ts: 'completeStructured without opts.cwd runs the CLI in the inherited working directory'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "code-review-cwd.test.ts: 'every code-review dimension judge passes the reviewed repoPath as cwd'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "build-step.test.ts: 'implement and validate return merge-in-progress while a merge is uncommitted'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "render.test.ts: 'the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 CliProvider.complete / CliProvider.completeStructured + CompletionOpts / StructuredCompletionOpts cwd field"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 judgeAdherence / judgeConventions / judgeCoverage / judgeFunctionalCoverage / judgeQuality"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 gitDiffTool paths input"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 storyChangeSet + mergeInProgress"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 changedFiles"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 realDiffGroundingDeps + buildDiffSymbols + DiffResult.hunksByFile"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 handleImplement / handleValidate + implement prompts"
+    }
+  ]
+}

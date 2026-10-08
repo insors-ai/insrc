@@ -137,6 +137,35 @@ export interface DeliveryNotice {
 }
 
 // ---------------------------------------------------------------------------
+// sc4 — StageAnnotation (E1 s2)
+// ---------------------------------------------------------------------------
+
+export type DeliveryStage =
+	| 'scoped'
+	| 'design-plan'
+	| 'ready-design-approved'
+	| 'ready-plan-approved'
+	| 'build-recorded'
+	| 'complete';
+
+/** The route a work item was triaged onto; it decides which gate makes the item ready. */
+export type DeliveryRoute = 'full-chain' | 'feature' | 'small' | 'small-bugfix' | 'sized-bugfix' | 'trivial' | 'unknown';
+
+export interface StageAnnotation {
+	readonly itemId: string;
+	readonly stage:  DeliveryStage;
+	readonly route:  DeliveryRoute;
+	/** The records the deciding rule used (sorted) and a sentence naming them. */
+	readonly reason: { readonly text: string; readonly artifactIds: readonly string[] };
+}
+
+export interface StagePassResult {
+	/** Keyed by item id; stories and issues only. */
+	readonly stages:  ReadonlyMap<string, StageAnnotation>;
+	readonly notices: readonly DeliveryNotice[];
+}
+
+// ---------------------------------------------------------------------------
 // Filesystem port + store error
 // ---------------------------------------------------------------------------
 

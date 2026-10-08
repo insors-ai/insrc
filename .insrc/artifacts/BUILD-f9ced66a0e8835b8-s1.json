@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "createdAt": "2026-10-08T08:26:39.223Z",
+    "updatedAt": "2026-10-08T09:48:23.895Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-08T09:48:24.120Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "summary": "Both build phases refuse with a retryable merge-in-progress error while a merge or squash is uncommitted, before any other work; both implement prompts carry the --no-ff merge rule from one MERGE_RULE constant.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f9ced66a0e8835b8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-f9ced66a0e8835b8-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-f9ced66a0e8835b8-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/story-code-review-reviews-wrong-code-E20261007f9ced66a/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/story-code-review-reviews-wrong-code-E20261007f9ced66a/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-subprocess.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-diff-paths.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/diff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/implement-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/adherence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/conventions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/quality.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/grounding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/changed-files.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/story-commits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/changed-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/story-commits.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T09:48:23.895Z"
+      }
+    ],
+    "commit": "526dc4f6"
+  }
+}

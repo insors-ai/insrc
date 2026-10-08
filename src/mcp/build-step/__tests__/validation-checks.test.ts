@@ -200,3 +200,14 @@ test('an unresolved test name makes tests fail with a note naming it', async () 
 	assert.equal(trivialNone.tests.ok, true);
 	assert.equal(trivialNone.tests.note, 'no tests named for a trivial build');
 });
+
+test('a trivial build that deletes a test file does not ask to run it', () => {
+	const repo = gitRepo(TREE);
+	try {
+		execFileSync('git', ['rm', '-q', 'src/b/__tests__/chain.test.ts'], { cwd: repo });
+		writeFileSync(join(repo, 'src/a/__tests__/notice.test.ts'), '// changed');
+		execFileSync('git', ['add', '.'], { cwd: repo });
+		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'delete one test, change another'], { cwd: repo, stdio: 'ignore' });
+		assert.deepEqual(trivialCheckPlan(repo).testFiles, ['src/a/__tests__/notice.test.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

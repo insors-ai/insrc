@@ -153,7 +153,8 @@ export function smallStandaloneCheckPlan(
 export function trivialCheckPlan(repoPath: string): ValidationCheckPlan {
 	let touched: string[] = [];
 	try {
-		touched = execFileSync('git', ['show', '--name-only', '--format=', 'HEAD'], { cwd: repoPath, encoding: 'utf8' })
+		// --diff-filter=d leaves out files the commit deleted: they no longer exist to run.
+		touched = execFileSync('git', ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'], { cwd: repoPath, encoding: 'utf8' })
 			.split('\n').filter(f => f.endsWith('.test.ts') && f.split('/').includes('__tests__'));
 	} catch (err) {
 		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the HEAD commit\'s files');

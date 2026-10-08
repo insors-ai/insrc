@@ -261,8 +261,8 @@
       "qc377ebe4": {
         "question": "The fork of the IDE (insors-ai/insrc-ide, a separate repository) was not read for this design; the two plugins in this repository were. Before the validate turn's change ships, the fork's reader of BUILD records and its artifact listing should be checked for a strict shape or a fixed list of kinds. Who makes that check, and does it hold the Story's last Task?",
         "status": "resolved",
-        "choice": "The builder checks the fork, and it does not hold the build",
-        "rationale": "Stakeholder took the recommendation on 2026-10-08: the builder checks the fork's reader of BUILD records and its artifact listing and records what it finds; the check does not hold the Story's last Task.",
+        "choice": "The fork is ignored",
+        "rationale": "Stakeholder, 2026-10-08: the insrc-ide fork is dead and is to be ignored. (The builder had first been asked to check it; the local copy at 83393569 was read and holds no reader of build records or of the artifacts directory.)",
         "resolvedAt": "2026-10-08T17:08:53.844Z"
       }
     }
@@ -862,7 +862,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "The validate turn's new field is optional and the tool's other fields are unchanged, so every existing call is valid. A turn without `tests` for a plan whose names carry the prefix reaches the same testsPassed as before. The build record gains an optional field and renders unchanged without it. The verdict's evidence gains fields and loses none; `outputTail` stays. Build records and plans on disk are not rewritten. A Story built before this change has no test record, and nothing requires one. The VS Code and JetBrains plugins are in this repository and were read: the one reader that a test record would disturb, the VS Code plugin's workflow chain, is changed by this Story. The fork of the IDE (insors-ai/insrc-ide) is a separate repository and was not read, so what it parses of a build record and whether its artifact listing has a fixed list of kinds is not known here. On this side the build record only gains one optional field and the verdict's evidence only gains fields. A note for the IDE repository is added to the daemon guide, and its reader of BUILD records and its artifact listing are checked in that repository before the validate turn's change ships.",
+      "backwardCompat": "The validate turn's new field is optional and the tool's other fields are unchanged, so every existing call is valid. A turn without `tests` for a plan whose names carry the prefix reaches the same testsPassed as before. The build record gains an optional field and renders unchanged without it. The verdict's evidence gains fields and loses none; `outputTail` stays. Build records and plans on disk are not rewritten. A Story built before this change has no test record, and nothing requires one. The VS Code and JetBrains plugins are in this repository and were read: the one reader that a test record would disturb, the VS Code plugin's workflow chain, is changed by this Story. The fork of the IDE (insors-ai/insrc-ide) is no longer developed (stakeholder, 2026-10-08) and is not a consumer to keep compatible: nothing is checked or noted for it.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

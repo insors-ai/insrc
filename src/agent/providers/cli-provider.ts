@@ -37,7 +37,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -200,7 +200,7 @@ export class CliProvider implements LLMProvider {
 			} catch (err) {
 				lastErr = err;
 				const msg = err instanceof Error ? err.message : String(err);
-				if (attempt >= maxAttempts || !isTransientCliError(msg)) throw err;
+				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				const backoffMs = 2000 * attempt;
 				log.warn(
 					{ provider: this.kind, attempt, maxAttempts, backoffMs, err: msg.slice(0, 200) },
@@ -366,7 +366,7 @@ export class CliProvider implements LLMProvider {
 				const msg = err instanceof Error ? err.message : String(err);
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
-				if (attempt >= 2 || !isTransientCliError(msg)) throw err;
+				if (attempt >= 2 || !isTransientCliError(transienceText(err))) throw err;
 				log.warn({ provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
 			}
 		}
@@ -455,7 +455,7 @@ export class CliProvider implements LLMProvider {
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
 			r.then(out => {
 				if (out.exitCode !== 0) {
-					return reject(new Error(cliFailureMessage('claude', out.exitCode, out.stdout, out.stderr)));
+					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr));
 				}
 				let envelope: ClaudeEnvelope;
 				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
@@ -483,7 +483,7 @@ export class CliProvider implements LLMProvider {
 			throw new Error(`codex emitted error event: ${JSON.stringify(errorEvent)}`);
 		}
 		if (out.exitCode !== 0) {
-			throw new Error(cliFailureMessage('codex', out.exitCode, out.stdout, out.stderr));
+			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr);
 		}
 		const agentMsg = events.find(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
 		log.debug({ exitCode: out.exitCode, eventCount: events.length, hasAgentMessage: agentMsg !== undefined }, 'codex completed');
@@ -561,43 +561,97 @@ export function isTransientCliError(message: string): boolean {
 /** Above this length a CLI's output is not put in a message: it is written whole to a file the message names. */
 export const CLI_OUTPUT_INLINE_CHARS = 2_000;
 
+/** Files of a CLI's failed output older than this are removed when the next one is written. */
+export const CLI_FAILURE_FILE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 /**
- * The message for a CLI that exited with a non-zero code.
+ * A CLI exited with a non-zero code. `said` is what the CLI itself reported
+ * as the reason: the `result` of the claude CLI's envelope when its output is
+ * one, else its error output. Whether the failure is worth retrying is
+ * decided on `said`, not on the whole message: the message can hold the
+ * envelope's usage figures, and a number among them is not a status code.
+ */
+export class CliExitError extends Error {
+	readonly said: string;
+
+	constructor(message: string, said: string) {
+		super(message);
+		this.name = 'CliExitError';
+		this.said = said;
+	}
+}
+
+/** The text a failure is judged transient on: what the CLI said, where that is known. */
+export function transienceText(err: unknown): string {
+	if (err instanceof CliExitError && err.said.length > 0) return err.said;
+	return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * The error for a CLI that exited with a non-zero code.
  *
- * It starts `<cli> exited with <code>.` (callers match on that) and then says
- * why, in the CLI's own words and in full. The claude CLI writes a JSON
- * envelope whose `result` holds the error text (the API's error, a usage
+ * Its message starts `<cli> exited with <code>.` (callers match on that) and
+ * then says why, in the CLI's own words and in full. The claude CLI writes a
+ * JSON envelope whose `result` holds the error text (the API's error, a usage
  * limit); that text is given first, so the cause is never behind the usage
  * figures that precede it in the envelope. The output itself is never cut:
  * up to CLI_OUTPUT_INLINE_CHARS it follows in the message; beyond that it is
- * written whole to a temporary file and the message names the file.
+ * written whole to a temporary file and the message names the file, keeping
+ * the error output in the message as well whenever that alone fits.
  */
-export function cliFailureMessage(
+export function cliExitError(
 	cli:      'claude' | 'codex',
 	exitCode: number,
 	stdout:   string,
 	stderr:   string,
 	dir:      string = join(tmpdir(), 'insrc-cli-failures'),
-): string {
+): CliExitError {
 	const head = `${cli} exited with ${exitCode}.`;
-	let said = '';
+	let result = '';
 	try {
-		const result = (JSON.parse(stdout) as { result?: unknown }).result;
-		if (typeof result === 'string' && result.trim().length > 0) said = ` ${result.trim()}`;
+		const r = (JSON.parse(stdout) as { result?: unknown }).result;
+		if (typeof r === 'string') result = r.trim();
 	} catch { /* not an envelope: the output below is all there is */ }
+	const said = result.length > 0 ? result : stderr.trim();
+	const lead = result.length > 0 ? ` ${result}` : '';
 
 	const output = `stderr=${stderr} stdout=${stdout}`;
-	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return `${head}${said} ${output}`;
+	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return new CliExitError(`${head}${lead} ${output}`, said);
 	try {
-		mkdirSync(dir, { recursive: true });
-		const path = join(dir, `${cli}-exit-${randomUUID()}.txt`);
-		writeFileSync(path, `--- stderr ---\n${stderr}\n--- stdout ---\n${stdout}\n`, 'utf8');
-		return `${head}${said} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`;
+		const path = writeCliFailureFile(dir, cli, stdout, stderr);
+		// The error output stays in the message when it fits: with no envelope it is the only statement of the cause.
+		const errOut = stderr.length > 0 && stderr.length <= CLI_OUTPUT_INLINE_CHARS ? ` stderr=${stderr}` : '';
+		return new CliExitError(`${head}${lead}${errOut} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`, said);
 	} catch (err) {
 		// The file could not be written: the output goes in the message, whole.
 		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'CLI failure output could not be written to a file; it stays in the message');
-		return `${head}${said} ${output}`;
+		return new CliExitError(`${head}${lead} ${output}`, said);
 	}
+}
+
+/** The message of `cliExitError`. */
+export function cliFailureMessage(cli: 'claude' | 'codex', exitCode: number, stdout: string, stderr: string, dir?: string): string {
+	return cliExitError(cli, exitCode, stdout, stderr, dir).message;
+}
+
+/**
+ * Write one failed call's output, whole, to a file only its owner can read
+ * (it may echo a prompt or repository content), and remove the files of
+ * earlier failures that are older than CLI_FAILURE_FILE_MAX_AGE_MS, so a
+ * long-running daemon does not keep them for ever.
+ */
+function writeCliFailureFile(dir: string, cli: string, stdout: string, stderr: string): string {
+	mkdirSync(dir, { recursive: true, mode: 0o700 });
+	const now = Date.now();
+	for (const name of readdirSync(dir)) {
+		if (!/^(claude|codex)-exit-.*\.txt$/.test(name)) continue;
+		const old = join(dir, name);
+		try { if (now - statSync(old).mtimeMs > CLI_FAILURE_FILE_MAX_AGE_MS) rmSync(old, { force: true }); }
+		catch { /* another process removed it first */ }
+	}
+	const path = join(dir, `${cli}-exit-${randomUUID()}.txt`);
+	writeFileSync(path, `--- stderr ---\n${stderr}\n--- stdout ---\n${stdout}\n`, { encoding: 'utf8', mode: 0o600 });
+	return path;
 }
 
 /** Resolve a bare CLI name (`claude`/`codex`) to its absolute path ONCE,

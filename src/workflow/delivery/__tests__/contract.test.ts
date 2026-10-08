@@ -43,7 +43,7 @@ const RECORDS: readonly ArtifactRecord[] = [
 
 /** Every DEF, HLD and LLD has marked markdown under docs/; nothing else does. */
 const PORT: DeliveryMarkdownPort = {
-	markdownOf: r => (['DEF', 'HLD', 'LLD'].includes(r.kind) ? { mdPath: `/repo/docs/${r.artifactId}.md`, hasMarker: true } : null),
+	markdownOf: r => (['DEF', 'HLD', 'LLD'].includes(r.kind) ? { mdPath: `/repo/docs/${r.artifactId}.md`, realPath: `/repo/docs/${r.artifactId}.md`, hasMarker: true } : null),
 };
 
 /** The snapshot the sample must equal. */

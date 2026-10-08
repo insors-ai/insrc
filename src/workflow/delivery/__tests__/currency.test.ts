@@ -264,6 +264,7 @@ test('a malformed file leaves every other item in place and is named with the co
 	const files = new Map(Object.entries(STORE_FILES).map(([name, v]) => [join(dir, name), typeof v === 'string' ? v : JSON.stringify(v)]));
 	const fs: ReadonlyStoreFs = {
 		exists:   p => p === dir || files.has(p),
+		realpath: p => p,
 		listDir:  () => Object.keys(STORE_FILES),
 		readFile: p => { const v = files.get(p); if (v === undefined) throw new Error(`ENOENT ${p}`); return v; },
 	};

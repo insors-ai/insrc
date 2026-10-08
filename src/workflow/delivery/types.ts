@@ -343,9 +343,13 @@ export interface DeliveryError { readonly error: string }
 export type DeliverySnapshotResponse = DeliverySnapshot | DeliveryError;
 export type DeliveryEvidenceResponse = DeliveryEvidenceRecord | DeliveryError;
 
-/** Locates a record's rendered markdown and whether it starts with that record's marker. */
+/**
+ * Locates a record's rendered markdown and whether it starts with that record's
+ * marker. realPath is the file the docs/ containment check resolved, so a
+ * reader opens exactly that file without resolving the path a second time.
+ */
 export interface DeliveryMarkdownPort {
-	markdownOf(record: ArtifactRecord): { readonly mdPath: string; readonly hasMarker: boolean } | null;
+	markdownOf(record: ArtifactRecord): { readonly mdPath: string; readonly realPath: string; readonly hasMarker: boolean } | null;
 }
 
 /** Test seams for the two handlers; the defaults read the real store and docs/ tree. */
@@ -359,9 +363,11 @@ export interface DeliveryDeps {
 // Filesystem port + store error
 // ---------------------------------------------------------------------------
 
-/** The only filesystem surface the loader uses. Read operations only. */
+/** The only filesystem surface the loader and the evidence handler use. Read operations only. */
 export interface ReadonlyStoreFs {
 	exists(path: string): boolean;
+	/** The path with every symlink resolved; throws when it does not exist. */
+	realpath(path: string): string;
 	listDir(path: string): readonly string[];
 	readFile(path: string): string;
 }

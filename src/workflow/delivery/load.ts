@@ -12,7 +12,7 @@
  * read-only ReadonlyStoreFs port, so nothing under the repository is written.
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
@@ -36,6 +36,7 @@ export const DELIVERY_ARTIFACT_KINDS: readonly DeliveryArtifactKind[] = ['SPEC',
 /** The node:fs implementation of the read-only store port. */
 export const nodeStoreFs: ReadonlyStoreFs = {
 	exists:   (path) => existsSync(path),
+	realpath: (path) => realpathSync(path),
 	listDir:  (path) => readdirSync(path),
 	readFile: (path) => readFileSync(path, 'utf8'),
 };

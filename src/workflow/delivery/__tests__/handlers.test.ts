@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -89,13 +89,13 @@ test("a build record that stamps no epic slug or date is located through its wor
 			assert.ok(r, id);
 			return r;
 		};
-		assert.deepEqual(port.markdownOf(rec(`BUILD-${EPIC}-s1`)), { mdPath: join(repo, EPIC_FOLDER, 'S001', 'BUILD.md'), hasMarker: false });
-		assert.deepEqual(port.markdownOf(rec(`LLD-${EPIC}-s1`)), { mdPath: join(repo, EPIC_FOLDER, 'S001', 'LLD.md'), hasMarker: true });
-		assert.deepEqual(port.markdownOf(rec(`DEF-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'DEF.md'), hasMarker: true });
+		assert.deepEqual(port.markdownOf(rec(`BUILD-${EPIC}-s1`)), { mdPath: join(repo, EPIC_FOLDER, 'S001', 'BUILD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'S001', 'BUILD.md')), hasMarker: false });
+		assert.deepEqual(port.markdownOf(rec(`LLD-${EPIC}-s1`)), { mdPath: join(repo, EPIC_FOLDER, 'S001', 'LLD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'S001', 'LLD.md')), hasMarker: true });
+		assert.deepEqual(port.markdownOf(rec(`DEF-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'DEF.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'DEF.md')), hasMarker: true });
 		assert.equal(port.markdownOf(rec(`AMD-${EPIC}-1`)), null, 'an amendment has no rendered markdown');
 		assert.equal(port.markdownOf(rec('BUILD-cccccccccccccccc-S001')), null, 'no folder and no file: null');
 		assert.equal(port.markdownOf(rec(`LLD-${EPIC}-s2`)), null, 'a matching folder without the file does not fall back to the meta-derived path');
-		assert.deepEqual(port.markdownOf(rec(`HLD-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'HLD.md'), hasMarker: false }, 'the marker must be the whole first line');
+		assert.deepEqual(port.markdownOf(rec(`HLD-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'HLD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'HLD.md')), hasMarker: false }, 'the marker must be the whole first line');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -194,6 +194,20 @@ test('workflow.deliveryEvidence reads a marker-less build record through the dae
 		assert.ok(!('error' in hld));
 		assert.equal(hld.renderedMarkdown, null, 'no HLD.md on disk');
 		assert.deepEqual(treeOf(repo), before, 'nothing written');
+
+		// Existence, containment and the read all go through an injected fs: a record only it holds is served.
+		const memId = `CR-${EPIC}-s1`;
+		const memFile = join('/mem', ARTIFACTS_DIR, `${memId}.json`);
+		const memFs = {
+			exists:   (p: string) => p === memFile || p === join('/mem', ARTIFACTS_DIR),
+			realpath: (p: string) => { if (p !== memFile && p !== join('/mem', ARTIFACTS_DIR)) throw new Error(`ENOENT ${p}`); return p; },
+			listDir:  () => [`${memId}.json`],
+			readFile: (p: string) => { if (p !== memFile) throw new Error(`ENOENT ${p}`); return JSON.stringify({ meta: { epicHash: EPIC, storyId: 's1' }, body: { verdict: 'pass' } }); },
+		};
+		const mem = handleDeliveryEvidence({ repo: '/mem', artifactId: memId }, undefined, { fs: memFs });
+		assert.ok(!('error' in mem), JSON.stringify(mem));
+		assert.deepEqual([mem.kind, mem.body, mem.renderedMarkdown], ['CR', { verdict: 'pass' }, null]);
+		assert.deepEqual(handleDeliveryEvidence({ repo: '/mem', artifactId: `CR-${EPIC}-s2` }, undefined, { fs: memFs }), { error: 'not found' });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -231,7 +245,7 @@ test('an unresolved repo or an unreadable store is an error and an absent store 
 		const failed = handleDelivery({ repo: unreadable }, undefined);
 		assert.ok('error' in failed && failed.error.startsWith('workflow.delivery: delivery: artifact store at '), JSON.stringify(failed));
 
-		const throwing = handleDelivery({ repo: empty }, undefined, { fs: { exists: () => true, listDir: () => { throw new Error('EACCES'); }, readFile: () => '' } });
+		const throwing = handleDelivery({ repo: empty }, undefined, { fs: { exists: () => true, realpath: p => p, listDir: () => { throw new Error('EACCES'); }, readFile: () => '' } });
 		assert.ok('error' in throwing && /EACCES/.test(throwing.error));
 
 		const s = handleDelivery({ repo: empty }, undefined);

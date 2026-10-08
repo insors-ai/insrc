@@ -15,11 +15,10 @@
  * neither writes.
  */
 
-import { readFileSync, realpathSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, isAbsolute } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import { resolveDocsMarkdown } from '../artifact-content.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { deriveCurrency } from './currency.js';
 import { deriveGates } from './gate.js';
@@ -90,9 +89,8 @@ function renderedMarkdownOf(repo: string, record: ArtifactRecord, deps: Delivery
 	try {
 		const port = deps.markdown ?? createMarkdownPort(repo, buildWorkItemGraph(loadArtifactRecordSet(repo, deps.fs ?? nodeStoreFs, deps.now)));
 		const md = port.markdownOf(record);
-		if (md === null) return null;
-		const located = resolveDocsMarkdown(repo, md.mdPath);
-		return 'realPath' in located ? readFileSync(located.realPath, 'utf8') : null;
+		// The port already ran the docs/ containment check; read the file it resolved.
+		return md === null ? null : readFileSync(md.realPath, 'utf8');
 	} catch (err) {
 		log.warn({ repo, artifactId: record.artifactId, err: errorText(err) }, 'workflow.deliveryEvidence: rendered markdown could not be read');
 		return null;
@@ -110,15 +108,18 @@ export function handleDeliveryEvidence(
 	const artifactId: unknown = params?.artifactId;
 	if (typeof artifactId !== 'string' || !ARTIFACT_ID_RE.test(artifactId)) return { error: 'invalid artifact id' };
 
+	// Existence, containment and the read all go through the one fs seam.
+	const fs = deps.fs ?? nodeStoreFs;
 	const storeDir = join(repo, ARTIFACTS_DIR);
 	const fileName = `${artifactId}.json`;
+	const filePath = join(storeDir, fileName);
+	if (!fs.exists(filePath)) return { error: 'not found' };
 	let realFile: string;
 	let realStore: string;
 	try {
-		realFile = realpathSync(join(storeDir, fileName));
-		realStore = realpathSync(storeDir);
+		realFile = fs.realpath(filePath);
+		realStore = fs.realpath(storeDir);
 	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { error: 'not found' };
 		return { error: `workflow.deliveryEvidence: ${artifactId} cannot be read: ${errorText(err)}` };
 	}
 	const rel = relative(realStore, realFile);
@@ -126,7 +127,7 @@ export function handleDeliveryEvidence(
 
 	let record: ArtifactRecord;
 	try {
-		const lifted = liftStoreFile(fileName, JSON.parse((deps.fs ?? nodeStoreFs).readFile(realFile)));
+		const lifted = liftStoreFile(fileName, JSON.parse(fs.readFile(realFile)));
 		if ('reason' in lifted) return { error: `workflow.deliveryEvidence: ${artifactId} cannot be read: ${lifted.detail}` };
 		record = lifted;
 	} catch (err) {

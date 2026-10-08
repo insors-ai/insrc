@@ -102,7 +102,7 @@ export function createMarkdownPort(repoPath: string, graph: WorkItemGraph): Deli
 			if ('reason' in located) return null;
 			const line = firstLine(located.realPath);
 			if (line === null) return null;
-			return { mdPath, hasMarker: line === `<!-- insrc:artifact ${record.artifactId} -->` };
+			return { mdPath, realPath: located.realPath, hasMarker: line === `<!-- insrc:artifact ${record.artifactId} -->` };
 		},
 	};
 }

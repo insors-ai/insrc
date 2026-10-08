@@ -35,7 +35,7 @@ const APPROVED = { approvedAt: CREATED };
 
 /** A port that reports every LLD under docs/ with its marker, and nothing else. */
 const PORT: DeliveryMarkdownPort = {
-	markdownOf: r => (r.kind === 'LLD' ? { mdPath: `/repo/docs/${r.artifactId}.md`, hasMarker: true } : null),
+	markdownOf: r => (r.kind === 'LLD' ? { mdPath: `/repo/docs/${r.artifactId}.md`, realPath: `/repo/docs/${r.artifactId}.md`, hasMarker: true } : null),
 };
 
 function snapshotOf(records: readonly ArtifactRecord[], port: DeliveryMarkdownPort = PORT): DeliverySnapshot {

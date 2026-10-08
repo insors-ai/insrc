@@ -1,0 +1,15 @@
+import { test, describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+test('plain pass', () => {});
+test('plain fail', () => { assert.equal(1, 2); });
+test('skipped by option', { skip: true }, () => {});
+test('skipped with reason', { skip: 'needs env' }, () => {});
+test('todo one', { todo: true }, () => {});
+test('has # hash and \\ backslash and "double" and \'single\' quotes', () => {});
+test('dup title', () => {});
+test('dup title', () => { assert.fail('second'); });
+describe('outer suite', () => {
+	it('nested pass', () => {});
+	describe('inner suite', () => { it('deep fail', () => { assert.fail('x'); }); });
+});
+test('parent with subtests', async (t) => { await t.test('sub one', () => {}); await t.test('sub two', { skip: true }, () => {}); });

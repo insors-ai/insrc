@@ -20,6 +20,7 @@ import type {
 	AnalyzeScopeRef,
 	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
+import type { AnswerReport } from '../completeness.js';
 
 // ---------------------------------------------------------------------------
 // Stage identifiers
@@ -231,6 +232,12 @@ export interface RunAnalyzeOk {
 	readonly tasksCompleted: number;
 	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string }>;
 	readonly durationMs: number;
+	/**
+	 * The answer report, derived by code from the run context's report and
+	 * from each plan task's completeness record. Absent in one case only: a
+	 * run resumed from a record stored before the report existed.
+	 */
+	readonly report?: AnswerReport | undefined;
 }
 
 export interface RunAnalyzeFail {
@@ -316,4 +323,6 @@ export interface RunRecord {
 	readonly error?: RunFailure | undefined;
 	readonly tasksCompleted?: number | undefined;
 	readonly tasksFailed?: ReadonlyArray<{ taskId: string; reason: string }> | undefined;
+	/** The run's answer report. Absent on a record stored before the report existed. */
+	readonly report?: AnswerReport | undefined;
 }

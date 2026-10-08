@@ -107,6 +107,7 @@ import type {
 	ClassifiedIntent,
 	PlannedTask,
 } from '../shared/analyze-types.js';
+import type { AnswerReport } from '../analyze/completeness.js';
 
 const log = getLogger('analyze-rpc');
 
@@ -209,6 +210,8 @@ export interface RunStartRpcOk {
 	readonly tasksCompleted: number;
 	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string }>;
 	readonly durationMs: number;
+	/** The run's answer report. Absent only for a run resumed from a record stored before the report existed. */
+	readonly report?: AnswerReport | undefined;
 }
 
 export interface RunStartRpcErr {
@@ -712,6 +715,8 @@ function shapeTerminalFrame(result: RunAnalyzeResult): RunStartRpcResponse {
 			tasksCompleted: result.tasksCompleted,
 			tasksFailed: result.tasksFailed,
 			durationMs: result.durationMs,
+			// Absent only for a run resumed from a record stored before the report existed.
+			...(result.report !== undefined ? { report: result.report } : {}),
 		};
 	}
 	const payload: AnalyzeRpcErrorPayload = {
@@ -958,6 +963,9 @@ export const _classifyShaperErrorForTest = classifyShaperError;
 
 /** Test hook: the daemon's planner-error mapping, used by the plan-tree entry. */
 export const _classifyPlannerErrorForTest = classifyPlannerError;
+
+/** Test hook: the run's result as the daemon's terminal response. */
+export const _shapeTerminalFrameForTest = shapeTerminalFrame;
 
 /** Test hook: the wrapper that turns a context handler's error into its response. */
 export const _invokeForTest = invoke;

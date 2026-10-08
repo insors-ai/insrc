@@ -294,6 +294,34 @@ export function renderCompletenessLine(report: AnswerReport): string {
 	return `Incomplete: ${parts.join('. ')}.${notes}`;
 }
 
+/** Written in the report's place for a run whose stored record carries none: one made before the report existed. */
+export const RUN_COMPLETENESS_NOT_RECORDED = 'Completeness was not recorded for this run.';
+
+/**
+ * One report for an answer built in two steps, each with its own report (a
+ * plan tree's run: the run context, then the plan's tasks). It is complete
+ * only when both are; the notes of both are kept, in the order given.
+ * `prefix` is put before each source id of `first`, so a reader can tell the
+ * two steps' sources apart.
+ */
+export function mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix = ''): AnswerReport {
+	const tag = (n: SourceNote): SourceNote => (prefix.length > 0 ? { ...n, sourceId: `${prefix}${n.sourceId}` } : n);
+	const basisNotes: string[] = [];
+	for (const note of [...(first.completeness.basisNotes ?? []), ...(second.completeness.basisNotes ?? [])]) {
+		if (!basisNotes.includes(note)) basisNotes.push(note);
+	}
+	const answerFailure = first.answerFailure ?? second.answerFailure;
+	return {
+		completeness: {
+			complete:   first.completeness.complete && second.completeness.complete,
+			incomplete: [...first.completeness.incomplete.map(tag), ...second.completeness.incomplete],
+			failed:     [...first.completeness.failed.map(tag), ...second.completeness.failed],
+			...(basisNotes.length > 0 ? { basisNotes } : {}),
+		},
+		...(answerFailure !== undefined ? { answerFailure } : {}),
+	};
+}
+
 /** Written at the head of an answer that carries no report: one built before the report existed. */
 export const COMPLETENESS_NOT_RECORDED = 'Completeness was not recorded for this answer.';
 

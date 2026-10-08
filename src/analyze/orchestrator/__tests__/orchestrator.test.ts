@@ -526,7 +526,9 @@ test('resume: status=ok + stage=done -> cached RunAnalyzeOk returned without re-
 		if (!result.ok) return;
 		assert.equal(result.runId, runId);
 		assert.deepEqual(result.intent, cachedIntent);
-		assert.deepEqual(result.finalReport, cachedReport);
+		// This record was stored without an answer report (as every record was
+		// before the report existed): the not-recorded line heads the text.
+		assert.deepEqual(result.finalReport, { ...cachedReport, summary: 'Completeness was not recorded for this run.\n\ncached summary' });
 		assert.equal(result.tasksCompleted, 4);
 		assert.equal(result.durationMs, 0,
 			'cached resume returns durationMs=0 (no time spent this call)');

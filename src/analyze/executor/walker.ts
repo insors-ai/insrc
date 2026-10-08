@@ -55,6 +55,7 @@ import {
 	type TaskExecutionRecord,
 	type TemplateExecuteResult,
 } from './types.js';
+import { taskPath } from './plan-sources.js';
 
 const log = getLogger('analyze:executor:walker');
 
@@ -424,11 +425,8 @@ function emit(opts: WalkOpts, event: TaskExecutionEvent): void {
  * planner-template task at level 1 sets it to its own taskId;
  * further nested levels join with '.'.
  */
-function appendTaskPath(parent: string | undefined, taskId: string): string {
-	return parent === undefined || parent.length === 0
-		? taskId
-		: `${parent}.${taskId}`;
-}
+/** One rule for a task's path, shared with the answer report's sources. */
+const appendTaskPath = taskPath;
 
 // ---------------------------------------------------------------------------
 // Test hooks

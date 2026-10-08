@@ -608,7 +608,7 @@
         {
           "scenario": "The aggregate-report task itself fails: its model call fails, or its prompt is larger than the model accepts.",
           "detection": "The runtime throws; the walk records the task as failed, and runAnalyze finds no final report on the executed plan.",
-          "response": "Unchanged: the run fails at stage 'execute' with 'executor-aggregator-failed', and the record carries the tasks that completed and failed. This Story does not divide an aggregate's input; Story s3 does.",
+          "response": "Unchanged: the run fails at stage 'execute' with 'executor-aggregator-failed', and the record carries the tasks that completed and failed. This Story does not divide an aggregate's input; Story s3 does. Accepted exception (stakeholder, 2026-10-08): acceptance criterion ac1 is not met for the docs family by this Story. On a repository of this size the aggregate-report task's input is larger than one model call accepts, and dividing it is Story s3's subject. ac1 stays as the Define words it. Story s3 must make a broad docs analysis complete, and its design must name this exception and close it. [[c10]]",
           "userImpact": "No final report. The failure message now gives the model provider's own words (ISSUE-7a3ab8dc), for example 'Prompt is too long'.",
           "recoverable": false
         },
@@ -827,7 +827,7 @@
             "a code request returns a final report whose first line names the failed functional-surface tasks, where on 2026-10-08 it returned none",
             "a request with an empty prompt and a stated kind of source completes",
             "a request sized so that its plan holds a planner-kind task: the child plan runs and its tasks appear by path in the run's answer report; if no size makes the planner emit one on this repository, that is recorded and the nested integration test stands as the proof",
-            "a docs request: recorded as it comes out; it is expected to stop at the aggregate task with 'Prompt is too long' until Story s3"
+            "a docs request, run and recorded but not a proof of ac1: it is expected to stop at the aggregate task with 'Prompt is too long'. This is the accepted exception of 2026-10-08, to be closed by Story s3"
           ],
           "fixturesNeeded": [
             "the installed daemon running this Story's code",
@@ -848,8 +848,7 @@
           "provingTests": [
             "integration: a plan in which one of three producers failed has a final report written from the two that exist",
             "live: an infra and a data request complete; a code request returns a final report that names its failed tasks; a request with an empty prompt and a stated source completes",
-            "unit: the table test over families and kinds of scope",
-            "live: the docs request, recorded as it comes out (its stop is Story s3's)"
+            "unit: the table test over families and kinds of scope"
           ]
         },
         {
@@ -877,7 +876,7 @@
     },
     "migration": {
       "stateBefore": "From the live runs and direct reads of 2026-10-08 recorded in step s1. A broad infra or data analysis runs to a final report; a broad code analysis returns none, because one failed task makes the aggregate task skip (unmetDependencies in src/analyze/executor/walker.ts) and the run fail with 'executor-aggregator-failed'; a broad docs analysis fails in the aggregate task with 'Prompt is too long'. The plan tasks accept fewer kinds of scope than TARGET_TO_KINDS allows: code and docs accept repo and manifest-dir, infra adds workspace, data accepts no connection, through three copies of one function; five tasks use the scope's value as a repo path without resolving it; a refused scope is a plain Error recorded as 'runtime-threw' with no code. An error nothing catches leaves the run record 'in-progress', and the daemon's handler reports stage 'classify' whatever stage was running. Nothing knows which runs are live; 'run-abandoned' is declared and never raised. The daemon refuses an empty prompt even when the caller states the kind of source.",
-      "stateAfter": "Every plan task takes its scope from one function built on Story s6's resolveScope and accepts exactly its family's row; a refused, unresolved or unindexed scope is a failed task with the existing code for it. The aggregate task runs on the inputs that exist and is told which are absent, so a run with a failed task returns a final report whose first line names what is missing. An uncaught error writes the run record as failed at the stage reached; a record 'in-progress' with no live run is rewritten as 'run-abandoned' by the reader that meets it. A request with no prompt and a stated kind of source runs as an unfocused request. The code tasks' notion of a module and an aggregate input too large for one call are unchanged and belong to other Stories.",
+      "stateAfter": "Every plan task takes its scope from one function built on Story s6's resolveScope and accepts exactly its family's row; a refused, unresolved or unindexed scope is a failed task with the existing code for it. The aggregate task runs on the inputs that exist and is told which are absent, so a run with a failed task returns a final report whose first line names what is missing. An uncaught error writes the run record as failed at the stage reached; a record 'in-progress' with no live run is rewritten as 'run-abandoned' by the reader that meets it. A request with no prompt and a stated kind of source runs as an unfocused request. The code tasks' notion of a module and an aggregate input too large for one call are unchanged and belong to other Stories; for the second, a broad docs analysis not completing is an accepted exception until Story s3.",
       "migrationSteps": [
         {
           "order": 1,
@@ -1013,7 +1012,6 @@
     "openQuestions": [
       "Back-flow to the HLD: this Story's boundary text does not name two parts of this design, both stops found by the first broad runs and assigned here by the stakeholder on 2026-10-08: the aggregate-report task running on the inputs that exist when a task before it failed, and the daemon accepting an empty prompt when a kind of source is stated. The boundary's text should say so.",
       "Back-flow to the Define and the HLD: a new Story is needed for what the code tasks treat as a module. They look up stored entities of kind 'module', which are imported modules and not directories; on this repository the two module tasks return nothing and every functional-surface task fails. Until it is built, acceptance criterion ac1 of this Story cannot hold for the code family beyond returning a report that names the failed tasks. Should that Story be defined before this one is built, or after?",
-      "Acceptance criterion ac1 cannot hold for the docs family on a repository of this size until Story s3: the aggregate-report task's prompt is too long for the model. Is it accepted that this Story closes with the docs run recorded as stopping there?",
       "A nested plan (ac2) was not planned by any live run at size S. If no size makes the planner emit a planner-kind task on this repository, is the integration test over a nested plan, with the real walk and stand-in runtimes, accepted as the proof?",
       "Starting a run under an id whose run is live in the same process is not designed here: today the second start overwrites the first's record. Should it be refused, and with which code ('run-in-progress' exists only in the daemon's list)?"
     ]
@@ -1072,6 +1070,12 @@
       "kind": "prior-artifact",
       "ref": "HLD-b9d5c5c40df5a574",
       "quotedText": "Its design begins by running one and recording how far it gets; if what is found is more than one Story, it is brought back to be split."
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "2026-10-08: ac1 for the docs family is an accepted exception on Story s7; it must be addressed later, by Story s3",
+      "quotedText": "go with B, but this needs to be addressed later"
     }
   ]
 }

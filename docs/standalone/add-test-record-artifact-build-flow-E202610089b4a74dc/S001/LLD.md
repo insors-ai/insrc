@@ -377,3 +377,23 @@ The plan workflow's test-strategy step asks for the file-name prefix on every te
 - A live or smoke test that the gate cannot run (it needs a model, a running daemon or a person): the design accepts a result reported by the builder, with where the evidence is, records it as reported and not run by the gate, and shows it to the judge. The alternative is that such a test always fails the gate's test step. Recommended: accept the reported result, shown apart from the results the gate produced.
 - The Story came from triage with no acceptance criteria, so the alternatives could not be scored against any and the acceptance mapping has one entry (ac1) that stands for the request itself. Is the request as stated in the Story the acceptance criterion?
 - The fork of the IDE (insors-ai/insrc-ide, a separate repository) was not read for this design; the two plugins in this repository were. Before the validate turn's change ships, the fork's reader of BUILD records and its artifact listing should be checked for a strict shape or a fixed list of kinds. Who makes that check, and does it hold the Story's last Task?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-08T16:36:47.911Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | The separate IDE fork (insors-ai/insrc-ide) tolerates a BUILD record with a new optional body field and a new TESTS json in the artifacts directory. | The fork is a separate repository and is not in this working directory; CLAUDE.md says only that it mirrors IPC types. I could check this repository's side only: BuildRecord.body gains one optional field (standalone-record.ts:76-96 shows the current optional-field body) and the verdict's evidence only gains fields. The design states the same gap in its backward-compat note and open question 4. [files: src/workflow/runners/build/standalone-record.ts] | Decide open question 4: who checks the fork's BUILD reader and artifact listing, and whether that holds the Story's last Task. |

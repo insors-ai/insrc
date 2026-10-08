@@ -102,3 +102,54 @@ test('the implement prompts tell the implementer to merge upstream with --no-ff 
 		assert.equal(prompt.includes('{{mergeRule}}'), false, 'the placeholder is filled');
 	}
 });
+
+// ---------------------------------------------------------------------------
+// The judge's evidence lists the named tests (LLD-9b4a74dc-S001, task t7)
+// ---------------------------------------------------------------------------
+
+test("the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before", async () => {
+	const { renderCheckEvidence } = await import('../phases/validate.js');
+	const typecheck = { ok: true, command: 'npx tsc --noEmit', exitCode: 0, timedOut: false, durationMs: 1200, outputTail: '' };
+	const base = { ok: false, command: 'node --test a.test.ts', exitCode: 1, timedOut: false, durationMs: 300, outputTail: '# fail 1', note: 'a note' };
+
+	// No named tests: exactly the two sections there were, with or without the empty new fields.
+	const before = renderCheckEvidence({ typecheck, tests: base });
+	assert.equal(before, [
+		'### Typecheck: PASSED\n- command: `npx tsc --noEmit`\n- exit code: 0 · 1.2 s',
+		'### Tests: FAILED\n- command: `node --test a.test.ts`\n- exit code: 1 · 0.3 s\n- note: a note\n- output (tail):\n```\n# fail 1\n```',
+	].join('\n\n'));
+	assert.equal(renderCheckEvidence({ typecheck, tests: { ...base, files: [], namedTests: [] } }), before);
+
+	const A = 'src/a/__tests__/a.test.ts';
+	const evidence = renderCheckEvidence({ typecheck, tests: { ...base,
+		files: [{ file: A, command: 'c', exitCode: 1, timedOut: false, durationMs: 300, outputPath: '/tmp/out/a.tap', titles: [
+			{ title: 'adds', depth: 0, result: 'pass' }, { title: 'subtracts', depth: 0, result: 'fail' }, { title: 'an unrelated one', depth: 0, result: 'fail' },
+		] }],
+		namedTests: [
+			{ name: 'the arithmetic works', level: 'unit', source: 'mapping', files: [], cases: [{ file: A, title: 'adds', result: 'pass' }, { file: A, title: 'subtracts', result: 'fail' }, { file: A, title: 'divides', result: 'not found' }] },
+			{ name: 'a.test.ts: by file', level: 'unit', source: 'prefix', cases: [], files: [A] },
+			{ name: 'runs against the real daemon', level: 'live', source: 'mapping', cases: [], files: [], reported: { result: 'pass', evidence: 'run 12' } },
+			{ name: 'prose nobody mapped', level: 'integration', source: 'none', cases: [], files: [] },
+		],
+	} });
+	assert.ok(evidence.startsWith(before), 'the two sections are unchanged and come first');
+	assert.equal(evidence.slice(before.length), '\n\n' + [
+		'#### Named tests',
+		'- unit: the arithmetic works',
+		`  - pass: 'adds' in \`${A}\``,
+		`  - fail: 'subtracts' in \`${A}\``,
+		`  - not found: 'divides' in \`${A}\``,
+		'- unit: a.test.ts: by file',
+		`  - fail (by file, no cases named): \`${A}\``,
+		'- live: runs against the real daemon',
+		'  - REPORTED BY THE BUILDER, not run by the gate: pass. Evidence: run 12',
+		'- integration: prose nobody mapped',
+		'  - nothing was run for this test: no test case was named for it',
+		'',
+		'#### Failures in the files outside the named cases',
+		`- 'an unrelated one' in \`${A}\``,
+		'',
+		"#### Whole output of each file's run",
+		`- \`${A}\`: /tmp/out/a.tap`,
+	].join('\n'));
+});

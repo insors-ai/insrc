@@ -115,9 +115,41 @@ function describeCheck(label: string, r: CheckResult): string {
 	return lines.join('\n');
 }
 
+/** The named tests of a run, case by case, for the judge: what the gate ran for
+ *  each test the plan names, what the builder reported instead of a run, and
+ *  what failed in the files outside the named cases. Empty when no test is named. */
+function describeNamedTests(r: CheckResult): string {
+	const named = r.namedTests ?? [];
+	if (named.length === 0) return '';
+	const lines: string[] = ['#### Named tests'];
+	const fileResult = (file: string): string => {
+		const run = (r.files ?? []).find(f => f.file === file);
+		if (run === undefined) return 'not run';
+		return run.timedOut ? 'timed out' : run.exitCode === 0 ? 'pass' : 'fail';
+	};
+	for (const t of named) {
+		lines.push(`- ${t.level !== undefined ? `${t.level}: ` : ''}${t.name}`);
+		for (const c of t.cases) lines.push(`  - ${c.result}: '${c.title}' in \`${c.file}\``);
+		if (t.source === 'prefix' || t.source === 'touched') {
+			for (const f of t.files) lines.push(`  - ${fileResult(f)} (by file, no cases named): \`${f}\``);
+		}
+		if (t.reported !== undefined) lines.push(`  - REPORTED BY THE BUILDER, not run by the gate: ${t.reported.result}. Evidence: ${t.reported.evidence}`);
+		if (t.cases.length === 0 && t.reported === undefined && t.source !== 'prefix' && t.source !== 'touched') lines.push('  - nothing was run for this test: no test case was named for it');
+	}
+	const namedCases = new Set(named.flatMap(t => t.cases.map(c => `${c.file}\u0000${c.title}`)));
+	const others = (r.files ?? []).flatMap(f => f.titles
+		.filter(t => t.result === 'fail' && !namedCases.has(`${f.file}\u0000${t.title}`))
+		.map(t => `- '${t.title}' in \`${f.file}\``));
+	if (others.length > 0) lines.push('', '#### Failures in the files outside the named cases', ...new Set(others));
+	const outputs = (r.files ?? []).filter(f => f.outputPath !== undefined).map(f => `- \`${f.file}\`: ${f.outputPath}`);
+	if (outputs.length > 0) lines.push('', '#### Whole output of each file\'s run', ...outputs);
+	return lines.join('\n');
+}
+
 /** The check-results section the validate prompts carry. */
 export function renderCheckEvidence(results: ValidationCheckResults): string {
-	return [describeCheck('Typecheck', results.typecheck), describeCheck('Tests', results.tests)].join('\n\n');
+	const named = describeNamedTests(results.tests);
+	return [describeCheck('Typecheck', results.typecheck), describeCheck('Tests', results.tests), ...(named.length > 0 ? [named] : [])].join('\n\n');
 }
 
 /** Resolve the edit-session provider for build validation. Validation is a

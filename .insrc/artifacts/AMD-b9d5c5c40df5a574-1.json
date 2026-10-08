@@ -1,0 +1,48 @@
+{
+  "id": "AMD-b9d5c5c40df5a574-1",
+  "epicHash": "b9d5c5c40df5a574",
+  "epicSlug": "make-insrc-analysis-complete-used-right",
+  "hldBaseRunId": "wf-1791349476498-tih4l4",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s8",
+    "internal": "Private implementation of s8: The code tasks of a broad analysis work on a repository whose graph has no modules for its directories"
+  },
+  "rationale": "Extends the Epic `make-insrc-analysis-complete-used-right` (DEF-b9d5c5c40df5a574, HLD-b9d5c5c40df5a574): a new Story for what the code plan tasks treat as a module, found by the first broad run of Story s7 on 2026-10-08 and split out by the stakeholder that day. It builds on the code tasks in src/analyze/runtimes/code/ and on Story s7's design (LLD-b9d5c5c40df5a574-s7).",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "LLD-b9d5c5c40df5a574-s7",
+      "quotedText": "What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/code/surface-functional.ts",
+      "quotedText": "module entity '${moduleId}' not found in the graph"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/code/discovery-modules.ts",
+      "quotedText": "if (e.kind !== 'module') continue;"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "2026-10-08: split the first broad run's findings in three; record the new Story upstream now",
+      "quotedText": "go with A. Record both upstream now."
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1791464389111-dsrbz6",
+    "storyId": "s8",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-10-08T13:00:34.209Z",
+  "status": "approved",
+  "approvedAt": "2026-10-08T13:58:03.581Z",
+  "approvedBy": "user (in-chat approval, 2026-10-08)"
+}

@@ -52,6 +52,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 - **E20261006b9d5c5c4:S003:FR002** — Large result sets are processed completely, in parts, and combined.
 - **E20261006b9d5c5c4:S003:FR003** — A single item too large to read at once is read in full, in sections.
 - **E20261006b9d5c5c4:S003:FR004** — The answer reports how the request was handled.
+- **E20261006b9d5c5c4:S003:FR005** — A broad analysis whose final combining step is handed more than one model call accepts is completed by handling that input in parts; this closes the exception accepted on Story s7 for the docs family.
 
 **s4:**
 
@@ -76,6 +77,7 @@ The analyzer's findings are incomplete in a way neither the analyzer nor its rea
 
 - **E20261006b9d5c5c4:S007:FR001** — A broad analysis runs through every stage to a final report.
 - **E20261006b9d5c5c4:S007:FR002** — A run that stops records where and why.
+- **E20261006b9d5c5c4:S007:FR003** — Accepted exception (stakeholder, 2026-10-08): for the docs family the first criterion is not met by this Story on a repository whose combining step is handed more than one model call accepts; Story s3 closes it. For the code family it is met in full only with Story s8.
 
 ## 3. Non-goals
 
@@ -162,6 +164,7 @@ As someone asking a large question, the analyzer works through all of it by a kn
 - **ac4:** Given a small request, when the analyzer handles it, then its results are returned whole without being divided. _(operationalizes `k1`)_
 - **ac5:** Given a part that fails while a large request is being handled, when the answer is assembled, then the findings of the other parts are kept and the failed part is reported as not covered. _(operationalizes `k3`, `k7`)_
 - **ac6:** Given a single item, such as a long document section, that is too large to be read at once, when the analyzer reads it, then its whole content is taken into account, not only its beginning. _(operationalizes `k2`)_
+- **ac7:** Given a broad analysis of documents whose final combining step is handed more than one model call accepts, as on this repository on 2026-10-08, where Story s7 was accepted with that analysis not completing, when it is run, then the input to the combining step is handled in parts and the analysis returns a final report. _(operationalizes `k1`, `k2`)_
 
 ### 6.4 E20261006b9d5c5c4:S004 — No lookup drops results
 
@@ -234,6 +237,22 @@ As someone asking the analyzer a broad question, the whole analysis runs to a fi
 - **ac2:** Given an analysis whose plan includes steps that themselves plan further steps, when it is run, then those nested steps run and their results reach the final report. _(operationalizes `k7`)_
 - **ac3:** Given an analysis that stops part of the way through, when it ends, then the record of the run says at which stage it stopped and why, and is not left reading as still in progress. _(operationalizes `k3`)_
 - **ac4:** Given a completed analysis, when it is asked for again by the same run, then the stored result is returned as before. _(operationalizes `k1`)_
+
+### 6.8 E20261006b9d5c5c4:S008 — The code tasks of a broad analysis work on a repository whose graph has no modules for its directories
+
+**User value:** `size: M`
+
+As someone asking for a broad analysis of a codebase, I get its modules and what each one offers, in any language the index covers, so the report is about my code and not a list of tasks that could not run.
+
+**Depends on:** `s7`
+
+**Acceptance criteria:**
+
+- **ac1:** Given a repository whose stored graph holds no entity of kind 'module' for its own directories, as for a TypeScript repository today, when a broad code analysis lists the repository's modules and its module tree, then the directories that hold source are returned as its modules, and the result says what it rests on.
+- **ac2:** Given a plan in which the planner names a directory of the repository as the module to describe, when the task that describes a module's functional surface runs, then it returns what that directory offers, and does not fail for want of a stored module entity.
+- **ac3:** Given a repository whose graph does hold module entities, as for a language whose parser emits them, when the same tasks run, then they return at least what they return today.
+- **ac4:** Given a module value that names nothing in the repository, when a task is given it, then the task fails with a reason that says so, and is not reported as an empty module.
+- **ac5:** Given a broad code analysis of an indexed repository, once this Story and Story s7 are built, when it is run, then it returns a final report in which the functional-surface tasks succeeded.
 
 ## 7. References
 

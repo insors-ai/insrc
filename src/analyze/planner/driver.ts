@@ -72,7 +72,9 @@ const PLANNER_PROMPT_REL = 'prompts/analyze/planner.system.md';
 
 export class PlanBuilderLlmUnavailableError extends Error {
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for Plan Builder: ${cause}`);
+		// Names the call, not a provider: the planner's provider is role-routed
+		// and need not be the local one.
+		super(`The model call for the plan builder failed: ${cause}`);
 		this.name = 'PlanBuilderLlmUnavailableError';
 	}
 }

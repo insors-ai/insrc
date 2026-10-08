@@ -73,7 +73,10 @@ export const PLANNED_TASK_SCHEMA = {
 } as const;
 
 export const PLAN_TASK_SCHEMA = {
-	$id:        `https://procix.ai/insrc/plan-task#${PLAN_SCHEMA_VERSION}`,
+	// The version is a path segment: JSON Schema draft 2020-12 forbids an
+	// identifier with a fragment, and a provider that validates the schema
+	// against that draft rejects the call.
+	$id:        `https://procix.ai/insrc/plan-task/v${PLAN_SCHEMA_VERSION}`,
 	title:      'PlanTask',
 	type:       'object',
 	additionalProperties: false,

@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1791464389111-dsrbz6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-08T13:00:34.210Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 45081,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "storyId": "s8",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T13:57:47.644Z"
+  },
+  "body": {
+    "scope": "M",
+    "notify": "Extends the Epic `make-insrc-analysis-complete-used-right` (DEF-b9d5c5c40df5a574, HLD-b9d5c5c40df5a574): a new Story for what the code plan tasks treat as a module, found by the first broad run of Story s7 on 2026-10-08 and split out by the stakeholder that day. It builds on the code tasks in src/analyze/runtimes/code/ and on Story s7's design (LLD-b9d5c5c40df5a574-s7).",
+    "addedStory": {
+      "id": "s8",
+      "title": "The code tasks of a broad analysis work on a repository whose graph has no modules for its directories",
+      "userValue": "As someone asking for a broad analysis of a codebase, I get its modules and what each one offers, in any language the index covers, so the report is about my code and not a list of tasks that could not run.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a repository whose stored graph holds no entity of kind 'module' for its own directories, as for a TypeScript repository today",
+          "when": "a broad code analysis lists the repository's modules and its module tree",
+          "then": "the directories that hold source are returned as its modules, and the result says what it rests on",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a plan in which the planner names a directory of the repository as the module to describe",
+          "when": "the task that describes a module's functional surface runs",
+          "then": "it returns what that directory offers, and does not fail for want of a stored module entity",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "a repository whose graph does hold module entities, as for a language whose parser emits them",
+          "when": "the same tasks run",
+          "then": "they return at least what they return today",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "a module value that names nothing in the repository",
+          "when": "a task is given it",
+          "then": "the task fails with a reason that says so, and is not reported as an empty module",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "a broad code analysis of an indexed repository, once this Story and Story s7 are built",
+          "when": "it is run",
+          "then": "it returns a final report in which the functional-surface tasks succeeded",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-b9d5c5c40df5a574-1",
+    "evidence": [
+      {
+        "kind": "prior-artifact",
+        "ref": "LLD-b9d5c5c40df5a574-s7",
+        "quote": "What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/runtimes/code/surface-functional.ts",
+        "quote": "module entity '${moduleId}' not found in the graph"
+      },
+      {
+        "kind": "code",
+        "ref": "src/analyze/runtimes/code/discovery-modules.ts",
+        "quote": "if (e.kind !== 'module') continue;"
+      },
+      {
+        "kind": "stakeholder",
+        "ref": "2026-10-08: split the first broad run's findings in three; record the new Story upstream now",
+        "quote": "go with A. Record both upstream now."
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"b9d5c5c40df5a574\",\"storyId\":\"s8\"}",
+      "description": "Approve the HLD amendment (`AMD-b9d5c5c40df5a574-1`) and the updated Epic, then run `design.story` for the new Story `s8` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "LLD-b9d5c5c40df5a574-s7",
+      "quotedText": "What the two module tasks and the functional-surface task of the code family treat as a module is not changed here; that is the subject of a separate Story"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/code/surface-functional.ts",
+      "quotedText": "module entity '${moduleId}' not found in the graph"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/code/discovery-modules.ts",
+      "quotedText": "if (e.kind !== 'module') continue;"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "2026-10-08: split the first broad run's findings in three; record the new Story upstream now",
+      "quotedText": "go with A. Record both upstream now."
+    }
+  ]
+}

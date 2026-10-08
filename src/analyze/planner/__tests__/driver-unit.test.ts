@@ -196,7 +196,9 @@ test('classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable', () =
 test('PlanBuilderLlmUnavailableError carries cause in message', () => {
 	const e = new PlanBuilderLlmUnavailableError('ECONNREFUSED');
 	assert.equal(e.name, 'PlanBuilderLlmUnavailableError');
-	assert.match(e.message, /Local Ollama unavailable for Plan Builder/);
+	// The message names the call and no provider: the planner's provider is role-routed.
+	assert.match(e.message, /^The model call for the plan builder failed: /);
+	assert.doesNotMatch(e.message, /Ollama|Local/);
 	assert.match(e.message, /ECONNREFUSED/);
 });
 

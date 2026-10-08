@@ -68,7 +68,9 @@ const CLASSIFY_PROMPT_REL = 'prompts/analyze/classify.system.md';
 
 export class ClassifierLlmUnavailableError extends Error {
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for classifier: ${cause}`);
+		// Names the call, not a provider: the classifier's provider is
+		// role-routed and need not be the local one.
+		super(`The model call for classification failed: ${cause}`);
 		this.name = 'ClassifierLlmUnavailableError';
 	}
 }

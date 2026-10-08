@@ -1,0 +1,26 @@
+<!-- insrc:artifact ISSUE-7a3ab8dc4b9d39ea -->
+
+# The plan tree cannot plan through the claude CLI, and a failed model call does not say why
+
+## Reproduction
+
+With the model provider for the planner set to the claude CLI (the default core tier on this machine), start a plan-tree analysis through the daemon: request 'analyze.run.start' with prompt 'Give me an overview of this codebase.', scope kind 'repo' on an indexed repository, source 'code', size 'S'. Observed, twice on 2026-10-08, after 46 and 50 seconds: classification passes, the run context is built, and the run ends at stage 'plan' with code 'plan-builder-llm-unavailable' and the message 'Local Ollama unavailable for Plan Builder: claude exited with 1. stderr= stdout={...' cut off after about 680 characters. The CLI's own session file holds the cause, which the message does not reach: 'API Error: 400 tools.8.custom.input_schema: JSON schema is invalid. It must match JSON Schema draft 2020-12'. Expected: the planner's call is accepted and a plan is returned; and when a model call does fail, the message names the call that failed, does not name a provider that was not used, and carries the provider's own error text in full. A second observation of the same message defect, the same day: three runs ended on the provider's usage limit; the CLI said 'You've hit your session limit', and the run's message again showed only 'claude exited with 1' and the start of the CLI's output.
+
+## Root cause
+
+Three separate defects. (1) The schema the planner hands to the model has the identifier 'https://procix.ai/insrc/plan-task#1' (src/analyze/planner/schema.ts:76, built from PLAN_SCHEMA_VERSION). JSON Schema draft 2020-12 does not allow an identifier with a non-empty fragment; the API validates a structured-output schema against that draft and rejects the request before the model runs. The classifier's schema has the same form (src/analyze/classifier/schema.ts:39) and so does the stored bundle schema (src/analyze/context/schema.ts:85). The answer-writing call is not affected only because it is given a copy of the bundle schema without the identifier, which is why the run context is built and the run stops one step later. Ajv's 2020 validator in strict mode reports the same fault on the planner's schema: '$id must match pattern ^[^#]*#?$'. Nothing looks a schema up by its identifier, so its form is free to change. (2) The planner's, the classifier's and the scope picker's error classes each build their message as 'Local Ollama unavailable for <caller>: <cause>' (src/analyze/planner/driver.ts:75, src/analyze/classifier/driver.ts:71, src/analyze/classifier/scope-picker.ts:84), whichever provider served the call. The context builder's error was corrected for this in Story s6 and names the call instead; these three were not. (3) When the claude CLI exits with a non-zero code, the CLI provider builds its error from the first 300 characters of the CLI's error output and the first 600 of its output (src/agent/providers/cli-provider.ts:457). The CLI's output is a JSON envelope whose 'result' field holds the error text and comes after the usage figures, so the cut removes exactly the part that says what went wrong.
+
+## Fix intent
+
+Give the three schemas an identifier that is valid in draft 2020-12 and still carries the schema's version, so that the planner's and the classifier's calls are accepted by the API. Make the three error messages name the call that failed and no provider. Make a failed claude CLI call report the CLI's own error text in full: read it from the CLI's envelope when the output is one, and never cut it; where the whole output is too long for a message, write it to a temporary file and name the file in the message, as the stakeholder's rule of 2026-10-08 on large payloads says. Prove the first part by a check that each schema handed to a model is valid under draft 2020-12, and by one live run through the daemon that gets past planning.
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/planner/schema.ts` — "$id:        `https://procix.ai/insrc/plan-task#${PLAN_SCHEMA_VERSION}`,"
+- **[[c2]]** `code` `src/analyze/classifier/schema.ts` — "$id:        `https://procix.ai/insrc/classified-intent#${CLASSIFIER_SCHEMA_VERSION}`,"
+- **[[c3]]** `code` `src/analyze/context/schema.ts` — "$id:        `https://procix.ai/insrc/analyze-context-bundle#${SCHEMA_VERSION}`,"
+- **[[c4]]** `code` `src/analyze/planner/driver.ts` — "super(`Local Ollama unavailable for Plan Builder: ${cause}`);"
+- **[[c5]]** `code` `src/analyze/classifier/driver.ts` — "super(`Local Ollama unavailable for classifier: ${cause}`);"
+- **[[c6]]** `code` `src/analyze/classifier/scope-picker.ts` — "super(`Local Ollama unavailable for scope-picker: ${cause}`);"
+- **[[c7]]** `code` `src/agent/providers/cli-provider.ts` — "return reject(new Error(`claude exited with ${out.exitCode}. stderr=${out.stderr.slice(0, 300)} stdout=${out.stdout.slice(0, 600)}`));"
+- **[[c8]]** `stakeholder` `2026-10-08: never cap a large payload; write it whole to a temporary file and pass the file path in the message` — "the payload should be written as a temp file and the file path passed in the message"

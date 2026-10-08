@@ -123,7 +123,7 @@ export interface CheckRunnerDeps {
 /** A leading '<base>.test.ts:' prefix — the convention plans use for test names. */
 const LEADING_TEST_FILE = /^\s*([A-Za-z0-9_.-]+\.test\.ts)\s*:/;
 
-function trackedFiles(repoPath: string): string[] {
+export function trackedFiles(repoPath: string): string[] {
 	try {
 		return execFileSync('git', ['ls-files'], { cwd: repoPath, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
 			.split('\n').filter(f => f.length > 0);

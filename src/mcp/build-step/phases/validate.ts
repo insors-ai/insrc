@@ -18,20 +18,29 @@ import { CliProvider, ReviewSessionTimeoutError, type ReviewSessionOpts } from '
 import { createRoleRouter } from '../../../analyze/context/role-router.js';
 import { runWithRoutingContext, currentRoutingContext } from '../../../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../../../config/analyze.js';
+import { relative } from 'node:path';
+
 import { getLogger } from '../../../shared/logger.js';
 import type { StructuredSchema } from '../../../shared/types.js';
 import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
-import { buildRecordPathsFor, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
-import { buildStartRelPath, resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import { storyWorkflowFiles } from '../../../workflow/runners/build/own-files.js';
+import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
+import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
+import {
+	persistTestRecordTask, readTestRecord, storedMappingFor, testRecordPaths,
+	type TestRecordFile, type TestRecordTask,
+} from '../../../workflow/runners/build/test-record.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { mergeInProgress } from '../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
+import { checkTestMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 import {
 	planTaskCheckPlan,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
+	trackedFiles,
 	trivialCheckPlan,
 	type CheckResult,
 	type ValidationCheckPlan,
@@ -61,6 +70,18 @@ type CheckRunner = (repoPath: string, plan: ValidationCheckPlan) => Promise<Vali
 let checkRunnerOverride: CheckRunner | undefined;
 export function _setBuildValidateCheckRunnerForTests(runner: CheckRunner | undefined): void {
 	checkRunnerOverride = runner;
+}
+
+/** Test seam: the clock of a validate turn (the one time both records take). */
+let clockOverride: (() => string) | undefined;
+export function _setBuildValidateClockForTests(clock: (() => string) | undefined): void {
+	clockOverride = clock;
+}
+
+/** Test seam: the writer of the Story's test record, to make a write fail. */
+let testRecordWriterOverride: typeof persistTestRecordTask | undefined;
+export function _setBuildValidateTestRecordWriterForTests(writer: typeof persistTestRecordTask | undefined): void {
+	testRecordWriterOverride = writer;
 }
 
 /** Time the judge session may take, its one retry included. */
@@ -185,18 +206,92 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	// the SAME verdict session + persist-on-verdict path and lands a BUILD record for
 	// the completion gate to approve. The plan-driven path below is untouched.
 	if (input.standalone !== undefined) {
-		return handleStandaloneValidate(repoPath, input.standalone, input.summary);
+		return handleStandaloneValidate(repoPath, input.standalone, input.summary, input.tests);
 	}
 
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
 	const ref = resolved.ref;
+	const mapping = resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
+	if (!mapping.ok) return mapping.error;
 	return runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
 		epicHash: ref.epicHash,
 		storyId:  ref.storyId,
 		taskId:   ref.taskId,
-	}, planTaskCheckPlan(repoPath, ref.task), input.summary);
+	}, planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary);
+}
+
+/**
+ * The mapping a validate turn works with: the one supplied on this turn, else
+ * the one stored for the Task by an earlier turn, else none.
+ *
+ * A SUPPLIED mapping is checked before any check runs, and a wrong one refuses
+ * the turn with every fault listed: nothing is run, judged or written. A STORED
+ * mapping is not checked for refusal, since the builder supplied nothing wrong
+ * on this turn: a case whose file is gone is run as it is and comes back
+ * `not found`. Entries for names the Task no longer has are dropped.
+ */
+function resolveMapping(
+	repoPath: string,
+	supplied: readonly TestMappingEntry[] | undefined,
+	named:    readonly NamedTest[],
+	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
+): { readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined } | { readonly ok: false; readonly error: BuildStepError } {
+	if (supplied !== undefined) {
+		const faults = checkTestMapping(supplied, named, trackedFiles(repoPath));
+		if (faults.length > 0) {
+			return { ok: false, error: err('invalid-test-mapping',
+				`insrc_build_step[validate]: the \`tests\` mapping is wrong, so nothing was run: ${faults.join('; ')}.`) };
+		}
+		return { ok: true, entries: supplied };
+	}
+	if (ident.epicHash.length === 0 || ident.storyId.length === 0) return { ok: true, entries: undefined };
+	const names = new Set(named.map(n => n.name));
+	const stored = storedMappingFor(repoPath, ident.epicHash, ident.storyId, ident.taskId)?.filter(e => names.has(e.name));
+	return { ok: true, entries: stored !== undefined && stored.length > 0 ? stored : undefined };
+}
+
+/** One Task's entry of the Story's test record, from the gate's results. */
+function toTestRecordTask(repoPath: string, taskId: string, ranAt: string, tests: CheckResult): TestRecordTask {
+	const named = tests.namedTests ?? [];
+	const namedCases = new Set(named.flatMap(t => t.cases.map(c => `${c.file}\u0000${c.title}`)));
+	const files = (tests.files ?? []).map((f): TestRecordFile => ({
+		file:       f.file,
+		exitCode:   f.exitCode,
+		timedOut:   f.timedOut,
+		durationMs: f.durationMs,
+		titles:     f.titles.map(t => ({ title: t.title, result: t.result })),
+		otherFailures: [...new Set(f.titles.filter(t => t.result === 'fail' && !namedCases.has(`${f.file}\u0000${t.title}`)).map(t => t.title))],
+		...(f.note !== undefined ? { note: f.note } : {}),
+	}));
+	const commit = headShortSha(repoPath);
+	return {
+		taskId,
+		...(commit !== undefined ? { commit } : {}),
+		ranAt,
+		testsPassed: tests.ok,
+		tests: named,
+		files,
+		...(tests.note !== undefined && tests.note.length > 0 ? { note: tests.note } : {}),
+	};
+}
+
+/**
+ * The route flag for a Story's records, resolved ONCE per validate turn for the
+ * test record and the build record alike. It is the Story's inherited flag;
+ * the caller's standalone declaration counts ONLY when the work item has no
+ * definition head at all (a head that exists and does not say `standalone` is
+ * an answer, and a declaration must not relabel it). Never the raw declaration.
+ */
+function resolveRouteFlag(repoPath: string, ident: { readonly epicHash: string; readonly storyId: string; readonly standalone?: unknown }): boolean | undefined {
+	try {
+		const noHead = Object.keys(readEpicDefinitionCore(repoPath, ident.epicHash)).length === 0;
+		return inheritedStoryStandalone(repoPath, ident.epicHash, ident.storyId, ident.standalone !== undefined && noHead ? true : undefined);
+	} catch (e) {
+		log.warn({ storyId: ident.storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[validate]: the route flag could not be resolved');
+		return undefined;
+	}
 }
 
 /** S002: the standalone (no-plan) validate branch. Resolves the Story identity
@@ -207,6 +302,7 @@ async function handleStandaloneValidate(
 	repoPath: string,
 	ctx:      BuildStandaloneContext,
 	summary?: string,
+	suppliedTests?: readonly TestMappingEntry[],
 ): Promise<BuildStepDone | BuildStepError> {
 	const sizeClass = ctx.sizeClass ?? 'small';
 	const producesLld = sizeClass !== 'trivial';
@@ -230,7 +326,18 @@ async function handleStandaloneValidate(
 			log.info({ storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[validate]: standalone LLD unreadable for the verdict prompt');
 		}
 	}
-	const checks = producesLld ? smallStandaloneCheckPlan(repoPath, testStrategy) : trivialCheckPlan(repoPath);
+	let checks: ValidationCheckPlan;
+	if (producesLld) {
+		// The subjects of the design's test strategy are this route's test names.
+		const named: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
+		const mapping = resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
+		if (!mapping.ok) return mapping.error;
+		checks = smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
+	} else {
+		// A trivial build names no tests: `tests` is ignored, and the test files
+		// the commit touched are run.
+		checks = trivialCheckPlan(repoPath);
+	}
 	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
 	// serving a standalone story; discarding that here left the shared persist to
@@ -267,6 +374,39 @@ async function runValidateSession(
 	// and cannot override.
 	log.info({ taskId: ident.taskId, storyId: ident.storyId, testFiles: checks.testFiles.length }, 'insrc_build_step[validate]: running checks');
 	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, checks);
+
+	// ONE time and ONE resolved route flag for both of the Story's records.
+	const now = (clockOverride ?? (() => new Date().toISOString()))();
+	const identified = ident.epicHash.length > 0 && ident.storyId.length > 0;
+	const routeFlag = identified ? resolveRouteFlag(repoPath, ident) : undefined;
+
+	// The test record is written HERE, straight after the checks and before the
+	// judge: what the run did is a fact whatever the judge then says, and whether
+	// or not the judge session ends in an error. A write failure never changes
+	// the verdict; it is noted in the verdict's evidence.
+	let testRecordNote: string | undefined;
+	if (identified) {
+		try {
+			(testRecordWriterOverride ?? persistTestRecordTask)(
+				repoPath,
+				{ epicHash: ident.epicHash, storyId: ident.storyId, now, ...(routeFlag === true ? { standalone: true } : {}) },
+				toTestRecordTask(repoPath, ident.taskId, now, results.tests),
+			);
+		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			log.warn({ storyId: ident.storyId, taskId: ident.taskId, err: message }, 'insrc_build_step[validate]: the test record was not written; the verdict is unchanged');
+			testRecordNote = `the test record was not written (${message}); the record on disk, if there is one, still shows this Task's earlier run, with that run's commit and time`;
+		}
+	}
+	/** The Story's TESTS.md, repo-relative, when a test record is on disk. */
+	const testRecordMd = (): string | undefined => {
+		if (!identified || readTestRecord(repoPath, ident.epicHash, ident.storyId) === null) return undefined;
+		try {
+			return relative(repoPath, testRecordPaths(repoPath, ident.epicHash, ident.storyId, { now, standalone: routeFlag }).md);
+		} catch {
+			return undefined;
+		}
+	};
 
 	// Establish the sc6 routing seam so the judge provider resolves through the same
 	// choke point as the workflow runner (the 'build' tier).
@@ -305,7 +445,11 @@ async function runValidateSession(
 			...(passed || judge.passed === false ? {} : {
 				reason: `${judge.reason} — but the daemon's checks failed: ${[typecheckClean ? undefined : 'typecheck', testsPassed ? undefined : 'tests'].filter(x => x !== undefined).join(' and ')}.`,
 			}),
-			evidence: results,
+			evidence: {
+				...results,
+				...(testRecordMd() !== undefined ? { testRecord: testRecordMd() } : {}),
+				...(testRecordNote !== undefined ? { testRecordNote } : {}),
+			},
 		};
 
 		// Persist the BUILD ledger record as a SIDE EFFECT of the verdict, so story
@@ -316,7 +460,6 @@ async function runValidateSession(
 		const { epicHash, storyId, taskId } = ident;
 		if (epicHash.length > 0 && storyId.length > 0) {
 			try {
-				const now = new Date().toISOString();
 				// Collect the file-level change-log of the build's changed set. A git
 				// failure is swallowed inside collectBuildChangeLog (→ []), and an empty
 				// change-log is omitted from the body (omit-slot) so a no-change build
@@ -359,10 +502,8 @@ async function runValidateSession(
 				// silence: that is an epic-parented Story, and a caller's declaration
 				// must not relabel it. The plan-driven branch passes no declaration, so
 				// it still never asserts a route it cannot know.
-				const noHead = Object.keys(readEpicDefinitionCore(repoPath, epicHash)).length === 0;
-				const standaloneFlag = inheritedStoryStandalone(
-					repoPath, epicHash, storyId, ident.standalone !== undefined && noHead ? true : undefined,
-				);
+				// (Resolved once, above, for the test record and this record alike.)
+				const standaloneFlag = routeFlag;
 				// The declared size class and rationale ride with the route: they are
 				// stamped only on a record that IS standalone, so an epic-parented
 				// record is never titled as a standalone one.
@@ -379,25 +520,25 @@ async function runValidateSession(
 					body: {
 						tasks: [{ id: taskId, passed }],
 						...(narrative !== undefined && narrative.length > 0 ? { summary: narrative } : {}),
+						// A LINK only, and only when a test record is on disk: the
+						// results are in the test record, each with its own run's commit.
+						...(testRecordMd() !== undefined ? { testRecord: { md: testRecordMd()! } } : {}),
 					},
 				};
-				// EXCLUDE the record's own json + md from its own change set. Without
-				// this the only dirty paths when the collector runs are usually these
-				// two, so the record would report that the Story changed its own ledger
-				// entry. Derived pre-persist through the same merge the write will use.
-				const own = buildRecordPathsFor(repoPath, rec);
+				// EXCLUDE the workflow's own files for this Story from the change set:
+				// this record's json and md, the test record's, and the build-start
+				// file. Without this the only dirty paths when the collector runs are
+				// usually these, so the record would report that the Story changed its
+				// own ledger entries. The list is the one the completion record uses.
+				const exclude = storyWorkflowFiles(repoPath, rec);
 				// The Story's COMMITTED range base. Consulted by the derivation only
 				// when the working tree is clean — which is the normal case here,
 				// because the implement prompt commits before validation runs.
 				// `undefined` means no base could be established, which yields an
 				// empty change set rather than a substituted (wrong) range.
 				const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
-				// The Story's build-start file is excluded beside the record's own
-				// paths, by the same exact-path filter: it is the workflow's stamp, not
-				// the Story's work, so it must neither appear in the change log nor, as
-				// the only dirty path, keep the committed range from being derived.
 				const changeLog = await collectBuildChangeLog(repoPath, {
-					author: 'insrc-build', timestamp: now, exclude: [own.json, own.md, buildStartRelPath(epicHash, storyId)],
+					author: 'insrc-build', timestamp: now, exclude,
 					...(base !== undefined ? { base } : {}),
 				});
 				persistBuildRecord(repoPath, {

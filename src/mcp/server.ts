@@ -584,6 +584,19 @@ export function buildInsrcMcpServerWithRegistry(): {
 				summary: z.string()
 					.describe('Only for phase=validate. OPTIONAL narrative of what this build actually did, in a sentence or two — lands on the BUILD record\'s `body.summary` and renders as `## Summary`. Never synthesised: omit it and the record carries no summary rather than one invented from the task list. Empty / whitespace-only counts as omitted.')
 					.optional(),
+				tests: z.array(z.object({
+					name:  z.string().min(1).describe('The exact text of one of the Task\'s named tests (for a standalone Small build: of a subject of the design\'s test strategy).'),
+					cases: z.array(z.object({
+						file:  z.string().min(1).describe('Repo-relative path of the tracked `.test.ts` file.'),
+						title: z.string().min(1).describe('The test\'s title exactly as the test file declares it; matched at any depth of nesting.'),
+					}).strict()).optional().describe('The test cases that carry this named test.'),
+					reported: z.object({
+						result:   z.enum(['pass', 'fail']),
+						evidence: z.string().min(1).describe('Where the evidence is: a log path, a run id, a section of the build record.'),
+					}).strict().optional().describe('Only for a `live` or `smoke` test the gate cannot run: the result you observed. Recorded as reported by the builder, not run by the gate.'),
+				}).strict())
+					.describe('Only for phase=validate. The mapping from the Task\'s named tests to the test cases that carry them. The daemon runs each mapped file itself, reads a result per case (pass / fail / skipped / not found) and writes them to the Story\'s test record (TESTS.md beside BUILD.md); a case that failed, was skipped or was not found fails the tests check. Omit it to reuse the mapping stored for the Task by an earlier validate turn; with neither, only a test name that begins with `<file>.test.ts:` can be run. A wrong mapping is refused with `invalid-test-mapping` and nothing is run. Ignored for a Trivial standalone build.')
+					.optional(),
 			},
 		},
 		async (rawArgs, _extra) => handleBuildStep(rawArgs),

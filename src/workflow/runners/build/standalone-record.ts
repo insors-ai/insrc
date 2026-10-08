@@ -241,7 +241,7 @@ export function renderStandaloneBuildRecordMd(rec: StandaloneBuildRecord): strin
  * omitted, never stored as an empty string. A falsy commit would render as an
  * empty `**Commit:**` line, which is worse than no line at all.
  */
-function headShortSha(repoPath: string): string | undefined {
+export function headShortSha(repoPath: string): string | undefined {
 	try {
 		const out = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
 			cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],

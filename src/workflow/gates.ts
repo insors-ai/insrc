@@ -56,6 +56,7 @@ import {
 	planArtifactPaths,
 	specArtifactId,
 	specArtifactPaths,
+	TESTS_ID_PREFIX,
 	workItemAnchorCreatedAt,
 	workItemKindOf,
 	writeAtomic,
@@ -89,6 +90,24 @@ export class ReviewBlockedError extends Error {
 		super(msg);
 		this.name = 'ReviewBlockedError';
 	}
+}
+
+/** Thrown when approval or rejection is asked for something that is a record
+ *  and not an approvable artifact: a Story's test record. The message begins
+ *  'not-approvable:'. */
+export class NotApprovableError extends Error {
+	constructor(readonly jsonPath: string) {
+		super(`${NOT_APPROVABLE_REASON} (${jsonPath})`);
+		this.name = 'NotApprovableError';
+	}
+}
+
+/** The reason a test record's approval is refused, on every route. */
+export const NOT_APPROVABLE_REASON = 'not-approvable: a test record is not approved or rejected';
+
+/** Whether the json at `jsonPath` is a Story's test record, by its id prefix. */
+export function isTestRecordJsonPath(jsonPath: string): boolean {
+	return basename(jsonPath).startsWith(TESTS_ID_PREFIX);
 }
 
 /** Thrown when a brainstorm SpecArtifact JSON does not exist at the
@@ -563,6 +582,9 @@ function headFullSha(cwd: string): string | undefined {
  *  JSON. Works generically for any workflow — the artifact's JSON
  *  path is passed in verbatim. */
 export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult {
+	// A test record is a record, not an approvable artifact. Refused HERE because
+	// this is the function every approval goes through, the TUI's included.
+	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}
@@ -811,6 +833,13 @@ export async function approveWorkflowTarget(
 	const codeReview: CodeReviewApprovalOutcome[] = [];
 
 	const approveOne = (jsonPath: string): void => {
+		// A test record carries an Epic and a Story in its meta, so without this it
+		// would be put through the code-review gate below and come back with that
+		// gate's outcome. It is refused first, by kind, with no code-review outcome.
+		if (isTestRecordJsonPath(jsonPath)) {
+			skipped.push({ path: jsonPath, reason: NOT_APPROVABLE_REASON });
+			return;
+		}
 		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
 		// runs BEFORE the meta.review approve and never merges into it. Story-scoped
 		// artifacts (meta.epicHash && meta.storyId) only; a `blocked` verdict
@@ -940,6 +969,7 @@ export interface RejectionResult {
 
 /** Same as `approveArtifactByJsonPath` but records a rejection. */
 export function rejectArtifactByJsonPath(jsonPath: string, reason: string): RejectionResult {
+	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}

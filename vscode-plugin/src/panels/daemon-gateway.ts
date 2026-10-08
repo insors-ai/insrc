@@ -101,6 +101,9 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       const rows: WorkflowChainRow[] = [];
       for (const entry of entries) {
         if (!entry.endsWith('.json')) continue;
+        // A Story's test record is the build gate's record of a run. It is never
+        // approved, so as a row it would read 'pending' for ever.
+        if (entry.startsWith(TEST_RECORD_PREFIX)) continue;
         let parsed: { meta?: { epicSlug?: string; approvedAt?: string } };
         try {
           parsed = JSON.parse(await readFile(join(root, entry), 'utf8')) as typeof parsed;
@@ -125,6 +128,10 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
     },
   };
 }
+
+/** The file-name prefix of a Story's test record in the artifacts directory
+ *  (the daemon's `TESTS_ID_PREFIX`; the plugin does not import daemon code). */
+const TEST_RECORD_PREFIX = 'TESTS-';
 
 /** Derive the workflow stage from an artifact filename prefix (DEF/HLD/LLD/PLAN/BUILD/…). */
 function stageFromFilename(name: string): string {

@@ -78,6 +78,30 @@ test('workflowChain() returns empty rows when artifactsRoot is undefined (valid 
   assert.deepEqual(calls, [], 'no IPC — a pure local read');
 });
 
+test("the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-artifacts-'));
+  try {
+    writeFileSync(join(dir, 'LLD-abc-s1.json'), JSON.stringify({ meta: { epicSlug: 'my-epic', approvedAt: '2026-01-01' } }));
+    writeFileSync(join(dir, 'BUILD-abc-s1.json'), JSON.stringify({ meta: { epicSlug: 'my-epic' } }));
+    const { gateway } = makeGateway({ artifactsRoot: () => dir });
+    const before = await gateway.workflowChain();
+    assert.deepEqual(before.rows.map((r) => `${r.stage}:${r.status}`).sort(), ['build:pending', 'lld:approved']);
+
+    // A Story's test record: no epicSlug, never approved. Without the skip it is
+    // a row named by its file name that reads 'pending' for ever.
+    writeFileSync(join(dir, 'TESTS-abc-s1.json'), JSON.stringify({ meta: { workflow: 'tests', epicHash: 'abc', storyId: 's1' }, body: { tasks: [] } }));
+    const after = await gateway.workflowChain();
+    assert.deepEqual(after, before);
+    assert.ok(!after.rows.some((r) => r.stage === 'tests' || r.slug.startsWith('TESTS-')));
+
+    // It is skipped by name, before it is read: an unreadable one does not fail the chain.
+    writeFileSync(join(dir, 'TESTS-abc-s2.json'), '{ not json');
+    assert.deepEqual(await gateway.workflowChain(), before);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'insrc-artifacts-'));
   try {

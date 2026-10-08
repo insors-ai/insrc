@@ -379,6 +379,37 @@ test('t6 — the raw-hash-labelled folder and the wrong-top-level folder are bot
 	} finally { r.cleanup(); }
 });
 
+test("converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)", () => {
+	const r = seedFourFolders();
+	try {
+		// The Story's test record, beside its BUILD.md in the raw-hash-labelled folder.
+		const forked = `docs/epics/${T6_HASH}-${T6_SEG}`;
+		writeFileSync(join(r.repo, `.insrc/artifacts/TESTS-${T6_HASH}-S001.json`), JSON.stringify({
+			meta: { workflow: 'tests', epicHash: T6_HASH, storyId: 'S001', standalone: true, createdAt: T6_ANCHOR, updatedAt: T6_ANCHOR },
+			body: { tasks: [] },
+		}));
+		writeFileSync(join(r.repo, forked, 'S001/TESTS.md'), `${artifactIdMarker(`TESTS-${T6_HASH}-S001`)}\n\n# Tests\n`);
+		assert.ok(existsSync(join(r.repo, forked, 'S001/BUILD.md')), 'precondition: BUILD.md is in the forked folder');
+		// applyMigration refuses a dirty tree, so the two added files are committed.
+		execFileSync('git', ['add', '-A'], { cwd: r.repo });
+		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'add the test record'], { cwd: r.repo });
+
+		const plan = planMigration(r.repo);
+		assert.deepEqual(plan.unmappable, []);
+		applyMigration(r.repo, plan);
+
+		const dest = join(r.repo, `docs/standalone/${GOOD}-${T6_SEG}`);
+		assert.ok(existsSync(join(dest, 'S001/BUILD.md')), 'BUILD.md moved');
+		assert.ok(existsSync(join(dest, 'S001/TESTS.md')), 'TESTS.md moved with it');
+		assert.equal(readFileSync(join(dest, 'S001/TESTS.md'), 'utf8').split('\n')[0], artifactIdMarker(`TESTS-${T6_HASH}-S001`));
+		// Nothing is left behind: the forked folder is gone, and one folder remains.
+		assert.ok(!existsSync(join(r.repo, forked)), 'the forked folder is gone');
+		assert.deepEqual(foldersForSegment(r.repo), [`docs/standalone/${GOOD}-${T6_SEG}`]);
+		// A second plan has nothing left to move.
+		assert.deepEqual(planMigration(r.repo).moves, []);
+	} finally { r.cleanup(); }
+});
+
 /** Every file under `docs/` plus the sha256 of its contents, so a comparison can
  *  detect a rewritten, added or deleted file — not just a renamed folder. */
 function docsFingerprint(repo: string): Record<string, string> {

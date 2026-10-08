@@ -239,6 +239,13 @@
         "choice": "Amend the HLD to match the LLD",
         "rationale": "Stakeholder took the recommendation on 2026-10-08: a partly read item's full length may be null with a note, and the builder's notEstablished input sets complete to false and adds no field.",
         "resolvedAt": "2026-10-08T06:58:27.788Z"
+      },
+      "qcf52ec1a": {
+        "question": "Back-flow to the Define and the HLD, for Story s4 (stakeholder direction, 2026-10-07): the index is a pointer, and the analyzer should read an item from its file where the item matters to the answer, not rely on the stored body. The indexer's own cut of a stored body to 8,192 characters (src/indexer/parser/artifact.ts:92, :298-300) is a ninth place an item's content is cut; the Define lists eight and Story s4 removes them. This Story only reports that cut, with the item's real length. Story s4's design should read the item from the file at its pointer at each of the nine sites.",
+        "status": "resolved",
+        "choice": "Amend Define and HLD now",
+        "rationale": "Stakeholder direction of 2026-10-07, recommendation taken on 2026-10-08: the index is a pointer and the analyzer reads an item from its file where it matters to the answer. The indexer's 8,192-character cut is a ninth cut site for Story s4. Story s1's scope is unchanged: it reports the cut with the item's real length.",
+        "resolvedAt": "2026-10-08T06:58:41.163Z"
       }
     }
   },

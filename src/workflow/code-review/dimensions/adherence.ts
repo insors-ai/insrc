@@ -144,7 +144,7 @@ export async function judgeAdherence(
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildAdherencePrompt(subject, grounding, note), ADHERENCE_FINDINGS_SCHEMA);
+		provider.completeStructured<unknown>(buildAdherencePrompt(subject, grounding, note), ADHERENCE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<AdherenceOutput> = (raw) =>
 		validateAgainstSchema<AdherenceOutput>(ADHERENCE_FINDINGS_SCHEMA, raw);

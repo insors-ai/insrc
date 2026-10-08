@@ -146,7 +146,7 @@ export async function judgeFunctionalCoverage(
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildFunctionalCoveragePrompt(subject, grounding, note), FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA);
+		provider.completeStructured<unknown>(buildFunctionalCoveragePrompt(subject, grounding, note), FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<FunctionalCoverageOutput> = (raw) =>
 		validateAgainstSchema<FunctionalCoverageOutput>(FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, raw);

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Delivery read model — shared types (E1, HLD-2ff0dfda sc1–sc5).
+ * Delivery read model — shared types (E1, HLD-2ff0dfda sc1–sc6).
  *
  * The record set (sc1), the work-item graph (sc2) and the notice shape (sc3)
  * every delivery pass reads. Type-only apart from DeliveryStoreUnreadableError,
@@ -227,6 +227,40 @@ export interface GatePassResult {
 	/** Keyed by item id; epics, stories and issues. */
 	readonly items:     ReadonlyMap<string, ItemGates>;
 	readonly notices:   readonly DeliveryNotice[];
+}
+
+// ---------------------------------------------------------------------------
+// sc6 — CurrencyAnnotation (E1 s4)
+// ---------------------------------------------------------------------------
+
+/** current and stale only where a recorded field settles it; unknown otherwise. */
+export type ReviewCurrency = 'current' | 'stale' | 'unknown';
+
+export interface ArtifactCurrency {
+	readonly artifactId:     string;
+	/** Null when the record carries no review. */
+	readonly reviewCurrency: ReviewCurrency | null;
+	/** The recorded fields that settled it; null when unknown. */
+	readonly basis:          string | null;
+}
+
+export interface EffectiveAmendment {
+	/** e.g. 'AMD-<hash>-1'. */
+	readonly amendmentId:  string;
+	readonly status:       'pending' | 'approved' | 'rejected';
+	/** The amendment's recorded type, e.g. 'storyBoundary.addStory'. */
+	readonly type:         string | null;
+	readonly storyId:      string | null;
+	/** Approved and counted in the epic's effective HLD. */
+	readonly appliesToHld: boolean;
+}
+
+export interface CurrencyPassResult {
+	/** Keyed by artifactId. */
+	readonly artifacts:  ReadonlyMap<string, ArtifactCurrency>;
+	/** Keyed by epic item id; each list sorted by amendmentId. */
+	readonly amendments: ReadonlyMap<string, readonly EffectiveAmendment[]>;
+	readonly notices:    readonly DeliveryNotice[];
 }
 
 // ---------------------------------------------------------------------------

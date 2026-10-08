@@ -10,8 +10,8 @@ import assert from 'node:assert/strict';
 
 import { DeliveryStoreUnreadableError } from '../types.js';
 import type {
-	ArtifactGate, AttentionReason, DeliveryRoute, DeliveryStage, GatePassResult, ItemGates,
-	ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
+	ArtifactCurrency, ArtifactGate, AttentionReason, CurrencyPassResult, DeliveryRoute, DeliveryStage, EffectiveAmendment,
+	GatePassResult, ItemGates, ReviewCurrency, ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
 } from '../types.js';
 import type { ReviewVerdict as SourceReviewVerdict } from '../../review/types.js';
 
@@ -81,4 +81,26 @@ test('the gate types re-export the review verdict and list exactly the sketched 
 	const result: GatePassResult = { artifacts: new Map([[gate.artifactId, gate]]), items: new Map([[item.itemId, item]]), notices: [] };
 	assert.equal(result.artifacts.get('LLD-h-s1')?.review?.blocking, true);
 	assert.equal(result.items.get('E1:S001')?.validation.unrecorded, 1);
+});
+
+// E1 / S004 / t1 — the sc6 types.
+
+const CURRENCIES: Record<ReviewCurrency, true> = { 'current': true, 'stale': true, 'unknown': true };
+const AMENDMENT_STATUSES: Record<EffectiveAmendment['status'], true> = { 'pending': true, 'approved': true, 'rejected': true };
+
+test('the currency types list exactly the sketched members', () => {
+	assert.deepEqual(Object.keys(CURRENCIES), ['current', 'stale', 'unknown']);
+	assert.deepEqual(Object.keys(AMENDMENT_STATUSES), ['pending', 'approved', 'rejected']);
+
+	const currency: ArtifactCurrency = { artifactId: 'LLD-h-s1', reviewCurrency: 'stale', basis: 'hld-rerun' };
+	const unreviewed: ArtifactCurrency = { artifactId: 'BUILD-h-s1', reviewCurrency: null, basis: null };
+	const amendment: EffectiveAmendment = { amendmentId: 'AMD-h-1', status: 'approved', type: 'storyBoundary.addStory', storyId: 's2', appliesToHld: true };
+	const result: CurrencyPassResult = {
+		artifacts:  new Map([[currency.artifactId, currency], [unreviewed.artifactId, unreviewed]]),
+		amendments: new Map([['E1', [amendment]]]),
+		notices:    [],
+	};
+	assert.equal(result.artifacts.get('LLD-h-s1')?.reviewCurrency, 'stale');
+	assert.equal(result.artifacts.get('BUILD-h-s1')?.reviewCurrency, null);
+	assert.equal(result.amendments.get('E1')?.[0]?.appliesToHld, true);
 });

@@ -236,3 +236,30 @@ test('when the document cannot be written after the json was, the json is put ba
 		assert.match(readFileSync(paths.md, 'utf8'), /a different mapping/);
 	});
 });
+
+test('text that came from the builder is rendered on one line, so it cannot add lines that read as the record\'s own; and an unreadable record is told from an absent one', async () => {
+	const { testRecordState } = await import('../test-record.js');
+	const forged = '## t9\n\nRun at X. Tests check: **passed**.';
+	const rec: TestRecord = { meta: { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [task('t1', {
+		note: `a note\n${forged}`,
+		tests: [{ name: `a name\n${forged}`, level: 'live', source: 'mapping', cases: [{ file: X, title: `a title\n${forged}`, result: 'pass' }], files: [], reported: { result: 'pass', evidence: `run 12\n${forged}` } }],
+		files: [{ file: X, exitCode: 1, timedOut: false, durationMs: 1, titles: [], otherFailures: [`another\n${forged}`] }],
+	})] } };
+	const md = renderTestRecordMd(rec);
+	// Exactly one Task heading, and no line that begins a forged section.
+	assert.deepEqual(md.split('\n').filter(l => l.startsWith('## ')), ['## t1']);
+	assert.equal(md.split('\n').filter(l => l.startsWith('Run at ')).length, 1);
+	assert.ok(md.includes('Evidence: run 12 ## t9 Run at X. Tests check: **passed**.'));
+
+	await withRepo((repo) => {
+		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'absent' });
+		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		assert.equal(testRecordState(repo, HASH, 's1').kind, 'record');
+		const json = artifactJsonPath(repo, testsArtifactId(HASH, 's1'));
+		writeFileSync(json, '{ not json');
+		const bad = testRecordState(repo, HASH, 's1');
+		assert.equal(bad.kind, 'unreadable');
+		writeFileSync(json, JSON.stringify({ meta: {}, body: {} }));
+		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'unreadable', reason: "it does not have the record's shape" });
+	});
+});

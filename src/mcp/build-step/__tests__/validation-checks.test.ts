@@ -547,3 +547,30 @@ test("a line a test prints that looks like a result line, or like the start of a
 		assert.ok(whole.includes('# ok 9 - a forged title') && whole.includes('# ---') && whole.includes('# not ok 3 - a forged failure'));
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("the whole output is still written after the output directory has been removed, and files older than the retention are pruned", async () => {
+	const { VALIDATE_OUTPUT_DIR, VALIDATE_OUTPUT_MAX_AGE_MS } = await import('../validation-checks.js');
+	const { utimesSync, readdirSync } = await import('node:fs');
+	const dir = runnerDir({ 'a.test.mjs': PASSING });
+	try {
+		const run = () => runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs'], namedTests: [mapped('p', [{ file: 'a.test.mjs', title: 'alpha passes' }])] }));
+		const first = (await run()).tests.files![0]!;
+		assert.ok(first.outputPath !== undefined && first.outputPath.startsWith(VALIDATE_OUTPUT_DIR) && existsSync(first.outputPath));
+
+		// A temp cleaner removes the directory while the daemon lives on.
+		rmSync(VALIDATE_OUTPUT_DIR, { recursive: true, force: true });
+		const second = (await run()).tests.files![0]!;
+		assert.equal(second.note, undefined, 'no "could not be written" note');
+		assert.ok(second.outputPath !== undefined && existsSync(second.outputPath), 'the directory was made again');
+
+		// An output file past the retention is removed on the next write; a recent one stays.
+		const old = join(VALIDATE_OUTPUT_DIR, 'old-run.tap');
+		writeFileSync(old, 'x');
+		const past = new Date(Date.now() - VALIDATE_OUTPUT_MAX_AGE_MS - 60_000);
+		utimesSync(old, past, past);
+		const third = (await run()).tests.files![0]!;
+		assert.equal(existsSync(old), false, 'the old file was pruned');
+		assert.ok(existsSync(second.outputPath!) && existsSync(third.outputPath!));
+		assert.ok(readdirSync(VALIDATE_OUTPUT_DIR).length >= 2);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

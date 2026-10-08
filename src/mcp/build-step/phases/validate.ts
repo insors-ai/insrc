@@ -27,14 +27,14 @@ import { storyWorkflowFiles } from '../../../workflow/runners/build/own-files.js
 import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../workflow/runners/build/standalone-record.js';
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import {
-	persistTestRecordTask, readTestRecord, storedMappingFor, testRecordPaths,
+	persistTestRecordTask, readTestRecord, storedMappingFor, testRecordPaths, testRecordState,
 	type TestRecordFile, type TestRecordTask,
 } from '../../../workflow/runners/build/test-record.js';
 import { collectBuildChangeLog } from '../../../workflow/runners/build/changed-files.js';
 import { mergeInProgress } from '../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../workflow/gates.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../workflow/storage.js';
-import { checkTestMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
+import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 import {
 	planTaskCheckPlan,
@@ -149,18 +149,18 @@ function describeNamedTests(r: CheckResult): string {
 		return run.timedOut ? 'timed out' : run.exitCode === 0 ? 'pass' : 'fail';
 	};
 	for (const t of named) {
-		lines.push(`- ${t.level !== undefined ? `${t.level}: ` : ''}${t.name}`);
-		for (const c of t.cases) lines.push(`  - ${c.result}: '${c.title}' in \`${c.file}\``);
+		lines.push(`- ${t.level !== undefined ? `${oneLine(t.level)}: ` : ''}${oneLine(t.name)}`);
+		for (const c of t.cases) lines.push(`  - ${c.result}: '${oneLine(c.title)}' in \`${oneLine(c.file)}\``);
 		if (t.source === 'prefix' || t.source === 'touched') {
 			for (const f of t.files) lines.push(`  - ${fileResult(f)} (by file, no cases named): \`${f}\``);
 		}
-		if (t.reported !== undefined) lines.push(`  - REPORTED BY THE BUILDER, not run by the gate: ${t.reported.result}. Evidence: ${t.reported.evidence}`);
+		if (t.reported !== undefined) lines.push(`  - REPORTED BY THE BUILDER, not run by the gate: ${oneLine(String(t.reported.result))}. Evidence: ${oneLine(t.reported.evidence)}`);
 		if (t.cases.length === 0 && t.reported === undefined && t.source !== 'prefix' && t.source !== 'touched') lines.push('  - nothing was run for this test: no test case was named for it');
 	}
 	const namedCases = new Set(named.flatMap(t => t.cases.map(c => `${c.file}\u0000${c.title}`)));
 	const others = (r.files ?? []).flatMap(f => f.titles
 		.filter(t => t.result === 'fail' && !namedCases.has(`${f.file}\u0000${t.title}`))
-		.map(t => `- '${t.title}' in \`${f.file}\``));
+		.map(t => `- '${oneLine(t.title)}' in \`${f.file}\``));
 	if (others.length > 0) lines.push('', '#### Failures in the files outside the named cases', ...new Set(others));
 	const outputs = (r.files ?? []).filter(f => f.outputPath !== undefined).map(f => `- \`${f.file}\`: ${f.outputPath}`);
 	if (outputs.length > 0) lines.push('', '#### Whole output of each file\'s run', ...outputs);
@@ -219,7 +219,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 		epicHash: ref.epicHash,
 		storyId:  ref.storyId,
 		taskId:   ref.taskId,
-	}, planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary);
+	}, planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary, mapping.note);
 }
 
 /**
@@ -237,7 +237,7 @@ function resolveMapping(
 	supplied: readonly TestMappingEntry[] | undefined,
 	named:    readonly NamedTest[],
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
-): { readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined } | { readonly ok: false; readonly error: BuildStepError } {
+): { readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError } {
 	if (supplied !== undefined) {
 		const faults = checkTestMapping(supplied, named, trackedFiles(repoPath));
 		if (faults.length > 0) {
@@ -247,9 +247,14 @@ function resolveMapping(
 		return { ok: true, entries: supplied };
 	}
 	if (ident.epicHash.length === 0 || ident.storyId.length === 0) return { ok: true, entries: undefined };
-	const names = new Set(named.map(n => n.name));
-	const stored = storedMappingFor(repoPath, ident.epicHash, ident.storyId, ident.taskId)?.filter(e => names.has(e.name));
-	return { ok: true, entries: stored !== undefined && stored.length > 0 ? stored : undefined };
+	// A record that is there and cannot be used is said so in the verdict: the
+	// turn then has no stored mapping, and its own write replaces the file.
+	const state = testRecordState(repoPath, ident.epicHash, ident.storyId);
+	if (state.kind === 'unreadable') {
+		return { ok: true, entries: undefined, note: `the stored test record could not be read (${oneLine(state.reason)}), so no stored mapping was used; this turn's record replaces it` };
+	}
+	const stored = usableStoredMapping(storedMappingFor(repoPath, ident.epicHash, ident.storyId, ident.taskId) ?? [], named);
+	return { ok: true, entries: stored.length > 0 ? stored : undefined };
 }
 
 /** One Task's entry of the Story's test record, from the gate's results. */
@@ -328,12 +333,14 @@ async function handleStandaloneValidate(
 		}
 	}
 	let checks: ValidationCheckPlan;
+	let mappingNote: string | undefined;
 	if (producesLld) {
 		// The subjects of the design's test strategy are this route's test names.
 		const named: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
 		const mapping = resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
 		if (!mapping.ok) return mapping.error;
 		checks = smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
+		mappingNote = mapping.note;
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
 		// the commit touched are run.
@@ -351,7 +358,7 @@ async function handleStandaloneValidate(
 			...(ctx.sizeClass !== undefined && ctx.sizeClass.length > 0 ? { sizeClass: ctx.sizeClass } : {}),
 			...(ctx.triageRationale !== undefined && ctx.triageRationale.length > 0 ? { triageRationale: ctx.triageRationale } : {}),
 		},
-	}, checks, summary);
+	}, checks, summary, mappingNote);
 }
 
 /** Shared: run the daemon's checks, then the read-only judge session under the sc6
@@ -370,6 +377,8 @@ async function runValidateSession(
 	checks:   ValidationCheckPlan,
 	/** The implementer's narrative, if supplied — see BuildStepInputValidate.summary. */
 	summary?: string,
+	/** Something the verdict must say about the stored mapping (it could not be read). */
+	mappingNote?: string,
 ): Promise<BuildStepDone | BuildStepError> {
 	// The daemon's own checks come first: their exit codes are facts the judge reads
 	// and cannot override.
@@ -465,6 +474,7 @@ async function runValidateSession(
 				...results,
 				...(testRecordMd() !== undefined ? { testRecord: testRecordMd() } : {}),
 				...(testRecordNote !== undefined ? { testRecordNote } : {}),
+				...(mappingNote !== undefined ? { storedMappingNote: mappingNote } : {}),
 			},
 		};
 

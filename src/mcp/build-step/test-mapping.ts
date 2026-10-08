@@ -51,6 +51,18 @@ export const REPORTABLE_LEVELS: ReadonlySet<string> = new Set(['live', 'smoke'])
 const ENTRY_KEYS: ReadonlySet<string> = new Set(['name', 'cases', 'reported']);
 const CASE_KEYS:  ReadonlySet<string> = new Set(['file', 'title']);
 
+/** Text the builder supplies is rendered into the judge's prompt and the test
+ *  record. It must be one line, so it cannot add lines that read as the gate's own. */
+function isOneLine(text: string): boolean {
+	return !/[\r\n\u2028\u2029]/.test(text);
+}
+
+/** The same text made safe to render when it did not come through the checks
+ *  (a stored record edited by hand): line breaks become spaces. */
+export function oneLine(text: string): string {
+	return text.replace(/[\r\n\u2028\u2029]+/g, ' ');
+}
+
 function leavesRepo(file: string): boolean {
 	return file.startsWith('/') || /^[A-Za-z]:[\\/]/.test(file) || file.split(/[\\/]/).includes('..');
 }
@@ -96,6 +108,7 @@ export function checkTestMapping(
 				if (!CASE_KEYS.has(key)) faults.push(`${cat}: unknown key '${key}'`);
 			}
 			if (typeof c.title !== 'string' || c.title.length === 0) faults.push(`${cat}: 'title' is empty`);
+			else if (!isOneLine(c.title)) faults.push(`${cat}: 'title' must be one line`);
 			if (typeof c.file !== 'string' || c.file.length === 0) {
 				faults.push(`${cat}: 'file' is empty`);
 			} else if (leavesRepo(c.file)) {
@@ -109,6 +122,7 @@ export function checkTestMapping(
 			const r = entry.reported;
 			if (r.result !== 'pass' && r.result !== 'fail') faults.push(`${at}.reported: 'result' must be 'pass' or 'fail'`);
 			if (typeof r.evidence !== 'string' || r.evidence.trim().length === 0) faults.push(`${at}.reported: 'evidence' is empty`);
+			else if (!isOneLine(r.evidence)) faults.push(`${at}.reported: 'evidence' must be one line`);
 			if (typeof name === 'string' && levelOf.has(name)) {
 				const level = levelOf.get(name);
 				if (level === undefined || !REPORTABLE_LEVELS.has(level)) {
@@ -121,4 +135,40 @@ export function checkTestMapping(
 		}
 	});
 	return faults;
+}
+
+/**
+ * A STORED mapping, made safe to reuse on a turn that supplied none.
+ *
+ * A stored mapping is not checked for refusal (the builder supplied nothing
+ * wrong on this turn), but the rules that decide WHAT MAY BE RUN OR TRUSTED
+ * still apply to it: the plan may have changed since it was stored, and the
+ * record is a tracked file that a merge or a hand edit can change.
+ *   - an entry for a name the Task no longer has is dropped;
+ *   - a reported result is dropped unless the test's level is still 'live' or 'smoke';
+ *   - a case whose file leaves the repository or is not a '.test.ts' file is dropped
+ *     (a file that is merely gone is kept: it is run as it is and comes back `not found`);
+ *   - an entry left with neither is dropped, so its test has nothing to run.
+ * Builder text is flattened to one line.
+ */
+export function usableStoredMapping(stored: readonly TestMappingEntry[], named: readonly NamedTest[]): readonly TestMappingEntry[] {
+	const levelOf = new Map<string, string | undefined>();
+	for (const n of named) if (!levelOf.has(n.name)) levelOf.set(n.name, n.level);
+	const out: TestMappingEntry[] = [];
+	const seen = new Set<string>();
+	for (const entry of stored) {
+		if (typeof entry.name !== 'string' || !levelOf.has(entry.name) || seen.has(entry.name)) continue;
+		seen.add(entry.name);
+		const cases = (entry.cases ?? [])
+			.filter(c => typeof c.file === 'string' && typeof c.title === 'string' && c.title.length > 0 && c.file.endsWith('.test.ts') && !leavesRepo(c.file))
+			.map(c => ({ file: c.file, title: oneLine(c.title) }));
+		const level = levelOf.get(entry.name);
+		const reported = entry.reported !== undefined && level !== undefined && REPORTABLE_LEVELS.has(level)
+			&& (entry.reported.result === 'pass' || entry.reported.result === 'fail') && typeof entry.reported.evidence === 'string'
+			? { result: entry.reported.result, evidence: oneLine(entry.reported.evidence) }
+			: undefined;
+		if (cases.length === 0 && reported === undefined) continue;
+		out.push({ name: entry.name, ...(cases.length > 0 ? { cases } : {}), ...(reported !== undefined ? { reported } : {}) });
+	}
+	return out;
 }

@@ -35,7 +35,7 @@ import type {
 	TestLocateOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:test-locate');
 
@@ -93,7 +93,7 @@ export async function runTestLocate(
 			// No query could be formed, so nothing was searched: not a search that found nothing.
 			completeness: buildCompleteness({
 				returned: 0, basis: 'graph', notEstablished: true,
-				basisNote: 'the subject held no distinctive word to match, so no search was made',
+				basisNote: `${GRAPH_BASIS_NOTE}. The subject held no distinctive word to match, so no search was made`,
 			}),
 			subject:      params.subject,
 			hits:         [],

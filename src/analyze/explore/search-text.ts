@@ -98,7 +98,8 @@ export async function runSearchText(
 		? resolveScopedPath(params.path, ctx.repoPath)
 		: ctx.repoPath;
 
-	const limit = params.topK ?? DEFAULT_TOP_K;
+	// At least 1, as the search itself enforces: a topK below 1 floors to 0.
+	const limit = Math.max(1, params.topK ?? DEFAULT_TOP_K);
 	let data;
 	try {
 		data = await runGrepSearch({

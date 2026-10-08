@@ -128,9 +128,10 @@ export function carriedCompleteness(
 	note?:    string,
 ): Completeness {
 	if (facts === undefined) {
+		const missing = 'what the lookup left out was not carried from its first step, so its completeness is not established';
 		return buildCompleteness({
 			returned, basis, notEstablished: true,
-			basisNote: 'what the lookup left out was not carried from its first step, so its completeness is not established',
+			basisNote: note !== undefined ? `${note}. ${missing}` : missing,
 		});
 	}
 	return buildCompleteness({

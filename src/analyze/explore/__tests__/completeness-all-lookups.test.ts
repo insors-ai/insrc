@@ -471,6 +471,53 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 });
 
 // ---------------------------------------------------------------------------
+// Paths off the main one
+// ---------------------------------------------------------------------------
+
+test('every graph-based record carries the coverage note, on the paths that return early as well', async () => {
+	const records: Record<string, Completeness> = {
+		// No query can be formed from the words.
+		'concept.resolve, no distinctive word': (await runConceptResolve(exp('concept.resolve', { query: 'the' }), ctx)).completeness,
+		'test.locate, no distinctive word':     (await runTestLocate(exp('test.locate', { subject: 'the test' }), ctx)).completeness,
+		// Nothing in the graph matches.
+		'symbol.locate, no match':    (await runSymbolLocate(exp('symbol.locate', { names: ['noSuchSymbolAnywhere'] }), ctx)).completeness,
+		'usage.example, no target':   (await runUsageExample(exp('usage.example', { symbolName: 'noSuchSymbolAnywhere' }), ctx)).completeness,
+		'class.hierarchy, no target': (await runClassHierarchy(exp('class.hierarchy', { symbolName: 'NoSuchClass' }), ctx)).completeness,
+		'data-model.trace, no target': (await runDataModelTrace(exp('data-model.trace', { entityName: 'NoSuchClass' }), ctx)).completeness,
+		'import.graph, no file':      (await runImportGraph(exp('import.graph', { path: join(REPO, 'no/such/dir') }), ctx)).completeness,
+		'convention.detect, no entity': (await runConventionDetect(exp('convention.detect', { path: join(REPO, 'no/such/dir') }), ctx)).completeness,
+	};
+	// The capability check when the model call did not run, and when prepare's facts were not carried.
+	const prep = await prepareCapabilityReuseCheck(exp('capability.reuse-check', { capability: 'pay charge' }), ctx);
+	if (prep.kind !== 'narrow-llm') throw new Error('the fixture has candidates');
+	records['capability.reuse-check, model call skipped'] = finalizeCapabilityReuseCheck(prep.prepared, undefined, 'model unavailable').completeness;
+	const { completenessFacts: _dropped, ...oldPrepared } = prep.prepared;
+	void _dropped;
+	records['capability.reuse-check, facts not carried'] = finalizeCapabilityReuseCheck(oldPrepared, { verdicts: [] } as Parameters<typeof finalizeCapabilityReuseCheck>[1], undefined).completeness;
+
+	for (const [path, c] of Object.entries(records)) {
+		assert.equal(c.basis, 'graph', path);
+		assert.ok(c.basisNote?.startsWith(GRAPH_BASIS_NOTE), `${path}: carries the graph's coverage note; got "${c.basisNote}"`);
+	}
+	// The two that could not search say so and are not complete; the "nothing matches" ones are complete.
+	assert.equal(records['concept.resolve, no distinctive word']!.complete, false);
+	assert.equal(records['test.locate, no distinctive word']!.complete, false);
+	assert.equal(records['symbol.locate, no match']!.complete, true);
+	assert.equal(records['capability.reuse-check, model call skipped']!.complete, false);
+	assert.match(records['capability.reuse-check, facts not carried']!.basisNote ?? '', /was not carried from its first step/);
+});
+
+test('a limit below 1 does not make a text lookup fail', async () => {
+	// A topK of 0.5 floors to 0; the search itself runs with at least 1.
+	const out = await runSearchText(exp('search.text', { pattern: 'needle', topK: 0.5 }), ctx);
+	assert.equal(out.hits.length, 1);
+	assert.equal(limitOf(out.completeness, 'hits').limit, 1);
+	const cfg = await runConfigTrace(exp('config.trace', { key: 'pay.key', topK: 0.5 }), ctx);
+	assert.equal(cfg.hits.length, 1);
+	assert.equal(limitOf(cfg.completeness, 'hits').limit, 1);
+});
+
+// ---------------------------------------------------------------------------
 // The facts a lookup carries from prepare to finalize
 // ---------------------------------------------------------------------------
 

@@ -355,7 +355,7 @@ export function finalizeCapabilityReuseCheck(
 	const completeness = llmSkipReason !== undefined
 		? buildCompleteness({
 			returned: candidates.length, basis: 'graph', notEstablished: true,
-			basisNote: `no candidate was judged (${llmSkipReason}); every candidate is shown as 'unrelated' by default`,
+			basisNote: `${GRAPH_BASIS_NOTE}. No candidate was judged (${llmSkipReason}); every candidate is shown as 'unrelated' by default`,
 		})
 		: carriedCompleteness(
 			candidates.length,

@@ -56,7 +56,7 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import type { Completeness } from '../completeness.js';
-import { graphCompleteness, reachedLimit } from './completeness-facts.js';
+import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from './completeness-facts.js';
 
 const log = getLogger('analyze:explore:concept-resolve');
 
@@ -626,7 +626,7 @@ export async function runConceptResolve(
 function noQueryCompleteness(): Completeness {
 	return buildCompleteness({
 		returned: 0, basis: 'graph', notEstablished: true,
-		basisNote: 'the query held no distinctive word to match, so no search was made',
+		basisNote: `${GRAPH_BASIS_NOTE}. The query held no distinctive word to match, so no search was made`,
 	});
 }
 

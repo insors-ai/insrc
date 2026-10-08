@@ -28,11 +28,6 @@
         "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
-    },
-    "approvedAt": "2026-10-07T08:02:03.174Z",
-    "reviewOverride": {
-      "reason": "User-approved override, 2026-10-07. The Define was approved earlier and its approval was cleared by in-place revisions the user directed: stories s6 and s7 added, s1 made dependent on s6, and story 4's criteria amended for sampled sources (Redis, etcd). No fresh daemon review was run on the revised Define; earlier Define reviews were dominated by the review probe's 50-match cap. The HLD built on it has been through fourteen daemon reviews.",
-      "at": "2026-10-07T08:02:03.174Z"
     }
   },
   "body": {
@@ -53,7 +48,7 @@
       },
       {
         "text": "Changing what the code index contains or how it is built.",
-        "rationale": "The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter."
+        "rationale": "The problem is results being dropped after they are found, not what is indexed; index freshness for files created in a session is a separate matter. The index is a pointer to an item: where an item's content matters to an answer, the analyzer reads the item from its file, which changes nothing in the index."
       },
       {
         "text": "Removing limits that protect a model's input from a single oversized item, without a replacement.",
@@ -410,9 +405,9 @@
           },
           {
             "id": "ac2",
-            "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content",
+            "given": "a single item larger than any fixed cut the analyzer used to apply to an item's content, or larger than the part of it the index stores",
             "when": "the analyzer reads it",
-            "then": "no fixed cut is applied to it",
+            "then": "no fixed cut is applied to it: the analyzer reads the item from its file at the place the index points to",
             "operationalizes": [
               "k2"
             ]
@@ -468,6 +463,9 @@
           },
           {
             "statement": "The planning instructions suggest no fixed number of results."
+          },
+          {
+            "statement": "Where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to; it does not rely on the body the index stores."
           }
         ]
       },
@@ -790,6 +788,12 @@
           "itemRef": "s4"
         },
         {
+          "id": "E20261006b9d5c5c4:S004:FR005",
+          "statement": "Where an item's content matters to the answer, the analyzer reads the item from its file at the place the index points to; it does not rely on the body the index stores.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
           "id": "E20261006b9d5c5c4:S005:FR001",
           "statement": "A question asking for every occurrence gets a complete enumeration as its answer.",
           "scope": "item",
@@ -910,7 +914,7 @@
       "id": "c13",
       "kind": "code",
       "ref": "src/prompts/analyze/synthesize.code.system.md",
-      "quotedText": "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
+      "quotedText": "HARD CAP per scope: XS \u226410 exports, S \u226425, M \u226460, L \u2264120, XL \u2264250"
     },
     {
       "id": "c16",

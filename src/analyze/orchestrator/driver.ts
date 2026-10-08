@@ -47,6 +47,7 @@ import {
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	ShaperToolLoopExhausted,
+	toolLoopExhaustedData,
 } from '../context/driver.js';
 import {
 	ScopeKindTargetMismatchError,
@@ -611,8 +612,9 @@ function classifyShaperError(err: unknown): RunFailure {
 	}
 	if (err instanceof ShaperLlmUnavailableError) return wrap('shaper-llm-unavailable', err);
 	if (err instanceof ShaperToolLoopExhausted) {
-		// What the tools returned before the limit is not lost with the failure.
-		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: { toolResults: err.toolResults } };
+		// What the tools returned before the limit is not lost with the failure:
+		// it is in the file the message names (or in `data`, had the file not been written).
+		return { code: 'shaper-tool-loop-exhausted', message: err.message, data: toolLoopExhaustedData(err) };
 	}
 	if (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);
 	if (err instanceof ShaperPromptMissingError) {

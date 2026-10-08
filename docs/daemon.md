@@ -727,6 +727,7 @@ sampling client).
 | `shaper-prompt-missing` | A prompt file is missing from the install. The message names the file. When it is the answer prompt, the lookups have already run: `data` is `{ results, report }`. A missing planning prompt carries no `data`. |
 | `shaper-schema-unrecoverable` | The tool loop's structured output could not be produced in the required shape. |
 | `shaper-llm-unavailable` | The planning call to a model failed. No lookup has run. |
+| `shaper-tool-loop-exhausted` | A free-form search reached its turn limit. What its tool calls returned is not cut and is not sent with the failure: it is written in full to a temporary JSON file (an array of `{ source, content }`), the message names the file, and `data` is `{ toolResultsFile, toolResultCount, toolResultChars }`. Only if the file could not be written does `data` carry the results themselves, as `{ toolResults }`. |
 | `invalid-input` | The request was built wrongly (unknown kind of source, no intent). |
 | `no-plan-for-request` | The plan for the request has no lookups. |
 | `answer-step-failed` | The lookups ran and the answer could not be written. `data` is `{ reason, results, report }`: `reason` is `model-failed` (the answer-writing call failed), `invalid-answer` (its output was not in the required shape) or `invalid-bundle` (the assembled bundle failed validation); `results` is what each lookup returned; `report` is the answer report with `answerFailure` set. No other way of answering is tried. |

@@ -20,6 +20,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
 import { execFileSync } from 'node:child_process';
@@ -27,6 +28,8 @@ import { execFileSync } from 'node:child_process';
 import { writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
+
+import { readTestRecord } from './test-record.js';
 
 const log = getLogger('workflow:build-record');
 
@@ -93,6 +96,12 @@ export interface BuildRecord {
 		 *  `changeLog`. Absent / empty → no `## Summary` section (omit-slot,
 		 *  byte-identity preserved for a record that carries none — k4). */
 		readonly summary?:     string | undefined;
+		/** The link to the Story's test record (TESTS.md, repo-relative). A LINK
+		 *  ONLY: it holds no totals and no results, so the build record cannot
+		 *  disagree with the test record about a run. Written by the validate turn
+		 *  when a test record exists on disk; carried forward by the merge.
+		 *  Absent → no `**Tests:**` line (omit-slot, byte-identity preserved). */
+		readonly testRecord?:  { readonly md: string } | undefined;
 	};
 }
 
@@ -184,6 +193,11 @@ export function renderBuildRecordMd(rec: BuildRecord): string {
 		const status = t.passed === true ? '✓' : t.passed === false ? '✗' : '·';
 		return `- ${status} \`${t.id}\``;
 	}));
+	if (rec.body.testRecord !== undefined) {
+		// BUILD.md and TESTS.md are filed in one folder, so the link is the file's name.
+		const target = rec.body.testRecord.md.split('/').pop() ?? rec.body.testRecord.md;
+		lines.push('', `**Tests:** [${target}](${target}) — what the gate ran for each Task, and what each test case did.`);
+	}
 	section('## Changes', changeLogBodyLines(rec.body.changeLog));
 	section('## Feedback', feedbackBodyLines(rec.body.feedback));
 
@@ -344,12 +358,43 @@ function mergeTasks(prior: readonly BuildRecordTask[] | undefined, next: readonl
 	return [...byId.values()];
 }
 
+/**
+ * A FIRST build record, when the Story already has a test record: take the test
+ * record's `createdAt`, and its route flag when it is `true` and this write
+ * states none.
+ *
+ * The gate writes a Story's test record before the judge, so on a first validate
+ * turn it exists before any build record does. A Story with no other anchor (a
+ * Trivial standalone build) has its folder dated by its record's `createdAt`; a
+ * build record first written on a later day, or by another writer, would
+ * otherwise date a second folder and be filed apart from its TESTS.md. Seeding
+ * HERE, in the one merge every writer and `buildRecordPathsFor` go through,
+ * keeps the two records in one folder whoever writes first.
+ */
+function seedFromTestRecord(jsonPath: string, rec: BuildRecord): BuildRecord {
+	const tests = readTestRecord(repoPathOfArtifactJson(jsonPath), rec.meta.epicHash, rec.meta.storyId);
+	if (tests === null) return rec;
+	return {
+		...rec,
+		meta: {
+			...rec.meta,
+			createdAt: tests.meta.createdAt,
+			...(tests.meta.standalone === true && rec.meta.standalone === undefined ? { standalone: true } : {}),
+		},
+	};
+}
+
+/** `<repo>/.insrc/artifacts/<id>.json` → `<repo>`. */
+function repoPathOfArtifactJson(jsonPath: string): string {
+	return dirname(dirname(dirname(jsonPath)));
+}
+
 /** Merge a new record on top of any prior on-disk record (the upsert core).
  *  Prior `createdAt` + completion/rejection stamps win; tasks union; everything
  *  else takes the new write. */
 function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
 	const prior = readPriorRecord(jsonPath);
-	if (prior === null) return rec;
+	if (prior === null) return seedFromTestRecord(jsonPath, rec);
 	const tasks = mergeTasks(prior.body.tasks, rec.body.tasks);
 	const meta: BuildRecord['meta'] = {
 		// Prior FIRST, mirroring the body merge below: a later write must not

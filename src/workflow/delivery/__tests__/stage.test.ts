@@ -196,6 +196,14 @@ test("an item with no recorded route keeps its records' stage and raises unknown
 	assert.deepEqual(unknown[0]!.itemIds, [a.itemId]);
 	assert.deepEqual(unknown[0]!.artifactIds, [`LLD-${SOLO}-S001`]);
 	assert.equal(unknown[0]!.attention, false);
+
+	// A fix story whose ISSUE has no magnitude: the notice names the ISSUE whose
+	// field was read, even though the ISSUE is the issue item's evidence.
+	const fix = run([issueRecord(ISSUE, undefined, { magnitude: undefined }), buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: false })]);
+	const fixStory = storyStage(fix, ISSUE, 1);
+	const fixNotice = fix.result.notices.find(n => n.code === 'unknown-route' && n.itemIds.includes(fixStory.itemId));
+	assert.ok(fixNotice);
+	assert.deepEqual(fixNotice.artifactIds, [`ISSUE-${ISSUE}`], 'the ISSUE, and not the non-standalone BUILD');
 });
 
 test('a story or issue with no design, plan or build is scoped', () => {

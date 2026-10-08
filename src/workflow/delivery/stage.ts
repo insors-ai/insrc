@@ -82,27 +82,41 @@ function evidenceOf(ctx: PassContext, item: WorkItemNode): ArtifactRecord[] {
 	});
 }
 
+/** Appended to a reason when the route is unknown. */
+const UNKNOWN_ROUTE_SUFFIX = ' (route unknown, so no ready gate applies)';
+
+/** The ISSUE that shares the item's work-item hash: the issue's own, or a fix story's. */
+function issueOf(ctx: PassContext, item: WorkItemNode): ArtifactRecord | undefined {
+	return item.workItemHash !== null ? ctx.issueByHash.get(item.workItemHash) : undefined;
+}
+
+/** A route and the records whose route fields were read to settle it. */
+interface ResolvedRoute {
+	readonly route:     DeliveryRoute;
+	readonly consulted: readonly ArtifactRecord[];
+}
+
 /** The story's route, by the precedence in the module comment. */
-function storyRoute(ctx: PassContext, story: WorkItemNode, evidence: readonly ArtifactRecord[]): DeliveryRoute {
-	const issue = story.workItemHash !== null ? ctx.issueByHash.get(story.workItemHash) : undefined;
-	if (issue !== undefined) return routeOfMagnitude(issue);
+function storyRoute(ctx: PassContext, story: WorkItemNode, evidence: readonly ArtifactRecord[]): ResolvedRoute {
+	const issue = issueOf(ctx, story);
+	if (issue !== undefined) return { route: routeOfMagnitude(issue), consulted: [issue] };
 
 	const lld = evidence.find(r => r.kind === 'LLD');
 	const lldClass = lld !== undefined ? stringField(lld, 'sizeClass') : undefined;
-	if (lldClass !== undefined) return routeOfSizeClass(lldClass) ?? 'unknown';
+	if (lld !== undefined && lldClass !== undefined) return { route: routeOfSizeClass(lldClass) ?? 'unknown', consulted: [lld] };
 
-	const buildClasses = evidence
-		.filter(r => r.kind === 'BUILD' && r.meta['standalone'] === true)
-		.flatMap(r => { const c = stringField(r, 'sizeClass'); return c !== undefined ? [c] : []; });
+	const standaloneBuilds = evidence.filter(r => r.kind === 'BUILD' && r.meta['standalone'] === true);
+	const consulted = [...(lld !== undefined ? [lld] : []), ...standaloneBuilds];
+	const buildClasses = standaloneBuilds.flatMap(r => { const c = stringField(r, 'sizeClass'); return c !== undefined ? [c] : []; });
 	if (buildClasses.length > 0) {
 		const distinct = new Set(buildClasses);
 		const only = distinct.size === 1 ? [...distinct][0] : undefined;
-		return only !== undefined ? routeOfSizeClass(only) ?? 'unknown' : 'unknown';
+		return { route: only !== undefined ? routeOfSizeClass(only) ?? 'unknown' : 'unknown', consulted };
 	}
 
 	const parent = story.parentId !== null ? ctx.graph.items.get(story.parentId) : undefined;
-	if (!story.standalone && parent?.kind === 'epic') return 'full-chain';
-	return 'unknown';
+	if (!story.standalone && parent?.kind === 'epic') return { route: 'full-chain', consulted: [] };
+	return { route: 'unknown', consulted };
 }
 
 /** The first matching stage rule for a story, with the records it used. */
@@ -154,42 +168,50 @@ function storyStage(
 	return { stage: 'scoped', text: 'no design, plan or build record', artifactIds: [] };
 }
 
-function storyAnnotation(ctx: PassContext, story: WorkItemNode): StageAnnotation {
+/** An annotation, with the records whose route fields settled its route. */
+interface Annotated {
+	readonly annotation: StageAnnotation;
+	readonly consulted:  readonly ArtifactRecord[];
+}
+
+function storyAnnotation(ctx: PassContext, story: WorkItemNode): Annotated {
 	const evidence = evidenceOf(ctx, story);
-	const route = storyRoute(ctx, story, evidence);
-	const issue = story.workItemHash !== null ? ctx.issueByHash.get(story.workItemHash) : undefined;
-	const { stage, text, artifactIds } = storyStage(route, evidence, issue);
-	const suffix = route === 'unknown' ? ' (route unknown, so no ready gate applies)' : '';
-	return { itemId: story.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } };
+	const { route, consulted } = storyRoute(ctx, story, evidence);
+	const { stage, text, artifactIds } = storyStage(route, evidence, issueOf(ctx, story));
+	const suffix = route === 'unknown' ? UNKNOWN_ROUTE_SUFFIX : '';
+	return { annotation: { itemId: story.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } }, consulted };
 }
 
 /** An issue: its least advanced fix story's stage, or, with none, the rules over its own ISSUE. */
-function issueAnnotation(ctx: PassContext, issueItem: WorkItemNode, stories: ReadonlyMap<string, StageAnnotation>): StageAnnotation {
-	const issue = issueItem.workItemHash !== null ? ctx.issueByHash.get(issueItem.workItemHash) : undefined;
+function issueAnnotation(ctx: PassContext, issueItem: WorkItemNode, stories: ReadonlyMap<string, Annotated>): Annotated {
+	const issue = issueOf(ctx, issueItem);
 	const route = issue !== undefined ? routeOfMagnitude(issue) : 'unknown';
-	const suffix = route === 'unknown' ? ' (route unknown, so no ready gate applies)' : '';
+	const consulted = issue !== undefined ? [issue] : [];
+	const suffix = route === 'unknown' ? UNKNOWN_ROUTE_SUFFIX : '';
 
-	const children = issueItem.childIds.flatMap(id => { const a = stories.get(id); return a !== undefined ? [a] : []; });
+	const children = issueItem.childIds.flatMap(id => { const a = stories.get(id)?.annotation; return a !== undefined ? [a] : []; });
 	if (children.length > 0) {
 		const least = children.reduce((a, b) => STAGE_ORDER.indexOf(b.stage) < STAGE_ORDER.indexOf(a.stage) ? b : a);
 		return {
-			itemId: issueItem.id, stage: least.stage, route,
-			reason: { text: `least advanced fix story ${least.itemId}: ${least.reason.text}`, artifactIds: least.reason.artifactIds },
+			annotation: {
+				itemId: issueItem.id, stage: least.stage, route,
+				reason: { text: `least advanced fix story ${least.itemId}: ${least.reason.text}`, artifactIds: least.reason.artifactIds },
+			},
+			consulted,
 		};
 	}
 	const { stage, text, artifactIds } = storyStage(route, [], issue);
-	return { itemId: issueItem.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } };
+	return { annotation: { itemId: issueItem.id, stage, route, reason: { text: `${text}${suffix}`, artifactIds } }, consulted };
 }
 
 /** The pass's notices for one item: an unknown route, and a code review with no build. */
-function noticesFor(ctx: PassContext, item: WorkItemNode, annotation: StageAnnotation): DeliveryNotice[] {
+function noticesFor(ctx: PassContext, item: WorkItemNode, { annotation, consulted }: Annotated): DeliveryNotice[] {
 	const evidence = evidenceOf(ctx, item);
 	const notices: DeliveryNotice[] = [];
 	if (annotation.route === 'unknown') {
-		const routeFields = evidence.filter(r => r.kind === 'ISSUE' || r.kind === 'LLD' || r.kind === 'BUILD').map(r => r.artifactId);
 		notices.push(makeNotice('unknown-route',
 			`${item.id} has no recorded route; its stage comes from its records alone`,
-			{ itemIds: [item.id], artifactIds: routeFields }));
+			{ itemIds: [item.id], artifactIds: consulted.map(r => r.artifactId) }));
 	}
 	if (item.kind === 'story') {
 		const reviews = evidence.filter(r => r.kind === 'CR');
@@ -215,7 +237,7 @@ export function deriveStages(graph: WorkItemGraph, recordSet: ArtifactRecordSet)
 	const ctx: PassContext = { graph, byId, issueByHash };
 
 	const ids = [...graph.items.keys()].sort();
-	const stories = new Map<string, StageAnnotation>();
+	const stories = new Map<string, Annotated>();
 	for (const id of ids) {
 		const item = graph.items.get(id);
 		if (item?.kind === 'story') stories.set(id, storyAnnotation(ctx, item));
@@ -226,10 +248,10 @@ export function deriveStages(graph: WorkItemGraph, recordSet: ArtifactRecordSet)
 	for (const id of ids) {
 		const item = graph.items.get(id);
 		if (item === undefined || (item.kind !== 'story' && item.kind !== 'issue')) continue;
-		const annotation = item.kind === 'story' ? stories.get(id) : issueAnnotation(ctx, item, stories);
-		if (annotation === undefined) continue;
-		stages.set(id, annotation);
-		notices.push(...noticesFor(ctx, item, annotation));
+		const annotated = item.kind === 'story' ? stories.get(id) : issueAnnotation(ctx, item, stories);
+		if (annotated === undefined) continue;
+		stages.set(id, annotated.annotation);
+		notices.push(...noticesFor(ctx, item, annotated));
 	}
 	return { stages, notices: sortNotices(notices) };
 }

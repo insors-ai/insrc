@@ -210,7 +210,16 @@
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-08T06:37:47.636Z"
+    "approvedAt": "2026-10-08T06:37:47.636Z",
+    "questionResolutions": {
+      "q44c66b5d": {
+        "question": "Back-flow to the HLD: One point bears on the HLD's wording. It says 'every swallowed error becomes the failed output'. The lookups hold 25 catch clauses in 12 lookup files, and only six were read in full here; some certainly handle an expected condition (a missing optional file) and are not swallowed errors. The design below states the rule that tells the two apart and requires each clause to be classified, not that all 25 change.",
+        "status": "resolved",
+        "choice": "Amend the HLD wording to match the LLD rule",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: a catch that handles a named, expected condition stays and says so in its record; only a swallowed error becomes the failed output.",
+        "resolvedAt": "2026-10-08T06:56:36.987Z"
+      }
+    }
   },
   "body": {
     "summary": {

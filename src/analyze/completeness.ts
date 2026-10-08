@@ -280,18 +280,28 @@ export function deriveAnswerReport(sources: readonly ReportSource[]): AnswerRepo
  */
 export function renderCompletenessLine(report: AnswerReport): string {
 	const { complete, incomplete, failed, basisNotes } = report.completeness;
-	const notes = (basisNotes ?? []).length > 0 ? ` Note: ${(basisNotes ?? []).join(' ')}` : '';
+	const notes = (basisNotes ?? []).length > 0 ? ` Note: ${(basisNotes ?? []).map(oneLine).join(' ')}` : '';
 	if (complete && report.answerFailure === undefined) return `Complete.${notes}`;
 
 	const parts: string[] = [];
-	if (report.answerFailure !== undefined) parts.push(`the answer could not be written (${report.answerFailure})`);
+	if (report.answerFailure !== undefined) parts.push(`the answer could not be written (${oneLine(report.answerFailure)})`);
 	if (incomplete.length > 0) {
-		parts.push(`${incomplete.length} incomplete: ${incomplete.map(n => `${n.sourceId} — ${n.reason}`).join(' | ')}`);
+		parts.push(`${incomplete.length} incomplete: ${incomplete.map(n => `${oneLine(n.sourceId)} — ${oneLine(n.reason)}`).join(' | ')}`);
 	}
 	if (failed.length > 0) {
-		parts.push(`${failed.length} failed: ${failed.map(n => `${n.sourceId} — ${n.reason}`).join(' | ')}`);
+		parts.push(`${failed.length} failed: ${failed.map(n => `${oneLine(n.sourceId)} — ${oneLine(n.reason)}`).join(' | ')}`);
 	}
 	return `Incomplete: ${parts.join('. ')}.${notes}`;
+}
+
+/**
+ * A reason is often a raw error message (a CLI's stderr, a search tool's
+ * failure) and may span lines. The completeness line is ONE line, read as the
+ * head of an answer's text: every run of whitespace becomes one space. The
+ * report itself keeps the reason as it was given.
+ */
+function oneLine(text: string): string {
+	return text.replace(/\s+/g, ' ').trim();
 }
 
 /** Written in the report's place for a run whose stored record carries none: one made before the report existed. */

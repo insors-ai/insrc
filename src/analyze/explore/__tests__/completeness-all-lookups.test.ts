@@ -348,6 +348,17 @@ test('each lookup that stops at a count reports the limit with its scope', async
 	assert.equal(con.hits.length, 1);
 	assert.equal(limitOf(con.completeness, 'matches').scope, 'overall');
 	assert.ok(con.completeness.total! > 1);
+	// A limit a plan gives below 1 never makes the lookup fail. Zero and a
+	// negative number are not a limit at all (the default applies); a fraction
+	// floors to zero, and at least one hit is kept.
+	for (const limit of [0, -3]) {
+		const all = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit }), ctx);
+		assert.equal(all.hits.length, con.completeness.total, `limit ${limit}`);
+		assert.equal(all.completeness.limited, undefined, `limit ${limit}`);
+	}
+	const fraction = await runConceptResolve(exp('concept.resolve', { query: 'pay charge', limit: 0.4 }), ctx);
+	assert.equal(fraction.hits.length, 1);
+	assert.equal(limitOf(fraction.completeness, 'matches').limit, 1);
 
 	// manifests.locate: two manifests, one kept; `families` still counts the ones returned.
 	const man = await runManifestsLocate(exp('manifests.locate', { topK: 1 }), ctx);

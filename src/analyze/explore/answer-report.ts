@@ -9,8 +9,8 @@
  * record; a model never writes it.
  */
 
-import { deriveAnswerReport } from '../completeness.js';
-import type { AnswerReport, Completeness, ReportSource } from '../completeness.js';
+import { deriveAnswerReport, isCompletenessRecord } from '../completeness.js';
+import type { AnswerReport, ReportSource } from '../completeness.js';
 import type { ExecutedExploration } from './types.js';
 
 /** How a lookup is named in the report: its type, then the id the plan gave it. */
@@ -31,8 +31,10 @@ export function reportFromLookups(results: readonly ExecutedExploration[]): Answ
 		const out = r.output;
 		if (out.type === 'failed')      return { ...base, failure: out.message };
 		if (out.type === 'unsupported') return { ...base, failure: `the lookup is not supported: ${out.reason}` };
-		const completeness = (out as { completeness?: Completeness }).completeness;
-		return completeness !== undefined ? { ...base, completeness } : base;
+		// A value that is not a record is not read as one: the source then has
+		// neither a record nor a failure, and the derivation says so.
+		const completeness = (out as { completeness?: unknown }).completeness;
+		return isCompletenessRecord(completeness) ? { ...base, completeness } : base;
 	});
 	return deriveAnswerReport(sources);
 }

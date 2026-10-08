@@ -589,7 +589,8 @@ export async function runConceptResolve(
 		if (prev === undefined || s.score > prev.score) byKey.set(k, s);
 	}
 
-	const limit = params.limit ?? MAX_HITS;
+	// A limit below 1 is not a limit a result can be cut to: at least one hit is kept.
+	const limit = Math.max(1, Math.floor(params.limit ?? MAX_HITS));
 	const ranked = Array.from(byKey.values())
 		.sort((a, b) => b.score - a.score)
 		.slice(0, limit);

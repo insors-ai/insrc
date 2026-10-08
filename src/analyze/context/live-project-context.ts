@@ -94,9 +94,9 @@ export interface LiveProjectContext {
  */
 export interface LiveProjectContextReport {
 	/** Each list that stopped at its limit, with how many entries the summaries hold. */
-	limitsReached?: { what: 'decisions' | 'constraints'; limit: number; found: number }[];
+	limitsReached?: { what: 'decisions' | 'constraints'; limit: number; found: number }[] | undefined;
 	/** The documents the returned decisions and constraints came from, once each. */
-	sourceEntityIds?: string[];
+	sourceEntityIds?: string[] | undefined;
 }
 
 export interface AssembleLiveProjectContextOpts {

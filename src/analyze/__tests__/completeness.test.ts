@@ -11,6 +11,7 @@ import {
 	buildCompleteness,
 	deriveAnswerReport,
 	renderCompletenessLine,
+	type AnswerReport,
 	type Completeness,
 	type ReportSource,
 } from '../completeness.js';
@@ -245,4 +246,27 @@ test('renderCompletenessLine names every incomplete and failed source and repeat
 		renderCompletenessLine({ ...base, answerFailure: 'model-failed' }),
 		'Incomplete: the answer could not be written (model-failed).',
 	);
+});
+
+test('the completeness line is one line even when a reason, a source id or a note spans lines; the report keeps them as given', () => {
+	const report: AnswerReport = {
+		completeness: {
+			complete:   false,
+			incomplete: [{ sourceId: 'search.text [e1]', sourceKind: 'lookup', reason: 'limit of 5 hits reached\n(the search stops\tat 5 hits)' }],
+			failed:     [{ sourceId: 'symbol.locate\n[e2]', sourceKind: 'lookup', reason: 'claude exited with 1.\r\nstderr:\n  overloaded\n' }],
+			basisNotes: ['first note\nsecond line'],
+		},
+		answerFailure: 'the model call failed:\n  timeout',
+	};
+	const line = renderCompletenessLine(report);
+	assert.equal(/[\r\n\t]/.test(line), false, JSON.stringify(line));
+	assert.equal(line,
+		'Incomplete: the answer could not be written (the model call failed: timeout). '
+		+ '1 incomplete: search.text [e1] — limit of 5 hits reached (the search stops at 5 hits). '
+		+ '1 failed: symbol.locate [e2] — claude exited with 1. stderr: overloaded. Note: first note second line');
+	// Only the line is flattened.
+	assert.equal(report.completeness.failed[0]?.reason, 'claude exited with 1.\r\nstderr:\n  overloaded\n');
+
+	const complete: AnswerReport = { completeness: { complete: true, incomplete: [], failed: [], basisNotes: ['a\nb'] } };
+	assert.equal(renderCompletenessLine(complete), 'Complete. Note: a b');
 });

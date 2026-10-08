@@ -162,6 +162,20 @@ export class ShaperLlmUnavailableError extends Error {
 	}
 }
 
+/**
+ * A tool's output as text, for the findings kept beside the conversation.
+ * This is bookkeeping: a value that has no JSON form (undefined, a circular
+ * structure, a BigInt) is described, never thrown from here into the tool loop.
+ */
+export function toolOutputText(output: unknown): string {
+	if (typeof output === 'string') return output;
+	try {
+		return JSON.stringify(output) ?? `(the tool returned ${String(output)})`;
+	} catch (err) {
+		return `(the tool's output has no JSON form: ${err instanceof Error ? err.message : String(err)})`;
+	}
+}
+
 export class ShaperToolLoopExhausted extends Error {
 	/** Every tool call the loop made before it reached the limit, with what the tool returned. */
 	readonly toolResults: readonly PartialFinding[];
@@ -753,7 +767,7 @@ async function runToolLoop(
 			});
 			gathered.push({
 				source:  `${call.name}(${previewToolArgs(call.input)})`,
-				content: typeof result.output === 'string' ? result.output : JSON.stringify(result.output),
+				content: toolOutputText(result.output),
 			});
 		}
 		convo.push({ role: 'user', content: resultBlocks });

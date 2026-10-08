@@ -200,7 +200,7 @@ export const ANALYZE_CONTEXT_BUNDLE_SCHEMA = {
  * Each form is built once and kept: the provider compiles a schema once per
  * object, and a second object with the same `$id` would be refused.
  */
-const modelFacing: { withMeta?: Record<string, unknown>; layersOnly?: Record<string, unknown> } = {};
+const modelFacing: { withMeta?: Record<string, unknown> | undefined; layersOnly?: Record<string, unknown> | undefined } = {};
 
 export function modelFacingBundleSchema(opts: { readonly withMeta: boolean }): Record<string, unknown> {
 	const key = opts.withMeta ? 'withMeta' : 'layersOnly';

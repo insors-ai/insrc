@@ -15,8 +15,9 @@
  */
 
 import { test } from 'node:test';
-import { buildCompleteness } from '../../completeness.js';
 import assert from 'node:assert/strict';
+
+import { buildCompleteness } from '../../completeness.js';
 
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import {

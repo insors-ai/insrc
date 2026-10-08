@@ -72,7 +72,7 @@ export interface DocSectionResult {
  */
 export interface DocsRetrievalReport {
 	/** Why the vector pass did not run; absent when it ran. The result then holds keyword matches only. */
-	vectorPassSkipped?: string;
+	vectorPassSkipped?: string | undefined;
 }
 
 export interface DocsRetrievalArgs {

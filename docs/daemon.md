@@ -619,8 +619,10 @@ of the lookups that ran for the request:
 - A model is never shown a schema that contains `report`, and a bundle in
   which a model or an agent supplied one is rejected (`bundle-schema` from
   `insrc_analyze_step`).
-- `report` is absent in one case only: a bundle or a run record stored before
-  it existed. No report is invented for those.
+- Only a run-mode bundle carries a `report`: it is the one built from
+  lookups. A classification or a task bundle has none. A run-mode bundle or
+  a run record lacks it in one case only, when it was stored before the
+  report existed. No report is invented for those.
 
 A plan-tree run (`analyze.run.start`) returns the same `report` on its result
 and stores it in the run record.

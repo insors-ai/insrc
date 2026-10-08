@@ -13,6 +13,7 @@ import {
 	ShaperInvalidInputError,
 	ShaperLlmUnavailableError,
 	ShaperNoPlanError,
+	toolOutputText,
 } from '../driver.js';
 import { ScopeKindTargetMismatchError, ScopeRefUnresolvedError } from '../invariants.js';
 
@@ -62,4 +63,15 @@ test('the other new errors carry their detail and their own name', () => {
 		mm.message,
 		"scopeRef.kind='connection' is incompatible with target='code'. Allowed kinds for this target: repo, module.",
 	);
+});
+
+test("a tool's output with no JSON form is described as text and never thrown into the tool loop", () => {
+	assert.equal(toolOutputText('plain'), 'plain');
+	assert.equal(toolOutputText({ a: 1 }), '{"a":1}');
+	// JSON.stringify(undefined) is undefined, which is not text.
+	assert.equal(toolOutputText(undefined), '(the tool returned undefined)');
+	const circular: Record<string, unknown> = {};
+	circular['self'] = circular;
+	assert.match(toolOutputText(circular), /^\(the tool's output has no JSON form: /);
+	assert.match(toolOutputText({ n: 10n }), /^\(the tool's output has no JSON form: /);
 });

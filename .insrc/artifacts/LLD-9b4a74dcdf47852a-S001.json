@@ -250,6 +250,13 @@
         "choice": "Accept the builder's reported result",
         "rationale": "Stakeholder took the recommendation on 2026-10-08: for a live or smoke test the gate cannot run, the builder reports the result and where the evidence is; it is recorded as reported by the builder and not run by the gate, shown apart from the results the gate produced, and shown to the judge. The design already says this; nothing in it changes.",
         "resolvedAt": "2026-10-08T17:05:43.787Z"
+      },
+      "q2791d48e": {
+        "question": "The Story came from triage with no acceptance criteria, so the alternatives could not be scored against any and the acceptance mapping has one entry (ac1) that stands for the request itself. Is the request as stated in the Story the acceptance criterion?",
+        "status": "resolved",
+        "choice": "Yes, the request as stated is the criterion",
+        "rationale": "Stakeholder confirmed on 2026-10-08: the request as stated in the Story (a test record that lists each test with its execution status, integrated with the flow so that the gate uses it) is the acceptance criterion that ac1 stands for.",
+        "resolvedAt": "2026-10-08T17:08:00.865Z"
       }
     }
   },

@@ -366,16 +366,16 @@ test('a story built without a plan marks its tasks unplanned, and the notice say
 	assert.equal(notices[0]?.attention, false);
 });
 
-test('a recorded block with no readable blocking finding stays a block', () => {
+test('a recorded block with no unresolved HIGH/MED finding is effectively pass, as the approval gate reads it, and still reports the block', () => {
 	const { result } = run([
-		defRecord(EPIC, ['s1', 's2', 's3']),
+		defRecord(EPIC, ['s1', 's2']),
 		lldRecord(EPIC, 's1', { review: review('block', []) }),
-		lldRecord(EPIC, 's2', { review: review('block', [null, 'x']) }),
-		lldRecord(EPIC, 's3', { review: review('block', [{ claimId: 'q1', severity: 'high' }]), reviewResolutions: {} }),
+		lldRecord(EPIC, 's2', { review: review('block', [null, { claimId: 'q1', severity: 'LOW' }]) }),
 	]);
-	for (const s of ['s1', 's2', 's3']) {
+	for (const s of ['s1', 's2']) {
 		const gate = gateOf(result, `LLD-${EPIC}-${s}`).review;
-		assert.equal(gate?.effectiveVerdict, 'block', `${s}: corrupt or legacy data fails closed`);
-		assert.equal(gate?.blocking, true);
+		assert.equal(gate?.verdict, 'block', `${s}: the recorded verdict is reported`);
+		assert.equal(gate?.effectiveVerdict, 'pass', `${s}: nothing the approval gate would refuse on`);
+		assert.equal(gate?.blocking, false);
 	}
 });

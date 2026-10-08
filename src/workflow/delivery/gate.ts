@@ -10,7 +10,7 @@
  *
  * Approval comes from ArtifactRecord.approval. A design artifact's review is its
  * meta.review: malformed findings are dropped before effectiveReviewVerdict sees
- * them, so a block listing HIGH/MED findings that are all resolved is effectively 'pass'
+ * them, so a block whose HIGH/MED findings are all resolved is effectively 'pass'
  * and a 'warn' carrying an unresolved MED is effectively 'block', as the approval
  * gate reads it. A CR record is itself a review (body.verdict, body.counts). The
  * reviewer party is read through reviewerPartyOf.
@@ -116,10 +116,11 @@ function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
 		const effective = effectiveReviewVerdict(report, resolutions ?? undefined);
 		const blockingFindings = findings.filter(f => BLOCKING.has(f.severity));
 		resolvedFindings = blockingFindings.filter(f => resolutions?.[f.claimId] !== undefined).length;
+		// The approval gate (gates.ts) refuses only while effectiveReviewVerdict is 'block',
+		// so a recorded block with no unresolved HIGH/MED finding is effectively 'pass';
+		// the recorded verdict is still reported unchanged.
 		if (effective === 'block') effectiveVerdict = 'block';
-		// A recorded block is lifted only by resolving the blocking findings it lists;
-		// one with none readable (empty, malformed, unknown severity) stays a block.
-		else if (verdict === 'block' && blockingFindings.length > 0) effectiveVerdict = 'pass';
+		else if (verdict === 'block') effectiveVerdict = 'pass';
 	}
 
 	return {
@@ -325,8 +326,10 @@ function itemGates(
 	const superseded = supersededIds(item, evidence);
 	const counted = evidence.filter(r => !superseded.includes(r.artifactId));
 
+	const builds = evidence.filter(r => r.kind === 'BUILD').sort((a, b) => a.artifactId.localeCompare(b.artifactId));
+	const hasPlan = evidence.some(r => r.kind === 'PLAN');
 	const validation = item.kind === 'story'
-		? storyValidation(item, evidence.filter(r => r.kind === 'BUILD').sort((a, b) => a.artifactId.localeCompare(b.artifactId)), evidence.some(r => r.kind === 'PLAN'), graph)
+		? storyValidation(item, builds, hasPlan, graph)
 		: { tasks: [], storyLevelResult: null, conflict: null, notices: [] };
 
 	const reasons = new Set<AttentionReason>();

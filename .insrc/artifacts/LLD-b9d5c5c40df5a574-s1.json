@@ -247,7 +247,9 @@
         "rationale": "Stakeholder direction of 2026-10-07, recommendation taken on 2026-10-08: the index is a pointer and the analyzer reads an item from its file where it matters to the answer. The indexer's 8,192-character cut is a ninth cut site for Story s4. Story s1's scope is unchanged: it reports the cut with the item's real length.",
         "resolvedAt": "2026-10-08T06:58:41.163Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-08T13:58:21.262Z",
+    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved."
   },
   "body": {
     "summary": {

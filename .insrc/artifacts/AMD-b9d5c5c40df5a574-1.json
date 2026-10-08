@@ -42,5 +42,7 @@
     "stepId": "scope.assess"
   },
   "proposedAt": "2026-10-08T13:00:34.209Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-08T13:58:03.581Z",
+  "approvedBy": "user (in-chat approval, 2026-10-08)"
 }

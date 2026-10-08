@@ -238,7 +238,9 @@
     "reviewOverride": {
       "reason": "User-approved override, 2026-10-08. Ten daemon reviews; every finding through the ninth is applied. The tenth (block, 1 medium, 15 of 16 premises hold) has no finding against the design's mechanics: it asks that the HLD's wording on run records be brought in line with this design, which keeps a count of live runs per id where the HLD says a set of ids, and has two readers rewrite an abandoned record where the HLD says three. The departure is recorded on this design as an open question and is to be folded into the next HLD edit. The chosen alternative's text was brought in line after the tenth review and was not sent back for an eleventh.",
       "at": "2026-10-08T13:54:57.472Z"
-    }
+    },
+    "staleAckedAt": "2026-10-08T13:58:21.267Z",
+    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved."
   },
   "body": {
     "summary": {

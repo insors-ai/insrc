@@ -29,7 +29,9 @@
     "reviewOverride": {
       "reason": "User-approved override, 2026-10-07. Nine daemon reviews; the last four had one or two MED findings each and no HIGH. Every finding through the ninth is applied; the revisions after the ninth review (its two findings, and the user's two decisions on the open questions: keep 'no-plan-for-request' behind a guard, move all eight copies of the model-failure test to one shared function) were not sent back for a tenth review.",
       "at": "2026-10-07T09:01:35.361Z"
-    }
+    },
+    "staleAckedAt": "2026-10-08T13:58:21.265Z",
+    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved."
   },
   "body": {
     "summary": {

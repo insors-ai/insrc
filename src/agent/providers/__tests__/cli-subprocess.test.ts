@@ -9,7 +9,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -91,5 +91,66 @@ test('a CLI child that exits 0 leaving a background process holding its pipes re
 		assert.ok(Date.now() - started < 10_000, 'the call returned when the CLI exited, not at the time limit');
 		const pid = f.grandchildPid();
 		assert.equal(await goneWithin(pid, 2_000), true, `background process ${pid} outlived the CLI`);
+	} finally { f.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// Working directory of one-shot calls (ISSUE-f9ced66a, LLD-f9ced66a-s1, task t1)
+// ---------------------------------------------------------------------------
+
+/** A fake CLI that answers with the directory it was started in: as a claude
+ *  envelope (result + structured_output), or as a codex agent_message when
+ *  called as `codex exec`. */
+const CWD_FAKE = `#!/usr/bin/env node
+const cwd = process.cwd();
+if (process.argv[2] === 'exec') {
+	process.stdout.write(JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: JSON.stringify({ cwd }) } }) + '\\n');
+} else {
+	process.stdout.write(JSON.stringify({ is_error: false, result: cwd, structured_output: { cwd } }));
+}
+`;
+
+const CWD_SCHEMA = { type: 'object', properties: { cwd: { type: 'string' } }, required: ['cwd'] } as const;
+
+function cwdFake(): { bin: string; elsewhere: string; cleanup: () => void } {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-cli-cwd-'));
+	const elsewhere = mkdtempSync(join(tmpdir(), 'insrc-fake-cli-repo-'));
+	const bin = join(dir, 'fake.mjs');
+	writeFileSync(bin, CWD_FAKE);
+	chmodSync(bin, 0o755);
+	return {
+		bin,
+		elsewhere: realpathSync(elsewhere),
+		cleanup: () => { rmSync(dir, { recursive: true, force: true }); rmSync(elsewhere, { recursive: true, force: true }); },
+	};
+}
+
+test('completeStructured and complete run the CLI in opts.cwd when it is given', async () => {
+	const f = cwdFake();
+	try {
+		for (const kind of ['claude', 'codex'] as const) {
+			const p = new CliProvider({ kind, binPath: f.bin, timeoutMs: 20_000 });
+			const structured = await p.completeStructured<{ cwd: string }>(
+				[{ role: 'user', content: 'where are you?' }], CWD_SCHEMA, { cwd: f.elsewhere });
+			assert.equal(structured.cwd, f.elsewhere, `${kind} completeStructured ran in opts.cwd`);
+			const plain = await p.complete([{ role: 'user', content: 'where are you?' }], { cwd: f.elsewhere });
+			const seen = kind === 'claude' ? plain.text : (JSON.parse(plain.text) as { cwd: string }).cwd;
+			assert.equal(seen, f.elsewhere, `${kind} complete ran in opts.cwd`);
+		}
+	} finally { f.cleanup(); }
+});
+
+test('completeStructured without opts.cwd runs the CLI in the inherited working directory', async () => {
+	const f = cwdFake();
+	try {
+		const inherited = realpathSync(process.cwd());
+		for (const kind of ['claude', 'codex'] as const) {
+			const p = new CliProvider({ kind, binPath: f.bin, timeoutMs: 20_000 });
+			const structured = await p.completeStructured<{ cwd: string }>([{ role: 'user', content: 'where are you?' }], CWD_SCHEMA);
+			assert.equal(structured.cwd, inherited, `${kind} completeStructured inherited the working directory`);
+			const plain = await p.complete([{ role: 'user', content: 'where are you?' }]);
+			const seen = kind === 'claude' ? plain.text : (JSON.parse(plain.text) as { cwd: string }).cwd;
+			assert.equal(seen, inherited, `${kind} complete inherited the working directory`);
+		}
 	} finally { f.cleanup(); }
 });

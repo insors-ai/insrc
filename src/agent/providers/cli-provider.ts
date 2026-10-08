@@ -167,14 +167,14 @@ export class CliProvider implements LLMProvider {
 			const prompt = serialiseMessages(messages);
 			if (this.kind === 'claude') {
 				const args = ['--print', '--output-format', 'json', ...this.modelArgs(opts)];
-				const { envelope } = await this.runClaude(args, prompt);
+				const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
 				return {
 					text: envelope.result ?? '',
 					stopReason: 'end_turn' as const,
 				};
 			}
 			const args = ['exec', '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt);
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
 			return {
 				text: agentText ?? '',
 				stopReason: 'end_turn' as const,
@@ -260,7 +260,7 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', JSON.stringify(schema),
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt);
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
 			if (envelope.is_error) {
 				throw new Error(`claude --print failed: ${envelope.result ?? 'no error message'}`);
 			}
@@ -275,7 +275,7 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, JSON.stringify(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt);
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
@@ -441,6 +441,13 @@ export class CliProvider implements LLMProvider {
 		return ['--model', model];
 	}
 
+
+	/** The exec override for a one-shot call: run the CLI in `cwd` when the
+	 *  caller names one, else no override, so the CLI inherits the daemon's
+	 *  working directory exactly as before. */
+	private execIn(cwd: string | undefined): ExecOverride | undefined {
+		return cwd !== undefined ? { cwd, timeoutMs: this.timeoutMs } : undefined;
+	}
 
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
 		return new Promise((resolve, reject) => {

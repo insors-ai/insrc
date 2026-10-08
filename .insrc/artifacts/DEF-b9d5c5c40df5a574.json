@@ -28,6 +28,11 @@
         "rationale": "The user confirmed on 2026-10-07 that the script is a legacy artifact on one machine and is absent from other machines where insrc is installed. It is registered only in that machine's ~/.claude/settings.json (UserPromptSubmit), dated 2026-07-24, and this repository never shipped it. Story s5 changes the steering block, which is the only guidance insrc installs; the per-turn reminder is not a product surface.",
         "resolvedAt": "2026-10-06T18:55:19.772Z"
       }
+    },
+    "approvedAt": "2026-10-08T10:41:15.684Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-08. The Define was approved on 2026-10-07 and its approval was cleared by an in-place amendment the user directed: Story s4 gains the requirement that the analyzer reads an item from its file at the place the index points to (FR005, ac2), and the non-goal on the index says this does not change the index. The edits record the stakeholder direction of 2026-10-07 and the question resolution of 2026-10-08. No fresh daemon review was run on the amended text; the user chose to approve by override.",
+      "at": "2026-10-08T10:41:15.684Z"
     }
   },
   "body": {
@@ -914,7 +919,7 @@
       "id": "c13",
       "kind": "code",
       "ref": "src/prompts/analyze/synthesize.code.system.md",
-      "quotedText": "HARD CAP per scope: XS \u226410 exports, S \u226425, M \u226460, L \u2264120, XL \u2264250"
+      "quotedText": "HARD CAP per scope: XS ≤10 exports, S ≤25, M ≤60, L ≤120, XL ≤250"
     },
     {
       "id": "c16",

@@ -18,12 +18,17 @@ export function lookupSourceId(e: ExecutedExploration): string {
 	return `${e.exploration.type} [${e.exploration.id}]`;
 }
 
+/** The reason given for a lookup whose output does not state its completeness. */
+export const NO_COMPLETENESS_RECORD = 'the lookup returned no completeness record';
+
 /**
  * One source per executed lookup. A `failed` or `unsupported` output is a
  * failed source with its reason; every other output carries its record.
  *
- * @throws RangeError (from `deriveAnswerReport`) when a lookup's output has
- *   neither: no result is counted as complete by default.
+ * An output with no record (or with a value that is not a record) is a
+ * defect of that lookup. It is listed as a failed source, as the plan walk
+ * lists a task whose runtime returned none: the answer is still written from
+ * the other lookups, it cannot read as complete, and it names the lookup.
  */
 export function reportFromLookups(results: readonly ExecutedExploration[]): AnswerReport {
 	const sources: ReportSource[] = results.map((r): ReportSource => {
@@ -31,10 +36,8 @@ export function reportFromLookups(results: readonly ExecutedExploration[]): Answ
 		const out = r.output;
 		if (out.type === 'failed')      return { ...base, failure: out.message };
 		if (out.type === 'unsupported') return { ...base, failure: `the lookup is not supported: ${out.reason}` };
-		// A value that is not a record is not read as one: the source then has
-		// neither a record nor a failure, and the derivation says so.
 		const completeness = (out as { completeness?: unknown }).completeness;
-		return isCompletenessRecord(completeness) ? { ...base, completeness } : base;
+		return isCompletenessRecord(completeness) ? { ...base, completeness } : { ...base, failure: NO_COMPLETENESS_RECORD };
 	});
 	return deriveAnswerReport(sources);
 }

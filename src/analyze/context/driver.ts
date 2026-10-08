@@ -1371,9 +1371,9 @@ async function tryExplorationPipeline(
 	});
 
 	// (c.0) The answer report, derived from the lookups' own records before any
-	// answer is written. It does not depend on the answer, and a lookup output
+	// answer is written. It does not depend on the answer. A lookup output
 	// that states nothing about its completeness is a defect of that lookup:
-	// it surfaces here as its own error, not as a failed answer step.
+	// it is listed as a failed source, and the answer is written from the rest.
 	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results) };
 
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE

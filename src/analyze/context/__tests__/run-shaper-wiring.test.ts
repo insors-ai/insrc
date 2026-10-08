@@ -259,6 +259,47 @@ test("runShaper's run-mode bundle carries the report derived from the executed l
 	assert.deepEqual(whole.report, { completeness: { complete: true, incomplete: [], failed: [] } });
 });
 
+test('a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups', async () => {
+	const plan = {
+		answerType: 'structural-map', synthesisHint: 'h',
+		explorations: [
+			{ id: 'e1', type: 'module.profile', purpose: 'p', params: { path: '/x' } },
+			{ id: 'e2', type: 'search.text',    purpose: 'p', params: { pattern: 'charge' } },
+			{ id: 'e3', type: 'symbol.locate',  purpose: 'p', params: { names: ['charge'] } },
+		],
+	} as unknown as ExplorationPlan;
+	const outputs: Record<string, unknown> = {
+		e1: { type: 'module.profile', completeness: WHOLE },
+		// No record at all.
+		e2: { type: 'search.text', hits: [] },
+		// A value in the record's place that is not a record.
+		e3: { type: 'symbol.locate', completeness: { complete: true } },
+	};
+	const { steps, seen } = standIns({
+		decompose: async () => plan,
+		executePlan: async (a) => ({
+			plan: a.plan,
+			results: a.plan.explorations.map(e => ({ exploration: e, output: outputs[e.id] as never, cached: false, elapsedMs: 0 })),
+			elapsedMs: 0, cacheHits: 0, cacheMisses: 0,
+		}) as unknown as ExecutedPlan,
+	});
+	// It used to throw a RangeError and lose every lookup's result.
+	const bundle = await call(unfocused({ kind: 'repo', value: repo }), steps, forbiddenLoop().provider, 'no-record');
+
+	assert.equal(seen.synthesize, 1, 'the answer was written');
+	assert.equal(bundle.summary, 'sum');
+	assert.deepEqual(bundle.report, {
+		completeness: {
+			complete:   false,
+			incomplete: [],
+			failed: [
+				{ sourceId: 'search.text [e2]',   sourceKind: 'lookup', reason: 'the lookup returned no completeness record' },
+				{ sourceId: 'symbol.locate [e3]', sourceKind: 'lookup', reason: 'the lookup returned no completeness record' },
+			],
+		},
+	});
+});
+
 test("a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report", async () => {
 	const plan = {
 		answerType: 'structural-map', synthesisHint: 'h',

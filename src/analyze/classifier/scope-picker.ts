@@ -81,7 +81,9 @@ export interface PickScopeResult {
 
 export class ScopePickerLlmUnavailableError extends Error {
 	constructor(cause: string) {
-		super(`Local Ollama unavailable for scope-picker: ${cause}`);
+		// Names the call, not a provider: the provider is role-routed and need
+		// not be the local one.
+		super(`The model call for picking the size failed: ${cause}`);
 		this.name = 'ScopePickerLlmUnavailableError';
 	}
 }

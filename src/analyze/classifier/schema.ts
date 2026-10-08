@@ -36,7 +36,10 @@ export const SCOPE_REF_KIND_ENUM = [
 ] as const;
 
 export const CLASSIFIED_INTENT_SCHEMA = {
-	$id:        `https://procix.ai/insrc/classified-intent#${CLASSIFIER_SCHEMA_VERSION}`,
+	// The version is a path segment: JSON Schema draft 2020-12 forbids an
+	// identifier with a fragment, and a provider that validates the schema
+	// against that draft rejects the call.
+	$id:        `https://procix.ai/insrc/classified-intent/v${CLASSIFIER_SCHEMA_VERSION}`,
 	title:      'ClassifiedIntent',
 	type:       'object',
 	required:   ['target', 'scope', 'focused', 'scopeRef', 'reasoning'],

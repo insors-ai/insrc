@@ -36,7 +36,8 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -454,7 +455,7 @@ export class CliProvider implements LLMProvider {
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
 			r.then(out => {
 				if (out.exitCode !== 0) {
-					return reject(new Error(`claude exited with ${out.exitCode}. stderr=${out.stderr.slice(0, 300)} stdout=${out.stdout.slice(0, 600)}`));
+					return reject(new Error(cliFailureMessage('claude', out.exitCode, out.stdout, out.stderr)));
 				}
 				let envelope: ClaudeEnvelope;
 				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
@@ -482,7 +483,7 @@ export class CliProvider implements LLMProvider {
 			throw new Error(`codex emitted error event: ${JSON.stringify(errorEvent)}`);
 		}
 		if (out.exitCode !== 0) {
-			throw new Error(`codex exited with ${out.exitCode}. stderr=${out.stderr.slice(0, 300)}`);
+			throw new Error(cliFailureMessage('codex', out.exitCode, out.stdout, out.stderr));
 		}
 		const agentMsg = events.find(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
 		log.debug({ exitCode: out.exitCode, eventCount: events.length, hasAgentMessage: agentMsg !== undefined }, 'codex completed');
@@ -551,7 +552,52 @@ function delay(ms: number): Promise<void> {
  *  mid-response`), which is echoed into our thrown message, so matching the
  *  string is sufficient. */
 export function isTransientCliError(message: string): boolean {
+	// The API's refusal of the request itself (a schema it rejects, a bad
+	// argument, no permission) is the same on every attempt.
+	if (/api error:\s*4(?!08|29)\d\d\b/i.test(message)) return false;
 	return /connection closed mid-response|api error|overloaded|rate.?limit|too many requests|internal server error|service unavailable|timeout|\b(429|500|502|503|504|529)\b/i.test(message);
+}
+
+/** Above this length a CLI's output is not put in a message: it is written whole to a file the message names. */
+export const CLI_OUTPUT_INLINE_CHARS = 2_000;
+
+/**
+ * The message for a CLI that exited with a non-zero code.
+ *
+ * It starts `<cli> exited with <code>.` (callers match on that) and then says
+ * why, in the CLI's own words and in full. The claude CLI writes a JSON
+ * envelope whose `result` holds the error text (the API's error, a usage
+ * limit); that text is given first, so the cause is never behind the usage
+ * figures that precede it in the envelope. The output itself is never cut:
+ * up to CLI_OUTPUT_INLINE_CHARS it follows in the message; beyond that it is
+ * written whole to a temporary file and the message names the file.
+ */
+export function cliFailureMessage(
+	cli:      'claude' | 'codex',
+	exitCode: number,
+	stdout:   string,
+	stderr:   string,
+	dir:      string = join(tmpdir(), 'insrc-cli-failures'),
+): string {
+	const head = `${cli} exited with ${exitCode}.`;
+	let said = '';
+	try {
+		const result = (JSON.parse(stdout) as { result?: unknown }).result;
+		if (typeof result === 'string' && result.trim().length > 0) said = ` ${result.trim()}`;
+	} catch { /* not an envelope: the output below is all there is */ }
+
+	const output = `stderr=${stderr} stdout=${stdout}`;
+	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return `${head}${said} ${output}`;
+	try {
+		mkdirSync(dir, { recursive: true });
+		const path = join(dir, `${cli}-exit-${randomUUID()}.txt`);
+		writeFileSync(path, `--- stderr ---\n${stderr}\n--- stdout ---\n${stdout}\n`, 'utf8');
+		return `${head}${said} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`;
+	} catch (err) {
+		// The file could not be written: the output goes in the message, whole.
+		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'CLI failure output could not be written to a file; it stays in the message');
+		return `${head}${said} ${output}`;
+	}
 }
 
 /** Resolve a bare CLI name (`claude`/`codex`) to its absolute path ONCE,

@@ -14,9 +14,11 @@
  *     child plan's tasks stand in for it, each named by its path (the parent
  *     task id, then the child task id). A planner-kind task that failed has
  *     no child report: it is one failed source.
- *   - An aggregate-report task (the last task of every plan) writes a summary
- *     from the other tasks' results. It is left out, so it can neither hide
- *     an incomplete task nor be counted as one.
+ *   - An aggregate-report task writes a summary from the other tasks'
+ *     results. It is left out, so it can neither hide an incomplete task nor
+ *     be counted as one. It is the last task of every plan: plan validation
+ *     rejects a plan with none, with more than one, or with one that is not
+ *     last (INV-12).
  *
  * A task that failed, or that was skipped because a task it depends on
  * failed, is a failed source with its reason.
@@ -45,7 +47,11 @@ export function collectPlanSources(
 ): ReportSource[] {
 	const sources: ReportSource[] = [];
 	const tasks = tree.plan.tasks;
-	// The last task of a plan is its aggregate-report task (the walk takes its `report` as the plan's).
+	// The aggregate-report task is found by position: it is the last task.
+	// Plan validation guarantees it (INV-12 in planner/validate.ts: exactly one
+	// aggregator, and it is the last task), and a plan that breaks the rule is
+	// rejected before it runs. The plan walk uses the same rule to take the
+	// plan's final report, so the two cannot disagree about which task it is.
 	const aggregateIndex = tasks.length - 1;
 
 	for (let i = 0; i < tasks.length; i++) {

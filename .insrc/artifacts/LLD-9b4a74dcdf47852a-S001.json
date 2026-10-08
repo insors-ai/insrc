@@ -257,6 +257,13 @@
         "choice": "Yes, the request as stated is the criterion",
         "rationale": "Stakeholder confirmed on 2026-10-08: the request as stated in the Story (a test record that lists each test with its execution status, integrated with the flow so that the gate uses it) is the acceptance criterion that ac1 stands for.",
         "resolvedAt": "2026-10-08T17:08:00.865Z"
+      },
+      "qc377ebe4": {
+        "question": "The fork of the IDE (insors-ai/insrc-ide, a separate repository) was not read for this design; the two plugins in this repository were. Before the validate turn's change ships, the fork's reader of BUILD records and its artifact listing should be checked for a strict shape or a fixed list of kinds. Who makes that check, and does it hold the Story's last Task?",
+        "status": "resolved",
+        "choice": "The builder checks the fork, and it does not hold the build",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: the builder checks the fork's reader of BUILD records and its artifact listing and records what it finds; the check does not hold the Story's last Task.",
+        "resolvedAt": "2026-10-08T17:08:53.844Z"
       }
     }
   },

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791457466463-uskz11",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T11:04:26.463Z",
+    "model": "claude:opus",
+    "elapsedMs": 80476,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s2",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/delivery/__tests__/stage.test.ts",
+        "src/workflow/delivery/__tests__/types.test.ts",
+        "src/workflow/delivery/stage.ts",
+        "src/workflow/delivery/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:1",
+            "message": "Caveat, not a coverage gap: the graph grounding is hollow for these just-created files. Every changed symbol, including the test files and test helpers, shows an empty testsReaching. stage.test.ts imports deriveStages, and its run() helper calls it, yet the graph has no edge from run() to deriveStages. So the empty edges come from incomplete indexing, not from untested code, and no HIGH was raised from them. Coverage was checked by running the suite instead. `npx tsx --test src/workflow/delivery/__tests__/stage.test.ts src/workflow/delivery/__tests__/types.test.ts` ran 18 tests: 18 passed, 0 failed. All 16 promised tests are present by exact name: types.test.ts:36 and stage.test.ts:59, 69, 77, 85, 95, 115, 123, 136, 166, 183, 197, 217, 228, 251 and 270. The pass-state comes from that local run, not from a build record.",
+            "expectationRef": "hollow testsReaching grounding (deriveStages, storyRoute, storyStage, issueAnnotation, noticesFor, etc.)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:206",
+            "message": "An issue whose own route is unknown appends UNKNOWN_ROUTE_SUFFIX to its least advanced fix story's reason text. That text already ends with the same suffix whenever the story's route is also unknown, so the reason reads '... (route unknown, so no ready gate applies) (route unknown, so no ready gate applies)'. Both routes are unknown in the common case where no ISSUE record exists for the hash and the story has no LLD or BUILD sizeClass. Fix: skip the suffix when the child's text already carries it, or build the issue reason from the child's base text.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:112",
+            "message": "Route resolution handles several records of the same kind inconsistently. For standalone BUILDs it gathers every sizeClass and returns 'unknown' when they disagree (lines 118-122). For LLDs it takes only the first record (evidence.find), so two LLDs with different sizeClass values give a route that depends on the order of evidenceArtifactIds. Fix: apply the BUILD rule (agree or unknown) to LLDs too.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:243",
+            "message": "When one workItemHash has more than one ISSUE record, the first one in recordSet.records wins. That depends on load order, unlike the rest of the pass, which sorts ids for determinism. The stage and route of an issue and its fix stories could then change between runs. Fix: pick deterministically (for example the lowest artifactId), or treat duplicate ISSUEs as an ambiguity that yields 'unknown'.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:98",
+            "message": "issueOf finds a fix story's ISSUE through the story's own workItemHash, not its issue parent's. If a fix story can carry a different hash than the issue the graph parented it under, the magnitude-first rule silently misses it and the route falls through to LLD or BUILD sizeClass. This contradicts the module comment that an issue's fix stories take the ISSUE's magnitude. Fix: look up through the parent item's workItemHash.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/stage.ts:217",
+            "message": "noticesFor recomputes evidenceOf for every story even though storyAnnotation already resolved it. issueOf is also evaluated twice per story, once inside storyRoute and again in storyAnnotation (line 188). This is redundant work rather than a correctness risk. Fix: carry the evidence and issue on the Annotated value.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 6
+    }
+  }
+}

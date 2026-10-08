@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s2",
+    "createdAt": "2026-10-08T10:48:17.785Z",
+    "updatedAt": "2026-10-08T11:06:56.186Z",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T11:06:56.406Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-2ff0dfdadb1c8d1c-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-2ff0dfdadb1c8d1c-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/S002/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/S002/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/stage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/stage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:06:56.186Z"
+      }
+    ],
+    "commit": "733e75b2",
+    "summary": "Built the E1 stage pass: the sc4 stage and route types, and deriveStages, which gives every story and issue its route (from recorded fields only; an ISSUE is read only for an issue and its fix stories), its stage by the ordered rules with each route's ready gate, a reason naming its records, and the unknown-route and review-without-build notices."
+  }
+}

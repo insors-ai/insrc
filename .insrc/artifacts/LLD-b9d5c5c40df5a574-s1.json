@@ -286,7 +286,7 @@
         },
         {
           "name": "errorForPipelineCause",
-          "signature": "function errorForPipelineCause(cause: PipelineCause, message: string, extra?: { readonly promptPath?: string | undefined; readonly found?: AnswerStepFound | undefined }): Error\n\ninterface AnswerStepFound { readonly results: readonly ExecutedExploration[]; readonly report: AnswerReport }\n\nclass ShaperAnswerStepFailedError extends Error {\n  readonly reason: 'model-failed' | 'invalid-answer' | 'invalid-bundle';\n  readonly found: AnswerStepFound;\n}",
+          "signature": "function errorForPipelineCause(cause: PipelineCause, message: string, extra?: { readonly promptPath?: string | undefined; readonly found?: AnswerStepFound | undefined }): Error\n\ninterface AnswerStepFound { readonly results: readonly ExecutedExploration[]; readonly report: AnswerReport }\n\nclass ShaperAnswerStepFailedError extends Error {\n  readonly reason: 'model-failed' | 'invalid-answer' | 'invalid-bundle';\n  readonly found: AnswerStepFound;\n}\n\n// src/mcp/analyze-step/types.ts: the step tool's error output gains an optional data member\ninterface StepOutputError {\n  readonly next: 'error';\n  readonly error: {\n    readonly code: string; readonly message: string; readonly retryable: boolean;   // as today\n    readonly data?: { readonly results: readonly ExecutedExploration[]; readonly report: AnswerReport } | undefined;\n  };\n}",
           "parameters": [
             {
               "name": "extra.found",
@@ -308,7 +308,8 @@
             "The third parameter changes from a prompt path to an object holding the prompt path and `found`. Its callers change with it: settlePipelineOutcome's two calls, and the existing tests of the cause table (src/analyze/context/__tests__/pipeline-outcome.test.ts)",
             "The error can arise only in run mode, where the lookup pipeline runs; the classification and task bundles are written by the tool loop and never raise it. Six calls reach the three bundle builders. Three are the daemon's request handlers (src/daemon/analyze-rpc.ts:270 classification, :283 run, :311 task), which go through one wrapper that maps an error to the response: the run handler's response carries the code with { reason, results, report } as its data, and the other two cannot receive it. The fourth is the daemon's plan-tree entry (analyze-rpc.ts:431) and the fifth the plan tree's own run-context step (src/analyze/orchestrator/driver.ts:291): each maps the error through its mapping function, so the run fails with 'answer-step-failed' and the data. The sixth is the classifier (src/analyze/classifier/driver.ts:132), which builds a classification bundle and cannot receive it. Two callers sit above the run handler: the one-shot agent tool (src/mcp/server.ts:1331-1340), which today prints the code and message and drops the data, and now also prints the completeness line and the failed step's reason from it; and the daemon's workflow runner (src/daemon/workflow-rpc.ts:226-229), which fails its step with the cause and the report",
             "A fourth cause arises after the lookups ran: 'answer-prompt-missing', returned when the answer-writing step cannot load its prompt file, which it loads inside the step, after the plan was executed (src/analyze/context/driver.ts:1282, :1340, :1359-1364; synthesizer.ts:125). Its outcome carries `found` like the other three. It keeps its own error and code, since a missing prompt file is a fault of the installation and should be named as one: ShaperPromptMissingError gains an optional `found`, the cause table sets it for this cause, and both mapping functions put { results, report } in the error's data beside the existing code. The same error raised before any lookup ran (a missing planning prompt) has no `found`",
-            "The step tool meets the same missing prompt on its own path: after its lookups ran, its plan phase and its narrow phase each prepare the answer-writing turn (src/mcp/analyze-step/phases/plan.ts:178, phases/narrow.ts:225) outside any try, and that preparation loads the prompt file and throws SynthesizerPromptMissingError when it is missing (src/analyze/context/synthesizer.ts:189, :319, :326). The throw leaves the phase with no state returned, so the executed results are lost. Both calls catch that error and return a non-retryable error naming the missing prompt, whose data holds the executed results and the report derived from them"
+            "The step tool meets the same missing prompt on its own path: after its lookups ran, its plan phase and its narrow phase each prepare the answer-writing turn (src/mcp/analyze-step/phases/plan.ts:178, phases/narrow.ts:225) outside any try, and that preparation loads the prompt file and throws SynthesizerPromptMissingError when it is missing (src/analyze/context/synthesizer.ts:189, :319, :326). The throw leaves the phase with no state returned, so the executed results are lost. Both calls catch that error and return a non-retryable error naming the missing prompt, whose data holds the executed results and the report derived from them",
+            "The step tool's error output has no place for that data today: StepOutputError's error holds a code, a message and a retryable flag (src/mcp/analyze-step/types.ts:124-131), and each phase builds it through its own errorResult helper, which takes those three (phases/plan.ts:226, phases/narrow.ts:269). The error gains the optional `data` member shown above, and the helpers in the plan and narrow phases take it as an optional fourth argument. The step tool returns its output to the agent as JSON text, so the data reaches the agent as part of that JSON with no rendering step; the error's message also starts with the completeness line, so an agent that reads only the message sees it. No other error of the step tool sets `data`"
           ]
         },
         {
@@ -522,7 +523,7 @@
       {
         "entity": "The step tool's path through a lookup that pauses for a model call",
         "change": "invariant-change",
-        "details": "Change sites for the three points above that the earlier lists did not name: the unguarded prepare in stepPlan; the step tool's two calls of stepPlan and its finalize handling; the prepared values of the three such lookups; the 'bundle' outcome and the cause table's signature; and the search tool's catch. Current behaviour that changes: a prepare that throws aborts the step call, and the search tool calls every failure a bad regex. Also here: the two calls that prepare the answer-writing turn, which gain the catch for a missing prompt.",
+        "details": "Change sites for the three points above that the earlier lists did not name: the unguarded prepare in stepPlan; the step tool's two calls of stepPlan and its finalize handling; the prepared values of the three such lookups; the 'bundle' outcome and the cause table's signature; and the search tool's catch. Current behaviour that changes: a prepare that throws aborts the step call, and the search tool calls every failure a bad regex. Also here: the two calls that prepare the answer-writing turn, which gain the catch for a missing prompt. And the step tool's error output type and the two error helpers, which gain the optional data.",
         "callSites": [
           "src/analyze/explore/executor.ts",
           "src/mcp/analyze-step/phases/plan.ts",
@@ -532,7 +533,9 @@
           "src/analyze/explore/capability-reuse-check.ts",
           "src/analyze/context/driver.ts",
           "src/daemon/tools/builtins/search/grep.ts",
-          "src/analyze/context/synthesizer.ts"
+          "src/analyze/context/synthesizer.ts",
+          "src/mcp/analyze-step/types.ts",
+          "src/mcp/analyze-step/handler.ts"
         ]
       },
       {
@@ -866,7 +869,8 @@
             "both classifyShaperError functions map it to 'answer-step-failed' with the reason, the results and the report in data, and a failed planning call is still 'shaper-llm-unavailable'",
             "the daemon's error payload, the one-shot agent tool's message and the daemon's workflow runner's step failure each carry the report and the reason",
             "a missing answer prompt, found after the lookups ran, gives the prompt-missing error with the results and the report, and both mapping functions keep its code and put them in its data; a missing planning prompt carries none",
-            "on the step tool's path, a missing answer prompt after the lookups ran returns a non-retryable error whose data holds the executed results and the derived report, from the plan phase and from the narrow phase"
+            "on the step tool's path, a missing answer prompt after the lookups ran returns a non-retryable error whose data holds the executed results and the derived report, from the plan phase and from the narrow phase",
+            "the step tool's JSON output for that error carries error.data with the results and the report, its message starts with the completeness line, and an error of any other kind has no data member"
           ]
         },
         {
@@ -1193,6 +1197,11 @@
       "id": "c10",
       "kind": "code",
       "ref": "A direct read on 2026-10-07 of the indexer's body cut, the entity's pointer and the file entity's hash, the summariser and the readers of stored summaries. Files: src/indexer/parser/artifact.ts, src/indexer/index.ts, src/shared/types.ts, src/analyze/summariser/driver.ts, src/shared/analyze-types.ts, src/db/doc-summaries.ts, src/analyze/runtimes/docs/family-summarise.ts, src/analyze/runtimes/docs/discovery-inventory.ts, src/analyze/runtimes/shared/adherence.ts, src/analyze/runtimes/code/adherence-check.ts, src/analyze/runtimes/data/adherence-check.ts, src/analyze/runtimes/infra/adherence-check.ts, src/analyze/context/live-project-context.ts, src/daemon/tools/builtins/docs/index.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "A direct read on 2026-10-08 of the step tool's error output type, its error helpers and how its output is returned. Files: src/mcp/analyze-step/types.ts, src/mcp/analyze-step/phases/plan.ts, src/mcp/analyze-step/phases/narrow.ts, src/mcp/analyze-step/handler.ts"
     }
   ]
 }

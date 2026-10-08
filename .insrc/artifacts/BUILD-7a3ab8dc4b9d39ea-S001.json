@@ -8,12 +8,13 @@
     "createdAt": "2026-10-08T11:27:46.514Z",
     "authoredBy": "controller",
     "triageRationale": "Bugfix, small: three local corrections with one obvious approach each, about seven files in two areas.",
-    "updatedAt": "2026-10-08T11:34:17.052Z"
+    "updatedAt": "2026-10-08T11:47:10.912Z",
+    "approvedAt": "2026-10-08T11:47:11.190Z"
   },
   "body": {
     "focus": "Fix ISSUE-7a3ab8dc4b9d39ea: (1) give the planner's, the classifier's and the bundle's schema an identifier that is valid in JSON Schema draft 2020-12 and still carries the schema's version; (2) make the planner's, the classifier's and the scope picker's failed-model-call messages name the call that failed and no provider; (3) make a failed claude CLI call report the CLI's own error text in full, read from the CLI's envelope when its output is one, never cut; an output too long for a message is written whole to a temporary file whose path the message names.",
     "producesLld": false,
-    "commit": "b7584edd",
+    "commit": "a88add7d",
     "tasks": [
       {
         "id": "S001",
@@ -24,10 +25,94 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-7a3ab8dc4b9d39ea-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/ISSUE-7a3ab8dc4b9d39ea.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-08T11:34:17.052Z"
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/bug-plan-tree-analysis-cannot-plan-E202610087a3ab8dc/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-failure-message.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/model-schemas-draft-2020.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/classifier/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/classifier/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/classifier/scope-picker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/__tests__/driver-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T11:47:10.912Z"
       }
     ]
   }

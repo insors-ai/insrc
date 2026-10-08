@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-08T11:27:46.514Z  ·  **Updated:** 2026-10-08T11:34:17.052Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-08T11:27:46.514Z  ·  **Updated:** 2026-10-08T11:47:10.912Z
 
-**Commit:** b7584edd
+**Commit:** a88add7d
 
 ## Scope
 
@@ -24,4 +24,16 @@ Fixed in commit b7584edd. (1) The planner's, the classifier's and the bundle's s
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-7a3ab8dc4b9d39ea.json` — **insrc-build** (2026-10-08T11:34:17.052Z)
+- `.insrc/artifacts/CR-7a3ab8dc4b9d39ea-S001.json` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `.insrc/artifacts/ISSUE-7a3ab8dc4b9d39ea.json` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `docs/standalone/bug-plan-tree-analysis-cannot-plan-E202610087a3ab8dc/S001/CR.md` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/agent/providers/__tests__/cli-failure-message.test.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/__tests__/model-schemas-draft-2020.test.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/classifier/driver.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/classifier/schema.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/classifier/scope-picker.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/context/schema.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/planner/__tests__/driver-unit.test.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/planner/driver.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `src/analyze/planner/schema.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)

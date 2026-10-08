@@ -39,7 +39,7 @@ import { getLogger } from '../../shared/logger.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 
 import { freshnessPathOf } from './scope.js';
-import type { ResolvedScope } from './scope.js';
+import type { ResolvedScope, ScopeDeps } from './scope.js';
 
 const log = getLogger('analyze:context:invariants');
 
@@ -104,9 +104,15 @@ export class ScopeNotIndexedError extends Error {
  * On success, returns the path of the matching repo (or undefined
  * for connection-only scopes) so the caller can record it for
  * telemetry.
+ *
+ * `deps` holds the two readers the check uses. A caller that resolved
+ * the scope through its own readers passes the same ones, so one call
+ * resolves and checks against the same registry; given none the check
+ * reads the real store.
  */
 export async function ensureNonEmptyClosure(
 	scope: ResolvedScope,
+	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'>,
 ): Promise<string | undefined> {
 	// Data-only scopes don't need a code graph.
 	if (scope.kind === 'connection') {
@@ -123,7 +129,7 @@ export async function ensureNonEmptyClosure(
 	// Find the longest-prefix registered repo containing the scope.
 	let repos: readonly RegisteredRepo[];
 	try {
-		repos = await listRepos(null);
+		repos = deps !== undefined ? await deps.listRepos() : await listRepos(null);
 	} catch (err) {
 		// Registry unreachable (e.g. graph store not initialised in a
 		// test harness). We do NOT throw ScopeNotIndexedError here --
@@ -169,7 +175,9 @@ export async function ensureNonEmptyClosure(
 
 	// Count entities indexed for this repo. Stops at the first hit;
 	// no need to materialise the full list.
-	const entities = await listEntitiesForRepo(null, best.path);
+	const entities = deps !== undefined
+		? await deps.listEntitiesForRepo(best.path)
+		: await listEntitiesForRepo(null, best.path);
 	if (entities.length === 0) {
 		throw new ScopeNotIndexedError(
 			scopePath,

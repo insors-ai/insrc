@@ -29,11 +29,17 @@ import { loadConnections } from '../../daemon/db/config.js';
 import type { LoadedConnections } from '../../daemon/db/config.js';
 import { findEntitiesByFile, listEntitiesForRepo } from '../../db/entities.js';
 import { listRepos } from '../../db/repos.js';
-import type { AnalyzeScopeRef } from '../../shared/analyze-types.js';
+import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.js';
 import { getLogger } from '../../shared/logger.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
 
-import { ScopeNotIndexedError, ScopeRefUnresolvedError } from './invariants.js';
+import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
+
+import {
+	ScopeKindTargetMismatchError,
+	ScopeNotIndexedError,
+	ScopeRefUnresolvedError,
+} from './invariants.js';
 
 const log = getLogger('analyze:context:scope');
 
@@ -104,6 +110,22 @@ export async function resolveScope(
 		case 'connection':
 			return resolveConnection(ref.value, deps);
 	}
+}
+
+/**
+ * Check that a kind of scope goes with a kind of source, then resolve
+ * the scope. The pairing is tested against the classifier's table
+ * BEFORE anything is resolved, so a refused pairing reads no store.
+ */
+export async function resolveScopeForTarget(
+	ref:    AnalyzeScopeRef,
+	target: AnalyzeTarget,
+	deps?:  ScopeDeps,
+): Promise<ResolvedScope> {
+	if (!isKindCompatibleWithTarget(target, ref.kind)) {
+		throw new ScopeKindTargetMismatchError(ref.kind, target, TARGET_TO_KINDS[target]);
+	}
+	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
 }
 
 /**

@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { addRepo } from '../../../db/repos.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import type { Entity } from '../../../shared/types.js';
+import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 
 import {
 	ScopeNotIndexedError,
@@ -214,6 +214,47 @@ test('ensureNonEmptyClosure: false-prefix is rejected (requires / boundary)', as
 // ---------------------------------------------------------------------------
 // ScopeNotIndexedError shape
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Readers handed in
+// ---------------------------------------------------------------------------
+
+test('ensureNonEmptyClosure: given readers it reads the registry and the entities through them, not the real store', async () => {
+	// The real store says the opposite of the stand-ins in each case.
+	const calls: string[] = [];
+	const readers = (entities: number) => ({
+		listRepos:           async () => { calls.push('listRepos'); return [{ path: '/standin/app', status: 'ready' } as unknown as RegisteredRepo]; },
+		listEntitiesForRepo: async (repoPath: string) => { calls.push(`listEntitiesForRepo:${repoPath}`); return Array.from({ length: entities }, () => makeEntity(repoPath, `${repoPath}/a.ts`)); },
+	});
+
+	// Real store: nothing registered. Stand-ins: registered, with entities.
+	assert.equal(await ensureNonEmptyClosure(scopeOf(codeIntent('/standin/app/src', 'module')), readers(1)), '/standin/app');
+	assert.deepEqual(calls, ['listRepos', 'listEntitiesForRepo:/standin/app']);
+
+	// Stand-ins: registered, no entities -> not indexed, naming the stand-in repo.
+	await assert.rejects(
+		() => ensureNonEmptyClosure(scopeOf(codeIntent('/standin/app')), readers(0)),
+		(err: unknown) => err instanceof ScopeNotIndexedError && err.registeredAs === '/standin/app',
+	);
+
+	// Real store: the scope's repo IS registered with entities. Stand-ins: it is in no repo.
+	await registerAndSeedRepo('/real/app', true);
+	assert.equal(await ensureNonEmptyClosure(scopeOf(codeIntent('/real/app'))), '/real/app');
+	await assert.rejects(
+		() => ensureNonEmptyClosure(scopeOf(codeIntent('/real/app')), readers(1)),
+		(err: unknown) => err instanceof ScopeNotIndexedError && err.registeredAs === undefined,
+	);
+});
+
+test('ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo', async () => {
+	const entities = async (): Promise<Entity[]> => { throw new Error('must not be read'); };
+	assert.equal(await ensureNonEmptyClosure(scopeOf(codeIntent('/x/app')), {
+		listRepos: async () => { throw new Error('registry down'); }, listEntitiesForRepo: entities,
+	}), undefined);
+	assert.equal(await ensureNonEmptyClosure(scopeOf(codeIntent('/x/app')), {
+		listRepos: async () => [], listEntitiesForRepo: entities,
+	}), undefined);
+});
 
 test('ScopeNotIndexedError carries scopePath + registeredAs on the instance', () => {
 	const e = new ScopeNotIndexedError('/scope', '/repo', 'because');

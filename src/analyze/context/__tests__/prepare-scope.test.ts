@@ -15,6 +15,7 @@ import type { Entity, LLMProvider, RegisteredRepo } from '../../../shared/types.
 import { TARGET_TO_KINDS } from '../../classifier/validate.js';
 import { prepareScope, ShaperInvalidInputError, _buildToolDepsForTest } from '../driver.js';
 import { ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
+import { resolveScope, resolveScopeForTarget } from '../scope.js';
 import type { ScopeDeps } from '../scope.js';
 import type { ClassificationShapeInput, RunShapeInput, TaskShapeInput } from '../types.js';
 
@@ -95,6 +96,51 @@ test('the pairing is checked for run mode only: classification and task inputs a
 	const ref: AnalyzeScopeRef = { kind: 'connection', value: 'ledger-db' };
 	assert.equal((await prepareScope('classification', classInput(ref), deps())).kind, 'connection');
 	assert.equal((await prepareScope('task', taskInput('code', ref), deps())).kind, 'connection');
+});
+
+test('resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched', async () => {
+	const valueFor: Record<AnalyzeScopeRef['kind'], string> = {
+		repo: REPO, module: `${REPO}/src`, file: FILE, symbol: `${FILE}#settle`,
+		connection: 'ledger-db', 'manifest-dir': `${REPO}/deploy`, workspace: REPO,
+	};
+	const kinds = Object.keys(valueFor) as Array<AnalyzeScopeRef['kind']>;
+	let accepted = 0;
+	let refused = 0;
+	for (const target of Object.keys(TARGET_TO_KINDS) as AnalyzeTarget[]) {
+		for (const kind of kinds) {
+			const ref: AnalyzeScopeRef = { kind, value: valueFor[kind] };
+			const d = deps();
+			if (TARGET_TO_KINDS[target].includes(kind)) {
+				const expected = await resolveScope(ref, deps());
+				assert.deepEqual(await resolveScopeForTarget(ref, target, d), expected, `${target}+${kind}`);
+				// The two callers return the same thing through it.
+				assert.deepEqual(await prepareScope('run', runInput(target, ref), deps()), expected, `prepareScope ${target}+${kind}`);
+				accepted += 1;
+			} else {
+				const err = await rejection(() => resolveScopeForTarget(ref, target, d));
+				assert.ok(err instanceof ScopeKindTargetMismatchError, `${target}+${kind}: got ${err.name}`);
+				assert.ok(
+					err.message.endsWith(`Allowed kinds for this target: ${TARGET_TO_KINDS[target].join(', ')}.`),
+					`${target}+${kind}: ${err.message}`,
+				);
+				assert.deepEqual(d.calls, [], `${target}+${kind}`);
+				refused += 1;
+			}
+		}
+	}
+	assert.equal(accepted, 6 + 4 + 3 + 4 + 7);
+	assert.equal(refused, 5 * 7 - accepted);
+});
+
+test('prepareScope makes no pairing check outside run mode: a refused pairing resolves to what resolveScope gives', async () => {
+	const ref: AnalyzeScopeRef = { kind: 'connection', value: 'ledger-db' };
+	const expected = await resolveScope(ref, deps());
+	assert.deepEqual(await prepareScope('classification', classInput(ref), deps()), expected);
+	// A task input carries an intent, and the table refuses code + connection.
+	assert.deepEqual(await prepareScope('task', taskInput('code', ref), deps()), expected);
+	// The same input in run mode IS refused.
+	const err = await rejection(() => prepareScope('run', taskInput('code', ref) as unknown as RunShapeInput, deps()));
+	assert.ok(err instanceof ScopeKindTargetMismatchError, `got ${err.name}`);
 });
 
 // ---------------------------------------------------------------------------

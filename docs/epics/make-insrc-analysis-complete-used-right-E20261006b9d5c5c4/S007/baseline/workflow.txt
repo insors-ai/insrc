@@ -1,0 +1,1579 @@
+ok 1 - design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail
+ok 2 - design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)
+ok 3 - design.story: a PASSED sbdry5 does not trigger the boundary hard-fail
+ok 4 - sbdry5 is added to exactly ONE orchestrator boundaryIds set (the design.story s8 set)
+ok 5 - the anti-overreach rule is wired into both the design.story and plan runners
+ok 6 - ANTI_OVERREACH_RULE names adjacentBoundaries + consume-not-redesign + flag-not-silent
+ok 7 - epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail
+ok 8 - epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail
+ok 9 - ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD
+ok 10 - ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass
+ok 11 - ac3: BUILD + enforce ON + absent CR => withheld into skipped[], no approvedAt, codeReview[] no-review
+ok 12 - ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded
+ok 13 - ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked
+ok 14 - ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)
+ok 15 - ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory
+ok 16 - ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)
+ok 17 - ac6: a story-scoped artifact whose basename is NOT BUILD- is not withheld even under enforce (basename predicate)
+ok 18 - ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (distinct from meta.review)
+ok 19 - ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)
+ok 20 - single BUILD target with no prior json => the hook CREATES the record, then it completes (no ArtifactMissingError)
+ok 21 - non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scoped)
+ok 22 - ac1: enforce on + CR block + no override → skipped, no approvedAt, codeReview[] blocked
+ok 23 - ac2: enforce on + CR block + overrideReview → approved, codeReview[] overridden + overrideReason
+ok 24 - ac3: CR warn → approved, codeReview[] warn + counts
+ok 25 - ac3: CR pass → approved, codeReview[] pass + counts
+ok 26 - ac5: absent CR record (non-BUILD) → approved byte-identical, codeReview[] no-review
+ok 27 - ac5: DEF/HLD artifact (no storyId) → gate never runs, codeReview empty, approved
+ok 28 - ac5: enforce OFF + CR block → approved (demoted advisory), codeReview[] warn/advisory
+ok 29 - batch: story A CR block + story B CR pass (enforce on) → A skipped, B approved
+ok 30 - ac6: clean meta.review + CR block → withheld ONLY by the code-review gate
+ok 31 - ac6: corrupt CR record (non-BUILD) → no-review fail-open, approved
+ok 32 - single: a review-clean artifact is approved (approvedAt stamped)
+ok 33 - single: a review-blocked artifact lands in skipped[] (not approved[]), no override
+ok 34 - single: overrideReview approves past the block
+ok 35 - single: a missing artifact throws ArtifactMissingError (not skipped)
+ok 36 - batch: a mixed epic splits into approved[] + skipped[] — nothing dropped
+ok 37 - batch: only NOT-yet-approved artifacts are swept (already-approved excluded)
+ok 38 - batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError
+ok 39 - batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)
+ok 40 - handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable
+ok 41 - handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason
+ok 42 - handleArtifactContent: openQuestions absent -> empty list (not an error)
+ok 43 - handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/
+ok 44 - handleArtifactContent: missing/unreadable .md -> { error }
+ok 45 - handleArtifactContent: missing sibling .json -> { error }
+ok 46 - handleArtifactContent: malformed sibling .json -> { error }
+ok 47 - handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)
+ok 48 - handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read
+ok 49 - handleArtifactContent: read-only — no file created or mutated over the fixture
+ok 50 - t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them
+ok 51 - t1: an absent body field projects as ABSENT — not null, not an empty object
+ok 52 - t1: a DEF body projects functionalDefinition only and never companions
+ok 53 - t1: a PLAN body's functionalDefinition projects too — the field is not gated on kind
+ok 54 - t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings
+ok 55 - t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path
+ok 56 - t1: a malformed structured record travels through rather than failing the read
+ok 57 - t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body
+ok 58 - t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}
+ok 59 - t1: adding sequenceDefinition left every pre-existing projected record unchanged
+ok 60 - t1: a malformed sequenceDefinition travels through as written — the read path validates nothing
+ok 61 - attributionOf returns the stored aggregate when present (authoritative)
+ok 62 - attributionOf preserves multiplicity — repeated identical rows are not deduped
+ok 63 - attributionOf on a zero-output NEW artifact returns [] (empty aggregate is authoritative)
+ok 64 - attributionOf shims a legacy scalar into a single (legacy)-role stamp
+ok 65 - attributionOf on a pre-attribution artifact (neither field) returns [] — no fabricated model
+ok 66 - modelSummary collapses a homogeneous run to a single runner:model
+ok 67 - modelSummary renders a heterogeneous run as mixed(...)
+ok 68 - modelSummary of a legacy artifact returns its original scalar label unchanged
+ok 69 - modelSummary of a fully-unattributed artifact reads "unknown"
+ok 70 - singleModelAttribution wraps a client label into one (client)-role stamp
+ok 71 - singleModelAttribution parses an ollama:<model> label into runner+model
+ok 72 - T2 given no author, finalizeArtifact writes no author field
+ok 73 - T2 given controller, finalizeArtifact stamps it in the artifact and in the json it renders
+ok 74 - T2 given daemon, finalizeArtifact stamps it in the artifact and in the json it renders
+ok 75 - T2 the author is the ONLY difference the argument makes
+ok 76 - T2 a finalize that fails is returned as it is, with no author added
+ok 77 - nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)
+ok 78 - nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)
+ok 79 - nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)
+ok 80 - nextAfterIssue: the sized design.story spec carries the full defect body, not just the title
+ok 81 - nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)
+ok 82 - nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude
+ok 83 - admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted
+ok 84 - admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted
+ok 85 - admitBugfixAdvance: approved + parentRef ABSENT -> not admitted
+ok 86 - admitBugfixAdvance: not approved -> not admitted
+ok 87 - locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation
+ok 88 - locateAndStampParent: standalone (null) -> writeParentRef(null)
+ok 89 - locateAndStampParent: readIssue null -> throws issue-not-found, no write
+ok 90 - locateAndStampParent: not approved -> throws not-approved, no write
+ok 91 - locateAndStampParent: locateParent rejects -> propagates, no write
+ok 92 - locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty
+ok 93 - defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)
+ok 94 - advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall
+ok 95 - advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed
+ok 96 - advanceBugfixAfterIssue: bugfixCategory flag off -> skipped
+ok 97 - ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)
+ok 98 - ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved
+ok 99 - ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)
+ok 100 - createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded
+ok 101 - createBugfixTrackerIssue: standalone (parentRef null) -> created UNLINKED
+ok 102 - createBugfixTrackerIssue: parentRef present but resolveParentIssueRef null -> created unlinked, no link attempt
+ok 103 - createBugfixTrackerIssue: resolveConfig type:none -> skipped, NO createIssue (ac2)
+ok 104 - createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> skipped, NO createIssue (ac2)
+ok 105 - createBugfixTrackerIssue: authOk false -> skipped, NO createIssue
+ok 106 - createBugfixTrackerIssue: meta.tracker already carries the ref -> reused, NO createIssue (idempotent)
+ok 107 - createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> still created + recorded, linked:false
+ok 108 - createBugfixTrackerIssue: createIssue throws (post-config) -> propagates, nothing recorded
+ok 109 - closeBugfixTrackerIssue: recorded ref + configured -> closed
+ok 110 - closeBugfixTrackerIssue: no recorded ref -> skipped, closeIssue NOT called (ac2 symmetry)
+ok 111 - closeBugfixTrackerIssue: resolveConfig none/GithubConfigError -> skipped, closeIssue NOT called
+ok 112 - closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates
+ok 113 - ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec
+ok 114 - prompt-on-lost-ref (create): recordRef throws -> promptOnLostRef gets the created ref; retry-record re-writes
+ok 115 - prompt-on-lost-ref (create): 'skip' -> created with reason ref-unrecorded, no throw
+ok 116 - prompt-on-lost-ref (close): no recorded ref + 'relink-by-label' -> re-discover via labels, re-record, close
+ok 117 - prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a2 dedup stays deferred)
+ok 118 - close default (no prompter): skip never re-discovers by label
+ok 119 - normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)
+ok 120 - parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)
+ok 121 - integration: configured repo -> create records the ref, close reads it back and closes (fake gh)
+ok 122 - integration: unconfigured repo -> no create/close commands, local issue unchanged (ac2)
+ok 123 - chain: no artifacts → next-action run-define
+ok 124 - chain: unapproved Define → approve-define
+ok 125 - chain: approved Define, no HLD → run-hld
+ok 126 - chain: unapproved HLD → approve-hld
+ok 127 - chain: approved HLD, no LLDs → run-lld for first Story
+ok 128 - chain: unapproved LLD blocks the chain → approve-lld
+ok 129 - chain: pending amendment surfaces before further LLDs
+ok 130 - chain: all Stories approved, no tracker → push-tracker
+ok 131 - formatChainReport prints all section headers
+ok 132 - finalize: the rendered companion carries Purpose + Legend + a relative ./LLD.md link, and stays offline
+ok 133 - gate: a HIGH-invalid definition of EACH kind → a retryable schema failure with details (ac1, lc1)
+ok 134 - gate: a valid / MED-LOW-only / no-companion body → undefined (ac3, no regression)
+ok 135 - gate: the author definition object is not mutated (k2 / ac4)
+ok 136 - finalize[standalone-LLD]: a HIGH-invalid uxDefinition → retryable schema failure + NO artifact written (ac1)
+ok 137 - finalize[standalone-LLD]: the corrected (valid) uxDefinition → {ok:true}, companion rendered + linked (ac2, ac4)
+ok 138 - finalize[standalone-LLD]: NO companion definitions → {ok:true}, no companion (byte-identical, ac3)
+ok 139 - finalize[design.epic]: a HIGH-invalid sequenceDefinition → retryable schema failure (second finalizer site)
+ok 140 - finalize[design.epic]: a valid erDefinition → {ok:true} with the companion rendered (no regression)
+ok 141 - renderDefineMarkdown produces expected sections
+ok 142 - renderDefineMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+ok 143 - renderDefineMarkdown escapes pipes in constraint text
+ok 144 - S001: renderDefineMarkdown renders an lc-namespaced local constraint with its source citation intact
+ok 145 - isDefineBody accepts valid body
+ok 146 - isDefineBody rejects bad flavor
+ok 147 - isDefineBody rejects missing stories
+ok 148 - checkStoryDependencyGraph passes clean DAG
+ok 149 - checkStoryDependencyGraph reports unknown dependency
+ok 150 - checkStoryDependencyGraph detects a cycle
+ok 151 - checkConstraintCoverage passes when every operationalizes id resolves
+ok 152 - checkConstraintCoverage reports unknown constraint id
+ok 153 - checkConstraintCoverage resolves local constraint ids too
+ok 154 - absent-safe: no FR statements anywhere → {} (no fd, no error)
+ok 155 - assembles doc-level + per-story FRs with minted ids, correct scope/itemRef
+ok 156 - id stability: identical inputs mint identical ids across two runs
+ok 157 - blank/whitespace statements are skipped; all-blank → {}
+ok 158 - a per-story FR whose story id is not among the known stories → validation error (dangling itemRef)
+ok 159 - finalize: an authored sequenceDefinition → sibling sequence companion written + linked
+ok 160 - finalize: an authored componentDependencyDefinition → sibling component companion written + linked
+ok 161 - finalize: BOTH diagram slots → two sibling companions + two refs
+ok 162 - finalize: NEITHER diagram slot → no diagram companion (byte-identical, absent-safe)
+ok 163 - finalize: a malformed (dangling-ref) sequenceDefinition now SURFACES a retryable failure (S001, was swallowed)
+ok 164 - orchestrator.ts wires the sequence + component gate rules at every synthesizer prompt that admits the matching slot (source-scan)
+ok 165 - both runner step-prompt builders carry the sequence + component gates adjacent to the ER gate (source-scan)
+ok 166 - the HLD (design.epic) synthesize body schema ADMITS both diagram slots but never requires them
+ok 167 - the LLD (design.story) synthesize body schema ADMITS both diagram slots but never requires them
+ok 168 - finalize[design.story standalone]: an authored erDefinition → sibling companion written + linked in the md (LIVE)
+ok 169 - finalize[design.story standalone]: NO erDefinition → no companion + no Diagrams slot (absent-safe)
+ok 170 - finalize[design.epic HLD]: an authored erDefinition → sibling companion written + linked in the HLD md (LIVE)
+ok 171 - finalize[design.epic HLD]: NO erDefinition → no companion + no Diagrams slot
+ok 172 - substitutePlaceholders returns params unchanged when no $sN
+ok 173 - substitutePlaceholders resolves $s1 whole output
+ok 174 - substitutePlaceholders resolves $s1.foo.bar
+ok 175 - substitutePlaceholders resolves $s1.arr[0]
+ok 176 - substitutePlaceholders throws on unknown step
+ok 177 - substitutePlaceholders throws on unknown key
+ok 178 - startRun runs deterministic steps to completion
+ok 179 - startRun threads $sN.<accessor> substitutions between steps
+ok 180 - startRun errors when a runner is missing
+ok 181 - startRun pauses on an llm-pause runner + resumeRun continues
+ok 182 - S010: a finalize returning llm-pause RE-PAUSES the same step (nextStepIndex unchanged), then completes
+ok 183 - S010: the executor threads draftProvider into BOTH run() and finalize() ctx; absent → undefined (byte-identical)
+ok 184 - define: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 185 - define: feedback PRESENT adds a Feedback section with the comment
+ok 186 - hld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 187 - hld: feedback PRESENT adds a Feedback section with the comment
+ok 188 - lld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 189 - lld: feedback PRESENT adds a Feedback section with the comment
+ok 190 - plan: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 191 - plan: feedback PRESENT adds a Feedback section with the comment
+ok 192 - define: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 193 - hld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 194 - lld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 195 - plan: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 196 - legacy (no feedback field) re-renders unchanged, then accepts a first append
+ok 197 - FEEDBACK_PROPERTY_SCHEMA accepts a valid feedback array and rejects a malformed one
+ok 198 - the define synthesizer body schema validates a body carrying feedback (additionalProperties:false preserved)
+ok 199 - all four synthesizer schemas wire feedback + carry the NEVER-author rule (source-scan)
+ok 200 - t8/t3 CALL SITE: a finalized standalone LLD PERSISTS the definition head's label, not one derived from its own focus
+ok 201 - t8/t3 CALL SITE: with NO definition head, the finalized LLD still falls back to a label derived from its focus
+ok 202 - ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE persists the ISSUE's anchor and lands in the ISSUE's folder
+ok 203 - ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anchor and files under its own day
+ok 204 - t8/t3 CALL SITE: an EMPTY label on the definition head is treated as absent at the call site too
+ok 205 - t8/t4a CALL SITE: a finalized PLAN for a standalone work item PERSISTS the placement flag
+ok 206 - t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at all
+ok 207 - 3a98d279 — a PLAN whose LLD carries a DIFFERENT label still takes the definition head's
+ok 208 - 3a98d279 — with NO definition head, a PLAN still falls back rather than composing an empty label
+ok 209 - t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical paths to the pre-change baseline
+ok 210 - t7 — workItemKindOf still maps absent and false alike to 'epic'
+ok 211 - t7 — readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged
+ok 212 - t7 PURITY: the markdown path builders perform no filesystem read — a path composes for a nonexistent repo directory
+ok 213 - t7 — the definition artifact is consulted at finalize time only, never during path resolution
+ok 214 - t7/t3 — the label is INHERITED from the definition head, not re-derived from the stage focus
+ok 215 - t7/t3 — the fallback still governs a work item with NO definition artifact
+ok 216 - t7/t3 — an EMPTY stored label counts as absent, so no folder name can begin with a dash
+ok 217 - t7/t4a — the PLACEMENT is inherited from the definition head, overriding the stage fallback
+ok 218 - t7/t4a — the caller fallback is used only when the head is SILENT
+ok 219 - t7/t4a — a stored FALSE is reported as false, never silently promoted to true
+ok 220 - mintFrId emits the doc-level canonical form
+ok 221 - mintFrId emits the per-item canonical form nested under a story
+ok 222 - mintFrId is byte-stable for identical inputs
+ok 223 - mintFrId keeps full width for an ordinal >= 1000 (padOrdinal not truncated)
+ok 224 - mintFrId throws via the shared guards on a bad epicHash or invalid date
+ok 225 - mintFrId throws on a non-positive ordinal
+ok 226 - parseFrId round-trips every mintFrId output (doc-level and per-item)
+ok 227 - parseFrId accepts the dash slug form
+ok 228 - parseFrId returns null on non-FR strings
+ok 229 - isFrId is the boolean guard over parseFrId
+ok 230 - define: absent functionalDefinition renders byte-identically (no FR section)
+ok 231 - define: a functionalDefinition renders the FR section when present
+ok 232 - hld: absent functionalDefinition renders byte-identically (no FR section)
+ok 233 - hld: a functionalDefinition renders the FR section when present
+ok 234 - lld: absent functionalDefinition renders byte-identically (no FR section)
+ok 235 - lld: a functionalDefinition renders the FR section when present
+ok 236 - plan: absent functionalDefinition renders byte-identically (no FR section)
+ok 237 - plan: a functionalDefinition renders the FR section when present
+ok 238 - each <Stage>Body type-checks with functionalDefinition present
+ok 239 - each <Stage>Body type-checks WITHOUT functionalDefinition (absent-safe)
+ok 240 - validateFunctionalDefinition treats undefined and empty requirements as absent
+ok 241 - a valid doc-level + per-item record passes
+ok 242 - duplicate FR ids are rejected with a duplicate-id error
+ok 243 - a per-item FR with a dangling itemRef is rejected
+ok 244 - a per-item FR missing itemRef is rejected
+ok 245 - a malformed FR id is rejected
+ok 246 - jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker
+ok 247 - jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker
+ok 248 - jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker
+ok 249 - jsonPathForMd leaves docs/stub layout untouched
+ok 250 - jsonPathForMd returns json paths unchanged
+ok 251 - jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker
+ok 252 - jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker
+ok 253 - jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception
+ok 254 - jsonPathForMd rejects unknown extensions
+ok 255 - jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)
+ok 256 - approveArtifactByJsonPath sets meta.approvedAt
+ok 257 - rejectArtifactByJsonPath sets meta.rejectedAt + reason
+ok 258 - rejectArtifactByJsonPath refuses empty reason
+ok 259 - reject then approve clears the rejection
+ok 260 - requireApprovedEpic throws ArtifactMissingError when no Define exists
+ok 261 - requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved
+ok 262 - requireApprovedEpic returns the Define artifact after approval
+ok 263 - t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt
+ok 264 - t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase
+ok 265 - t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT
+ok 266 - t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string
+ok 267 - t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)
+ok 268 - CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins
+ok 269 - CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once
+ok 270 - CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever
+ok 271 - t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them
+ok 272 - renderHldMarkdown emits all sections
+ok 273 - renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+ok 274 - isHldBody accepts valid body
+ok 275 - isHldBody rejects missing storyBoundaries
+ok 276 - checkStoryCoverage passes when every Epic Story has a boundary
+ok 277 - checkStoryCoverage flags orphan Epic Stories
+ok 278 - checkContractDependencyGraph passes on a consistent, acyclic graph
+ok 279 - checkContractDependencyGraph flags a cycle (mutual consumption)
+ok 280 - checkContractDependencyGraph flags an inversion (consumer not downstream of owner)
+ok 281 - checkContractDependencyGraph cg2 message names the nearest-common-ancestor re-ownership target
+ok 282 - checkContractDependencyGraph flags depends drift from consumedByStories
+ok 283 - reconcileDependsFromConsumers repairs a drifted depends so cg3 passes (S002 ac2)
+ok 284 - reconcileDependsFromConsumers is a pure inverse: dedup+sort, self-skip, other fields untouched (S002 ac2)
+ok 285 - reconcileDependsFromConsumers does NOT mask a genuine cg1 cycle (S002 ac3)
+ok 286 - reconcileDependsFromConsumers does NOT mask a genuine cg2 inversion (S002 ac3)
+ok 287 - checkStoryCoverage flags shared contract owned by unknown Story
+ok 288 - checkRolloutCoverage passes on clean fixture
+ok 289 - checkRolloutCoverage flags story in multiple phases
+ok 290 - checkRolloutCoverage flags story in zero phases
+ok 291 - checkOwnershipConsistency passes on aligned fixture
+ok 292 - checkOwnershipConsistency flags mismatch between shared contract owner and boundary owner
+ok 293 - checkInterfaceSketchTypeLevel passes on pure TS interface
+ok 294 - checkInterfaceSketchTypeLevel flags a return statement
+ok 295 - worked example — canonical + slug, exactly
+ok 296 - round-trip canonical + slug at every level
+ok 297 - ordinal padding — <3 digits pad to 3, >=1000 keep full width
+ok 298 - parse accepts canonical AND slug for the same node
+ok 299 - hash8 derives from epicHash slice, never re-hashed
+ok 300 - date is UTC of createdAt
+ok 301 - parentId chain task → story → epic → null
+ok 302 - label ↔ ordinal bridges
+ok 303 - S001: storyIdToOrdinal accepts s<n> AND S<nnn> — case + padding inert
+ok 304 - S001/ac1: a standalone uppercase S001 canonicalizes to the same id as its lowercase sibling
+ok 305 - S001/ac2: lowercase story ids are byte-identical before/after; ordinalToStoryId unchanged
+ok 306 - S001: deriveWorkItemIdentity composes the bundle; story-level s1===S001; epic-level has no story segment
+ok 307 - S001/lc1: identity stays both-way — parse(toCanonical(mint(S001))) yields ordinal 1
+ok 308 - resolver — \#9, s1/t3, canonical + slug all resolve to the same task record
+ok 309 - resolver — story-level (s1, \#5) and epic-level (\#1)
+ok 310 - resolver — both-way helpers
+ok 311 - resolver — a second epic that does NOT hold the label no longer makes it ambiguous (INVERTED at S001/t5)
+ok 312 - resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (was null: unresolved-target)
+ok 313 - resolver — MUTATION: delete the ISSUE and the same target goes back to null
+ok 314 - resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)
+ok 315 - resolver — the hierarchical id form also resolves for a DEF-less epic
+ok 316 - resolver — ADDITIVE: when BOTH a DEF and an ISSUE exist for one hash, the DEF wins and nothing is guessed
+ok 317 - resolver — a DEF-bearing epic is untouched by the ISSUE fallback (regression)
+ok 318 - resolver — a bugfix epic is not shadowed by a DEF epic that lacks its story (INVERTED at S001/t5)
+ok 319 - RED-FIRST (a), green at t4 — asserts DESIRED behaviour, FAILS today: a DEF epic holding s1 plus an UNRELATED ISSUE epic on a different hash still resolves `s1`
+ok 320 - RED-FIRST (b), green at t3 — asserts DESIRED behaviour, FAILS today: a single-epic repo REFUSES a nonexistent story instead of minting a dummy ref
+ok 321 - RED-FIRST (c), green at t3, NARROWING 1 — asserts DESIRED behaviour, FAILS today: an explicitly scoped label for a story the scoped epic LACKS refuses
+ok 322 - RED-FIRST (d), green at t3, NARROWING 2 — asserts DESIRED behaviour, FAILS today: a hierarchical id naming a nonexistent story ordinal refuses
+ok 323 - RED-FIRST (e), green at t4 — asserts DESIRED behaviour, FAILS today: two FEATURE epics where only ONE holds s1 resolves (additive beyond the regression)
+ok 324 - t2: readEpicDefinition reads the DEF first and the ISSUE second — the order is the discriminator
+ok 325 - t2: first-READABLE-wins — a MALFORMED DEF falls through to the ISSUE rather than aborting the read
+ok 326 - t2: readEpicDefinition NEVER throws — missing, malformed, and a malformed-with-no-fallback all yield an absence
+ok 327 - t3: the reader is now WIRED — the DEF body type carries `stories`, and an undeclared story no longer resolves
+ok 328 - t3 — the ARTIFACT clause: a story with an LLD resolves, and one with only a PLAN resolves too
+ok 329 - t3 — neither artifact nor declaration → REFUSAL, not a dummy ref
+ok 330 - t3 — the DECLARATION clause alone suffices: a DEF-declared story with no LLD and no PLAN resolves
+ok 331 - t3 — an ISSUE-anchored epic blesses ordinal 1 and REFUSES ordinal 2 (the one-story convention)
+ok 332 - t3 — s1 / S1 / S001 verify identically, inherited from storyIdToOrdinal
+ok 333 - t3 — an EPIC-level call is entirely unverified and unchanged (asserted, not assumed)
+ok 334 - t3 — task-level NON-extension: an existing story with an unknown taskId still resolves, `task` absent
+ok 335 - t3 — never throws: an unparseable story label and a malformed definition artifact each yield a refusal
+ok 336 - t3 — PER-CLAUSE degradation: a corrupt DEF does not disqualify a story whose LLD is intact
+ok 337 - t4 — GENUINE ambiguity still refuses: two feature epics that BOTH contain s1, unscoped → null
+ok 338 - t4 — a tie within the EXPLICIT tier does not fall through to the implied tier
+ok 339 - t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic implies one) and resolves with an explicit scope
+ok 340 - t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated peer, reachable unscoped and scoped
+ok 341 - t4 — an epic with real evidence but UNUSABLE identity counts toward ambiguity instead of vanishing
+ok 342 - t4 — a lone candidate whose reference cannot be built is a REFUSAL, not a hand-off
+ok 343 - t6 — resolveByIssue NO-OP: issue numbers resolve at task, story and epic level exactly as before
+ok 344 - t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef for a story that does not exist now refuses
+ok 345 - resolver — unknown / malformed identifier → null
+ok 346 - id marker embeds as the first body line and round-trips out
+ok 347 - renderIssueMarkdown: emits the id-marker header + one section per body field, in order
+ok 348 - renderIssueMarkdown: NO routing/linking metadata leaks into the GH body (k4)
+ok 349 - isIssueBody: accepts a well-formed body, rejects any missing/empty prose field
+ok 350 - issueArtifactId / issueArtifactPaths: hash-named json, nested item-root ISSUE.md under docs/standalone
+ok 351 - ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing kinds unchanged
+ok 352 - pathsForWorkflow: workflow "issue" routes to the ISSUE.md/json keyed by meta.issueHash
+ok 353 - writeAtomic round-trip: IssueArtifact json is deep-equal + idempotent
+ok 354 - prepareDecompose[issue]: a fixed 2-step plan (issue.capture -> checklist.verify)
+ok 355 - prepareSynthesize[issue]: supported (no throw) and grounds on the step outputs
+ok 356 - finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset
+ok 357 - finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)
+ok 358 - computeHldEffectiveHash returns a 64-char hex string
+ok 359 - computeHldEffectiveHash is deterministic
+ok 360 - computeHldEffectiveHash differs when amendments change
+ok 361 - computeHldEffectiveHash order-sensitive to amendment sequence
+ok 362 - extractHldContextSlice returns owned + consumed contracts + boundary + phase
+ok 363 - extractHldContextSlice returns consumed contracts for consumer Story
+ok 364 - extractHldContextSlice throws when Story not in HLD
+ok 365 - extractHldContextSlice.adjacentBoundaries = sibling boundaries, current story excluded
+ok 366 - extractHldContextSlice.adjacentBoundaries preserves storyBoundaries order (self removed)
+ok 367 - extractHldContextSlice.adjacentBoundaries === [] for a single-story HLD
+ok 368 - findAdjacentScopeViolations flags implementing a sibling-owned contract
+ok 369 - findAdjacentScopeViolations ignores a consumes of a sibling-owned contract
+ok 370 - findAdjacentScopeViolations does not flag implementing your OWN owned contract
+ok 371 - findAdjacentScopeViolations returns [] for a standalone/single-story slice (no siblings)
+ok 372 - isLldBody accepts valid body
+ok 373 - isLldBody rejects missing testStrategy
+ok 374 - isLldBody rejects contractDetails without an api array
+ok 375 - isLldBody rejects testStrategy without an acceptanceMapping array
+ok 376 - checkApiSignaturesTypeLevel: a body rejected by isLldBody never reaches it (no TypeError)
+ok 377 - checkSharedContractRefs passes when every id resolves
+ok 378 - checkSharedContractRefs flags unknown contract id
+ok 379 - checkImplementOwnership passes when owner matches
+ok 380 - checkImplementOwnership flags claiming to implement a contract owned by another Story
+ok 381 - checkImplementOwnership ignores role=consumes
+ok 382 - checkAcceptanceMapping passes when every criterion is mapped
+ok 383 - checkAcceptanceMapping flags an unknown criterion in the mapping
+ok 384 - checkAcceptanceMapping flags an unmapped Story criterion
+ok 385 - checkApiSignaturesTypeLevel passes on TS signature
+ok 386 - checkApiSignaturesTypeLevel flags a signature with a body containing return
+ok 387 - renderLldMarkdown emits all sections
+ok 388 - renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries is non-empty
+ok 389 - renderLldMarkdown omits the adjacent-scope subsection for a single-story LLD (byte-compatible)
+ok 390 - renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set
+ok 391 - renderLldMarkdown includes Migration section for enhancement (when present)
+ok 392 - buildOwnershipIndex maps cited code paths to owning work items
+ok 393 - buildOwnershipIndex is best-effort: missing store → empty; bad json skipped
+ok 394 - matchGraphCandidates scores by distinct matched paths, sorted desc
+ok 395 - matchGraphCandidates: unmatched paths contribute nothing (no throw)
+ok 396 - matchGraphCandidates: an ABSOLUTE graph-neighbour path matches its repo-relative owner key
+ok 397 - matchGraphCandidates: suffix match is path-boundary-guarded (no cross-story false attach, lc1)
+ok 398 - inferParentCandidates: touched path owned by a story yields a graph candidate + evidence
+ok 399 - inferParentCandidates: graph expansion folds neighbour files into ownership matching
+ok 400 - inferParentCandidates: returns raw scores only (no threshold applied)
+ok 401 - inferParentCandidates: empty defectDescription skips the semantic pass
+ok 402 - refFromDocPath parses slug + storyId from a docs artifact path
+ok 403 - mapSemanticHits maps artifact hits to work items, rank-decayed, de-duped
+ok 404 - end-to-end: touched paths under a story → graph attach with grounded evidence (ac1)
+ok 405 - end-to-end: defect description matching a story → semantic attach (ac2)
+ok 406 - end-to-end: neither tier matches → prompt → standalone (ac3)
+ok 407 - tier-1 explicit-ref hit → deterministic, short-circuits (inferCandidates never called)
+ok 408 - stale explicitRef (resolveRef null) → falls through to inference tiers
+ok 409 - graph candidate ≥ threshold → graph-ownership wins even when semantic scores higher (short-circuit)
+ok 410 - graph empty/below-threshold, semantic ≥ threshold → semantic
+ok 411 - semantic candidate just below threshold → defers to prompt (no silent attach)
+ok 412 - tied graph candidates at/above threshold → defers to prompt (no arbitrary pick)
+ok 413 - inferCandidates rejects/times out → degrades to prompt then standalone, never throws, never auto-attaches
+ok 414 - inferCandidates returns a resolved {error}-shaped object → degrades to standalone, never throws
+ok 415 - inferCandidates returns a well-typed array carrying a malformed element → filtered, degrades, no throw
+ok 416 - empty defectDescription → semantic tier skipped, graph+prompt order preserved
+ok 417 - nothing clears threshold → promptForRef; a resolvable ref attaches (prompt tier)
+ok 418 - prompt with an unresolvable / empty ref → standalone, parentRef=null
+ok 419 - malformed input (no paths, no description, no ref) throws
+ok 420 - ParentLocation shape invariant: parentRef non-null iff tier ≠ standalone; confidence ≥ threshold on attach
+ok 421 - planMigration: every member of the epic resolves to ONE folder; story artifacts under S<nnn>/; DEF-anchored (no split)
+ok 422 - planMigration: both locate paths — slug-named md via marker, markerless BUILD via hash filename
+ok 423 - planMigration: a hand-written non-artifact doc is never enumerated (not moved, not unmappable)
+ok 424 - planMigration: a standalone item resolves under docs/standalone/ with the LLD createdAt as anchor
+ok 425 - planMigration: an artifact already at its nested destination is SKIPPED (idempotent)
+ok 426 - planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer
+ok 427 - planMigration: a work item with no ANCHOR is still fail-loud unmappable
+ok 428 - applyMigration: git mv relocates each md (history followed), no flat md remains, .insrc/artifacts byte-identical
+ok 429 - applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, names files) before any move
+ok 430 - applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)
+ok 431 - applyMigration: a git-mv failure rolls the run back and leaves no partial mix
+ok 432 - t6 — a pre-seeded FOUR-folder work item converges onto ONE
+ok 433 - t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled
+ok 434 - t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL
+ok 435 - t6 — convergence is idempotent: a second plan after applying has nothing left to move
+ok 436 - t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at
+ok 437 - t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)
+ok 438 - t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug
+ok 439 - t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing
+ok 440 - t6a — end to end: the disagreeing work item converges onto exactly ONE folder
+ok 441 - t8 — a link in an UNMOVED file pointing at a moved path is rewritten
+ok 442 - t8 — a file never rewrites a reference to its OWN old path
+ok 443 - t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html
+ok 444 - t9 — a companion is never overwritten at its destination
+ok 445 - t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost
+ok 446 - t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow
+ok 447 - T5 a DEF with no review is withheld; an override reason approves it and is written on the artifact
+ok 448 - T5 a HLD with no review is withheld; an override reason approves it and is written on the artifact
+ok 449 - T5 a LLD with no review is withheld; an override reason approves it and is written on the artifact
+ok 450 - T5 the message names the reviewer that is needed: a controller review for daemon-authored work
+ok 451 - T5 an ISSUE with no review is approved on the approval alone
+ok 452 - T5 an SPEC with no review is approved on the approval alone
+ok 453 - T5 an PLAN with no review is approved on the approval alone
+ok 454 - T6 a DEF authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 455 - T6 a DEF authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 456 - T6 a DEF authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 457 - T6 a DEF authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 458 - T6 a HLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 459 - T6 a HLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 460 - T6 a HLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 461 - T6 a HLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 462 - T6 a LLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 463 - T6 a LLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 464 - T6 a LLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 465 - T6 a LLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 466 - T6 an other-party review whose verdict BLOCKS still withholds without an override
+ok 467 - T6 an unknown author or an unknown reviewer never withholds by itself
+ok 468 - T6 older records with no party field are judged by their model labels
+ok 469 - T6 the same-party rule applies to any artifact that carries a review, also one that needs none
+ok 470 - T7 a BUILD record whose Story has no code review is withheld (enforcement off)
+ok 471 - T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)
+ok 472 - T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)
+ok 473 - T7 a BUILD record whose Story has no code review is withheld (enforcement on)
+ok 474 - T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)
+ok 475 - T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)
+ok 476 - T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label
+ok 477 - T7 a code review that cannot be read is no code review
+ok 478 - T7 the TUI approve service applies the same rules: it calls the same function
+ok 479 - T8 a batch approval lists every withheld artifact in skipped[] with its reason, and approves the rest
+ok 480 - T18 a DEF fixture (author: controller) stamped with the shared helper is approved with no override
+ok 481 - T18 a DEF fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 482 - T18 a DEF fixture (author: none) stamped with the shared helper is approved with no override
+ok 483 - T18 a HLD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 484 - T18 a HLD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 485 - T18 a HLD fixture (author: none) stamped with the shared helper is approved with no override
+ok 486 - T18 a LLD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 487 - T18 a LLD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 488 - T18 a LLD fixture (author: none) stamped with the shared helper is approved with no override
+ok 489 - T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 490 - T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 491 - T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override
+ok 492 - T18 a DEF authored by the controller is stamped with a passing review by the daemon
+ok 493 - T18 a DEF authored by the daemon is stamped with a passing review by the controller
+ok 494 - T18 a DEF with no author gets a daemon review, which no known author can match
+ok 495 - T18 a HLD authored by the controller is stamped with a passing review by the daemon
+ok 496 - T18 a HLD authored by the daemon is stamped with a passing review by the controller
+ok 497 - T18 a HLD with no author gets a daemon review, which no known author can match
+ok 498 - T18 a LLD authored by the controller is stamped with a passing review by the daemon
+ok 499 - T18 a LLD authored by the daemon is stamped with a passing review by the controller
+ok 500 - T18 a LLD with no author gets a daemon review, which no known author can match
+ok 501 - T18 an older fixture is read by its attribution labels: written by `client`, reviewed by the daemon
+ok 502 - T18 a BUILD record (author: controller) gets a passing code-review record beside it, by the daemon
+ok 503 - T18 a BUILD record (author: daemon) gets a passing code-review record beside it, by the controller
+ok 504 - T18 a BUILD record (author: none) gets a passing code-review record beside it, by the daemon
+ok 505 - resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (no story segment)
+ok 506 - resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/
+ok 507 - resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone, same internal S<nnn> grouping
+ok 508 - resolveArtifactMdPath: bare <KIND>.md; folder key is fileSeg(slug)+epicSegment; identity (not filename) supplies the key
+ok 509 - resolveArtifactMdPath: throws when a story-scoped kind gets an epic-level identity
+ok 510 - resolveArtifactMdPath: story ordinal is zero-padded to S<nnn> (>=1000 keeps full width)
+ok 511 - listWorkItems: one kind-tagged, sorted entry per work-item folder across both top-levels
+ok 512 - listWorkItems: empty list (no throw) when docs/epics and docs/standalone are absent
+ok 513 - listArtifactMdPaths: every md within one work item (item-root + each S<nnn>/)
+ok 514 - lldArtifactPaths: md is the nested resolver path; json is unchanged ARTIFACTS_DIR/<hashId>.json
+ok 515 - lldArtifactPaths: epicSlug omitted → folder label falls back to fileSeg(epicHash); json unchanged
+ok 516 - lldMdRel: nested repo-relative md path matching the absolute helper
+ok 517 - defineArtifactId is unchanged (hash-flat json store stays untouched)
+ok 518 - resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD.md (ac2)
+ok 519 - resolveCompanionPath: standalone kind lands under docs/standalone
+ok 520 - resolveCompanionPath: throws for a story-scoped companion missing identity.story
+ok 521 - resolveCompanionPath: rejects a companionFileName containing a path separator
+ok 522 - listPendingArtifacts returns ONLY pending artifacts (approvedAt/rejectedAt excluded) — ac1
+ok 523 - listPendingArtifacts maps each descriptor field (kind/title/mdPath/workItemId/openQuestionCount/state)
+ok 524 - listPendingArtifacts excludes a non-union KIND even when unapproved (BUILD)
+ok 525 - listPendingArtifacts returns [] for an absent .insrc/artifacts dir (not a throw)
+ok 526 - listPendingArtifacts skips a single malformed JSON file and still returns the rest
+ok 527 - listPendingArtifacts defaults: no openQuestions -> 0; no derivable workItemId -> omitted
+ok 528 - listPendingArtifacts falls back title to workItemId then artifactId when body has none
+ok 529 - handleWorkflowPending: fixture repo with pending artifacts -> { artifacts } (ac1)
+ok 530 - handleWorkflowPending: all-approved / absent store -> { artifacts: [] } (ac3, distinct from error)
+ok 531 - handleWorkflowPending: repo-unresolved (no param, no env) -> { error }, NOT { artifacts: [] } (ac2)
+ok 532 - handleWorkflowPending: store-unreadable (artifacts path is a file) -> { error } (ac2)
+ok 533 - checkPlanTaskGraph: accepts a valid single-task graph
+ok 534 - checkPlanTaskGraph: accepts a valid multi-task ordered graph
+ok 535 - checkPlanTaskGraph: rejects a dependency cycle
+ok 536 - checkPlanTaskGraph: rejects a dangling dependsOn id
+ok 537 - checkPlanTaskGraph: rejects order that is not a valid topological order
+ok 538 - checkPlanTaskGraph: rejects a non-t\\d id and empty derivedFrom
+ok 539 - checkPlanTaskGraph: rejects design under-coverage (a citation no Task derives from)
+ok 540 - checkPlanTaskGraph: rejects a derivedFrom id with no matching citation
+ok 541 - checkTestStrategyCoverage: returns [] for a total coverage map
+ok 542 - checkTestStrategyCoverage: flags an uncovered LLD strategy item
+ok 543 - checkTestStrategyCoverage: flags a coverage row with an unknown task id
+ok 544 - checkTestStrategyCoverage: flags a Task with an empty tests[]
+ok 545 - checkTestStrategyCoverage: flags a coverage claim whose Task names no tests
+ok 546 - checkTestStrategyCoverage: accepts one-to-many and many-to-one mappings
+ok 547 - renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task table + [[cN]]
+ok 548 - renderPlanMarkdown output passes validateCitations (every citation grounded)
+ok 549 - planArtifactPaths: nested story-scoped md under docs/epics + hash-json under .insrc/artifacts; hash fallback
+ok 550 - jsonPathForMd resolves a rendered plan md back to its canonical json; approve sets approvedAt
+ok 551 - isPlanBody guards the tasks + testStrategyCoverage shape
+ok 552 - requireApprovedLld: returns the LLD when approved + non-stale
+ok 553 - requireApprovedLld: throws ArtifactNotApprovedError when approvedAt is missing
+ok 554 - requireApprovedLld: throws when rejectedAt is set
+ok 555 - requireApprovedLld: throws when effective hash differs and no stale-ack
+ok 556 - requireApprovedLld: returns the LLD when stale but stale-acked
+ok 557 - requireApprovedLld: throws ArtifactMissingError when no LLD exists
+ok 558 - readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts
+ok 559 - readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)
+ok 560 - readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent
+ok 561 - questionId: parses a leading [id / verdict] tag; falls back to a stable sha
+ok 562 - openQuestions / unresolvedOpen reflect recorded resolutions
+ok 563 - recordResolution persists a resolved choice to HLD meta + renders section
+ok 564 - recordResolution ignore + defer persist the right status to DEF meta
+ok 565 - recordResolution throws on an unknown questionId
+ok 566 - listDeferred enumerates deferred questions across DEF + HLD + LLDs
+ok 567 - parseArtifactId: DEF/HLD/LLD decode to the (kind, epicHash, storyId) locator
+ok 568 - parseArtifactId: malformed or unsupported ids return null
+ok 569 - an openQuestionId-anchored comment resolves that existing question (no append)
+ok 570 - a section/quote/general comment appends a new open question then resolves it (a1)
+ok 571 - a stale openQuestionId (not a current question) falls back to the append path
+ok 572 - recorded === comments written; resolutions[] reports one entry per comment
+ok 573 - malformed/unsupported artifactId -> { error }, no write
+ok 574 - empty comments or a blank body -> { error }
+ok 575 - repo unresolved -> { error }
+ok 576 - absent artifact json -> { error } (recorded 0, before any write)
+ok 577 - a mid-batch record failure -> { error } naming recorded-so-far, no silent drop
+ok 578 - re-submitting the SAME general comment is idempotent (no duplicate open question)
+ok 579 - read-only-except-target: only the target artifact json is written
+ok 580 - approve is refused when the review verdict is block and no override
+ok 581 - approve proceeds with an override reason and records reviewOverride
+ok 582 - approve proceeds normally when the verdict is not block
+ok 583 - epicCatalog enumerates Epics with problem + stories + approved flag
+ok 584 - epicCatalog marks an un-approved Epic as not approved + returns [] for an empty repo
+ok 585 - nextStoryId returns s<max+1>
+ok 586 - appendStoryToDefine appends the Story, re-renders md, and retains approval
+ok 587 - appendStoryToDefine rejects a duplicate story id
+ok 588 - applyAddStory appends a new StoryBoundary to the effective HLD
+ok 589 - applyAddStory rejects a story id that already has a boundary
+ok 590 - composeSpecFocus: includes intent, scope, every non-goal, and every decision; deterministic
+ok 591 - resolveStageFocus: an approved spec seeds the focus + sets seededFromSpec (ac1)
+ok 592 - resolveStageFocus: no specHash is a pure passthrough — focus verbatim, seededFromSpec unset (ac4)
+ok 593 - resolveStageFocus: an unapproved spec throws SpecNotApprovedError (never seeds an unapproved spec, k12)
+ok 594 - resolveStageFocus: a missing specHash throws SpecArtifactNotFoundError
+ok 595 - ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surfaces it when seeded
+ok 596 - ac4: a plain-focus finalizeDefine leaves meta.seededFromSpec unset + no seeded-from header line
+ok 597 - ac3: specScopeFitsStandalone is true for feature/small, false for epic/trivial (surfaced, never narrowed)
+ok 598 - ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + renders the Seeded-from line
+ok 599 - ac4: a plain-focus standalone LLD leaves meta.seededFromSpec unset + no Seeded-from line
+ok 600 - ac1/ac2: resolveStageFocus composes the same framing for the standalone param bag as for define
+ok 601 - deriveSlug drops stopwords + hyphenates the rest
+ok 602 - deriveSlug caps at MAX_TOKENS (6) distinctive words
+ok 603 - deriveSlug lowercases + strips punctuation
+ok 604 - deriveSlug rejects all-stopword focus
+ok 605 - deriveSlug rejects empty
+ok 606 - safeDeriveSlug(undefined) returns a stable non-empty default, no throw
+ok 607 - safeDeriveSlug('') returns a stable non-empty default, no throw
+ok 608 - safeDeriveSlug(valid focus) is byte-identical to deriveSlug (happy path unchanged)
+ok 609 - safeDeriveSlug on an all-stopword/degenerate focus falls back to a non-empty slug (deriveSlug throws)
+ok 610 - renderSpecMarkdown: emits the id-marker header + one section per body field
+ok 611 - renderSpecMarkdown: an empty openItems list omits the Open items section (confirmed spec)
+ok 612 - isSpecBody: accepts a well-formed body, rejects under-structured ones
+ok 613 - specArtifactId / specArtifactPaths: hash-named json, nested slug-labelled md under docs/standalone
+ok 614 - writeAtomic round-trip: SpecArtifact json is deep-equal + idempotent
+ok 615 - prepareSynthesize: brainstorm is supported (no "not yet supported" throw) and grounds on s1
+ok 616 - finalizeArtifact[brainstorm]: converged output → exactly one SpecArtifact, approvedAt unset
+ok 617 - finalizeArtifact[brainstorm]: rejects an under-structured body (empty scopeBoundary), writes nothing
+ok 618 - finalizeArtifact[brainstorm]: rejects a ruled-out direction missing from nonGoals
+ok 619 - requireApprovedSpec: returns the record when meta.approvedAt is set
+ok 620 - requireApprovedSpec: throws SpecNotApprovedError (naming the SPEC id + outstanding) when unapproved (ac4)
+ok 621 - readSpecArtifact: throws SpecArtifactNotFoundError on a missing hash
+ok 622 - readSpecArtifact: throws a plain Error (not the typed ones) on a corrupt body
+ok 623 - ac3: a freshly persisted spec is unapproved and cannot be consumed until an explicit approve stamps it
+ok 624 - ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workflow = brainstorm)
+ok 625 - ac2: approve refuses a block-verdict SPEC without an override, approves with one
+ok 626 - ac4: resolveApprovedSpec maps unapproved → not-approved, missing → not-found, approved → { spec }
+ok 627 - writeAtomic creates parent dirs + writes content
+ok 628 - writeAtomic overwrites existing file
+ok 629 - writeAtomic refuses relative paths
+ok 630 - writeAtomic refuses empty path
+ok 631 - stubArtifactPaths returns docs/stub layout
+ok 632 - defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 633 - hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 634 - lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/
+ok 635 - md folder is labelled by slug; json stays named by hash
+ok 636 - slug label is sanitised against path separators
+ok 637 - amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/
+ok 638 - amendmentFilenamePrefix is `AMD-<hash>-`
+ok 639 - lldFilenamePrefix is `LLD-<hash>-`
+ok 640 - amendmentsRootDir points at .insrc/artifacts
+ok 641 - t1 — a DEF present and readable wins outright; the ISSUE is never consulted
+ok 642 - t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator
+ok 643 - t1 — a DEF absent with an ISSUE present yields the ISSUE's values
+ok 644 - t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins
+ok 645 - t1 — a DEF that PARSES but carries none of the three fields also falls through
+ok 646 - t1 — neither artifact readable yields an empty result and does NOT throw
+ok 647 - t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected
+ok 648 - t1 — UNWIRED: the accessor exists but changes no folder path yet
+ok 649 - t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined
+ok 650 - t2 — signature and return meaning unchanged for a DEF-bearing epic
+ok 651 - t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment
+ok 652 - t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory
+ok 653 - t2 — the anchor read is finalize-time only: path construction performs no read
+ok 654 - t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item
+ok 655 - t5 — the raw hash appears nowhere in the composed folder name
+ok 656 - t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt
+ok 657 - t5 — the hash fallback is still REACHABLE for a work item with no definition artifact
+ok 658 - 3a98d279 — the STANDALONE route takes the label from the head, not the LLD
+ok 659 - 3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD's createdAt
+ok 660 - 3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash
+ok 661 - 3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it
+ok 662 - 3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`
+ok 663 - 0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last
+ok 664 - 0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD
+ok 665 - 0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD
+ok 666 - 0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing
+ok 667 - b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one
+ok 668 - 0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record
+ok 669 - 0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort
+ok 670 - 0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder
+ok 671 - validateCitations passes when every ref resolves + every id used
+ok 672 - validateCitations fails on unknown ref
+ok 673 - validateCitations tolerates an unused citation (harmless padding)
+ok 674 - validateCitations fails on duplicate id
+ok 675 - validateCitations fails on non-cN id shape
+ok 676 - S001: validateCitations IGNORES lc-refs and k-refs — an lc/k ref absent from the citation list does NOT fail
+ok 677 - S001: validateCitations still FAILS a genuine dangling c-ref (the guard is not weakened by S001)
+ok 678 - checkScopeBoundary passes on stub workflow (no rules)
+ok 679 - checkScopeBoundary fails define artifact containing a code fence
+ok 680 - checkScopeBoundary fails design.epic containing a task list
+ok 681 - renderCitationBlock formats the tail block
+ok 682 - renderCitationBlock returns empty on empty list
+ok 683 - isTrackerPushRefs accepts valid push refs
+ok 684 - isTrackerPushRefs rejects missing epicRef
+ok 685 - isTrackerSyncRefs accepts valid sync refs
+ok 686 - isTrackerPostRefs accepts valid post refs
+ok 687 - isTrackerChecklistResult validates shape
+ok 688 - renderTrackerMarkdown for push shows refs + labels + all-passed checklist
+ok 689 - renderTrackerMarkdown for sync shows per-story status
+ok 690 - renderTrackerMarkdown surfaces failed checklist items with notes
+ok 691 - HLD approve creates the Epic issue, links docs, and writes nested meta.tracker
+ok 692 - LLD approve creates the Story issue + aggregates into the Define; links the LLD doc
+ok 693 - re-approving the HLD is idempotent (no second issue)
+ok 694 - duplicate guard adopts an existing Epic issue instead of creating one
+ok 695 - tracker disabled (no config) skips cleanly
+ok 696 - missing required meta fields skip
+ok 697 - R4: posts the review report as an issue comment when the artifact carries meta.review
+ok 698 - task push is opt-out by default (pushTasks unset) → skipped, no issues
+ok 699 - pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue
+ok 700 - pushTasks: falls back to an untyped issue when the org lacks the issue type
+ok 701 - pushTasks: re-push is idempotent (adopts taskRefs, no new issues)
+ok 702 - pushTasks: skips when the Story issue does not exist yet
+ok 703 - orchestrator.ts wires UX_CONTENT_GATE_RULE at every synthesizer prompt that admits the uxDefinition slot (source-scan)
+ok 704 - both runner step-prompt builders carry the UX gate adjacent to the ER gate (source-scan)
+ok 705 - the HLD (design.epic) synthesize body schema ADMITS uxDefinition but never requires it (admit-but-never-force)
+ok 706 - the LLD (design.story) synthesize body schema ADMITS uxDefinition but never requires it (admit-but-never-force)
+ok 707 - fieldAdd appends a documented field marker to interfaceSketch
+ok 708 - fieldAdd refuses duplicate member name (matches methods too)
+ok 709 - fieldRemove requires breaking=true + migrationCue
+ok 710 - fieldRemove appends removal marker
+ok 711 - rename swaps the contract name
+ok 712 - rename refuses when oldName does not match
+ok 713 - methodAdd rejects signatures with function body
+ok 714 - methodAdd appends a signature marker
+ok 715 - reassignOwnership moves ownership from oldOwner to newOwner
+ok 716 - reassignOwnership refuses wrong oldOwner
+ok 717 - addConsumer appends consumer + depends edge (S002 ac4: stays cg3 inverse-consistent)
+ok 718 - addConsumer refuses when consumer is already the owner
+ok 719 - nonFunctional.retarget swaps target value
+ok 720 - nonFunctional.retarget refuses when property is unset
+ok 721 - rollout.reorder permutes phase order
+ok 722 - rollout.reorder refuses non-permutations
+ok 723 - rollout.splitPhase divides one phase into two
+ok 724 - rollout.splitPhase refuses when union of new stories != original stories
+ok 725 - rollout.mergePhases merges a contiguous run
+ok 726 - rollout.mergePhases refuses non-contiguous phases
+ok 727 - applyAmendments is deterministic (same inputs → same outputs)
+ok 728 - getEffectiveHld with no amendments returns base unchanged
+ok 729 - getEffectiveHld applies approved amendments to body
+ok 730 - getEffectiveHash changes when an amendment is approved
+ok 731 - scanLldStaleness reports up-to-date when LLD hash matches current effective
+ok 732 - scanLldStaleness reports amendment-<id> when a new amendment lands
+ok 733 - scanLldStaleness reports hld-rerun when base runId changed
+ok 734 - scanLldStaleness returns [] when no LLDs exist
+ok 735 - nextAmendmentId starts at 1 in an empty repo
+ok 736 - nextAmendmentId advances past existing entries
+ok 737 - proposeAmendment writes a record then readAmendment returns it
+ok 738 - proposeAmendment refuses duplicate ids
+ok 739 - proposeAmendment refuses non-pending status at write time
+ok 740 - approveAmendment sets status + approvedAt + approvedBy
+ok 741 - approveAmendment refuses double-approve
+ok 742 - rejectAmendment refuses missing reason
+ok 743 - rejectAmendment refuses on approved records
+ok 744 - listAmendments returns records in id-suffix order
+ok 745 - listAmendments filters by Epic hash prefix
+ok 746 - listApprovedAmendments filters + sorts by approvedAt
+ok 747 - readAmendment throws when record is missing
+ok 748 - validateAdaptiveCardsAsset: present + parseable → returns silently
+ok 749 - validateAdaptiveCardsAsset: missing schema → throws with one copy-assets Fix: line (t1)
+ok 750 - validateAdaptiveCardsAsset: empty file → reason "file is empty"
+ok 751 - validateAdaptiveCardsAsset: malformed JSON → unparseable schema
+ok 752 - the shipped Adaptive Cards schema validates + records the version comment
+ok 753 - the shipped schema compiles under the shared ajv, accepts a good UxDefinition + rejects a malformed one
+ok 754 - assessDiagramNeed: empty when the model says no visual is warranted (one serial call)
+ok 755 - assessDiagramNeed: a type:"er" need when warranted
+ok 756 - assessDiagramNeed: warranted:true but no diagrams → treated as no-need
+ok 757 - assessDiagramNeed: fail-safe to no-diagram on a provider error (never throws)
+ok 758 - assessDiagramNeed: fail-safe on an unparseable/invalid provider output (schema violation)
+ok 759 - isHldBody: passes with NEITHER new field (older body) and WITH the new fields
+ok 760 - isLldBody: passes with NEITHER new field (older body) and WITH the new fields
+ok 761 - componentDependencyDefinitionToIr: components→nodes, dependencies→edges, docType component-dependency
+ok 762 - componentDependencyDefinitionToIr: an isolated component renders as an edge-less node
+ok 763 - componentDependencyDefinitionToIr: byte-identical IR for a byte-identical def (deterministic)
+ok 764 - componentDependencyDefinitionToIr: a dangling dependency endpoint throws ComponentDefinitionError
+ok 765 - validateComponentDependencyDefinition: sound → no findings; dangling → HIGH breach
+ok 766 - validateComponentDependencyDefinition: a duplicate component id → HIGH breach
+ok 767 - erDefinitionToIr: sections = Purpose + Fields & schema + Legend
+ok 768 - uxDefinitionToIr: sections = Purpose + Elements & roles + Legend
+ok 769 - sequenceDefinitionToIr: sections = Purpose + Participants & message flow + Legend
+ok 770 - componentDependencyDefinitionToIr: sections = Purpose + Components & dependencies + Legend
+ok 771 - empty-but-valid definitions emit Purpose + Legend only (field section omitted, no throw)
+ok 772 - toIr does not mutate the input definition (read-only derivation)
+ok 773 - renderErCompanion with opts.sourceLink writes the escaped back-link into the HTML
+ok 774 - renderSequenceCompanion without sourceLink still writes HTML (backward-safe) — band present, no link
+ok 775 - renderSequenceCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+ok 776 - renderComponentCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref
+ok 777 - renderSequenceCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+ok 778 - renderComponentCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+ok 779 - validateErDefinition: a metamodel-valid, referentially-sound model → no findings (ac3)
+ok 780 - validateErDefinition: a shape/cardinality violation → HIGH breach via ajv vs the vendored metamodel (ac4)
+ok 781 - validateErDefinition: a dangling relationship range → HIGH referential-integrity breach
+ok 782 - validateErDefinition: ER<->FR mismatch → a finding when a FunctionalDefinition is supplied
+ok 783 - validateErDefinition: validates the JSON element only — no path/file input exists, sound model on no filesystem
+ok 784 - validateErDefinition: a class with no identifier → a LOW observation (never blocks)
+ok 785 - erDefinitionToIr: classes→entities, scalar slots→attributes, class slots→relationship edges w/ crow's-foot
+ok 786 - erDefinitionToIr: deterministic — same erDef yields byte-identical IR
+ok 787 - erDefinitionToIr: throws ErDefinitionError for a dangling class-ranged slot (defense-in-depth)
+ok 788 - crowsFootToken: derives crow's-foot from LinkML cardinality
+ok 789 - generateErCompanions: warranted + sound erDefinition → renders a sibling companion + returns the ref
+ok 790 - generateErCompanions: not warranted → no companion (inert)
+ok 791 - generateErCompanions: an invalid (HIGH) erDefinition is not rendered
+ok 792 - companionBodyLines: renders each diagram companion as a LINK, never inlining content (k1/ac2)
+ok 793 - companionBodyLines: absent/empty companions → [] (extension slot omitted; forward-only)
+ok 794 - validateLinkmlMetamodelAsset: present + parseable → returns silently
+ok 795 - validateLinkmlMetamodelAsset: missing schema → throws with one copy-assets Fix: line (t2)
+ok 796 - validateLinkmlMetamodelAsset: empty file → reason "file is empty"
+ok 797 - validateLinkmlMetamodelAsset: malformed JSON → unparseable schema
+ok 798 - the shipped LinkML metamodel schema validates + records the LinkML version
+ok 799 - the shipped schema accepts a known-good ErDefinition and rejects a malformed one via ajv (ac4)
+ok 800 - renderErCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref (ac2/ac4)
+ok 801 - renderErCompanion: ofSectionId is carried onto the ref when supplied
+ok 802 - renderErCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written
+ok 803 - sequenceDefinitionToIr: participants→call-frame nodes, messages→edges, docType call-sequence
+ok 804 - sequenceDefinitionToIr: a recurse message edge id carries the :repeat suffix
+ok 805 - sequenceDefinitionToIr: a truncation → a truncation node citing its frame
+ok 806 - sequenceDefinitionToIr: byte-identical IR for a byte-identical def (deterministic)
+ok 807 - sequenceDefinitionToIr: a dangling message endpoint throws SequenceDefinitionError
+ok 808 - validateSequenceDefinition: a sound def → no findings; a dangling endpoint → HIGH breach
+ok 809 - validateSequenceDefinition: a non-array participants/messages → HIGH breach
+ok 810 - isHldBody / isLldBody: pass with NEITHER new field and WITH uxDefinition + adherence
+ok 811 - renderLldMarkdown: uxDefinition + adherence present but NO ux-mock companion → byte-identical (omit-slot)
+ok 812 - renderLldMarkdown: a ux-mock companion renders the UX section as a LINK (never inlined)
+ok 813 - renderLldMarkdown: an ER + a UX companion render in their OWN slots
+ok 814 - ADHERENCE_PROPERTY_SCHEMA: validates a recorded selection against the AdherenceDimension set
+ok 815 - isAdherenceDimension: only the five selectable members
+ok 816 - finalize seam: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)
+ok 817 - finalize seam: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots
+ok 818 - HLD: a valid uxDefinition → sibling ux-mock HTML + a UX section LINK in the markdown (never inlined)
+ok 819 - HLD: a body with BOTH an ER and a UX definition emits BOTH companions in their own slots
+ok 820 - HLD: a body with NO ux-mock companion renders no UX section at all (absent-safe, byte-identical)
+ok 821 - t1: a TextBlock renders its text as CONTENT, not as a 'TextBlock: "…"' caption
+ok 822 - t1: an Input.Text renders a LABELLED TEXT CONTROL carrying its label and placeholder
+ok 823 - t1: an Input.ChoiceSet renders a labelled control listing EVERY choice title
+ok 824 - t1: an ActionSet renders ONE BUTTON PER ACTION, with Submit and OpenUrl DISTINGUISHABLE
+ok 825 - t1: an Image renders a LABELLED PLACEHOLDER carrying url and altText, and is NEVER fetched
+ok 826 - t1: a Container renders a visibly grouped region CONTAINING its children
+ok 827 - t1: a ColumnSet renders its Columns SIDE BY SIDE rather than stacked
+ok 828 - t1: a Column renders as a region inside its ColumnSet, preserving its width hint
+ok 829 - t1: source-scan — the element switch is EXHAUSTIVE over UxElement, so a ninth variant fails the build
+ok 830 - t1: an element OUTSIDE the union emits a VISIBLE placeholder naming that type, siblings intact
+ok 831 - t1: an unrecognised element never THROWS and never silently disappears
+ok 832 - t1: a Container whose items is MALFORMED renders an empty group and the rest survives
+ok 833 - t1: text containing HTML metacharacters renders as LITERAL TEXT, everywhere it can appear
+ok 834 - t1: the emitter is PURE — the same definition yields a byte-identical string
+ok 835 - t3: renderUxCompanion is now WIRED to the emitter and off the diagram seam
+ok 836 - renderUxCompanion: ok → writes the sibling HTML + returns a ux-mock ref (ac1)
+ok 837 - renderUxCompanion: ofSectionId is carried onto the ref when supplied
+ok 838 - renderUxCompanion: the render path has NO failure mode — the old DiagramGenerationError is unreachable
+ok 839 - t2: renderUxCompanion still stamps kind:'ux-mock' — the ref contract no consumer may notice changing
+ok 840 - t2: the written companion carries NO diagram runtime and fetches nothing
+ok 841 - t2: DETERMINISM — rendering the same definition twice produces byte-identical files
+ok 842 - t2: the narrated prose appears ALONGSIDE the mock, not instead of it
+ok 843 - t2: an EMPTY card body still yields an openable document with the prose
+ok 844 - validateUxDefinition: a schema-valid card → no findings (ac1)
+ok 845 - validateUxDefinition: an unknown card element type → HIGH breach via ajv vs the vendored schema (ac2)
+ok 846 - validateUxDefinition: a missing required field (TextBlock without text) → HIGH breach
+ok 847 - validateUxDefinition: a wrong card discriminator → HIGH breach
+ok 848 - validateUxDefinition: validates the JSON element only — no path/file input exists
+ok 849 - validateUxDefinition: a malformed vendored asset raises UxDefinitionError (t1)
+ok 850 - uxDefinitionToIr: card→root node, every element a node, containment an edge (ac1)
+ok 851 - uxDefinitionToIr: deterministic — same uxDef yields byte-identical IR
+ok 852 - feedbackBodyLines: absent → []
+ok 853 - feedbackBodyLines: empty → []
+ok 854 - feedbackBodyLines: present → one bullet per entry with author/timestamp/target/comment
+ok 855 - changeLogBodyLines: absent → []
+ok 856 - changeLogBodyLines: empty → []
+ok 857 - changeLogBodyLines: present → one bullet per entry with target file/author/timestamp (+ optional segment + summary)
+ok 858 - sectionSlug: deterministic lowercase-kebab, number-prefixed with ordinal
+ok 859 - computeSectionNumbers: numbers body sections 1..N in order; unnumbered/envelope absent
+ok 860 - renderSharedContextReference: reference line names source + human section, no prose
+ok 861 - deriveHldContextRef: engine-derived HLD ref from epicHash
+ok 862 - renderFromFormat: envelope + numbered sections + nested item numbers + shared-ref line
+ok 863 - renderFromFormat: a required body section with no binding throws (fail-fast)
+ok 864 - renderFromFormat: an optional section with no binding is skipped (absent-safe)
+ok 865 - renderFromFormat: shared-ref falls back to ctx.defaultRef; empty section renders None
+ok 866 - every default format: unnumbered required Summary, a References section, and a numbered body
+ok 867 - defaultFormat(kind) returns the matching format
+ok 868 - DEF format: business-tagged Summary + FR section + Stories, in human-first order
+ok 869 - LLD format: HLD context is a shared-ref (de-dup) + NAMED S003/S004 extension slots
+ok 870 - renderFromFormat over the LLD default: numbered envelope with a populated Summary
+ok 871 - loadDocumentFormat: the bundled default resolves for 'define' and equals the in-code default
+ok 872 - loadDocumentFormat: the bundled default resolves for 'hld' and equals the in-code default
+ok 873 - loadDocumentFormat: the bundled default resolves for 'lld' and equals the in-code default
+ok 874 - loadDocumentFormat: the bundled default resolves for 'plan' and equals the in-code default
+ok 875 - loadDocumentFormat: a per-repo override WINS over the bundled default
+ok 876 - loadDocumentFormat: a MALFORMED repo override degrades to the bundled default
+ok 877 - loadDocumentFormat: the mtime cache picks up a hot edit to a repo override
+ok 878 - resolveDocumentFormat: returns the bundled default DocumentFormat for a repo with no override
+ok 879 - resolveDocumentFormat: a repo override flows through to the renderer resolution path
+ok 880 - round-trip: parse(serialize(defaultFormat('define'))) deep-equals the in-code default
+ok 881 - round-trip: parse(serialize(defaultFormat('hld'))) deep-equals the in-code default
+ok 882 - round-trip: parse(serialize(defaultFormat('lld'))) deep-equals the in-code default
+ok 883 - round-trip: parse(serialize(defaultFormat('plan'))) deep-equals the in-code default
+ok 884 - parse: a template with no header is REJECTED
+ok 885 - parse: a kind mismatch against expectKind is REJECTED
+ok 886 - parse: a section directive with no id is REJECTED
+ok 887 - parse: an invalid audience is REJECTED
+ok 888 - parse: an unknown directive attribute is REJECTED
+ok 889 - parse: a directive with no following heading is REJECTED
+ok 890 - parse: an item-section before an itemFormat directive is REJECTED
+ok 891 - serialize: a per-repo edit (reordered/renamed section) parses back into the edited format
+ok 892 - isDefineBody: passes WITHOUT feedback (legacy) and WITH it
+ok 893 - isHldBody: passes WITHOUT feedback (legacy) and WITH it
+ok 894 - isLldBody: passes WITHOUT feedback (legacy) and WITH it
+ok 895 - isPlanBody: passes WITHOUT feedback (legacy) and WITH it
+ok 896 - FeedbackEntry carries the full authorship + target + comment shape
+ok 897 - a FeedbackEntry with a bare target (no version/segment/kind) is valid
+ok 898 - ChangeLogEntry (s2-reserved) shares the authorship stamp
+ok 899 - round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows
+ok 900 - rejects an out-of-tree path (not under .insrc/artifacts or docs/)
+ok 901 - rejects a malformed / missing artifact JSON
+ok 902 - rejects a blank author or blank comment
+ok 903 - writeArtifactJson refuses an out-of-tree destination
+ok 904 - an approved issue artifact fires advanceBugfixAfterIssue with {repoPath, issueHash, repo}
+ok 905 - a non-bugfix approval fires no seam and returns an empty followOn
+ok 906 - an issue artifact missing issueHash does NOT advance (guarded)
+ok 907 - a rejecting advance seam is captured as ok:false + note, never propagates
+ok 908 - a skipped advance result surfaces its reason as an ok:true note
+ok 909 - bugfixCategory:false is threaded through to the seam opts
+ok 910 - a BUILD artifact carrying issueHash fires completeBugfixTracker
+ok 911 - a BUILD artifact WITHOUT issueHash fires no completion (current data-model reality)
+ok 912 - a batch fires the seam only for the matching completed artifact
+ok 913 - an unreadable / meta-less artifact is skipped (no seam, no throw)
+ok 914 - effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion
+ok 915 - DEFAULT_DEPS carries the diagram slot (conditional at run time)
+ok 916 - runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass
+ok 917 - runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block
+ok 918 - runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)
+ok 919 - expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow
+ok 920 - enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false
+ok 921 - assembler: a non-empty working tree yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature) and does NOT call the HEAD^ seam
+ok 922 - assembler: an empty working tree falls back to the last-commit diff (ac2)
+ok 923 - assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles
+ok 924 - assembler: both the working tree and the last commit empty => a valid grounding with symbols:[] (no crash)
+ok 925 - assembler: a truncated diff still yields a valid grounding (bounded hunks + a truncation note, review proceeds)
+ok 926 - assembler: a working-tree git failure propagates (DiffUnavailableError)
+ok 927 - assembler: a clean tree whose last-commit diff also fails propagates (both paths unavailable)
+ok 928 - assembler (integration): a clean-working-tree repo recovers the last commit via the real git_diff HEAD^ fallback — read-only
+ok 929 - T47: with NO opts the calls on the seams, including their argument counts, are exactly the old ones
+ok 930 - a base and globs: the working tree is read with the globs; when it is clean the RANGE is read, with the base and the globs
+ok 931 - a dirty working tree is reviewed as it is: neither the range nor the last commit is consulted
+ok 932 - T45: a base whose range is EMPTY after exclusion gives an empty result — the last-commit fallback is NOT used
+ok 933 - globs but NO base: the last-commit fallback runs, with the globs
+ok 934 - seams written before rangeDiff existed: a base is ignored and the sequence is the globs-only one
+ok 935 - T46: a failing RANGE diff retries the sequence without the base; one warning
+ok 936 - T46: failing EXCLUSIONS step all the way down to the old sequence, called with no excludeGlobs argument; two warnings
+ok 937 - T46: when the OLD sequence itself fails, DiffUnavailableError still leaves the function
+ok 938 - T46: an error that is not a diff failure propagates at once — the fallback does not swallow a bug
+ok 939 - T44 (integration, real git): ledger hunks larger than the diff cap that sort before src/ — with the exclusion every source file keeps its diff text; without it the text is lost
+ok 940 - integration, real git: with no base and a clean tree the last commit is reviewed, minus ledger files
+ok 941 - the range diff carries full hunks for the Story files and none for merged-in files
+ok 942 - a file changed by both a Story commit and the merge carries only the Story's own hunks
+ok 943 - edits folded into a merge commit are reviewed and marked
+ok 944 - a range with no Story change gives an empty grounding without calling git_diff
+ok 945 - a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first
+ok 946 - without hunksByFile buildDiffSymbols splits the body as before
+ok 947 - the range diff applies the exclusions to every per-unit call
+ok 948 - a truncated per-unit call marks the grounding truncated and a storyChangeSet failure steps down
+ok 949 - freshness: a changed file whose per-file indexedAt predates its mtime is stale
+ok 950 - freshness: a changed file whose watermark is >= its mtime is NOT stale
+ok 951 - freshness: a changed path with NO indexable entity (repo indexed AFTER the change) is excluded — does not block forever
+ok 952 - freshness: a never-indexed changed source file (no entities, repo behind the change) is stale
+ok 953 - freshness: a never-indexed repo (watermark 0) with a changed file is stale
+ok 954 - freshness: isProcessing mirrors the injected queue flag and the compute triggers no reindex
+ok 955 - freshness: a mixed changed set reports only the stale files
+ok 956 - freshness: an empty changed set is fresh (no stale files)
+ok 957 - effectiveJudges keeps functional-coverage only for a subject with FRs
+ok 958 - runCodeReview: an FR subject runs five dimensions and a functional-coverage HIGH folds to block
+ok 959 - runCodeReview: a no-FR subject runs exactly the four base dimensions (absent-safe)
+ok 960 - DEFAULT_DEPS carries the functional-coverage slot (conditional at run time)
+ok 961 - expectedDimensions appends functional-coverage only with FRs; schema enum + arity follow
+ok 962 - enforce on + verdict block + no override => { status:blocked } with the reason + counts (ac1)
+ok 963 - enforce on + verdict block + overrideReview => { status:overridden } recording the reason + at (ac2)
+ok 964 - verdict warn => { status:warn } (allowed, warnings surfaced) under enforce on AND off (ac3)
+ok 965 - verdict pass => { status:pass }; the gate never approves and writes nothing (ac4/read-only)
+ok 966 - enforce OFF + verdict block => a non-blocking advisory warn (advisory:true + demoted-block message), distinct from a genuine warn (critique 1)
+ok 967 - absent CR record => { status:no-review } (strictly additive; completion unchanged) (ac4)
+ok 968 - a malformed CR json => { status:no-review } (fail-open, never a spurious block)
+ok 969 - a CR record whose verdict is outside the ReviewVerdict union => { status:no-review } (fail-open)
+ok 970 - an overrideReview reason on a non-block verdict (pass/warn) is a no-op (no overridden status)
+ok 971 - readEnforceFlag fail-safe: opts.enforce omitted on a block record NEVER throws and yields a valid outcome (default false path)
+ok 972 - CONFIG_CATALOG declares codeReview.enforce with type boolean + default false
+ok 973 - s10: the enforce gate over a degraded warn record => status:warn (a non-pass advisory), never pass
+ok 974 - codeReview.grounding: returns { ok:true, grounding } with structured summaries when the subject resolves
+ok 975 - codeReview.grounding: a missing contract (S001) is NOT a decline — the subject resolves (mode B) and a grounding is still produced
+ok 976 - codeReview.grounding: no build yields { ok:false, reason:no-build-record }, never a grounding
+ok 977 - codeReview.grounding: over-the-socket IPC + read-only (live) # SKIP
+ok 978 - assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text
+ok 979 - assembleCodeReviewGrounding: a changed file with no indexed entities yields no rows (omitted, not error)
+ok 980 - assembleCodeReviewGrounding: one row per entity, multiple entities in a file share the file path
+ok 981 - assembleCodeReviewGrounding: empty changed set yields empty grounding
+ok 982 - isTestFile recognises __tests__ dirs and .test/.spec suffixes only
+ok 983 - runCodeReview: all four judges returning findings persist ONE record with dimensions:[four] + folded verdict + counts (ac1)
+ok 984 - runCodeReview: verdict fold matches the ReviewVerdict vocabulary (any-HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) (ac2)
+ok 985 - runCodeReview: the record is written at CR-<epic>-<story> and carries kind:code-review (ac3)
+ok 986 - runCodeReview: the four judges run SERIALLY in [adherence,conventions,coverage,quality] order, never concurrently (ac4)
+ok 987 - runCodeReview: a throwing 2nd judge aborts the run with {ok:false} and writes NOTHING; judges 3-4 do not run (ac5)
+ok 988 - runCodeReview: an in-memory validation failure returns {ok:false} before any write (ac5)
+ok 989 - runCodeReview: a pre-aborted signal returns {ok:false} and writes nothing (ac5)
+ok 990 - runCodeReview: a grounding failure returns {ok:false} and writes nothing (ac5)
+ok 991 - runCodeReview: a successful run writes BOTH the .json and the .md (two write-spy calls)
+ok 992 - runCodeReview: all four dimensions empty => a written PASS record (an empty review is a persisted PASS, not an absence)
+ok 993 - T4 runCodeReview given reviewedBy controller writes it on the record
+ok 994 - T4 runCodeReview given reviewedBy daemon writes it on the record
+ok 995 - T4 runCodeReview given no reviewedBy writes none
+ok 996 - DEFAULT_DEPS: wires the base four judges + conditional functional-coverage + diagram + ux, in fixed order + writeAtomic
+ok 997 - s10: runCodeReview with opts.groundingMode:degraded stamps body.groundingMode === degraded
+ok 998 - s10: capVerdictAtWarn:true + all-empty findings (would fold pass) => verdict warn
+ok 999 - s10: capVerdictAtWarn:true + a HIGH finding => verdict stays block (the cap never lowers block/warn)
+ok 1000 - s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the verdict fold is unchanged (default parity)
+ok 1001 - 0855311b — a subject holding NO LLD and NO build record still files the review in the story's folder
+ok 1002 - b2e16601 — the label comes from the definition head, not from what the LLD stored
+ok 1003 - 0855311b — an LLD-only Small story: the review lands beside the LLD
+ok 1004 - an epic-parented story is unchanged: epic split, the DEF's label and anchor
+ok 1005 - with nothing on disk the subject's own LLD is still the fallback (anchor, split and label)
+ok 1006 - resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated
+ok 1007 - resolveCodeReviewSubject: empty diff is a valid trivial subject (not an error)
+ok 1008 - resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)
+ok 1009 - resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)
+ok 1010 - resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)
+ok 1011 - resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)
+ok 1012 - resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)
+ok 1013 - resolveCodeReviewSubject: git derivation failure -> no-build-record
+ok 1014 - resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)
+ok 1015 - resolveCodeReviewSubject: read-only — only the injected read seams are called
+ok 1016 - T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files
+ok 1017 - T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either
+ok 1018 - T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles
+ok 1019 - T41: a base naming a commit that does not exist -> ok, the same set today's call returns, and exactly one warning
+ok 1020 - T41: with NO resolvable base the first attempt is the ledger-exclusion one — no base is invented
+ok 1021 - the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam
+ok 1022 - T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attempt is called with no options and its result is returned
+ok 1023 - T43: a seam that ALWAYS throws -> no-build-record, after all three attempts
+ok 1024 - T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback
+ok 1025 - effectiveJudges keeps ux only when hasUxAcceptance
+ok 1026 - DEFAULT_DEPS carries the ux slot last (conditional at run time)
+ok 1027 - expectedDimensions: base four when neither fires; pushes ux on hasUxAcceptance
+ok 1028 - expectedDimensions: a declared-but-uncontented adherence selection is still expected (ac3)
+ok 1029 - buildJudgementsSchema: admits ux in the enum exactly when ux is in the computed dims
+ok 1030 - runCodeReview: a valid uxDefinition runs the ux dimension + folds to pass
+ok 1031 - runCodeReview: a required-but-missing UX design folds a ux HIGH to block (un-forked, ac2)
+ok 1032 - runCodeReview: neither uxDefinition nor adherence → exactly the base four (byte-shape compatible)
+ok 1033 - judgeAdherence: maps model findings to DimensionResult{adherence} with expectationRef (ac1)
+ok 1034 - judgeAdherence: no departures => empty findings, no manufactured findings (ac2)
+ok 1035 - judgeAdherence: empty grounding still yields a valid empty result (ac2)
+ok 1036 - judgeAdherence: drops a finding whose location file is outside the changed set
+ok 1037 - judgeAdherence: issues exactly ONE completeStructured call, no other provider method (ac4/k4/k3)
+ok 1038 - judgeAdherence: a differently-decided-but-faithful design raises nothing (ac3)
+ok 1039 - judgeAdherence: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 1040 - ADHERENCE_FINDINGS_SCHEMA per-finding shape is 1:1 with sc3 DimensionFinding fields
+ok 1041 - buildAdherencePrompt: the output-shape reminder is TRAILING (after the changed symbols)
+ok 1042 - judgeAdherence: both contracts null (mode C) -> empty result with ZERO provider calls
+ok 1043 - judgeAdherence: a contract present -> issues exactly one completeStructured call (mode B unchanged)
+ok 1044 - buildAdherencePrompt: mode A includes the LLD body + the Approved plan section + implementation-correctness framing
+ok 1045 - buildAdherencePrompt: mode B (LLD only) includes the LLD body, OMITS the plan section, no null deref
+ok 1046 - every code-review dimension judge passes the reviewed repoPath as cwd
+ok 1047 - judgeConventions: documented-rule breach maps with rule id in expectationRef, confidence:breach, dimension:conventions (ac1)
+ok 1048 - buildConventionsPrompt: embeds the DOCUMENTED_RULES baseline (rule ids present) (ac1)
+ok 1049 - judgeConventions: three distinct TS-rule breaches each survive individually with their location (ac2)
+ok 1050 - CONVENTIONS_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional (ac2)
+ok 1051 - judgeConventions: thin-sample idiom drift is tagged confidence:observation, not breach (ac3)
+ok 1052 - buildConventionsPrompt: system charge carries the breach-vs-observation low-confidence discipline (ac3)
+ok 1053 - judgeConventions: a Promise.all-over-LLM breach maps against the no-promise-all-llm rule with confidence:breach (ac4)
+ok 1054 - judgeConventions: direct-storage (k5) and raw-dump (k6) breaches map through; out-of-changedFiles dropped (ac5)
+ok 1055 - judgeConventions: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+ok 1056 - judgeConventions: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 1057 - judgeConventions: empty grounding still yields a valid empty result (edge)
+ok 1058 - judgeConventions: clean code => empty findings, no manufactured finding (edge)
+ok 1059 - buildConventionsPrompt: the output-shape reminder is TRAILING (after the documented rules, after the symbols)
+ok 1060 - judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)
+ok 1061 - buildCoveragePrompt: serializes the approvedPlan promised tests into the trailing payload (ac1)
+ok 1062 - judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)
+ok 1063 - judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)
+ok 1064 - judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)
+ok 1065 - buildCoveragePrompt: charge distinguishes present-failing from no-test and forbids an unsupported pass-state (ac3)
+ok 1066 - judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)
+ok 1067 - buildCoveragePrompt: charge instructs excluding pre-existing gaps in touched-but-unchanged neighbours (ac4)
+ok 1068 - judgeCoverage: issues exactly ONE completeStructured call, no other provider method (k3/k4)
+ok 1069 - judgeCoverage: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 1070 - judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)
+ok 1071 - judgeCoverage: all-covered => empty findings, no manufactured finding (edge)
+ok 1072 - judgeCoverage: runs and returns a valid result with subject.buildRecord===null
+ok 1073 - buildCoveragePrompt: a null buildRecord degrades the pass-state to unverified in the prompt
+ok 1074 - buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule
+ok 1075 - buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)
+ok 1076 - COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional
+ok 1077 - buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)
+ok 1078 - registry: the sequence + component peer handlers register alongside er (additive, er untouched)
+ok 1079 - hasDiagramReferences: engages on a body carrying only a sequence / component definition (body-keyed)
+ok 1080 - judgeDiagram: a sound sequence / component definition → no findings
+ok 1081 - judgeDiagram: a dangling sequence definition folds a HIGH breach through the diagram dimension
+ok 1082 - judgeDiagram: a dangling component definition folds a HIGH breach through the diagram dimension
+ok 1083 - registry: S003 registers the ER handler; a duplicate registration throws (fail-fast)
+ok 1084 - judgeDiagram: dispatches an erDefinition-bearing body to the ER handler (sound → no findings)
+ok 1085 - judgeDiagram: a dangling erDefinition folds a HIGH breach through the dimension
+ok 1086 - judgeDiagram: dispatches a companion to its owning registered handler (spy) + aggregates
+ok 1087 - judgeDiagram: a companion no handler owns yields ONE LOW observation (never throws)
+ok 1088 - ER handler: a referenced-but-absent companion file → HIGH breach (ac3)
+ok 1089 - ER handler: a present companion file → no absent-file breach
+ok 1090 - hasDiagramReferences: true for an erDefinition and/or a diagram companion; false otherwise
+ok 1091 - functionalRequirementsOf / hasFunctionalDefinition read the approved LLD record
+ok 1092 - judgeFunctionalCoverage: an unrealized FR is a HIGH finding bound to its FR id
+ok 1093 - judgeFunctionalCoverage: a finding outside the changed set is dropped
+ok 1094 - judgeFunctionalCoverage: a finding referencing an unknown FR id is dropped
+ok 1095 - judgeFunctionalCoverage: every FR realized => empty findings (pass)
+ok 1096 - buildConventionsPrompt is byte-identical across the three review modes (contract-independent)
+ok 1097 - buildQualityPrompt is byte-identical across the three review modes (contract-independent)
+ok 1098 - judgeQuality: the four risk classes each map to a finding with location + severity (ac1)
+ok 1099 - QUALITY_FINDINGS_SCHEMA: distinctive field is counterpartRef (not expectationRef); shape 1:1 with sc3 (ac1)
+ok 1100 - judgeQuality: a duplication finding maps counterpartRef through naming the existing symbol (ac2)
+ok 1101 - buildQualityPrompt: charge instructs counterpartRef on duplication and the payload includes the callers/callees edges (ac2)
+ok 1102 - judgeQuality: a matter-of-taste finding maps through at LOW severity (ac3)
+ok 1103 - buildQualityPrompt: charge caps matters of taste at LOW severity, never HIGH (ac3)
+ok 1104 - judgeQuality: issues exactly ONE completeStructured call, no other provider method (ac4/k3/k4)
+ok 1105 - judgeQuality: a finding whose location file is outside changedFiles is dropped
+ok 1106 - judgeQuality: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 1107 - judgeQuality: empty grounding yields a valid empty result (edge)
+ok 1108 - judgeQuality: no-risk code => empty findings, no manufactured finding (edge)
+ok 1109 - buildQualityPrompt: the output-shape reminder is TRAILING (after the changed symbols)
+ok 1110 - hasUxAcceptance: true for a uxDefinition, an adherence selection incl 'ux', or a ux-mock companion; false otherwise
+ok 1111 - adherenceSelectionOf: reads the recorded selection ([] when absent)
+ok 1112 - hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; counts only diagram-*)
+ok 1113 - judgeUx: a schema-valid uxDefinition → dimension:ux, no findings
+ok 1114 - judgeUx: adherence requires 'ux' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)
+ok 1115 - judgeUx: a schema-invalid uxDefinition folds a HIGH breach through the dimension
+ok 1116 - judgeUx: a referenced-but-absent ux-mock companion file → HIGH breach
+ok 1117 - judgeUx: a present ux-mock companion file → no absent-file breach
+ok 1118 - judgeUx: an unknown recorded adherence member → HIGH breach
+ok 1119 - parseGithubRemoteUrl handles SSH remotes
+ok 1120 - parseGithubRemoteUrl handles HTTPS remotes
+ok 1121 - parseGithubRemoteUrl rejects other hosts
+ok 1122 - parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin
+ok 1123 - parseGitRemoteOwnerRepo returns null on a repo with no origin
+ok 1124 - parseGitRemoteOwnerRepo returns null on a non-git dir
+ok 1125 - resolveGithubConfig honors per-repo "type": "none"
+ok 1126 - resolveGithubConfig honors default "type": "none" when no per-repo entry
+ok 1127 - resolveGithubConfig prefers per-repo "none" over default owner/repo
+ok 1128 - resolveGithubConfig returns type=github with owner/repo when configured
+ok 1129 - a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo
+ok 1130 - a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence
+ok 1131 - resolveGithubConfig defaults to type=none when no matching entry AND no config file
+ok 1132 - resolveGithubConfig defaults to type=none when file exists but has no matching entry
+ok 1133 - resolveGithubConfig defaults to type=none when default entry is empty {}
+ok 1134 - resolveGithubConfig with explicit "type": "github" but no owner/repo throws when git remote is absent
+ok 1135 - resolveGithubConfig with explicit "type": "github" resolves via git remote when owner/repo omitted
+ok 1136 - resolveGithubConfig without a config file does NOT auto-detect from git remote
+ok 1137 - every real-shape fixture builds a valid ArtifactRecord with its identity fields intact
+ok 1138 - builders fabricate records the same way recordFromFile lifts them
+ok 1139 - a story with LLD, PLAN, BUILD and CR is one item with all four as evidence
+ok 1140 - s1 and S001 records join one story and both raw ids are kept in sourceIds
+ok 1141 - the real S001/s001 pair from epic dfc0371b yields one story
+ok 1142 - LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice
+ok 1143 - an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items
+ok 1144 - a standalone story with no head is a root with no invented epic, dated from its own LLD
+ok 1145 - a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice
+ok 1146 - pending and rejected EXT records create no story item and appear as epic evidence
+ok 1147 - a rejected EXT whose story nothing else names is keyed epic-level and creates no story key
+ok 1148 - records with an invalid createdAt or a non-hex hash get the H-form id and an identity-anchor-missing notice
+ok 1149 - groupRecordsByWorkItem keys an unparseable storyId as <hash>|R(x), omits SPECs, and a head-less HLD key carries an unresolved-parent notice
+ok 1150 - an epic story under a hash with no head raises unresolved-parent and gets no parent
+ok 1151 - a Define story with no records yet is still a member of its epic
+ok 1152 - no call throws for a malformed createdAt, a non-hex hash or an unparseable storyId
+ok 1153 - task t1 in two stories of different epics gets two distinct canonical ids
+ok 1154 - a BUILD task id equal to the story id creates no task item and no notice
+ok 1155 - tasks under an :R(x) story and under a story with an invalid createdAt get <story id>:T<nnn> ids and the builder does not throw
+ok 1156 - an issue with fix stories S001 and S002 has two distinct story children with their own tasks and evidence
+ok 1157 - a self-slug parentRef gives correctsRef null and no notice
+ok 1158 - an issue whose outward parentRef matches nothing is present with an unresolved-parent notice
+ok 1159 - a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story
+ok 1160 - a parentRef naming an existing epic and a storyId it lacks resolves to the epic with an unresolved-parent notice naming the missing story
+ok 1161 - a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice
+ok 1162 - a hierarchical slug parentRef resolves through parseWorkflowId
+ok 1163 - a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both
+ok 1164 - a SPEC named by seededFromSpec is in that epic's evidence; an unnamed SPEC raises unattached-spec
+ok 1165 - the same record set built twice gives a deep-equal graph
+ok 1166 - epic, standalone and issue ids equal deriveWorkItemIdentity over the anchor inputs and pinned folder segments, including a sized-bugfix LLD dated a different day from its ISSUE
+ok 1167 - every kind in a temporary store is lifted, AMD from its flat shape
+ok 1168 - invalid JSON, missing meta, unknown prefix and an unreadable file each become a load failure and the load continues
+ok 1169 - an absent store yields an empty record set
+ok 1170 - a store whose listDir throws raises DeliveryStoreUnreadableError
+ok 1171 - the store is byte-identical after a load
+ok 1172 - an unparseable storyId keeps storyIdRaw with storyOrdinal null
+ok 1173 - NOTICE_ATTENTION is true for exactly record-unreadable, identity-ambiguous, unresolved-parent and validation-conflict
+ok 1174 - makeNotice sorts and de-duplicates ids and takes attention from the table
+ok 1175 - sortNotices gives one order for every permutation and drops exact duplicates
+ok 1176 - a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan
+ok 1177 - a story with an unapproved build whose tasks all passed is build-recorded
+ok 1178 - a story with an approved build is complete whatever its task results and review verdict
+ok 1179 - a story with no design, plan or build record is scoped
+ok 1180 - the issue magnitude decides a fix story's route ahead of its build stamp
+ok 1181 - a story under an epic never takes its route from an ISSUE that shares its hash
+ok 1182 - a non-standalone build stamp is never read and an epic story is full-chain
+ok 1183 - a sized-bugfix or full-chain story with an approved design and no plan is design-plan
+ok 1184 - an unknown or disagreeing stamp gives the unknown route, never a guess
+ok 1185 - a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice
+ok 1186 - a code review with no build leaves the stage and raises review-without-build
+ok 1187 - an item with no recorded route keeps its records' stage and raises unknown-route
+ok 1188 - a story or issue with no design, plan or build is scoped
+ok 1189 - an issue takes the least advanced stage of its fix stories
+ok 1190 - missing evidence records and wrongly typed fields never throw
+ok 1191 - every story and issue in the real-shape fixtures gets exactly one stage, deterministically
+ok 1192 - DeliveryStoreUnreadableError carries the store path and the underlying message
+ok 1193 - the stage and route types list exactly the HLD members
+ok 1194 - auto finding applies its edit to both markdown and body
+ok 1195 - an edit whose find is absent is skipped, never applied blind
+ok 1196 - assisted/manual findings are not auto-applied and surface via pendingUserFindings
+ok 1197 - severity rubric certifies against the real judge (fixed claim set) # SKIP
+ok 1198 - calibration fixtures are well-formed ground truth
+ok 1199 - runCalibration scores agreement + directional errors against the fixtures
+ok 1200 - runCalibration flags a gate escape when a blocking case is judged LOW
+ok 1201 - runCalibration is fully in agreement when the provider matches ground truth
+ok 1202 - T4 severity follows outcome
+ok 1203 - T5 the verdict blocks only on a premise that does not hold
+ok 1204 - T5 findings with no outcome give the verdict they gave before
+ok 1205 - the unverified count appears only on a template review
+ok 1206 - T6 the rendered review lists the two problem kinds separately and says which one blocks
+ok 1207 - T6 an empty list says so rather than disappearing
+ok 1208 - T7 a design with only unverified premises is approvable
+ok 1209 - T7 a premise that does not hold refuses approval until resolved or overridden
+ok 1210 - T8 a review record written before this change keeps its verdict, rendering and gate result
+ok 1211 - T17 a premise that holds is not among the findings that need a human
+ok 1212 - T1 author: the explicit field wins over a contradicting model label
+ok 1213 - T1 author: without the field the attribution labels decide
+ok 1214 - T1 author: nothing stored reads as unknown, and so does a BUILD record with no field
+ok 1215 - T1 reviewer: the explicit field wins over a contradicting model label
+ok 1216 - T1 reviewer: without the field the model label decides
+ok 1217 - T1 reviewer: nothing stored reads as unknown
+ok 1218 - T1 the other party
+ok 1219 - code under mind/ (the AFM bug) → probe finds real hits, prefixed with mind/
+ok 1220 - code under src/ (legacy layout) → still found, prefixed with src/ (no regression)
+ok 1221 - a filename-existence probe finds a file under a non-src/ root
+ok 1222 - listPendingReviewFindings returns non-LOW unresolved findings; effective verdict blocks
+ok 1223 - resolve apply mutates the artifact + records resolution; override clears the rest
+ok 1224 - resolve apply refuses a finding with no edits
+ok 1225 - HIGH inventory finding when claim says two but ripgrep finds three
+ok 1226 - citation confirmed by path:line read is LOW
+ok 1227 - verdict is block when HIGH present, pass when all LOW
+ok 1228 - gatherEvidence sets truncated when matches exceed the cap
+ok 1229 - auto finding yields artifactEdits whose find is a real substring; manual yields options and no edits
+ok 1230 - renderReviewReport emits a verdict header, a table, and orders HIGH first
+ok 1231 - gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)
+ok 1232 - T15 a DEF authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+ok 1233 - T15 a DEF authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+ok 1234 - T15 a DEF authored by the controller is reviewed by the daemon
+ok 1235 - T15 a DEF authored by an unknown author is reviewed by the daemon
+ok 1236 - T15 a LLD authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+ok 1237 - T15 a LLD authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+ok 1238 - T15 a LLD authored by the controller is reviewed by the daemon
+ok 1239 - T15 a LLD authored by an unknown author is reviewed by the daemon
+ok 1240 - T15 the TUI review service surfaces the refusal, naming a controller review or an override
+ok 1241 - mind/-only layout → single mind root, fallbackUsed=false (the core AFM bug)
+ok 1242 - src/-only layout → single src root, no regression
+ok 1243 - multi-root src/+mind/ → one root each, densest-first by fileCount
+ok 1244 - all files at repo root → single repoPath root, fallbackUsed=false
+ok 1245 - mixed root-level + subdir files → collapse to repoPath (subsumes subdirs)
+ok 1246 - non-file entities are ignored when bucketing
+ok 1247 - empty graph (zero entities) → repo-root fallback, fallbackUsed=true
+ok 1248 - graph with only non-file entities → repo-root fallback (no file roots)
+ok 1249 - a rejecting graph reader → repo-root fallback, never throws
+ok 1250 - rootPrefix: subdir root → its segment; repo root → empty
+ok 1251 - T9 a design stage runs ONE reviewer session and no extract, probe or per-premise call
+ok 1252 - T9 the prompt carries the template for the intent, the insrc analyze instruction, and the design last
+ok 1253 - T9 an HLD is a design stage too
+ok 1254 - T10 an invalid first answer causes exactly one repeat carrying the validation errors
+ok 1255 - T10 a second invalid answer fails the review
+ok 1256 - T11 a session failure fails the review
+ok 1257 - T11 a timeout fails the review with a message naming the limit that applied
+ok 1258 - T11 a provider with no session capability fails at once and the old pipeline is not run
+ok 1259 - a review cancelled before or during its session returns no report
+ok 1260 - T12 a DEF review and an ISSUE review still run extract, probe and verify with the same extraction prompt, byte for byte
+ok 1261 - T16 the first session gets the whole limit, and the limit defaults by intent
+ok 1262 - T16 no review gets more than 30 minutes, whatever it is given
+ok 1263 - T16 the validation repeat is started with only the time that remains
+ok 1264 - T16 a review whose deadline has passed fails before a repeat is started
+ok 1265 - a design answering an ISSUE is reviewed once with the ISSUE template and the ISSUE limit, and is not edited
+ok 1266 - a design under an Epic gets the SPEC template and the Epic limit; a standalone feature design the feature limit
+ok 1267 - a failed design review stamps nothing
+ok 1268 - T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)
+ok 1269 - T1 each template has an id, a threshold and its check items
+ok 1270 - T1 only an HLD or an LLD is a design stage
+ok 1271 - T2 intent and complexity come from the artifact store
+ok 1272 - T15 with no setting present the defaults are used
+ok 1273 - T15 a changed setting changes the threshold or the limit used
+ok 1274 - T15 a value that is not a positive whole number falls back to its default
+ok 1275 - T15 a limit above 30 minutes is reduced to 30; the hard cap cannot be raised
+ok 1276 - T15 the settings are declared in the config catalog with the same defaults
+ok 1277 - the prompt gives instructions, then the checklist, then the design last
+ok 1278 - T3 a complete answer is accepted and becomes findings
+ok 1279 - T3 `not applicable` with a reason counts as answered and is not a finding
+ok 1280 - T3 an unanswered item is rejected
+ok 1281 - T3 an item with neither a premise nor a reason is rejected
+ok 1282 - T3 more premises than the threshold is rejected; exactly the threshold is accepted
+ok 1283 - T3 an invalid outcome is rejected
+ok 1284 - T3 a premise that does not hold must name the file it rests on
+ok 1285 - T3 an unverified premise must say what was tried
+ok 1286 - T3 an unknown or repeated item, and a missing items array, are rejected
+ok 1287 - T3 every error in an answer is reported, not just the first
+ok 1288 - define epic.frame: omitting summary still validates (absent-safe)
+ok 1289 - define epic.frame: a { prose, audience } summary validates
+ok 1290 - define epic.frame: a summary without prose is REJECTED
+ok 1291 - define epic.frame: an out-of-set audience is REJECTED
+ok 1292 - define epic.frame: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 1293 - design.epic framework.write: omitting summary still validates (absent-safe)
+ok 1294 - design.epic framework.write: a { prose, audience } summary validates
+ok 1295 - design.epic framework.write: a summary without prose is REJECTED
+ok 1296 - design.epic framework.write: an out-of-set audience is REJECTED
+ok 1297 - design.epic framework.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 1298 - design.story contract.detail: omitting summary still validates (absent-safe)
+ok 1299 - design.story contract.detail: a { prose, audience } summary validates
+ok 1300 - design.story contract.detail: a summary without prose is REJECTED
+ok 1301 - design.story contract.detail: an out-of-set audience is REJECTED
+ok 1302 - design.story contract.detail: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 1303 - plan test-strategy.write: omitting summary still validates (absent-safe)
+ok 1304 - plan test-strategy.write: a { prose, audience } summary validates
+ok 1305 - plan test-strategy.write: a summary without prose is REJECTED
+ok 1306 - plan test-strategy.write: an out-of-set audience is REJECTED
+ok 1307 - plan test-strategy.write: an unknown key inside summary is REJECTED (additionalProperties:false)
+ok 1308 - contract.detail: omitting contextRefs still validates (engine derives the HLD ref)
+ok 1309 - contract.detail: an explicit contextRefs entry validates
+ok 1310 - contract.detail: a contextRefs entry missing sectionId is REJECTED
+ok 1311 - defineSynthesizer body schema: admits body.summary
+ok 1312 - defineSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+ok 1313 - designEpicSynthesizer body schema: admits body.summary
+ok 1314 - designEpicSynthesizer body schema: still rejects an unknown body key (additionalProperties:false retained)
+ok 1315 - invariance: brainstormElicitSchema still accepts the confirmed converged shape and rejects a retired `questions` field
+ok 1316 - invariance: the elicit category enum equals exactly the BRAINSTORM_CATEGORY_CLASSES ids
+ok 1317 - decisionDraftSchema: accepts a folded draft with one decision + accepts a convergence draft
+ok 1318 - decisionAnswerSchema: accepts each tagged action and rejects an unknown action / extra props
+ok 1319 - ac1: run() drafts ONE decision via the draftProvider and pauses carrying the running-spec blob
+ok 1320 - ac1: run() FAILS CLOSED (retryable draft-provider-unavailable) when no draftProvider is supplied — never cheap/local
+ok 1321 - ac1: a draftProvider failure surfaces as a retryable draft-failed (run stays paused-able)
+ok 1322 - ac2: choose folds the answer and RE-PAUSES the next drafted decision (same step, nextStepIndex unchanged)
+ok 1323 - ac2: choose with a stale/wrong decisionId → retryable unknown-decision
+ok 1324 - ac2: choose an option that was not presented → retryable unknown-option
+ok 1325 - ac2: reopen re-presents a named prior decision; reopen of an unknown decision → retryable unknown-decision
+ok 1326 - ac3: daemon-proposed convergence + final_confirm → COMPLETE with the assembled brainstormElicitSchema output
+ok 1327 - ac3: controller-forced propose_converge then final_confirm also converges (controller override)
+ok 1328 - ac3: final_confirm BEFORE convergence is proposed → retryable not-confirmed (nothing produced)
+ok 1329 - ac3/ac4: nothing is produced until final_confirm — a mid-loop pause has no step output
+ok 1330 - t1: StandaloneBrainstormContext accepts a bare focus string
+ok 1331 - t2: brainstormElicitSchema is a valid, ajv-compilable JSON Schema stub
+ok 1332 - t3: registerBrainstormRunners is idempotent and resolves the elicit runner
+ok 1333 - t3: a duplicate runnerId under workflow brainstorm reproduces executor's duplicate-runner throw
+ok 1334 - t3: k10 — the brainstorm runner module never IMPORTS the daemon layer or CALLS the addIdea stub
+ok 1335 - t4: brainstorm is a member of the WORKFLOW_NAMES union
+ok 1336 - t4: prepareDecompose recognizes brainstorm (not "not yet supported") and yields a one-step plan schema
+ok 1337 - t4: registerWorkflowRunners() wires registerBrainstormRunners beside the existing register*Runners
+ok 1338 - t4: the workflow-step handler phase switch gains NO brainstorm case (new workflow value, not a new phase)
+ok 1339 - t4: the triage route table (classify.ts) is not modified to insert brainstorm (ac5)
+ok 1340 - ac1: admitBuild returns admitted:true with only the thin pointer when approved + recorded==current
+ok 1341 - ac2: admitBuild returns plan-unapproved when the plan exists but was never approved
+ok 1342 - ac2: approval is evaluated before staleness — unapproved AND drifted yields the single reason plan-unapproved
+ok 1343 - ac4: admitBuild returns plan-missing (precedence over staleness) when no plan record exists
+ok 1344 - ac3: admitBuild returns plan-stale with inline staleness when the recorded basis differs from current
+ok 1345 - ac3: admitBuild conservatively refuses plan-stale when the recorded design hash is empty/absent
+ok 1346 - t4: admitBuild propagates a malformed epicHash rather than remapping it
+ok 1347 - t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing
+ok 1348 - t4: admitBuild propagates a missing current design.story rather than admitting or fabricating plan-stale
+ok 1349 - t2: approvalVerdict maps an unapproved plan to { unapproved }
+ok 1350 - t2: approvalVerdict maps a missing plan to { missing }
+ok 1351 - t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it
+ok 1352 - t2: approvalVerdict returns { ok, plan } for an approved plan
+ok 1353 - t3: driftVerdict yields stale with inline hashes when recorded differs from current
+ok 1354 - t3: driftVerdict treats equal recorded/current hashes as fresh
+ok 1355 - t3: driftVerdict conservatively yields stale when the recorded design hash is empty
+ok 1356 - guard: admitBuild is the public verdict surface of the admission module
+ok 1357 - t1: BuildAdmissionResult discriminates on `admitted` (accepted branch carries only the thin pointer)
+ok 1358 - render: a non-empty body.summary -> a `\#\# Summary` section carrying the narrative (ac1)
+ok 1359 - render: an empty / whitespace body.summary -> NO `\#\# Summary` section (omit-slot, ac3)
+ok 1360 - render: a summary XOR feedback -> only the present section renders
+ok 1361 - render: neither summary nor feedback -> no new sections, byte-identical to the pre-S003 render (ac3/k4)
+ok 1362 - persist: a record with body.summary -> the json carries it and the .md renders `\#\# Summary` (ac1)
+ok 1363 - appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `\#\# Feedback` (ac2)
+ok 1364 - persist upsert: a re-validate that omits body.summary PRESERVES the prior summary
+ok 1365 - persist: a record with neither summary nor feedback -> the .md has no new sections (ac3/k4)
+ok 1366 - persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists
+ok 1367 - a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)
+ok 1368 - re-validating the same task refreshes its passed without duplicating the row
+ok 1369 - an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)
+ok 1370 - a malformed prior record is treated as absent (fail-open fresh write), not a throw
+ok 1371 - persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)
+ok 1372 - approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)
+ok 1373 - S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)
+ok 1374 - a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)
+ok 1375 - the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)
+ok 1376 - t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)
+ok 1377 - the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write
+ok 1378 - BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write
+ok 1379 - a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise
+ok 1380 - BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown
+ok 1381 - BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown
+ok 1382 - BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved
+ok 1383 - FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error
+ok 1384 - t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically
+ok 1385 - t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read
+ok 1386 - t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified "at persist time" semantics)
+ok 1387 - t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `\#\# Summary`
+ok 1388 - t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)
+ok 1389 - t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically
+ok 1390 - t8: the TWO unconditional parts always render, even on a record carrying nothing else
+ok 1391 - t8: each of the SEVEN omit-slots renders when populated — one assertion per section
+ok 1392 - t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section
+ok 1393 - t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title
+ok 1394 - t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost
+ok 1395 - t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7
+ok 1396 - t8: an empty or absent changeLog still renders NO `\#\# Changes` section
+ok 1397 - t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation
+ok 1398 - t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest "Standalone:" bit
+ok 1399 - t4 — a record carrying standalone true is placed under docs/standalone
+ok 1400 - t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move
+ok 1401 - t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured
+ok 1402 - t5 — a standalone record renders the standalone heading and "Standalone: yes", not the plan-driven title
+ok 1403 - t5 — the render keys on sizeClass, so it survives a record whose flag is absent
+ok 1404 - 43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/
+ok 1405 - 43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)
+ok 1406 - changedFiles: derives the staged changed set from a real git repo (extraction is behaviour-preserving)
+ok 1407 - changedFiles: throws NoBuildChangesError on a non-git directory
+ok 1408 - collectBuildChangeLog: one file-level entry per changed path (segment omitted), stamped author/timestamp
+ok 1409 - collectBuildChangeLog: version is threaded onto target when supplied
+ok 1410 - collectBuildChangeLog: an empty changed set → []
+ok 1411 - collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never throws out)
+ok 1412 - t3: collectBuildChangeLog with NO base/exclude forwards `undefined` — the seam sees exactly what it sees today
+ok 1413 - t3: a base on the ctx REACHES the seam as opts.base
+ok 1414 - t3: an exclude list on the ctx REACHES the seam as opts.exclude
+ok 1415 - t3: existing TWO-ARGUMENT call sites and ONE-PARAMETER seam stubs still compile and behave identically
+ok 1416 - t3: collectBuildChangeLog STILL never throws and STILL logs — a seam that throws yields [] (ac6 regression guard)
+ok 1417 - t4: `exclude` is forwarded to the seam, and the COLLECTOR itself still does no filtering (the filter lives in changedFiles)
+ok 1418 - t3: a CLEAN tree + base derives the COMMITTED range — the base reaches git_diff as `from`
+ok 1419 - t3: a DIRTY tree NEVER consults the base — the result cannot depend on which range was supplied
+ok 1420 - t3: an UNRESOLVABLE base on a clean tree throws out of changedFiles (the caller swallows it — ac6 is enforced one level up)
+ok 1421 - t3: an empty-string base behaves as ABSENT (contract pinned; the guard itself is defence-in-depth)
+ok 1422 - t4 (WORKING-TREE derivation): the record's own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives
+ok 1423 - t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving base..HEAD — asserted separately from the working-tree case
+ok 1424 - CR-1: a tree dirty with ONLY the record's own paths still derives the COMMITTED range — the exclusion is applied BEFORE the emptiness gate
+ok 1425 - CR-1: a tree dirty with REAL work plus the record's own paths still does NOT consult the base — the fix must not widen the gate
+ok 1426 - t4: ABSOLUTE exclusion paths are normalised — callers hold absolute paths while git reports relative ones
+ok 1427 - t4: a Story that changed ONLY artifact files still yields a NON-EMPTY change set (docs-only edge case)
+ok 1428 - t4: an exclusion path OUTSIDE the repo is left alone rather than relativised into something that might match
+ok 1429 - T26: LEDGER_EXCLUDE_GLOBS keep and drop EXACTLY the listed sets (real git)
+ok 1430 - T26: the constant is exactly the four globs, and frozen
+ok 1431 - T27: the globs give the SAME result when git_diff runs from a subdirectory of the repo
+ok 1432 - T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is clean under excludeGlobs, so the range is derived
+ok 1433 - T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs
+ok 1434 - T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today's — no `exclude` key at all
+ok 1435 - T29: WITH excludeGlobs every one of the three diffs carries them
+ok 1436 - T29: collectBuildChangeLog passes NO excludeGlobs — the BUILD writers are unaffected
+ok 1437 - a clean tree with a base reports only the Story's own files, not files a merge brought in
+ok 1438 - without a base the derivation is unchanged
+ok 1439 - collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge
+ok 1440 - a committed ledger file stays out of the range result after a mid-build merge
+ok 1441 - create: no prior BUILD json + a changed set writes a plan-driven BUILD record with a 2-entry change-log
+ok 1442 - merge/idempotent: calling twice keeps exactly ONE BUILD json for the id
+ok 1443 - empty: an empty changed set writes a record with NO changeLog key
+ok 1444 - failure swallow: a throwing listChanged still writes a record (no changeLog) and does NOT throw
+ok 1445 - no-op: an empty epicHash returns undefined and writes no file
+ok 1446 - parse round-trip: buildArtifactId round-trips through parseBuildArtifactRef (incl. a hyphen-bearing storyId)
+ok 1447 - CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record
+ok 1448 - t4 — an ISSUE-anchored work item gets standalone true and lands under docs/standalone
+ok 1449 - t4 — an epic-parented work item is unaffected: a DEF without the flag stays epic
+ok 1450 - t4 — an explicit standalone FALSE on the definition artifact is not written through as false
+ok 1451 - t1: a BuildRecord carrying changeLog + feedback type-checks and JSON round-trips
+ok 1452 - t4: renderBuildRecordMd emits a \#\# Changes and a \#\# Feedback section when present
+ok 1453 - t4: absent, undefined-valued, and empty-array changeLog/feedback all render byte-identically (omit-slot)
+ok 1454 - t4/t6c: a legacy record (body without the S002 keys) re-renders byte-identically to the base render
+ok 1455 - t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback
+ok 1456 - t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered \#\# Feedback section
+ok 1457 - t6: the STAMPED base on the PLAN is used, without needing the artifact committed
+ok 1458 - t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN
+ok 1459 - t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base
+ok 1460 - t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method
+ok 1461 - t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story's own LLD was in
+ok 1462 - t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure
+ok 1463 - t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain
+ok 1464 - t6: git UNAVAILABLE / a non-git directory yields undefined without throwing
+ok 1465 - t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup
+ok 1466 - t6: a MALFORMED artifact json is treated as absent rather than throwing
+ok 1467 - t6: an empty epicHash or storyId yields undefined without touching the filesystem or git
+ok 1468 - T18: buildStartRelPath is the one path, outside the artifact store
+ok 1469 - T18: a VALID build-start file wins over a different approval-time stamp on the PLAN
+ok 1470 - T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order
+ok 1471 - T18: one Story's build-start file does not answer for another Story of the same epic
+ok 1472 - T19: an invalid build-start file is IGNORED and the approval-time stamp is returned
+ok 1473 - T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid
+ok 1474 - T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range
+ok 1475 - T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain
+ok 1476 - T1: no stamp and no BUILD record -> stamped; the file holds HEAD's full sha and the Story's ids
+ok 1477 - T2: a valid stamp, HEAD moved, no BUILD record -> kept; file bytes unchanged
+ok 1478 - T3: mid-build approval — plan t1,t2,t3, record has t1 passed and was approved AFTER the stamp -> kept
+ok 1479 - T4: a record approved after the stamp whose one task has passed FALSE, or passed ABSENT -> kept
+ok 1480 - T4 (mixed): EVERY task must have passed — one passed and one failed, plan covered, approved after the stamp -> kept
+ok 1481 - T5: a record approved after the stamp but TASK-LESS -> kept
+ok 1482 - T6: a FINISHED plan-driven build (plan t1,t2; both passed; approved after the stamp) -> stamped at the new HEAD
+ok 1483 - T7: a FINISHED standalone build (no PLAN; one passed task; approved after the stamp) -> stamped
+ok 1484 - T8: a planned Story validated as a WHOLE (plan t1,t2; record holds a passed task whose id is the storyId) -> stamped
+ok 1485 - T8 (contrast): a passed task that is neither a plan task nor the storyId does NOT cover the plan -> kept
+ok 1486 - T9: a finished record approved BEFORE the stamp (or at the same instant, or with no approval, or an unparseable one) -> kept
+ok 1487 - T10: a PLAN json that is present but malformed makes an otherwise finished record NOT finished -> kept
+ok 1488 - T11: no stamp and an UNAPPROVED record with one task -> skipped-work-exists, no file
+ok 1489 - T12: no stamp and an APPROVED record covering one of three plan tasks -> skipped-work-exists, no file
+ok 1490 - T13: no stamp and an APPROVED record whose one task has passed false -> skipped-work-exists, no file
+ok 1491 - T13 (unreadable record): no stamp and a BUILD record that cannot be parsed -> skipped-work-exists
+ok 1492 - T14: no stamp and a FINISHED record -> stamped
+ok 1493 - T15: no stamp and a TASK-LESS record, approved or not -> stamped
+ok 1494 - T16: a repo with no commits -> not-written, no file
+ok 1495 - T16: a directory that is not a git repo -> not-written, without throwing
+ok 1496 - T16: the build-start directory cannot be created -> not-written, without throwing
+ok 1497 - T16: an empty epicHash or storyId -> not-written, nothing created
+ok 1498 - T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone
+ok 1499 - T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on
+ok 1500 - stampBuildStart never writes or changes an artifact record
+ok 1501 - T21: range-base.ts has no RUNTIME import of gates.ts (type-only imports excluded)
+ok 1502 - storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in
+ok 1503 - storyChangeSet records Story edits folded into a merge commit as a merge-edit unit
+ok 1504 - storyChangeSet records a hand-resolved conflict as a merge-edit unit
+ok 1505 - storyChangeSet includes a file the Story deleted and a root commit's files
+ok 1506 - storyChangeSet is empty when the range holds only a clean merge
+ok 1507 - storyChangeSet throws NoBuildChangesError for an unresolvable base
+ok 1508 - mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed
+ok 1509 - mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG
+ok 1510 - known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work
+ok 1511 - an octopus merge becomes one merge-edit unit over its whole change instead of a failure
+ok 1512 - epicFrameSchema: omitting functionalRequirements still validates (absent-safe)
+ok 1513 - epicFrameSchema: a doc-level FR statement (+ optional rationale) validates
+ok 1514 - epicFrameSchema: an FR without a statement is REJECTED
+ok 1515 - epicFrameSchema: an FR carrying an id/scope is REJECTED (model must not mint ids)
+ok 1516 - storiesComposeSchema: omitting per-story functionalRequirements still validates (absent-safe)
+ok 1517 - storiesComposeSchema: per-story FR statements validate
+ok 1518 - storiesComposeSchema: a per-story FR without a statement is REJECTED
+ok 1519 - S001: a local constraint with an lc-namespaced id (lc1) validates against storiesComposeSchema
+ok 1520 - S001: a local constraint with a c-namespaced id (c1) is REJECTED (the collision namespace is no longer allowed)
+ok 1521 - S001: a k-shaped local-constraint id (k1) is REJECTED — only the lc namespace is accepted
+ok 1522 - S001: source stays a c-citation reference — lc id + c source validates; a non-c source is rejected
+ok 1523 - all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0
+ok 1524 - missing scopes: issue-types + project are manual carrying the refresh command
+ok 1525 - missing config: the config step writes github.json and reports done
+ok 1526 - project views step is always manual with the UI click-list
+ok 1527 - queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)
+ok 1528 - queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)
+ok 1529 - queryTasks: first page omits `after`; a cursor page passes it
+ok 1530 - queryTasks: default state is open; repo + is:issue always scoped
+ok 1531 - queryTasks: state:all emits no state qualifier
+ok 1532 - queryTasks: owner → assignee:, epic/story → label qualifiers
+ok 1533 - queryTasks: bare story id is normalised to a story: label
+ok 1534 - ghCurrentLogin: reads gh api user .login
+ok 1535 - ghCurrentLogin: throws when no login is returned
+ok 1536 - listMyOpenTasks: resolves the current login → assignee:<me> is:open
+ok 1537 - parseGithubRemoteUrl handles ssh + https + .git suffix
+ok 1538 - parseGithubRemoteUrl keeps dots in repo names
+ok 1539 - parseGithubRemoteUrl rejects non-github urls
+ok 1540 - ref parse/build/url/line
+ok 1541 - mapIssueStatus follows the convention (closed overrides)
+ok 1542 - renderEpicBody links slug-based docs (not hash)
+ok 1543 - render*Body emit clickable blob links with a repo ref, bare paths without
+ok 1544 - commitAndPushArtifacts stages, commits, and pushes present files
+ok 1545 - commitAndPushArtifacts reports committed-not-pushed on push failure
+ok 1546 - commitAndPushArtifacts is a no-op when nothing is staged
+ok 1547 - commitAndPushArtifacts no-ops when no file is present
+ok 1548 - renderStoryBody back-refs the Epic + links the slug LLD
+ok 1549 - updateEpicTaskList splices the link + is idempotent
+ok 1550 - resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)
+ok 1551 - resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)
+ok 1552 - resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped
+ok 1553 - resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null
+ok 1554 - resolveWorkflowRef: issue\# and hierarchical-id forms resolve identically with or without opts.epicHash
+ok 1555 - routeForSizeClass: epic enters at define, in-Epic, full chain
+ok 1556 - routeForSizeClass: feature is a standalone LLD with plan
+ok 1557 - routeForSizeClass: small is a standalone LLD, no plan
+ok 1558 - routeForSizeClass: trivial routes straight to build, no LLD
+ok 1559 - routeForSizeClass: every non-epic tier is standalone (the enabling invariant)
+ok 1560 - routeForSizeClass: only trivial (and a small bugfix) skips the LLD
+ok 1561 - routeForSizeClass: bugfix small routes issue -> build (no design, no plan)
+ok 1562 - routeForSizeClass: bugfix sized routes issue -> design -> plan -> build
+ok 1563 - routeForSizeClass: a bugfix with no magnitude throws (authoritative guard)
+ok 1564 - routeForSizeClass: magnitude is ignored for the four fixed tiers (ac1)
+ok 1565 - CLASSIFY_SCHEMA: accepts a well-formed result
+ok 1566 - CLASSIFY_SCHEMA: rejects an unknown sizeClass
+ok 1567 - CLASSIFY_SCHEMA: rejects missing storyTitle
+ok 1568 - CLASSIFY_SCHEMA: rejects an unknown signal kind
+ok 1569 - CLASSIFY_SCHEMA: sizeClass enum includes bugfix (auto-derived from SIZE_CLASSES)
+ok 1570 - CLASSIFY_SCHEMA: accepts a bugfix with magnitude sized
+ok 1571 - CLASSIFY_SCHEMA: rejects a bugfix with NO magnitude (conditional required)
+ok 1572 - CLASSIFY_SCHEMA: rejects an out-of-enum magnitude
+ok 1573 - CLASSIFY_SCHEMA: a non-bugfix tier needs no magnitude (four-tier unchanged)
+ok 1574 - sc1 contract: a bugfix TriageResult carries magnitude and startStage issue
+ok 1575 - sc1 contract: a fixed-tier TriageResult omits magnitude and keeps its route
+ok 1576 - buildClassifyPrompt: request + grounding trail, grounding after the request
+ok 1577 - buildClassifyPrompt: empty grounding is flagged for conservative classification
+ok 1578 - buildClassifyPrompt: declaredBugfix adds bugfix+magnitude guidance to the system prompt
+ok 1579 - buildClassifyPrompt: WITHOUT declaredBugfix the system prompt is the unchanged four-tier prompt

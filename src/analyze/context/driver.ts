@@ -75,10 +75,9 @@ import {
 	writeBundle,
 	type CacheKey,
 } from './cache.js';
-import { ensureNonEmptyClosure, ScopeKindTargetMismatchError } from './invariants.js';
-import { freshnessPathOf, resolveScope } from './scope.js';
+import { ensureNonEmptyClosure } from './invariants.js';
+import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
-import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../classifier/validate.js';
 import {
 	modelFacingBundleSchema,
 	SCHEMA_VERSION,
@@ -1107,9 +1106,7 @@ export async function prepareScope(
 	const ref = scopeRefOf(inputs);
 	if (invocationMode === 'run' && 'intent' in inputs) {
 		const target = (inputs as RunShapeInput).intent.target;
-		if (!isKindCompatibleWithTarget(target, ref.kind)) {
-			throw new ScopeKindTargetMismatchError(ref.kind, target, TARGET_TO_KINDS[target]);
-		}
+		return resolveScopeForTarget(ref, target, deps);
 	}
 	return deps !== undefined ? resolveScope(ref, deps) : resolveScope(ref);
 }

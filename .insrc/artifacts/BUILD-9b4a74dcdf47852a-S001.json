@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "S001",
+    "createdAt": "2026-10-08T18:05:03.112Z",
+    "updatedAt": "2026-10-08T18:05:03.112Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story under a single design: the build step's validate phase and check planner, the tool's input shape, a new record with its renderer, and the build record's link to it."
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "Tasks t1 to t11 of the plan are built; t12 (the live check on the real gate) waits for the stakeholder's push and the daemon's update. The gate now takes a mapping from a Task's named tests to test cases at the validate turn, runs each mapped test file on its own with the TAP reporter, reads a result per test title, and writes a per-Story test record (TESTS.md beside BUILD.md, linked from the build record). A case that fails, is skipped or is not found fails the tests check; a live or smoke test may carry a result reported by the builder. The record cannot be approved or rejected on any route, and every reader of the artifacts directory leaves it alone. Two things found while building: a test file's run inherited the test runner's nesting marker, which made node run nothing and exit 0 (fixed; an existing test of the runner had been passing without running anything); and --test-force-exit sometimes drops trailing tests of a file with many tests while exiting 0 (not fixed here; with a mapping such a test now shows as not found instead of passing silently).",
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/mcp.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/vscode.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/baseline/workflow.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/fixtures/tap-sample.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/tap-results.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/test-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/__tests__/validation-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/tap-results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/test-mapping.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/build-step/validation-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/implement-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/validate-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/artifact-kinds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrate-docs-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/load.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/migrate-docs-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/path-scheme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/test-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/own-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/standalone-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/test-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/daemon-gateway.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-08T18:05:03.112Z"
+      }
+    ],
+    "commit": "b20d5c12"
+  }
+}

@@ -174,6 +174,16 @@ export function codeReviewArtifactId(epicHash: string, storyId: string): string 
 	return `CR-${epicHash}-${storyId}`;
 }
 
+/** The id prefix of a Story's test record. */
+export const TESTS_ID_PREFIX = 'TESTS-';
+
+/** A Story's test record: what the build validation gate ran for each Task and
+ *  what each test case did. Its own namespace, like `CR-`: it is a record, not
+ *  an approvable artifact. */
+export function testsArtifactId(epicHash: string, storyId: string): string {
+	return `${TESTS_ID_PREFIX}${epicHash}-${storyId}`;
+}
+
 /** The work item's stable anchor createdAt — `meta.epicCreatedAt` when the
  *  finalize step stamped it, else the artifact's own `createdAt`. This is the
  *  value the sc2 md-path resolver keys the `E<date>` folder segment on, so every
@@ -441,6 +451,11 @@ export function buildRecordFolderArgs(
  * BUILD record's flag and then the caller's as fallbacks. The record's own anchor
  * is the persisted BUILD record's `createdAt`, so a review of a Trivial build
  * (no head, no LLD) lands in the folder that build was written to.
+ *
+ * When there is NO persisted BUILD record, a persisted test record stands in
+ * for it: the gate writes a Story's test record before the judge, so on a first
+ * validate turn it exists before any BUILD record does, and its `createdAt` and
+ * flag are then the record anchor. The caller's own values come last.
  */
 export function storyRecordFolderArgs(
 	repoPath: string,
@@ -449,8 +464,11 @@ export function storyRecordFolderArgs(
 	fallback: { readonly standalone?: boolean | undefined; readonly ownCreatedAt: string },
 ): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
 	const build = readArtifactCore(repoPath, buildArtifactId(epicHash, storyId));
-	const standalone = inheritedStoryStandalone(repoPath, epicHash, storyId, build.standalone ?? fallback.standalone) === true;
-	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, build.createdAt ?? fallback.ownCreatedAt);
+	const tests = build.createdAt === undefined ? readArtifactCore(repoPath, testsArtifactId(epicHash, storyId)) : {};
+	const standalone = inheritedStoryStandalone(
+		repoPath, epicHash, storyId, build.standalone ?? tests.standalone ?? fallback.standalone,
+	) === true;
+	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, build.createdAt ?? tests.createdAt ?? fallback.ownCreatedAt);
 }
 
 /** Absolute path to a canonical artifact JSON from its (hash-based) id. The
@@ -632,6 +650,25 @@ export function buildArtifactPaths(
 	return {
 		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'BUILD', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`),
+	};
+}
+
+/** Paths for a Story's test record. The direct peer of `buildArtifactPaths`:
+ *  nested `S<nnn>/TESTS.md`, canonical hash-named JSON in the `TESTS-` namespace. */
+export function testsArtifactPaths(
+	repoPath:     string,
+	epicHash:     string,
+	storyId:      string,
+	createdAtISO: string,
+	workItemKind: WorkItemKind,
+	epicSlug?:    string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'TESTS', workItemKind, epicSlug ?? epicHash),
+		json: join(repoPath, ARTIFACTS_DIR, `${testsArtifactId(epicHash, storyId)}.json`),
 	};
 }
 

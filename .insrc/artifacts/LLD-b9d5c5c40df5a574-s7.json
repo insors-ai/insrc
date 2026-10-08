@@ -37,7 +37,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "Each acceptance criterion of Define Story S007 (ac1 complete to a final report, ac2 nested plans, ac3 a stopped run says where and why, ac4 a completed run is replayed) is designed, and the docs-family gap on ac1 is an exception recorded upstream rather than a silent omission.",
-          "evidence": "DEF.md:236-239 lists ac1-ac4 exactly as the design maps them (section 6 acceptance mapping covers all four). The docs exception is recorded in the Define itself: DEF.md:55 'S003:FR005 \u2014 ... this closes the exception accepted on Story s7 for the docs family' and DEF.md:167 (S003 ac7) 'where Story s7 was accepted with that analysis not completing'. The module notion is split to S008 (DEF.md:241), which the design leaves alone. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md]",
+          "evidence": "DEF.md:236-239 lists ac1-ac4 exactly as the design maps them (section 6 acceptance mapping covers all four). The docs exception is recorded in the Define itself: DEF.md:55 'S003:FR005 — ... this closes the exception accepted on Story s7 for the docs family' and DEF.md:167 (S003 ac7) 'where Story s7 was accepted with that analysis not completing'. The module notion is split to S008 (DEF.md:241), which the design leaves alone. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -233,6 +233,11 @@
       "reviewedAt": "2026-10-08T13:34:17.731Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T13:54:57.478Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-08. Ten daemon reviews; every finding through the ninth is applied. The tenth (block, 1 medium, 15 of 16 premises hold) has no finding against the design's mechanics: it asks that the HLD's wording on run records be brought in line with this design, which keeps a count of live runs per id where the HLD says a set of ids, and has two readers rewrite an abandoned record where the HLD says three. The departure is recorded on this design as an open question and is to be folded into the next HLD edit. The chosen alternative's text was brought in line after the tenth review and was not sent back for an eleventh.",
+      "at": "2026-10-08T13:54:57.472Z"
     }
   },
   "body": {
@@ -339,7 +344,7 @@
           "internal": "Giving a request that asks no specific question a run context: what the lookup pipeline plans for it (a broad survey of the area it names, from the lookups that exist) where today it returns at once; the same for a request started with a stated kind of source, which is always marked unfocused; serving, in the lookup pipeline, the four kinds of scope it returns for today (a file, a symbol, a manifest directory, a data connection), and how each resolves to what the lookups need. Replacing the single 'model unavailable' error with the cause of each way of not proceeding, as new codes in the existing list and new typed errors, and with the existing codes where one fits: every place the pipeline returns nothing, and the fall-through for a bundle that fails validation, is listed and given its cause. It owns the place the error is raised, the pipeline's rule for returning nothing, and the functions that map these errors to codes (the plan tree's and the daemon's, and the classify stage's mapping, through which an error from the classifier's context build is routed). The form of a symbol scope's value, its resolution to one stored entity, and the validator and classifier prompt brought in line. The one function that resolves a scope's value to a repo, a path or an entity, and moving the lookup pipeline's direct readers of the value to it (the planning prompt, the context builder's path resolution, the indexed check). Correcting the table of which kind of scope goes with which kind of source, with the classifier prompt's copy of it, the table's comment and the matrix test, and applying it on both classification branches: the plan tree's classify mapping surfaces the validator's inner code, and the branch with no classifier calls the validator's checks directly. Supplying the connection check from both callers of the classifier, and mapping a connection id to its repo. It declares all three new codes in both lists; Stories s1 and s7 raise one each."
         }
       ],
-      "rolloutPhase": "Phase C \u2014 a broad analysis completes",
+      "rolloutPhase": "Phase C — a broad analysis completes",
       "nonFunctional": {
         "performance": "A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.",
         "observability": "Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.",

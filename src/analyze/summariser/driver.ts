@@ -54,6 +54,13 @@ const log = getLogger('analyze:summariser');
 
 const SUMMARISER_PROMPT_REL = 'prompts/analyze/doc-summariser.system.md';
 
+/**
+ * How much of a document's stored body the summariser gives the model. A
+ * summary therefore rests on at most this many characters of its document;
+ * the plan tasks that read summaries report a longer document as partly read.
+ */
+export const SUMMARISER_BODY_CHARS = 8_192;
+
 // ---------------------------------------------------------------------------
 // Typed errors
 // ---------------------------------------------------------------------------
@@ -315,7 +322,7 @@ function buildMessages(args: {
 		'\n' +
 		'Doc body:\n' +
 		'```\n' +
-		entity.body?.slice(0, 8_192) + '\n' +
+		entity.body?.slice(0, SUMMARISER_BODY_CHARS) + '\n' +
 		'```\n' +
 		hintsBlock +
 		'\n\n' +
@@ -368,6 +375,7 @@ function classifyErrorCode(err: unknown): string {
 
 /** Test hook. */
 export const _classifyErrorCodeForTest = classifyErrorCode;
+export const _buildMessagesForTest = buildMessages;
 
 // ---------------------------------------------------------------------------
 // Prompt loading + provider construction

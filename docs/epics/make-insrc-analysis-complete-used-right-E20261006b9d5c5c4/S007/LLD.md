@@ -438,3 +438,22 @@ Scope: the three per-family functions stay, each rewritten to call resolveScope 
 
 - A nested plan (ac2) was not planned by any live run at size S. If no size makes the planner emit a planner-kind task on this repository, is the integration test over a nested plan, with the real walk and stand-in runtimes, accepted as the proof?
 - Back-flow to the HLD: the HLD's text on run records says the daemon keeps the set of run ids it is executing and that three readers apply the abandoned rule, the resume check among them. This design keeps a count of runs per id, so that two runs under one id cannot make each other look abandoned, and has two readers rewrite, since the resume check cannot find its own id not live and a new run replaces the record anyway. The HLD's text should be brought in line.
+
+## Resolved questions
+
+- `q99631ac2` — A nested plan (ac2) was not planned by any live run at size S. If no size makes the planner emit a planner-kind task on this repository, is the integration test over a nested plan, with the real walk and stand-in runtimes, accepted as the proof?
+  - **resolved**: Try larger sizes first, then fall back — Stakeholder took the recommendation on 2026-10-08: only size S has been tried live, so run the planner live at larger sizes (infra or data, which complete today) to look for a nested plan; if none appears, the integration test over the real walk is the proof for ac2, with the sizes tried recorded. _(2026-10-08T14:12:53.720Z)_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1.analyzeBundles[0]: How far a broad analysis of this repository gets, for each of the four families` — "live runs through the daemon (analyze.run.start), 2026-10-08, after the fix of ISSUE-7a3ab8dc"
+- **[[c2]]** `step-output` `s1.analyzeBundles[1]: Why one missing input makes the aggregate task skip and the run fail` — "direct read (not an analyze run)"
+- **[[c3]]** `step-output` `s1.analyzeBundles[2]: Which kinds of scope each family's plan tasks accept, and which tasks read the scope's value directly` — "direct read (not an analyze run)"
+- **[[c4]]** `step-output` `s1.analyzeBundles[3]: What happens to a run record when a run dies, and who reads run records` — "direct read (not an analyze run)"
+- **[[c5]]** `step-output` `s1.analyzeBundles[4]: Where an empty prompt is refused, and what a request without a prompt means further in` — "direct read (not an analyze run)"
+- **[[c6]]** `step-output` `s1.analyzeBundles[5]: Existing tests the test strategy extends` — "direct read (not an analyze run)"
+- **[[c7]]** `stakeholder` `2026-10-08: split the first broad run's findings in three (option A)` — "go with A"
+- **[[c8]]** `prior-artifact` `ISSUE-7a3ab8dc4b9d39ea` — "The plan tree cannot plan through the claude CLI, and a failed model call does not say why"
+- **[[c9]]** `prior-artifact` `HLD-b9d5c5c40df5a574` — "Its design begins by running one and recording how far it gets; if what is found is more than one Story, it is brought back to be split."
+- **[[c10]]** `stakeholder` `2026-10-08: ac1 for the docs family is an accepted exception on Story s7; it must be addressed later, by Story s3` — "go with B, but this needs to be addressed later"
+- **[[c11]]** `prior-artifact` `EXT-b9d5c5c40df5a574-s8` — "The code tasks of a broad analysis work on a repository whose graph has no modules for its directories"

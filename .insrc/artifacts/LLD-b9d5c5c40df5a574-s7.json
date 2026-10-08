@@ -240,7 +240,16 @@
       "at": "2026-10-08T13:54:57.472Z"
     },
     "staleAckedAt": "2026-10-08T13:58:21.267Z",
-    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved."
+    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved.",
+    "questionResolutions": {
+      "q99631ac2": {
+        "question": "A nested plan (ac2) was not planned by any live run at size S. If no size makes the planner emit a planner-kind task on this repository, is the integration test over a nested plan, with the real walk and stand-in runtimes, accepted as the proof?",
+        "status": "resolved",
+        "choice": "Try larger sizes first, then fall back",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: only size S has been tried live, so run the planner live at larger sizes (infra or data, which complete today) to look for a nested plan; if none appears, the integration test over the real walk is the proof for ac2, with the sizes tried recorded.",
+        "resolvedAt": "2026-10-08T14:12:53.720Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -18,11 +18,14 @@ import {
 	buildRecord,
 	crRecord,
 	defRecord,
+	extRecord,
 	hldRecord,
+	issueRecord,
 	lldRecord,
 	planRecord,
 	recordFromFile,
 	recordSet,
+	specRecord,
 } from './fixtures.js';
 
 const EPIC = 'aaaaaaaaaaaaaaaa';
@@ -69,6 +72,9 @@ test('a review is current or stale only where a recorded field settles it, and u
 		planRecord(EPIC, 's4', ['t1'], { ...REVIEW, lldRunId: 'wf-lld-other', lldEffectiveHash: current }),
 		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }], { approvedAt: CREATED, updatedAt: '2026-10-09T00:00:00.000Z' }),
 		crRecord(EPIC, 's1', 'pass'),
+		specRecord('dddddddddddddddd', REVIEW),
+		issueRecord('bbbbbbbbbbbbbbbb', { slug: 'nothing' }, REVIEW),
+		extRecord(EPIC, 's5', { ...REVIEW, approvedAt: CREATED }),
 	]);
 
 	assert.equal(currencyOf(result, `LLD-${EPIC}-s1`).reviewCurrency, 'current');
@@ -82,7 +88,7 @@ test('a review is current or stale only where a recorded field settles it, and u
 	assert.equal(plan.reviewCurrency, 'stale');
 	assert.match(plan.basis ?? '', /lldRunId differ/);
 
-	for (const id of [`DEF-${EPIC}`, `HLD-${EPIC}`, `CR-${EPIC}-s1`]) {
+	for (const id of [`DEF-${EPIC}`, `HLD-${EPIC}`, `CR-${EPIC}-s1`, 'SPEC-dddddddddddddddd', 'ISSUE-bbbbbbbbbbbbbbbb', `EXT-${EPIC}-s5`]) {
 		assert.deepEqual(currencyOf(result, id), { artifactId: id, reviewCurrency: 'unknown', basis: null }, `${id} reads unknown`);
 	}
 	assert.equal(currencyOf(result, `CR-${EPIC}-s1`).reviewCurrency, 'unknown', 'a build approved after its review never makes the review stale');

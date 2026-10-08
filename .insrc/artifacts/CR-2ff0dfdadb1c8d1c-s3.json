@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791463017981-yatmzc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T12:36:57.981Z",
+    "model": "claude:opus",
+    "elapsedMs": 110294,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s3",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/delivery/__tests__/gate.test.ts",
+        "src/workflow/delivery/__tests__/read.test.ts",
+        "src/workflow/delivery/__tests__/types.test.ts",
+        "src/workflow/delivery/gate.ts",
+        "src/workflow/delivery/graph.ts",
+        "src/workflow/delivery/load.ts",
+        "src/workflow/delivery/read.ts",
+        "src/workflow/delivery/types.ts",
+        "src/workflow/review/resolve.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/graph.ts:83",
+            "message": "graph.ts defines its own local readers `str` / `obj` / `arr` that wrap the shared `asString` / `asObject` in read.ts. gate.ts and load.ts call the shared readers directly. Recent commit 7e7bc2cc moved the delivery module to 'one shared asObject', so these wrappers are a second set of readers in the same module. Consider calling the shared readers directly, or moving `arr` into read.ts. Only three modules show this pattern, so it is an observation, not a breach.",
+            "expectationRef": "module-idiom: shared delivery readers (read.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/gate.ts:96",
+            "message": "`approvalOf` is defined in both gate.ts (takes an ArtifactRecord, returns ArtifactGate['approval']) and load.ts:48 (takes a raw fields record, returns ArtifactRecord['approval']). The signatures and meanings differ. Both are module-private, so nothing is broken, but two different functions with the same name in one module make it easy to grep or edit the wrong one. A more specific name such as `gateApprovalOf` would avoid this.",
+            "expectationRef": "module-idiom: helper naming within workflow/delivery",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/delivery/graph.ts:191",
+            "message": "buildWorkItemGraph runs to about 165 lines and calls 19 helpers. One body handles hash indexing, head minting, story seeding, the standalone and anchor rules, raw-id fallback and the ambiguity notices. The inline closures (seed, lldAnchorOf) and the per-story loop at lines 269-328 could become named helpers, for example a function that resolves one story's placement and id. The logic is well commented and covered by run/stageOf in the tests, so this is a maintainability note, not a correctness risk.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

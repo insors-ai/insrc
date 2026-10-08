@@ -1,0 +1,276 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791460987477-4hovtq",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T12:08:04.309Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 296827,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s3",
+    "lldRunId": "wf-1791458944705-ro00q5",
+    "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T12:10:11.011Z",
+    "rangeBase": "1fe805dcb03552a2937450061de653f8cd842370"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds the sc5 gate types to the delivery module's types, re-using the review verdict type, then one new gate.ts holding the gate pass in two layers: an artifact gate per record (approval, review, effective verdict, blocking) and an item gate per epic, story and issue (task validation, the story-level result, the approved-but-failed conflict, the attention reasons with the superseded-pending rule, and the pass's two notices). Everything is tested over fabricated records in one new gate.test.ts, plus a type-level check of the new types."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Gate annotation types",
+        "summary": "Add ArtifactGate, TaskResult, TaskValidation, AttentionReason, ItemGates and GatePassResult to src/workflow/delivery/types.ts as the HLD sc5 sketch, importing ReviewVerdict with `import type` from ../review/types.js and re-exporting it.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The sc5 types are exported from types.ts with exactly the sketched members and fields.",
+          "ReviewVerdict is re-exported from review/types.ts, not redeclared.",
+          "The module compiles under the repo's strict tsconfig."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "types.test.ts: 'the gate types re-export the review verdict and list exactly the sketched members'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Artifact gates: approval and review facts",
+        "summary": "New src/workflow/delivery/gate.ts exporting deriveGates(graph, recordSet). Layer 1 builds one ArtifactGate per record: approval state and time; the review for design kinds from meta.review (findings filtered to well-formed entries before effectiveReviewVerdict, resolvedFindings, reviewOverride, reviewerPartyOf with unknown as null, effectiveVerdict including warn-with-unresolved-MED as block and all-resolved block as pass) and for a CR from body.verdict / body.counts (per-field, non-numbers as 0) / reviewerPartyOf(meta); review null for BUILD and AMD; blocking for design artifacts against their own approval and for a CR against its story's BUILD approval, ignoring the CR's own stamp and reading no config. After this task deriveGates returns the full artifacts map with an empty items map and no notices; t3 fills those.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Approved, rejected and unstamped records read approved, rejected and pending with the matching time.",
+          "An unapproved block with no override is blocking; an approved block and an overridden block are not, and still report the verdict and override.",
+          "A block whose HIGH/MED findings are all resolved has effectiveVerdict pass; a warn with an unresolved MED has effectiveVerdict block.",
+          "A CR blocks only while its story has no approved BUILD, whatever the CR's own stamp.",
+          "A CR stamped model 'client' without reviewedBy reads reviewedBy 'controller'.",
+          "Malformed reviews, findings and CR bodies never throw and invent nothing."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'approved, rejected and unstamped artifacts read approved, rejected and pending'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'an approved historical block and an overridden block do not block and still show the verdict and the override'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a code review blocks only while its story has no approved build'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Item gates: task validation, conflict, attention and notices",
+        "summary": "Layer 2 of deriveGates: one ItemGates per epic, story and issue. Task validation per task child (planned by ordinal against plannedTaskIds, result failed > passed > unrecorded over the story's BUILD body.tasks, through private null-returning ordinal wrappers, ignoring malformed or unparseable entries); the story-level result; the conflict when a BUILD is approved and any result failed; attentionReasons over the evidence minus superseded pending records (chains SPEC<DEF<HLD on an epic, SPEC<LLD<PLAN<BUILD on a story; ISSUE, EXT and AMD never superseded; a CR never raises pending-decision); attentionRule naming the excluded records; unplanned-task and validation-conflict notices sorted with sortNotices. gate.ts never imports stage.ts; the ac2/ac5 tests import deriveStages test-only to assert the stage is unchanged.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "An approved BUILD with a failed task carries the conflict, validation-failed and validation-conflict, and a validation-conflict notice; its approval stays approved and deriveStages (test-only) still reads complete.",
+          "The BUILD-0855311b6b32eb72-S001 shape gives storyLevelResult failed, no task items and a story-level conflict.",
+          "A planned task with no result is unrecorded; a build task with no planned task keeps its result, is unplanned and raises an unplanned-task notice.",
+          "A pending LLD under an approved PLAN, a pending DEF under an approved HLD and a pending SPEC on a story with an approved LLD raise no attention reason, even with a blocked review, and attentionRule names them; pending ISSUE, EXT and AMD still raise pending-decision.",
+          "Every epic, story and issue gets exactly one ItemGates, deterministically, and the pass never throws.",
+          "gate.ts has no import of stage.ts."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a planned task with no recorded result is unrecorded and counted as neither passed nor failed'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a build task with no planned task keeps its result and is marked unplanned'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated'"
+          },
+          {
+            "level": "unit",
+            "name": "gate.test.ts: 'every epic, story and issue in the real-shape fixtures gets item gates, deterministically'"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "gate.test.ts: 'approved, rejected and unstamped artifacts read approved, rejected and pending'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review'",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'an approved historical block and an overridden block do not block and still show the verdict and the override'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a code review blocks only while its story has no approved build'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented'",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a planned task with no recorded result is unrecorded and counted as neither passed nor failed'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a build task with no planned task keeps its result and is marked unplanned'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "gate.test.ts: 'every epic, story and issue in the real-shape fixtures gets item gates, deterministically'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: the sc5 types in delivery/types.ts with ReviewVerdict re-exported from review/types.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails: ArtifactGate rules (approval, review, effectiveVerdict, blocking, CR guarded gate)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails: ItemGates task validation, storyLevelResult and conflict"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails: AttentionReason and the stakeholder-confirmed superseded-pending rule"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths: malformed reviews, findings, CR bodies, task entries and unparseable ids"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails: DeliveryNotice gate-pass notices (unplanned-task, validation-conflict)"
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791480626042-aqur7t",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T17:31:17.161Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 51119,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7bb98c29f578875d",
+    "epicSlug": "bug-build-validation-cannot-resolve-plan",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/build-step/validation-checks.ts defines LEADING_TEST_FILE as /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/, which accepts exactly one '<base>.test.ts' immediately followed (modulo whitespace) by ':' at the start of a test name.",
+          "evidence": "The read of src/mcp/build-step/validation-checks.ts:76 returned `const LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/;`, which matches the cited regex character for character at the anchored line. The grep found 2 matches: this source line and a quotation of it in docs/standalone/bug-build-validation-cannot-resolve-plan-E202610087bb98c29/ISSUE.md:19. The premise's description of the regex is also correct. `^\\s*` anchors it to the start of the name and allows leading whitespace. A single capture group matches `[A-Za-z0-9_.-]+\\.test\\.ts`, a base name that cannot contain `/`. Then `\\s*:` requires a colon, with optional whitespace before it.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited file:line holds exactly the regex the premise quotes, and the premise's description of what it accepts matches the pattern. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "Root cause",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "resolveTaskTestFiles in src/mcp/build-step/validation-checks.ts maps each test name to files only via LEADING_TEST_FILE.exec(name) and a basename lookup over tracked __tests__ files; there is no other resolution path.",
+          "evidence": "`src/mcp/build-step/validation-checks.ts:94` resolves to `export function resolveTaskTestFiles(`, so the function anchor is correct. `src/mcp/build-step/validation-checks.ts:109` reads `const m = LEADING_TEST_FILE.exec(name);`, and line 110 reads `const matches = m?.[1] === undefined ? undefined : byBase.get(m[1]);`. Together these confirm that each test name is resolved by extracting a leading test-file token and looking its basename up in the `byBase` map. The only other `byBase.get(` match is at line 102 (`const list = byBase.get(b);`), which sits before the per-name loop. It reads like part of building the `byBase` index (get or create the list for basename `b`), not a second way to resolve a test name. No other resolver call turned up in the gathered evidence. The claim that there is \"no other resolution path\" can only be checked against these matches. The evidence supports it and nothing contradicts it.",
+          "action": "None — verified sound. Optionally, the premise could name line 102 as the code that builds the basename index, so readers don't take it for a second lookup path.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The anchors resolve to the stated entities, and the only resolution logic in the evidence is LEADING_TEST_FILE.exec plus the byBase basename lookup. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p3",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "In resolveTaskTestFiles, a name whose LEADING_TEST_FILE match is absent or maps to no tracked file is pushed onto `unresolved` (`if (matches === undefined || matches.length === 0) { unresolved.push(name);`).",
+          "evidence": "Both cited anchors check out exactly. A read of src/mcp/build-step/validation-checks.ts:111 returns `if (matches === undefined || matches.length === 0) {`, and a read of :112 returns `unresolved.push(name);`. A grep for each pattern finds only one source match, at these same lines; the second match each time is the ISSUE.md citation itself. So the branch the premise describes exists where it says, and it pushes the name onto `unresolved` when the match is absent or empty.",
+          "action": "None needed: the evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited lines are where the premise says and match it exactly, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "Root cause",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "planTaskCheckPlan calls resolveTaskTestFiles on the task's test names and passes its `unresolved` list through as the plan's unresolvedTests.",
+          "evidence": "The gathered evidence supports the premise. `src/mcp/build-step/validation-checks.ts:129` declares `export function planTaskCheckPlan(repoPath, task: { readonly tests: readonly { readonly name: string }[] }): ValidationCheckPlan`, so the task carries named tests. Line 131 reads `const { files, unresolved } = resolveTaskTestFiles(repoPath, names);`, which calls resolveTaskTestFiles and destructures its `unresolved` list. Line 133 reads `...basePlan(), testFiles: files, unresolvedTests: unresolved,`, which passes that list straight through as the plan's unresolvedTests. All three cited anchors point to the claimed code. Line 130 was not read. It presumably builds `names` from `task.tests`, which does not affect the claim. A second match at line 149 shows the same pass-through in a sibling function.",
+          "action": "None needed. The premise is verified.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the citation at all three anchors (129, 131, 133), so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The validate test check emits the note `named tests matched no test file: ${plan.unresolvedTests.join('; ')}` and fails (ok/testsPassed false) whenever plan.unresolvedTests is non-empty.",
+          "evidence": "The note template appears in both cited places: src/mcp/build-step/validation-checks.ts:209 (\"? `named tests matched no test file: ${plan.unresolvedTests.join('; ')}`\") and :218 (\"note: [ran.note, `named tests matched no test file: ${plan.unresolvedTests.join('; ')}`].filter(...).join('; ')\"). The failure gating is also there. At :211, `const ok = plan.unresolvedTests.length === 0 && (plan.noTests?.ok ?? false);` makes ok false whenever unresolvedTests is non-empty. At :215, `tests = plan.unresolvedTests.length === 0 ? ran : {` keeps the real run result only when nothing is unresolved, and otherwise builds a replacement result that carries the note from :218. The evidence does not show the replacement object's ok/passed field (lines 216–217 were not read). Still, the branch structure plus the explicit ok gate at :211 support the claim that a non-empty unresolvedTests always fails the check.",
+          "action": "None needed: the premise holds. One small caveat: the ok:false field inside the replacement object at :215–:218 was not in the evidence, so a one-line read of lines 216–217 would fully close it.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence supports the premise, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p6",
+          "ref": "Root cause",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test name 'artifact-content.test.ts and pending.test.ts: ...' does not match LEADING_TEST_FILE because the first file name is followed by ' and' rather than ':', so it becomes unresolved and neither file is run.",
+          "evidence": "The premise holds against the regex. `src/mcp/build-step/validation-checks.ts:76` defines `const LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/;`. The pattern is anchored at `^`, and its file-name character class `[A-Za-z0-9_.-]` has no space. For 'artifact-content.test.ts and pending.test.ts: ...', the capture group matches 'artifact-content.test.ts'. After that, `\\s*` consumes the space, but the next character is 'a' (from 'and'), not ':'. Backtracking can't help: the name must end in `.test.ts`, and the anchor stops the match from starting at 'pending.test.ts'. So the match fails. This regex is the mapping used at line 109 (`const m = LEADING_TEST_FILE.exec(name);`) and in the filter at line 144 (`names.filter(n => LEADING_TEST_FILE.test(n))`). The name therefore isn't mapped to either file, which matches the ISSUE.md:11 description that it goes to unresolved. The evidence covers the matching step directly. The unresolved-handling branch isn't quoted, but the premise's 'neither file is run' follows from the failed match, since the name has no other path to a file.",
+          "action": "None needed: the evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise, so no artifact edit is needed."
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "Reproduction",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "Both named files exist under src/workflow/__tests__: artifact-content.test.ts and pending.test.ts.",
+          "evidence": "Both anchors resolve. The read of `src/workflow/__tests__/artifact-content.test.ts:1` returned FOUND with the file's license header (`/*-----...`). The read of `src/workflow/__tests__/pending.test.ts:1` also returned FOUND with the same header. Both files exist under src/workflow/__tests__ as the premise states. The grep results for `describe(` and `workflow.artifactContent|workflow.pending` were capped at 50 matches and include no lines from these two files, but that has no bearing on this premise, which only claims the files exist.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Both named test files were read at line 1 in the real source tree, so the premise holds and no edit is needed."
+          }
+        },
+        {
+          "claimId": "p8",
+          "ref": "Fix intent",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "LEADING_TEST_FILE is also used outside resolveTaskTestFiles (a second plan builder filters names with LEADING_TEST_FILE.test(n) before resolving); the fix intent must cover every LEADING_TEST_FILE consumer, or a multi-file name would be silently dropped there instead of resolved ('the LLD names no test file').",
+          "evidence": "The grep for /LEADING_TEST_FILE\\.(test|exec)\\(/ finds exactly 2 consumers. One is src/mcp/build-step/validation-checks.ts:109 `const m = LEADING_TEST_FILE.exec(name);`, which sits inside resolveTaskTestFiles (declared at :94). The other is src/mcp/build-step/validation-checks.ts:144 `const named = names.filter(n => LEADING_TEST_FILE.test(n));`, which is a second plan builder. It filters names before it resolves them with `resolveTaskTestFiles(repoPath, named)` at :148. When the filter leaves nothing, :146 returns `noTests: { ok: false, note: 'the LLD names no test file' }`. So the premise holds: LEADING_TEST_FILE has a consumer outside resolveTaskTestFiles. If only the exec at :109 is widened, the .test() filter at :144 still drops a multi-file name, and the build reports 'the LLD names no test file' instead of resolving the name. The other plan builder (:131) passes names to resolveTaskTestFiles directly with no pre-filter.",
+          "action": "None needed: the premise is confirmed. When building the fix, change both LEADING_TEST_FILE consumers (validation-checks.ts:109 and :144) the same way, or move the :144 filter onto the shared multi-file parse. Add a test where a multi-file name reaches the :144 path and confirm the build does not report 'the LLD names no test file'.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise (two LEADING_TEST_FILE consumers at :109 and :144), so the artifact text needs no correction. The premise is a scope reminder that the build must follow."
+          }
+        },
+        {
+          "claimId": "p9",
+          "ref": "Fix intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Under the current rule, a '*.test.ts' mention appearing only after the ':' does not count as a test-file reference, because LEADING_TEST_FILE is anchored at the start of the name; the fix preserves this.",
+          "evidence": "src/mcp/build-step/validation-checks.ts:76 reads `const LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/;`. The `^` anchor plus `\\s*` means the capture group can only match a name that starts the string, apart from leading whitespace. The group's character class `[A-Za-z0-9_.-]` has no space or colon in it, and the group must be followed directly by `\\s*:`. So in an input such as `\"some name: foo.test.ts\"`, the `*.test.ts` mention after the ':' can never fill the group: the text before the first ':' would have to end in `.test.ts`, and here it doesn't. The ISSUE.md citation [[c1]] quotes the same line. This confirms the premise's claim about the current rule. The second half, \"the fix preserves this\", is about how the fix is meant to behave rather than about existing code. It is consistent with the anchored rule the evidence shows, and nothing in the evidence contradicts it.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms that LEADING_TEST_FILE is anchored to the start of the name and needs a ':' right after the test-file name, so a mention that appears only after the ':' is not counted. No change to the artifact is needed. Whether the fix keeps this behaviour should be checked during code review of the built change."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c4",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Prior artifact BUILD-2ff0dfdadb1c8d1c-s5 task t3 recorded validation passed false with note 'named tests matched no test file: artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged', matching the note format produced by the test check.",
+          "evidence": "The note-format half of the premise checks out. src/mcp/build-step/validation-checks.ts:209 reads \"? `named tests matched no test file: ${plan.unresolvedTests.join('; ')}`\", and line 218 has the same prefix inside a joined note. Joining the unresolved test names into that template gives exactly the quoted note 'named tests matched no test file: artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged'. The prior-artifact half is not verified. All 5 grep matches come from the ISSUE.md that makes this claim (lines 7, 22 and 23) or from validation-checks.ts. None comes from the BUILD-2ff0dfdadb1c8d1c-s5 record, so the evidence never shows that task t3 actually recorded passed false with that note. The only support is the ISSUE quoting itself (ISSUE.md:23).",
+          "action": "Confirm the claim against the BUILD-2ff0dfdadb1c8d1c-s5 record: read t3's validation entry and check passed=false and the exact note text, then cite that record's real path and line in c4 instead of the bare artifact ID. Whether or not it holds, the fix the issue prescribes still stands, because ISSUE.md:7's reproduction steps and the code at validation-checks.ts:209/218 show the failure mode on their own.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The prior record is missing from the evidence, so there is nothing to base an auto-edit on. A person has to look up the BUILD artifact's path and confirm the t3 validation entry.",
+            "options": [
+              "Read the BUILD-2ff0dfdadb1c8d1c-s5 artifact, confirm t3's validation entry is passed=false with the quoted note, and add its path:line to c4",
+              "If the record can't be found, reword c4 as an observed reproduction (ISSUE.md:7) rather than a prior-artifact citation"
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 9
+      },
+      "reviewedAt": "2026-10-08T17:41:53.057Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p10": {
+        "findingId": "p10",
+        "status": "resolved",
+        "note": "Checked: .insrc/artifacts/BUILD-2ff0dfdadb1c8d1c-s5.json:22 records t3 as passed false. The note text is not stored in the record; it was in the validate response of 2026-10-08. Citation c4 now says exactly that. Also widened the fix intent to cover the second LEADING_TEST_FILE consumer (validation-checks.ts:144), per the LOW on the fix intent.",
+        "resolvedAt": "2026-10-08T17:45:23.636Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Resolve a plan test name that lists several test files",
+    "reproduction": "Give an approved plan task the test name 'artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged', where both files exist under src/workflow/__tests__. Run insrc_build_step validate on that task. Observed: the test run reports 'named tests matched no test file: artifact-content.test.ts and pending.test.ts: ...', the two files are never run, and the task fails with testsPassed false even though every acceptance check is judged satisfied (this happened to E1 s5 task t3; both files pass 32/32 when run by hand). Expected: both files are run, and the task passes when they pass.",
+    "rootCause": "resolveTaskTestFiles in src/mcp/build-step/validation-checks.ts maps a test name to files only through LEADING_TEST_FILE, which accepts exactly one '<base>.test.ts' followed by ':' at the start of the name. In 'artifact-content.test.ts and pending.test.ts: ...' the first file name is followed by ' and', not ':', so the pattern does not match, the name goes to unresolved, and planTaskCheckPlan passes it on as an unresolved test, which makes the test check fail.",
+    "fixIntent": "When the leading part of a test name, before its ':', lists several test files joined by 'and' or commas, resolve it to every listed file, so all of them are run. This holds everywhere the leading prefix is read, including the plan builder that first filters names by it, so a multi-file name is neither left unresolved nor reported as naming no test file. A name whose leading part names no test file stays unresolved as today, and a '*.test.ts' mention after the ':' still does not count."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts",
+      "quotedText": "const LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts",
+      "quotedText": "if (matches === undefined || matches.length === 0) {\n\t\t\tunresolved.push(name);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/mcp/build-step/validation-checks.ts",
+      "quotedText": "? `named tests matched no test file: ${plan.unresolvedTests.join('; ')}`"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-2ff0dfdadb1c8d1c-s5.json:22 records task t3 as passed false; the note 'named tests matched no test file: artifact-content.test.ts and pending.test.ts: the existing workflow.artifactContent and workflow.pending tests, unchanged' was in the insrc_build_step validate response of 2026-10-08 and is not stored in the record"
+    }
+  ]
+}

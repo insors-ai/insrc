@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791480477175-7u0j6y",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T17:29:20.823Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 83648,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "4b33600426ce4112",
+    "epicSlug": "bug-test-sweep-hangs-intermittently-npx",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/artifacts/companion/__tests__/render.test.ts exists and its header recommends running it with `npx tsx --test --test-force-exit`.",
+          "evidence": "read src/workflow/artifacts/companion/__tests__/render.test.ts:1 → FOUND, so the file exists. grep matched src/workflow/artifacts/companion/__tests__/render.test.ts:14, which reads \" * Run: npx tsx --test --test-force-exit src/workflow/artifacts/companion/__tests__/render.test.ts\". That line is in the file's header comment and recommends `npx tsx --test --test-force-exit` as the premise says. The other grep match is the ISSUE.md citation of this same line.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: the file exists, and line 14 of its header gives the --test-force-exit run command. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "render.test.ts contains exactly three tests.",
+          "evidence": "The read probe shows the anchor file exists: `src/workflow/artifacts/companion/__tests__/render.test.ts:1` → FOUND (opens with a `/*---` license header). Neither grep probe says anything about this file. `/^\\s*(it|test)\\(/` hit its 50-match cap after covering only `src/agent/providers/__tests__/*` (cli-failure-message, cli-provider.live, cli-review-session, cli-subprocess, local-agents-structured.live, mcp-sampling-provider). `/^\\s*describe\\(/` hit its cap after covering only `src/daemon/db/__tests__/*`. Neither result lists a single match in `render.test.ts`, so the evidence can neither confirm nor refute the claim that it contains exactly three tests. The premise is UNVERIFIABLE from the gathered evidence.",
+          "action": "Re-run the test-count probe scoped to the anchor file only, e.g. `rg -n '^\\s*(it|test)\\(' src/workflow/artifacts/companion/__tests__/render.test.ts`, so the repo-wide 50-match cap cannot truncate it. Then fix the count in the artifact to the real number, or drop the word \"exactly\" if the task does not depend on the precise count. The file exists, so the anchor itself is sound.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchor resolves, but the count of three is not grounded. The repo-wide grep was truncated before it reached src/workflow/. A count can only be corrected from a file-scoped probe, so no edit to the artifact can be derived from the current evidence.",
+            "options": [
+              "Re-run the probe scoped to render.test.ts and replace 'exactly three' with the count it finds",
+              "Make the premise less strict (e.g. 'render.test.ts contains the companion render tests') if the task does not depend on the exact count",
+              "Keep the premise as written once a scoped probe confirms there are 3 matching test( / it( calls"
+            ]
+          }
+        },
+        {
+          "claimId": "p3",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "All tests in render.test.ts call renderErCompanion, which is defined in src/workflow/artifacts/companion/render.ts.",
+          "evidence": "The definition location is confirmed. grep /export (async )?function renderErCompanion/ matches src/workflow/artifacts/companion/render.ts:84 (`export async function renderErCompanion(`). The read of render.ts:1 confirms the file exists. Note that line 84 is the real anchor; an older LLD note gives ~65, which is now stale. In render.test.ts, renderErCompanion is called at three places: line 39 (basic render), line 53 (with `ofSectionId: '4-data-model-changes'`) and line 66 (inside `assert.rejects`). The evidence does not list the test declarations (`test(`/`it(`) in render.test.ts, so it cannot show that ALL tests in the file call renderErCompanion. There may be other tests that never reach it. The \"where it's defined\" half of the premise is verified. The \"all tests\" half is supported by these 3 calls but not proven.",
+          "action": "Keep the citation to render.ts and anchor it at line 84. Either narrow the \"all tests\" claim to the verified call sites (render.test.ts:39, :53, :66) or check the full list of tests in render.test.ts before relying on it. The prescribed change does not depend on the \"all\" wording as long as the work only touches these call sites.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The definition location is confirmed at render.ts:84. Only the 'all tests' quantifier is unproven, because the evidence shows 3 call sites but no list of tests. Rewording needs a human OK because the artifact's verbatim text was not provided.",
+            "options": [
+              "Reword to: 'The render.test.ts tests at lines 39, 53 and 66 call renderErCompanion, defined at src/workflow/artifacts/companion/render.ts:84.'",
+              "Keep 'all tests' after checking that render.test.ts declares exactly three tests (one per call site).",
+              "Drop the quantifier: 'render.test.ts exercises renderErCompanion (src/workflow/artifacts/companion/render.ts:84).'"
+            ]
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/workflow/artifacts/companion/render.ts imports assembleShell from '../../../docgen/render/shell.js' and renderErCompanion goes through assembleShell.",
+          "evidence": "The import half is confirmed directly from source: grep matched `src/workflow/artifacts/companion/render.ts:22: import { assembleShell } from '../../../docgen/render/shell.js';`, and the read of render.ts:1 shows the file exists. The `assembleShell(` grep stopped at its cap before reaching render.ts, so no direct source line shows the call inside renderErCompanion. The evidence still supports that half: a prior verified PLAN finding (docs/standalone/ux-mock-companion-does-not-produce-E2026100185e6a586/S001/PLAN.md:173) records `await assembleShell(ir)` at render.ts:91 inside `renderErCompanion` at :84, and says each of the four companion render functions calls it. That UX-mock change only replaced the UX companion's call site (render.ts:137-138, PLAN.md:61/172), so the ER companion's call is unaffected. Nothing in the evidence contradicts the premise.",
+          "action": "none — verified sound (optional: cite the renderErCompanion call site by line, e.g. render.ts:~91, so a future probe can confirm the call directly instead of relying on a prior artifact)",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Source confirms the import at render.ts:22. A prior verified artifact places the assembleShell call at render.ts:91 inside renderErCompanion (:84), and the later UX-only change did not touch it. The premise holds, so no edit is needed."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/docgen/render/shell.ts reads the bundled mermaid runtime asset via `readFile(join(dir, manifest.mermaidAsset), 'utf8')` from fs/promises.",
+          "evidence": "The premise matches the evidence exactly. src/docgen/render/shell.ts:78 contains `readFile(join(dir, manifest.mermaidAsset), 'utf8'),`, and src/docgen/render/shell.ts:20 contains `import { readFile } from 'node:fs/promises';`. The only other match is the ISSUE.md artifact quoting this same line. The import uses the `node:` prefix (`node:fs/promises`), which is the same module as `fs/promises`, so the claim holds.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: shell.ts:20 imports readFile from 'node:fs/promises' and shell.ts:78 performs readFile(join(dir, manifest.mermaidAsset), 'utf8'). No edit needed."
+          }
+        },
+        {
+          "claimId": "p6",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "For small diagrams, the assembleShell path in shell.ts (and renderErCompanion) only reads bundled assets with readFile and spawns no subprocess, timer, or other long-lived handle.",
+          "evidence": "The positive half of the premise holds. The readFile grep finds shell.ts:64 `JSON.parse(await readFile(join(docgenAssetDir(), 'runtime.json'), 'utf8'))`, plus shell.ts:78-79 reading `manifest.mermaidAsset` and `manifest.svgPanZoomAsset`. So assembleShell does read bundled assets with readFile. The companion directory reads assets the same way (adaptive-cards.ts:91 and metamodel.ts:105), but the evidence shows no readFile match in companion/render.ts itself.\n\nThe negative half cannot be verified. That half claims there is no subprocess, timer, or long-lived handle. Both negative greps are TRUNCATED at 50 matches, and they cut off before reaching the anchor files:\n- The child_process/spawn/exec grep never gets past docs/.\n- The setInterval/setTimeout/createServer/Worker grep stops at src/daemon/db/__tests__/rdbms-common.test.ts:300. Results are alphabetical, so src/docgen/render/shell.ts and src/workflow/artifacts/companion/render.ts were never reached.\n\nThe reads of shell.ts:1 and render.ts:1 return only the license header. Nothing in the evidence shows the bodies of assembleShell or renderErCompanion. Also, the ISSUE artifact (bug-test-sweep-hangs-intermittently) cites shell.ts readFile as a suspect in the test-hang investigation. That makes this absence claim load-bearing, and the evidence cannot confirm it.",
+          "action": "Re-run the absence probes scoped to the two anchor files, so truncation cannot hide matches: rg 'child_process|spawn\\(|execFile|exec\\(|setInterval|setTimeout|createServer|Worker\\(|watch\\(|createReadStream' src/docgen/render/shell.ts src/workflow/artifacts/companion/render.ts. Also check the transitive callees of assembleShell and renderErCompanion (for example loadRuntime/docgenAssetDir and the companion metamodel/adaptive-cards loaders). Then read both functions' bodies. Downgrade to LOW only if the scoped probes come back empty. If a handle is found, rewrite the premise and the root-cause analysis that depends on it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The readFile half is confirmed, but the 'no subprocess/timer/handle' half is unverifiable: the probes were truncated before reaching the anchor files. The premise needs scoped re-verification, or it should be reworded to claim only what the evidence shows.",
+            "options": [
+              "Re-run the absence greps scoped to src/docgen/render/shell.ts and src/workflow/artifacts/companion/render.ts (plus their direct callees), and keep the premise as written if they come back empty.",
+              "Reword the premise to the verified part only: 'assembleShell reads bundled assets (runtime.json, the mermaid and svg-pan-zoom bundles) via fs/promises readFile (shell.ts:64,78-79)', and track the no-long-lived-handle claim as an open hypothesis.",
+              "If scoped probes find a timer, subprocess, or watcher on these paths, make it the candidate root cause of the test-sweep hang and rewrite the premise."
+            ]
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "package.json defines the test script as `tsx --test src/**/__tests__/*.test.ts` (no --test-force-exit).",
+          "evidence": "The grep for the exact script string matches package.json:18: `\"test\": \"tsx --test src/**/__tests__/*.test.ts\"`. The other match is the ISSUE.md citation itself. The `test-force-exit` grep stopped at its 50-match cap, but its results are in path order and continue past where package.json would sort (after docs/, into src/). No package.json line appears, so the flag is not in package.json. Every flag occurrence is in docs, test-file headers (e.g. render.test.ts:14 \"Run: npx tsx --test --test-force-exit ...\"), or the validate runner (src/mcp/build-step/validation-checks.ts:28 TEST_RUNNER_ARGV). None is in the package.json test script. The premise is confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: package.json:18 defines the test script exactly as cited and it has no --test-force-exit. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p8",
+          "ref": "c5",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The companion directory has other test files besides render.test.ts that pass alongside it (104/104 runs), so the hang requires the full parallel sweep.",
+          "evidence": "The probe grep for /describe\\(|test\\(/ hit its 50-match cap and was truncated. None of the returned matches are under the anchor src/workflow/artifacts/companion/__tests__/. They come from design/, docs/epics/, docs/standalone/, jetbrains-plugin/ markdown-renderer.js, and src/agent/providers/__tests__/ (cli-failure-message.test.ts, cli-provider.live.test.ts, cli-review-session.test.ts). The evidence names no test file in the companion directory, not even render.test.ts. It holds no run output, so nothing supports the \"104/104 runs\" figure or the claim that the hang appears only in the full parallel sweep. The premise is therefore unverifiable from the gathered evidence.",
+          "action": "Re-run the probe scoped to the anchor so it is not truncated by matches elsewhere in the repo: list src/workflow/artifacts/companion/__tests__/*.test.ts and grep for test( only within that directory. Then confirm the claimed pass rate by running only that directory repeatedly, e.g. `npx tsx --test 'src/workflow/artifacts/companion/__tests__/*.test.ts'` in a loop. Record the actual file list and run count in the artifact. If no other test files exist there, change the premise so it no longer cites sibling files as evidence that the hang depends on the full sweep.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence contains no files or run results for the anchored directory, so no evidence-derived text edit is possible. The premise has to be checked again with a probe scoped to that directory and a repeated test run.",
+            "options": [
+              "Re-probe with a grep limited to src/workflow/artifacts/companion/__tests__/ and keep the premise if sibling test files are confirmed there",
+              "Run only the companion directory N times and record the observed pass count instead of the unverified 104/104",
+              "If render.test.ts is the only file there, reword the premise so the full-sweep hang is argued from other evidence (e.g. a run limited to that directory passing versus the full sweep hanging)"
+            ]
+          }
+        },
+        {
+          "claimId": "p9",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Node's test runner reports 'Promise resolution is still pending but the event loop has already resolved' when a test promise is never settled, and --test-force-exit masks this by exiting the process, dropping the file from results.",
+          "evidence": "The gathered evidence is a grep for /test-force-exit/ only (50 matches, truncated). It shows that the repo uses the flag widely: TEST_RUNNER_ARGV in src/mcp/build-step/validation-checks.ts:28, and the `Run: npx tsx --test --test-force-exit ...` headers in about 20 test files, including src/workflow/artifacts/companion/__tests__/render.test.ts:14. It also shows the repo's own documents restating parts of the premise. docs/standalone/bug-test-sweep-hangs-intermittently-npx-E202610084b336004/ISSUE.md:15 says \"Find what leaves a test promise unsettled ... without --test-force-exit and without dropping any file from the results\". docs/standalone/permission-hook-integration-test-ts-hangs-E2026100357446545/ISSUE.md:14 says the flag \"exits as soon as synchronous tests settle\" and \"cancels work still in flight\". None of the evidence contains Node's diagnostic string \"Promise resolution is still pending but the event loop has already resolved\". No Node documentation or source excerpt was gathered either. Nothing in the evidence shows that --test-force-exit makes the runner drop a file from its results, as opposed to cancelling or failing its tests. The only support is the artifacts' own prose, which is circular. The premise is about how an outside tool behaves, and these probes cannot confirm that.",
+          "action": "Confirm Node's behaviour before building on it. Reproduce it on the pinned Node 22 runtime: write a test whose promise never settles, with no live handle, and run it with and without --test-force-exit. Record the exact diagnostic text, and record whether the file is missing from the results or appears with its tests marked cancelled or failed. Then cite that transcript, or the matching Node docs or source (lib/internal/test_runner), in the artifact. Fix the premise wording if the run disagrees with it. Two details to check in particular: the \"still pending\" message appears when the event loop drains with no live handles, so a handle that keeps the process alive is a different failure mode; and the flag may report the file's tests as cancelled rather than drop the file.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither confirms nor contradicts how Node itself behaves; it only shows the repo using the flag and the issue documents asserting the premise. The fix still targets something real (making the sweep finish without --test-force-exit), so this is MED, not HIGH. Choosing the correct wording needs a reproduction or Node's docs, so no edit is proposed automatically.",
+            "options": [
+              "Run a minimal reproduction on Node 22 (a test with a never-settled promise, run with and without --test-force-exit), then attach the transcript as cited evidence for the premise.",
+              "Reword the premise to what the repo has actually observed: the sweep hangs or reports incompletely when render.test.ts runs in the parallel sweep. Drop the exact Node message and the claim that the file is dropped until they are confirmed.",
+              "Cite the Node 22 test-runner docs or source (lib/internal/test_runner) for the message and for how --test-force-exit reports unfinished tests, and adjust 'drops the file' to 'cancels/fails its tests' if that is what the source says."
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c5",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Recorded run evidence (sweep2.log, 2026-10-08) shows 1 of 6 subset runs hung on render.test.ts at 297683 ms with 2013 tests/2011 pass, while 5 runs finished in ~5.5 s; the full sweep also hung at commit c8fb4ed3.",
+          "evidence": "No probes were run for this premise, so there are no ripgrep matches and no path:line reads. None of its claims can be checked against the source tree: the existence or content of sweep2.log, the 1-of-6 subset hang on render.test.ts at 297683 ms, the 2013 tests / 2011 pass counts, the ~5.5 s duration of the other 5 runs, and the full-sweep hang at commit c8fb4ed3. The premise is UNVERIFIABLE from the evidence handed to this review.",
+          "action": "Ground the premise in checkable evidence. Do one of: (a) commit or attach sweep2.log (or the relevant excerpt) at a stable path and cite it with path:line for the render.test.ts hang line and the summary counts; (b) cite c8fb4ed3 as a resolvable commit, confirmed with `git cat-file -t c8fb4ed3`, together with the command used for the full sweep; or (c) reword the premise as an unverified observation rather than recorded evidence. Then re-run the review so probes can confirm the counts (2013/2011, 297683 ms, 5 of 6 at ~5.5 s).",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The premise rests on a run log and a commit hash that no probe checked. Whether it is accurate cannot be decided from the evidence, and editing the text would mean inventing values, so no artifactEdits are proposed. A human needs to supply checkable anchors or downgrade the claim.",
+            "options": [
+              "Commit sweep2.log (or an excerpt) into the repo and change the anchor to its path:line for the hang and summary lines, then re-review.",
+              "Keep the claim but mark it as an unverified observation from the run of 2026-10-08, not grounded evidence.",
+              "Replace the log citation with a reproducible command (e.g. the subset test invocation run 6x at c8fb4ed3) so a probe can re-run and confirm the hang."
+            ]
+          }
+        },
+        {
+          "claimId": "p11",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The fix depends first on diagnosing the root cause (what leaves a promise unsettled under the parallel sweep) before any correction; the fix must not rely on --test-force-exit.",
+          "evidence": "The ISSUE states both parts of the premise outright. ISSUE.md:3 has the title \"Make the test sweep finish reliably without --test-force-exit\". ISSUE.md:11 says the root cause is \"Not yet diagnosed; establishing it is the first part of this fix\", so diagnosis comes before any correction. ISSUE.md:15 says \"Find what leaves a test promise unsettled when render.test.ts runs inside the full parallel sweep, and correct it ... without --test-force-exit and without dropping any file from the results\", which is both the order and the no-flag rule. The anchor exists. src/workflow/artifacts/companion/__tests__/render.test.ts:14 has the header \"Run: npx tsx --test --test-force-exit src/workflow/artifacts/companion/__tests__/render.test.ts\", which ISSUE.md:11 and :19 (c1) also cite. Many sibling companion tests have the same header (adaptive-cards, assess, er, ux-render, and others). There is also a prior case where the flag hid a hang: permission-hook ISSUE.md:14 and :32. It requires the run to be shown exiting on its own, not just a correct-looking diff. That backs the \"must not rely on the flag\" rule.",
+          "action": "None needed; the premise checks out. Optional cleanup: once the root cause is fixed, the \"--test-force-exit\" in the render.test.ts:14 Run header could be dropped so the file no longer suggests the flag. Prove the fix by running the workflow+mcp subsets and the full sweep without the flag, not by reading the diff.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Checked against ISSUE.md:3, :11 and :15 and the anchor at render.test.ts:14. Nothing in the artifact needs to change."
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 6,
+        "low": 5
+      },
+      "reviewedAt": "2026-10-08T17:36:53.962Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p2": {
+        "findingId": "p2",
+        "status": "resolved",
+        "note": "Verified with a file-scoped probe: render.test.ts declares exactly three tests, at lines 36, 50 and 58.",
+        "resolvedAt": "2026-10-08T17:41:45.764Z"
+      },
+      "p3": {
+        "findingId": "p3",
+        "status": "resolved",
+        "note": "Verified: each of the three tests calls renderErCompanion (render.test.ts:39, :53, :66), which is defined at src/workflow/artifacts/companion/render.ts:84 and calls assembleShell(ir) at :91.",
+        "resolvedAt": "2026-10-08T17:41:45.765Z"
+      },
+      "p6": {
+        "findingId": "p6",
+        "status": "resolved",
+        "note": "Verified with probes scoped to src/docgen/render/shell.ts and src/workflow/artifacts/companion/render.ts: no child_process, spawn, execFile, exec, setInterval, setTimeout, createServer, Worker, watch or createReadStream. The only subprocess path is the oversized-diagram renderer (shell.ts:270), which these small ER diagrams do not take.",
+        "resolvedAt": "2026-10-08T17:41:45.766Z"
+      },
+      "p8": {
+        "findingId": "p8",
+        "status": "resolved",
+        "note": "Verified: src/workflow/artifacts/companion/__tests__ holds 16 test files; running `npx tsx --test 'src/workflow/artifacts/companion/__tests__/*.test.ts'` on 2026-10-08 gave 104 tests, 104 pass.",
+        "resolvedAt": "2026-10-08T17:41:45.766Z"
+      },
+      "p9": {
+        "findingId": "p9",
+        "status": "resolved",
+        "note": "Accepted and corrected: the Node-behaviour claims were not established. A minimal reproduction on Node v24.21.0 (a never-settling test promise) hung until killed both with and without --test-force-exit and printed no 'still pending' message. The issue now says only that the flag ends the run without showing every file finished, and that how the runner reports this case is part of the diagnosis.",
+        "resolvedAt": "2026-10-08T17:41:45.767Z"
+      },
+      "p10": {
+        "findingId": "p10",
+        "status": "resolved",
+        "note": "Accepted and corrected: the run logs live outside the repo and are not committed, so the reproduction now marks the 1-in-6 rate as an observation from 2026-10-08 and names the Node version. Commit c8fb4ed3 is real (`git cat-file -t c8fb4ed3` gives commit: 'feat(build): s3/t3 item gates ...'); the subset command in the reproduction lets anyone re-run it.",
+        "resolvedAt": "2026-10-08T17:41:45.767Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Make the test sweep finish reliably without --test-force-exit",
+    "reproduction": "On Node v24.21.0, run `npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'` several times. Expected: every run finishes in about 5.5 s with 0 failures. Observed: in about 1 of 6 runs (1 of 6 observed on 2026-10-08; those run logs were kept outside the repo and are not committed), src/workflow/artifacts/companion/__tests__/render.test.ts never finishes. It runs until an external 300 s timeout and is reported as failed with 'Promise resolution is still pending but the event loop has already resolved' (2013 tests, 2011 pass, the file counted as a failure). The full sweep `npx tsx --test 'src/**/__tests__/*.test.ts'` also hangs, and did so at commit c8fb4ed3 as well. render.test.ts does NOT hang alone (25 of 25 runs pass in about 0.2 s), with the other companion test files (104 of 104 pass), or as 32 concurrent copies of itself.",
+    "rootCause": "Not yet diagnosed; establishing it is the first part of this fix. What is established: the file's three tests call renderErCompanion (src/workflow/artifacts/companion/render.ts), which goes through assembleShell (src/docgen/render/shell.ts). For these small diagrams that path only reads the bundled runtime assets with fs/promises readFile and spawns no subprocess, so the file has no obvious long-running handle of its own. The file's own header already recommends running it with --test-force-exit. The hang reproduces only inside the full parallel run, so the trigger is likely shared state or resource contention across test files, or the test runner under load, rather than this file in isolation. Using --test-force-exit is not a fix: it ends the run without showing that every file finished. A minimal reproduction on Node v24.21.0 (one test returning a promise that never settles) hung until killed both with and without the flag and printed no 'still pending' message, so how the runner reports this case still has to be established as part of the diagnosis.",
+    "fixIntent": "Find what leaves a test promise unsettled when render.test.ts runs inside the full parallel sweep, and correct it, so that both the workflow+mcp subsets and the full sweep finish reliably on every run, without --test-force-exit and without dropping any file from the results."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/__tests__/render.test.ts",
+      "quotedText": "Run: npx tsx --test --test-force-exit src/workflow/artifacts/companion/__tests__/render.test.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/render.ts",
+      "quotedText": "import { assembleShell } from '../../../docgen/render/shell.js';"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts",
+      "quotedText": "readFile(join(dir, manifest.mermaidAsset), 'utf8'),"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "package.json",
+      "quotedText": "\"test\": \"tsx --test src/**/__tests__/*.test.ts\""
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "2026-10-08 test runs: subset hang in sweep2.log (render.test.ts, 297683 ms, 'Promise resolution is still pending but the event loop has already resolved'); 5 other subset runs at about 5.5 s; 25/25 solo runs, 104/104 companion runs and 32 concurrent copies all pass"
+    }
+  ]
+}

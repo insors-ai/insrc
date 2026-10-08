@@ -1,0 +1,718 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791454582508-356km7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T10:25:10.918Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 528405,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1791360301609-41fijn",
+    "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD covers S002 FR001–FR003 and ac1–ac7 from the DEF, placing stories and issues (not epics/tasks) in one of six stages, with the route deciding the ready gate.",
+          "evidence": "DEF.md:43-45 lists S002 FR001-FR003, and DEF.md:135-141 lists ac1-ac7. All of them appear in §2.3/§2.4/§2.5 and the edge-case table. DEF S002:FR001 says 'every work item', but HLD.md:206 narrows sc4 to 'keyed by itemId; stories and issues only', and HLD sc7 (line 342) has 'null for epics and tasks'. The LLD follows that HLD narrowing. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md, docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: the stages project recorded evidence and do not redefine gates, imply running activity, or write to the store.",
+          "evidence": "DEF.md:72-73 rules out a new state machine and running-activity reporting. The LLD's ready gates match the triage taxonomy in src/workflow/triage/types.ts:21-37: small/trivial have needsPlan false, a small bugfix skips design, a sized bugfix takes the full path. §2.4 states that ready text never mentions running activity. deriveStages is pure, with no I/O. [files: src/workflow/triage/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Route fields exist in the store with the shapes the LLD reads: ISSUE meta.magnitude is 'small'|'sized'; standalone LLD meta.sizeClass is feature/small/bugfix; standalone BUILDs carry sizeClass 'trivial'/'small'; a non-standalone BUILD can carry 'M'.",
+          "evidence": "51 ISSUE files have \"magnitude\": \"small\"|\"sized\". LLD sizeClass values are only feature/small/bugfix. Examples: BUILD-0855311b6b32eb72-S001 has standalone:true, sizeClass:'trivial', and ISSUE-0855311b6b32eb72 magnitude 'small', so the ISSUE magnitude correctly wins over the stamp. BUILD-914cbf5ea9026b92-s4 has standalone:false, sizeClass:'M', with DEF-914cbf5ea9026b92 present. LLD-7c219c7471d79496-S001 has sizeClass 'bugfix' and no ISSUE record, which is the LLD's 'bugfix with no ISSUE → unknown' case. [files: src/workflow/types.ts, .insrc/artifacts/BUILD-0855311b6b32eb72-S001.json, .insrc/artifacts/BUILD-914cbf5ea9026b92-s4.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Fix stories share the issue's workItemHash and are the issue item's children; the ISSUE record is in the issue item's evidence, not the story's.",
+          "evidence": "graph.ts:224-245: the head is a DEF ?? ISSUE, and the head's evidenceArtifactIds come from the epic-level records (the ISSUE). graph.ts:331: a story's parentId is headDraft.id. graph.ts:294: a fix story's standalone flag comes from head.meta.standalone. So the small-bugfix gate ('the ISSUE for its hash is approved') has to reach the ISSUE through parentId or a scan by hash, not through the story's own evidenceArtifactIds. Both are available to deriveStages(graph, recordSet). [files: src/workflow/delivery/graph.ts]",
+          "action": "Say explicitly in the implementation that a fix story's ISSUE is found through its parent issue item's evidence (or a workItemHash scan), because §2.1 mentions only lookup by artifactId.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Approval state is available as ArtifactRecord.approval.state derived from meta.approvedAt/rejectedAt.",
+          "evidence": "types.ts:33-37 has approval { state: ApprovalState; approvedAt; rejectedAt }. load.ts:66-72 derives the state from approvedAt/rejectedAt/status. [files: src/workflow/delivery/types.ts, src/workflow/delivery/load.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reused helpers makeNotice(code, message, refs) and sortNotices exist with the stated signatures, and NOTICE_ATTENTION gives attention false for 'unknown-route' and 'review-without-build'; deriveStages/stage.ts and the sc4 types do not yet exist.",
+          "evidence": "notice.ts:44 has `export function makeNotice(code: NoticeCode, message: string, refs: NoticeRefs)` and notice.ts:73 has sortNotices. notice.ts:24-25 has 'unknown-route': false and 'review-without-build': false. types.ts:118-119 already includes both codes in NoticeCode. src/workflow/delivery/ has no stage.ts, and types.ts has no DeliveryStage/DeliveryRoute. [files: src/workflow/delivery/notice.ts, src/workflow/delivery/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The only change sites are adding the sc4 types to types.ts and a new stage.ts; it has no callers until s5, and the WorkItemNode fields it consumes (evidenceArtifactIds, parentId, childIds, workItemHash, standalone, kind) exist.",
+          "evidence": "types.ts:77-98 WorkItemNode has id, kind, workItemHash, standalone, parentId, childIds, evidenceArtifactIds. WorkItemGraph (types.ts:100-106) exposes items as a ReadonlyMap. The type sketch matches the HLD.md:188-208 sc4 sketch field for field. [files: src/workflow/delivery/types.ts, docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older records without route stamps (pre-stamp standalone LLDs, an ISSUE with no magnitude), non-SizeClass values ('M'), and conflicting stamps resolve to 'unknown' with a notice instead of a guessed route; full-chain epic LLDs carry no sizeClass and fall to the 'non-standalone epic → full-chain' rule.",
+          "evidence": "DEF.md:81 records that full-chain epic LLDs carry no sizeClass and that seven standalone LLDs and one ISSUE predate the stamps. The LLD's §2.2 and §5 edge table map each of these to 'unknown' plus an unknown-route notice, or to full-chain for a DEF-parented, non-standalone story. graph.ts:294 sets standalone from DEF head.meta.standalone, so a DEF without that field gives standalone false, as rule (4) needs. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md, src/workflow/delivery/graph.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An ISSUE with no magnitude makes its fix stories 'unknown' rather than falling through to the LLD sizeClass.",
+          "evidence": "The edge table says 'An ISSUE with no magnitude → the issue and its fix stories have route unknown'. §2.2 rule (1) reads 'when an ISSUE record has the story's workItemHash, that ISSUE's magnitude' and does not say whether a missing magnitude falls through. The two agree only if rule (1) is read as terminal once an ISSUE exists. The intent is clear, but the rule text is loose.",
+          "action": "State in §2.2 that rule (1) is terminal whenever an ISSUE exists for the hash: a missing or invalid magnitude gives 'unknown' and does not fall through to the LLD's 'bugfix' stamp.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s2 does not read task results, review verdicts/overrides (s3), currency (s4) or raise incomplete-evidence (s5), and does not re-derive identity (s1).",
+          "evidence": "The LLD says it reads only meta.magnitude, meta.sizeClass, meta.standalone and approval.state, and that the approved-BUILD-with-failed-tasks case is 'not read here (s3 reports the conflict)'. HLD.md:413 limits s2 to route mapping, the precedence, the ready gates and the reason wording, which matches. Item identity comes from the s1 graph unchanged. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Missing evidence records and wrongly typed route fields are detected (lookup undefined / typeof) and degrade to skipped records or an 'unknown' route without throwing, consistent with the s1 graph's never-throw convention.",
+          "evidence": "graph.ts:83-93 already uses str/obj/arr type guards and documents 'never throws' (graph.ts:205). ArtifactRecord.meta is Record<string, unknown> (types.ts:43), so typeof checks are the natural detection. The LLD names both cases with their detection, response and user impact, and has a test for them ('missing evidence records and wrongly typed fields never throw'). [files: src/workflow/delivery/graph.ts, src/workflow/delivery/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1–ac7 maps to a named stage.test.ts test built from the existing fixture builders (defRecord, lldRecord, planRecord, buildRecord, crRecord, issueRecord).",
+          "evidence": "The §6 acceptance mapping covers ac1-ac7, and ac6 has two tests. fixtures.ts:385-410 exports defRecord, lldRecord, planRecord, buildRecord(hash, storyId, tasks, meta), crRecord(hash, storyId, verdict, meta) and issueRecord(hash, parentRef, meta), each taking a meta override for approvedAt/sizeClass/magnitude/standalone. fixtures.ts:43 also has REAL_STORE for the 'real-shape fixtures' determinism test. [files: src/workflow/delivery/__tests__/fixtures.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T10:27:28.372Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T10:41:58.945Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story adds the stage pass to the delivery read model. For every story and issue it works out the route the item was triaged onto, from the fields its records carry, and then places it in one of six stages with one ordered rule list. The route alone decides which approval makes the item ready: an approved plan for the full chain, feature and sized-bugfix routes, an approved design for the small route, and an approved issue for a small bugfix. Every stage carries a reason naming the records behind it; an item whose route cannot be read keeps the stage its records establish and gets an unknown-route notice."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A stateless, read-only projection pipeline in a new src/workflow/delivery module, beside pending.ts and artifact-content.ts. One request performs one read of every JSON record under the artifact store into an immutable record set (sc1), keeping unreadable files as load failures instead of throwing. The identity pass (s1) turns that record set into a work-item graph (sc2) of epics, stories, tasks and issues under the canonical work-item identity, with every item's evidence records attached. Three passes then run independently over the same graph and record set, each producing an annotation keyed by work-item or artifact id: route-aware stage with its reason (s2, sc4), gate signals and the gate-based attention reasons (s3, sc5), and record currency, amendment/extension checks and data-quality notices (s4, sc6). All three report problems through the one notice shape s1 owns (sc3). The snapshot step (s5) merges graph and annotations into the published response (sc7), computes counts and the final Needs-attention flag, sorts everything deterministically, and stamps the read time. The daemon exposes it as two new handler-map entries that lazy-import the module, following the workflow.pending idiom; no existing handler changes.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "StageAnnotation",
+          "purpose": "Each story's and issue's derived stage, the route that decided its ready gate, and the reason naming the evidence behind it.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c12"
+          ],
+          "interfaceSketch": "type DeliveryStage =\n  | 'scoped'\n  | 'design-plan'\n  | 'ready-design-approved'\n  | 'ready-plan-approved'\n  | 'build-recorded'\n  | 'complete';\n\ntype DeliveryRoute = 'full-chain' | 'feature' | 'small' | 'small-bugfix' | 'sized-bugfix' | 'trivial' | 'unknown';\n\ninterface StageAnnotation {\n  readonly itemId: string;\n  readonly stage: DeliveryStage;\n  readonly route: DeliveryRoute;\n  readonly reason: { readonly text: string; readonly artifactIds: readonly string[] };\n}\n\ninterface StagePassResult {\n  readonly stages: ReadonlyMap<string, StageAnnotation>;  // keyed by itemId; stories and issues only\n  readonly notices: readonly DeliveryNotice[];\n}"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactRecordSet",
+          "purpose": "One immutable reading of the artifact store: every parsed record with the facts all passes share, plus every file that could not be read. The single source every later layer reads, so no pass re-reads the disk and all passes see the same records.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c18",
+            "c4"
+          ],
+          "interfaceSketch": "type DeliveryArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'ISSUE' | 'EXT' | 'AMD';\n\ntype ApprovalState = 'approved' | 'rejected' | 'pending';\n\ninterface ArtifactRecord {\n  readonly artifactId: string;              // file stem, e.g. 'LLD-<hash>-s1'\n  readonly kind: DeliveryArtifactKind;\n  readonly workItemHash: string | null;     // meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC; top-level epicHash for an AMD\n  readonly storyIdRaw: string | null;       // meta.storyId exactly as written\n  readonly storyOrdinal: number | null;     // canonical ordinal of storyIdRaw, null when absent or unparseable\n  readonly approval: { readonly state: ApprovalState; readonly approvedAt: string | null; readonly rejectedAt: string | null };\n                                            // meta.approvedAt / meta.rejectedAt; for an AMD, top-level approvedAt / rejectedAt / status\n  readonly createdAt: string | null;        // meta.createdAt; top-level proposedAt for an AMD\n  readonly epicCreatedAt: string | null;    // meta.epicCreatedAt when stamped\n  readonly meta: Readonly<Record<string, unknown>>;   // the record's meta; for a flat AMD, every top-level field except `amendment`\n  readonly body: unknown;                             // the record's body; for a flat AMD, its `amendment` object\n}\n\n// Per-kind lift: every kind except AMD is read as { meta, body }; AMD records are flat\n// ({ id, epicHash, amendment, status, approvedAt?, rejectedAt?, ... }) and are lifted as described above.\n// A non-AMD file without meta is a 'missing-meta' load failure.\n\ninterface RecordLoadFailure {\n  readonly fileName: string;\n  readonly reason: 'unreadable' | 'invalid-json' | 'missing-meta' | 'unknown-kind';\n  readonly detail: string;\n}\n\ninterface ArtifactRecordSet {\n  readonly repo: string;\n  readonly readAt: string;                  // ISO time the directory was listed\n  readonly records: readonly ArtifactRecord[];   // sorted by artifactId\n  readonly failures: readonly RecordLoadFailure[]; // sorted by fileName\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "WorkItemGraph",
+          "purpose": "The identity and hierarchy of all work: each epic, story, task and issue exactly once under its canonical id, with parent/child links, the source ids it was joined from, and the artifacts that are its evidence.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c6",
+            "c7"
+          ],
+          "interfaceSketch": "type DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue';\n\ninterface WorkItemNode {\n  readonly id: string;                      // canonical work-item id, e.g. 'E20261007<hash8>:S001', ':T002' for tasks; issue id for an issue\n                                            // Records are grouped by workItemHash + storyOrdinal BEFORE the id is minted. The id's date segment\n                                            // is the work item's anchor date: the definition head's (DEF-/ISSUE-<hash>) createdAt when one exists;\n                                            // otherwise workItemAnchorCreatedAt (meta.epicCreatedAt ?? meta.createdAt, storage.ts:181) of the\n                                            // group's earliest-created design head (LLD, else SPEC or BUILD for routes without one). The minted id\n                                            // must equal deriveWorkItemIdentity's output and the work item's existing path-scheme folder whenever\n                                            // those can be derived. Only when no record of the group has any createdAt is the id\n                                            // 'H<workItemHash>[:S<nnn>]', with an 'identity-anchor-missing' notice.\n  readonly kind: DeliveryItemKind;\n  readonly title: string | null;            // null when no record names it\n  readonly workItemHash: string | null;\n  readonly standalone: boolean;\n  readonly sourceIds: readonly string[];    // every raw id joined into this item, e.g. ['s1', 'S001']\n  readonly parentId: string | null;\n  readonly childIds: readonly string[];     // sorted\n  readonly evidenceArtifactIds: readonly string[]; // sorted; artifacts whose identity resolves to this item\n  readonly plannedTaskIds: readonly string[];      // stories only: task ids from the PLAN\n                                                   // Task items are minted only from t<n> ids (taskIdToOrdinal); a build task id equal to the\n                                                   // story's own id is a story-level result, creates no task item and raises no notice\n  readonly correctsRef: { readonly epicHash?: string; readonly storyId?: string; readonly slug?: string; readonly resolvedItemId: string | null } | null;\n                                            // issues only, from meta.parentRef; resolved by epicHash, else by slug against records' meta.epicSlug,\n                                            // EXCLUDING records that share the issue's own hash (the issue and its fix stories). A parentRef that\n                                            // names only the issue itself means 'no corrected parent': correctsRef is null and no notice is raised.\n  readonly seededFromSpecId: string | null; // 'SPEC-' + meta.seededFromSpec (which holds the bare 16-char spec hash); matched against\n                                            // the SPEC record's artifactId, and that SPEC is then in this item's evidence\n}\n\ninterface WorkItemGraph {\n  readonly items: ReadonlyMap<string, WorkItemNode>;\n  readonly rootIds: readonly string[];      // epics, standalone stories, issues; sorted\n  readonly notices: readonly DeliveryNotice[];  // identity notices (sc3)\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "DeliveryNotice",
+          "purpose": "The one shape every pass uses to report missing, malformed, ambiguous or contradictory evidence, so notices from identity, stage, gate and currency passes can be merged, sorted and counted uniformly. Owned at the root story because s2, s3 and s4 sit on separate branches and all emit notices.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "type NoticeCode =\n  | 'record-unreadable'          // s1: a file in the store could not be loaded\n  | 'identity-ambiguous'         // s1: records the canonical rule cannot settle as same or different\n  | 'unresolved-parent'          // s1: an issue's corrected parent, or a record's epic, is not in the store\n  | 'identity-anchor-missing'    // s1: no recorded date at all to mint the canonical id; hash form used\n  | 'unattached-spec'            // s1: a SPEC that no work item names as its seededFromSpec (store-level, attention false)\n  | 'unknown-route'              // s2: no recorded route for an item that needs one\n  | 'review-without-build'       // s2: a code review exists with no build record\n  | 'unplanned-task'             // s3: a build task with no matching planned task\n  | 'validation-conflict'        // s3: completion approved while a task failed\n  | 'incomplete-evidence'        // s4 (missing fields), s5 (a plan missing on a route that requires one): expected evidence absent\n  | 'review-currency-unknown'    // s4: no recorded field settles whether a review is current\n  | 'base-predates-extension';   // s4: an accepted extension is newer than the epic framing\n\ninterface DeliveryNotice {\n  readonly code: NoticeCode;\n  readonly message: string;\n  readonly itemIds: readonly string[];      // sorted; empty for store-level notices\n  readonly artifactIds: readonly string[];  // sorted\n  readonly fileNames: readonly string[];    // sorted; for unreadable files that have no artifact id\n  readonly attention: boolean;              // true when this notice alone makes an item need attention\n}\n\n// attention by code (fixed): true for 'record-unreadable', 'identity-ambiguous', 'unresolved-parent', 'validation-conflict';\n// false for 'identity-anchor-missing', 'unattached-spec', 'unknown-route', 'review-without-build', 'unplanned-task',\n// 'incomplete-evidence', 'review-currency-unknown', 'base-predates-extension'. Unresolved references therefore count toward\n// Needs attention (S003:FR005); informational notices stay visible without flooding the filter."
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Private to s2: the mapping from a work item's recorded route fields to a DeliveryRoute, read in this order of precedence: ISSUE meta.magnitude for an issue and for every fix story whose work-item hash is that issue's hash (small-bugfix or sized-bugfix, ahead of any BUILD stamp such as 'trivial'); the story's LLD meta.sizeClass; the standalone BUILD record's meta.sizeClass (the only place a trivial route is recorded); and, for a story under a non-standalone epic with none of these, the full chain; including treating any value that is not a SizeClass member (such as a scope letter 'M') or a missing stamp as unknown; a non-standalone BUILD's sizeClass is never read; the first-match-wins precedence that picks the stage; which gate counts as the ready gate for each route; and the wording of stage reasons. It reads approval state only through sc1 and never consults gate or currency annotations. Its LLD maps each of s2 ac1-ac7 to a named test over fabricated records."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Private to s1: how the store directory is listed and each file parsed; how a record's kind, work-item hash and raw story id are lifted from its file name and meta; the use of the canonical ordinal rule to join s1/S1/S001 and the decision of when two records are ambiguous rather than the same; sourcing story membership from the Define's story list and from accepted extension records; attaching fix stories to an issue through the shared work-item hash and resolving meta.parentRef; nesting tasks by plan and build task ids; and the sort order of records, failures and child lists. No other story reads the files or re-derives identity. Also private: the per-kind lift, including reading flat amendment records; the anchor-date rule for minting canonical ids after grouping by hash and ordinal, which must reproduce deriveWorkItemIdentity and the existing path-scheme folder for every work item those can identify; attaching each SPEC to the item that names it in meta.seededFromSpec; resolving a slug-only parentRef through records' meta.epicSlug. Its LLD maps each of s1 ac1-ac6 to a named test, including ac3 (an ambiguity notice naming the other record), ac4 (two fix stories under one issue) and ac6 (colliding short task ids in two stories). Task items are minted only from t<n> build and plan task ids; a build task id equal to the story's id is left for s3 as a story-level result, with a fixture of that shape. Slug resolution of an issue's parentRef excludes records sharing the issue's own hash; a parentRef that names only the issue itself yields no corrected parent and no notice. Fixtures cover both real shapes: a self-slug parentRef (for example ISSUE-0855311b6b32eb72) and an outward slug (for example ISSUE-2d9e9e694a94116b)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private to s4: deciding review currency only from recorded fields (for example the framework's existing story-design staleness against its high-level design) and reporting unknown otherwise, never from file modification time; comparing accepted extension records with their epic framing; and detecting expected-but-missing fields, such as an artifact with no title. It never decides route-dependent gaps, which need s2's route. It reports through notices and never adds or removes work items. Also private: deriving each epic's amendments, and any story design's staleness against its high-level design, from the AMD, HLD and LLD records already in sc1, reusing only pure helpers such as computeHldEffectiveHash and never the amendments module's disk-reading listers, so the pass adds no second read and one malformed amendment cannot fail the snapshot. Staleness hashes the epic's approved amendments in rising approvedAt order, the order the existing scanner uses, which is separate from sc6's presentation sort by amendmentId. Its LLD maps each of s4 ac1-ac5 to a named test, including ac5 asserting that no file in the store changes. Its ac4 test covers the missing-field half (an artifact with no title); the build-without-plan half is tested in s5."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private to s5: running the load, graph and three annotation passes in order for one request; joining annotations onto items; deciding needsAttention as any sc5 attention reason or any notice with attention true; computing counts over the full item set; the deterministic sort of items and notices; choosing openWith from whether an artifact's markdown carries its marker; the two daemon handler-map entries and their repo resolution and error mapping; the artifact-id validation that keeps evidence reads inside the artifact store; and the 1,000-artifact performance fixture. Also private: the error-path mapping (absent store is an empty snapshot; unreadable store, invalid or unknown evidence id is { error }). Also private: the determinism test (two snapshots over the same fixture are identical) and the regression check that the existing workflow.pending and workflow.artifactContent tests pass unchanged. Its LLD maps each of s5 ac1-ac6 to a named test: ac1 asserts the store is byte-identical after a request, ac3 reads a marker-less BUILD through workflow.deliveryEvidence, and ac6 is a type-level check that the VS Code plugin compiles against the published types plus a fixture the JetBrains mirror parses. Also private: the one route-dependent completeness check, raising an 'incomplete-evidence' notice for a story whose sc4 route requires a plan (full-chain, feature, sized-bugfix) but which has a build and no plan; small and small-bugfix routes never get it. Its LLD also owns the test for the build-without-plan half of s4 ac4: a full-chain story with a build and no plan gets the incomplete-evidence notice, and small and small-bugfix stories with a build and no plan do not."
+        }
+      ],
+      "rolloutPhase": "Phase B — stage, gate and currency passes",
+      "nonFunctional": {
+        "performance": "workflow.delivery returns a full snapshot for a fixture of 1,000 artifact records forming 500 work items within 500 ms of daemon-side time on the reference environment, leaving the client its PRD budget of one second to first render. The store is read once per request; passes are linear in records plus items. No LLM provider is called anywhere in the pipeline.",
+        "security": "Read-only by construction: the module opens files for reading only and has no write path. workflow.deliveryEvidence accepts an artifact id, never a path; the id must match the artifact-id pattern and resolve inside the artifact store, and rendered markdown is read only through the existing docs/ containment rule. Artifact content is returned as data and never evaluated. Clients never read the store themselves.",
+        "observability": "Each request logs, through the module's own logger, the repository, record count, unreadable count, item count, notice count by code, and elapsed time. Unreadable records appear both in the log and as notices in the response, so a thin view is never silent.",
+        "durability": "Nothing is persisted or cached. Artifact files are written by tmp-then-rename, so a concurrent read sees each file either before or after a write, never half-written; a work item whose JSON and markdown are mid-update is reported from its JSON and marked openWith 'evidence-read' if the markdown cannot be resolved."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "StagePassResult (deriveStages)",
+          "signature": "export function deriveStages(graph: WorkItemGraph, recordSet: ArtifactRecordSet): StagePassResult",
+          "parameters": [
+            {
+              "name": "graph",
+              "type": "WorkItemGraph",
+              "purpose": "The s1 graph; its story and issue items are annotated, using their evidenceArtifactIds, parentId, childIds, workItemHash and standalone.",
+              "optional": false
+            },
+            {
+              "name": "recordSet",
+              "type": "ArtifactRecordSet",
+              "purpose": "The s1 record set; records are looked up by artifactId and approval is read only from ArtifactRecord.approval.state.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StagePassResult",
+            "meaning": "stages: one StageAnnotation per story and issue item, keyed by item id (epics and tasks have none). notices: the pass's unknown-route and review-without-build notices, sorted with sortNotices."
+          },
+          "errors": [],
+          "preconditions": [
+            "graph was built from recordSet."
+          ],
+          "postconditions": [
+            "Never throws: a missing record, an unexpected field type or an unknown value yields route 'unknown' or the stage the remaining records establish.",
+            "Pure and deterministic: no I/O, and the same inputs give the same map and notice order.",
+            "Reads no gate (sc5) or currency (sc6) annotation and never changes the graph."
+          ]
+        },
+        {
+          "name": "DeliveryRoute (route resolution)",
+          "signature": "type DeliveryRoute = 'full-chain' | 'feature' | 'small' | 'small-bugfix' | 'sized-bugfix' | 'trivial' | 'unknown'",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryRoute",
+            "meaning": "First match wins. Issue item: its ISSUE's meta.magnitude, 'small' to small-bugfix, 'sized' to sized-bugfix. Story: (1) when an ISSUE record has the story's workItemHash, that ISSUE's magnitude as above (ahead of any BUILD stamp); (2) else its LLD's meta.sizeClass; (3) else the meta.sizeClass of its BUILD records whose meta.standalone is true, when they all agree; (4) else, when the story is not standalone and its parent is an epic, 'full-chain'. sizeClass maps 'feature', 'small' and 'trivial' to the route of the same name. A missing field, a value that is not a SizeClass member (such as 'M'), 'epic', 'bugfix' with no ISSUE for the hash, or disagreeing standalone BUILD stamps give 'unknown'. A non-standalone BUILD's sizeClass is never read."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A route is never guessed: anything not covered by the rules above is 'unknown'."
+          ]
+        },
+        {
+          "name": "DeliveryStage (stage rules)",
+          "signature": "type DeliveryStage = 'scoped' | 'design-plan' | 'ready-design-approved' | 'ready-plan-approved' | 'build-recorded' | 'complete'",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryStage",
+            "meaning": "For a story, the first rule that matches its evidence: (1) complete, when any BUILD is approved; (2) build-recorded, when any BUILD exists (pending or rejected), whatever its task results; (3) the route's ready gate: full-chain, feature and sized-bugfix give ready-plan-approved when a PLAN is approved; small gives ready-design-approved when its LLD is approved; small-bugfix gives ready-design-approved when the ISSUE for its hash is approved; trivial and unknown have no ready gate; (4) design-plan, when an LLD or PLAN exists in any state, or the route is sized-bugfix and its ISSUE is approved; (5) scoped. CR records are in no rule. For an issue with fix-story children, the least advanced child's stage in the order scoped < design-plan < ready-design-approved < ready-plan-approved < build-recorded < complete; for an issue with none, the same rules over its own ISSUE (so a small-bugfix issue with an approved ISSUE is ready-design-approved, a sized one design-plan, a pending one scoped)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every story and issue gets exactly one of the six stages."
+          ]
+        },
+        {
+          "name": "StageAnnotation (reason)",
+          "signature": "interface StageAnnotation { readonly itemId: string; readonly stage: DeliveryStage; readonly route: DeliveryRoute; readonly reason: { readonly text: string; readonly artifactIds: readonly string[] } }",
+          "parameters": [],
+          "returns": {
+            "type": "StageAnnotation",
+            "meaning": "reason.artifactIds are the records the matching rule used, sorted (for an issue placed by a child, that child's reason ids); reason.text names them and the rule, e.g. 'PLAN-<id> approved; the full-chain route is ready once its plan is approved', 'LLD-<id> approved; the small route needs no plan', 'ISSUE-<id> approved; the small-bugfix route needs no design or plan', 'BUILD-<id> recorded and not approved', 'BUILD-<id> approved', 'no design, plan or build record'. An unknown route adds 'route unknown, so no ready gate applies'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A ready stage's text never mentions running activity or a missing plan."
+          ]
+        },
+        {
+          "name": "DeliveryNotice (stage-pass notices)",
+          "signature": "makeNotice('unknown-route' | 'review-without-build', message, { itemIds, artifactIds })",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryNotice",
+            "meaning": "unknown-route: one per story or issue whose route is unknown, naming the item and the records whose route fields were read. review-without-build: one per story with a CR record and no BUILD record, naming the item and the CR records. Both have attention false (from NOTICE_ATTENTION)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The CR never changes the stage."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DeliveryStage, DeliveryRoute, StageAnnotation, StagePassResult",
+        "change": "new",
+        "details": "The sc4 types, added to src/workflow/delivery/types.ts beside sc1-sc3 so s5 imports every contract type from one module, exactly as sketched in the HLD.",
+        "callSites": [
+          "src/workflow/delivery/types.ts"
+        ]
+      },
+      {
+        "entity": "deriveStages",
+        "change": "new",
+        "details": "New module src/workflow/delivery/stage.ts. It imports graph.ts and notice.ts (its dependencies: WorkItemGraph, makeNotice, sortNotices); it has no caller yet. Its only caller will be s5's snapshot pass.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Defines the sc4 types and produces StagePassResult."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Looks records up by artifactId; reads meta.magnitude, meta.sizeClass, meta.standalone and approval.state only."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Annotates story and issue items using evidenceArtifactIds, parentId, childIds, workItemHash and standalone; adds no items."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Raises unknown-route and review-without-build through makeNotice and sorts with sortNotices."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An item's evidenceArtifactIds names an id with no record in the record set.",
+          "detection": "The artifactId lookup in the record-set index returns undefined.",
+          "response": "The id is skipped for every rule; the stage comes from the records that are present.",
+          "userImpact": "None beyond what s1 already reports for that record; the stage pass does not throw.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A route field has an unexpected type (meta.sizeClass is a number, meta.magnitude an object, meta.standalone a string).",
+          "detection": "A typeof check against the expected string or boolean before mapping.",
+          "response": "The field is treated as absent, so the rule falls through and the route is 'unknown' when nothing else matches.",
+          "userImpact": "The item shows its records' stage with an unknown-route notice instead of a wrong route.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A full-chain story with an approved PLAN and no BUILD.",
+          "expected": "ready-plan-approved; reason names the PLAN and no running activity."
+        },
+        {
+          "input": "A small story (LLD sizeClass small) with an approved LLD and no PLAN.",
+          "expected": "ready-design-approved; no notice about a missing plan."
+        },
+        {
+          "input": "A small-bugfix issue with an approved ISSUE and no fix story yet.",
+          "expected": "The issue is ready-design-approved."
+        },
+        {
+          "input": "A sized-bugfix fix story with an approved LLD and no PLAN.",
+          "expected": "design-plan: the sized-bugfix route's gate is the approved PLAN."
+        },
+        {
+          "input": "A full-chain story with an approved LLD and no PLAN.",
+          "expected": "design-plan, not ready."
+        },
+        {
+          "input": "A story with a pending or rejected BUILD whose tasks all passed.",
+          "expected": "build-recorded."
+        },
+        {
+          "input": "A story with an approved BUILD whose tasks failed and whose CR is block.",
+          "expected": "complete; task results and review verdicts are not read here (s3 reports the conflict)."
+        },
+        {
+          "input": "A story with a CR and no BUILD.",
+          "expected": "Stage unchanged by the CR; one review-without-build notice naming the CR."
+        },
+        {
+          "input": "A standalone story whose LLD has no sizeClass and whose BUILD has none.",
+          "expected": "route 'unknown', stage from its records, one unknown-route notice."
+        },
+        {
+          "input": "A non-standalone BUILD stamped sizeClass 'M' on an epic story.",
+          "expected": "The stamp is not read; the story is full-chain."
+        },
+        {
+          "input": "A fix story under a small issue whose BUILD is stamped 'trivial'.",
+          "expected": "Route small-bugfix: the ISSUE magnitude wins over the BUILD stamp."
+        },
+        {
+          "input": "A standalone LLD stamped 'bugfix' whose hash has no ISSUE record.",
+          "expected": "Route 'unknown' with a notice."
+        },
+        {
+          "input": "Two standalone BUILDs on one story stamped 'small' and 'trivial'.",
+          "expected": "Route 'unknown' with a notice naming both."
+        },
+        {
+          "input": "A trivial story with only an approved BUILD.",
+          "expected": "complete, route trivial."
+        },
+        {
+          "input": "An issue with fix stories S001 complete and S002 design-plan.",
+          "expected": "The issue is design-plan, reason from S002."
+        },
+        {
+          "input": "A Define story with no records under a non-standalone epic.",
+          "expected": "scoped, route full-chain, no notice."
+        },
+        {
+          "input": "An ISSUE with no magnitude.",
+          "expected": "The issue and its fix stories have route 'unknown' and a notice each."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (node:assert/strict), over fabricated records from src/workflow/delivery/__tests__/fixtures.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Stage rules per route, one test per acceptance criterion.",
+          "subjects": [
+            "stage.test.ts: 'a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan'",
+            "stage.test.ts: 'a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice'",
+            "stage.test.ts: 'a story with an unapproved build whose tasks all passed is build-recorded'",
+            "stage.test.ts: 'a story with an approved build is complete whatever its task results and review verdict'",
+            "stage.test.ts: 'a code review with no build leaves the stage and raises review-without-build'",
+            "stage.test.ts: 'an item with no recorded route keeps its records' stage and raises unknown-route'",
+            "stage.test.ts: 'a story or issue with no design, plan or build is scoped'"
+          ],
+          "fixturesNeeded": [
+            "defRecord, lldRecord, planRecord, buildRecord, crRecord and issueRecord builders with approvedAt / sizeClass / magnitude / standalone set per case."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Route resolution precedence and the remaining edge cases.",
+          "subjects": [
+            "stage.test.ts: 'the issue magnitude decides a fix story's route ahead of its build stamp'",
+            "stage.test.ts: 'a non-standalone build stamp is never read and an epic story is full-chain'",
+            "stage.test.ts: 'a sized-bugfix or full-chain story with an approved design and no plan is design-plan'",
+            "stage.test.ts: 'an unknown or disagreeing stamp gives the unknown route, never a guess'",
+            "stage.test.ts: 'an issue takes the least advanced stage of its fix stories'",
+            "stage.test.ts: 'missing evidence records and wrongly typed fields never throw'",
+            "stage.test.ts: 'every story and issue in the real-shape fixtures gets exactly one stage, deterministically'"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "stage.test.ts: 'a full-chain story with an approved plan and no build is ready-plan-approved, naming the plan'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "stage.test.ts: 'a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "stage.test.ts: 'a story with an unapproved build whose tasks all passed is build-recorded'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "stage.test.ts: 'a story with an approved build is complete whatever its task results and review verdict'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "stage.test.ts: 'a code review with no build leaves the stage and raises review-without-build'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "stage.test.ts: 'an item with no recorded route keeps its records' stage and raises unknown-route'",
+            "stage.test.ts: 'an unknown or disagreeing stamp gives the unknown route, never a guess'"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "stage.test.ts: 'a story or issue with no design, plan or build is scoped'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Route first, then one ordered stage rule list",
+        "oneLineSummary": "Resolve each item's route from its recorded fields, then pick the stage with one first-match-wins rule list whose ready rule is read from a per-route gate table.",
+        "approach": "A new src/workflow/delivery/stage.ts exports deriveStages(graph, recordSet): StagePassResult, with the sc4 types beside the other contract types in types.ts. For every story and issue it (1) resolves the route by the HLD precedence (ISSUE magnitude for the issue and its fix stories; else the LLD sizeClass; else a standalone BUILD's sizeClass; else full-chain for a story under a non-standalone epic; anything else unknown), (2) looks up the route's ready gate in a fixed table (full-chain, feature, sized-bugfix: approved PLAN gives Ready · plan approved; small: approved LLD gives Ready · design approved; small-bugfix: approved ISSUE gives Ready · design approved; trivial and unknown: no ready gate), and (3) applies one ordered rule list: approved BUILD gives Complete, any BUILD gives Build recorded, the route's ready gate, any design record gives Design & plan, else Scoped. Each rule names the artifacts it matched, which become the reason. An issue's stage is the least advanced of its fix stories, or its own ISSUE when it has none. Notices: unknown-route for an unknown route, review-without-build for a CR with no BUILD.",
+        "pros": [
+          "The route alone decides which gate counts, exactly as FR2 asks; records that happen to exist never change the gate.",
+          "One rule list makes the precedence explicit and easy to test per row.",
+          "Reasons come straight from the matched rule, so every stage names its evidence."
+        ],
+        "cons": [
+          "An issue's stage depends on its children, so issues are derived after their fix stories."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Per-route state machines",
+        "oneLineSummary": "Model each route as its own small state machine over its expected records and walk it per item.",
+        "approach": "Define one transition table per route (full-chain DEF to HLD to LLD to PLAN to BUILD; small LLD to BUILD; small-bugfix ISSUE to BUILD; and so on) and advance an item through its route's states as each expected record is found approved.",
+        "pros": [
+          "Each route's sequence is explicit."
+        ],
+        "cons": [
+          "Six tables to keep in step with the six stages; most transitions repeat across routes.",
+          "An unknown route has no machine, so 'keep the stage its records establish' needs a separate path anyway.",
+          "Records out of the expected order (a BUILD with no PLAN on a full-chain story) stall the machine instead of placing the item."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Correct for well-ordered records but brittle on out-of-order evidence, and heavier."
+      },
+      {
+        "id": "a3",
+        "name": "Records-first stage, route only as a label",
+        "oneLineSummary": "Pick the stage from which records exist and are approved, and attach the route afterwards as information.",
+        "approach": "Derive the stage purely from record presence: approved BUILD, BUILD, approved PLAN, approved LLD, any design record, nothing. Then compute the route separately and attach it.",
+        "pros": [
+          "Simplest rule set."
+        ],
+        "cons": [
+          "Violates FR2 and ac2: a small story with an approved LLD and a full-chain story with an approved LLD but no plan would land in the same stage, so a full-chain story waiting on its plan would look ready."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Breaks FR2 and ac2."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "export interface WorkItemNode {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/delivery/notice.ts",
+      "quotedText": "export function makeNotice(code: NoticeCode, message: string, refs: NoticeRefs): DeliveryNotice {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/delivery/graph.ts",
+      "quotedText": "export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/triage/types.ts",
+      "quotedText": "export type SizeClass = 'epic' | 'feature' | 'small' | 'trivial' | 'bugfix';"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "design.story/s1 data-model.trace: route fields recorded in the live store (.insrc/artifacts)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD-2ff0dfdadb1c8d1c sc4 StageAnnotation and the s2 story boundary"
+    }
+  ]
+}

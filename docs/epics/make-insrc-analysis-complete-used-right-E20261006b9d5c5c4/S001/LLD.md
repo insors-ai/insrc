@@ -687,6 +687,8 @@ The executor and the plan walk attach a completeness record to each result after
   - **resolved**: Amend the HLD to name the value — Stakeholder took the recommendation on 2026-10-08: sc1 is read by other Stories, so its basis values are stated in the HLD. _(2026-10-08T06:57:30.431Z)_
 - `qb7084a5d` — Back-flow to the HLD: the completeness record's `limited` is a list of reached limits, each with a scope, where the HLD's sketch of sc1 shows a single limit; several results reach more than one.
   - **resolved**: Amend the HLD to match the LLD — Stakeholder took the recommendation on 2026-10-08: several results reach more than one limit, so limited is a list of reached limits, each with a scope. _(2026-10-08T06:58:03.877Z)_
+- `q19e419d5` — Back-flow to the HLD: in the completeness record, partlyRead's totalChars is `number | null` with an optional totalNote, where the HLD's sketch of sc1 shows a number. A consuming Story must read a nullable length. The builder also takes a `notEstablished` input for a result that cannot know whether it is complete; it sets complete to false and adds no field to the record.
+  - **resolved**: Amend the HLD to match the LLD — Stakeholder took the recommendation on 2026-10-08: a partly read item's full length may be null with a note, and the builder's notEstablished input sets complete to false and adds no field. _(2026-10-08T06:58:27.788Z)_
 
 ## Citations
 

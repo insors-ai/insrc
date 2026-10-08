@@ -55,8 +55,10 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.terraform';
 const log = getLogger('analyze:runtimes:infra:inventory-terraform');
@@ -91,7 +93,9 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files: walked, truncated } = await walkFiles(repoPath);
+		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
+		// Files the inventory could not read or parse, and directories the walk could not enter.
+		const skipped: SkippedItem[] = [...unreadable];
 
 		const tfFiles = walked.filter(f =>
 			TF_EXT_RE.test(f.relPath) || TFVARS_EXT_RE.test(f.relPath),
@@ -153,6 +157,7 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 				text = await readFile(f.absPath, 'utf8');
 			} catch (err) {
 				log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.terraform: read failed');
+				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
 
@@ -172,6 +177,7 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 				json = await parse(f.relPath, text);
 			} catch (err) {
 				log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.terraform: HCL parse failed -- skipping');
+				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
 
@@ -243,6 +249,7 @@ export const infraInventoryTerraformRuntime: TemplateRuntime = {
 			completeness: fileWalkCompleteness(
 				resources.length + dataRefs.length + modules.length + providers.length + variables.length + outputs.length,
 				truncated,
+				{ skipped },
 			),
 		};
 	},

@@ -123,6 +123,11 @@ export function fileWalkCompleteness(
 	});
 }
 
+/** The `skipped` entry for a file an inventory could not read or parse. */
+export function unreadableFile(relPath: string, err: unknown): SkippedItem {
+	return { what: relPath, reason: `it could not be read or parsed (${err instanceof Error ? err.message.split('\n')[0] : String(err)})` };
+}
+
 export interface WalkedFile {
 	readonly absPath: string;
 	/** Path relative to the walk root, using `/` separators. */
@@ -134,15 +139,17 @@ export interface WalkedFile {
  * deterministic depth-first, name-sorted order). Symlinks are NOT
  * followed. SKIP_DIRS are excluded.
  *
- * Stops + flags `truncated=true` after `cap` files; the caller logs
- * the truncation so reviewers know the inventory may be partial.
+ * Stops + flags `truncated=true` after `cap` files. A directory below the
+ * root that cannot be read is returned in `unreadable`; a root that cannot
+ * be read throws. The caller puts both in its completeness record.
  */
 export async function walkFiles(
 	root: string,
 	cap:  number = DEFAULT_FILE_CAP,
-): Promise<{ files: readonly WalkedFile[]; truncated: boolean }> {
+): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }> {
 	const out: WalkedFile[] = [];
 	let truncated = false;
+	const unreadable: SkippedItem[] = [];
 
 	const visit = async (dir: string): Promise<void> => {
 		if (out.length >= cap) { truncated = true; return; }
@@ -150,9 +157,15 @@ export async function walkFiles(
 		let entries;
 		try {
 			entries = await readdir(dir, { withFileTypes: true });
-		} catch {
-			// Inaccessible dir -- skip silently. The caller's intent is
-			// inventory, not exhaustive perm enumeration.
+		} catch (err) {
+			// The walk's root: the task could not run. A directory below it is
+			// expected on a real tree (permissions): the walk goes on, and the
+			// directory is named so the result says what it does not cover.
+			if (dir === root) throw err;
+			unreadable.push({
+				what:   relative(root, dir).split(sep).join('/'),
+				reason: `the directory could not be read (${(err as NodeJS.ErrnoException).code ?? (err as Error).message})`,
+			});
 			return;
 		}
 		entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -172,5 +185,5 @@ export async function walkFiles(
 	};
 
 	await visit(root);
-	return { files: out, truncated };
+	return { files: out, truncated, unreadable };
 }

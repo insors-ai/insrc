@@ -37,8 +37,10 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.kubernetes';
 const log = getLogger('analyze:runtimes:infra:inventory-kubernetes');
@@ -68,7 +70,9 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files: walked, truncated } = await walkFiles(repoPath);
+		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
+		// Files the inventory could not read or parse, and directories the walk could not enter.
+		const skipped: SkippedItem[] = [...unreadable];
 
 		const yamlFiles = walked.filter(f =>
 			YAML_EXT_RE.test(f.relPath) && !HELM_CHART_RE.test(f.relPath),
@@ -87,6 +91,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 					{ file: f.relPath, err: (err as Error).message },
 					'inventory.kubernetes: YAML parse failed -- skipping',
 				);
+				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
 
@@ -140,7 +145,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 
 		return {
 			outputs: new Map<string, unknown>([['k8s-inventory', inventory]]),
-			completeness: fileWalkCompleteness(resources.length, truncated),
+			completeness: fileWalkCompleteness(resources.length, truncated, { skipped }),
 		};
 	},
 };

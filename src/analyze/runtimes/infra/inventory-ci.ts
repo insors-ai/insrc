@@ -38,8 +38,10 @@ import {
 	readScopeRef,
 	resolveRepoPath,
 	fileWalkCompleteness,
+	unreadableFile,
 	walkFiles,
 } from './_shared.js';
+import type { SkippedItem } from '../../completeness.js';
 
 const TEMPLATE_ID = 'infra.inventory.ci';
 const log = getLogger('analyze:runtimes:infra:inventory-ci');
@@ -119,7 +121,9 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 		const scopeRef = readScopeRef(args, TEMPLATE_ID);
 		const repoPath = resolveRepoPath(scopeRef, TEMPLATE_ID);
 
-		const { files: walked, truncated } = await walkFiles(repoPath);
+		const { files: walked, truncated, unreadable } = await walkFiles(repoPath);
+		// Files the inventory could not read or parse, and directories the walk could not enter.
+		const skipped: SkippedItem[] = [...unreadable];
 
 		const githubWorkflows: GhaWorkflowRecord[] = [];
 		const gitlabCi: GitlabCiRecord[]           = [];
@@ -134,6 +138,7 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 				doc = load(await readFile(f.absPath, 'utf8'));
 			} catch (err) {
 				log.debug({ file: f.relPath, err: (err as Error).message }, 'inventory.ci: YAML parse failed -- skipping');
+				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
 
@@ -151,7 +156,7 @@ export const infraInventoryCiRuntime: TemplateRuntime = {
 		);
 		return {
 			outputs: new Map<string, unknown>([['ci-inventory', inventory]]),
-			completeness: fileWalkCompleteness(githubWorkflows.length + gitlabCi.length, truncated),
+			completeness: fileWalkCompleteness(githubWorkflows.length + gitlabCi.length, truncated, { skipped }),
 		};
 	},
 };

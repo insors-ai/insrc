@@ -38,10 +38,9 @@ import type { LiveProjectContextReport } from '../../context/live-project-contex
 import { createItemMeasurer, summarisedFrom } from '../../explore/item-measure.js';
 import type { ItemMeasurer } from '../../explore/item-measure.js';
 import { SUMMARISER_BODY_CHARS } from '../../summariser/driver.js';
-import { buildCompleteness } from '../../completeness.js';
 import type { Completeness, PartlyReadItem, ReachedLimit } from '../../completeness.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
-import { GRAPH_BASIS_NOTE, graphCompleteness, reachedLimit } from '../../explore/completeness-facts.js';
+import { graphCompleteness, reachedLimit } from '../../explore/completeness-facts.js';
 
 /** How many decisions and constraints the check asks the project context for. */
 const PROJECT_CONTEXT_LIMIT = 500;
@@ -260,37 +259,19 @@ export async function runAdherenceCheck(args: AdherenceRunArgs): Promise<Adheren
 			},
 		);
 	} catch (err) {
+		// The model that judges adherence could not be called: the task did not
+		// do its work. It throws, and the walk records the task as failed. (It
+		// used to return every constraint as "missing implementation", which
+		// reads as a finding.)
 		log.warn(
 			{ runId: executeArgs.runId, taskId: executeArgs.task.taskId, err: (err as Error).message },
 			`${templateId}: LLM call failed`,
 		);
-		return {
-			subject,
-			matches: [],
-			drifts:  [],
-			// Failure -> every constraint goes into missingImpl with an
-			// explicit failure note so the aggregator can render it.
-			missingImpl: constraints.map(c => ({
-				constraint:    c.constraint,
-				docCitation:   {
-					kind: 'section',
-					...(c.sourceEntityId ? { entityId: c.sourceEntityId } : {}),
-					...(c.file          ? { file:      c.file          } : {}),
-					...(c.heading       ? { heading:   c.heading       } : {}),
-				},
-				whereExpected: `(LLM adjudication failed; ${subjectLabel.toLowerCase()} adherence unknown)`,
-				rationale:     `Adherence check failed: ${(err as Error).message}`,
-			})),
-			contradictions: [],
-			diagnostics: {
-				constraintCount: constraints.length,
-				excerptCount:    excerpts.length,
-			},
-			completeness: buildCompleteness({
-				returned: 0, basis: 'graph', notEstablished: true,
-				basisNote: `${GRAPH_BASIS_NOTE}. The model call that judges adherence failed: ${(err as Error).message}`,
-			}),
-		};
+		throw new Error(
+			`${templateId}: the model call that judges adherence failed: ${(err as Error).message}. ` +
+			`${constraints.length} constraint(s) and ${excerpts.length} excerpt(s) were gathered and not judged.`,
+			{ cause: err },
+		);
 	}
 
 	const matches        = Array.isArray(raw['matches'])        ? raw['matches']        as unknown[] : [];

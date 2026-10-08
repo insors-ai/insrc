@@ -1,0 +1,29 @@
+{
+  "id": "AMD-6a1315585c38c41c-1",
+  "epicHash": "6a1315585c38c41c",
+  "epicSlug": "e2-delivery-board-vs-code-goal",
+  "hldBaseRunId": "wf-1791485029499-gnjvqz",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc3",
+    "breaking": false,
+    "field": {
+      "name": "BoardDownMessage 'items' variant",
+      "optional": false,
+      "type": "{ readonly type: 'items'; readonly items: readonly { readonly itemId: string; readonly kind: 'epic' | 'story' | 'task' | 'issue'; readonly title: string | null; readonly stageLabel: string | null }[] }",
+      "purpose": "Lets s1 list every readable item (title, kind, stage label) before s2's BoardViewModel exists; s2 stops sending it once 'board' is posted."
+    }
+  },
+  "rationale": "The HLD has s1 render a minimal list of item titles until s2 supplies columns, but sc3's down-messages have no variant that carries a list without s2's BoardViewModel. An additive 'items' variant lets s1 show every readable item (s1 ac1, ac3) without defining s2's model. Filed by hand: the LLD's s4 proposal used a string where the store expects a FieldSpec, so the runner dropped it.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1791486668911-o3u8rv",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-08T19:17:40.495Z",
+  "status": "approved",
+  "approvedAt": "2026-10-08T19:35:24.144Z",
+  "approvedBy": "subho@insors.io"
+}

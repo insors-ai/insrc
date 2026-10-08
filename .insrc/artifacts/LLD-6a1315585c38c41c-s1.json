@@ -1,0 +1,956 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791486668911-o3u8rv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-08T19:16:55.099Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 346184,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "hldEffectiveHash": "e74ad3720f264d1fa81053294dfcd822eca2512a5bf5d4a718f9aec6380c02c6",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s1's six acceptance criteria (DEF §6.1 ac1–ac6) and FR001–FR003 are each designed: editor-tab open command + manual refresh, taken-at time and stale-on-failure, distinct empty/unavailable/failed/partial states, superseded-response drop, selection kept across refresh, read-only.",
+          "evidence": "DEF.md:109-114 lists ac1–ac6 for S001. LLD §2.4 postconditions cover ac2/ac3/ac5 (stale last snapshot, empty vs ready-partial, selection kept/cleared with notice), §2.4/§2.8 cover ac4 (seq drop, dispose discard), §2.8 covers ac1 (view type, title, CSP HTML, refresh on open), and §5 invariants cover ac6 (c6). The placement check from c9 ('validate against a tool-window entry point') appears as lc1 and is recorded in the BUILD summary. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The interim 'items' down-message the LLD posts is backed by an HLD amendment to sc3.",
+          "evidence": "HLD.md:146-152 BoardDownMessage has no 'items' variant. .insrc/artifacts/AMD-6a1315585c38c41c-1.json exists: type 'sharedContract.fieldAdd', contractId 'sc3', breaking false, field \"BoardDownMessage 'items' variant\", status 'pending'. Its field type (itemId, kind, title|null, stageLabel|null) matches LLD §2.5. One wording difference: the AMD says s2 'stops sending it once board is posted', while the LLD says s2 'replaces' it. The amendment must be approved before the build. [files: .insrc/artifacts/AMD-6a1315585c38c41c-1.json, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "Approve AMD-6a1315585c38c41c-1 before building s1, and make the AMD and LLD wording agree on whether s2 drops 'items'.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "rpc rejects with the fixed 'daemon is not running' message on ENOENT/ECONNREFUSED, sets no timeout of its own, and turns an envelope error (for example, an unknown method on an older daemon) into a rejection with the daemon's text.",
+          "evidence": "src/shared/ipc-client.ts:76-81: `if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') reject(new Error('daemon is not running — start it with: insrc daemon start'))`; :67 `if (res.error) reject(new Error(res.error))`; rpc() has no timer. src/daemon/server.ts:173/201 send `error: \\`unknown method: ${request.method}\\``. So the daemon-unavailable / read-failed split by message prefix works (DAEMON_DOWN_PREFIX at :31 is not exported, so the client must repeat or match the literal). [files: src/shared/ipc-client.ts, src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "workflow.delivery returns a DeliveryError object (it resolves and does not reject) for a missing repo or an unreadable store, and uses params.repo when it is given.",
+          "evidence": "src/workflow/delivery/handlers.ts:45-48 repoOf takes params.repo when it is a non-empty string, otherwise INSRC_REPO. :58 `return { error: 'workflow.delivery: `repo` is required' }`; :82-83 catch → `return { error: ... }`. src/daemon/index.ts:710-713 returns the handler result, so the error arrives as a resolved result with an `error` field, as LLD §2.2 and §5 say. [files: src/workflow/delivery/handlers.ts, src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "extension.ts today has a warn-only panelLog and builds webview panels with createWebviewPanel(viewType, title, ViewColumn.Active, { enableScripts: true }) wrapped as a ChatPanelChannel-shaped object.",
+          "evidence": "vscode-plugin/src/extension.ts:255 `const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };` (no error method, so the LLD's added error sink is needed for ChatPanelLogger, whose interface at chat-panel.ts:47-50 requires warn+error). extension.ts:610-628 shows the docs-review panel wrapped with setHtml/postMessage/onMessage/onDidDispose/reveal/dispose, which matches ChatPanelChannel at chat-panel.ts:37-45. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The six unions the type mirror is to re-export (DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict) all exist in src/workflow/delivery/types.ts, and the mirror does not export them yet.",
+          "evidence": "types.ts:148 DeliveryStage, :208 AttentionReason, :117 NoticeCode, :198 TaskResult, :25 ApprovalState, :17 `export type { ReviewVerdict }` (re-exported from ../review/types.js). vscode-plugin/src/delivery/delivery-contract.ts:14-36 exports only the nine Delivery* types, so the additions are new and type-only. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused shared client exposes rpc with the shape DeliveryClientDeps.rpc expects: <T>(method, params?) => Promise<T>.",
+          "evidence": "ipc-client.ts:93 `rpc<T = unknown>(method: string, params?: unknown): Promise<T>;` and createIpcClient at :115-120 returns `rpc: call`. That matches HLD sc1 DeliveryClientDeps.rpc (HLD.md:67). [files: src/shared/ipc-client.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding insrc.delivery.openBoard requires extending the closed InsrcCommandId union, packaging.test.ts's exact command list, and truthful-sync.test.ts's count from 13 to 14.",
+          "evidence": "command-registry.ts:14-28 InsrcCommandId is a closed union of 14 ids, and CommandDescriptor.id is typed by it (:31). package.json contributes 13 commands (lines 36-100; insrc.status.menu is not contributed). truthful-sync.test.ts:201 `assert.equal(cmds.length, 13)`. packaging.test.ts:60-63 deepEqual over the exact sorted list. All three change sites are named in LLD §3.3. [files: vscode-plugin/src/surfaces/command-registry.ts, vscode-plugin/src/config/__tests__/truthful-sync.test.ts, vscode-plugin/src/__tests__/packaging.test.ts, vscode-plugin/package.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The mirror's additions keep compiling under tsconfig.delivery-contract.json, and the new delivery/ modules are typechecked by the plugin's main tsconfig.",
+          "evidence": "tsconfig.delivery-contract.json extends ./tsconfig.json and includes only src/delivery/delivery-contract.ts. tsconfig.json includes src/**/*.ts (excluding tests), so new src/delivery/*.ts files are compiled by `tsc -p tsconfig.json` (package.json:769). [files: vscode-plugin/tsconfig.delivery-contract.json, vscode-plugin/tsconfig.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing is persisted, and a snapshot from an incompatible or older daemon is rejected rather than half-rendered (schemaVersion-1 check; an unknown method maps to read-failed).",
+          "evidence": "DeliverySnapshot.schemaVersion is the literal type 1 (types.ts:311). BoardState is held in memory only (LLD §3.2). An older daemon without workflow.delivery answers with an envelope `unknown method:` error (server.ts:173), which rpc rejects with (ipc-client.ts:67) and which does not start with 'daemon is not running', so it falls into read-failed as LLD §5 states. [files: src/workflow/delivery/types.ts, src/daemon/server.ts, src/shared/ipc-client.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s1 stays within sc1–sc4. It parses every up-message but acts on no s4-owned intent (open-evidence), renders no columns (s2/sc5), and does not call evidence().",
+          "evidence": "HLD.md:340 s1 owns sc1–sc4. LLD §2.8 lists the selection intents it applies (set-view, set-scope, set-search, set-attention, select-item, close-details, set-density). open-evidence is not among them, and §2.3 says 's1 does not call it'. LLD §2.5 keeps rendering to 'status' plus the interim 'items' message, which s2 replaces. The LLD's extra latestSeq on BoardState changes sc2, which s1 owns. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure (no workspace, stopped daemon, DeliveryError result, unknown method, timeout, bad schemaVersion, malformed webview message, answer after panel close) can be detected from the real client and handler behaviour, and its handling is stated.",
+          "evidence": "Each detection rests on code: the null repo is checked before rpc; the not-running message is fixed (ipc-client.ts:78); DeliveryError comes back as a resolved {error} (handlers.ts:58,83); the unknown-method envelope error is rejected with its text (server.ts:173 → ipc-client.ts:67); there is no rpc timeout, so the client's own race is required (ipc-client.ts:46-83 has no timer); schemaVersion is literally 1. rpc's 'invalid response from daemon' rejection (ipc-client.ts:71) falls under 'any other reason' and maps to read-failed. One gap: after a timeout the underlying socket stays open until the daemon answers. Results are ignored, so this is not a correctness issue. [files: src/shared/ipc-client.ts, src/workflow/delivery/handlers.ts, src/daemon/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every s1 acceptance criterion maps to at least one named test, and the existing-test edits (the packaging list, the truthful-sync count) are planned.",
+          "evidence": "LLD §6 maps ac1–ac6 to named tests across board-host, board-state, delivery-client and packaging. The ac1 packaging test name matches the existing test at packaging.test.ts:44, which the LLD says gains the new id. truthful-sync.test.ts:201 (count 13) is planned to go to 14 in §3.3. [files: vscode-plugin/src/__tests__/packaging.test.ts, vscode-plugin/src/config/__tests__/truthful-sync.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ac6 integration test can run the daemon's real handleDelivery from inside the plugin's test suite.",
+          "evidence": "Plugin tests already import runtime daemon modules by relative path: docs-review-panel.test.ts:2722-2723 does `await import('../../../../src/workflow/artifacts/companion/er.js')`. The k5 source-scan tests are scoped per directory (hosts/, workspace/, daemon/, onboarding/) and do not scan __tests__ in a new delivery/ folder. The plugin's test script is `tsx --test 'src/**/__tests__/*.test.ts'` (package.json:770). handleDelivery accepts DeliveryDeps seams (types.ts:356-360) and takes a real repo path. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, src/workflow/delivery/handlers.ts, vscode-plugin/package.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T19:24:53.930Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-08T19:35:30.626Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This story builds the board's frame: a command that opens the delivery board in an editor tab, a client that fetches the open workspace's delivery snapshot from the daemon with a time limit, and the board's state, which keeps the last good snapshot, ignores answers to superseded refreshes and keeps the reader's choices across refreshes. The tab shows when its data was taken and says plainly whether the board is loading, current, empty, partly readable, unavailable or failed, with a simple list of items until the columns of the next story arrive.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Delivery client",
+          "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "Board state: load status and selection",
+          "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "Board webview message protocol",
+          "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;"
+        },
+        {
+          "id": "sc4",
+          "name": "Display labels",
+          "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11"
+          ],
+          "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+        }
+      ],
+      "rolloutPhase": "Phase A — board shell and shared contracts",
+      "nonFunctional": {
+        "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+        "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+        "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+        "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DeliveryClient",
+          "signature": "function createDeliveryClient(deps: DeliveryClientDeps): DeliveryClient",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "DeliveryClientDeps",
+              "purpose": "rpc (the shared IpcClient's rpc), the workspace root or null, and the two deadlines in milliseconds.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliveryClient",
+            "meaning": "The board's only path to workflow.delivery and workflow.deliveryEvidence; it exposes no other method."
+          },
+          "errors": [],
+          "preconditions": [
+            "deps.deadlinesMs.snapshot and deps.deadlinesMs.evidence are positive."
+          ],
+          "postconditions": [
+            "Nothing is sent to the daemon until snapshot() or evidence() is called."
+          ]
+        },
+        {
+          "name": "DeliveryClient.snapshot",
+          "signature": "snapshot(): Promise<DeliveryResult<DeliverySnapshot>>",
+          "parameters": [],
+          "returns": {
+            "type": "DeliveryResult<DeliverySnapshot>",
+            "meaning": "ok with the snapshot when the daemon returned a schemaVersion-1 DeliverySnapshot for deps.repo; otherwise a typed failure. Never rejects."
+          },
+          "errors": [
+            {
+              "type": "no-workspace",
+              "condition": "deps.repo is null; the daemon is not called."
+            },
+            {
+              "type": "daemon-unavailable",
+              "condition": "rpc rejects with the shared client's 'daemon is not running' message (ENOENT or ECONNREFUSED on the socket)."
+            },
+            {
+              "type": "timed-out",
+              "condition": "No answer within deps.deadlinesMs.snapshot; the late answer, if any, is ignored."
+            },
+            {
+              "type": "read-failed",
+              "condition": "rpc rejects for any other reason (including an envelope error such as an unknown method on an older daemon), the result is a DeliveryError { error }, the result is not an object, or its schemaVersion is not 1."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The request sent is workflow.delivery with params { repo: deps.repo }.",
+            "A failure's message is the daemon's error text, the socket error message, or a fixed text naming the timeout or the unsupported schemaVersion."
+          ]
+        },
+        {
+          "name": "DeliveryClient.evidence",
+          "signature": "evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "An artifact id taken from the current snapshot's evidence entries.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliveryResult<DeliveryEvidenceRecord>",
+            "meaning": "ok with the record when the daemon returned one; otherwise a typed failure. Never rejects. Provided for s4; s1 does not call it."
+          },
+          "errors": [
+            {
+              "type": "no-workspace",
+              "condition": "deps.repo is null."
+            },
+            {
+              "type": "daemon-unavailable",
+              "condition": "As for snapshot()."
+            },
+            {
+              "type": "timed-out",
+              "condition": "No answer within deps.deadlinesMs.evidence."
+            },
+            {
+              "type": "read-failed",
+              "condition": "Any other rejection, or a DeliveryError result such as 'invalid artifact id' or 'not found'."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The request sent is workflow.deliveryEvidence with params { repo: deps.repo, artifactId }."
+          ]
+        },
+        {
+          "name": "BoardState",
+          "signature": "function initialBoardState(): BoardState;\nfunction reduceBoardState(state: BoardState, event: BoardEvent): BoardState;\n\ntype BoardEvent =\n  | { readonly type: 'refresh-requested'; readonly seq: number }\n  | { readonly type: 'snapshot-arrived'; readonly seq: number; readonly result: DeliveryResult<DeliverySnapshot>; readonly at: string }\n  | { readonly type: 'selection-changed'; readonly selection: BoardSelection };\n\n/** BoardState (sc2) plus the request bookkeeping the reducer needs. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  readonly selectionNotice: string | null;\n  /** The newest refresh request number; only its answer is applied. */\n  readonly latestSeq: number;\n}",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "BoardState",
+              "purpose": "The current state.",
+              "optional": false
+            },
+            {
+              "name": "event",
+              "type": "BoardEvent",
+              "purpose": "One refresh request, one client answer stamped with its request number, or one selection change.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardState",
+            "meaning": "The next state; the input is never mutated."
+          },
+          "errors": [],
+          "preconditions": [
+            "refresh-requested seq values are strictly increasing."
+          ],
+          "postconditions": [
+            "snapshot-arrived with seq !== state.latestSeq returns state unchanged (a superseded answer is dropped).",
+            "An ok snapshot gives status 'empty' only when it has no items and is not partial (unreadableCount is 0 and it has no store-level notices); otherwise 'ready'. AppliedSnapshot.partial is true when unreadableCount > 0 or the snapshot has store-level notices, so a store whose every record failed to load shows 'ready' with a partial notice, never 'empty'.",
+            "A daemon-unavailable or no-workspace failure gives 'unavailable', a read-failed or timed-out failure gives 'failed'; both keep the last applied snapshot as last.",
+            "On an applied snapshot the selection is kept; a selectedItemId not present in the new snapshot is set to null and selectionNotice says the item is no longer in the board; otherwise selectionNotice is null.",
+            "refresh-requested sets status to 'loading' with the last applied snapshot kept."
+          ]
+        },
+        {
+          "name": "BoardDownMessage",
+          "signature": "function boardDownMessages(state: BoardState, labels: DisplayLabels): readonly Envelope<BoardDownMessage>[]",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "BoardState",
+              "purpose": "The state to render.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Text for stage ids in the interim item list.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly Envelope<BoardDownMessage>[]",
+            "meaning": "Always a 'status' message (StatusView) first; then, when a snapshot is shown (current, or last for a stale state), an 'items' message listing every item's id, kind, title and stage label in the snapshot's own order. s2 replaces the 'items' message with 'board'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "StatusView.stale is true exactly when the state is unavailable or failed and a last snapshot exists; takenAt is that snapshot's takenAt; message names the failure and its time.",
+            "StatusView.partialNotice is set when the shown snapshot is partial, naming unreadableCount and the store-level notices.",
+            "No message carries artifact text other than titles, labels and notice messages, all destined for textContent."
+          ]
+        },
+        {
+          "name": "BoardUpMessage",
+          "signature": "function parseBoardUpMessage(raw: unknown): BoardUpMessage | null",
+          "parameters": [
+            {
+              "name": "raw",
+              "type": "unknown",
+              "purpose": "Whatever the webview posted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BoardUpMessage | null",
+            "meaning": "The typed intent when raw is an Envelope<BoardUpMessage> with v 1 and a known type with well-typed fields; null otherwise."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A null result is ignored by the host and logged once through warn()."
+          ]
+        },
+        {
+          "name": "DisplayLabels",
+          "signature": "const DISPLAY_LABELS: DisplayLabels",
+          "parameters": [],
+          "returns": {
+            "type": "DisplayLabels",
+            "meaning": "Exhaustive text for every DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState and ReviewVerdict, plus the unplanned label; e.g. stage 'ready-plan-approved' -> 'Ready · plan approved', 'complete' -> 'Complete'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Adding a member to any of the six unions without a label fails to compile."
+          ]
+        },
+        {
+          "name": "DeliveryClientDeps",
+          "signature": "function createDeliveryBoardHost(deps: {\n  readonly createPanel: (opts: { readonly viewType: string; readonly title: string }) => ChatPanelChannel;\n  readonly client: DeliveryClient;\n  readonly logger: ChatPanelLogger;\n  readonly now: () => string;\n  readonly genNonce: () => string;\n}): { open(): void; dispose(): void }",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "object",
+              "purpose": "The webview channel factory, the delivery client (built from DeliveryClientDeps), the logger, a clock and a nonce source; vscode-free so the host is tested with fakes.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ open(): void; dispose(): void }",
+            "meaning": "open() reveals the existing panel or creates one (view type 'insrc.deliveryBoard', title 'Delivery board'), sets its CSP-locked HTML, and starts a refresh; dispose() closes it."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Each 'refresh' intent (and open) dispatches refresh-requested with the next seq, calls client.snapshot(), and dispatches snapshot-arrived with that seq; after each dispatch it posts boardDownMessages(state).",
+            "A dropped (superseded) answer is logged through warn(); a failed or timed-out one through error(), with the seq and elapsed time.",
+            "Selection intents (set-view, set-scope, set-search, set-attention, select-item, close-details, set-density) update the selection through selection-changed; in s1 they change no rendering beyond the status and item list.",
+            "lc1: before s1 completes, the builder compares the editor tab against a sidebar (webview view) entry point for the board, and records the decision and its reason in the BUILD record's summary; the editor tab stays unless that comparison shows a sidebar entry is required.",
+            "The host records the channel's onDidDispose; once disposed it discards any answer still outstanding without dispatching, posting or logging it, and the next open() creates a new panel with a fresh state."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/delivery/delivery-contract.ts type mirror",
+        "change": "field-add",
+        "details": "Re-export DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState and ReviewVerdict from src/workflow/delivery/types.ts beside the nine existing types; tsconfig.delivery-contract.json and E1's contract test keep compiling it.",
+        "callSites": [
+          "vscode-plugin/src/delivery/delivery-contract.ts",
+          "src/workflow/delivery/types.ts"
+        ]
+      },
+      {
+        "entity": "BoardState",
+        "change": "new",
+        "details": "The sc2 state value plus latestSeq, changed only by reduceBoardState; held by the board host for the panel's life and never persisted.",
+        "callSites": []
+      },
+      {
+        "entity": "vscode-plugin/package.json contributes.commands",
+        "change": "field-add",
+        "details": "One command, insrc.delivery.openBoard titled 'Open delivery board' in category insrc, registered through the command registry in extension.ts outside the insrc.chat.enabled gate. The id joins the closed InsrcCommandId union in vscode-plugin/src/surfaces/command-registry.ts (CommandDescriptor.id is typed by it); packaging.test.ts's exact command list and truthful-sync.test.ts's command count (13 to 14) gain it, and an extension wiring test asserts the command is contributed.",
+        "callSites": [
+          "vscode-plugin/package.json",
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/surfaces/command-registry.ts",
+          "vscode-plugin/src/__tests__/packaging.test.ts",
+          "vscode-plugin/src/config/__tests__/truthful-sync.test.ts"
+        ]
+      },
+      {
+        "entity": "vscode-plugin/src/extension.ts board wiring",
+        "change": "field-add",
+        "details": "extension.ts builds the board host's ChatPanelLogger from the existing warn-only panelLog plus an error sink: { warn: panelLog.warn, error: (m) => console.error(`[insrc] ${m}`) }, builds the delivery client from createIpcClient().rpc, vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null and deadlines of 30 s and 15 s, creates the host with vscode.window.createWebviewPanel(viewType, title, ViewColumn.Active, { enableScripts: true }) wrapped as a ChatPanelChannel, and registers insrc.delivery.openBoard through the command registry.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "src/shared/ipc-client.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "createDeliveryClient implements DeliveryClient over DeliveryClientDeps: repo in every request, a deadline per call, typed failures, a schemaVersion-1 check; extension.ts builds it from createIpcClient().rpc, vscode.workspace.workspaceFolders[0] and deadlines of 30 s and 15 s."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "BoardState, LoadStatus, AppliedSnapshot and BoardSelection as sketched, changed only through reduceBoardState; the initial selection is view 'board', scope all, empty search, attention off, nothing selected, density comfortable."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Envelope v1 with the sketched BoardDownMessage and BoardUpMessage unions, parsed by parseBoardUpMessage; s1 posts 'status' and the interim 'items' message (see the HLD amendment proposal) and accepts every up-message type, applying the selection ones to state for later stories."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "DISPLAY_LABELS with exhaustive Records over the six re-exported unions; s1 uses only the stage labels, in the interim item list."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon is not running or its socket does not exist.",
+          "detection": "rpc rejects with the shared client's fixed 'daemon is not running' message, which the client maps to a daemon-unavailable failure.",
+          "response": "Status becomes 'unavailable' with that message and the time; a last snapshot, if any, stays shown and is marked stale.",
+          "userImpact": "The board says the daemon is unavailable rather than showing an empty board.",
+          "recoverable": true
+        },
+        {
+          "scenario": "No workspace folder is open.",
+          "detection": "deps.repo is null when the client is called; the client returns no-workspace without calling the daemon.",
+          "response": "Status becomes 'unavailable' with a message asking the user to open a folder.",
+          "userImpact": "The board explains why it cannot show anything.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon answers with a DeliveryError, such as an unreadable artifact store or 'repo is required'.",
+          "detection": "The resolved result is an object with a string error field.",
+          "response": "The client returns read-failed with the daemon's text; status becomes 'failed', keeping any last snapshot as stale.",
+          "userImpact": "A failed read is shown as a failure, distinct from an empty workspace.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is older and does not know workflow.delivery.",
+          "detection": "rpc rejects with the daemon envelope's error text (an unknown-method error), which is not the not-running message.",
+          "response": "read-failed with that text; status 'failed'.",
+          "userImpact": "The board reports the daemon's error instead of hanging or showing an empty board.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon accepts the connection but never answers.",
+          "detection": "The snapshot deadline (30 s) passes before rpc settles.",
+          "response": "The client returns timed-out; status 'failed' with a timeout message; a later answer to that request is ignored.",
+          "userImpact": "The board leaves the loading state instead of spinning forever.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon returns a snapshot with a schemaVersion other than 1, or a value that is not an object.",
+          "detection": "The client checks typeof result === 'object' and result.schemaVersion === 1 before returning ok.",
+          "response": "read-failed naming the unsupported schemaVersion; the snapshot is not applied.",
+          "userImpact": "A contract the board does not understand is never half-rendered.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The webview posts a malformed or unknown message.",
+          "detection": "parseBoardUpMessage returns null.",
+          "response": "The host ignores it and logs one warn() line.",
+          "userImpact": "None visible; a bad message cannot trigger any action.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A snapshot with zero items and zero unreadable records.",
+          "expected": "Status 'empty' with a message that the workspace has no recorded delivery work; no items message content."
+        },
+        {
+          "input": "A snapshot with zero items but unreadable records.",
+          "expected": "Status 'ready' with a partial notice naming the unreadable count, not 'empty', so missing data is never mistaken for missing work."
+        },
+        {
+          "input": "A snapshot with items and store-level notices.",
+          "expected": "Status 'ready', partial true, partialNotice listing the notices; every readable item is listed."
+        },
+        {
+          "input": "Two refreshes; the first answer arrives after the second.",
+          "expected": "The second answer is applied; the first is dropped and logged through warn(); nothing from it is shown."
+        },
+        {
+          "input": "A refresh fails while the board shows an older snapshot.",
+          "expected": "The older snapshot stays, marked stale, with the failure and its time."
+        },
+        {
+          "input": "The selected item disappears in the next snapshot.",
+          "expected": "selectedItemId is cleared and selectionNotice tells the user; search, scope, attention, view and density are kept."
+        },
+        {
+          "input": "The open command runs while the board is already open.",
+          "expected": "The existing panel is revealed and refreshed; no second panel is created."
+        },
+        {
+          "input": "The panel is closed while a refresh is outstanding.",
+          "expected": "The host has recorded the dispose, so the late answer (or its timeout) is discarded: it is not dispatched, not posted and not logged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Only one coherent snapshot is applied at a time; a superseded response is dropped and never merged with a newer one.",
+          "source": "c8"
+        },
+        {
+          "text": "No navigation, filter, expansion or refresh changes any artifact, approval, source file or Git state.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx --test over vscode-plugin/src/**/__tests__/*.test.ts (the plugin's package.json test script), using the existing fakeIpc and fake ChatPanelChannel idioms",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The client's request shape, deadline and failure classification; the reducer's sequencing, status and selection rules; the down-message derivation; up-message parsing; label exhaustiveness.",
+          "subjects": [
+            "createDeliveryClient",
+            "reduceBoardState / initialBoardState",
+            "boardDownMessages",
+            "parseBoardUpMessage",
+            "DISPLAY_LABELS"
+          ],
+          "fixturesNeeded": [
+            "A fake rpc whose answers and rejections are scripted per call, including a never-settling promise for the timeout case",
+            "Small DeliverySnapshot fixtures: empty, items, unreadable records, store-level notices"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The board host over a fake ChatPanelChannel and the real reducer: open, refresh, out-of-order answers, failures, reveal of an existing panel; and the client against the daemon's real handleDelivery over a temporary git repository to prove nothing is written.",
+          "subjects": [
+            "createDeliveryBoardHost",
+            "createDeliveryClient over src/workflow/delivery/handlers.ts handleDelivery"
+          ],
+          "fixturesNeeded": [
+            "A fake ChatPanelChannel recording setHtml and posted messages",
+            "A temporary git repository with a small artifact store and docs/ tree"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The type mirror still compiles with the six added re-exports, and the new command is contributed and wired.",
+          "subjects": [
+            "vscode-plugin/src/delivery/delivery-contract.ts",
+            "vscode-plugin/package.json contributes.commands",
+            "vscode-plugin/src/extension.ts wiring"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-host.test.ts: 'opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time'",
+            "packaging.test.ts: 'the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-state.test.ts: 'a failed refresh keeps the last snapshot as stale with the failure and its time'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-state.test.ts: 'empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty'",
+            "delivery-client.test.ts: 'the client classifies a missing workspace, a stopped daemon, a daemon error, a timeout and an unknown schemaVersion into their own failure kinds'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-state.test.ts: 'an answer to a superseded refresh is dropped and nothing from it is applied'",
+            "board-host.test.ts: 'when the earlier refresh answers after the later one, only the later snapshot is posted'",
+            "board-host.test.ts: 'an answer or timeout that arrives after the panel is closed is neither posted nor logged'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-state.test.ts: 'a refresh keeps the selection, and clears a selected item that is gone with a notice'"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "delivery-client.test.ts: 'opening and refreshing against a temporary git repository leaves the store, docs and git untouched'"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure state reducer driven by a thin effect shell",
+        "oneLineSummary": "Board state (sc2) changes only through a pure reduce(state, event) function; a small host shell issues client calls, stamps request numbers, dispatches their results as events and posts the down-messages derived from the new state.",
+        "approach": "The delivery client (sc1) is a factory over an rpc function, the workspace repo and two deadlines; each method races the rpc against its deadline and classifies the outcome into a DeliveryResult. Board state is a plain value: the load status, the selection and a selection notice, plus the next request number and the sequence number of the outstanding request. A pure reducer handles events such as refresh-requested, snapshot-arrived (with its request number), and the reader's intents; a snapshot-arrived event whose number is not the newest outstanding one leaves state unchanged, which is the whole of the drop-the-superseded-response rule.\n\nThe host shell, created with injected deps (createPanel, the client, a clock, a nonce generator and a ChatPanelLogger), owns the webview channel. On each intent it dispatches to the reducer, performs any requested client call, and after every state change derives the down-messages (status always; a minimal item list in s1, replaced by s2's board model later) from the new state and posts them. The display labels (sc4) and the message protocol types (sc3) are separate modules the reducer and renderers import.",
+        "pros": [
+          "Sequencing, failure-to-status mapping and selection retention are all pure functions over values, so s1 ac2, ac3, ac4 and ac5 are tested by feeding events in any order without timers or sockets.",
+          "s2 to s5 extend the board by adding events and view-model builders, never by touching the shell's control flow.",
+          "The shell is small enough to test with the existing fake-channel and fake-IPC idioms."
+        ],
+        "cons": [
+          "Two layers (reducer plus shell) instead of one closure; the event set must be kept in step with the up-message set.",
+          "Every state change re-derives the down-messages, which s2 must keep cheap for the 150 ms budget."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Imperative host closure with mutable state",
+        "oneLineSummary": "One createDeliveryBoardHost factory holds mutable fields (last snapshot, outstanding request number, selection) and handles each message inline, like createDocsReviewHost.",
+        "approach": "The host closure keeps let-bound fields and a message switch. A refresh increments a counter, awaits the client, compares the counter before applying, and posts status and items directly from inside the handler. Failures set the status fields in place. The client, labels and protocol types are as in a1.\n\nThis follows the shape of the existing review host (docs-review-panel.ts createDocsReviewHost), which keeps its state in closure variables and posts from its handlers.",
+        "pros": [
+          "Matches the closest existing panel host, so it reads like code reviewers already know.",
+          "Fewer types: no event union separate from the up-messages."
+        ],
+        "cons": [
+          "Sequencing and selection rules are interleaved with awaits and posts, so testing out-of-order responses needs a fake client with controllable promises and a fake channel for every case.",
+          "Later stories add branches to the same switch, so s2-s5 all edit one growing function, raising the chance of breaking s1's ordering rule."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets the criteria in principle, but ac4 and ac5 depend on correct ordering of awaits inside one handler, which is only partially checkable without controllable fake promises, and later stories keep editing the same switch."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Concurrency: apply one coherent snapshot at a time. Drop superseded responses; do not combine half of an old snapshot with half of a newer one."
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Placement: a dedicated editor tab is the leading candidate for a wide board; validate against a tool-window entry point."
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {"
+    },
+    {
+      "id": "c26",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "reject(new Error('daemon is not running — start it with: insrc daemon start'));"
+    },
+    {
+      "id": "c27",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "export interface ChatPanelChannel {"
+    },
+    {
+      "id": "c28",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "export interface ChatPanelLogger {"
+    },
+    {
+      "id": "c29",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts",
+      "quotedText": "const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;"
+    },
+    {
+      "id": "c30",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts",
+      "quotedText": "const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };"
+    },
+    {
+      "id": "c31",
+      "kind": "code",
+      "ref": "vscode-plugin/src/__tests__/packaging.test.ts",
+      "quotedText": "test('the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)', () => {"
+    },
+    {
+      "id": "c32",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/delivery-contract.ts",
+      "quotedText": "readonly 'workflow.delivery':         { readonly request: DeliverySnapshotRequest; readonly response: DeliverySnapshotResponse };"
+    },
+    {
+      "id": "c33",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly schemaVersion:   1;"
+    },
+    {
+      "id": "c34",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+      "quotedText": "function fakeIpc(responder: (method: string, params: unknown) => unknown) {"
+    }
+  ]
+}

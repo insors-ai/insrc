@@ -1,0 +1,456 @@
+ok 1 - mapper: table covers every AnalyzeRunEvent variant exactly once (exhaustive)
+ok 2 - mapper: stage variants -> StageProgressEvent{operation:analyze.run,total:null,index}
+ok 3 - mapper: specific stageId/stageLabel derivations
+ok 4 - mapper: llm-token + all sub-events + done -> null (no throw)
+ok 5 - mapper: malformed / unknown input -> null, never throws
+ok 6 - emitter: stage events -> progress frames; sub-events/llm-token emit nothing; zero delta frames
+ok 7 - emitter: repeated stages still advance the counter
+ok 8 - emitter: a send that throws EPIPE on the Nth call does not abort the run
+ok 9 - analyze-rpc.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+ok 10 - buildClassification: happy path + cache hit on identical re-invocation # SKIP
+ok 11 - buildRun (infra target): happy path returns schema-valid bundle # SKIP
+ok 12 - buildTask (code target): happy path with upstream mix # SKIP
+ok 13 - buildRun (code target): unindexed registered repo -> scope-not-indexed error code # SKIP
+ok 14 - classify: happy path returns ok:true with a ClassifiedIntent # SKIP
+ok 15 - classify: nonexistent scopeRef.value -> scope-ref-unresolved error code # SKIP
+ok 16 - plan (infra XS): end-to-end -> ok:true with a validator-passing PlanTask # SKIP
+ok 17 - plan: currentDepth=99 -> max-plan-depth-exceeded error code in <5s # SKIP
+ok 18 - buildRun: malformed intent -> invalid-params error code # SKIP
+ok 19 - runStart (streaming): infra workspace end-to-end via streaming RPC; result mirrors run.json # SKIP
+ok 20 - runStart (streaming): invalid scopeRef.kind -> invalid-params in analyze.result, fast (no LLM) # SKIP
+ok 21 - buildClassification rejects non-object params with invalid-params
+ok 22 - buildClassification rejects missing runId
+ok 23 - buildClassification rejects missing scopeRef
+ok 24 - buildClassification rejects bad scopeRef.kind
+ok 25 - buildRun rejects missing intent
+ok 26 - buildRun rejects bad intent.target
+ok 27 - buildRun rejects bad intent.scope
+ok 28 - buildRun rejects non-boolean intent.focused
+ok 29 - buildTask rejects target=generic at task scope
+ok 30 - buildTask rejects bad task.produces shape
+ok 31 - buildTask accepts undefined upstream as an empty Map
+ok 32 - buildTask accepts array-form upstream
+ok 33 - buildTask rejects bad upstream array entries
+ok 34 - invalid-params responses carry { code, message }
+ok 35 - classify rejects non-object params with invalid-params
+ok 36 - classify rejects missing runId
+ok 37 - classify rejects missing userPrompt
+ok 38 - classify rejects missing scopeRef
+ok 39 - classify rejects bad scopeRef.kind
+ok 40 - classify rejects empty-string userPrompt
+ok 41 - plan rejects non-object params with invalid-params
+ok 42 - plan rejects missing runId
+ok 43 - plan rejects missing intent
+ok 44 - plan rejects bad intent.target
+ok 45 - plan rejects bad rootScope value
+ok 46 - plan rejects non-integer currentDepth
+ok 47 - plan rejects negative currentDepth
+ok 48 - runStart (streaming): non-object params -> analyze.result frame with invalid-params + done
+ok 49 - runStart (streaming): missing runId -> invalid-params in terminal frame
+ok 50 - runStart (streaming): missing userPrompt -> invalid-params
+ok 51 - runStart (streaming): missing scopeRef -> invalid-params
+ok 52 - runStart (streaming): bad scopeRef.kind -> invalid-params with field name in message
+ok 53 - runStart (streaming): resume cache hit -> analyze.result with ok:true; no intermediate progress frames
+ok 54 - runStatus rejects non-object params with invalid-params
+ok 55 - runStatus rejects missing runId
+ok 56 - runStatus on missing runId record returns invalid-input
+ok 57 - runStatus returns the persisted RunRecord round-trip
+ok 58 - runPurge rejects non-object params with invalid-params
+ok 59 - runPurge rejects missing runId
+ok 60 - runPurge rejects non-boolean force
+ok 61 - runPurge on missing runId record returns purged=false (idempotent)
+ok 62 - runPurge removes a persisted finished run; subsequent purge returns purged=false
+ok 63 - runPurge refuses on status=in-progress without force; force=true overrides
+ok 64 - AnalyzeRpcOk responses have ok:true and a bundle field
+ok 65 - the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason
+ok 66 - a failure with no report is passed on as before: its code and message, and nothing about completeness
+ok 67 - a grounded step gets the flattened findings of a successful request
+ok 68 - index.ts registers an 'artifact.feedback.append' handler that delegates to appendFeedback
+ok 69 - the handler returns { error } (not throw) on a bad request / ArtifactFeedbackError
+ok 70 - the artifact-feedback tool is mounted at boot and single-sources appendFeedback
+ok 71 - the writer exports the append-only API + typed error
+ok 72 - backupAll snapshots LMDB to a single file at <target>/graph.lmdb
+ok 73 - backupAll snapshot is openable + round-trips the source rows
+ok 74 - backupAll leaves the source env writable + readable
+ok 75 - backupAll re-run over an existing target overwrites idempotently
+ok 76 - backupAll skips Lance when the source directory is absent
+ok 77 - backupGraphStore throws when env is not open
+ok 78 - runBootSteeringRefresh re-stamps a MARKED repo file to the stripped skeleton
+ok 79 - runBootSteeringRefresh leaves an UNMARKED / absent file untouched (REPLACE-ONLY opt-out)
+ok 80 - runBootSteeringRefresh is idempotent — an already-current marked file reports unchanged, no write
+ok 81 - runBootSteeringRefresh swallows a readBlock throw (missing/empty asset) and returns undefined
+ok 82 - runBootSteeringRefresh swallows a listRepos rejection and returns undefined (never throws)
+ok 83 - runBootSteeringRefresh over an empty registry returns an empty report, no writes
+ok 84 - src/daemon/index.ts imports and calls runBootSteeringRefresh AFTER the reconcile, guarded
+ok 85 - STEERING markers are exported for fixtures
+ok 86 - T12 the daemon refuses to review code the daemon wrote: an error frame, no provider, no review
+ok 87 - T4 the daemon reviews code that is controller-authored, and stamps the review as the daemon's
+ok 88 - T4 the daemon reviews code that is of unknown author (an older record), and stamps the review as the daemon's
+ok 89 - T4 with no BUILD record at all the author is unknown and the daemon reviews
+ok 90 - the author is read from the BUILD record
+ok 91 - a declined subject is still an error frame, before the author is looked at
+ok 92 - T17 the degraded mode grounds on the diff, stamps the record degraded and caps a clean verdict at warn
+ok 93 - T17 a diff the daemon cannot read ends in one error frame naming the cause, and no record is written
+ok 94 - T17 with no mode the request grounds on the graph and can pass, as before
+ok 95 - T17 with the full mode the request grounds on the graph and can pass, as before
+ok 96 - T17 a grounding mode the daemon does not know is refused, not read as full
+ok 97 - first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent
+ok 98 - first boot with no config present → writes surviving former keys + canonical catalog defaults; no retired keys, one write
+ok 99 - module boundary: daemon imports the catalog from src/config, and src/daemon has zero imports of src/cli
+ok 100 - boot wiring contract: unconditional, no silent parse catch, distinguishable catalog-error, all outcomes handled
+ok 101 - reconcile never aborts boot: every failure input yields a structured outcome, not a throw
+ok 102 - t2: the status object includes installedCommit populated from the reader
+ok 103 - t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)
+ok 104 - t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change
+ok 105 - t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha
+ok 106 - guideMarkerStart/End produce the exact insrc:guide marker strings
+ok 107 - readWorkflowGuide returns the trimmed section for a known workflow (ac1)
+ok 108 - readWorkflowGuide keeps a decoy inner marker verbatim, not mis-sliced
+ok 109 - readWorkflowGuide returns null for an unknown key
+ok 110 - readWorkflowGuide returns null for a half-present pair (start, no end)
+ok 111 - readWorkflowGuide returns null for an inverted pair (end before start)
+ok 112 - listWorkflowGuides returns COMPLETE-pair keys only, in document order
+ok 113 - listWorkflowGuides returns [] for text with no pairs (Phase-A empty)
+ok 114 - guideGetResult: known key -> Ok { workflow, guidance }
+ok 115 - guideGetResult: omitted workflow -> Error { validWorkflows }
+ok 116 - guideGetResult: unknown workflow -> Error { validWorkflows }
+ok 117 - guideGetResult: read-seam throws -> Error { validWorkflows: [] }, never escapes
+ok 118 - guideListResult: returns { workflows } in document order
+ok 119 - guideListResult: read-seam throws -> { workflows: [] }, never escapes
+ok 120 - shipped steering-block.md enumerates bugfix without disturbing the existing keys/order
+ok 121 - guideGetResult({workflow:"bugfix"}) returns the bugfix section from the shipped asset
+ok 122 - removes every complete guide section, retaining the skeleton
+ok 123 - leaves a half-present (start-only) marker intact
+ok 124 - collapses the blank run left where a section was removed
+ok 125 - is idempotent — stripping an already-stripped skeleton is a no-op
+ok 126 - is safe on text with no guide sections at all
+ok 127 - is safe on empty-ish text
+ok 128 - the shipped asset carries guide sections; readSteeringBlock returns it whole
+ok 129 - refreshSteeringAcrossRepos (default readBlock) stamps a guide-marker-free skeleton
+ok 130 - an injected readBlock (the daemon-update path) is ALSO stripped — the skeleton contract cannot be bypassed
+ok 131 - the inject-path strip is idempotent over the shipped asset
+ok 132 - t1: readInstalledCommit returns the trimmed sha for a valid HEAD (trailing newline stripped)
+ok 133 - t1: readInstalledCommit invokes git with `-C <root> rev-parse HEAD`
+ok 134 - t1: any exec failure (throw / non-git / ENOENT) returns '' and never throws
+ok 135 - t1: with no root arg it resolves DAEMON_ROOT = $INSRC_DAEMON_ROOT ?? ~/.insrc/daemon
+ok 136 - listModels('cli-claude') -> curated list mapped from CatalogModel, available:true
+ok 137 - listModels('cli-codex') -> the cli-codex curated list, available:true
+ok 138 - cloud branch: an empty curated array stays available:true + []
+ok 139 - ac4: the ollama lister is NEVER called for a cloud provider (no HTTP path)
+ok 140 - listModels('ollama') success -> available:true + mapped models
+ok 141 - listModels('ollama') with a REJECTING lister (unreachable) -> available:false + []
+ok 142 - listModels('ollama') with a lister that rejects on timeout -> available:false + []
+ok 143 - listModels('ollama') with a lister that rejects on malformed -> available:false + []
+ok 144 - listModels('ollama') reachable-but-zero -> available:true + [] (distinct from failure)
+ok 145 - unknown/missing provider -> invalid-params error result, no throw, no mutation
+ok 146 - read-only: the injected deps expose only read methods (no config-write path reachable)
+ok 147 - source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/ac4)
+ok 148 - handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)
+ok 149 - integration: listModels(cloud) sources from the REAL getCuratedCatalog after validateModelCatalog
+ok 150 - unselected clients are always emitted as skipped, never omitted
+ok 151 - {claude:true} registers claude (mcp add --scope user); codex is skipped
+ok 152 - {agents:true} maps to the codex client (agents flag → codex, --scope omitted)
+ok 153 - an existing `insrc` entry in `mcp list` → unchanged, no add spawned
+ok 154 - an `insrc` substring only inside a path (not a line-start name) does NOT count as registered
+ok 155 - an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add
+ok 156 - a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw
+ok 157 - a non-zero `mcp add` exit → failed carrying the CLI stderr
+ok 158 - per-client isolation: claude add fails, codex still registers independently
+ok 159 - mixed idempotency: claude already present, codex absent → unchanged + registered
+ok 160 - a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess
+ok 161 - registerMcpClients never rejects even if the injected run throws
+ok 162 - validateModelCatalog: valid catalog fixture → resolves, caches the frozen parse
+ok 163 - validateModelCatalog: removed/absent catalog file → throws ModelCatalogValidationError naming the file + one copy-assets Fix: line
+ok 164 - validateModelCatalog: non-JSON file → throws (parse failure) naming the file
+ok 165 - validateModelCatalog: schema-invalid variants → throw naming the specific failure, short-circuit
+ok 166 - validateModelCatalog: short-circuits on the FIRST structural failure (version before providers)
+ok 167 - modelsFor('cli-claude') / modelsFor('cli-codex') over a loaded catalog → the curated readonly arrays
+ok 168 - modelsFor for a provider with an explicitly-empty array → empty readonly array (not an error)
+ok 169 - getCuratedCatalog before validateModelCatalog populated the cache → throws the boot-ordering Error
+ok 170 - MODEL_CATALOG_DIR is the dir modelCatalogDir() resolves by default (one source of truth)
+ok 171 - contract: validateModelCatalog passes against the real resolved MODEL_CATALOG_DIR and modelsFor is well-formed
+ok 172 - smoke: the built out/assets/models stages the catalog JSON, non-empty
+ok 173 - depthForRepo counts repoPath-named jobs (full/reembed/doc-summarise-repo) for that repo
+ok 174 - depthForRepo counts file/config-file jobs whose filePath is under the repo (repoPath+sep)
+ok 175 - repo-agnostic jobs (config-full/config-reindex/doc-summarise-entity) and other-repo jobs do NOT count
+ok 176 - depthForRepo returns 0 for a repo with no queued jobs; get depth() is the global total
+ok 177 - index.ts registers a 'repo.stats' handler that delegates to collectRepoStats
+ok 178 - the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted
+ok 179 - the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config)
+ok 180 - collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared
+ok 181 - buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket
+ok 182 - buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind
+ok 183 - buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored
+ok 184 - buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)
+ok 185 - buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor
+ok 186 - buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo
+ok 187 - collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size
+ok 188 - a new connection registers an entry labelled unknown until a message identifies it
+ok 189 - handleMessage with a valid client envelope updates label/pid/lastMethod
+ok 190 - a malformed client envelope is ignored — the connection stays unknown/pid undefined
+ok 191 - socket close deletes the entry; a double-close / close-before-message is idempotent
+ok 192 - attachedClients() returns entries sorted by connectedAt
+ok 193 - the daemon.debug-status contract returns { clients } from the registry with no side effects (k1/k5)
+ok 194 - absent file → create with only the marked section
+ok 195 - file with user content but no marker → append, preserving content
+ok 196 - marked section present + identical → idempotent no-op (unchanged, no write)
+ok 197 - stale marked section → replace ONLY between markers, preserve surrounding
+ok 198 - open marker without close → left untouched (never clobber to EOF)
+ok 199 - duplicate open markers → left untouched (ambiguous)
+ok 200 - refresh: present + stale block → replaced, surrounding content byte-for-byte preserved
+ok 201 - refresh: present + identical block → unchanged, content null (no write)
+ok 202 - refresh: absent file → skipped, NEVER created
+ok 203 - refresh: present file WITHOUT markers → skipped, NEVER created/appended (opt-out)
+ok 204 - refresh: duplicate markers → unchanged + note, untouched
+ok 205 - refresh: malformed markers (open without close) → unchanged + note, untouched
+ok 206 - walk: mixed repos — stale written, opted-out skipped-not-created, malformed untouched
+ok 207 - walk: per-file read rejection → skipped+note, walk continues to remaining repos
+ok 208 - walk: per-file write rejection → skipped+note, other repos still refreshed
+ok 209 - walk: CLAUDE.md refreshed while sibling AGENTS.md absent → independent per-file
+ok 210 - walk: zero registered repos → empty report, no writes
+ok 211 - walk: partial deps fills the omitted members with production defaults
+ok 212 - readSteeringBlock: resolves the shipped prompts/steering-block.md and is non-trivial
+ok 213 - injectSteeringBlock: nothing selected → both files skipped, no writes
+ok 214 - injectSteeringBlock: claude only → CLAUDE.md created, AGENTS.md untouched
+ok 215 - injectSteeringBlock: both selected + one pre-existing → created + preserved-append
+ok 216 - injectSteeringBlock: re-run is idempotent (second run unchanged)
+ok 217 - t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process
+ok 218 - t3: a launch guard failure surfaces as a result.error envelope and does NOT schedule shutdown
+ok 219 - t3: daemon.updateOutcome returns the last outcome, and null when none exists
+ok 220 - t1: PATHS carries the two S001 daemon-home entries under the insrc dir
+ok 221 - t2: launchUpdate spawns the detached daemon-ctl.sh restart child with detached/unref/stdio-to-log
+ok 222 - t2: launchUpdate rejects a concurrent launch when a live marker is present; a stale marker is ignored
+ok 223 - t2: launchUpdate throws cannot-locate BEFORE any spawn or marker write when the root/helper is missing
+ok 224 - t2: readUpdateOutcome parses a present record and returns null for absent / unparseable (never throws)
+ok 225 - t2: writeUpdateOutcome persists the record and clears the in-flight marker
+ok 226 - t2: runDetachedUpdate writes state:succeeded on a zero exit and clears the marker
+ok 227 - t2: runDetachedUpdate writes state:failed with the raw stderr on a non-zero exit; no retry/rollback
+ok 228 - workflowProgressToStage maps phase→stageId and folds runner/attempt/detail into stageLabel
+ok 229 - workflowProgressToStage falls back to phase as the label when no extra fields
+ok 230 - makeTokenAccumulator batches tokens and flushes the tail
+ok 231 - makeTokenAccumulator keeps tokensTotal monotonic and stageId from the latest step
+ok 232 - T12 a controller-authored LLD: progress frames, then done with the verdict and reviewedBy daemon
+ok 233 - T12 a controller-authored DEF is reviewed through the pipeline and ends in done
+ok 234 - T12 a daemon-authored DEF ends in one error frame; no provider call, nothing stamped
+ok 235 - T12 a daemon-authored LLD ends in one error frame; no provider call, nothing stamped
+ok 236 - a bad request, a missing artifact and a failing review each end in one error frame
+ok 237 - finalizeArtifact: s8 sbdry4 hard-fail is now CORRECTABLE and carries structured findings
+ok 238 - finalizeArtifact: a CLEAN s8 (all passed) yields no boundary failure
+ok 239 - correctionDirective: names each finding + demands change-nothing-else + grounding
+ok 240 - reAuditBoundary: audits the CORRECTED artifact for the flagged items + returns fresh verdicts
+ok 241 - the findings flattened into a workflow step start with the completeness line when the bundle has a report, and are unchanged when it has none
+ok 242 - prepareWorkflowRun exposes a router + cfg + repoPath alongside the back-compat scalar provider
+ok 243 - prep.router resolves a provider per role (distinct roles → distinct resolutions)
+ok 244 - prepareWorkflowRun still throws "no repo" before any router is built
+ok 245 - runWorkflowServerSide drives stub end-to-end + stamps per-output attribution (sc5), not the retired scalar model
+ok 246 - runWorkflowServerSide with a router captures per-output attribution — one heterogeneous row per output (sc5 ac1)
+ok 247 - runWorkflowServerSide does NOT review the artifact it authors (the other party reviews it)
+ok 248 - T16 a run asked to review (review:true) makes no review call, says the artifact needs a controller review, and stamps nothing
+ok 249 - T16 a run not asked to review announces nothing about a review
+ok 250 - runWorkflowServerSide refuses a provider without structured-output
+ok 251 - runWorkflowServerSide fails clearly when synthesize stays invalid across all attempts
+ok 252 - T2 the daemon run finalizes through ONE call, so a correction retry cannot skip the author stamp
+ok 253 - startWorkflowRun returns a runId synchronously and poll transitions running → done
+ok 254 - poll with the returned cursor yields only NEW frames (append-only)
+ok 255 - unknown runId polls as status:unknown with an error
+ok 256 - abortWorkflowRun flips a running run to aborted; unknown runId → ok:false
+ok 257 - repoIdOf
+ok 258 - loadConnections
+ok 259 - saveConnections
+ok 260 - DuckDBFileDriver -- fixed-width via converter cache
+ok 261 - DuckDBFileDriver -- bson via converter cache
+ok 262 - DuckDBFileDriver -- avro via converter cache
+ok 263 - DuckDBFileDriver -- xlsx via converter cache (per-sheet glob)
+ok 264 - DuckDBFileDriver -- directory-of-bson (Phase 4.5)
+ok 265 - DuckDBFileDriver -- csv
+ok 266 - DuckDBFileDriver -- json
+ok 267 - DuckDBFileDriver -- directory connection (Phase 4)
+ok 268 - DuckDBFileDriver -- distinct (Phase 0.3)
+ok 269 - DuckDBFileDriver -- 0.1.x extended aggregates
+ok 270 - DuckDBFileDriver -- histogram (Phase 0.2)
+ok 271 - DuckDBFileDriver -- correlation matrix (Phase 0.4)
+ok 272 - DuckDBFileDriver -- outliers (Phase 0.5)
+ok 273 - DuckDBFileDriver -- pool path-escape guard
+ok 274 - DuckDBFileDriver -- option validation
+ok 275 - getDuckDB lazy-inits a singleton and returns the same instance
+ok 276 - parallel first-callers collapse onto one init
+ok 277 - withConnection runs a query and disposes the connection
+ok 278 - memory_limit PRAGMA is applied
+ok 279 - extension auto-install/load disabled blocks DB attaches
+ok 280 - closeDuckDB clears the singleton; next getDuckDB rebuilds
+ok 281 - assertNamespaceAllowed
+ok 282 - clamp helpers
+ok 283 - listFilesForConnection
+ok 284 - [skip] MongoDriver integration: INSRC_DB_TESTS != 1 # SKIP
+ok 285 - [skip] MysqlDriver integration: INSRC_DB_TESTS != 1 # SKIP
+ok 286 - [skip] PostgresDriver integration: INSRC_DB_TESTS != 1 # SKIP
+ok 287 - quoteTarget
+ok 288 - compileWhere
+ok 289 - buildSampleSql
+ok 290 - looksLikeMutation
+ok 291 - withTimeout
+ok 292 - aggregateResultKey
+ok 293 - compileAggregateExprs
+ok 294 - compileAggregate
+ok 295 - readAggregateRow
+ok 296 - compileDistinct
+ok 297 - readDistinctRows
+ok 298 - readDistinctCount
+ok 299 - compileTemporalTrend
+ok 300 - readTemporalTrendRow
+ok 301 - quoteTarget -- identifier injection
+ok 302 - compileWhere -- column-name injection
+ok 303 - compileWhere -- value parametrisation
+ok 304 - buildSampleSql -- mutation denylist
+ok 305 - looksLikeMutation -- denylist coverage
+ok 306 - prismaSchemaDescription
+ok 307 - [skip] RedisDriver integration: INSRC_DB_TESTS != 1 # SKIP
+ok 308 - registry
+ok 309 - makeSecretRef
+ok 310 - resolveSecrets
+ok 311 - extractUrlPassword
+ok 312 - inferShape
+not ok 313 - SqliteDriver (via pool)
+ok 314 - parseModifiers: returns leading mod tokens, stops at type
+ok 315 - parseModifiers: skips leading annotations
+ok 316 - parseTypeFromSignature: java shape extracts type
+ok 317 - parseTypeFromSignature: scala shape uses colon
+ok 318 - parseTypeFromSignature: returns undefined when no type
+ok 319 - parseDefaultFromBody: extracts simple = expr
+ok 320 - parseDefaultFromBody: caps very long defaults
+ok 321 - parseNullable: detects @Nullable annotation
+ok 322 - parseNullable: detects @NotNull annotation
+ok 323 - parseNullable: detects Optional<>, Option[], X | null, X | None
+ok 324 - parseNullable: returns undefined for non-nullable types
+ok 325 - extractTsFields: typed + optional + default
+ok 326 - extractTsFields: skips method-shaped lines
+ok 327 - extractTsFields: declaredAt line tracks body offset
+ok 328 - extractPyFields: type-annotated dataclass-style fields
+ok 329 - extractPyFields: skips bare indented identifiers (likely method body)
+ok 330 - extractGoFields: simple struct fields with types
+ok 331 - extractGoFields: handles struct tags
+ok 332 - extractGoFields: comma-separated names share a type
+ok 333 - execute: empty entityId returns 400-shape error
+ok 334 - execute: entity not found returns success: false
+ok 335 - execute: non-class entity returns success: false
+ok 336 - execute: Java class walks DEFINES edges to variable children
+ok 337 - execute: TypeScript class regex-parses body fields
+ok 338 - execute: Python class regex-parses body fields
+ok 339 - execute: Go struct regex-parses fields
+ok 340 - execute: empty class returns fields: []
+ok 341 - levenshtein: identity is 0
+ok 342 - levenshtein: single-char swap is 1
+ok 343 - levenshtein: empty vs N is N
+ok 344 - commonPrefixLen: counts matching prefix
+ok 345 - similarityScore: identity returns 1
+ok 346 - similarityScore: total mismatch (long edits) returns 0
+ok 347 - similarityScore: typo (one trailing char) ranks above unrelated
+ok 348 - similarityScore: shared prefix outranks shared suffix
+ok 349 - execute: empty className returns 400-shape error
+ok 350 - execute: exact hit returns { found: true } with location metadata
+ok 351 - execute: abstract class surfaces isAbstract flag
+ok 352 - execute: interface and type kinds also resolve
+ok 353 - execute: typo near a real class returns { found: false, nearest } with the real class first
+ok 354 - execute: missing class with no neighbours returns { found: false, nearest: [] }
+ok 355 - execute: language filter excludes other-language matches
+ok 356 - execute: repoPath filter narrows to a single repo
+ok 357 - execute: unknown repoPath returns { found: false, nearest: [] }
+ok 358 - execute: `repos` filter scopes to the listed workspace repos
+ok 359 - execute: `repos` and `repoPath` together -> error
+ok 360 - execute: empty `repos` array short-circuits to { found: false, nearest: [] }
+ok 361 - execute: `repos` with unknown paths drops them silently
+ok 362 - execute: nearest dedupes same name across repos
+ok 363 - parseKinds: undefined yields all four kinds
+ok 364 - parseKinds: subset is honoured
+ok 365 - parseKinds: unknown kind rejected
+ok 366 - parseKinds: empty array rejected
+ok 367 - parseKinds: non-array rejected
+ok 368 - buildSnippet: first non-empty line, trimmed
+ok 369 - buildSnippet: caps at 200 chars with ellipsis
+ok 370 - buildSnippet: empty body returns undefined
+ok 371 - execute: empty entityId returns 400
+ok 372 - execute: unknown kinds rejected before DB lookup
+ok 373 - execute: missing entity returns success: false
+ok 374 - execute: non-class entity rejected
+ok 375 - execute: surfaces INHERITS / IMPLEMENTS / CALLS / REFERENCES with per-kind counts
+ok 376 - execute: kinds filter narrows the result set
+ok 377 - execute: snippet captures the first body line, trimmed
+ok 378 - execute: empty class -> empty references with all-zero counts
+ok 379 - execute: REF_LIMIT cap stops at 200 and sets truncated: true
+ok 380 - extractDdlOps: CREATE TABLE -> create_table with table name
+ok 381 - extractDdlOps: DROP TABLE IF EXISTS -> drop_table
+ok 382 - extractDdlOps: ALTER TABLE ADD COLUMN -> add_column with type + nullable + default
+ok 383 - extractDdlOps: ALTER TABLE DROP COLUMN
+ok 384 - extractDdlOps: ALTER TABLE RENAME TO -> rename_table
+ok 385 - extractDdlOps: CREATE UNIQUE INDEX -> add_index
+ok 386 - extractDdlOps: unrecognised statement -> execute_raw
+ok 387 - extractDdlOps: multiple statements in one file split correctly
+ok 388 - extractRubyOps: create_table block + inline t.string fields
+ok 389 - extractRubyOps: add_column / remove_column standalone
+ok 390 - extractRubyOps: rename_column / rename_table / add_index / remove_index
+ok 391 - extractRubyOps: comment lines are stripped before parsing
+ok 392 - execute: missing repoPath returns 400
+ok 393 - execute: unknown tool returns 400 with supported list
+ok 394 - execute: empty repo (no migration dirs) -> { detected: false, migrations: [] }
+ok 395 - execute: prisma-migrate picks up migration.sql files in lex order
+ok 396 - execute: rails mode reads .rb files
+ok 397 - execute: auto mode picks the first detected tool (registry order)
+ok 398 - parsePrismaSchema: extracts both models with correct line numbers
+ok 399 - parsePrismaSchema: User columns + relations + table override
+ok 400 - parsePrismaSchema: Post @map renames the column
+ok 401 - parseTypeORMEntity: extracts table name + columns + relations
+ok 402 - parseTypeORMEntity: skips classes without @Entity decorator (defensive)
+ok 403 - execute: missing repoPath returns 400
+ok 404 - execute: unknown orm returns 400 with supported list
+ok 405 - execute: empty repo (no orm artefacts) returns success with empty detected + models
+ok 406 - execute: prisma mode picks up models from prisma/schema.prisma
+ok 407 - execute: typeorm mode picks up @Entity classes from the graph
+ok 408 - execute: auto mode merges models from every detected dialect
+ok 409 - execute: auto mode skips dialects that fail detection without erroring
+ok 410 - nameVariants
+ok 411 - findFirstVariantMatch
+ok 412 - classifyWindow
+ok 413 - docs_retrieve returns matching doc sections + citations
+ok 414 - docs_retrieve fails when session has no closure repo
+ok 415 - docs_retrieve honours filenameHint boost
+ok 416 - docs_project_context returns zero-doc context when nothing is summarised
+ok 417 - docs_project_context rolls up decisions + constraints with citations
+ok 418 - docs_summary_get returns markdown rendered summary
+ok 419 - docs_summary_get returns failure when no summary exists
+ok 420 - docs_family_list returns every summarised doc in a family
+ok 421 - docs_family_list skips placeholder rows
+ok 422 - T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both
+ok 423 - T22: an excluded file does not count against maxBytes
+ok 424 - T23: with no exclude, and with an empty one, both argument vectors are exactly today's
+ok 425 - T23: the body and the numstat command receive the SAME pathspecs
+ok 426 - T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it
+ok 427 - T25: a malformed exclude is invalid-input and git is not run
+ok 428 - T25: the closed input schema declares exclude as an array of non-empty strings
+ok 429 - git_diff limits the body and file list to the given paths, literally
+ok 430 - git_diff rejects paths together with path and an empty paths array
+ok 431 - graph_query op=defined_in returns DEFINES out-neighbors
+ok 432 - graph_query op=defined_in errors without fileEntityId
+ok 433 - graph_query op=imports returns IMPORTS out-neighbors
+ok 434 - graph_query op=closure walks transitive edges with kindFilter
+ok 435 - graph_query op=closure respects maxDepth
+ok 436 - graph_query op=closure errors without roots
+ok 437 - graph_query op=unreachable yields entities outside the closure
+ok 438 - graph_query op=unreachable errors without candidateKinds
+ok 439 - graph_query op=unreachable empty roots yields every candidate-kind entity
+ok 440 - graph_query op=scc finds a 2-node cycle as one component
+ok 441 - graph_query op=scc with two acyclic nodes reports two singletons
+ok 442 - graph_query rejects unknown op
+ok 443 - graph_query rejects missing op
+ok 444 - graph_query maxDepth is capped at 20
+ok 445 - graph_query limit is capped at 500 and applied to entities array
+ok 446 - runGrepSearch: node fallback matches every occurrence, not just the first per file
+ok 447 - runGrepSearch: honours caseInsensitive flag
+ok 448 - runGrepSearch: rejects empty pattern
+ok 449 - the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length
+ok 450 - on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)
+ok 451 - the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both
+ok 452 - the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule
+ok 453 - a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded
+ok 454 - the shell helper says when stdout passed its cap, and not otherwise
+ok 455 - the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex
+ok 456 - the search's hits and limits are unchanged for its other callers

@@ -13,9 +13,7 @@
  * drives the later phases.
  */
 
-import { isKindCompatibleWithTarget, TARGET_TO_KINDS } from '../../analyze/classifier/validate.js';
-import { ScopeKindTargetMismatchError } from '../../analyze/context/invariants.js';
-import { resolveScope } from '../../analyze/context/scope.js';
+import { resolveScopeForTarget } from '../../analyze/context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../../analyze/context/scope.js';
 import type { ClassifiedIntent } from '../../shared/analyze-types.js';
 
@@ -26,9 +24,5 @@ import type { ClassifiedIntent } from '../../shared/analyze-types.js';
  * table.
  */
 export async function stepScope(intent: ClassifiedIntent, deps?: ScopeDeps): Promise<ResolvedScope> {
-	const { kind } = intent.scopeRef;
-	if (!isKindCompatibleWithTarget(intent.target, kind)) {
-		throw new ScopeKindTargetMismatchError(kind, intent.target, TARGET_TO_KINDS[intent.target]);
-	}
-	return deps !== undefined ? resolveScope(intent.scopeRef, deps) : resolveScope(intent.scopeRef);
+	return resolveScopeForTarget(intent.scopeRef, intent.target, deps);
 }

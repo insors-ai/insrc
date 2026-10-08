@@ -1,0 +1,970 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791470870888-9gi5o2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-08T14:53:30.889Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 339975,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "epicSlug": "add-test-record-artifact-build-flow",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791470870888-9gi5o2",
+    "hldEffectiveHash": "9b4a74dcdf47852ae947d314851ca4f486c25e5892cb09f16f59257be23260b1",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story under a single design, with real choices to settle: where the record lives and what kind of artifact it is, how the builder states the mapping at the validate turn, how the gate tells one test title's result from a file's, and how the three check plans (plan Task, small standalone, trivial) use it. It touches the build step's validate phase and its check planner, the build tool's input shape, a new record with its renderer, and the build record's link to it: several files in two modules and more than one build task, but no new subsystem and no set of independent stories. Grounding was by reading the source (grep over the gate's callers), not by an analyzer pass.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story has no upstream definition with acceptance criteria, so the single ac1 standing for the stakeholder request (a per-Story artifact that lists tests with their execution status, used by the gate) is the whole intent, and the design covers it without building a non-goal.",
+          "evidence": "Glob of .insrc/artifacts/*9b4a74dc* returns only LLD-9b4a74dcdf47852a-S001.json: no DEF, ISSUE, SPEC or HLD exists for this work item. The design's sections 2 to 6 cover the mapping input, the gate running the files, per-title results, the TESTS record and its link from BUILD. No non-goals are stated upstream to violate. The design's open question 3 already flags that ac1 is a stand-in. [files: .insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json]",
+          "action": "None. Open question 3 (is the request itself the acceptance criterion) still needs the user's answer before plan.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the gate finds test files only through a leading '<file>.test.ts:' prefix, runs all files in one command and reads only the exit code. An unprefixed plan test name fails the check, and the small standalone route drops unprefixed subjects and reports 'the LLD names no test file' when none has a prefix.",
+          "evidence": "validation-checks.ts:76 `LEADING_TEST_FILE = /^\\s*([A-Za-z0-9_.-]+\\.test\\.ts)\\s*:/`; :214 `runOne(repoPath, [...plan.testCommand, ...plan.testFiles], plan.testTimeoutMs, deps)` (one command); :191 `ok: r.exitCode === 0`; :215-219 unresolved names force `ok: false`; :144-146 `names.filter(n => LEADING_TEST_FILE.test(n))` then `noTests: { ok: false, note: 'the LLD names no test file' }`; :165 trivial route `noTests: { ok: true, ... }`. [files: src/mcp/build-step/validation-checks.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "In the validate turn a judge failure returns 'verdict-session-timeout', 'unparseable-verdict' or 'verdict-session-failed' before the BUILD record is written. testsPassed comes from the gate's results. The standalone flag counts the caller's declaration only when the work item has no definition head.",
+          "evidence": "validate.ts:249-262 returns the three error codes inside the judge try/catch and after judgeShapeError, all before the persist block at :285-381. :264 `const testsPassed = results.tests.ok`. :330-333 `const noHead = Object.keys(readEpicDefinitionCore(repoPath, epicHash)).length === 0; ... inheritedStoryStandalone(repoPath, epicHash, storyId, ident.standalone !== undefined && noHead ? true : undefined)`. The checks run at :237, before the judge, so a test-record write between them is possible as designed. [files: src/mcp/build-step/phases/validate.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The BUILD record's paths come from pathsForMerged on the merged record's own createdAt, not from storyRecordFolderArgs. Its three writers (validate turn, ensureBuildRecordOnCompletion, trivial implement turn) all go through persistBuildRecord and mergeWithPrior, and each stamps the current time on a first write. storyRecordFolderArgs has one caller, the code-review writer.",
+          "evidence": "standalone-record.ts:244-256 pathsForMerged calls `buildRecordFolderArgs(..., standalone, merged.meta.createdAt)`; :271 and :294 both call mergeWithPrior; :352 `if (prior === null) return rec` (the seeding point the design names). Grep for `persistBuildRecord(` / `persistStandaloneBuildRecord(` outside tests: validate.ts:371, completion-record.ts:85, implement.ts:159 only, each with `createdAt: now` / `new Date().toISOString()`. Grep for storyRecordFolderArgs: defined storage.ts:445, used only in code-review/subject-paths.ts:32. storage.ts:451-453 anchors on the persisted BUILD record's `createdAt` and `standalone`. [files: src/workflow/runners/build/standalone-record.ts, src/workflow/storage.ts, src/workflow/code-review/subject-paths.ts, src/mcp/build-step/phases/implement.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The TAP reporter prints what section 3.3 says: one 'ok N - title' / 'not ok N - title' line per test and per suite, four spaces per depth, ' # SKIP' with optional reason and ' # TODO', '#' as '\\#' and backslash as '\\\\', quotes unchanged, and a parent after its children as 'not ok' when a child failed.",
+          "evidence": "tap-sample/sample.tap: line 35 `ok 3 - skipped by option # SKIP`, 41 `ok 4 - skipped with reason # SKIP needs env`, 47 `ok 5 - todo one # TODO`, 53 `ok 6 - has \\# hash and \\\\ backslash and \"double\" and 'single' quotes`, 59/65 `ok 7 - dup title` / `not ok 8 - dup title`, 86 `    ok 1 - nested pass`, 93 `        not ok 1 - deep fail`, 116 `    not ok 2 - inner suite`, 126 `not ok 9 - outer suite`. sample-source.txt matches these titles. Not checked: the Node version of the capture. One gap the design does not state: YAML diagnostic text sits at the same four-space indent as a depth-1 result line (sample.tap line 16), so the parser should skip the `---` to `...` blocks and read stdout only, or an error message that begins 'ok N - ' could be read as a title. [files: docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample.tap, docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample/sample-source.txt]",
+          "action": "State in the LLD that diagnostic blocks are skipped and that titles are parsed from stdout only, with a fixture for it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "What the design calls new does not exist yet (the 'TESTS' kind, a TESTS artifact id, NotApprovableError, the `tests` input field), and the pieces it reuses exist with the stated shape (ArtifactKind and STORY_SCOPED in path-scheme.ts, resolveArtifactMdPath, the insrc:artifact marker and jsonPathForMd).",
+          "evidence": "path-scheme.ts:46 `export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE'` and :68 STORY_SCOPED `['LLD', 'PLAN', 'BUILD', 'CR', 'EXT']`: no TESTS. storage.ts artifact-id functions (:148-173, :663) have none for TESTS. gates.ts (read in full) declares ArtifactMissingError, ArtifactNotApprovedError, ReviewBlockedError, NoPendingArtifactsError and no NotApprovableError. types.ts:59-81 BuildStepInputValidate has no `tests`; server.ts:563-587 inputSchema has none. storage.ts:475 `ARTIFACT_ID_MARKER_RE = /<!--\\s*insrc:artifact\\s+([A-Za-z0-9._-]+)\\s*-->/` accepts a TESTS id, so gates.ts:973-991 jsonPathForMd resolves TESTS.md to its json. [files: src/workflow/path-scheme.ts, src/workflow/storage.ts, src/workflow/gates.ts, src/mcp/build-step/types.ts, src/mcp/server.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Plan Tasks' tests carry a level from 'unit', 'integration', 'live', 'smoke', and a standalone design's test strategy may also use 'contract', so the 'live'/'smoke' rule for reported results can be applied on both routes.",
+          "evidence": "artifacts/plan.ts:45 `export type TestLevel = 'unit' | 'integration' | 'live' | 'smoke'` with :48 `readonly level: TestLevel`; artifacts/lld.ts:113 `readonly level: 'unit' | 'integration' | 'live' | 'smoke' | 'contract'`. render.ts:93 already reads `t.level` off the Task's tests. Today's planTaskCheckPlan (validation-checks.ts:129) and smallStandaloneCheckPlan (:141) type only `name` / `subjects`, so adding the optional `level` is a widening. [files: src/workflow/artifacts/plan.ts, src/workflow/artifacts/lld.ts, src/mcp/build-step/validation-checks.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The inventory of readers of the artifacts directory and of places that list the kinds is complete, and each behaves today as section 3.5 says.",
+          "evidence": "Grep for readdir across src, vscode-plugin/src and jetbrains-plugin/src/main, crossed with files naming the artifacts directory, gives: gates.ts:145 (DEF regex) and :786 (`^(DEF|HLD|LLD|PLAN|BUILD)-`), pending.ts:110-115 (PENDING_KINDS filter), locate/ownership.ts:85, questions.ts:538-539 (prefix filter), tracker/resolve.ts (anchored DEF/ISSUE/LLD/PLAN regexes), cli/services/workflow.ts:129 (DEF_RE), amendments/staleness.ts:72-74 and store.ts:69-71, :199-201 (AMD prefix), delivery/load.ts:139-150, migrate-docs-tree.ts:320, vscode-plugin daemon-gateway.ts:95, WorkflowChainReader.kt. All are in the design's list. indexer/index.ts and daemon/index.ts match the search but read other directories (extension.ts:278 reads the log dir). Grep for kind alternations finds only path-scheme.ts:68, migrate-docs-tree.ts:109, gates.ts:784, delivery/load.ts:33, all listed. resolve-comment.ts:96 `ARTIFACT_ID_RE = /^(DEF|HLD|LLD)-.../` returns null for a TESTS id. [files: src/workflow/gates.ts, src/workflow/pending.ts, src/workflow/questions.ts, src/workflow/tracker/resolve.ts, src/workflow/amendments/store.ts, src/workflow/amendments/staleness.ts, src/workflow/resolve-comment.ts, src/cli/services/workflow.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Approval and rejection stamps are written only by approveArtifactByJsonPath and rejectArtifactByJsonPath, which today stamp any json with a meta. approveOne runs the code-review gate first for any meta with an Epic and a Story. The batch matches only DEF, HLD, LLD, PLAN and BUILD.",
+          "evidence": "gates.ts:565-634 approveArtifactByJsonPath checks only `typeof artifact.meta !== 'object'` before stamping; :942-960 rejectArtifactByJsonPath likewise. :819-829 approveOne: `if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) { const gate = enforceCodeReviewGate(...); codeReview.push(...)` runs before :837. :784 batch regex `^(DEF|HLD|LLD|PLAN|BUILD)-`. Callers outside tests: gates.ts:837, cli/services/workflow.ts:158 and :172, and daemon/index.ts:652 (approveWorkflowTarget). Grep for other writers of approvedAt/rejectedAt finds only amendments/store.ts (AMD records). A kind check in the two functions plus one at the top of approveOne therefore covers every route. [files: src/workflow/gates.ts, src/cli/services/workflow.ts, src/daemon/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The build tool's input shape is registered in src/mcp/server.ts, handler.ts only dispatches on the phase, and the check plans, the runner and renderCheckEvidence each have one production caller in validate.ts.",
+          "evidence": "server.ts:563-587 holds the zod inputSchema for insrc_build_step (phase, target, repo, epicHash, standalone, summary) and :589 passes rawArgs to handleBuildStep. handler.ts:40-44 casts the input and switches on `step.phase` with no shape of its own. Grep outside tests: planTaskCheckPlan only at validate.ts:167, smallStandaloneCheckPlan at :201, runValidationChecks at :237 (via the override), renderCheckEvidence at :248, handleValidate only at handler.ts:44. Note for the plan: existing tests inject results through `_setBuildValidateCheckRunnerForTests` (validate.ts:57-64); those stand-ins return a tests result without the new `files` and `namedTests`, and tsc does not check test files, so the new code must tolerate their absence or the stand-ins must be updated. [files: src/mcp/server.ts, src/mcp/build-step/handler.ts, src/mcp/build-step/phases/validate.ts]",
+          "action": "Add the existing check-runner stand-ins in build-step.test.ts to the change sites, or state that the evidence and record code treat missing `files`/`namedTests` as empty.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The VS Code plugin's workflowChain lists a row for every json in the artifacts directory, 'pending' unless stamped, so it must skip TESTS. The JetBrains reader only reads DEF, HLD, LLD and AMD names and needs no change.",
+          "evidence": "daemon-gateway.ts:102-114: `if (!entry.endsWith('.json')) continue;` then for every entry `rows.push({ slug: parsed.meta?.epicSlug ?? entry.replace(/\\.json$/, ''), stage: stageFromFilename(entry), status: parsed.meta?.approvedAt !== undefined ? 'approved' : 'pending' })`. WorkflowChainReader.kt:102 `.filter { it.startsWith(\"DEF-\") && it.endsWith(\".json\") }`, :116 reads `HLD-$epicHash.json`, :156 `LLD-$epicHash-$storyId.json`, :193-203 the `AMD-$epicHash-` prefix. [files: vscode-plugin/src/panels/daemon-gateway.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.5",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The change log has two writers that each hand-list the workflow's own files, and the change-set derivation returns the working tree's files as soon as any non-excluded file is dirty, so the test record's files must be in both lists.",
+          "evidence": "validate.ts:367-368 `exclude: [own.json, own.md, buildStartRelPath(epicHash, storyId)]`; completion-record.ts:75 the same three. changed-files.ts:137-138 `const kept = keep(working); if (kept.length > 0) return kept;` before the committed-range fallback at :143. A TESTS json or TESTS.md written before the judge and left out of either list would be the returned set. The trivial implement writer (implement.ts:159-168) writes no changeLog. [files: src/mcp/build-step/phases/validate.ts, src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/changed-files.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The docs-tree migration holds its own kind pattern and its own story-scoped list, and it converges already-nested documents, so a TESTS.md it does not know would be left behind in a forked folder. Adding TESTS to both makes it converge with its Story.",
+          "evidence": "migrate-docs-tree.ts:109 `/^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|EXT|ISSUE)-([0-9a-f]{16})(?:-(.+))?$/` and :115 `const storyScoped = kind === 'LLD' || kind === 'PLAN' || kind === 'BUILD' || kind === 'CR' || kind === 'EXT'`, separate from path-scheme. :324 `if (parsed === null) continue;` drops an unknown id. :142-164 indexNestedMd indexes nested md by marker, so a marker-bearing TESTS.md is found once the id parses; :421-467 moves each member to resolveArtifactMdPath. Companion moves at :499-500 skip `.md`, so an unknown TESTS.md really would stay behind. Residual: :432-437 marks a member whose md is missing as unmappable, so a TESTS json written without its md would join that list (same as BUILD today). [files: src/workflow/migrate-docs-tree.ts]",
+          "action": "Have the test-record writer treat json and md as one write for error reporting, so a json without an md is not left on disk.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The separate IDE fork (insors-ai/insrc-ide) tolerates a BUILD record with a new optional body field and a new TESTS json in the artifacts directory.",
+          "evidence": "The fork is a separate repository and is not in this working directory; CLAUDE.md says only that it mirrors IPC types. I could check this repository's side only: BuildRecord.body gains one optional field (standalone-record.ts:76-96 shows the current optional-field body) and the verdict's evidence only gains fields. The design states the same gap in its backward-compat note and open question 4. [files: src/workflow/runners/build/standalone-record.ts]",
+          "action": "Decide open question 4: who checks the fork's BUILD reader and artifact listing, and whether that holds the Story's last Task.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The failures the design handles are detectable with the existing primitives: the process runner never rejects and reports spawn errors, timeouts and exit codes with the whole output; the delivery loader reports an unknown prefix as an 'unknown-kind' failure (so a skip is needed); and the ownership scan does not fail on a record with no citations.",
+          "evidence": "process-group.ts:56-93: `Never rejects`; stdout and stderr are accumulated without a cap (:85-86), `timedOut` set at :83, `spawnError` at :89, so 'nothing is cut' is achievable and the 4,000-character cut is only validation-checks.ts:34/173-175 `tail`. validation-checks.ts:185-190 maps spawnError and timedOut to failed results with notes. delivery/load.ts:148-150 `if (kindOfFile(fileName) === null) { failures.push({ fileName, reason: 'unknown-kind', ... }); continue; }`. ownership.ts:95 `const citations = Array.isArray(parsed.citations) ? parsed.citations : [];`. validate.ts:375-380 already swallows a BUILD persist failure, the pattern the test-record write follows. [files: src/shared/process-group.ts, src/mcp/build-step/validation-checks.ts, src/workflow/delivery/load.ts, src/workflow/locate/ownership.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1 maps to tests, the existing test files the subjects are prefixed with exist under __tests__ folders (so today's gate resolves them), render.test.ts is the name of exactly two files, and the live subject's source mapping has the shape step 7 converts from.",
+          "evidence": "The acceptance mapping gives ac1 three proving tests (one build-step, one validation-checks, one live). Glob finds src/mcp/build-step/__tests__/{build-step,render,validation-checks}.test.ts, src/workflow/artifacts/companion/__tests__/render.test.ts (the second render.test.ts), src/workflow/__tests__/migrate-docs-tree.test.ts, src/workflow/runners/build/__tests__/{build-record,completion-record}.test.ts and vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts (uses node:test, line 6). tap-results, test-mapping, test-record and artifact-kinds test files do not exist yet, as expected for new files. tests.map.json has `\"t1\": [ { \"planTest\": ..., \"cases\": [{\"file\", \"title\"}], \"mutations\": [...] } ]`, matching the conversion (rename planTest to name, drop mutations). Not run: whether the vscode-plugin test passes when started from the repository root by the gate. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json, vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts, src/mcp/build-step/__tests__/render.test.ts, src/workflow/artifacts/companion/__tests__/render.test.ts]",
+          "action": "Before plan, run `npx tsx --test vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` once from the repository root to confirm the gate can run it there.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-08T16:36:47.911Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "qbb3f9575": {
+        "question": "A mapped test case that the test runner reports as skipped (for example a test that runs only when an environment variable is set): does it satisfy the named test? The design as written lets it pass the check. The alternative is that a skipped case fails the check unless the named test's level is live, where the builder reports the result instead. Recommended: a skipped case does not satisfy a unit or integration test.",
+        "status": "resolved",
+        "choice": "A skipped case fails a unit or integration test",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: a skipped test proves nothing, and a pass that is green because it was skipped is the hollow pass this record exists to expose. The design's rule for the tests check and its tests were changed to match.",
+        "resolvedAt": "2026-10-08T17:03:46.877Z"
+      },
+      "qdf77614f": {
+        "question": "A live or smoke test that the gate cannot run (it needs a model, a running daemon or a person): the design accepts a result reported by the builder, with where the evidence is, records it as reported and not run by the gate, and shows it to the judge. The alternative is that such a test always fails the gate's test step. Recommended: accept the reported result, shown apart from the results the gate produced.",
+        "status": "resolved",
+        "choice": "Accept the builder's reported result",
+        "rationale": "Stakeholder took the recommendation on 2026-10-08: for a live or smoke test the gate cannot run, the builder reports the result and where the evidence is; it is recorded as reported by the builder and not run by the gate, shown apart from the results the gate produced, and shown to the judge. The design already says this; nothing in it changes.",
+        "resolvedAt": "2026-10-08T17:05:43.787Z"
+      },
+      "q2791d48e": {
+        "question": "The Story came from triage with no acceptance criteria, so the alternatives could not be scored against any and the acceptance mapping has one entry (ac1) that stands for the request itself. Is the request as stated in the Story the acceptance criterion?",
+        "status": "resolved",
+        "choice": "Yes, the request as stated is the criterion",
+        "rationale": "Stakeholder confirmed on 2026-10-08: the request as stated in the Story (a test record that lists each test with its execution status, integrated with the flow so that the gate uses it) is the acceptance criterion that ac1 stands for.",
+        "resolvedAt": "2026-10-08T17:08:00.865Z"
+      },
+      "qc377ebe4": {
+        "question": "The fork of the IDE (insors-ai/insrc-ide, a separate repository) was not read for this design; the two plugins in this repository were. Before the validate turn's change ships, the fork's reader of BUILD records and its artifact listing should be checked for a strict shape or a fixed list of kinds. Who makes that check, and does it hold the Story's last Task?",
+        "status": "resolved",
+        "choice": "The fork is ignored",
+        "rationale": "Stakeholder, 2026-10-08: the insrc-ide fork is dead and is to be ignored. (The builder had first been asked to check it; the local copy at 83393569 was read and holds no reader of build records or of the artifacts directory.)",
+        "resolvedAt": "2026-10-08T17:08:53.844Z"
+      }
+    },
+    "approvedAt": "2026-10-08T17:19:29.247Z",
+    "rangeBase": "8bd28e94a8edfa48dda07096b28858937fe7bbc0"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build validation gate gets a test record for each Story. When a Task is submitted, the builder says which test cases (a test file and a test title) carry each test the plan names. The gate runs those files itself, one at a time, reads a result for every test title, and writes the cases and their results into the record, which is rendered as TESTS.md beside the Story's PLAN and BUILD documents. A Task fails the gate's test step when a named test has no case, when a case did not run, or when a case failed. Plans do not change, and a test name that begins with a file name still works as it does today."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add a per-Story test record that the build validation gate reads and writes"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "handleValidate",
+          "signature": "function handleValidate(input: BuildStepInputValidate): Promise<BuildStepDone | BuildStepError>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "BuildStepInputValidate",
+              "purpose": "The validate turn. It gains the optional `tests` field: the mapping from the Task's test names to test cases.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BuildStepDone | BuildStepError",
+            "meaning": "The verdict as today. Its evidence for the tests check also carries, per named test, the cases and their results, the path of the test record, and for each file run the path of a file holding that run's whole output."
+          },
+          "errors": [
+            {
+              "type": "BuildStepError 'invalid-test-mapping'",
+              "condition": "The `tests` input names a test the Task does not have, names the same test twice, gives a case whose file is not a tracked '.test.ts' file inside the repository, gives a case with an empty title, or gives a builder-reported result for a test whose level is not 'live' or 'smoke' (a test with no level included). Nothing is run and nothing is written; the message lists every fault found."
+            }
+          ],
+          "preconditions": [
+            "Unchanged: the repo resolves, no merge is in progress, the target resolves to a Task or a standalone context is given"
+          ],
+          "postconditions": [
+            "When the checks ran, the Story's test record holds this Task's tests, cases and results from this run, replacing what it held for this Task and leaving other Tasks' entries as they were. This holds also when the judge session then fails and the turn ends in an error with no verdict: the record is written before the judge",
+            "A mapping supplied on this turn is stored in the record; a later validate turn of the same Task that supplies none uses the stored one",
+            "The verdict's testsPassed is the gate's result from this run and never the builder's statement"
+          ]
+        },
+        {
+          "name": "planTaskCheckPlan",
+          "signature": "function planTaskCheckPlan(repoPath: string, task: { readonly tests: readonly { readonly level?: string; readonly name: string }[] }, mapping?: readonly TestMappingEntry[]): ValidationCheckPlan",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository, as today.",
+              "optional": false
+            },
+            {
+              "name": "task",
+              "type": "{ tests: { level?, name }[] }",
+              "purpose": "The plan Task's named tests.",
+              "optional": false
+            },
+            {
+              "name": "mapping",
+              "type": "readonly TestMappingEntry[]",
+              "purpose": "The cases for the Task's test names: this turn's input, or else the one stored in the test record.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ValidationCheckPlan",
+            "meaning": "The plan as today plus `namedTests`: one entry per test name of the Task, saying where its files come from (the mapping, the name's own file-name prefix, or nothing) and which cases it expects. `testFiles` is the union of the mapped files and the files resolved from prefixes; `unresolvedTests` lists only names that have neither a mapping entry nor a prefix that resolves."
+          },
+          "errors": [],
+          "preconditions": [
+            "The mapping, when given, has already passed the validate turn's checks"
+          ],
+          "postconditions": [
+            "With no mapping the returned testFiles and unresolvedTests are exactly today's"
+          ]
+        },
+        {
+          "name": "smallStandaloneCheckPlan",
+          "signature": "function smallStandaloneCheckPlan(repoPath: string, testStrategy: { readonly testLevels: readonly { readonly level?: string; readonly subjects: readonly string[] }[] } | undefined, mapping?: readonly TestMappingEntry[]): ValidationCheckPlan",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository, as today.",
+              "optional": false
+            },
+            {
+              "name": "testStrategy",
+              "type": "the LLD's test strategy | undefined",
+              "purpose": "The subjects of the standalone design's test levels, which are this route's test names.",
+              "optional": false
+            },
+            {
+              "name": "mapping",
+              "type": "readonly TestMappingEntry[]",
+              "purpose": "Cases for subjects, by the subject's exact text.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ValidationCheckPlan",
+            "meaning": "As today plus `namedTests`. A subject that is mapped is run through its cases. A subject with a file-name prefix and no mapping is run as today. A subject with neither is left out, as today, and is listed in the record as not mapped; it does not fail the check."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "With no mapping the returned plan is exactly today's, including 'the LLD names no test file' when no subject has a prefix",
+            "With a mapping and no prefixed subject the plan is not 'no tests': the mapped files are run"
+          ]
+        },
+        {
+          "name": "runValidationChecks",
+          "signature": "function runValidationChecks(repoPath: string, plan: ValidationCheckPlan, deps?: CheckRunnerDeps): Promise<ValidationCheckResults>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "ValidationCheckPlan",
+              "purpose": "The check plan, with its named tests.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "CheckRunnerDeps",
+              "purpose": "The process runner, and the writer of a run's output file; tests supply stand-ins.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ValidationCheckResults",
+            "meaning": "`typecheck` as today. `tests` as today plus `files` (one entry per test file run: its exit code, whether it timed out, its duration, the result of every test title it reported, and the path of the file holding its whole output) and `namedTests` (per named test, its cases with a result each of pass, fail, skipped or not found)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Each test file is run on its own, one after another, with the TAP reporter added to today's command; the time limit of the plan covers all of them together, and a file not started when it runs out is recorded as timed out",
+            "tests.ok is true only when every file run exited with 0, no file timed out, no name is unresolved, every case of every named test has the result pass, and no reported result is 'fail'. A case whose result is skipped does not satisfy its test: it fails the check like a case that failed, and the record shows it as skipped. (A test that can only run with a model or a running daemon is a live or smoke test, whose result the builder reports.) When no file is run at all: a Task whose named tests are all reported by the builder, each as 'pass', passes the check with the note that the gate ran no test and every result was reported by the builder; in every other case with no file the rule is today's (it fails unless the route gave an acceptable reason)",
+            "Never throws, as today"
+          ]
+        },
+        {
+          "name": "persistBuildRecord",
+          "signature": "function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "rec",
+              "type": "BuildRecord",
+              "purpose": "The build record; its body may now carry `testRecord`: the repo-relative path of the Story's TESTS.md, and nothing else.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ md: string; json: string }",
+            "meaning": "As today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A record with `testRecord` renders one line under its tasks that links to TESTS.md; a record without it renders byte for byte as today. The build record holds no results of its own, so it cannot disagree with the test record about a run",
+            "`testRecord` is carried forward by the merge with the prior record when a write does not supply it"
+          ]
+        },
+        {
+          "name": "renderCheckEvidence",
+          "signature": "function renderCheckEvidence(results: ValidationCheckResults): string",
+          "parameters": [
+            {
+              "name": "results",
+              "type": "ValidationCheckResults",
+              "purpose": "The results of the gate's checks.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The evidence section of the judge's prompt. For the tests check it now also lists each named test with its cases and results, and each file's own failures outside the named cases."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "With no named tests the section reads as today"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "BuildStepInputValidate",
+        "change": "field-add",
+        "details": "Gains `tests?: readonly TestMappingEntry[]`. TestMappingEntry is { name: string; cases?: readonly { file: string; title: string }[]; reported?: { result: 'pass' | 'fail'; evidence: string } }. `name` is the exact text of one of the Task's test names (plan route) or of a subject of the design's test strategy (small standalone route). `file` is repo-relative. `title` is the test's title exactly as the test file declares it; a case matches a test of that title at any depth of nesting in that file. `reported` is for a test the gate cannot run (a live run that needs a model or a human check): the builder states the result and where the evidence is; it is accepted only for a test whose level is exactly 'live' or 'smoke'. Any other level ('unit', 'integration', and 'contract', which a standalone design's test strategy may use) and a test with no level refuse it. It is recorded as reported by the builder and not run by the gate, and is shown to the judge. An entry has cases, or reported, or both. The field is declared in the build tool's registered input shape in src/mcp/server.ts (the shape the tool enforces and the schema lookup tool slices), and the tool's description of the validate phase there says what it is for; src/mcp/build-step/handler.ts only dispatches on the phase and declares no shape. An entry and a case are declared strict: a key the shape does not have is refused by the tool before the turn starts. The trivial standalone route ignores the field, since that route names no tests.",
+        "callSites": [
+          "src/mcp/build-step/types.ts",
+          "src/mcp/build-step/phases/validate.ts",
+          "src/mcp/server.ts"
+        ]
+      },
+      {
+        "entity": "ValidationCheckPlan",
+        "change": "field-add",
+        "details": "Gains `namedTests: readonly NamedTestPlan[]`, each { name; level?; source: 'mapping' | 'prefix' | 'touched' | 'none'; cases: { file; title }[]; files: string[]; reported? }. 'mapping' carries its cases. 'prefix' carries the files the name's leading file name resolves to and no cases. 'touched' is the trivial route: one entry per test file the commit touched. 'none' is a name with nothing to run.",
+        "callSites": [
+          "src/mcp/build-step/validation-checks.ts",
+          "src/mcp/build-step/phases/validate.ts"
+        ]
+      },
+      {
+        "entity": "CheckResult (tests)",
+        "change": "field-add",
+        "details": "The tests result gains `files: readonly TestFileRun[]` and `namedTests: readonly NamedTestResult[]`. TestFileRun is { file; command; exitCode; timedOut; durationMs; titles: { title; depth; result: 'pass' | 'fail' | 'skipped' }[]; outputPath }. NamedTestResult is the NamedTestPlan with a `result` on each case ('pass', 'fail', 'skipped', 'not found') and, for a 'prefix' or 'touched' entry, the result of its files. A title that occurs more than once in a file has the result fail if any occurrence failed, else pass if any passed, else skipped. `outputPath` is a file under the system's temporary directory that holds the run's whole standard output and standard error; nothing is cut. The existing `outputTail` stays as the last part of the last file's output, for the judge's prompt. What the runner prints was captured on 2026-10-08 under Node 22.23.2 with `npx tsx --test --test-force-exit --test-reporter=tap` over one file with nested suites, subtests, skipped and todo tests, a duplicated title and a title with '#', a backslash and both kinds of quote; the source and the output are in docs/standalone/add-test-record-artifact-build-flow-E202610089b4a74dc/S001/tap-sample and the parser's test fixtures are pinned to that capture. It shows: one 'ok N - <title>' or 'not ok N - <title>' line per test and per suite; four spaces of indent per depth; ' # SKIP' with an optional reason and ' # TODO' after the title; '#' printed as '\\#' and a backslash as '\\\\', quotes unchanged; a suite or a parent test printed after its children, as 'not ok' when a child failed. A line with a TODO directive counts as skipped. A suite's or parent's own line is a title like any other.",
+        "callSites": [
+          "src/mcp/build-step/validation-checks.ts",
+          "src/mcp/build-step/phases/validate.ts"
+        ]
+      },
+      {
+        "entity": "TestRecord",
+        "change": "new",
+        "details": "A new record per Story, in a new module beside the build record's (src/workflow/runners/build). Its json is `TESTS-<epicHash>-<storyId>.json` in the artifacts directory and its document is `TESTS.md` in the Story's folder, resolved by the same folder derivation the BUILD record uses (storyRecordFolderArgs in src/workflow/storage.ts). That derivation anchors on the persisted BUILD record's createdAt and standalone flag, and the test record is written before the judge, when on a Story's first turn no BUILD record exists yet. So the rule for that case is stated: the validate turn takes one time at its start and resolves the standalone flag once, exactly as its BUILD write resolves it today (the Story's inherited flag, with the caller's declaration counted only when the work item has no definition head at all, since a head that exists and does not say standalone is an answer and a declaration must not relabel it), and gives that time and that resolved flag to both writers, never the raw declaration; the test record persists them as its own createdAt and standalone flag on its first write and keeps them afterwards; and the derivation, when there is no BUILD record, takes a persisted test record's createdAt and flag as the record anchor before it falls back to the caller's own clock; that serves the test record's own path and the code-review writer, which is the derivation's one caller today. The BUILD record's writer does not go through that derivation: its paths come from pathsForMerged in src/workflow/runners/build/standalone-record.ts, on the merged record's own createdAt, and each of its three writers stamps the current time on a first write: the validate turn, ensureBuildRecordOnCompletion, and the implement turn of the trivial standalone route (src/mcp/build-step/phases/implement.ts), which writes the BUILD record before any validate turn. All three go through persistBuildRecord and its merge. On the trivial route the BUILD record therefore normally exists before the first test record and is the anchor; the case with no BUILD record arises there only when validate is called with no implement turn before it, and on the other routes on every first validate turn. So the seeding is put where both writers and buildRecordPathsFor already meet, the merge with the prior record (mergeWithPrior): when there is no prior BUILD record and a test record exists for the Story, the new BUILD record takes its createdAt from the test record, and its standalone flag too when the test record's is true and the write does not state one. A BUILD record first written on a later day after a judge failure, or first written by the completion path, therefore lands in the folder the test record is in. When a BUILD record already exists (every Story built before this change), it stays the anchor and the test record follows it. Shape: meta { workflow: 'tests'; epicHash; storyId; createdAt; updatedAt; standalone? } and body { tasks: { taskId; commit; ranAt; testsPassed; tests: NamedTestResult[]; files: { file; exitCode; timedOut; durationMs; otherFailures: string[] }[] }[] }. `commit` is HEAD when the gate ran and `ranAt` the time. `testsPassed` is the result of the gate's tests check for that run; it is not the verdict, which also needs the judge and the typecheck and is recorded on the build record. The record is written straight after the checks and before the judge session, because the results are facts of the run whatever the judge then says. A Task's entry is replaced when that Task is validated again; other entries are kept. The mapping of a Task is read back from its entry when a later turn supplies none. The document lists, per Task and per named test, a table of result, test title and file, then the tests reported by the builder with their evidence, then any failures in the files outside the named cases, with totals at the top. The record is not an approvable artifact: it has no approval stamps, the approval batch does not list it, and approval or rejection of its path is refused on every route: in skipped[] with a reason that begins 'not-approvable:' from the approval tool, and as a NotApprovableError from the two stamping functions. It carries the `insrc:artifact` id marker like other rendered documents.",
+        "callSites": [
+          "src/mcp/build-step/phases/validate.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/runners/build/completion-record.ts",
+          "src/workflow/code-review/subject-paths.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/path-scheme.ts",
+          "src/mcp/build-step/phases/implement.ts"
+        ]
+      },
+      {
+        "entity": "ArtifactKind",
+        "change": "field-modify",
+        "details": "Gains the member 'TESTS', story-scoped like 'BUILD' and 'CR', so that resolveArtifactMdPath places TESTS.md in the Story's folder. Every reader of the artifacts directory, and every place that lists the kinds, either handles the new kind or leaves it out on purpose, with a test for each. Found by a search of src, vscode-plugin and jetbrains-plugin for files that name the artifacts directory and read a directory. Outside src there are two. The VS Code plugin's workflow chain (workflowChain in vscode-plugin/src/panels/daemon-gateway.ts) lists a row for every json in the directory, with a stage taken from the file name and the status 'pending' unless the json has an approval stamp; a test record would show there for ever as a pending row named by its file name, so workflowChain skips a name with the TESTS prefix, with a test. The JetBrains plugin's reader (WorkflowChainReader.kt) keeps only names that begin with DEF, HLD, LLD or AMD and was checked: it needs no change. The two plugins' review panels take their lists from the daemon's pending list, which leaves the record out. Within src, the indexer and the daemon's entry point match the search but read other directories; the readers of the artifacts directory are: the delivery view (src/workflow/delivery: types, load, graph, stage), which keeps its kinds as they are; its loader today reports a json whose prefix is not one of its kinds as an 'unknown-kind' load failure, so the loader skips a name with the TESTS prefix before that branch, and a test record adds neither a record nor a failure; the pending list (src/workflow/pending.ts), which filters by its own kinds and leaves it out; the ownership scan (src/workflow/locate/ownership.ts), which reads meta and citations of every json and must not fail on a record with no citations; the question scan (src/workflow/questions.ts); the Epic catalogue and the approval batch (src/workflow/gates.ts); the tracker's resolver (src/workflow/tracker/resolve.ts); the CLI's workflow service (src/cli/services/workflow.ts); the amendment staleness scan (src/workflow/amendments/staleness.ts) and the amendment store (src/workflow/amendments/store.ts, which reads the directory twice, for the next amendment id and for an Epic's amendments, each time keeping only names with the AMD prefix); the path walk in src/workflow/path-scheme.ts; and the id parser (src/workflow/resolve-comment.ts), which returns no identity for a TESTS id. The docs-tree migration (src/workflow/migrate-docs-tree.ts) holds its own kind pattern and its own story-scoped list, apart from the path scheme's. It does more than move documents out of the old flat layout: it also converges documents that are already nested, moving a Story's BUILD.md, LLD.md and the rest out of a forked folder. A TESTS.md it does not know would be left behind there, apart from its BUILD.md, and would keep the old folder alive. So TESTS joins the migration's kind pattern and its story-scoped list, and a nested TESTS.md converges with its Story. Approval and rejection are refused for the record by kind, in the two functions every route goes through: approveArtifactByJsonPath and rejectArtifactByJsonPath in src/workflow/gates.ts, which today stamp any json that has a meta. Both throw a new error class, NotApprovableError, declared beside them, whose message begins 'not-approvable:'. The approval tool's single-path route (approveOne inside approveWorkflowTarget) runs the code-review gate before it reaches approveArtifactByJsonPath for any json whose meta has an Epic and a Story, which the test record's has; so approveOne makes the same kind check first, before it reads the meta or runs that gate, and puts the path in skipped[] with the reason 'not-approvable: a test record is not approved or rejected'. No code-review outcome is produced for it. The TUI's service (approve and reject in src/cli/services/workflow.ts) calls the two functions directly and lets NotApprovableError reach its caller, which shows its message as it shows any other failure of those calls. The batch already matches only DEF, HLD, LLD, PLAN and BUILD.",
+        "callSites": [
+          "src/workflow/path-scheme.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/delivery/types.ts",
+          "src/workflow/delivery/load.ts",
+          "src/workflow/pending.ts",
+          "src/workflow/locate/ownership.ts",
+          "src/workflow/questions.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/tracker/resolve.ts",
+          "src/cli/services/workflow.ts",
+          "src/workflow/amendments/staleness.ts",
+          "src/workflow/amendments/store.ts",
+          "src/workflow/resolve-comment.ts",
+          "src/workflow/migrate-docs-tree.ts",
+          "vscode-plugin/src/panels/daemon-gateway.ts",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt"
+        ]
+      },
+      {
+        "entity": "BuildRecord",
+        "change": "field-add",
+        "details": "body gains `testRecord?: { md: string }`, the link to the Story's TESTS.md. It is written by the validate turn's existing write of the build record, after the verdict, whenever a test record exists on disk for the Story. It holds no totals and no results: those are in the test record only, each Task's entry with the commit and time of its own run, so the link stays true when a later run's results could not be written or no verdict was reached. The build record's change log has two writers: the validate turn (src/mcp/build-step/phases/validate.ts) and the completion record (ensureBuildRecordOnCompletion in src/workflow/runners/build/completion-record.ts, run before every BUILD approval), and each lists the workflow's own files to leave out by hand: the build record's json and md and the Story's build-start file. The change-set derivation returns the working tree's files as soon as any is dirty, so a test record left out of either list would become the Story's whole change log at completion. Both writers therefore take the list from one new function beside the build record's paths, which returns the build record's json and md, the test record's json and md, and the build-start file for a Story.",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/mcp/build-step/phases/validate.ts",
+          "src/workflow/runners/build/completion-record.ts",
+          "src/workflow/runners/build/changed-files.ts"
+        ]
+      },
+      {
+        "entity": "The implement and validate prompts",
+        "change": "field-modify",
+        "details": "The implement prompt (src/mcp/build-step/render.ts) tells the builder that when it submits the Task it must pass `tests`: for each test listed, the file and title of every test case that carries it, and for a live or smoke test it cannot hand to the gate, the result and where the evidence is. The validate prompt's instruction on tests tells the judge to check that the cases listed for each named test do exercise what the name says, and that a reported result is backed by the evidence it points to. The build guide text returned by the guide tool is updated the same way. It is the build section of the steering source, src/prompts/steering-block.md, between the `insrc:guide:build` markers (src/daemon/guide-sections.ts only cuts the sections out and holds no text); the installed daemon stamps the steering block into marked repositories again at boot.",
+        "callSites": [
+          "src/mcp/build-step/render.ts",
+          "src/prompts/steering-block.md"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The `tests` input is wrong: a name the Task does not have, a name given twice, a case whose file is not a tracked '.test.ts' file in the repository, an empty title, an entry with neither cases nor a reported result, or a reported result for a test whose level is not 'live' or 'smoke'.",
+          "detection": "The validate turn checks the input against the Task's test names (or the design's subjects), against the list of tracked files that the gate already reads from git, and against the level of each named test, before any check is run.",
+          "response": "The turn returns the error 'invalid-test-mapping' with every fault listed. No check is run, no verdict is made and neither record is written.",
+          "userImpact": "The builder sees exactly which entries to correct and submits again.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A named test has no mapping entry and its name has no file-name prefix that resolves.",
+          "detection": "planTaskCheckPlan finds no entry for the name in the mapping and resolveTaskTestFiles returns it as unresolved.",
+          "response": "As today the tests check fails. The files that could be resolved are still run. The record lists the test with the source 'none', and the check's note says to pass a `tests` mapping at the validate turn.",
+          "userImpact": "The Task fails the gate with a note that names the tests that have no cases.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A case's title did not run in its file: the title is misspelt, the test was removed, or the file's run ended before reaching it.",
+          "detection": "After the file's run, no result line with that title is found in its TAP output at any depth.",
+          "response": "The case's result is 'not found' and the tests check fails. The record shows the case as not found, and the file's entry shows its exit code and whether it timed out.",
+          "userImpact": "The Task fails with the missing case named. A run cut short shows as not found and is never read as a pass.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A case failed.",
+          "detection": "The file's TAP output has a 'not ok' line with that title.",
+          "response": "The case's result is 'fail' and the tests check fails.",
+          "userImpact": "The Task fails with the failing case named in the verdict and in the record.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A test file exits with a non-zero code although every mapped case in it passed: another test in the file failed, or the file crashed after its tests.",
+          "detection": "The exit code of that file's run is not 0.",
+          "response": "The tests check fails, as it does today for a failing file. The record lists the titles that failed outside the named cases under that file.",
+          "userImpact": "The Task fails; the record shows that the failure is in the file but outside the cases named.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A test file cannot be started or runs past the time limit, or the limit is used up before a file is started.",
+          "detection": "The process runner reports a spawn error or a timeout, as today; a file not yet started when the remaining time is zero is not started.",
+          "response": "The file is recorded with a note (could not start, timed out, or not run: the time limit was used up), its cases are 'not found', and the tests check fails. The files after it are handled the same way.",
+          "userImpact": "The Task fails with the reason on the file.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The output of a file's run cannot be read as TAP.",
+          "detection": "The parser finds no TAP version line and no result line in the output.",
+          "response": "The file is recorded with no titles and a note that its output was not understood; its cases are 'not found' and the tests check fails. The whole output is still in the file named by `outputPath`.",
+          "userImpact": "The Task fails and the builder can read the raw output.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The file holding a run's whole output cannot be written.",
+          "detection": "The write to the temporary directory throws.",
+          "response": "The run's results stand. The file's entry carries no `outputPath` and a note with the reason. Nothing else changes.",
+          "userImpact": "The verdict is unaffected; the raw output of that file is not available afterwards.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The test record cannot be written, or the stored record cannot be read when a turn supplies no mapping.",
+          "detection": "The write or the read throws, or the stored json does not have the record's shape.",
+          "response": "A write failure is logged and the verdict is returned unchanged, with a note in its evidence that the test record was not written and that the record on disk, if there is one, still shows this Task's earlier run with that run's commit and time. The build record links to the test record only when one exists on disk. An unreadable stored record is treated as no stored mapping, with the same kind of note, and the turn goes on with the prefix rule.",
+          "userImpact": "The verdict is never lost or turned into an error by the record; the note says the record is missing or stale.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A stored mapping names a file that no longer exists or is no longer tracked.",
+          "detection": "The stored mapping is checked against the tracked files like a supplied one.",
+          "response": "That case is kept and gets the result 'not found'; the tests check fails. The turn is not refused, since the builder supplied nothing wrong on this turn.",
+          "userImpact": "The Task fails with the stale case named; the builder submits a corrected mapping.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The judge session fails after the checks ran: it passes its deadline, returns nothing usable, or fails outright, and the turn ends in an error with no verdict.",
+          "detection": "The validate turn's existing handling of the judge session: the session throws or its answer does not have the verdict's shape, and the turn returns 'verdict-session-timeout', 'unparseable-verdict' or 'verdict-session-failed' before the build record's write.",
+          "response": "The test record was already written, before the judge: it holds this run's results for the Task, with `testsPassed` from the tests check, and a mapping supplied on this turn is stored. The build record is not written, as today, so it keeps what it had; its link to the test record, if it has one, is still true, since the link carries no results. The error returned is unchanged.",
+          "userImpact": "The builder sees the same error as today. The test record shows what the run did, and a second validate turn needs no mapping.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A mapped case was skipped by the test runner, for example a test that runs only when an environment variable is set.",
+          "detection": "The file's TAP output has that title with a SKIP or TODO directive.",
+          "response": "The case's result is 'skipped' and the tests check fails: a skipped test proves nothing about what the plan named.",
+          "userImpact": "The Task fails with the skipped case named. The builder maps a case that runs, or, for a live or smoke test, reports the result with its evidence.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A validate turn with no `tests` for a Task whose test names all carry a file-name prefix",
+          "expected": "The same files are run and the same verdict is reached as today. The record is written with one entry per name, source 'prefix', listing the files and every title each reported."
+        },
+        {
+          "input": "A mapping that covers some of the Task's names, while the others carry a prefix",
+          "expected": "Mapped names are checked case by case; the others are checked by their files' exit codes. A file needed by both is run once."
+        },
+        {
+          "input": "A name that has both a mapping entry and a prefix",
+          "expected": "The mapping wins; the prefix is not used for that name."
+        },
+        {
+          "input": "Two cases, or two named tests, that point at the same title in the same file",
+          "expected": "The file is run once and both cases take that title's result."
+        },
+        {
+          "input": "A title that occurs twice in one file",
+          "expected": "The case fails if any occurrence failed, passes if none failed and at least one passed, and is skipped if all were skipped."
+        },
+        {
+          "input": "A title nested inside a describe block or a subtest",
+          "expected": "It is matched at any depth by its own title, without the titles of the blocks around it."
+        },
+        {
+          "input": "A title that contains a '#' or a backslash, which the runner escapes as '\\\\#' and '\\\\\\\\', or a quote, which it prints as it is",
+          "expected": "The parser reverses the two escapes before comparing and leaves quotes alone, so the title as the test file declares it matches."
+        },
+        {
+          "input": "A live or smoke test given with a reported result and no cases",
+          "expected": "The gate runs nothing for it. The record shows it as reported by the builder with the result and the evidence. A reported 'fail' fails the tests check; a reported 'pass' does not count as a pass run by the gate and is shown apart in the totals. When every named test of the Task is reported as 'pass' and none has cases, no file is run and the check passes with a note saying so; the judge is shown the note and the evidence each result points to."
+        },
+        {
+          "input": "A Task validated a second time with a different mapping",
+          "expected": "The Task's entry in the record is replaced by the new mapping and results; other Tasks' entries are untouched."
+        },
+        {
+          "input": "A trivial standalone build",
+          "expected": "`tests` is ignored. The files the commit touched are run one by one and the record lists each file with every title it reported; with no touched test file the check is acceptable as today and the record says no tests were named."
+        },
+        {
+          "input": "A small standalone build whose design has subjects in prose and a mapping for some of them",
+          "expected": "Mapped subjects are run and recorded. Unmapped prose subjects are listed as not mapped and do not fail the check, as today."
+        },
+        {
+          "input": "The validate turn of the first Task of a Story, when no record exists",
+          "expected": "The record is created with that Task's entry; the build record written on the same turn links to it."
+        },
+        {
+          "input": "A trivial standalone build (no definition and no design to anchor its folder) validated with no implement turn before it, whose judge session fails on the first validate turn, validated again on a later day",
+          "expected": "The first turn writes the test record with the turn's time as its createdAt. The second turn's BUILD record is seeded with that time as its createdAt by the merge, so BUILD.md is written in the folder TESTS.md is already in, and the test record's createdAt does not change. The same holds when the first BUILD record is written by the completion path."
+        },
+        {
+          "input": "A validate turn that passes a standalone context for a Story whose definition head exists and does not say standalone",
+          "expected": "The resolved flag is not standalone, as for the BUILD record today. TESTS.md is filed beside BUILD.md under docs/epics, the test record persists no standalone flag, and nothing is relabelled when a BUILD record is later seeded from it."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A validate turn that supplies no `tests`, for names that carry a file-name prefix, runs the same files and reaches the same testsPassed as today.",
+          "source": "c1"
+        },
+        {
+          "text": "A named test that resolves to nothing fails the tests check; no test files and no acceptable reason also fails it.",
+          "source": "c1"
+        },
+        {
+          "text": "The verdict is passed only when the judge passed and the gate's own tests check and typecheck passed; the builder's statements never set testsPassed.",
+          "source": "c2"
+        },
+        {
+          "text": "Writing a record is a side effect that never turns a verdict into an error.",
+          "source": "c2"
+        },
+        {
+          "text": "The checks never throw: a spawn failure or a timeout is a failed result with a note.",
+          "source": "c1"
+        },
+        {
+          "text": "A build record with no new field renders byte for byte as it does today, and the change log leaves out the workflow's own files at both of its writers, the validate turn and the completion record.",
+          "source": "c3"
+        },
+        {
+          "text": "Every test process runs in its own process group under a time limit and is forced to exit when its tests finish.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by `npx tsx --test --test-force-exit`; test files in `__tests__` folders beside the source. Every unit and integration subject below begins with the name of the test file it lives in, which is the rule the gate applies today, so the Tasks that carry them can be validated before this Story's change is live. (`render.test.ts` is the name of two tracked files, in the build step and in the artifact companions; today's gate runs both, which is harmless.) The one live subject has no file name and cannot pass today's gate: it belongs to the Story's last Task, which is submitted only after the installed daemon has been updated to this Story's code, so that the new gate validates it, with the live result reported by the builder.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The TAP reader and the mapping checks, with no process started.",
+          "subjects": [
+            "tap-results.test.ts: the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+            "tap-results.test.ts: a title nested in a suite or a subtest is found at its depth by its own title",
+            "tap-results.test.ts: TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+            "tap-results.test.ts: a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+            "tap-results.test.ts: output with no TAP version line and no result line is reported as not understood, with no titles",
+            "test-mapping.test.ts: a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+            "test-mapping.test.ts: a correct mapping with cases, with a reported result on a live test, and with both, is accepted"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The check plans and the runner over a temporary git repository with small test files, as the gate's existing tests do.",
+          "subjects": [
+            "validation-checks.test.ts: with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+            "validation-checks.test.ts: with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+            "validation-checks.test.ts: smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+            "validation-checks.test.ts: runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+            "validation-checks.test.ts: a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+            "validation-checks.test.ts: a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+            "validation-checks.test.ts: a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+            "validation-checks.test.ts: a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+            "validation-checks.test.ts: trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The record: its merge, its paths and its document.",
+          "subjects": [
+            "test-record.test.ts: the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+            "test-record.test.ts: the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+            "test-record.test.ts: the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+            "test-record.test.ts: the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+            "build-record.test.ts: a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+            "artifact-kinds.test.ts: with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws",
+            "artifact-kinds.test.ts: approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)",
+            "migrate-docs-tree.test.ts: converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)",
+            "daemon-gateway.test.ts: the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The validate turn end to end, with the check runner and the judge overridden as the existing tests do.",
+          "subjects": [
+            "build-step.test.ts: a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+            "build-step.test.ts: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+            "build-step.test.ts: a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+            "build-step.test.ts: a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+            "build-step.test.ts: when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+            "build-step.test.ts: the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+            "render.test.ts: the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+            "build-step.test.ts: the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+            "completion-record.test.ts: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)",
+            "build-step.test.ts: when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+            "build-step.test.ts: a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+            "build-step.test.ts: a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "The real gate on a real Task, once the daemon runs this Story's code.",
+          "subjects": [
+            "Task t1 of Story s7 of the analyzer epic, whose plan names its tests in prose, is submitted with a mapping converted from docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json: the gate runs the three test files, every case is pass, the tests check passes, and TESTS.md is written by the gate in that Story's folder in place of the hand-made one"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "build-step.test.ts: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+            "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+            "Task t1 of Story s7 of the analyzer epic, whose plan names its tests in prose, is submitted with a mapping converted from docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json: the gate runs the three test files, every case is pass, the tests check passes, and TESTS.md is written by the gate in that Story's folder in place of the hand-made one"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The gate finds a Task's tests only through a leading '<file>.test.ts:' in each test name, runs all the files in one command and reads only the exit code (src/mcp/build-step/validation-checks.ts). A name without the prefix fails the tests check. The validate turn takes no statement about tests (src/mcp/build-step/types.ts) and the build record says only whether each Task passed (src/workflow/runners/build/standalone-record.ts). There is no record of which tests ran. Plans written before 7 October 2026, and the plan of Story s7 of the analyzer epic, carry no prefix.",
+      "stateAfter": "The validate turn takes an optional mapping from test names to test cases. The gate takes files from the mapping or, for a name without an entry, from the prefix as before; runs each file on its own; reads a result per test title; and writes a test record per Story (TESTS-<epicHash>-<storyId>.json and TESTS.md beside BUILD.md) that the build record links to. A turn that supplies no mapping for prefixed names behaves as before, with the record written as well.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the TAP reader and the mapping checks as new modules with their unit tests. Nothing calls them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add 'TESTS' to the kinds of artifact for path resolution, add the test record module (merge, paths, document), and go through every reader that enumerates artifacts so that each handles the new kind or leaves it out, with a test for each. No record is written yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend the check plans with the optional mapping and with namedTests, keeping the returned files and unresolved names identical when no mapping is given.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Change the runner to run each file on its own with the TAP reporter, write each run's whole output to a file, and return results per file and per named test. From this step the gate's command line for tests differs from before; the exit-code rule is unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add `tests` to the validate turn's input and to the build tool's registered input shape and description in src/mcp/server.ts; check it before any check runs; read the stored mapping when none is supplied; write the test record after the checks and before the judge session; add testRecord, a link only, to the build record's existing write; and have the validate turn and the completion record take the workflow's own files to leave out of the change log from one function that includes the test record's.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Update the implement prompt, the judge's evidence and instruction, and the build guide text.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Update the installed daemon and reload the MCP server of the working session, then submit Task t1 of Story s7 of the analyzer epic as the live check. Its mapping is converted by hand from that Story's tests.map.json, whose shape is not the input's: take the array under `t1`, rename each entry's `planTest` to `name`, and drop `mutations`, which the entry shape does not have and the tool would refuse. The hand-made TESTS.md and tests.map.json in that Story's folder are replaced by the gate's record; tests.map.json is removed once the record holds the mapping. This Story's own last Task is submitted after the same update, so that it is validated by the new gate.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The validate turn's new field is optional and the tool's other fields are unchanged, so every existing call is valid. A turn without `tests` for a plan whose names carry the prefix reaches the same testsPassed as before. The build record gains an optional field and renders unchanged without it. The verdict's evidence gains fields and loses none; `outputTail` stays. Build records and plans on disk are not rewritten. A Story built before this change has no test record, and nothing requires one. The VS Code and JetBrains plugins are in this repository and were read: the one reader that a test record would disturb, the VS Code plugin's workflow chain, is changed by this Story. The fork of the IDE (insors-ai/insrc-ide) is no longer developed (stakeholder, 2026-10-08) and is not a consumer to keep compatible: nothing is checked or noted for it.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A separate test record per Story, written by the gate",
+        "oneLineSummary": "A new record (TESTS) beside PLAN and BUILD holds, per Task, each named test, the test cases that carry it and their results; the builder states the mapping at the validate turn and the gate runs the files and writes the results.",
+        "approach": "The validate turn takes an optional `tests` input: for each test name of the Task, the cases that carry it, each a test file and a test title. The gate takes its test files from that mapping, and from the leading file-name prefix for a name that has one and is not mapped. It runs each file on its own with the TAP reporter, reads a result per test title, and writes a record of its own kind for the Story: a json beside the other artifacts and a TESTS.md in the Story's folder. The record keeps one section per Task, replaced when that Task is validated again, with the commit and time of the run. The tests check fails when a named test has no case, when a case's title did not run in its file, or when a case failed. The BUILD record's document links to the test record.",
+        "pros": [
+          "The gate runs and reports the tests named for the Task, title by title, whatever the plan's test names look like",
+          "One readable document per Story says which tests carry each planned test and what each did, with the commit of the run",
+          "A plan needs no change and no naming convention; plans already written work"
+        ],
+        "cons": [
+          "A new kind of record that path resolution and the readers that enumerate artifacts must know or ignore",
+          "The builder must state the mapping at each validate turn",
+          "Running each file on its own costs one process start per file"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "The test results as a section of the BUILD record",
+        "oneLineSummary": "The same mapping input and per-title results, stored in the BUILD record's body and rendered as a Tests section of BUILD.md.",
+        "approach": "The validate turn takes the same optional `tests` mapping and the gate runs and parses the same way, but the results go into the BUILD record: each entry of body.tasks gains the named tests, their cases and results, and BUILD.md renders them under a Tests heading. No new kind of record and no new path.",
+        "pros": [
+          "No new kind of record: nothing that enumerates artifacts changes",
+          "The build record already merges with its prior version and is already excluded from its own change log"
+        ],
+        "cons": [
+          "The BUILD record is the thing approved at the end of the Story; a long list of test cases for every Task makes that document hard to read and review",
+          "It is not the separate artifact that was asked for",
+          "The build record's writer is shared by two routes and by the completion record; growing its body touches all of them"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "a2 gives the gate the same ability and the same results but puts them inside the document that is approved at the end of the Story, which grows by a table per Task, and it is not the separate artifact that was asked for."
+      },
+      {
+        "id": "a3",
+        "name": "Keep the prefix rule and make the plan state it",
+        "oneLineSummary": "No record: the plan's prompts and schema require every test name to begin with '<file>.test.ts:', and the gate stays as it is.",
+        "approach": "The plan workflow's test-strategy step asks for the file-name prefix on every test name and its schema or checklist refuses a name without one, so that every new plan meets the gate's rule. The gate, the validate input and the build record do not change. Plans already approved without the prefix are edited by hand and approved again.",
+        "pros": [
+          "The smallest change",
+          "The mapping is fixed at planning time and reviewed with the plan"
+        ],
+        "cons": [
+          "A plan's author must name test files before any test is written, and a test that ends up in another file breaks the gate",
+          "The gate still reads only an exit code: there is no record of which tests ran and what each did",
+          "A file named by the prefix may hold none of the planned tests and the gate cannot tell",
+          "Does not give the artifact that was asked for, and approved plans must be reopened"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "a3 removes the surprise for new plans but records nothing about which tests ran, still cannot tell whether a named file holds the planned tests, and makes the plan's author name files before the tests exist."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "A mapped test case that the test runner reports as skipped (for example a test that runs only when an environment variable is set): does it satisfy the named test? The design as written lets it pass the check. The alternative is that a skipped case fails the check unless the named test's level is live, where the builder reports the result instead. Recommended: a skipped case does not satisfy a unit or integration test.",
+      "A live or smoke test that the gate cannot run (it needs a model, a running daemon or a person): the design accepts a result reported by the builder, with where the evidence is, records it as reported and not run by the gate, and shows it to the judge. The alternative is that such a test always fails the gate's test step. Recommended: accept the reported result, shown apart from the results the gate produced.",
+      "The Story came from triage with no acceptance criteria, so the alternatives could not be scored against any and the acceptance mapping has one entry (ac1) that stands for the request itself. Is the request as stated in the Story the acceptance criterion?",
+      "The fork of the IDE (insors-ai/insrc-ide, a separate repository) was not read for this design; the two plugins in this repository were. Before the validate turn's change ships, the fork's reader of BUILD records and its artifact listing should be checked for a strict shape or a fixed list of kinds. Who makes that check, and does it hold the Story's last Task?"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[0]: How the validation gate finds and runs a Task's tests",
+      "quotedText": "src/mcp/build-step/validation-checks.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[1]: The one production caller of the check plans and what it does with the results",
+      "quotedText": "src/mcp/build-step/phases/validate.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[2]: The validate turn's input, the build record, and the plan's test names",
+      "quotedText": "src/workflow/runners/build/standalone-record.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[3]: Where the file-name prefix is asked for, and what the test runner prints",
+      "quotedText": "src/mcp/build-step/render.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s1.analyzeBundles[4]: Existing tests of the gate and of the build record",
+      "quotedText": "src/mcp/build-step/__tests__/validation-checks.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "Stakeholder request of 2026-10-08: a new artifact that lists the tests with their execution status, integrated with the flow so that the gate can use it"
+    }
+  ]
+}

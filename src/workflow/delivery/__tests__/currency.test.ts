@@ -304,3 +304,23 @@ test('producing the currency annotation changes no file in the artifact store', 
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
+
+test('the staleness hash uses each amendment record\'s own id, and a missing hldBaseRunId is not called a re-run', () => {
+	// A hand-renamed AMD file: its file stem (artifactId) differs from the id it records.
+	const renamed = recordFromFile(`AMD-${EPIC}-7.json`, {
+		id: `AMD-${EPIC}-3`, epicHash: EPIC, epicSlug: 'e1', hldBaseRunId: RUN, rationale: 'r', citations: [], proposedBy: { role: 'controller' },
+		proposedAt: CREATED, status: 'approved', approvedAt: '2026-10-01T00:00:00.000Z', amendment: { type: 'storyBoundary.addStory', storyId: 's7' },
+	});
+	const byRecordedId = computeHldEffectiveHash(RUN, [`AMD-${EPIC}-3`]);
+	const { result } = run([
+		defRecord(EPIC, ['s1', 's2']),
+		hldRecord(EPIC, { runId: RUN }),
+		renamed,
+		lld('s1', byRecordedId, { hldAmendmentsApplied: [`AMD-${EPIC}-3`] }),
+		lld('s2', 'some-other-hash', { hldBaseRunId: undefined }),
+	]);
+	assert.equal(currencyOf(result, `LLD-${EPIC}-s1`).reviewCurrency, 'current', 'hashed by the recorded id, as the scanner hashes it');
+	const noBase = currencyOf(result, `LLD-${EPIC}-s2`);
+	assert.equal(noBase.reviewCurrency, 'stale', 'the hash mismatch still makes it stale');
+	assert.doesNotMatch(noBase.basis ?? '', /hld-rerun/, 'no recorded hldBaseRunId, so no re-run is claimed');
+});

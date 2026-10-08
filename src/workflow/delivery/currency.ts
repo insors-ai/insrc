@@ -17,8 +17,9 @@
  * records no content stamp, and a BUILD's timestamps are rewritten on approval.
  *
  * An amendment counts toward the effective HLD exactly as listApprovedAmendments
- * counts it: a well-formed record (isAmendmentRecord) with status 'approved' and
- * a string approvedAt.
+ * counts it, through the store's own approvedInApplyOrder: a well-formed record
+ * (isAmendmentRecord) with status 'approved' and a string approvedAt, hashed by
+ * its recorded id.
  *
  * Notices: review-currency-unknown for each item holding reviews no recorded
  * field settles; base-predates-extension for an accepted extension whose story
@@ -30,7 +31,9 @@
  * throws, adds or removes no work item.
  */
 
+import { approvedInApplyOrder } from '../amendments/store.js';
 import { isAmendmentRecord } from '../amendments/types.js';
+import type { AmendmentRecord } from '../amendments/types.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { kindOfFile } from './load.js';
 import { makeNotice, sortNotices } from './notice.js';
@@ -83,24 +86,23 @@ function time(value: string | null): number | null {
 	return Number.isNaN(t) ? null : t;
 }
 
-function amendmentSuffix(id: string): number {
-	const m = /-(\d+)$/.exec(id);
-	return m === null ? 0 : Number(m[1]) || 0;
+/** The AMD as the store wrote it (meta with its amendment put back), when well formed. */
+function amendmentRecordOf(amd: ArtifactRecord): AmendmentRecord | null {
+	const rec: unknown = { ...amd.meta, amendment: amd.body };
+	return isAmendmentRecord(rec) ? rec : null;
 }
 
 /** Whether an AMD counts toward the effective HLD, as listApprovedAmendments counts it. */
 function counts(amd: ArtifactRecord): boolean {
-	return isAmendmentRecord({ ...amd.meta, amendment: amd.body })
-		&& amd.meta['status'] === 'approved'
-		&& typeof amd.meta['approvedAt'] === 'string';
+	const rec = amendmentRecordOf(amd);
+	return rec !== null && approvedInApplyOrder([rec]).length === 1;
 }
 
-/** An epic's counted amendments in the scanner's order: numeric suffix, then a stable sort by approvedAt. */
-function countedAmendments(epic: WorkItemNode, ctx: PassContext): ArtifactRecord[] {
-	return evidenceOf(epic, ctx, 'AMD')
-		.filter(counts)
-		.sort((a, b) => amendmentSuffix(a.artifactId) - amendmentSuffix(b.artifactId))
-		.sort((a, b) => (asString(a.meta['approvedAt']) ?? '').localeCompare(asString(b.meta['approvedAt']) ?? ''));
+/** The record ids of an epic's counted amendments, in the order the store's
+ *  approvedInApplyOrder gives them (the order the effective-HLD hash uses). */
+function countedAmendmentIds(epic: WorkItemNode, ctx: PassContext): string[] {
+	const records = evidenceOf(epic, ctx, 'AMD').map(amendmentRecordOf).filter((r): r is AmendmentRecord => r !== null);
+	return approvedInApplyOrder(records).map(r => r.id);
 }
 
 function amendmentOf(amd: ArtifactRecord): EffectiveAmendment {
@@ -132,7 +134,7 @@ function lldCurrency(lld: ArtifactRecord, ctx: PassContext): Settled | null {
 	const runId = hlds.length === 1 ? asString(hlds[0]?.meta['runId'] ?? null) : null;
 	if (runId === null) return null;
 
-	const counted = countedAmendments(epic, ctx).map(a => a.artifactId);
+	const counted = countedAmendmentIds(epic, ctx);
 	const current = computeHldEffectiveHash(runId, counted);
 	if (stored === current) {
 		return { reviewCurrency: 'current', basis: `hldEffectiveHash matches HLD run ${runId} with amendments [${counted.join(', ')}]` };
@@ -141,8 +143,9 @@ function lldCurrency(lld: ArtifactRecord, ctx: PassContext): Settled | null {
 		? new Set((lld.meta['hldAmendmentsApplied'] as unknown[]).filter((x): x is string => typeof x === 'string'))
 		: new Set<string>();
 	const missing = counted.find(id => !applied.has(id));
-	let basis = asString(lld.meta['hldBaseRunId']) !== runId
-		? `hld-rerun: hldBaseRunId differs from HLD run ${runId}`
+	const baseRunId = asString(lld.meta['hldBaseRunId']);
+	let basis = baseRunId !== null && baseRunId !== runId
+		? `hld-rerun: hldBaseRunId ${baseRunId} differs from HLD run ${runId}`
 		: missing !== undefined
 			? `amendment ${missing} is not in hldAmendmentsApplied`
 			: 'hldEffectiveHash differs from the recomputed effective HLD hash; no amendment identified';

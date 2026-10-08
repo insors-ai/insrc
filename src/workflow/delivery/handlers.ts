@@ -24,7 +24,7 @@ import { ARTIFACTS_DIR } from '../storage.js';
 import { deriveCurrency } from './currency.js';
 import { deriveGates } from './gate.js';
 import { buildWorkItemGraph } from './graph.js';
-import { liftStoreFile, loadArtifactRecordSet, nodeStoreFs } from './load.js';
+import { DELIVERY_ARTIFACT_KINDS, liftStoreFile, loadArtifactRecordSet, nodeStoreFs } from './load.js';
 import { createMarkdownPort } from './markdown.js';
 import { assembleSnapshot } from './snapshot.js';
 import { deriveStages } from './stage.js';
@@ -39,7 +39,7 @@ import type {
 
 const log = getLogger('delivery');
 
-const ARTIFACT_ID_RE = /^(SPEC|DEF|HLD|LLD|PLAN|BUILD|CR|ISSUE|EXT|AMD)-[0-9a-f]{16}(-[A-Za-z0-9]+)?$/;
+const ARTIFACT_ID_RE = new RegExp(`^(${DELIVERY_ARTIFACT_KINDS.join('|')})-[0-9a-f]{16}(-[A-Za-z0-9]+)?$`);
 
 function errorText(err: unknown): string {
 	return err instanceof Error ? err.message : String(err);
@@ -96,7 +96,8 @@ function renderedMarkdownOf(repo: string, record: ArtifactRecord, deps: Delivery
 		if (md === null) return null;
 		const located = resolveDocsMarkdown(repo, md.mdPath);
 		return 'realPath' in located ? readFileSync(located.realPath, 'utf8') : null;
-	} catch {
+	} catch (err) {
+		log.warn({ repo, artifactId: record.artifactId, err: errorText(err) }, 'workflow.deliveryEvidence: rendered markdown could not be read');
 		return null;
 	}
 }
@@ -128,7 +129,7 @@ export function handleDeliveryEvidence(
 
 	let record: ArtifactRecord;
 	try {
-		const lifted = liftStoreFile(fileName, JSON.parse(readFileSync(realFile, 'utf8')));
+		const lifted = liftStoreFile(fileName, JSON.parse((deps.fs ?? nodeStoreFs).readFile(realFile)));
 		if ('reason' in lifted) return { error: `workflow.deliveryEvidence: ${artifactId} cannot be read: ${lifted.detail}` };
 		record = lifted;
 	} catch (err) {

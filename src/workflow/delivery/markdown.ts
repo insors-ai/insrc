@@ -11,10 +11,11 @@
  * found from the work-item graph rather than the record's own meta: the item
  * holding the record gives its epic segment (the canonical id before any ':')
  * and, for a story, its S<nnn> folder, and the docs/ work-item folder named
- * '<slug>-<epicSegment>' is the root. workflow.pending's own derivation from the
- * record's meta is the second candidate (a SPEC, say, lives in its own folder).
- * The first candidate that exists and passes workflow.artifactContent's docs/
- * containment rule is the record's markdown; only its first 512 bytes are read.
+ * '<slug>-<epicSegment>' is the root. Only when no folder matches the record (a
+ * SPEC in its own folder, say) is workflow.pending's derivation from the
+ * record's meta used instead. The path must exist and pass workflow.artifactContent's
+ * docs/ containment rule; only its first 512 bytes are read, and the marker must
+ * be the whole first line.
  * Never writes, never throws.
  */
 
@@ -92,18 +93,16 @@ export function createMarkdownPort(repoPath: string, graph: WorkItemGraph): Deli
 		markdownOf(record) {
 			if (!MD_KINDS.has(record.kind)) return null;
 			const kind = record.kind as ArtifactKind;
-			let derived = '';
-			try { derived = deriveMdPath(repoPath, kind, record.meta); } catch { derived = ''; }
-			const candidates = [folderPath(record, kind), derived.length > 0 ? derived : null]
-				.filter((p): p is string => p !== null);
-			for (const mdPath of [...new Set(candidates)]) {
-				const located = resolveDocsMarkdown(repoPath, mdPath);
-				if ('reason' in located) continue;
-				const line = firstLine(located.realPath);
-				if (line === null) continue;
-				return { mdPath, hasMarker: line.trim() === `<!-- insrc:artifact ${record.artifactId} -->` };
+			let mdPath = folderPath(record, kind);
+			if (mdPath === null) {
+				try { mdPath = deriveMdPath(repoPath, kind, record.meta); } catch { mdPath = ''; }
+				if (mdPath.length === 0) return null;
 			}
-			return null;
+			const located = resolveDocsMarkdown(repoPath, mdPath);
+			if ('reason' in located) return null;
+			const line = firstLine(located.realPath);
+			if (line === null) return null;
+			return { mdPath, hasMarker: line === `<!-- insrc:artifact ${record.artifactId} -->` };
 		},
 	};
 }

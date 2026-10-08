@@ -30,7 +30,8 @@ import {
 
 const log = getLogger('delivery-load');
 
-const KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
+/** Every store-file prefix the delivery read model knows. */
+export const DELIVERY_ARTIFACT_KINDS: readonly DeliveryArtifactKind[] = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'ISSUE', 'EXT', 'AMD'];
 
 /** The node:fs implementation of the read-only store port. */
 export const nodeStoreFs: ReadonlyStoreFs = {
@@ -42,7 +43,7 @@ export const nodeStoreFs: ReadonlyStoreFs = {
 /** The kind named by a store file name's prefix, or null for an unknown prefix. */
 export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
 	const prefix = fileName.split('-')[0] ?? '';
-	return (KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
+	return (DELIVERY_ARTIFACT_KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
 }
 
 function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {

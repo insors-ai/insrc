@@ -685,6 +685,8 @@ The executor and the plan walk attach a completeness record to each result after
   - **resolved**: Amend the HLD wording to match the LLD rule — Stakeholder took the recommendation on 2026-10-08: a catch that handles a named, expected condition stays and says so in its record; only a swallowed error becomes the failed output. _(2026-10-08T06:56:36.987Z)_
 - `q4ab107ec` — Back-flow to the HLD: the completeness record's `basis` gains the value 'model-directed' for the free-form lookup, which the HLD's contract sc1 describes in words without giving it a value.
   - **resolved**: Amend the HLD to name the value — Stakeholder took the recommendation on 2026-10-08: sc1 is read by other Stories, so its basis values are stated in the HLD. _(2026-10-08T06:57:30.431Z)_
+- `qb7084a5d` — Back-flow to the HLD: the completeness record's `limited` is a list of reached limits, each with a scope, where the HLD's sketch of sc1 shows a single limit; several results reach more than one.
+  - **resolved**: Amend the HLD to match the LLD — Stakeholder took the recommendation on 2026-10-08: several results reach more than one limit, so limited is a list of reached limits, each with a scope. _(2026-10-08T06:58:03.877Z)_
 
 ## Citations
 

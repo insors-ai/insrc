@@ -33,7 +33,7 @@ import type { PlanTreeNode } from '../../planner/recursive.js';
 import { aggregateReportCompleteness } from '../../runtimes/shared/aggregator.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { _shapeTerminalFrameForTest as shapeTerminalFrame } from '../../../daemon/analyze-rpc.js';
-import { concludeRun, runAnalyze } from '../driver.js';
+import { completeRun, concludeRun, runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord, writeRunRecord } from '../persistence.js';
 import type { RunRecord } from '../types.js';
 
@@ -281,6 +281,50 @@ test('a run record written without a report resumes with none and its text form 
 		assert.ok(other.ok);
 		assert.deepEqual(other.finalReport, { from: 'old-shape' });
 	} finally {
+		purgeRunForTests(runId);
+	}
+});
+
+test('a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(runtime('demo.limited', { files: ['a'] }, LIMITED));
+	registerTemplateRuntime(runtime('demo.aggregate', { report: FINAL }, aggregateReportCompleteness()));
+	const tree = node(plan([
+		task({ taskId: 't01', template: 'demo.limited', produces: ['files'] }),
+		task({ taskId: 't02', template: 'demo.aggregate', produces: ['report'], consumes: ['files'] }),
+	]));
+	const runId = uniqueRunId('complete');
+	const contextReport: AnswerReport = {
+		completeness: { complete: false, incomplete: [], failed: [{ sourceId: 'symbol.locate [e3]', sourceKind: 'lookup', reason: 'closed' }] },
+	};
+	try {
+		const executed = await runExecutor({ tree, intent: INTENT, runId });
+		// The record as it stands while the plan is being executed.
+		const inProgress = storedRecord(runId, { stage: 'execute', status: 'in-progress', tasksCompleted: undefined, tasksFailed: undefined });
+
+		const result = completeRun({ record: inProgress, intent: INTENT, tree, executed, contextReport, start: Date.now() });
+		assert.ok(result.ok);
+		assert.deepEqual(result.report?.completeness.incomplete.map(n => n.sourceId), ['t01']);
+		assert.deepEqual(result.report?.completeness.failed.map(n => n.sourceId), ['run context / symbol.locate [e3]']);
+		const line = renderCompletenessLine(result.report!);
+		assert.equal((result.finalReport as typeof FINAL).summary, `${line}\n\n${SUMMARY}`);
+		assert.equal(result.tasksCompleted, 2);
+
+		// The stored record is done, and holds the same report and the same final report.
+		const stored = readRunRecord(runId);
+		assert.equal(stored?.stage, 'done');
+		assert.equal(stored?.status, 'ok');
+		assert.deepEqual(stored?.report, result.report);
+		assert.deepEqual(stored?.finalReport, result.finalReport);
+		assert.equal(stored?.tasksCompleted, 2);
+
+		// Resumed from that record, the run returns what it returned.
+		const resumed = await runAnalyze({ runId, userPrompt: 'ignored on resume', scopeRef: { kind: 'repo', value: '/r' } });
+		assert.ok(resumed.ok);
+		assert.deepEqual(resumed.report, result.report);
+		assert.deepEqual(resumed.finalReport, result.finalReport);
+	} finally {
+		purgeAllTaskOutputs(runId);
 		purgeRunForTests(runId);
 	}
 });

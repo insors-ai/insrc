@@ -58,6 +58,7 @@ import {
 	_resetRuntimeBootstrapLatchForTests,
 	registerBuiltinRuntimes,
 } from '../../runtimes/bootstrap.js';
+import { renderCompletenessLine } from '../../completeness.js';
 import { runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord } from '../persistence.js';
 
@@ -138,6 +139,15 @@ test('orchestrator-e2e.live: infra XS end-to-end -> result mirrors run.json',
 				`summary too short: ${report.summary}`);
 			assert.ok(Array.isArray(report.findings) && report.findings.length >= 1);
 			assert.equal(report.metadata.target, 'infra');
+
+			// The run carries its answer report (LLD-b9d5c5c40df5a574-s1): derived
+			// by code, stored in the run record, and its line heads the final
+			// report's text.
+			assert.ok(result.report !== undefined, 'a run made now always has a report');
+			assert.equal(typeof result.report.completeness.complete, 'boolean');
+			assert.equal(report.summary.split('\n')[0], renderCompletenessLine(result.report));
+			assert.deepEqual(record!.report, result.report);
+			assert.deepEqual(record!.finalReport, result.finalReport);
 			assert.equal(report.metadata.runId, runId);
 
 			assert.equal(record!.status, 'ok');

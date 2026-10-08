@@ -405,32 +405,7 @@ export async function runAnalyze(
 	// ----- (done) -----
 	// The answer report, derived by code from the run context's report and
 	// from each plan task's own record; its line heads the final report's text.
-	const concluded = concludeRun(tree, execResult, contextBundle.report);
-	record = patch(record, {
-		stage: 'done',
-		status: 'ok',
-		finalReport: concluded.finalReport,
-		report: concluded.report,
-		tasksCompleted: rootPlan.tasksCompleted,
-		tasksFailed: rootPlan.tasksFailed,
-	});
-	writeRunRecord(record);
-	const durationMs = Date.now() - start;
-	log.info(
-		{ runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },
-		'runAnalyze: ok',
-	);
-
-	return emitDoneAndReturn({
-		ok: true,
-		runId,
-		intent,
-		finalReport: concluded.finalReport,
-		tasksCompleted: rootPlan.tasksCompleted,
-		tasksFailed: rootPlan.tasksFailed,
-		durationMs,
-		report: concluded.report,
-	});
+	return emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, start }));
 }
 
 // ---------------------------------------------------------------------------
@@ -481,6 +456,50 @@ export function concludeRun(
 		RUN_CONTEXT_SOURCE_PREFIX,
 	);
 	return { report, finalReport: headFinalReport(executed.root.finalReport, renderCompletenessLine(report)) };
+}
+
+/**
+ * The last step of a run whose plan was executed and produced a final report:
+ * derive the answer report, store the run record as done, and build the
+ * result. The record and the result carry the same report and the same final
+ * report, so a run resumed from the record returns what the run returned.
+ */
+export function completeRun(args: {
+	readonly record:        RunRecord;
+	readonly intent:        ClassifiedIntent;
+	readonly tree:          PlanTreeNode;
+	readonly executed:      ExecutorResult;
+	/** The report of the run context, the run's first step. */
+	readonly contextReport: AnswerReport | undefined;
+	/** When the run started, in milliseconds. */
+	readonly start:         number;
+}): RunAnalyzeResult {
+	const { record, intent, tree, executed } = args;
+	const rootPlan = executed.root;
+	const concluded = concludeRun(tree, executed, args.contextReport);
+	writeRunRecord(patch(record, {
+		stage: 'done',
+		status: 'ok',
+		finalReport: concluded.finalReport,
+		report: concluded.report,
+		tasksCompleted: rootPlan.tasksCompleted,
+		tasksFailed: rootPlan.tasksFailed,
+	}));
+	const durationMs = Date.now() - args.start;
+	log.info(
+		{ runId: record.runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },
+		'runAnalyze: ok',
+	);
+	return {
+		ok: true,
+		runId: record.runId,
+		intent,
+		finalReport: concluded.finalReport,
+		tasksCompleted: rootPlan.tasksCompleted,
+		tasksFailed: rootPlan.tasksFailed,
+		durationMs,
+		report: concluded.report,
+	};
 }
 
 /**

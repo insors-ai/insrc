@@ -24,7 +24,9 @@
     "storyId": "S001",
     "lldRunId": "wf-1791470870888-9gi5o2",
     "lldEffectiveHash": "9b4a74dcdf47852ae947d314851ca4f486c25e5892cb09f16f59257be23260b1",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-08T17:29:03.059Z",
+    "rangeBase": "1447db22fb69809bfb79c4572a65d36773ff913c"
   },
   "body": {
     "summary": {

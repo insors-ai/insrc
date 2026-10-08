@@ -265,7 +265,9 @@
         "rationale": "Stakeholder, 2026-10-08: the insrc-ide fork is dead and is to be ignored. (The builder had first been asked to check it; the local copy at 83393569 was read and holds no reader of build records or of the artifacts directory.)",
         "resolvedAt": "2026-10-08T17:08:53.844Z"
       }
-    }
+    },
+    "approvedAt": "2026-10-08T17:19:29.247Z",
+    "rangeBase": "8bd28e94a8edfa48dda07096b28858937fe7bbc0"
   },
   "body": {
     "summary": {

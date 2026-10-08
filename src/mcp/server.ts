@@ -550,10 +550,15 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'The prompt surfaces any design decisions resolved at plan-start (from the ' +
 				"Story LLD's meta.questionResolutions). Open questions are resolved at stage " +
 				'STARTS via insrc_workflow_step, not here.\n\n' +
-				'  - `validate` — { target }. The DAEMON runs a read-only verdict session ' +
-				'against the repo (inspect tree + run tests + typecheck) and returns ' +
-				'{ next: "done", verdict, passed }. `passed` is the daemon\'s judgment, ' +
-				'never a self-report.\n\n' +
+				'  - `validate` — { target, tests? }. The DAEMON runs the typecheck and the ' +
+				'Task\'s tests itself, then a read-only verdict session against the repo, ' +
+				'and returns { next: "done", verdict, passed }. `passed` is the daemon\'s ' +
+				'judgment, never a self-report. Pass `tests` to say which test cases (a ' +
+				'file and a test title) carry each test the Task names: the daemon runs ' +
+				'those files, records a result per case in the Story\'s test record ' +
+				'(TESTS.md beside BUILD.md), and fails the Task when a case fails, is ' +
+				'skipped or is not found. A wrong mapping returns the error ' +
+				'`invalid-test-mapping` and nothing is run.\n\n' +
 				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
 			annotations: {
 				readOnlyHint:   false,   // validate runs an agentic session against the repo

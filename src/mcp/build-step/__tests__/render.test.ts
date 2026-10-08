@@ -153,3 +153,43 @@ test("the judge's evidence lists each named test with its cases and results; wit
 		`- \`${A}\`: /tmp/out/a.tap`,
 	].join('\n'));
 });
+
+test("the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before", async () => {
+	// The plan-driven implement prompt: the rule sits under the Task's listed tests.
+	const implement = renderImplementPrompt('/repo', TASK, '');
+	const listed = implement.indexOf("- unit: render.test.ts: 'x'");
+	const rule = implement.indexOf('**Say which test cases carry each test.**');
+	assert.ok(listed !== -1 && rule > listed, 'the mapping rule follows the listed tests');
+	for (const phrase of ['pass `tests` to the validate turn', "`name` the test's text exactly as listed", '`file`', '`title`', '`TESTS.md` beside', 'is skipped, or is not found', '`live` or `smoke`', '`reported`', 'not run by the gate']) {
+		assert.ok(implement.includes(phrase), `implement prompt lacks: ${phrase}`);
+	}
+	assert.match(implement, /with the `tests` mapping described above\.\s*$/);
+	// A standalone build WITH a design is told the same, by subject; a trivial one (no design, no named tests) is not.
+	const small = renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'f', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' });
+	assert.ok(small.includes('## Submitting the tests') && small.includes("`name` the subject's text exactly as the design states it") && small.includes('`reported`'));
+	assert.ok(!renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'f', resolvedDecisions: '' }).includes('## Submitting the tests'));
+
+	// The judge is told what to check about the named tests and the reported results, on both routes.
+	for (const prompt of [renderValidatePrompt('/repo', TASK, 'E'), renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', evidence: 'E' })]) {
+		assert.ok(prompt.includes('do exercise what its name says'), 'the judge checks the cases against the name');
+		assert.ok(prompt.includes('**REPORTED BY THE BUILDER**') && prompt.includes('check that the evidence it points to exists'));
+		assert.ok(!prompt.includes('{{'), 'no placeholder is left unfilled');
+	}
+
+	// The guide's build section says the same, and the guide tool's reader returns it.
+	const { readWorkflowGuide } = await import('../../../daemon/guide-sections.js');
+	const { readSteeringBlock } = await import('../../../daemon/steering-inject.js');
+	const guide = readWorkflowGuide(readSteeringBlock(), 'build');
+	assert.ok(typeof guide === 'string' && guide.length > 0);
+	for (const phrase of ["At `phase:'validate'`", 'pass `tests`', '`TESTS.md` beside `BUILD.md`', '`invalid-test-mapping`', 'it is never approved', '`reported: { result, evidence }`']) {
+		assert.ok((guide as string).includes(phrase), `the build guide lacks: ${phrase}`);
+	}
+
+	// The evidence half: named tests listed case by case; nothing added when none is named.
+	const { renderCheckEvidence } = await import('../phases/validate.js');
+	const typecheck = { ok: true, command: 't', exitCode: 0, timedOut: false, durationMs: 1, outputTail: '' };
+	const tests = { ok: true, command: 'c', exitCode: 0, timedOut: false, durationMs: 1, outputTail: '' };
+	assert.ok(!renderCheckEvidence({ typecheck, tests }).includes('Named tests'));
+	const withNamed = renderCheckEvidence({ typecheck, tests: { ...tests, files: [], namedTests: [{ name: 'n', level: 'unit', source: 'mapping', files: [], cases: [{ file: 'a.test.ts', title: 't', result: 'pass' }] }] } });
+	assert.ok(withNamed.includes("#### Named tests\n- unit: n\n  - pass: 't' in `a.test.ts`"));
+});

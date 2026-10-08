@@ -218,6 +218,21 @@ Turns an approved LLD/PLAN into code. Multi-turn: `phase:'implement'` →
 `insrc_schema({ tool:'insrc_build_step', phase })` for the exact shape of each
 phase.
 
+**Tell the gate which tests carry each planned test.** At `phase:'validate'`
+pass `tests`: one entry per test the Task names, with `name` the test's text
+exactly as the plan states it and `cases` the test cases that carry it, each a
+`file` (repo-relative `.test.ts` path) and a `title` (exactly as the file
+declares it). The daemon runs each mapped file itself and writes a result per
+case (pass / fail / skipped / not found) to the Story's **test record**,
+`TESTS.md` beside `BUILD.md`. A case that fails, is skipped or is not found
+fails the Task, as does a named test with no case. For a `live` or `smoke` test
+the daemon cannot run, give `reported: { result, evidence }` instead; it is
+recorded as reported by you, not run by the gate. Omit `tests` on a later turn
+of the same Task to reuse the stored mapping. Without a mapping, only a test
+name that begins with `<file>.test.ts:` can be run. A wrong mapping is refused
+with `invalid-test-mapping` and nothing is run. The test record is a record:
+it is never approved.
+
 After the build has produced its changes, run `code-review` over the changed
 code, PRESENT the verdict, then COMPLETE the Story by approving its **BUILD**
 artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is

@@ -26,6 +26,7 @@ import type { GitDiffData } from '../../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../../daemon/tools/types.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { ChangeLog, ChangeLogEntry } from '../../artifacts/provenance/types.js';
+import { storyChangeSet } from './story-commits.js';
 
 const log = getLogger('workflow:build:changed-files');
 
@@ -142,7 +143,11 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	if (opts?.base !== undefined && opts.base.length > 0) {
 		const ranged = new Set<string>();
 		await collectDiff(repoPath, { from: opts.base, ...globs }, ranged);
-		return keep(ranged);
+		// Only the Story's OWN changes count (ISSUE-f9ced66a): a file a mid-build
+		// merge brought in is in base..HEAD but in none of the Story's units. The
+		// exclusions above stay with git; this only narrows what git reported.
+		const own = new Set(storyChangeSet(repoPath, opts.base).paths);
+		return keep(new Set([...ranged].filter(f => own.has(f))));
 	}
 	return kept;
 }

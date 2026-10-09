@@ -40,6 +40,19 @@ import type { Entity } from '../shared/types.js';
 
 const log = getLogger('analyze:docs-retrieval');
 
+/** The two services the vector pass uses. */
+interface VectorPassDeps {
+	embedQuery:       typeof embedQuery;
+	searchEntityVecs: typeof searchEntityVecs;
+}
+const REAL_VECTOR_PASS: VectorPassDeps = { embedQuery, searchEntityVecs };
+let vectorPass: VectorPassDeps = REAL_VECTOR_PASS;
+/** Test seam: stand-ins for the embedding of the query and for the vector
+ *  search. Pass undefined to go back to the real ones. */
+export function _setVectorPassForTest(deps: Partial<VectorPassDeps> | undefined): void {
+	vectorPass = deps === undefined ? REAL_VECTOR_PASS : { ...REAL_VECTOR_PASS, ...deps };
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -186,7 +199,7 @@ export async function retrieveDocSections(
 	const vectorScores = new Map<string, number>();
 	let queryVec: number[];
 	try {
-		queryVec = await embedQuery(args.query);
+		queryVec = await vectorPass.embedQuery(args.query);
 	} catch (err) {
 		log.debug(
 			{ err: (err as Error).message },
@@ -202,11 +215,17 @@ export async function retrieveDocSections(
 	}
 	if (queryVec.length > 0) {
 		try {
-			const hits = await searchEntityVecs(
+			// With an area, the search is among the area's candidates, so its hits
+			// are the nearest within the area. Searching the repo and dropping what
+			// lies outside would leave a small area with few vector scores or none.
+			// With no area the query is the one it always was.
+			const hits = await vectorPass.searchEntityVecs(
 				queryVec,
 				args.closureRepos,
 				maxResults * VECTOR_DEPTH_MULT,
-				{ kinds: kinds as readonly string[] },
+				args.area === undefined
+					? { kinds: kinds as readonly string[] }
+					: { kinds: kinds as readonly string[], ids: [...candidateById.keys()] },
 			);
 			for (const h of hits) {
 				// Lance cosine distance is in [0, 2]; convert to similarity

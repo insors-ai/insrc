@@ -2679,12 +2679,13 @@ test('t4: a self-reference and a 3-cycle both terminate and draw — layout iter
   assert.ok(lines.length >= 3, 'the self-reference is drawn as a multi-segment loop');
 });
 
+/** A drawn diagram as one line per element — namespace, tag, attributes, text — for the determinism checks. */
+const dgShape = (el: BodyStub): string =>
+  allOf(el).map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+
 test('t4: determinism — the same record renders an identical element tree every time', () => {
   const rec = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
-  const shape = (api: DgApi): string =>
-    allOf(api.dgRenderEr(rec)!.el)
-      .map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`)
-      .join('\n');
+  const shape = (api: DgApi): string => dgShape(api.dgRenderEr(rec)!.el);
   // Two independent evaluations, so no cached state can make them agree.
   assert.equal(shape(loadDg()), shape(loadDg()), 'no randomness, no measurement-dependent reflow');
 });
@@ -3064,8 +3065,7 @@ test('t5: an empty or malformed sequence record is ABSENT and creates no element
 
 test('t5: determinism — the same sequence record renders an identical tree every time', () => {
   const rec = realSeqRecord();
-  const shape = (api: DgApi): string =>
-    allOf(api.dgRenderSeq(rec)!.el).map((n) => `${n.ns}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+  const shape = (api: DgApi): string => dgShape(api.dgRenderSeq(rec)!.el);
   assert.equal(shape(loadDg()), shape(loadDg()));
 });
 
@@ -3913,12 +3913,12 @@ function isText(n: BodyStub): boolean {
 
 interface UxSlot {
   state: 'absent' | 'rendered' | 'unshowable';
-  kind?: string;
-  label?: string;
-  reason?: string;
-  body?: BodyStub;
-  linkOut?: { relPath: string; title: string };
-  anchorSlug?: string;
+  kind?: string | undefined;
+  label?: string | undefined;
+  reason?: string | undefined;
+  body?: BodyStub | undefined;
+  linkOut?: { relPath: string; title: string } | undefined;
+  anchorSlug?: string | undefined;
 }
 
 interface UxApi {

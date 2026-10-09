@@ -71,7 +71,8 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   const args = EXT.slice(call, EXT.indexOf('});', call));
   assert.match(args, /rpc: client\.rpc/);
   assert.match(args, /repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null/);
-  assert.match(args, /warn: panelLog\.warn, error: .*console\.error/);
+  assert.match(args, /logger: panelLog,/);
+  assert.match(EXT, /const panelLog = \{\s*warn: \(message: string\): void => console\.warn\(`\[insrc\] \$\{message\}`\),\s*error: \(message: string\): void => console\.error\(`\[insrc\] \$\{message\}`\),\s*\};/, 'the shared panel logger has warn and error sinks');
   assert.match(args, /vscode\.ViewColumn\.Active, \{ enableScripts: true \}/);
 
   // Running the registered command over fakes.

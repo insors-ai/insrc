@@ -101,9 +101,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     for (const m of boardDownMessages(state, DISPLAY_LABELS)) channel?.postMessage(m);
   }
 
+  /** Reduce and derive the messages first; the new state is kept only when it renders, so a bad snapshot never becomes the last one. */
   function dispatch(event: BoardEvent): void {
-    state = reduceBoardState(state, event);
-    post();
+    const next = reduceBoardState(state, event);
+    const messages = boardDownMessages(next, DISPLAY_LABELS);
+    state = next;
+    for (const m of messages) channel?.postMessage(m);
   }
 
   function elapsedMs(since: string): number {
@@ -134,7 +137,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
     } catch (err) {
-      // A malformed snapshot that slipped past the client: show it as a failed refresh rather than a frozen board.
+      // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
+      // board, so this shows a failed refresh over it rather than a frozen board.
       const message = err instanceof Error ? err.message : String(err);
       deps.logger.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
       dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });

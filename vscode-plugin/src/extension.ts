@@ -253,7 +253,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // A thin degrade-path logger for the panels. The plugin ships no pino logger
   // (that would drag the daemon logging stack into the thin extension bundle, k5);
   // panel diagnostics go to the Extension Host console, the idiomatic channel.
-  const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };
+  const panelLog = {
+    warn: (message: string): void => console.warn(`[insrc] ${message}`),
+    error: (message: string): void => console.error(`[insrc] ${message}`),
+  };
   const daemonData = createDaemonDataGateway({
     rpc: (method, params) => client.rpc(method, params),
     artifactsRoot: () => {
@@ -643,7 +646,7 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true }),
     rpc: client.rpc,
     repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
-    logger: { warn: panelLog.warn, error: (message: string): void => console.error(`[insrc] ${message}`) },
+    logger: panelLog,
   });
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over

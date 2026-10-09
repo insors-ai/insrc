@@ -136,6 +136,21 @@ test('when the earlier refresh answers after the later one, only the later snaps
   const status = payloads(ch).filter(p => p.type === 'status').at(-1);
   assert.equal(status?.type === 'status' ? status.status.state : null, 'failed', 'not stuck on loading');
   assert.match(status?.type === 'status' ? status.status.message ?? '' : '', /socket exploded/);
+
+  // A snapshot the client accepts but that cannot be rendered never becomes the board's last snapshot.
+  calls.length = 0;
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  const bad = snapshot(['x'], '2026-10-09T11:00:05.000Z');
+  Object.defineProperty(bad.items[0], 'stage', { get() { throw new Error('unrenderable item'); } });
+  calls[0]!.resolve({ ok: true, value: bad });
+  await flush();
+  const after = payloads(ch).filter(p => p.type === 'status').at(-1);
+  assert.equal(after?.type === 'status' ? after.status.state : null, 'failed');
+  assert.deepEqual(lastItems(ch), ['new'], 'the previous good board is still the one shown');
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  calls[1]!.resolve({ ok: true, value: snapshot(['fresh'], '2026-10-09T11:00:06.000Z') });
+  await flush();
+  assert.deepEqual(lastItems(ch), ['fresh'], 'and the next refresh recovers');
 });
 
 test('an answer or timeout that arrives after the panel is closed is neither posted nor logged', async () => {

@@ -82,6 +82,10 @@ test('empty, unavailable, failed and partial snapshots each give their own statu
   const entries = boardDownMessages(partial, DISPLAY_LABELS).map(e => e.payload).find(p => p.type === 'items');
   assert.deepEqual(entries?.type === 'items' ? entries.items.map(i => i.stageLabel) : null, [DISPLAY_LABELS.stage.scoped, null]);
 
+  const unknownStage = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('n', 'N', 'from-a-newer-daemon')]))]);
+  const unknownEntries = boardDownMessages(unknownStage, DISPLAY_LABELS).map(e => e.payload).find(p => p.type === 'items');
+  assert.deepEqual(unknownEntries?.type === 'items' ? unknownEntries.items.map(i => i.stageLabel) : null, ['from-a-newer-daemon'], 'an unlabelled stage shows its id');
+
   const unreadableOnly = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([], { unreadableCount: 1 }))]);
   assert.equal(statusOf(unreadableOnly).state, 'ready', 'not empty: a record failed to load');
   assert.match(statusOf(unreadableOnly).partialNotice ?? '', /1 record could not be read/);

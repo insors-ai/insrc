@@ -111,7 +111,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   }
 
   function elapsedMs(since: string): number {
-    return Math.max(0, Date.parse(deps.now()) - Date.parse(since));
+    const ms = Date.parse(deps.now()) - Date.parse(since);
+    return Number.isFinite(ms) ? Math.max(0, ms) : 0;
   }
 
   async function refresh(): Promise<void> {

@@ -159,7 +159,8 @@ export function boardDownMessages(state: BoardState, labels: DisplayLabels): rea
       itemId: i.id,
       kind: i.kind,
       title: i.title,
-      stageLabel: i.stage === null ? null : labels.stage[i.stage.stage],
+      // A stage this build has no label for (a newer daemon) shows its raw id rather than nothing.
+      stageLabel: i.stage === null ? null : labels.stage[i.stage.stage] ?? String(i.stage.stage),
     }));
     out.push({ v: 1, payload: { type: 'items', items } });
   }

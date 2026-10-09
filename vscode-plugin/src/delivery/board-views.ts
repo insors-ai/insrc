@@ -10,11 +10,11 @@
  * board. Pure and vscode-free.
  */
 
-import { isPlaceable, placeableCount, selectMatches, type MatchedCard } from './board-model.js';
-import type { CardView, EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
+import { groupByStage, indexItems, isPlaceable, placeableCount, selectMatches, type MatchedCard } from './board-model.js';
+import type { EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
-import { STAGE_ORDER, type DisplayLabels } from './labels.js';
+import type { DisplayLabels } from './labels.js';
 
 export const NOT_IN_EPIC_TITLE = 'Not in an epic';
 
@@ -30,9 +30,8 @@ function groupOf(epicItemId: string | null, title: string, matches: readonly Mat
   const stories = matches.filter(m => m.item.kind === 'story');
   const storiesComplete = stories.filter(m => m.stage === 'complete').length;
   const stages: StageGroupView[] = [];
-  for (const stage of STAGE_ORDER) {
-    const cards: CardView[] = matches.filter(m => m.stage === stage).map(m => m.card);
-    if (cards.length > 0) stages.push({ stage, label: labels.stage[stage], cards });
+  for (const [stage, inStage] of groupByStage(matches)) {
+    if (inStage.length > 0) stages.push({ stage, label: labels.stage[stage], cards: inStage.map(m => m.card) });
   }
   return {
     epicItemId,
@@ -108,10 +107,10 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
  * or not the fix story itself matches the search.
  */
 export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): IssueViewModel {
-  const byId = new Map(snapshot.items.map(i => [i.id, i]));
+  const byId = indexItems(snapshot);
   const issues: IssueEntryView[] = [];
   let needsAttention = 0;
-  for (const m of selectMatches(snapshot, selection, labels)) {
+  for (const m of selectMatches(snapshot, selection, labels, byId)) {
     if (m.item.kind !== 'issue') continue;
     const ref = m.item.correctsRef;
     const parentItem = ref === null || ref.resolvedItemId === null ? undefined : byId.get(ref.resolvedItemId);

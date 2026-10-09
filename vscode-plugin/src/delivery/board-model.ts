@@ -49,7 +49,12 @@ export function unknownStages(snapshot: DeliverySnapshot): ReadonlyMap<string, n
   return new Map([...counts].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
-type ItemIndex = ReadonlyMap<string, DeliveryItemView>;
+export type ItemIndex = ReadonlyMap<string, DeliveryItemView>;
+
+/** The snapshot's items by id. */
+export function indexItems(snapshot: DeliverySnapshot): ItemIndex {
+  return new Map(snapshot.items.map(i => [i.id, i]));
+}
 
 /**
  * The epic an item belongs to: its parent when that is an epic; for an issue,
@@ -200,8 +205,7 @@ export function placeableCount(snapshot: DeliverySnapshot): number {
  * and the issue view all build from this one step, so they count the same
  * matches (E2 s3).
  */
-export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): readonly MatchedCard[] {
-  const byId: ItemIndex = new Map(snapshot.items.map(i => [i.id, i]));
+export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels, byId: ItemIndex = indexItems(snapshot)): readonly MatchedCard[] {
   const needle = selection.search.trim().toLowerCase();
   const out: MatchedCard[] = [];
   for (const item of snapshot.items) {
@@ -214,15 +218,19 @@ export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelect
   return out;
 }
 
+/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns and the rollup's stage groups both use it. */
+export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<DeliveryStage, readonly MatchedCard[]> {
+  const out = new Map<DeliveryStage, MatchedCard[]>(STAGE_ORDER.map(s => [s, []]));
+  for (const m of matches) out.get(m.stage)?.push(m);
+  return out;
+}
+
 export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
-  const matches = new Map<DeliveryStage, CardView[]>(STAGE_ORDER.map(s => [s, []]));
-  let needsAttention = 0;
-  for (const m of selectMatches(snapshot, selection, labels)) {
-    matches.get(m.stage)?.push(m.card);
-    if (m.item.needsAttention) needsAttention++;
-  }
+  const matches = selectMatches(snapshot, selection, labels);
+  const byStage = groupByStage(matches);
+  const needsAttention = matches.filter(m => m.item.needsAttention).length;
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {
-    const all = matches.get(stage) ?? [];
+    const all = (byStage.get(stage) ?? []).map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
     return { stage, label: labels.stage[stage], total: all.length, cards: shown, hiddenCount: all.length - shown.length };
   });

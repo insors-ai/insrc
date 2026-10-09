@@ -49,11 +49,7 @@ import {
 	ShaperToolLoopExhausted,
 	toolLoopExhaustedData,
 } from '../context/driver.js';
-import {
-	ScopeKindTargetMismatchError,
-	ScopeNotIndexedError,
-	ScopeRefUnresolvedError,
-} from '../context/invariants.js';
+import { scopeErrorMapping } from '../context/invariants.js';
 import type { ShaperTraceEvent } from '../context/types.js';
 import {
 	getTemplatesForTarget,
@@ -603,13 +599,9 @@ function classifyClassifierError(err: unknown): RunFailure {
 }
 
 function classifyShaperError(err: unknown): RunFailure {
-	if (err instanceof ScopeNotIndexedError) {
-		return {
-			code: 'scope-not-indexed',
-			message: err.message,
-			data: { scopePath: err.scopePath, registeredAs: err.registeredAs },
-		};
-	}
+	// The three scope errors: one mapping, shared with the daemon and the plan walk.
+	const scoped = scopeErrorMapping(err);
+	if (scoped !== undefined) return scoped;
 	if (err instanceof ShaperLlmUnavailableError) return wrap('shaper-llm-unavailable', err);
 	if (err instanceof ShaperToolLoopExhausted) {
 		// What the tools returned before the limit is not lost with the failure:
@@ -625,8 +617,6 @@ function classifyShaperError(err: unknown): RunFailure {
 	}
 	if (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);
 	if (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);
-	if (err instanceof ScopeRefUnresolvedError) return wrap('scope-ref-unresolved', err);
-	if (err instanceof ScopeKindTargetMismatchError) return wrap('scope-ref-kind-target-mismatch', err);
 	// The lookups ran and the answer could not be written: the failure
 	// carries what they found, and the report says the answer step failed.
 	if (err instanceof ShaperAnswerStepFailedError) {

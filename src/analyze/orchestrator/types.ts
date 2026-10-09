@@ -21,6 +21,7 @@ import type {
 	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
 import type { AnswerReport } from '../completeness.js';
+import type { FailedTask } from '../executor/types.js';
 
 // ---------------------------------------------------------------------------
 // Stage identifiers
@@ -230,7 +231,7 @@ export interface RunAnalyzeOk {
 	readonly intent: ClassifiedIntent;
 	readonly finalReport: unknown;
 	readonly tasksCompleted: number;
-	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string }>;
+	readonly tasksFailed: ReadonlyArray<FailedTask>;
 	readonly durationMs: number;
 	/**
 	 * The answer report, derived by code from the run context's report and
@@ -322,7 +323,7 @@ export interface RunRecord {
 	/** Filled in when status='failed'. */
 	readonly error?: RunFailure | undefined;
 	readonly tasksCompleted?: number | undefined;
-	readonly tasksFailed?: ReadonlyArray<{ taskId: string; reason: string }> | undefined;
+	readonly tasksFailed?: ReadonlyArray<FailedTask> | undefined;
 	/** The run's answer report. Absent on a record stored before the report existed. */
 	readonly report?: AnswerReport | undefined;
 }

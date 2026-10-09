@@ -38,6 +38,7 @@
  */
 
 import { isCompletenessRecord } from '../completeness.js';
+import { scopeErrorMapping, type ScopeErrorCode } from '../context/invariants.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
@@ -47,6 +48,7 @@ import {
 	ExecutorRuntimeMissingError,
 	type ClassifiedIntent,
 	type ExecutorResult,
+	type FailedTask,
 	type PlanExecutionResult,
 	type PlannedTask,
 	type PlanTreeNode,
@@ -101,7 +103,7 @@ async function executePlan(
 	const outputs     = new Map<string, unknown>();
 	const failed      = new Set<string>();
 	const perTask     = new Map<string, TaskExecutionRecord>();
-	const tasksFailed: { taskId: string; reason: string }[] = [];
+	const tasksFailed: FailedTask[] = [];
 	const children    = new Map<string, ExecutorResult>();
 	let   tasksCompleted = 0;
 	let   finalReport: unknown = undefined;
@@ -188,7 +190,7 @@ async function executePlan(
 			}
 		} else {
 			failed.add(task.taskId);
-			tasksFailed.push({ taskId: task.taskId, reason: result.error ?? 'unknown' });
+			tasksFailed.push({ taskId: task.taskId, reason: result.error ?? 'unknown', ...(result.code !== undefined ? { code: result.code } : {}) });
 		}
 
 		emit(opts, {
@@ -232,6 +234,13 @@ async function executeLeafTask(
 		result = await runtime.execute({ task, intent, upstreamOutputs, runId });
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
+		// A refused scope is a failure the caller can act on: it keeps the scope
+		// error's code and its own message, with no 'runtime-threw:' in front.
+		const scoped = scopeErrorMapping(err);
+		if (scoped !== undefined) {
+			log.warn({ runId, taskId: task.taskId, code: scoped.code, err: msg }, 'leaf task refused its scope');
+			return failedRecord(task, scoped.message, scoped.code);
+		}
 		log.warn({ runId, taskId: task.taskId, err: msg }, 'leaf task runtime threw');
 		return failedRecord(task, `runtime-threw: ${msg}`);
 	}
@@ -384,7 +393,7 @@ function checkOutputShape(
 	return new ExecutorOutputShapeError(task.template, task.taskId, missing, extra);
 }
 
-function failedRecord(task: PlannedTask, error: string): TaskExecutionRecord {
+function failedRecord(task: PlannedTask, error: string, code?: ScopeErrorCode): TaskExecutionRecord {
 	return {
 		taskId:      task.taskId,
 		template:    task.template,
@@ -392,6 +401,7 @@ function failedRecord(task: PlannedTask, error: string): TaskExecutionRecord {
 		produces:    [...task.produces],
 		status:      'failed',
 		error,
+		...(code !== undefined ? { code } : {}),
 		completedAt: nowIso(),
 	};
 }

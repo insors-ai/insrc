@@ -84,6 +84,33 @@ export class ScopeNotIndexedError extends Error {
 	}
 }
 
+/** The code of each of the three scope errors, as a request's failure states it. */
+export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch';
+
+/** A scope error as a coded failure. `scope-not-indexed` carries the path that
+ *  was looked for and the repo it was found registered as, if any. */
+export type ScopeErrorMapping =
+	| { readonly code: 'scope-not-indexed'; readonly message: string; readonly data: { readonly scopePath: string; readonly registeredAs: string | undefined } }
+	| { readonly code: 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch'; readonly message: string };
+
+/**
+ * The ONE mapping from the three scope error classes to their codes. Returns
+ * `undefined` for any other error.
+ *
+ * It lives beside the classes so that everything that turns one of them into a
+ * coded failure can call it without importing each other: the plan tree's
+ * mapping (orchestrator/driver.ts), the daemon's (daemon/analyze-rpc.ts), and
+ * the plan walk, which the run driver itself imports.
+ */
+export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {
+	if (err instanceof ScopeNotIndexedError) {
+		return { code: 'scope-not-indexed', message: err.message, data: { scopePath: err.scopePath, registeredAs: err.registeredAs } };
+	}
+	if (err instanceof ScopeRefUnresolvedError) return { code: 'scope-ref-unresolved', message: err.message };
+	if (err instanceof ScopeKindTargetMismatchError) return { code: 'scope-ref-kind-target-mismatch', message: err.message };
+	return undefined;
+}
+
 /**
  * Ensure the scope has a non-empty graph closure -- i.e. there is
  * at least one indexed entity for the repo containing the scope's

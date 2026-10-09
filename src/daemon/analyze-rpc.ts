@@ -74,11 +74,7 @@ import {
 	ShaperToolLoopExhausted,
 	toolLoopExhaustedData,
 } from '../analyze/context/driver.js';
-import {
-	ScopeKindTargetMismatchError,
-	ScopeNotIndexedError,
-	ScopeRefUnresolvedError,
-} from '../analyze/context/invariants.js';
+import { scopeErrorMapping } from '../analyze/context/invariants.js';
 import {
 	MaxPlanDepthExceededError,
 	PlanBuilderExhausted,
@@ -209,7 +205,8 @@ export interface RunStartRpcOk {
 	readonly intent: ClassifiedIntent;
 	readonly finalReport: unknown;
 	readonly tasksCompleted: number;
-	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string }>;
+	/** `code` is present when the task failed on a refused scope (one of the three scope codes). */
+	readonly tasksFailed: ReadonlyArray<{ taskId: string; reason: string; code?: string | undefined }>;
 	readonly durationMs: number;
 	/** The run's answer report. Absent only for a run resumed from a record stored before the report existed. */
 	readonly report?: AnswerReport | undefined;
@@ -897,16 +894,9 @@ async function invoke(
  * preserves the original error's message.
  */
 function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
-	if (err instanceof ScopeNotIndexedError) {
-		return {
-			code: 'scope-not-indexed',
-			message: err.message,
-			data: {
-				scopePath: err.scopePath,
-				registeredAs: err.registeredAs,
-			},
-		};
-	}
+	// The three scope errors: one mapping, shared with the plan tree and the plan walk.
+	const scoped = scopeErrorMapping(err);
+	if (scoped !== undefined) return scoped;
 	if (err instanceof ShaperLlmUnavailableError) {
 		return { code: 'shaper-llm-unavailable', message: err.message };
 	}
@@ -929,12 +919,6 @@ function classifyShaperError(err: unknown): AnalyzeRpcErrorPayload {
 	}
 	if (err instanceof ShaperNoPlanError) {
 		return { code: 'no-plan-for-request', message: err.message };
-	}
-	if (err instanceof ScopeRefUnresolvedError) {
-		return { code: 'scope-ref-unresolved', message: err.message };
-	}
-	if (err instanceof ScopeKindTargetMismatchError) {
-		return { code: 'scope-ref-kind-target-mismatch', message: err.message };
 	}
 	// The lookups ran and the answer could not be written: the failure
 	// carries what they found, and the report says the answer step failed.

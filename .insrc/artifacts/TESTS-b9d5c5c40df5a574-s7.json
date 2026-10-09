@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-08T18:44:10.632Z"
+    "updatedAt": "2026-10-09T05:22:18.063Z"
   },
   "body": {
     "tasks": [
@@ -218,6 +218,110 @@
               },
               {
                 "title": "the real start phase builds a workspace scope, for every kind of source, and its prompt names that directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4093c5fa",
+        "ranAt": "2026-10-09T05:22:18.063Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a kind added to a row of a stand-in table is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a kind added to a row of a stand-in table is accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a module, a file, a symbol and a connection scope resolve to the registered repo and the area",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a module, a file, a symbol and a connection scope resolve to the registered repo and the area",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a scope in no registered repo is not indexed for code and docs and resolves for infra and data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a scope in no registered repo is not indexed for code and docs and resolves for infra and data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 717,
+            "titles": [
+              {
+                "title": "a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)",
+                "result": "pass"
+              },
+              {
+                "title": "a kind added to a row of a stand-in table is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "a module, a file, a symbol and a connection scope resolve to the registered repo and the area",
+                "result": "pass"
+              },
+              {
+                "title": "a scope in no registered repo is not indexed for code and docs and resolves for infra and data",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)",
                 "result": "pass"
               }
             ],

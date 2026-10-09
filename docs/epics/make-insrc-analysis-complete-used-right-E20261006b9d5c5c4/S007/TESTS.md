@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -39,3 +39,43 @@ Run at 2026-10-08T18:44:10.632Z on commit `be6abc9c`. Tests check: **passed**. 1
 | `src/analyze/context/__tests__/invariants.test.ts` | 0 | 15 | 1.6 s |  |
 | `src/analyze/context/__tests__/prepare-scope.test.ts` | 0 | 8 | 0.8 s |  |
 | `src/mcp/__tests__/analyze-step-scope.test.ts` | 0 | 3 | 0.7 s |  |
+
+## t2
+
+Run at 2026-10-09T05:22:18.063Z on commit `4093c5fa`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row) | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` |
+
+**unit: a kind added to a row of a stand-in table is accepted**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a kind added to a row of a stand-in table is accepted | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` |
+
+**unit: a module, a file, a symbol and a connection scope resolve to the registered repo and the area**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a module, a file, a symbol and a connection scope resolve to the registered repo and the area | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` |
+
+**unit: a scope in no registered repo is not indexed for code and docs and resolves for infra and data**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a scope in no registered repo is not indexed for code and docs and resolves for infra and data | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` |
+
+**unit: an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed) | `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/shared/__tests__/task-scope.test.ts` | 0 | 5 | 0.7 s |  |

@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "createdAt": "2026-10-09T16:54:22.468Z",
+    "updatedAt": "2026-10-09T17:38:28.840Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "approvedAt": "2026-10-09T17:38:29.931Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "summary": "The perf fixture's stories now carry planned tasks and recorded results; the perf test passes at the exact targets. The full plugin suite was run at HEAD 87eee377 (`npx tsx --test --test-reporter=tap 'src/**/__tests__/*.test.ts'` in vscode-plugin), output in /tmp/insrc-validate-output/vscode-plugin-full-suite-t9.tap: 935 tests, 930 pass, 4 skipped, 1 fail — the known manifest-catalog test (not ok 609 'each declared key's type/enum/default matches its ConfigOption, and scope is machine'). npm run package produced insrc-vscode-0.5.12.vsix.",
+    "testRecord": {
+      "md": "docs/standalone/defect-against-epic-e2-6a131558-vs-E20261009b2687832/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-details.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-model.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-state.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-views.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/labels.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-details.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-views.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/labels.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T17:38:28.840Z"
+      }
+    ],
+    "commit": "19d9449e"
+  }
+}

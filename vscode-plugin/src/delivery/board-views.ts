@@ -10,7 +10,7 @@
  * board. Pure and vscode-free.
  */
 
-import { groupByStage, indexItems, isPlaceable, placeableCount, selectMatches, type MatchedCard } from './board-model.js';
+import { groupByStage, indexItems, isPlaceable, placeableCount, selectMatches, titleOf, type MatchedCard } from './board-model.js';
 import type { EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
@@ -77,7 +77,7 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSele
     if (e.kind !== 'epic') continue;
     const own = byEpic.get(e.id) ?? [];
     if (own.length === 0 && !listAll && e.id !== scopedEpic) continue;
-    epics.push(groupOf(e.id, e.title ?? e.id, own, labels));
+    epics.push(groupOf(e.id, titleOf(e), own, labels));
   }
   return {
     epics,
@@ -94,7 +94,7 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
   return {
     itemId: item.id,
     kind: item.kind,
-    title: item.title ?? item.id,
+    title: titleOf(item),
     stageLabel: stage === undefined ? null : Object.hasOwn(labels.stage, stage) ? labels.stage[stage] : String(stage),
   };
 }

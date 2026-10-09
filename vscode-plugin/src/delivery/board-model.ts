@@ -72,7 +72,8 @@ export function epicOf(item: DeliveryItemView, byId: ItemIndex): DeliveryItemVie
   return targetParent?.kind === 'epic' ? targetParent : null;
 }
 
-const titleOf = (item: DeliveryItemView): string => item.title ?? item.id;
+/** An item's title, or its id when it has none; every view shows titles through this. */
+export const titleOf = (item: DeliveryItemView): string => item.title ?? item.id;
 
 function inScope(item: DeliveryItemView, epic: DeliveryItemView | null, selection: BoardSelection): boolean {
   switch (selection.scope.kind) {

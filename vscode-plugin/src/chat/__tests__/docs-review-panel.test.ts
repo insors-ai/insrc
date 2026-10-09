@@ -2679,9 +2679,9 @@ test('t4: a self-reference and a 3-cycle both terminate and draw — layout iter
   assert.ok(lines.length >= 3, 'the self-reference is drawn as a multi-segment loop');
 });
 
-/** A drawn diagram as one line per element — namespace, tag, attributes, text — for the determinism checks. */
+/** A drawn diagram as one line per element — namespace, tag, class, attributes, text — for the checks that it renders identically. */
 const dgShape = (el: BodyStub): string =>
-  allOf(el).map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+  allOf(el).map((n) => `${n.ns ?? '-'}|${n.tag}|${n.className}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
 
 test('t4: determinism — the same record renders an identical element tree every time', () => {
   const rec = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
@@ -5303,16 +5303,13 @@ test('t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to w
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     erDefinition: DG_ER, companions: [DG_REF],
   };
-  const shapeOf = (n: BodyStub): string =>
-    JSON.stringify(allOf(n).map((x) => [x.tagName, x.className, x.textContent]));
-
   const diagramOnly = runWebview();
   diagramOnly.deliver(base);
 
   const withExperience = runWebview();
   withExperience.deliver({ ...base, uxDefinition: UX_CARD_T6, companions: [DG_REF, UX_REF_T6] });
 
-  assert.equal(shapeOf(withExperience.diagram), shapeOf(diagramOnly.diagram),
+  assert.equal(dgShape(withExperience.diagram), dgShape(diagramOnly.diagram),
     'the diagram host renders identically whether or not a mock is present');
   assert.equal(uxSlotsIn(withExperience).length, 1, 'while the experience slot did appear');
 });

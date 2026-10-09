@@ -68,7 +68,9 @@ export function writeRunRecord(record: RunRecord): string {
  *   { ok: true, purged: false }               -- nothing on disk to purge
  *                                                (run.json + dir both missing)
  *   { ok: false, code: 'run-in-progress' }    -- record shows status='in-progress'
- *                                                and force was not set
+ *                                                and force was not set, and the
+ *                                                run is live or its liveness is
+ *                                                not known (no `isLive` given)
  *
  * Filesystem errors propagate -- the orchestrator RPC turns them into
  * 'internal-error' at the wire.
@@ -84,15 +86,59 @@ export interface PurgeRunRefused {
 	readonly stage: import('./types.js').RunStage;
 }
 
+/** What an abandoned record's error says. */
+export const RUN_ABANDONED_MESSAGE =
+	"The run record was left 'in-progress' and no live run stands behind it: the run stopped without recording how it ended.";
+
+/**
+ * The abandoned rule. A record that is 'in-progress' means a run is live;
+ * one with no live run behind it is abandoned. This rewrites such a record as
+ * failed at the stage it had reached, with 'run-abandoned', and returns the
+ * rewritten record.
+ *
+ * The caller has established that the record is 'in-progress' and that its
+ * run is not live. Liveness is known only in the process that started the
+ * run, so it is never decided here.
+ *
+ * The write is best effort: when it fails (a full disk may be why the run
+ * died) the failure is logged and the abandoned record is returned all the
+ * same, so the reader still says what is true.
+ */
+export function abandonRunRecord(record: RunRecord): RunRecord {
+	const abandoned: RunRecord = {
+		...record,
+		status:    'failed',
+		error:     { code: 'run-abandoned', message: RUN_ABANDONED_MESSAGE },
+		updatedAt: new Date().toISOString(),
+	};
+	try {
+		writeRunRecord(abandoned);
+		log.info({ runId: record.runId, stage: record.stage }, 'run record rewritten as abandoned: in-progress with no live run');
+	} catch (err) {
+		log.warn({ runId: record.runId, err: (err as Error).message }, 'the abandoned run record could not be written; it is reported as abandoned all the same');
+	}
+	return abandoned;
+}
+
 export function purgeRun(
 	runId: string,
-	opts:  { readonly force?: boolean } = {},
+	opts:  {
+		readonly force?: boolean;
+		/** Says whether a run is live. Only a caller in the process that starts
+		 *  the runs can know; one that cannot passes nothing, and an
+		 *  'in-progress' record is then refused. */
+		readonly isLive?: ((runId: string) => boolean) | undefined;
+	} = {},
 ): PurgeRunResult | PurgeRunRefused {
 	const dir = dirname(runRecordPathFor(runId));
 
 	if (opts.force !== true) {
 		const record = readRunRecord(runId);
-		if (record !== null && record.status === 'in-progress') {
+		if (record !== null && record.status === 'in-progress' && opts.isLive !== undefined && !opts.isLive(runId)) {
+			// No live run stands behind the record: it is abandoned, and is
+			// purged without force. The rewrite is best effort; the purge follows.
+			abandonRunRecord(record);
+		} else if (record !== null && record.status === 'in-progress') {
 			log.info(
 				{ runId, stage: record.stage },
 				'purgeRun refused: run is in-progress (use force=true to override)',

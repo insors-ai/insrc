@@ -24,6 +24,8 @@ export {
 	runRecordPathFor,
 	writeRunRecord,
 	purgeRun,
+	abandonRunRecord,
+	RUN_ABANDONED_MESSAGE,
 	purgeRunForTests,
 	type PurgeRunResult,
 	type PurgeRunRefused,

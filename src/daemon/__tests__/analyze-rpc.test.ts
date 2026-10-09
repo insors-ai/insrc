@@ -39,6 +39,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { writeRunRecord, purgeRunForTests } from '../../analyze/orchestrator/index.js';
+import { lowerRunLive, raiseRunLive } from '../../analyze/orchestrator/live-runs.js';
 
 // ---------------------------------------------------------------------------
 // Params validation -- invalid-params responses for malformed input
@@ -709,7 +710,7 @@ test('runPurge removes a persisted finished run; subsequent purge returns purged
 	assert.equal(second.purged, false);
 });
 
-test('runPurge refuses on status=in-progress without force; force=true overrides', async () => {
+test('runPurge refuses on status=in-progress for a live run without force; force=true overrides', async () => {
 	const runId = `rpc-purge-inprog-${Math.floor(Math.random() * 1e9).toString(16)}`;
 	try {
 		writeRunRecord({
@@ -722,6 +723,9 @@ test('runPurge refuses on status=in-progress without force; force=true overrides
 			status:          'in-progress',
 		});
 
+		// The record's run is going in this process: a record with no live run
+		// is abandoned and purged without force (see analyze-run-abandoned.test.ts).
+		raiseRunLive(runId);
 		const refused = await runPurge({ runId });
 		assert.equal(refused.ok, false);
 		if (refused.ok) return;
@@ -734,6 +738,7 @@ test('runPurge refuses on status=in-progress without force; force=true overrides
 		if (!forced.ok) return;
 		assert.equal(forced.purged, true);
 	} finally {
+		lowerRunLive(runId);
 		purgeRunForTests(runId);
 	}
 });

@@ -44,9 +44,12 @@
 
 import {
 	classify as runClassifier,
+	abandonRunRecord,
+	isRunLive,
 	purgeRun,
 	readRunRecord,
 	runAnalyze,
+	writeRunRecord,
 	shaperFor,
 } from '../analyze/index.js';
 import type {
@@ -535,21 +538,38 @@ export async function runStart(
 
 	let result: RunAnalyzeResult;
 	try {
-		result = await runAnalyze(args, { onEvent, signal });
+		result = await runAnalyzeImpl(args, { onEvent, signal });
 	} catch (err) {
-		// runAnalyze captures every typed error as a failure result.
-		// An uncaught throw here means a bug or an OS-level failure;
-		// surface as a structured analyze.result frame so the IDE
-		// dispatch path stays uniform.
+		// runAnalyze captures every typed error as a failure result, and
+		// records an error nothing inside it catches. A throw that still
+		// escapes means a bug or an OS-level failure; surface it as a
+		// structured analyze.result frame so the IDE dispatch path stays
+		// uniform.
 		const message = err instanceof Error ? err.message : String(err);
 		log.error({ runId: parsed.runId, message }, 'analyze.run.start: uncaught orchestrator error');
+		// The run is over. If its record still says 'in-progress', write it as
+		// failed, and report the stage the record had reached. Reading and
+		// writing are guarded: whatever happens here, both frames are sent, so
+		// the client never waits on a handler that failed while reporting a failure.
+		let stage: RunStartRpcErr['stage'] = 'classify';
+		try {
+			const left = readRunRecord(parsed.runId);
+			if (left !== null) {
+				stage = left.stage;
+				if (left.status === 'in-progress') {
+					writeRunRecord({ ...left, status: 'failed', error: { code: 'internal-error', message }, updatedAt: new Date().toISOString() });
+				}
+			}
+		} catch (writeErr) {
+			log.error({ runId: parsed.runId, err: (writeErr as Error).message }, 'analyze.run.start: the failed run record could not be written');
+		}
 		send({
 			id: 0,
 			stream: 'analyze.result',
 			data: {
 				ok: false,
 				runId: parsed.runId,
-				stage: 'classify',
+				stage,
 				durationMs: Date.now() - start,
 				error: { code: 'internal-error', message },
 			} satisfies RunStartRpcResponse,
@@ -771,6 +791,13 @@ export async function runStatus(params: unknown): Promise<RunStatusRpcResponse> 
 			},
 		};
 	}
+	// A record 'in-progress' means a run is live. This process holds the count
+	// of live runs: with none under this id, the record is abandoned. It is
+	// rewritten as failed with 'run-abandoned' (best effort) and returned so.
+	// A record that is 'ok' or 'failed' is returned as it was read.
+	if (record.status === 'in-progress' && !isRunLive(parsed.runId)) {
+		record = abandonRunRecord(record);
+	}
 	return { ok: true, record };
 }
 
@@ -795,7 +822,9 @@ export async function runPurge(params: unknown): Promise<RunPurgeRpcResponse> {
 
 	let result;
 	try {
-		result = purgeRun(parsed.runId, parsed.force !== undefined ? { force: parsed.force } : {});
+		// This process starts the runs, so it can say which are live: a record
+		// left 'in-progress' with no live run is abandoned and purged without force.
+		result = purgeRun(parsed.runId, { isLive: isRunLive, ...(parsed.force !== undefined ? { force: parsed.force } : {}) });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		log.warn({ runId: parsed.runId, message }, 'analyze.run.purge: filesystem error');
@@ -952,6 +981,13 @@ export const _classifyPlannerErrorForTest = classifyPlannerError;
 
 /** Test hook: the run's result as the daemon's terminal response. */
 export const _shapeTerminalFrameForTest = shapeTerminalFrame;
+
+/** The run function the daemon's run handler calls. */
+let runAnalyzeImpl: typeof runAnalyze = runAnalyze;
+/** Test seam: a stand-in for runAnalyze in the run handler. Pass undefined to go back to the real one. */
+export function _setRunAnalyzeForTest(impl: typeof runAnalyze | undefined): void {
+	runAnalyzeImpl = impl ?? runAnalyze;
+}
 
 /** Test hook: the wrapper that turns a context handler's error into its response. */
 export const _invokeForTest = invoke;

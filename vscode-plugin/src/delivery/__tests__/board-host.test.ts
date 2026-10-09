@@ -229,7 +229,12 @@ test('the board document inserts text only through textContent and posts only bo
   const hostile = '<img src=x onerror=alert(1)>';
   deliver({ v: 1, payload: { type: 'status', status: { state: 'failed', takenAt: '2026-10-09T11:00:00.000Z', message: hostile, partialNotice: hostile, stale: true } } });
   assert.match(el['status']!.textContent, /<img src=x onerror=alert\(1\)>.*\(stale\)/);
-  assert.equal(el['notice']!.textContent, hostile);
+  const panelOf = { kind: 'refresh-failed', title: hostile, text: hostile, action: 'retry', stale: true, affected: [{ artifactIds: [hostile], text: hostile }] };
+  deliver({ v: 1, payload: { type: 'status', status: { state: 'failed', takenAt: null, message: hostile, partialNotice: null, stale: true, freshnessLabel: null, panel: panelOf } } });
+  const shown = texts(el['panel']!);
+  assert.ok(shown.filter(t => t.includes(hostile)).length >= 3, 'the panel title, text and affected record are literal text');
+  assert.equal(findAll(el['panel']!, e => e.tag === 'img').length, 0, 'markup never becomes elements');
+  assert.equal(el['notice'], undefined, 'the old notice line is gone');
 });
 
 test('the board view renders titles and notices containing markup and script as literal text', async () => {
@@ -257,7 +262,7 @@ test('the board view renders titles and notices containing markup and script as 
   assert.deepEqual(findAll(s1, x => x.attrs['class'] === 'badge').map(b => b.attrs['data-tone']), ['danger', 'warning']);
   assert.deepEqual(texts(cards[0]!), ['ISSUE · I1', 'Plain issue', 'Standalone']);
   assert.equal(el['totals']!.textContent, '2 items, 0 needing attention');
-  assert.equal(el['empty']!.textContent, '');
+  assert.deepEqual(texts(el['panel']!), [], 'no panel when the selection matches');
 });
 
 test('the board controls post only board up-messages, the scope control lists every epic, and an empty selection says nothing matches', async () => {
@@ -269,21 +274,20 @@ test('the board controls post only board up-messages, the scope control lists ev
   const { posted, deliver, el } = runScript();
   deliver({ v: 1, payload: { type: 'board', model } });
 
-  const scope = el['scope']!;
-  assert.deepEqual(scope.children.map(o => [o.value, o.textContent]), [['all', 'All work'], ['standalone', 'Standalone'], ['epic:EA', 'Alpha'], ['epic:EB', 'EB']]);
-  assert.equal(scope.value, 'all');
+  const chips = () => el['scope-chips']!.children;
+  const chip = (v: string) => chips().find(c => c.attrs['data-scope'] === v)!;
+  assert.deepEqual(chips().map(c => [c.attrs['data-scope'], c.textContent]), [['all', 'All work'], ['standalone', 'Standalone'], ['epic:EA', 'Alpha'], ['epic:EB', 'EB']]);
+  assert.equal(chip('all').attrs['aria-pressed'], 'true');
+  assert.equal(el['scope'], undefined, 'the old scope <select> is gone');
+  assert.equal(el['attention'], undefined, 'the old attention checkbox is gone');
 
   const more = findAll(el['board']!, x => x.tag === 'button');
   assert.deepEqual(more.map(b => b.textContent), ['Show 5 more']);
   more[0]!.listeners['click']!();
   el['search']!.value = 'alpha';
   el['search']!.listeners['input']!();
-  el['attention']!.checked = true;
-  el['attention']!.listeners['change']!();
-  for (const v of ['epic:EA', 'standalone', 'all']) {
-    scope.value = v;
-    scope.listeners['change']!();
-  }
+  el['attention-chip']!.listeners['click']!();
+  for (const v of ['epic:EA', 'standalone', 'all']) chip(v).listeners['click']!();
   const sent = posted.slice(3);   // after the boot posts: set-density, ready and the harness's refresh
   for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
   assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
@@ -296,20 +300,20 @@ test('the board controls post only board up-messages, the scope control lists ev
   ]);
 
   // An empty selection keeps the controls as the reader set them and says nothing matches.
-  scope.value = 'epic:EB';
+  chip('epic:EB').listeners['click']!();
   const host = await openWith(fixtureSnapshot([item({ id: 'EB', kind: 'epic' }), item({ id: 'S1', standalone: true })]));
   host.ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'EB' } } });
   const none = lastBoard(host.ch);
   assert.equal(none?.emptySelection, true, 'the host reports that the epic scope matches nothing');
   deliver({ v: 1, payload: { type: 'board', model: none } });
-  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
-  assert.equal(scope.value, 'epic:EB', 'the scope control keeps its choice');
+  assert.deepEqual(texts(el['panel']!).slice(0, 2), ['Nothing matches this view', 'Work exists, but none matches the current search, scope and attention filter.']);
+  assert.equal(chip('epic:EB').attrs['aria-pressed'], 'true', 'the scope chip keeps its choice');
 
   // A refresh that removes the scoped epic keeps it selectable, with a note, so the reader can see and clear it.
   const gone = await boardModelFor(fixtureSnapshot([item({ id: 'S1', standalone: true })]));
   deliver({ v: 1, payload: { type: 'board', model: gone } });
-  assert.equal(scope.value, 'epic:EB');
-  assert.deepEqual(scope.children.map(o => [o.value, o.textContent]), [['all', 'All work'], ['standalone', 'Standalone'], ['epic:EB', 'Epic no longer on the board']]);
+  assert.deepEqual(chips().map(c => [c.attrs['data-scope'], c.textContent, c.attrs['aria-pressed']]),
+    [['all', 'All work', 'false'], ['standalone', 'Standalone', 'false'], ['epic:EB', 'Epic no longer on the board', 'true']]);
   assert.equal(el['search']!.value, 'alpha');
 });
 
@@ -521,17 +525,17 @@ test('the epic rollup and issue view render as text, and their tabs and links po
   // An empty selection in either view says nothing matches.
   host.ch.send({ v: 1, payload: { type: 'set-search', search: 'no such thing' } });
   deliver({ v: 1, payload: lastOf(host.ch, 'issues')! });
-  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  assert.equal(texts(el['panel']!)[0], 'Nothing matches this view');
   host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
   deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
-  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  assert.equal(texts(el['panel']!)[0], 'Nothing matches this view');
   assert.deepEqual(el['board']!.children.map(g => g.children[0]!.textContent), [], 'no epic matches the search');
 
   // An issue view over a board with no issues says so, rather than that nothing matches.
   const plain = await openWith(fixtureSnapshot([item({ id: 'S1' })]));
   plain.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
   deliver({ v: 1, payload: lastOf(plain.ch, 'issues')! });
-  assert.equal(el['empty']!.textContent, 'There are no issues on the board.');
+  assert.deepEqual(texts(el['panel']!), ['No issues on the board', 'There are no issues on the board.'], 'no Clear filters: nothing is filtered out');
 });
 
 test('a logger that throws never leaves the board loading or stops a refresh', async () => {
@@ -842,9 +846,10 @@ test('the details pane renders as text and its controls post only select-item, c
   assert.equal('hidden' in pane.attrs, false, 'the pane is shown');
   const shown = texts(pane);
   for (const t of [
-    `Details ${hostile}`, 'Stage: Build recorded', 'A build is recorded. (BUILD-x)',
-    'The build is approved while 1 task result failed (Types).',
-    '0 passed, 1 failed, 0 unrecorded, 0 unplanned', 'Types \u00b7 Failed', 'Depends on: t0', 'types compile',
+    `Details ${hostile}`, 'STORY \u00b7 S1', 'Build recorded', 'Why this stage?', 'A build is recorded.', 'From BUILD-x',
+    'Two records disagree', 'The build is approved while 1 task result failed (Types).',
+    '0 passed, 1 failed, 0 unrecorded, 0 unplanned', 'Types', 'Failed', 'Depends on t0', 'types compile',
+    'Artifact chain', 'LLD', 'PLAN', 'BUILD',
     'BUILD BUILD-x \u00b7 Approved', 'LLD LLD-x \u00b7 Approved', `Unplanned task: odd ${hostile}`,
     'Parent: Board epic', 'Child: Types', 'Sources: s1', 'Record BUILD-x',
   ]) assert.ok(shown.includes(t), `shows ${t}`);
@@ -1064,13 +1069,13 @@ test('every card is focusable and opens with Enter or Space, arrows move between
   assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S1' }]);
   b.relay();
   const details = b.w.el['details']!;
-  const heading = details.children.find(c => c.tag === 'h2')!;
+  const heading = findAll(details, c => c.tag === 'h2')[0]!;
   assert.equal(heading.attrs['tabindex'], '-1');
   assert.equal(focusState.active, heading, 'focus moves to the details heading');
   cardOf(board, 'S2').listeners['keydown']!(keyEvent(' '));
   assert.deepEqual(b.w.posted.map(m => (m as { payload: unknown }).payload), [{ type: 'select-item', itemId: 'S2' }]);
   b.relay();
-  assert.equal(focusState.active, details.children.find(c => c.tag === 'h2'), 'a newly opened item focuses its own heading');
+  assert.equal(focusState.active, findAll(details, c => c.tag === 'h2')[0], 'a newly opened item focuses its own heading');
 
   // Escape inside the details closes them, and focus returns to the card that opened them.
   const esc = keyEvent('Escape');
@@ -1330,7 +1335,7 @@ test('clicking a rollup row title posts set-scope for that epic (standalone for 
     { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } }, { type: 'set-view', view: 'board' },
     { type: 'set-scope', scope: { kind: 'standalone' } }, { type: 'set-view', view: 'board' },
   ]);
-  assert.equal(el['scope']!.value, 'standalone', 'the scope control follows');
+  assert.equal(el['scope-chips']!.children.find(c => c.attrs['data-scope'] === 'standalone')!.attrs['aria-pressed'], 'true', 'the scope chip follows');
 });
 
 test('scope and attention chips post set-scope / set-attention with aria-pressed; tabs are role=tab with aria-selected and arrow-key movement', async () => {
@@ -1367,4 +1372,121 @@ test('scope and attention chips post set-scope / set-attention with aria-pressed
   assert.equal(focusState.active, el['tab-board'], 'Right from the last tab wraps to the first');
   el['tab-board']!.listeners['keydown']!(keyEvent('ArrowLeft'));
   assert.equal(focusState.active, el['tab-issues'], 'Left from the first tab wraps to the last');
+});
+
+/** storySnapshot with a stage reason on S1 and, when asked, a validation conflict. */
+function reasonedStory(conflict = false): DeliverySnapshot {
+  const snap = storySnapshot();
+  return { ...snap, items: snap.items.map(i => (i.id === 'S1'
+    ? { ...i, stage: { ...i.stage!, reason: { text: 'A build is recorded.', artifactIds: ['BUILD-x'] } },
+        ...(conflict ? { conflict: { failedTaskItemIds: ['S1:T2'], storyLevelFailed: false } } : {}) }
+    : i)) };
+}
+
+/** Open S1's details through the real host and script, with its PLAN read answered. */
+async function openedDetails(conflict = false) {
+  const b = await liveBoard(reasonedStory(conflict));
+  cardOf(b.w.el['board']!, 'S1').listeners['click']!();
+  b.relay();
+  b.s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  b.pump();
+  return b;
+}
+
+test('opening a card shows #details before #board in DOM order with its heading focused, tasks as <details> rows with checks and dependency chips, and a \'Why this stage?\' highlight with the stage reason', async () => {
+  const doc = renderBoardDocument('N0NCE');
+  assert.ok(doc.indexOf('<aside id="details"') < doc.indexOf('<div id="board"'), '#details precedes #board');
+  const b = await openedDetails();
+  const details = b.w.el['details']!;
+  assert.equal('hidden' in details.attrs, false);
+  assert.equal(focusState.active, findAll(details, c => c.tag === 'h2')[0], 'the heading is focused');
+  assert.deepEqual(texts(findAll(details, c => c.attrs['class'] === 'details-head')[0]!), ['STORY · S1', 'Details']);
+  const why = findAll(details, c => c.attrs['class'] === 'why')[0]!;
+  assert.deepEqual(texts(why), ['Why this stage?', 'A build is recorded.', 'From BUILD-x']);
+  const rows = findAll(details, c => c.tag === 'details' && c.attrs['class'] === 'task');
+  assert.deepEqual(rows.map(r => r.attrs['data-item-id']), ['S1:T1', 'S1:T2']);
+  assert.deepEqual(rows.map(r => r.children[0]!.tag), ['summary', 'summary']);
+  assert.deepEqual(rows.map(r => findAll(r, c => c.attrs['class'] === 'pill').map(p => [p.textContent, p.attrs['data-tone']])), [
+    [['Passed', 'success'], ['No dependencies', 'neutral']],
+    [['Failed', 'danger'], ['Depends on Types', 'neutral']],
+  ]);
+  assert.deepEqual(rows.map(r => findAll(r, c => c.tag === 'li').map(l => l.textContent)), [['types compile'], ['rows built']]);
+  const chain = findAll(details, c => c.attrs['class'] === 'chain')[0]!;
+  assert.deepEqual(chain.children.map(li => [li.children[0]!.textContent, li.attrs['data-status']]), [
+    ['DEF', 'not-recorded'], ['HLD', 'not-recorded'], ['LLD', 'recorded'], ['PLAN', 'recorded'], ['BUILD', 'recorded'],
+  ], 'the fixture route (full-chain) expects DEF and HLD, which this standalone fixture does not record');
+  assert.ok(texts(chain).includes('Not recorded'));
+});
+
+test('the conflict box is the first element after the details chips, before the task list', async () => {
+  const b = await openedDetails(true);
+  const kids = b.w.el['details']!.children;
+  const chips = kids.findIndex(c => (c.attrs['class'] ?? '').includes('details-chips'));
+  const conflict = kids.findIndex(c => c.attrs['class'] === 'details-conflict');
+  const tasks = kids.findIndex(c => c.attrs['aria-label'] === 'Tasks');
+  assert.ok(chips >= 0 && conflict === chips + 1, 'the conflict box comes straight after the chips');
+  assert.ok(tasks > conflict, 'and before the task list');
+  assert.deepEqual(texts(kids[conflict]!), ['Two records disagree', 'The build is approved while 1 task result failed (Builder).']);
+  assert.equal(kids[conflict]!.attrs['role'], 'note');
+});
+
+test('a view with emptySelection renders \'Nothing matches this view\' with Clear filters posting clear-filters; Retry posts refresh; the partial panel\'s \'Inspect affected records\' lists artifact ids', async () => {
+  const host = await openWith(fixtureSnapshot([item({ id: 'S1', title: 'Only' })]));
+  send(host.ch, { type: 'set-search', search: 'nothing like this' });
+  const { posted, deliver, el } = runScript();
+  el['search']!.value = 'nothing like this';
+  el['attention-chip']!.listeners['click']!();
+  deliver({ v: 1, payload: { type: 'board', model: lastBoard(host.ch) } });
+  const panel = el['panel']!;
+  assert.deepEqual(texts(panel), ['Nothing matches this view', 'Work exists, but none matches the current search, scope and attention filter.', 'Clear filters']);
+  posted.length = 0;
+  findAll(panel, c => c.tag === 'button' && c.textContent === 'Clear filters')[0]!.listeners['click']!();
+  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [{ type: 'clear-filters' }]);
+  assert.equal(el['search']!.value, '', 'the search box is cleared');
+  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'false', 'the attention chip is released');
+
+  // A failed refresh: the status panel offers Retry, which posts refresh.
+  send(host.ch, { type: 'refresh' });
+  host.calls[1]!.resolve({ ok: false, failure: { kind: 'read-failed', message: 'bad store' } });
+  await flush();
+  const failedStatus = payloads(host.ch).filter(p => p.type === 'status').at(-1)!;
+  deliver({ v: 1, payload: failedStatus });
+  assert.deepEqual(texts(panel).slice(0, 3), ['Showing the last successful snapshot', 'The refresh failed: bad store. Your board and selection are preserved.', 'Stale']);
+  posted.length = 0;
+  findAll(panel, c => c.tag === 'button' && c.textContent === 'Retry')[0]!.listeners['click']!();
+  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [{ type: 'refresh' }]);
+
+  // A partial snapshot: the panel's disclosure lists each affected record.
+  const notice = { code: 'record-unreadable', message: 'PLAN-x could not be parsed.', itemIds: [], artifactIds: ['PLAN-x'], fileNames: [], attention: true };
+  const partial = await openWith(fixtureSnapshot([item({ id: 'S1' })], { unreadableCount: 1, notices: [notice] as never }));
+  deliver({ v: 1, payload: payloads(partial.ch).filter(p => p.type === 'status').at(-1)! });
+  const disclosure = findAll(panel, c => c.tag === 'details')[0]!;
+  assert.equal(disclosure.children[0]!.tag, 'summary');
+  assert.equal(disclosure.children[0]!.textContent, 'Inspect affected records');
+  assert.deepEqual(findAll(disclosure, c => c.tag === 'code').map(c => c.textContent), ['PLAN-x']);
+  assert.ok(texts(disclosure).includes('1 record could not be read.'));
+});
+
+test('the script uses textContent only and posts only BoardUpMessage envelopes; Escape closes details and focus returns to the card or the tab', async () => {
+  assert.doesNotMatch(BOARD_WEBVIEW_SCRIPT, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/);
+  const b = await openedDetails(true);
+  const details = b.w.el['details']!;
+  // Every control in the details posts a board up-message.
+  for (const btn of findAll(details, c => c.tag === 'button')) btn.listeners['click']!();
+  for (const m of b.w.posted) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
+  b.w.posted.length = 0;
+  // Escape closes the details and focus returns to the card that opened them.
+  details.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal('hidden' in details.attrs, true);
+  assert.equal(focusState.active?.attrs['data-item-id'], 'S1', 'focus returns to the card');
+  // When the card is no longer shown, focus goes to the shown view's tab.
+  cardOf(b.w.el['board']!, 'S1').listeners['click']!();
+  b.relay();
+  b.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  b.pump();
+  details.listeners['keydown']!(keyEvent('Escape'));
+  b.relay();
+  assert.equal(focusState.active, b.w.el['tab-epics'], 'focus lands on the shown view\'s tab');
 });

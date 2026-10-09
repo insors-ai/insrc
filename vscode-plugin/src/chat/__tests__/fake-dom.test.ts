@@ -35,8 +35,10 @@ test('the shared fake DOM records writes, parses and traps innerHTML, clears chi
   assert.ok(body.children.every((c) => c.parentNode === body));
 
   // textContent clears the children, as in the real DOM.
+  const replaced = body.children[0]!;
   body.textContent = 'plain';
   assert.equal(body.children.length, 0);
+  assert.equal(replaced.parentNode, null, 'a replaced child is detached');
   assert.equal(body.innerHTML, '');
 
   // Namespaces and text nodes.
@@ -62,6 +64,7 @@ test('the shared fake DOM records writes, parses and traps innerHTML, clears chi
   assert.deepEqual(list.children.map((x) => x.id), ['a', 'c']);
   assert.equal(b.parentNode, null, 'a removed node has no parent');
   assert.throws(() => list.removeChild(bodyStub('li')), /not a child/);
+  assert.throws(() => list.insertBefore(bodyStub('li'), bodyStub('li')), /reference node that is not a child/);
 
   // Inserting a node that already has a parent moves it, within a parent or across.
   list.insertBefore(c, a);

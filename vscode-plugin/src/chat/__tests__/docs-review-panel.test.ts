@@ -52,10 +52,15 @@ interface GitNeed {
   readonly window?: { readonly from: string; readonly to: string } | undefined;
 }
 
+/** The one place this file spawns git: a runner bound to `root`. History checks reach it only through git(t, need). */
+function gitIn(root: string, env: NodeJS.ProcessEnv = process.env): (...args: string[]) => string {
+  return (...args) =>
+    execFileSync('git', args, { cwd: root, env, encoding: 'utf8', maxBuffer: 1 << 24, stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
 /** A git runner bound to `root`, or null after skipping the test with the reason its history is missing. */
 function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: string[]) => string) | null {
-  const run = (...args: string[]): string =>
-    execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 24, stdio: ['ignore', 'pipe', 'pipe'] });
+  const run = gitIn(root);
   const succeeds = (...args: string[]): boolean => {
     try { run(...args); return true; } catch { return false; }
   };
@@ -78,11 +83,14 @@ function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: st
   if (need.window) {
     const { from, to } = need.window;
     const noWindow = (why: string): null => skip(`no build window between ${from} and ${to}: ${why}`);
-    const last = (file: string): string => {
-      try { return run('log', '--format=%H', '-1', '--', file).trim(); } catch { return ''; }
+    // A failing git log is reported as itself, not mistaken for a file no commit touches.
+    const last = (file: string): string | Error => {
+      try { return run('log', '--format=%H', '-1', '--', file).trim(); } catch (err) { return err as Error; }
     };
     const a = last(from);
     const b = last(to);
+    if (a instanceof Error) return noWindow(`git log failed for ${from}: ${a.message.split('\n')[0]}`);
+    if (b instanceof Error) return noWindow(`git log failed for ${to}: ${b.message.split('\n')[0]}`);
     if (a === '' || b === '') return noWindow(`no commit touches ${a === '' ? from : to}`);
     if (a === b) return noWindow('both ends are the same commit');
     if (!succeeds('merge-base', '--is-ancestor', a, b)) return noWindow(`the ${from} commit is not an ancestor of the ${to} commit`);
@@ -503,7 +511,7 @@ test('the docs-review host + client modules are vscode-free', async () => {
 /** Evaluate DOCS_BODY_RENDERER_SOURCE with a chosen `marked` global and return
  *  its renderMarkdownBody. */
 function loadRenderer(marked: unknown): (el: unknown, src: string) => {
-  el: unknown; degradation: { degraded: boolean; notice?: string };
+  el: unknown; degradation: { degraded: boolean; notice?: string | undefined };
 } {
   // eslint-disable-next-line no-new-func
   const make = new Function('marked', `${DOCS_BODY_RENDERER_SOURCE}; return renderMarkdownBody;`);
@@ -1507,7 +1515,7 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
 // ---------------------------------------------------------------------------
 
 /** Eval DOCS_FR_SOURCE and return placeFunctionalRequirements + the createElement count. */
-function loadPlace(opts: { throwOnCall?: number; getElementById?: (id: string) => BodyStub | undefined } = {}) {
+function loadPlace(opts: { throwOnCall?: number | undefined; getElementById?: ((id: string) => BodyStub | undefined) | undefined } = {}) {
   const made: string[] = [];
   const doc = {
     // Present so a document-wide-lookup mutation can actually FIND something and
@@ -1771,7 +1779,7 @@ interface WebviewRun {
   deliver(payload: Record<string, unknown>): void;
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean; breakPlacement?: boolean; breakDiagram?: boolean; breakExperience?: boolean; countCreates?: boolean } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -5518,7 +5526,7 @@ test('history and compiler checks skip with a stated reason when what they need 
     return { reasons, skip: (reason?: string) => { reasons.push(reason ?? ''); } };
   };
   // The guards are tested against directories built here, so only the git binary is needed, not this repo's history.
-  if (spawnSync('git', ['--version']).error) { t.skip('git is not installed'); return; }
+  try { gitIn(tmpdir())('--version'); } catch { t.skip('git is not installed'); return; }
 
   const bare = mkdtempSync(join(tmpdir(), 'insrc-guard-plain-'));
   const repo = mkdtempSync(join(tmpdir(), 'insrc-guard-git-'));
@@ -5529,12 +5537,15 @@ test('history and compiler checks skip with a stated reason when what they need 
     assert.deepEqual(plain.reasons, [`not a git work tree: ${bare}`]);
 
     // A one-commit repository: both files' last commit is that one commit.
-    const sh = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+    // The fixture ignores the host's git config, so signing, hooks or a missing identity cannot fail it.
+    const fixture = gitIn(repo, { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' });
+    const sh = (...args: string[]): string =>
+      fixture('-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', ...args);
     sh('init', '-q');
     writeFileSync(join(repo, 'PLAN.md'), 'plan\n');
     writeFileSync(join(repo, 'BUILD.md'), 'build\n');
     sh('add', '.');
-    sh('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'one');
+    sh('commit', '-q', '-m', 'one');
     const head = sh('rev-parse', 'HEAD').trim();
 
     const equal = recorder();
@@ -5551,7 +5562,7 @@ test('history and compiler checks skip with a stated reason when what they need 
 
     // Out of order: a second commit, then a window whose start is the later one.
     writeFileSync(join(repo, 'PLAN.md'), 'plan, revised\n');
-    sh('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-am', 'two');
+    sh('commit', '-q', '-am', 'two');
     const inverted = recorder();
     assert.equal(git(inverted, { window: { from: 'PLAN.md', to: 'BUILD.md' } }, repo), null);
     assert.deepEqual(inverted.reasons, ['no build window between PLAN.md and BUILD.md: the PLAN.md commit is not an ancestor of the BUILD.md commit']);
@@ -5580,8 +5591,10 @@ test('history and compiler checks skip with a stated reason when what they need 
 
   // No history or compiler check bypasses the guards.
   const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
-  assert.equal(src.split("execFileSync('" + "git', [").length - 1, 0, 'no check runs git directly');
-  assert.equal(src.split('const ' + 'git = (').length - 1, 0, 'and no check keeps a git helper of its own');
-  assert.equal(src.split('function ' + 'git(').length - 1, 1, 'the guard is the one git runner');
-  assert.equal(src.split('existsSync(' + 'tsc)').length - 1, 0, 'no test asserts the compiler is present');
+  const count = (re: RegExp): number => (src.match(re) ?? []).length;
+  const q = '[\'"`]';
+  assert.equal(count(new RegExp(`\\b(?:execFileSync|execSync|spawnSync|spawn|exec)\\(\\s*${q}git\\b`, 'g')), 1, 'git is spawned in one place, gitIn');
+  assert.equal(count(/\bgitIn\(/g), 4, 'gitIn is declared once and bound only by git(t, need), and by this test for the git binary and its fixture');
+  assert.equal(count(/\b(?:const|let|function)\s+git\b/g), 1, 'git(t, need) is the one history runner');
+  assert.equal(count(/existsSync\(\s*tsc\b/g), 0, 'no test asserts the compiler is present');
 });

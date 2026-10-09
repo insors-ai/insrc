@@ -16,8 +16,9 @@
  *   textContent assignment clears the children, as in the real DOM;
  * - the namespace an element was created in (`ns`), and text nodes (nodeType 3);
  * - parent and sibling links, appendChild/insertBefore/removeChild (insertion
- *   moves a node that already has a parent; removeChild asserts the child is
- *   present and clears its parent), querySelector('#id') — which throws a SyntaxError
+ *   moves a node that already has a parent; insertBefore asserts its reference
+ *   node is a child, and removeChild that the child is present; removal and
+ *   replacing content clear the parent), querySelector('#id') — which throws a SyntaxError
  *   on a digit-leading id, as the real DOM does — and querySelectorAll by tag;
  * - listeners as arrays per type, and scrollIntoView.
  *
@@ -102,6 +103,8 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
     c.parentNode = n;
     return c;
   };
+  // Replacing the content detaches the old children, as in the real DOM.
+  const detachAll = (): void => { for (const c of children) c.parentNode = null; children.length = 0; };
   const n: BodyStub = {
     nodeType, tagName, ns, id, data: '', value: '', style: {}, attrs: {}, children, writes,
     listeners: {}, scrolled: false, parentNode: null,
@@ -111,13 +114,13 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
     get textContent() { return txt; },
     set textContent(v: string) {
       writes.push({ prop: 'textContent', value: v });
-      txt = v; html = ''; children.length = 0;
+      txt = v; html = ''; detachAll();
     },
     get innerHTML() { return html; },
     set innerHTML(v: string) {
       writes.push({ prop: 'innerHTML', value: v });
       html = v;
-      children.length = 0;
+      detachAll();
       for (const line of String(v).split('\n')) {
         const i = line.indexOf('\t');
         if (i > 0) children.push(adopt(bodyStub(line.slice(0, i), '', line.slice(i + 1))));
@@ -134,9 +137,12 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
     },
     appendChild(c) { children.push(adopt(c)); return c; },
     insertBefore(c, ref) {
+      if (ref === c) return c; // inserting a node before itself leaves it where it is
+      // The real DOM throws NotFoundError for a reference node that is not a child.
+      assert.ok(ref === null || children.includes(ref), 'insertBefore was called with a reference node that is not a child');
       adopt(c); // first, so a move within this parent cannot shift ref's index
       const i = ref === null ? children.length : children.indexOf(ref);
-      children.splice(i < 0 ? children.length : i, 0, c);
+      children.splice(i, 0, c);
       return c;
     },
     removeChild(c) {

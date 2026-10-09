@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -81,3 +81,61 @@ Run at 2026-10-09T16:41:15.265Z on commit `ed05329b`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` | 0 | 1 | 0.4 s |  |
 | `src/daemon/db/__tests__/list-complete.test.ts` | 0 | 1 | 1.5 s |  |
+
+## t3
+
+Run at 2026-10-09T16:51:48.292Z on commit `326409ee`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope) | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold) | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it) | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode) | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities) | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**integration: dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id | `src/analyze/__tests__/measure-pass.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/__tests__/measure-pass.test.ts` | 0 | 8 | 1.5 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T16:41:15.265Z",
+    "updatedAt": "2026-10-09T16:51:48.292Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -16,9 +16,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "listTables and listNamespaces take an optional `complete`. In that mode sqlite, pg and mysql apply no clamp and send no LIMIT; oracle and mssql build their query without FETCH FIRST and TOP; the MongoDB, Cassandra and DynamoDB drivers apply no limit; NATS lists its one bucket as before. Redis and etcd ignore the mode and ClickHouse's listing still throws. The file listing's limit is optional and walkFiles takes null for no cap. Without the new option every listing behaves as before. Two things beyond the plan's text: the twelve driver classes are now exported, so that each driver's own listing method can be run in a test against a stand-in client (the networked drivers had no listing test before); and the file walk has its own test file. Whether a ClickHouse source is 'not determined' is decided by the measuring pass of the next Task; this Task's test shows that its listing throws in either mode. Twelve mutations were run, one per driver and listing, and each fails a test. The daemon and analyze suites have no test that passed in the baseline and fails now.",
+    "summary": "Task t3 adds the measuring pass to src/analyze/measure.ts: measureRequestScope resolves a request's scope and counts it without throwing, measureResolvedScope counts the stored area (code, docs, generic), the files of the infra tasks' own walk with no cap (infra) or the live source (a connection or a data request), and measureDataSource counts tables, namespaces or files through the complete mode of the driver's listing. A scope that cannot be counted is not determined, with size XL and its reason. dataScopeOf in the data runtimes' shared module is now the one rule from a resolved scope to a pool path, used by resolveDataScope and by the measure. Eight tests in measure-pass.test.ts; 30 mutations were run and all are killed; the analyze and daemon suites match the Story baseline by test name.",
     "testRecord": {
       "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/TESTS.md"
     },
@@ -28,191 +32,205 @@
           "file": ".insrc/artifacts/PLAN-b9d5c5c40df5a574-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/config.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/daemon.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/mcp.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/baseline/vscode-plugin.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/measure-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/analyze/measure.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/data/_shared.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/infra/_shared.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/list-complete.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/cassandra.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/clickhouse.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/dynamodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/etcd.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mongodb.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mssql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/mysql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/nats.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/oracle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/pg.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/redis.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/drivers/sqlite.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/daemon/db/list-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       },
       {
         "target": {
           "file": "src/shared/db-driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T16:41:15.265Z"
+        "timestamp": "2026-10-09T16:51:48.292Z"
       }
     ],
-    "commit": "ed05329b"
+    "commit": "326409ee"
   }
 }

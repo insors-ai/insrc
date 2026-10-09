@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T16:41:15.265Z"
+    "updatedAt": "2026-10-09T16:51:48.292Z"
   },
   "body": {
     "tasks": [
@@ -210,6 +210,161 @@
             "titles": [
               {
                 "title": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "326409ee",
+        "ranAt": "2026-10-09T16:51:48.292Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure-pass.test.ts",
+                "title": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/measure-pass.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1544,
+            "titles": [
+              {
+                "title": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
+                "result": "pass"
+              },
+              {
+                "title": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
+                "result": "pass"
+              },
+              {
+                "title": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
+                "result": "pass"
+              },
+              {
+                "title": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
+                "result": "pass"
+              },
+              {
+                "title": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id",
+                "result": "pass"
+              },
+              {
+                "title": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+                "result": "pass"
+              },
+              {
+                "title": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
                 "result": "pass"
               }
             ],

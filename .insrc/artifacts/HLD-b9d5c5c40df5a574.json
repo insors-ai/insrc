@@ -20,7 +20,12 @@
     "schemaVersion": 1,
     "epicHash": "b9d5c5c40df5a574",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-09T09:49:43.744Z",
+    "reviewOverride": {
+      "reason": "User-approved override, 2026-10-09 (the user chose option A in chat: approve by override, with no fresh daemon review). The HLD's approval was cleared by an in-place wording edit made for Story s7 task t16 (commit ae1b8831). Two passages changed and nothing else: the framework text on run records and Story s7's boundary now say a count of the runs being executed per id, two readers that apply the abandoned rule and rewrite the record (the status request and the purge), and a new run replacing a record left in progress, where they said a set of run ids and three readers. The edit records the stakeholder decision of 2026-10-08, and the code it describes passed the build gate in tasks t12 and t14. No fresh review by the daemon was run on the amended text.",
+      "at": "2026-10-09T09:49:43.744Z"
+    }
   },
   "body": {
     "summary": {

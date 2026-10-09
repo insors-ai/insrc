@@ -30,8 +30,8 @@
       "reason": "User-approved override, 2026-10-07. Nine daemon reviews; the last four had one or two MED findings each and no HIGH. Every finding through the ninth is applied; the revisions after the ninth review (its two findings, and the user's two decisions on the open questions: keep 'no-plan-for-request' behind a guard, move all eight copies of the model-failure test to one shared function) were not sent back for a tenth review.",
       "at": "2026-10-07T09:01:35.361Z"
     },
-    "staleAckedAt": "2026-10-08T13:58:21.265Z",
-    "staleAckedReason": "Amendment AMD-b9d5c5c40df5a574-1 (approved 2026-10-08) adds Story s8's boundary to the HLD and changes no contract or boundary this design reads; the design stands as approved."
+    "staleAckedAt": "2026-10-09T09:50:19.983Z",
+    "staleAckedReason": "In-place wording edit of the HLD for Story s7 task t16 (commit ae1b8831), approved by the stakeholder by override on 2026-10-09: the framework text on run records and Story s7's boundary now say a count of runs per id and two rewriting readers, where they said a set of run ids and three readers. No contract, no Story boundary's scope and no other Story's text changed, so this design stands as approved."
   },
   "body": {
     "summary": {

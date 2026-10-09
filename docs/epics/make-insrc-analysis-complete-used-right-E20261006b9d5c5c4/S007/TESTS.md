@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -437,3 +437,13 @@ Run at 2026-10-09T09:38:48.555Z on commit `733e2a0b`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/analyze-run-empty-prompt.test.ts` | 0 | 2 | 1 s |  |
+
+## t16
+
+Run at 2026-10-09T09:50:41.013Z on commit `12e1e887`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: the rendered HLD equals what its renderer gives for the stored data, and the Epic's designs pass the approved-and-fresh gate once the HLD is approved**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/hld-edit-t16.md holds the check's printed output: HLD approved 2026-10-09T09:49:43.744Z; gate passed for s1, s6 and s7 (LLD and PLAN); rendered HLD equals the renderer output for the stored data: true; none of the old wording remains.

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T09:38:48.555Z"
+    "updatedAt": "2026-10-09T09:50:41.013Z"
   },
   "body": {
     "tasks": [
@@ -1968,6 +1968,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "12e1e887",
+        "ranAt": "2026-10-09T09:50:41.013Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the rendered HLD equals what its renderer gives for the stored data, and the Epic's designs pass the approved-and-fresh gate once the HLD is approved",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/measurements/hld-edit-t16.md holds the check's printed output: HLD approved 2026-10-09T09:49:43.744Z; gate passed for s1, s6 and s7 (LLD and PLAN); rendered HLD equals the renderer output for the stored data: true; none of the old wording remains."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

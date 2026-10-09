@@ -58,7 +58,7 @@ export interface DeliveryMethods {
 /** The fields the plugin reads from a snapshot item; a renamed or removed field fails here. */
 export type DeliveryItemView = Pick<DeliveryItem,
 	'id' | 'kind' | 'title' | 'standalone' | 'sourceIds' | 'parentId' | 'childIds' | 'stage' | 'evidence' |
-	'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices'>;
+	'tasks' | 'validation' | 'storyLevelResult' | 'conflict' | 'correctsRef' | 'needsAttention' | 'attentionReasons' | 'notices'>;
 
 /** The fields the plugin reads from an evidence entry to choose how to open it. */
 export type DeliveryEvidenceView = Pick<DeliveryEvidenceEntry, 'artifactId' | 'kind' | 'mdPath' | 'openWith' | 'approval' | 'review'>;

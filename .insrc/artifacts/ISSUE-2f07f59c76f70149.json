@@ -1,0 +1,372 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1791540597543-tqnj7k",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T10:10:44.404Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 46859,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "2f07f59c76f70149",
+    "epicSlug": "bug-test-t1-no-file-under",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "issue",
+      "stage": "issue",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p1",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The S004 guard test lives in vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts and contains a test titled 't1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild'.",
+          "evidence": "The grep for /NO file under src/ is modified/ and the grep for /S004 need no daemon rebuild/ both match vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4004: `test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', async () => {`. The read of the anchor file at line 1 returned FOUND, so the file exists. The title matches the premise word for word. Other docs also name it as living in docs-review-panel.test.ts: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/S004/BUILD.md:13, docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:7, and baseline/vscode.txt:347, where it is listed as 'not ok 347'.",
+          "action": "None needed; the premise is verified. The test exists at the cited path with the exact title. It is currently failing, which the baseline and the ISSUE record, but that is a separate fact and does not affect this citation.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: the cited file holds the test with this exact title at line 4004. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p2",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The test computes its committed window with git('diff', '--name-only', `${planCommit}..HEAD`), i.e. the window's upper end is HEAD.",
+          "evidence": "The grep for git('diff', '--name-only', `${planCommit}..HEAD`) matches vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4024: \"const committed = git('diff', '--name-only', `${planCommit}..HEAD`)\". planCommit is defined at :4020 as git('log', '--format=%H', '-1', '--', ...) and asserted at :4022 to be the build-window boundary. So the committed window runs from planCommit to HEAD, and its upper end is HEAD, as the premise says. A second test at :5645/:5648 uses the same `${planCommit}..HEAD` pattern through execFileSync.",
+          "action": "none — verified sound. Optionally, the citation could name line 4024 instead of only the file. Line 5648 has the same open-ended `${planCommit}..HEAD` window, so a fix may need to cover it too.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise: line 4024 computes the window with HEAD as the upper end. No correction is needed. The second occurrence at :5648 is worth noting for the fix's scope."
+          }
+        },
+        {
+          "claimId": "p3",
+          "ref": "c2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "planCommit is derived as the last commit touching docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md, which resolves to 87f3f2f3.",
+          "evidence": "The evidence confirms the load-bearing part of the premise, which is how planCommit is derived. vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4020-4021 has `const planCommit = git('log', '--format=%H', '-1', '--', 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();`. That is the most recent commit touching S004/PLAN.md. A second derivation at :5645-5646 does the same thing with `execFileSync('git', ['log', '--format=%H', '-1', '--', '.../S004/PLAN.md'])`. The PLAN.md file exists: the grep matched docs/epics/.../S004/PLAN.md:249.\n\nThe specific hash `87f3f2f3` only appears in the artifact itself (docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:11). No `git log` output was gathered, so the evidence does not independently confirm the hash. This does not affect the work. The test computes planCommit at runtime, so the defect (the `<planCommit>..HEAD` window plus `git status` is open at the HEAD and working-tree end) and the fix (bound that end) are the same whatever the hash is.\n\nNote: test file line 5645 shows a second planCommit derivation besides the one at 4020. The fix should cover both sites if both build an open-ended window.",
+          "action": "None needed; the premise is sound. Optional: when building, apply the window-bounding fix at both planCommit derivation sites (docs-review-panel.test.ts:4020 and :5645), not only the first. The literal hash 87f3f2f3 is shown for information only and was not confirmed by the evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The derivation (git log -1 on S004/PLAN.md) is confirmed verbatim at docs-review-panel.test.ts:4020 and :5645. The hash only identifies the commit and does not change what gets built, so no edit to the artifact is needed."
+          }
+        },
+        {
+          "claimId": "p4",
+          "ref": "c1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test unions the committed diff with uncommitted changes from `git status --porcelain`, making the window open at the working-tree end too.",
+          "evidence": "The anchored test still reads working-tree state: `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4027: const working = git('status', '--porcelain')`. A `git status --porcelain` read reports uncommitted and untracked changes, so any window built from it stays open at the working-tree end. The union with the committed range is not shown in the test lines gathered here. It is stated by the issue record `docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:11`: \"The test computes its window as `git diff --name-only <planCommit>..HEAD` … It also unions in `git status --porcelain`. Both ends are open: HEAD and the working tree keep moving.\" The comment at :4014 (\"version of this test read `git status --porcelain`, which passed only while…\") refers to an earlier version of the test, but :4027 shows the current version still makes that call. The premise is consistent with the evidence. Nothing contradicts it.",
+          "action": "none — verified sound. Optionally, when building, read docs-review-panel.test.ts around :4010–:4035 to confirm where `working` is merged with the committed diff set before the window is narrowed.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: :4027 reads `git status --porcelain` and ISSUE.md:11 documents the union with `<planCommit>..HEAD`. No edit needed."
+          }
+        },
+        {
+          "claimId": "p5",
+          "ref": "c1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The test asserts deepStrictEqual of the src/-prefixed files in the window against [] (nothing under src/ changed).",
+          "evidence": "The evidence backs only half of the premise. The grep /startsWith\\('src/'\\)/ found 2 places that filter for src/-prefixed paths in vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts: line 4036 (`const daemonFiles = paths.filter((p) => p.startsWith('src/'));`) and line 5152 (`const underSrc = diffBlock.split('\\n').map((l) => l.trim()).filter((l) => l.startsWith('src/'));`). So the test does build a list of src/-prefixed files, and it does so in two different tests, not one. The assertion half is not supported. The grep /deepStrictEqual\\(.*\\[\\]/ found 0 matches, so no line shows deepStrictEqual compared against []. The assertion may be split across lines, or it may use another form such as strictEqual(x.length, 0) or deepEqual. The evidence doesn't show which. The only read was line 1, which is just the file header (`/**`) and says nothing about the assertion. The evidence also doesn't say which of the two filters, daemonFiles at 4036 or underSrc at 5152, is the \"window\" the premise means.",
+          "action": "Read the lines just after 4036 and 5152 in docs-review-panel.test.ts to find the actual assertion on `daemonFiles` and `underSrc`. Then do three things. (1) Confirm the assertion form. If it isn't deepStrictEqual(..., []), reword the premise to name the real assertion, for example `assert.deepStrictEqual(underSrc, [])` spread over several lines, or `assert.strictEqual(underSrc.length, 0)`. (2) Name the variable and line the premise refers to (4036 daemonFiles or 5152 underSrc). (3) Anchor the premise to that path:line instead of the bare file path. The point the premise carries, that nothing under src/ changed, may still be right. The evidence just doesn't confirm it.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The src/ filter is confirmed at :4036 and :5152, but no grep match shows the deepStrictEqual-against-[] assertion. Someone has to read the lines after each filter, pick the right anchor, and confirm the assertion form. The evidence alone can't support an automatic text edit.",
+            "options": [
+              "Anchor to :5152 (underSrc built from the diff block) after confirming the assertion that follows is an empty-array or zero-length check, and reword the premise to match the real assertion form.",
+              "Anchor to :4036 (daemonFiles filtered from paths) after confirming the assertion that follows is an empty-array or zero-length check, and reword the premise to match the real assertion form.",
+              "Reword the premise to drop the assertion-form detail: 'The test filters the window's paths with startsWith('src/') and asserts none remain.' Keep it anchored to the file until a read confirms the exact line."
+            ]
+          }
+        },
+        {
+          "claimId": "p6",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The test's existing assertions are exactly three: the window is non-empty, no file in it is under src/, and the Story's files are under vscode-plugin/src/chat/.",
+          "evidence": "The evidence doesn't settle this premise. The only read of the anchor, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1, returned just the opening comment line `/**`. It shows no assertion bodies. Every grep match under /vscode-plugin/src/chat/ is in docs/ artifacts (DEF.md, HLD.md, the S001/S002 LLD/PLAN/CR files), not in the test file. So the probe never reached the test's assertions and can't count them. The /deepStrictEqual/ grep found 5 matches, none of them in the anchor file. One match, docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:7, describes a test named 't1: NO file under src/ is modified' whose deepStrictEqual against [] fails with 442 src/ files listed. That backs one of the three claimed assertions (no file under src/), but only second-hand. The /assert\\.ok\\(.*length/ grep hit only files under src/ (capped at 50), none in the test file, so the 'window is non-empty' assertion is unconfirmed. Nothing in the evidence shows the third assertion (the Story's files are under vscode-plugin/src/chat/). Nothing shows that 'exactly three' is the full set either.",
+          "action": "Read the 't1: NO file under src/ is modified' test block in vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts directly (find it by its test name, not by line 1). List every assert.* call inside it. Confirm that exactly these three are present: (1) the window/change set is non-empty, (2) deepStrictEqual of the src/-prefixed files against [], and (3) every Story file starts with vscode-plugin/src/chat/. If the count or wording differs, correct the premise to match the real assertions. If the fix depends on keeping assertions (1) and (3) unchanged, cite their real line numbers in the artifact.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The probe returned only line 1 of the anchor file, and the grep scope did not cover the test file's body. So no evidence-derived count or line correction is possible. The premise needs a targeted read of the t1 test block before it can be confirmed or reworded.",
+            "options": [
+              "Re-anchor the premise on the t1 test's own line range (e.g. docs-review-panel.test.ts:<start>-<end>) after a direct read, and keep 'exactly three' if the read confirms it.",
+              "Drop 'exactly' and reword the premise to say the test asserts at least: a non-empty window, no src/ file (deepStrictEqual against []), and Story files under vscode-plugin/src/chat/.",
+              "If the read shows other assertions, list them all in the premise so the fix's preserve/replace scope is explicit."
+            ]
+          }
+        },
+        {
+          "claimId": "p7",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "Commit 5db5fe95 is 'docs(workflow): S004 BUILD approved — Story complete, Epic bfe98ff7 complete 4/4' and is the last commit touching docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md.",
+          "evidence": "The evidence only partly covers the premise. The read `docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md:1 → FOUND: # Build (plan-driven) — Story s4` shows the anchored file exists and is the S004 BUILD record. The one grep match for /S004 BUILD approved/ is `docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:21`, which is the artifact's own citation line [[c3]]. A premise matching its own text is not independent confirmation. Nothing in the gathered evidence comes from git: no commit object, no `git log` output for the BUILD.md path, and no check of the subject line of 5db5fe95. So two claims cannot be checked from this evidence: that the commit 5db5fe95 has that exact subject line, and that it is the LAST commit touching that file.",
+          "action": "Check the commit claim against git history. Run `git log -1 --format='%h %s' -- docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md` to confirm that the last commit touching the file is 5db5fe95 with the cited subject. If the hash or subject differs, update citation c3 in ISSUE.md to match. If it matches, note that git history verified it. The file anchor itself is sound.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The file anchor is confirmed, but the commit hash, subject and 'last commit' claim come only from the artifact's own text, and the grep and read probes cannot reach git history. A person (or a git-log probe) has to confirm or correct the citation. No safe edit can be derived from the evidence.",
+            "options": [
+              "Run git log -1 on the BUILD.md path. If it returns 5db5fe95 with the cited subject, accept c3 as verified.",
+              "If git log shows a different last commit, replace the hash and subject in c3 with the real values.",
+              "Drop the 'last commit touching' wording from c3 and cite only the BUILD.md file as the doc anchor."
+            ]
+          }
+        },
+        {
+          "claimId": "p8",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "`git diff --name-only 87f3f2f3..5db5fe95` lists 0 files under src/ and 4 files under vscode-plugin/src/chat/.",
+          "evidence": "The gathered evidence does not address this premise. It is a ripgrep over the path string `vscode-plugin/src/chat/`, and every one of the 50 matches (truncated at the cap) is a mention inside documentation: the Epic's DEF.md, its HLD.md, and the S001/S002 LLD/PLAN/CR.md files (e.g. DEF.md:170, HLD.md:90, S001/LLD.md:261-304, S002/CR.md:13-47). No probe ran `git diff --name-only 87f3f2f3..5db5fe95`, and no match references either commit hash. So nothing confirms or refutes the claimed counts of 0 files under src/ and 4 files under vscode-plugin/src/chat/. One adjacent signal: S001/CR.md:13 describes S001's changed set as \"eleven source files across two packages (src/workflow…\". That shows Stories in this Epic have touched src/, but it is not tied to this commit range, so it cannot contradict the premise. The premise is UNVERIFIABLE from the evidence provided.",
+          "action": "Re-ground the premise by running `git diff --name-only 87f3f2f3..5db5fe95` and recording its real output. Count the paths under `src/` and under `vscode-plugin/src/chat/` and name the 4 chat files explicitly. If src/ is not actually empty for this range (S001/CR.md:13 shows earlier Stories in this Epic touched src/workflow), correct the inventory. Also re-check any scope or adherence claim that relies on \"no daemon-side change\".",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence never ran the git diff, so there are no grounded values for an automatic edit. A person has to run the diff and then confirm or correct the counts.",
+            "options": [
+              "Run `git diff --name-only 87f3f2f3..5db5fe95`, confirm 0 files under src/ and 4 under vscode-plugin/src/chat/, and list the 4 file paths in the premise so it can be re-verified",
+              "If the diff shows files under src/, correct the count and update any downstream claim that the change is plugin-only",
+              "If the commit range is wrong (for example it should start at the Story's base commit), fix the range and re-derive the counts"
+            ]
+          }
+        },
+        {
+          "claimId": "p9",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "With the current open-ended window the test fails listing 442 src/ files, including src/agent/providers/cli-provider.ts and src/workflow/delivery/types.ts.",
+          "evidence": "The evidence confirms only that the two named anchor files exist. `read src/agent/providers/cli-provider.ts:1 → FOUND` and `read src/workflow/delivery/types.ts:1 → FOUND`, and `src/agent/providers/cli-provider.ts:131: export class CliProvider implements LLMProvider` shows the first file is real and in use. The premise's main claim is that the test currently fails with the open-ended window and lists 442 src/ files. Nothing gathered speaks to that. The probes did not run the test, capture its failure output, or count the files it lists. The `/export/` grep stopped at its 50-match cap and only hit non-src docs and the camon tree, so it says nothing about the 442 figure. The anchors are real, but the failure, the count of 442, and whether these two files are in the failing list cannot be checked from this evidence. Even so, a miscount here would not change what gets built: the fix is to bound the window, whatever the exact number of files listed.",
+          "action": "Before relying on the figure, run the test against the current open-ended window and record the real failure output: the number of src/ files listed, and whether cli-provider.ts and delivery/types.ts are among them. Update the premise to match. If the exact count doesn't matter to the task, change the wording to \"lists many src/ files (e.g. …)\" so the artifact doesn't depend on a number nobody has checked.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The anchors exist, but the evidence does not cover the failing-test claim or the count of 442. The count does not change the prescribed fix (bounding the window), so this is MED and unverifiable, not HIGH. Choosing between re-measuring and softening the wording needs a human decision.",
+            "options": [
+              "Re-run the test on the current window, then replace 442 with the measured count and confirm both named files appear in the failure list.",
+              "Soften the premise so it does not depend on the count: 'the test fails listing many src/ files (e.g. src/agent/providers/cli-provider.ts, src/workflow/delivery/types.ts)'.",
+              "Keep the premise as written and attach the captured test output as a citation."
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c4",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The prior BUILD artifact .insrc/artifacts/BUILD-bfe98ff7f97178cf-s4.json corresponds to Epic build-vs-code-plugin-ui-integration-E20260929bfe98ff7 Story S004 and its approval is the S004 completion point.",
+          "evidence": "The read of `.insrc/artifacts/BUILD-bfe98ff7f97178cf-s4.json:1` came back FOUND, so the BUILD ledger body exists. `docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md:18` lists that exact body: \"`.insrc/artifacts/BUILD-bfe98ff7f97178cf-s4.json` — **insrc-build** (2026-10-02T09:08:49.948Z)\". This places it under the S004 directory of the Epic build-vs-code-plugin-ui-integration-E20260929bfe98ff7. The hash bfe98ff7f97178cf matches the rest of that Epic's artifacts: DEF.md:1 `DEF-bfe98ff7f97178cf`, HLD.md:1 `HLD-bfe98ff7f97178cf`, S004/LLD.md:1 `LLD-bfe98ff7f97178cf-s4` and S004/CR.md:1 `CR-bfe98ff7f97178cf-s4`. The CR for s4 also exists (S004/CR.md:3 \"Code review: bfe98ff7f97178cf:s4\"). That fits the BUILD approval being the code-review-gated completion point for S004. The evidence does not show whether the BUILD has been approved yet. The premise only says its approval is the completion point, and that holds.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise. The BUILD body exists, S004/BUILD.md:18 references it, and its epic hash and story suffix (s4) match the S004 LLD and CR artifacts. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p11",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "87f3f2f3 (last S004 PLAN.md commit) is an ancestor of 5db5fe95 (S004 BUILD approval), so the closed window planCommit..buildCommit is well-ordered and non-empty.",
+          "evidence": "The evidence names both anchors but never shows how the two commits relate in git history. docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:11 says 87f3f2f3 is planCommit, \"the last commit touching .../S004/PLAN.md\". ISSUE.md:15 says the end of the window becomes \"the commit that approved S004's BUILD, recorded in the repo as the last commit touching its S004/BUILD.md\". ISSUE.md:21 cites that commit as \"5db5fe95 docs(workflow): S004 BUILD approved — Story complete, Epic bfe98ff7 complete 4/4\". The PLAN.md references in vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4021 and :5646 only show that the test looks up the last PLAN.md commit. Nothing gathered shows `git merge-base --is-ancestor 87f3f2f3 5db5fe95`, commit dates, or a `git diff --name-only 87f3f2f3..5db5fe95` listing. Some ordering is plausible: S004/BUILD.md:19 and :36 carry 2026-10-02 timestamps, and a plan normally comes before its build approval. But no evidence shows that 87f3f2f3 is an ancestor of 5db5fe95, or that the range between them is non-empty. Both claims are unverifiable from what was gathered.",
+          "action": "Before building, check the claim in the repo. Run `git merge-base --is-ancestor 87f3f2f3 5db5fe95` and expect exit code 0. Then run `git diff --name-only 87f3f2f3..5db5fe95` and confirm it lists files, including vscode-plugin/src/chat/ paths and none under src/. Record the result in the artifact as a citation. The test's existing non-empty assertion will also catch a backwards or empty window. If ancestry fails, for example because the PLAN.md commit came after the build commit or sits on a side branch, change how the start point is chosen: use the merge-base of the two commits, or the last PLAN.md commit that is an ancestor of the build commit.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence supports no exact text change. Whether 87f3f2f3 is an ancestor of 5db5fe95 has to be checked against the git history, which the gathered evidence does not include.",
+            "options": [
+              "Run `git merge-base --is-ancestor 87f3f2f3 5db5fe95` and `git diff --name-only 87f3f2f3..5db5fe95`, then add the output to the ISSUE as grounding for the ordering premise.",
+              "Have the test assert that planCommit is an ancestor of buildCommit (via `git merge-base --is-ancestor`) before it computes the window, so a wrongly ordered window fails loudly.",
+              "If ancestry does not hold, start the window from the last PLAN.md commit that is an ancestor of the BUILD commit (`git log -1 --format=%H <buildCommit> -- <PLAN.md>`)."
+            ]
+          }
+        },
+        {
+          "claimId": "p12",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "The fix changes only vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts; no production code is modified.",
+          "evidence": "The anchor resolves: `read vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1 → FOUND`, so the one file the fix targets exists. The evidence shows the defect lives entirely in the test's own window computation. docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md:11 says: \"The test computes its window as `git diff --name-only <planCommit>..HEAD` … It also unions in `git status --porcelain`. Both ends are open\". ISSUE.md:15 gives the fix: \"The end becomes the commit that approved S004's BUILD, recorded in the repo as the last commit touching its S004/BUILD.md … The change touches only this one test; no production code changes.\" The end-anchor the fix relies on exists in the repo. docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md is present (matches at :19 and :36), and ISSUE.md:21 cites its approval commit \"5db5fe95 docs(workflow): S004 BUILD approved\". Nothing in the evidence points to a production module the fix would need to change. Both the window bounds (plan commit, BUILD-approval commit) come from git history the test reads directly. The test-only scope is consistent with the evidence.",
+          "action": "None needed; the premise checks out. The test-only scope is a commitment about the build, so at code-review time, check that the build diff touches only vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Verified: the anchored test file exists, the defect and its fix are confined to that test's git-diff window logic, and the BUILD.md approval commit used as the new end-anchor exists. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "s4/t3",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The failing guard blocks the build gate of later work that validates this test file, including E2 s4/t3.",
+          "evidence": "Part of the premise is supported. docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/S004/PLAN.md:25 shows that E2 s4/t3 validates against this file, with two integration tests in docs-review-panel.test.ts ('openArtifact opens a non-pending artifact…' and 'openArtifact on a cold pane…'). The same tests appear in S004/LLD.md:267 under ac5. The failing guard is real too: S004/BUILD.md:13 records \"The one failing test in docs-review-panel.test.ts, 't1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', is a pre-existing failure that s4 did not cause and cannot affect\". The guard's origin matches S002/PLAN.md:201, which scopes that Story to \"NO file under src/\".\n\nThe word \"blocks\" is not supported. BUILD.md:13 shows that s4 recorded the failure as pre-existing and went on, and BUILD.md:39 shows that s4's build touched the test file. Nothing in the evidence shows the gate actually refusing or halting. The failing test makes the file's suite red, but the evidence shows that being noted and accepted, not stopping the build.",
+          "action": "Reword the premise to match what the evidence shows. Any later build that runs docs-review-panel.test.ts as its validation (E2 s4/t3 is the confirmed case) gets a red suite from the stale S002 't1' guard. s4 had to explain that red away as a pre-existing failure in S004/BUILD.md:13. Without a fix, every later Story that validates this file will hit the same failure and need the same explanation. The fix itself does not change: remove the S002 one-off \"no file under src/\" guard from the shared suite or scope it to its own Story's change set.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The failing guard and s4/t3's dependence on this file are both confirmed. Only the strength of the consequence is overstated: the evidence shows s4 recording the failure as pre-existing, not a gate halting. The fix stays the same, so this needs a wording correction rather than a re-scope.",
+            "options": [
+              "Reword to: 'The stale guard turns the suite red for every later build that validates this test file. E2 s4/t3 hit it and had to record it as a pre-existing failure (S004/BUILD.md:13).'",
+              "Keep 'blocks' but qualify it: 'blocks a clean (all-green) validation of later work…, forcing each such build to explain the failure away, as E2 s4 did.'",
+              "Drop the cross-artifact consequence and keep only the defect statement (the S002 't1' guard fails against the current tree)."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 7,
+        "low": 6
+      },
+      "reviewedAt": "2026-10-09T10:10:51.068Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "p5": {
+        "findingId": "p5",
+        "status": "resolved",
+        "note": "Applied. The assertion form is confirmed by reading :4036-4037 (`daemonFiles = paths.filter(p => p.startsWith('src/'))`, then `assert.deepEqual(daemonFiles, [], …)`). rootCause now anchors to those lines, and c7 cites :4036. :5152 is a different test that scans a recorded note's block, not a live window, so it is out of this defect.",
+        "resolvedAt": "2026-10-09T10:15:33.163Z"
+      },
+      "p6": {
+        "findingId": "p6",
+        "status": "resolved",
+        "note": "Applied. Read the t1 block (:4004-4048) in full. Its assertions are: planCommit matches a 40-hex sha (:4022), the window is non-empty (:4033), the src/-prefixed paths are [] (:4037), and some path is under vscode-plugin/src/chat/ (:4043). fixIntent now lists all four as kept.",
+        "resolvedAt": "2026-10-09T10:15:33.164Z"
+      },
+      "p7": {
+        "findingId": "p7",
+        "status": "resolved",
+        "note": "Verified with git. `git log -1 --format='%h %s' -- …/S004/BUILD.md` returns `5db5fe95 docs(workflow): S004 BUILD approved — Story complete, Epic bfe98ff7 complete 4/4`. Recorded as c6.",
+        "resolvedAt": "2026-10-09T10:15:33.165Z"
+      },
+      "p8": {
+        "findingId": "p8",
+        "status": "resolved",
+        "note": "Verified with git. `git diff --name-only 87f3f2f3..5db5fe95` lists 0 src/ paths and these 4 vscode-plugin/src/chat/ paths: docs-review-panel.ts, protocol.ts, __tests__/docs-review-panel.test.ts and __tests__/fixtures/ux-parity.ts. They are now named in reproduction and in c6.",
+        "resolvedAt": "2026-10-09T10:15:33.166Z"
+      },
+      "p9": {
+        "findingId": "p9",
+        "status": "resolved",
+        "note": "Verified by running the test: it fails, and its listing includes cli-provider.ts and delivery/types.ts. The count was measured as `git diff --name-only 87f3f2f3..9af198ab | grep -c ^src/` = 442, and the wording now pins it to 9af198ab. The exact number does not change the fix.",
+        "resolvedAt": "2026-10-09T10:15:33.166Z"
+      },
+      "p11": {
+        "findingId": "p11",
+        "status": "resolved",
+        "note": "Verified with git. `git merge-base --is-ancestor 87f3f2f3 5db5fe95` exits 0, and the range is non-empty (c6). The test's existing non-empty assertion stays as the runtime check.",
+        "resolvedAt": "2026-10-09T10:15:33.167Z"
+      },
+      "p13": {
+        "findingId": "p13",
+        "status": "resolved",
+        "note": "Applied with evidence. The build validation gate returned passed:false for E2 s4/t3 twice in this session, both times for this test alone, under the check 'The pane's existing tests pass unchanged'. 'Blocks' is the observed outcome, and the reproduction now says so precisely. The second open-window site the review surfaced (:5648, t6 docs-sections) is folded into the rootCause and fixIntent.",
+        "resolvedAt": "2026-10-09T10:15:33.167Z"
+      },
+      "p1": {
+        "findingId": "p1",
+        "status": "resolved",
+        "note": "Verified sound; no change.",
+        "resolvedAt": "2026-10-09T10:15:33.168Z"
+      },
+      "p2": {
+        "findingId": "p2",
+        "status": "resolved",
+        "note": "Verified. The second `${planCommit}..HEAD` site at :5648 is now in scope (c5).",
+        "resolvedAt": "2026-10-09T10:15:33.168Z"
+      },
+      "p3": {
+        "findingId": "p3",
+        "status": "resolved",
+        "note": "Verified. The hash is confirmed by git (c6). Both derivation sites, :4020 and :5645, are covered by fixIntent.",
+        "resolvedAt": "2026-10-09T10:15:33.168Z"
+      },
+      "p4": {
+        "findingId": "p4",
+        "status": "resolved",
+        "note": "Verified; the union is at :4027-4029.",
+        "resolvedAt": "2026-10-09T10:15:33.169Z"
+      },
+      "p10": {
+        "findingId": "p10",
+        "status": "resolved",
+        "note": "Verified sound; no change.",
+        "resolvedAt": "2026-10-09T10:15:33.169Z"
+      },
+      "p12": {
+        "findingId": "p12",
+        "status": "resolved",
+        "note": "Accepted. Code review will check that the build diff touches only docs-review-panel.test.ts.",
+        "resolvedAt": "2026-10-09T10:15:33.170Z"
+      }
+    },
+    "approvedAt": "2026-10-09T10:27:27.691Z",
+    "parentRef": {
+      "slug": "bug-test-t1-no-file-under"
+    }
+  },
+  "body": {
+    "title": "Bound the S004 src/-untouched guard test to that Story's own build window",
+    "reproduction": "Run `cd vscode-plugin && npx tsx --test src/chat/__tests__/docs-review-panel.test.ts`. Observed: the test 't1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild' (docs-review-panel.test.ts:4004) fails. Its `assert.deepEqual(daemonFiles, [], …)` at :4037 lists every src/ file changed since 87f3f2f3, 442 files at 9af198ab, including src/agent/providers/cli-provider.ts and src/workflow/delivery/types.ts. Expected: it passes. The Story it guards (Epic build-vs-code-plugin-ui-integration-E20260929bfe98ff7, S004) touched no src/ file in its own commits: `git diff --name-only 87f3f2f3..5db5fe95` lists 0 src/ files and 4 vscode-plugin/src/chat/ files (docs-review-panel.ts, protocol.ts, __tests__/docs-review-panel.test.ts, __tests__/fixtures/ux-parity.ts). Consequence: the file's suite is red for any later build that validates it. The build validation gate refused E2 s4/t3 twice for this test alone (verdict passed:false, check 'The pane's existing tests pass unchanged').",
+    "rootCause": "The test computes its window as `git diff --name-only <planCommit>..HEAD` (:4024), where planCommit is the last commit touching docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md (:4020, resolving to 87f3f2f3 'S004 PLAN approved'). It unions that with `git status --porcelain` (:4027) into `paths`, and asserts that the src/-prefixed entries of `paths` are [] (:4036-4037). Both ends of the window are open: HEAD and the working tree keep moving after the Story closed, so the window grew to cover every later commit and uncommitted change in the repo. The window was correct only while S004 was in progress. Once its BUILD was approved (5db5fe95, the last commit touching S004/BUILD.md; 87f3f2f3 is its ancestor), the guard began checking other work's src/ changes against S004's rule. The same open window is used by a second test from that Story, 't6: docs-sections.ts is BYTE-IDENTICAL' (:5640-5650, `${planCommit}..HEAD` at :5648). It passes today only because no later commit has touched docs-sections.ts.",
+    "fixIntent": "Close the window at the Story's own completion point in both tests that use it (:4004 and :5640). The end becomes the commit that approved S004's BUILD, recorded in the repo as the last commit touching its S004/BUILD.md, in place of HEAD (and, for :4004, the working tree). Each guard then checks exactly S004's committed change set. The existing assertions stay: the PLAN commit is a commit, the window is non-empty, nothing in it is under src/, and the Story worked in vscode-plugin/src/chat/ (for :4004); docs-sections.ts is not in it (for :5640). The change touches only this one test file; no production code changes."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+      "quotedText": "const committed = git('diff', '--name-only', `${planCommit}..HEAD`)"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md",
+      "quotedText": "5db5fe95 docs(workflow): S004 BUILD approved — Story complete, Epic bfe98ff7 complete 4/4"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/BUILD-bfe98ff7f97178cf-s4.json"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:5648",
+      "quotedText": "const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..HEAD`], { cwd: repoRoot, encoding: 'utf8' });"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "git: merge-base --is-ancestor 87f3f2f3 5db5fe95 (exit 0); log -1 -- S004/BUILD.md → 5db5fe95; log -1 -- S004/PLAN.md → 87f3f2f3; diff --name-only 87f3f2f3..5db5fe95 → 0 src/, 4 vscode-plugin/src/chat/",
+      "quotedText": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, vscode-plugin/src/chat/__tests__/fixtures/ux-parity.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/protocol.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:4036",
+      "quotedText": "const daemonFiles = paths.filter((p) => p.startsWith('src/'));"
+    }
+  ]
+}

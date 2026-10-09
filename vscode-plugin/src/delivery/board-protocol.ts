@@ -14,7 +14,7 @@
  * interim item list; s2's board view model (sc5) replaces it, and the variant
  * stays declared but unsent. The 'show-more' up-message (AMD-6a1315585c38c41c-2)
  * asks for the next page of one column. The epic rollup and issue view models
- * are s3's; the item details model is declared by the story that owns it (s4).
+ * are s3's; the item details model (sc6) and its task and evidence rows are s4's.
  */
 
 import type { Envelope } from '../chat/protocol.js';
@@ -139,8 +139,46 @@ export interface IssueViewModel {
   readonly emptySelection: boolean;
 }
 
-/** Declared by its owning story: ItemDetailsViewModel (s4). */
-export type ItemDetailsViewModel = unknown;
+/** One task of the selected story (s4): its result, and its dependencies and checks from the story's PLAN. */
+export interface TaskRowView {
+  readonly taskItemId: string;
+  readonly title: string | null;
+  /** Result label from sc4, or the unplanned label. */
+  readonly resultLabel: string;
+  readonly planned: boolean;
+  /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */
+  readonly dependsOn: readonly string[] | null;
+  readonly acceptanceChecks: readonly string[] | null;
+}
+
+/** One evidence record of the selected item (s4), and where opening it goes. */
+export interface EvidenceRowView {
+  readonly artifactId: string;
+  readonly kindLabel: string;
+  readonly approvalLabel: string;
+  readonly reviewLabel: string | null;
+  readonly overrideLabel: string | null;
+  readonly opensIn: 'review-pane' | 'read-only';
+}
+
+/** The details of the selected item (s4, sc6), built from the shown snapshot alone. */
+export interface ItemDetailsViewModel {
+  readonly itemId: string;
+  readonly title: string;
+  readonly stageLabel: string | null;
+  readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;
+  readonly tasks: readonly TaskRowView[];
+  readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;
+  readonly conflict: string | null;
+  readonly evidence: readonly EvidenceRowView[];
+  readonly notices: readonly string[];
+  readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];
+  readonly sourceIds: readonly string[];
+  /** Set when the PLAN read failed; the rest of the details still render. */
+  readonly planNotice: string | null;
+  /** The read-only text of an evidence-read record the reader opened, rendered as preformatted text. */
+  readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;
+}
 
 /** Host -> webview. Each message replaces what it names; nothing is merged. */
 export type BoardDownMessage =

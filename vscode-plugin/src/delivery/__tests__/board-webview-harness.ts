@@ -65,6 +65,8 @@ export function makeEl(tag: string): FakeEl {
 /** Every text in an element's subtree, depth first. */
 export const texts = (e: FakeEl): string[] => [e.textContent, ...e.children.flatMap(texts)].filter(t => t.length > 0);
 export const findAll = (e: FakeEl, pred: (x: FakeEl) => boolean): FakeEl[] => [...(pred(e) ? [e] : []), ...e.children.flatMap(c => findAll(c, pred))];
+/** The board's cards in document order: the li.card elements, the one rule every board test counts by. */
+export const cardsIn = (root: FakeEl): FakeEl[] => findAll(root, e => e.tag === 'li' && e.attrs['class'] === 'card');
 
 /** Run the webview script against the fake DOM; elements are created on first lookup by id. */
 /** state is the webview state VS Code hands back on boot; stateThrows makes getState throw. */

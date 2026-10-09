@@ -19,7 +19,7 @@ import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { createDeliveryBoardHost } from '../board-host.js';
 import type { BoardDownMessage, Envelope } from '../board-protocol.js';
 import { largeSnapshot } from './board-fixtures.js';
-import { findAll, runScript } from './board-webview-harness.js';
+import { cardsIn, runScript } from './board-webview-harness.js';
 import { flush } from './flush.js';
 
 const FIRST_RENDER_MS = 1000;
@@ -50,7 +50,7 @@ function boardOverScript() {
   return { w, host, send: (payload: unknown) => toHost?.({ v: 1, payload }) };
 }
 
-const cards = (w: ReturnType<typeof runScript>) => findAll(w.el['board']!, e => e.tag === 'li' && e.attrs['class'] === 'card').length;
+const cards = (w: ReturnType<typeof runScript>) => cardsIn(w.el['board']!).length;
 
 test('a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three', async (t) => {
   const snap = largeSnapshot();

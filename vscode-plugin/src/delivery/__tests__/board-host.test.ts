@@ -14,7 +14,7 @@ import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../bo
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
 import { evidence as ev, item, snapshot as fixtureSnapshot } from './board-fixtures.js';
-import { findAll, focusState, keyEvent, runScript, texts, type FakeEl } from './board-webview-harness.js';
+import { cardsIn, findAll, focusState, keyEvent, runScript, texts, type FakeEl } from './board-webview-harness.js';
 import { flush } from './flush.js';
 
 interface FakeChannel extends ChatPanelChannel {
@@ -246,7 +246,7 @@ test('the board view renders titles and notices containing markup and script as 
   assert.equal(columns.length, 6);
   assert.deepEqual(columns.map(c => c.children[0]!.textContent),
     ['Scoped (1)', 'Design & plan (0)', 'Ready · design approved (0)', 'Ready · plan approved (0)', 'Build recorded (0)', 'Complete (1)']);
-  const cards = findAll(el['board']!, x => x.attrs['class'] === 'card');
+  const cards = cardsIn(el['board']!);
   assert.deepEqual(cards.map(c => c.attrs['data-item-id']), ['I1', 'S1']);
   const s1 = cards[1]!;
   assert.deepEqual(texts(s1), [`Story · ${hostile}`, `Epic: Epic ${hostile}`, 'Validation conflict', 'Unknown route'],
@@ -921,7 +921,7 @@ test('a narrow pane stacks the columns into one list grouped by stage, and no ru
   deliver({ v: 1, payload: { type: 'board', model: lastBoard(ch) } });
   const sections = findAll(el['board']!, e => e.tag === 'section');
   assert.equal(sections.length, 6, 'one group per stage');
-  assert.deepEqual(findAll(el['board']!, e => e.tag === 'li' && e.attrs['class'] === 'card').map(c => c.attrs['data-item-id']), ['S1', 'S2']);
+  assert.deepEqual(cardsIn(el['board']!).map(c => c.attrs['data-item-id']), ['S1', 'S2']);
   assert.ok(texts(el['board']!).includes('Rejected'), 'the warning badge is rendered');
 });
 
@@ -1017,7 +1017,6 @@ async function liveBoard(snap: DeliverySnapshot) {
   return { s, ch, w, pump, relay };
 }
 
-const cardsIn = (root: FakeEl) => findAll(root, e => e.tag === 'li' && e.attrs['class'] === 'card');
 const cardOf = (root: FakeEl, id: string) => cardsIn(root).find(c => c.attrs['data-item-id'] === id)!;
 
 test('every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card', async () => {

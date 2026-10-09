@@ -21,7 +21,6 @@ import Ajv2020 from 'ajv/dist/2020.js';
 
 import { CLASSIFIED_INTENT_SCHEMA, CLASSIFIER_SCHEMA_VERSION } from '../classifier/schema.js';
 import { ClassifierLlmUnavailableError } from '../classifier/driver.js';
-import { ScopePickerLlmUnavailableError } from '../classifier/scope-picker.js';
 import { DECOMPOSE_SCHEMA } from '../context/decomposer.js';
 import { ANALYZE_CONTEXT_BUNDLE_SCHEMA, modelFacingBundleSchema, SCHEMA_VERSION } from '../context/schema.js';
 import { CAPABILITY_VERDICTS_SCHEMA } from '../explore/capability-reuse-check.js';
@@ -73,12 +72,11 @@ test("a schema's identifier has no fragment and still carries the schema's versi
 	}
 });
 
-test('a failed model call for planning, classification or picking the size names the call and no provider', () => {
+test('a failed model call for planning or classification names the call and no provider', () => {
 	const cause = 'claude exited with 1. API Error: 400 schema is invalid';
 	const cases: ReadonlyArray<readonly [Error, string]> = [
 		[new PlanBuilderLlmUnavailableError(cause), `The model call for the plan builder failed: ${cause}`],
 		[new ClassifierLlmUnavailableError(cause),  `The model call for classification failed: ${cause}`],
-		[new ScopePickerLlmUnavailableError(cause), `The model call for picking the size failed: ${cause}`],
 	];
 	for (const [err, expected] of cases) {
 		assert.equal(err.message, expected);

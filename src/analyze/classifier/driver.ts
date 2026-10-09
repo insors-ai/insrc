@@ -21,7 +21,7 @@
  *   4. Run semantic validation (validate.ts). On failure: append a
  *      corrective note + the failure reason to the user message
  *      and retry ONCE.
- *   5. Return the typed ClassifiedIntent on success, throw a typed
+ *   5. Return the typed intent (with no size) on success, throw a typed
  *      error on exhaustion / unrecoverable failures.
  *
  * No tool-loop: the classifier consumes the bundle's content
@@ -55,7 +55,7 @@ import type {
 	ClassifyInput,
 	ClassifyOpts,
 } from './types.js';
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { UnsizedIntent } from '../measure.js';
 import { validateIntentSemantics, type ValidationFailure } from './validate.js';
 
 const log = getLogger('analyze:classifier');
@@ -124,7 +124,7 @@ export function connectionCheckFor(
 	return args.connectionExists ?? connectionIsRegistered;
 }
 
-export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedIntent> {
+export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent> {
 	const { input, opts } = args;
 	const cfg = loadAnalyzeConfig();
 
@@ -150,9 +150,9 @@ export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedInte
 	// case (matches the design's "after two failures, the analyze
 	// run aborts with a clear scopeRef-unresolved error").
 	for (let attempt = 0; attempt < 2; attempt++) {
-		let raw: ClassifiedIntent;
+		let raw: UnsizedIntent;
 		try {
-			raw = await provider.completeStructured<ClassifiedIntent>(
+			raw = await provider.completeStructured<UnsizedIntent>(
 				messages,
 				CLASSIFIED_INTENT_SCHEMA as Record<string, unknown>,
 				{
@@ -174,7 +174,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<ClassifiedInte
 		const failure = await validateIntentSemantics(raw, connectionCheckFor(args));
 		if (failure === null) {
 			log.debug(
-				{ runId: opts.runId, target: raw.target, scope: raw.scope, attempt },
+				{ runId: opts.runId, target: raw.target, attempt },
 				'classifier intent validated',
 			);
 			return raw;
@@ -232,7 +232,7 @@ function buildInitialMessages(
 		'\n```\n' +
 		`\n` +
 		'Now classify. Emit ONLY the JSON object matching the ClassifiedIntent ' +
-		'schema -- no prose, no fenced block. Required fields: target, scope, ' +
+		'schema -- no prose, no fenced block. Required fields: target, ' +
 		'focused, scopeRef ({kind, value}), reasoning. Optional: focus ' +
 		'(required when focused=true). Every layer value is a single string ' +
 		'or boolean per the schema -- never nested objects.';
@@ -245,7 +245,7 @@ function buildInitialMessages(
 
 function appendCorrectionTurn(
 	prior:    LLMMessage[],
-	rejected: ClassifiedIntent,
+	rejected: UnsizedIntent,
 	failure:  ValidationFailure,
 ): LLMMessage[] {
 	return [

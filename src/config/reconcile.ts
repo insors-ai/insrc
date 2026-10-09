@@ -36,7 +36,8 @@
  *                and the discarded prior value is recorded
  */
 
-import { CONFIG_CATALOG, CONFIG_MIGRATIONS, RETIRED_PATHS, type ConfigMigration, type ConfigOption, type RetiredPath } from './config-catalog.js';
+import { CONFIG_CATALOG, CONFIG_MIGRATIONS, RETIRED_PATHS, RETIRED_ROLE_IDS, type ConfigMigration, type ConfigOption, type RetiredPath } from './config-catalog.js';
+import { roleDescriptor } from './role-taxonomy.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -271,6 +272,36 @@ function assertRetiredDisjoint(catalog: readonly ConfigOption[], retired: readon
 	}
 }
 
+/**
+ * Catalog-integrity: a retired role id must not be a live role. A role cannot
+ * be both routed and have its stored tier stripped.
+ */
+function assertRetiredRolesNotLive(retiredRoleIds: readonly string[], isLiveRole: (id: string) => boolean): void {
+	for (const id of retiredRoleIds) {
+		if (isLiveRole(id)) {
+			throw new ConfigCatalogError(`models.tasks.${id}`,
+				`retired role id '${id}' is in the role taxonomy (retired ∩ taxonomy ≠ ∅)`);
+		}
+	}
+}
+
+/**
+ * Where a retired role id's stored tier can be: under `models.tasks`, and under
+ * the `tasks` of each entry of `models.byRepo`. Each place is a list of KEYS,
+ * not a dot-path: the role id and a repo's path are single keys that hold dots
+ * and slashes. `label` is how the place is reported as pruned.
+ */
+function retiredRolePlaces(config: Record<string, unknown>, id: string): Array<{ keys: string[]; label: string }> {
+	const places = [{ keys: ['models', 'tasks', id], label: `models.tasks["${id}"]` }];
+	const byRepo = readAt(config, ['models', 'byRepo']);
+	if (isPlainObject(byRepo)) {
+		for (const repo of Object.keys(byRepo)) {
+			places.push({ keys: ['models', 'byRepo', repo, 'tasks', id], label: `models.byRepo["${repo}"].tasks["${id}"]` });
+		}
+	}
+	return places;
+}
+
 // ---------------------------------------------------------------------------
 // Public entry point
 // ---------------------------------------------------------------------------
@@ -286,7 +317,11 @@ function assertRetiredDisjoint(catalog: readonly ConfigOption[], retired: readon
  * keys is refined to "preserve every un-catalogued key EXCEPT those explicitly
  * on the retired list". Idempotent: a second pass reports changed === false.
  *
- * @throws ConfigCatalogError if a catalog row has an out-of-domain type or a
+ * The prune also strips the stored tier of each retired role id (see
+ * RETIRED_ROLE_IDS), under `models.tasks` and per repo.
+ *
+ * @throws ConfigCatalogError if a retired role id is still in the role taxonomy,
+ *         if a catalog row has an out-of-domain type or a
  *         default that fails its own predicate, or a retired path overlaps a
  *         live catalog path (both are shipped-catalog bugs).
  */
@@ -295,8 +330,12 @@ export function reconcileConfig(
 	catalog: readonly ConfigOption[] = CONFIG_CATALOG,
 	retired: readonly RetiredPath[] = RETIRED_PATHS,
 	migrations: readonly ConfigMigration[] = CONFIG_MIGRATIONS,
+	retiredRoleIds: readonly string[] = RETIRED_ROLE_IDS,
+	/** Whether an id is a live role; a test stands in for the taxonomy. */
+	isLiveRole: (id: string) => boolean = id => roleDescriptor(id) !== undefined,
 ): ConfigReconcileResult {
 	assertRetiredDisjoint(catalog, retired);
+	assertRetiredRolesNotLive(retiredRoleIds, isLiveRole);
 
 	// Root is a shallow copy so we never write through to `existing`; nested
 	// nodes are copied lazily (copy-on-write) only when a descendant is written.
@@ -357,6 +396,17 @@ export function reconcileConfig(
 		if (hasPath(config, keys)) {
 			deleteAt(config, owned, keys);
 			pruned.push(r.path);
+		}
+	}
+
+	// Retired role ids: the stored tier of a role that no longer exists, globally
+	// and per repo. Reported as pruned, like a retired path.
+	for (const id of retiredRoleIds) {
+		for (const place of retiredRolePlaces(config, id)) {
+			if (hasPath(config, place.keys)) {
+				deleteAt(config, owned, place.keys);
+				pruned.push(place.label);
+			}
 		}
 	}
 

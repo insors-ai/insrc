@@ -1054,7 +1054,7 @@ function deriveEmptyLayers(bundle: AnalyzeContextBundle): BundleLayerName[] {
  * MCP-integration shaperProvider config only routes the structured-
  * output call sites (decomposer, synthesizer, doc.decision.trace,
  * doc.constraint.enumerate, capability.reuse-check, classifier,
- * scope-picker, planner, summariser, adherence, aggregator) --
+ * planner, summariser, adherence, aggregator) --
  * everything reachable via `buildShaperProvider(cfg)`. Tool-loop
  * callers stay on Ollama regardless of shaperProvider.
  */

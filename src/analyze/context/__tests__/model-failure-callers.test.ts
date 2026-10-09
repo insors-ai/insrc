@@ -21,11 +21,6 @@ import {
 	_classifyErrorForTest as classifierClassify,
 } from '../../classifier/driver.js';
 import {
-	ScopePickerLlmUnavailableError,
-	ScopePickerSchemaUnrecoverable,
-	_classifyErrorForTest as scopePickerClassify,
-} from '../../classifier/scope-picker.js';
-import {
 	PlanBuilderLlmUnavailableError,
 	PlanBuilderSchemaUnrecoverable,
 	_classifyErrorForTest as plannerClassify,
@@ -76,13 +71,12 @@ test('source search: the failure-text list exists only in model-failure.ts', () 
 	assert.deepEqual(holders, ['context/model-failure.ts']);
 });
 
-test('each of the six callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error', () => {
+test('each of the five callers classifies a CLI call failure as its model-unavailable error and a shape failure as its schema error', () => {
 	for (const err of CALL_FAILURES) {
 		const label = `${err.name}: ${err.message}`;
 		assert.ok(plannerClassify(err) instanceof PlanBuilderLlmUnavailableError, `planner: ${label}`);
 		assert.match(aggregatorClassify(err).message, /^aggregator-llm-unavailable: /, `aggregator: ${label}`);
 		assert.ok(classifierClassify(err) instanceof ClassifierLlmUnavailableError, `classifier: ${label}`);
-		assert.ok(scopePickerClassify(err) instanceof ScopePickerLlmUnavailableError, `scope picker: ${label}`);
 		assert.equal(summariserClassify(err), 'llm-unavailable', `summariser: ${label}`);
 		assert.ok(toolLoopClassify(err) instanceof ShaperLlmUnavailableError, `tool loop: ${label}`);
 	}
@@ -91,7 +85,6 @@ test('each of the six callers classifies a CLI call failure as its model-unavail
 		assert.ok(plannerClassify(err) instanceof PlanBuilderSchemaUnrecoverable, `planner: ${label}`);
 		assert.match(aggregatorClassify(err).message, /^aggregator-schema-unrecoverable: /, `aggregator: ${label}`);
 		assert.ok(classifierClassify(err) instanceof ClassifierSchemaUnrecoverable, `classifier: ${label}`);
-		assert.ok(scopePickerClassify(err) instanceof ScopePickerSchemaUnrecoverable, `scope picker: ${label}`);
 		// The summariser has its own, older vocabulary for a wrong-shaped
 		// answer: it names 'schema-unrecoverable' only for the two texts
 		// it knows and files the rest under 'other'. Pinned exactly, so
@@ -113,6 +106,5 @@ test('a typed sampling failure reaches each caller\'s error as the client\'s own
 	assert.ok(!plannerClassify(err).message.includes('Model call failed:'), 'no doubled prefix');
 	assert.equal(aggregatorClassify(err).message, 'aggregator-llm-unavailable: client declined');
 	assert.match(classifierClassify(err).message, /client declined$/);
-	assert.match(scopePickerClassify(err).message, /client declined$/);
 	assert.match(toolLoopClassify(err).message, /client declined$/);
 });

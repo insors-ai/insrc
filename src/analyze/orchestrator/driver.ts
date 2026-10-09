@@ -290,12 +290,10 @@ async function runStages(
 		log.info({ runId, target: unsized.target }, 'runAnalyze: classifier skipped via targetHint');
 	} else {
 		try {
-			// The classifier still returns a size of its own; it is not used.
-			const { scope: _modelSize, ...classified } = await classifyImpl({
+			unsized = await classifyImpl({
 				input: { userPrompt, scopeRef: initialScopeRef },
 				opts: { runId },
 			});
-			unsized = classified;
 		} catch (err) {
 			const failure = classifyClassifierError(err);
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
@@ -648,10 +646,9 @@ export async function hintedIntentBase(
 	const base: HintedIntentBase = focus.length > 0
 		? { target, focused: true, focus, scopeRef }
 		: { target, focused: false, scopeRef };
-	// The size is not part of either check; 'M' is a placeholder here.
 	let failure: Awaited<ReturnType<typeof validateIntentSemantics>>;
 	try {
-		failure = await validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, connectionExists);
+		failure = await validateIntentSemantics({ ...base, reasoning: '' }, connectionExists);
 	} catch (err) {
 		// The connection check can throw (an unreadable connections file,
 		// a registry that cannot be read). That is a failure of this

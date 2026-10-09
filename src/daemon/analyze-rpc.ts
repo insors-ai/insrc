@@ -342,9 +342,9 @@ export async function classify(params: unknown): Promise<ClassifyRpcResponse> {
 	const opts: ClassifyOpts = { runId: parsed.runId };
 
 	try {
-		// The size is not the classifier's to state: it is counted from the scope
-		// the classifier named. The response keeps the field, with the measured size.
-		const { scope: _modelSize, ...unsized } = await classifierImpl({ input, opts });
+		// The classifier states no size: it is counted from the scope the
+		// classifier named. The response keeps the field, with the measured size.
+		const unsized = await classifierImpl({ input, opts });
 		const measure = await measureRequestScope(unsized.scopeRef, unsized.target);
 		log.debug({ runId: parsed.runId, size: measure.size, determined: measure.determined }, 'analyze.classify complete');
 		return { ok: true, intent: { ...unsized, scope: measure.size }, measure };
@@ -1117,8 +1117,7 @@ function parseRunParams(params: unknown): RunParams {
 	// The builder measures the request, so the intent of a run-level request
 	// need not carry a size. One that does is checked as before and then left
 	// out: only a size given as `sizeHint` is carried, as a hint.
-	const rawIntent = requireObject(obj['intent'], 'intent');
-	const { scope: _notRead, ...unsized } = parseIntent(rawIntent['scope'] === undefined ? { ...rawIntent, scope: 'M' } : rawIntent);
+	const { scope: _notRead, ...unsized } = parseIntent(obj['intent'], 'size-optional');
 	const result: { runId: string; intent: UnsizedIntent; sizeHint?: AnalyzeScope } = { runId: requireString(obj, 'runId'), intent: unsized };
 	if (obj['sizeHint'] !== undefined) {
 		const validScopes = ['XS', 'S', 'M', 'L', 'XL'];
@@ -1211,7 +1210,7 @@ function parsePlanParams(params: unknown): PlanParams {
 	const obj = requireObject(params, 'params');
 	const result: Record<string, unknown> = {
 		runId: requireString(obj, 'runId'),
-		intent: parseIntent(obj['intent']),
+		intent: parseIntent(obj['intent'], 'size-required'),
 	};
 	if (typeof obj['parentTaskPath'] === 'string' && obj['parentTaskPath'].length > 0) {
 		result['parentTaskPath'] = obj['parentTaskPath'];
@@ -1237,7 +1236,7 @@ function parseTaskParams(params: unknown): TaskParams {
 	const obj = requireObject(params, 'params');
 	return {
 		runId: requireString(obj, 'runId'),
-		intent: parseIntent(obj['intent']),
+		intent: parseIntent(obj['intent'], 'size-required'),
 		task: parseTask(obj['task']),
 		template: parseTemplate(obj['template']),
 		upstream: parseUpstream(obj['upstream']),
@@ -1259,21 +1258,28 @@ function parseScopeRef(value: unknown): AnalyzeScopeRef {
 	};
 }
 
-function parseIntent(value: unknown): ClassifiedIntent {
+/**
+ * Parse an intent. A size on it is always checked. A run-level request need
+ * not carry one (`size-optional`): its size is measured, and no size is put in
+ * the absent one's place.
+ */
+function parseIntent(value: unknown, size: 'size-required'): ClassifiedIntent;
+function parseIntent(value: unknown, size: 'size-optional'): UnsizedIntent & { scope?: AnalyzeScope };
+function parseIntent(value: unknown, size: 'size-required' | 'size-optional'): UnsizedIntent & { scope?: AnalyzeScope } {
 	const obj = requireObject(value, 'intent');
 	const target = requireString(obj, 'target');
 	const validTargets = ['code', 'data', 'infra', 'generic', 'docs'];
 	if (!validTargets.includes(target)) {
 		throw new TypeError(`intent.target: must be one of ${validTargets.join(', ')}; got '${target}'`);
 	}
-	const scope = requireString(obj, 'scope');
 	const validScopes = ['XS', 'S', 'M', 'L', 'XL'];
-	if (!validScopes.includes(scope)) {
+	const scope = size === 'size-optional' && obj['scope'] === undefined ? undefined : requireString(obj, 'scope');
+	if (scope !== undefined && !validScopes.includes(scope)) {
 		throw new TypeError(`intent.scope: must be one of ${validScopes.join(', ')}; got '${scope}'`);
 	}
 	const result: Record<string, unknown> = {
 		target: target as ClassifiedIntent['target'],
-		scope: scope as ClassifiedIntent['scope'],
+		...(scope !== undefined ? { scope: scope as ClassifiedIntent['scope'] } : {}),
 		focused: requireBoolean(obj, 'focused'),
 		scopeRef: parseScopeRef(obj['scopeRef']),
 		reasoning: requireString(obj, 'reasoning'),
@@ -1281,7 +1287,7 @@ function parseIntent(value: unknown): ClassifiedIntent {
 	if (obj['focus'] !== undefined && obj['focus'] !== null) {
 		result['focus'] = requireString(obj, 'focus');
 	}
-	return result as unknown as ClassifiedIntent;
+	return result as unknown as UnsizedIntent & { scope?: AnalyzeScope };
 }
 
 function parseTask(value: unknown): PlannedTask {

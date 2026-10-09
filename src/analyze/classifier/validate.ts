@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Cross-field validation for a `ClassifiedIntent`:
+ * Cross-field validation for a classified intent (it needs no size):
  *
  *   1. scopeRef.kind must be compatible with target (a `connection`
  *      scope on a `code` target is a contradiction).
@@ -28,8 +28,8 @@ import { existsSync, statSync } from 'node:fs';
 import type {
 	AnalyzeScopeRef,
 	AnalyzeTarget,
-	ClassifiedIntent,
 } from '../../shared/analyze-types.js';
+import type { UnsizedIntent } from '../measure.js';
 
 /**
  * Per-target allowed scopeRef.kind values. The classifier picks a
@@ -89,7 +89,7 @@ export interface ValidationFailure {
  * state.
  */
 export async function validateIntentSemantics(
-	intent: ClassifiedIntent,
+	intent: UnsizedIntent,
 	connectionExists?: (id: string) => Promise<boolean>,
 ): Promise<ValidationFailure | null> {
 	const kindMismatch = checkKindTargetMatch(intent.target, intent.scopeRef.kind);

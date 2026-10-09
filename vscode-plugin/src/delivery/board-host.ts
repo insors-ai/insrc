@@ -15,14 +15,23 @@
  * disposed an outstanding answer is discarded without being dispatched, posted
  * or logged, and the next open() starts a new panel with a fresh state.
  *
+ * The host also keeps the board's paging (E2 s2): show-more raises one
+ * column's page, and a scope, search or attention change resets it. Every
+ * derive keeps the new state only when it renders, and items whose stage is
+ * not one of the six are logged once per applied refresh.
+ *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
  * renders the status and the s1 item list as text (textContent only) and posts
  * only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  */
 
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
-import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
-import { boardDownMessages, initialBoardState, reduceBoardState, type BoardEvent, type BoardState } from './board-state.js';
+import { showMore, unknownStages, type BoardPaging } from './board-model.js';
+import { parseBoardUpMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import {
+  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot,
+  type BoardEvent, type BoardSelection, type BoardState,
+} from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { errorText } from './guards.js';
@@ -94,20 +103,25 @@ export function renderBoardDocument(nonce: string): string {
 export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBoardHost {
   let channel: ChatPanelChannel | undefined;
   let state: BoardState = initialBoardState();
+  /** The visible card limit per column; reset by a scope, search or attention change, kept across refreshes. */
+  let paging: BoardPaging = {};
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
 
-  function post(): void {
-    for (const m of boardDownMessages(state, DISPLAY_LABELS)) channel?.postMessage(m);
+  /**
+   * Derive the messages first; the new state and paging are kept only when they render, so a bad snapshot or
+   * selection never becomes the board's. A throw leaves both as they were and posts nothing.
+   */
+  function apply(next: BoardState, nextPaging: BoardPaging): void {
+    const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);
+    state = next;
+    paging = nextPaging;
+    for (const m of messages) channel?.postMessage(m);
   }
 
-  /** Reduce and derive the messages first; the new state is kept only when it renders, so a bad snapshot never becomes the last one. */
-  function dispatch(event: BoardEvent): void {
-    const next = reduceBoardState(state, event);
-    const messages = boardDownMessages(next, DISPLAY_LABELS);
-    state = next;
-    for (const m of messages) channel?.postMessage(m);
+  function dispatch(event: BoardEvent, nextPaging: BoardPaging = paging): void {
+    apply(reduceBoardState(state, event), nextPaging);
   }
 
   function elapsedMs(since: string): number {
@@ -140,6 +154,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     }
     try {
       dispatch({ type: 'snapshot-arrived', seq, result, at });
+      if (result.ok) logUnknownStages(seq, result.value);
     } catch (err) {
       // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
       // board, so this shows a failed refresh over it rather than a frozen board.
@@ -154,18 +169,44 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     }
   }
 
+  /** Once per applied refresh: the items left off the board because their stage is not one of the six. */
+  function logUnknownStages(seq: number, snapshot: DeliverySnapshot): void {
+    const unknown = unknownStages(snapshot);
+    if (unknown.size === 0) return;
+    const named = [...unknown].map(([stage, n]) => `${stage} (${n})`).join(', ');
+    deps.logger.warn(`delivery board: refresh ${seq} left items with unknown stages off the board: ${named}`);
+  }
+
+  /** An epic scope must name an epic in the shown snapshot. */
+  function knownScope(scope: BoardScope): boolean {
+    if (scope.kind !== 'epic') return true;
+    const shown = shownSnapshot(state.status);
+    return shown !== null && shown.snapshot.items.some(i => i.kind === 'epic' && i.id === scope.epicItemId);
+  }
+
+  function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
+    dispatch({ type: 'selection-changed', selection }, nextPaging);
+  }
+
   function handle(msg: BoardUpMessage): void {
     const sel = state.selection;
     switch (msg.type) {
-      case 'ready': post(); return;
+      case 'ready': apply(state, paging); return;
       case 'refresh': void refresh(); return;
-      case 'set-view': dispatch({ type: 'selection-changed', selection: { ...sel, view: msg.view } }); return;
-      case 'set-scope': dispatch({ type: 'selection-changed', selection: { ...sel, scope: msg.scope } }); return;
-      case 'set-search': dispatch({ type: 'selection-changed', selection: { ...sel, search: msg.search } }); return;
-      case 'set-attention': dispatch({ type: 'selection-changed', selection: { ...sel, needsAttentionOnly: msg.on } }); return;
-      case 'select-item': dispatch({ type: 'selection-changed', selection: { ...sel, selectedItemId: msg.itemId } }); return;
-      case 'close-details': dispatch({ type: 'selection-changed', selection: { ...sel, selectedItemId: null } }); return;
-      case 'set-density': dispatch({ type: 'selection-changed', selection: { ...sel, density: msg.density } }); return;
+      case 'set-view': select({ ...sel, view: msg.view }); return;
+      case 'set-scope':
+        if (!knownScope(msg.scope)) {
+          deps.logger.warn('delivery board: ignored a scope naming an epic that is not on the board');
+          return;
+        }
+        select({ ...sel, scope: msg.scope }, {});
+        return;
+      case 'set-search': select({ ...sel, search: msg.search }, {}); return;
+      case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
+      case 'select-item': select({ ...sel, selectedItemId: msg.itemId }); return;
+      case 'close-details': select({ ...sel, selectedItemId: null }); return;
+      case 'set-density': select({ ...sel, density: msg.density }); return;
+      case 'show-more': apply(state, showMore(paging, msg.stage)); return;
       case 'open-evidence': return;   // opening evidence is s4's
     }
   }
@@ -174,6 +215,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     generation++;
     channel = undefined;
     state = initialBoardState();
+    paging = {};
     nextSeq = 0;
   }
 
@@ -193,7 +235,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           deps.logger.warn('delivery board: ignored a malformed webview message');
           return;
         }
-        handle(msg);
+        try {
+          handle(msg);
+        } catch (err) {
+          // apply() keeps state and paging only when they render, so the board stays as it was.
+          deps.logger.error(`delivery board: ${msg.type} could not be shown: ${errorText(err)}`);
+        }
       });
       opened.setHtml(renderBoardDocument(deps.genNonce()));
       void refresh();

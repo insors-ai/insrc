@@ -12,7 +12,8 @@ import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
-import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
+import type { DeliverySnapshot } from '../delivery-contract.js';
+import { item, snapshot as fixtureSnapshot } from './board-fixtures.js';
 import { flush } from './flush.js';
 
 interface FakeChannel extends ChatPanelChannel {
@@ -54,9 +55,9 @@ function controlledClient(): { client: DeliveryClient; calls: Deferred[] } {
   return { client, calls };
 }
 
+/** Scoped stories with the given ids, in the given order. */
 function snapshot(ids: readonly string[], takenAt: string): DeliverySnapshot {
-  const items = ids.map(id => ({ id, kind: 'story', title: `Title ${id}`, stage: null }) as unknown as DeliveryItem);
-  return { schemaVersion: 1, repo: '/ws', takenAt, recordCount: ids.length, unreadableCount: 0, items, rootIds: ids, notices: [], counts: {}, attentionRule: '' } as unknown as DeliverySnapshot;
+  return fixtureSnapshot(ids.map(id => item({ id })), { takenAt });
 }
 
 function setup() {
@@ -75,10 +76,12 @@ function setup() {
 }
 
 const payloads = (c: FakeChannel) => c.posted.map(e => e.payload);
-const lastItems = (c: FakeChannel) => {
-  const m = payloads(c).filter(p => p.type === 'items').at(-1);
-  return m?.type === 'items' ? m.items.map(i => i.itemId) : null;
+const lastBoard = (c: FakeChannel) => {
+  const m = payloads(c).filter(p => p.type === 'board').at(-1);
+  return m?.type === 'board' ? m.model : null;
 };
+/** Every card id on the last board posted, column by column. */
+const lastItems = (c: FakeChannel) => lastBoard(c)?.columns.flatMap(col => col.cards.map(k => k.itemId)) ?? null;
 
 test('opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot\'s items with its taken-at time', async () => {
   const { host, channels, created, calls } = setup();
@@ -117,7 +120,8 @@ test('when the earlier refresh answers after the later one, only the later snaps
   await flush();
   assert.equal(ch.posted.length, before, 'the superseded answer posts nothing');
   assert.deepEqual(lastItems(ch), ['new']);
-  assert.equal(payloads(ch).some(p => p.type === 'items' && p.items.some(i => i.itemId === 'old')), false);
+  assert.equal(payloads(ch).some(p => p.type === 'board' && p.model.columns.some(c => c.cards.some(k => k.itemId === 'old'))), false);
+  assert.equal(payloads(ch).some(p => p.type === 'items'), false, "the interim 'items' message is never sent");
   assert.equal(logs.warn.length, 1);
   assert.match(logs.warn[0]!, /dropped the answer to refresh 1 \(1 item\)/);
 
@@ -242,4 +246,87 @@ test('the board document inserts text only through textContent and posts only bo
   assert.equal(el['notice']!.textContent, hostile);
   assert.equal(el['items']!.children.length, 1);
   assert.equal(el['items']!.children[0]!.textContent, `story · ${hostile} · Complete`);
+});
+
+/** Open the board and answer its first refresh with the given snapshot. */
+async function openWith(snap: DeliverySnapshot) {
+  const s = setup();
+  s.host.open();
+  s.calls[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  return { ...s, ch: s.channels[0]! };
+}
+
+const column = (c: FakeChannel, stage: string) => lastBoard(c)?.columns.find(col => col.stage === stage);
+
+test('show-more reveals the next page of one column, and a new search resets paging', async () => {
+  const many = fixtureSnapshot([
+    ...Array.from({ length: 60 }, (_, n) => item({ id: `S${String(n).padStart(3, '0')}`, title: `Story ${n}` })),
+    item({ id: 'C1', stage: 'complete' }),
+  ]);
+  const { ch, calls, logs } = await openWith(many);
+  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount, column(ch, 'scoped')?.total], [50, 10, 60]);
+
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [60, 0], 'the next page of that column');
+  assert.equal(column(ch, 'complete')?.cards.length, 1, 'other columns are unchanged');
+
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  calls[1]!.resolve({ ok: true, value: many });
+  await flush();
+  assert.equal(column(ch, 'scoped')?.cards.length, 60, 'a refresh keeps paging');
+
+  ch.send({ v: 1, payload: { type: 'set-search', search: 'story' } });
+  assert.deepEqual([column(ch, 'scoped')?.cards.length, column(ch, 'scoped')?.hiddenCount], [50, 10], 'a new search resets paging');
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  ch.send({ v: 1, payload: { type: 'set-attention', on: false } });
+  assert.equal(column(ch, 'scoped')?.cards.length, 50, 'an attention change resets paging too');
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'all' } } });
+  assert.equal(column(ch, 'scoped')?.cards.length, 50, 'and so does a scope change');
+
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'no-such-epic' } } });
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'shipped' } });
+  assert.equal(ch.posted.length, before, 'an unknown epic or stage changes nothing');
+  assert.equal(logs.warn.length, 2);
+});
+
+test('an item with an unknown stage is left off the board and logged once per refresh', async () => {
+  const snap = fixtureSnapshot([item({ id: 'A', stage: 'shipped' }), item({ id: 'B', stage: 'shipped' }), item({ id: 'C', stage: 'scoped' })]);
+  const { ch, calls, logs } = await openWith(snap);
+  assert.deepEqual(lastItems(ch), ['C']);
+  assert.equal(lastBoard(ch)?.totals.items, 1);
+  assert.equal(logs.warn.length, 1);
+  assert.match(logs.warn[0]!, /refresh 1 left items with unknown stages off the board: shipped \(2\)/);
+
+  ch.send({ v: 1, payload: { type: 'set-search', search: 'c' } });
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  ch.send({ v: 1, payload: { type: 'ready' } });
+  assert.equal(logs.warn.length, 1, 'selection changes, show-more and ready do not log it again');
+
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  calls[1]!.resolve({ ok: true, value: snap });
+  await flush();
+  assert.equal(logs.warn.length, 2, 'the next applied refresh logs it once more');
+});
+
+test('a selection change that cannot be rendered keeps the previous board and is logged', async () => {
+  // A malformed sourceIds renders while the search is empty (it is never read) and throws once a search reads it.
+  const snap = fixtureSnapshot([item({ id: 'A', title: 'Alpha' }), item({ id: 'B', sourceIds: 42 as never })]);
+  const { ch, logs } = await openWith(snap);
+  assert.deepEqual(lastItems(ch), ['A', 'B']);
+
+  ch.send({ v: 1, payload: { type: 'show-more', stage: 'scoped' } });
+  const before = ch.posted.length;
+  ch.send({ v: 1, payload: { type: 'set-search', search: 'alpha' } });
+  assert.equal(ch.posted.length, before, 'nothing is posted');
+  assert.equal(logs.error.length, 1);
+  assert.match(logs.error[0]!, /set-search could not be shown/);
+
+  // The previous state is kept: the search is still empty.
+  ch.send({ v: 1, payload: { type: 'ready' } });
+  assert.deepEqual(lastItems(ch), ['A', 'B']);
+  ch.send({ v: 1, payload: { type: 'set-view', view: 'board' } });
+  assert.equal(logs.error.length, 1, 'with the search unchanged, later intents render');
 });

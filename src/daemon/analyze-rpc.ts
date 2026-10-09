@@ -1079,11 +1079,28 @@ function parseClassifyParams(params: unknown): ClassifyParams {
 	};
 }
 
+/** What the run request's parser says of an empty prompt with no stated kind of source. */
+export const EMPTY_PROMPT_NEEDS_SOURCE =
+	'userPrompt: a request with no prompt must state a kind of source (targetHint: one of code, data, infra, generic, docs); ' +
+	'with neither a prompt nor a kind of source there is nothing to classify';
+
 function parseRunStartParams(params: unknown): RunStartParams {
 	const obj = requireObject(params, 'params');
+	// The prompt may be the empty string when a kind of source is stated: the
+	// run is then unfocused. With none it is refused, because the classifier
+	// would have nothing to classify. Only the EMPTY string is empty here: a
+	// prompt of white space is a prompt, as it always was.
+	const runId = requireString(obj, 'runId');
+	const userPrompt = obj['userPrompt'];
+	if (typeof userPrompt !== 'string') {
+		throw new TypeError('userPrompt: must be a string');
+	}
+	if (userPrompt.length === 0 && obj['targetHint'] === undefined) {
+		throw new TypeError(EMPTY_PROMPT_NEEDS_SOURCE);
+	}
 	const result: Record<string, unknown> = {
-		runId: requireString(obj, 'runId'),
-		userPrompt: requireString(obj, 'userPrompt'),
+		runId,
+		userPrompt,
 		scopeRef: parseScopeRef(obj['scopeRef']),
 	};
 	if (obj['targetHint'] !== undefined) {

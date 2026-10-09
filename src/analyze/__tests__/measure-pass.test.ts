@@ -1,0 +1,495 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The measuring pass (LLD-b9d5c5c40df5a574-s2, task t3): a request's scope is
+ * resolved and counted from a temporary graph store, from the disk and from
+ * stand-in data drivers. No model, no network.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir, userInfo } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { loadConnections } from '../../daemon/db/config.js';
+import { getDb } from '../../db/client.js';
+import { findEntitiesByFile, listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
+import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
+import { addRepo, listRepos } from '../../db/repos.js';
+import { makeEntityId } from '../../indexer/parser/base.js';
+import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { Entity, EntityKind } from '../../shared/types.js';
+import type { ResolvedScope, ScopeDeps } from '../context/scope.js';
+import type { PlannedTask, TemplateExecuteArgs } from '../executor/types.js';
+import {
+	_setMeasureDepsForTest, measureDataSource, measureRequestScope, measureResolvedScope, sizeOfCounts,
+} from '../measure.js';
+import type { RequestMeasure } from '../measure.js';
+import { _setDataPoolSourceForTest, dataScopeOf, resolveDataScope } from '../runtimes/data/_shared.js';
+import { walkFiles } from '../runtimes/infra/_shared.js';
+import { _setTaskScopeDepsForTest } from '../runtimes/shared/task-scope.js';
+
+const NOW = '2026-10-09T10:00:00.000Z';
+
+let dir: string;
+/** A workspace directory that holds two registered repos. */
+let WS: string;
+let BIG: string;
+let SMALL: string;
+/** A registered repo, outside the workspace, with no stored entity. */
+let EMPTY: string;
+
+function ent(repo: string, kind: EntityKind, name: string, rel: string): Entity {
+	const file = join(repo, rel);
+	return {
+		id: makeEntityId(repo, file, kind, name), kind, name, language: 'typescript', repoId: 0, repo, file,
+		startLine: 1, endLine: 5, body: `// ${name}`, embedding: [], indexedAt: NOW,
+	} as Entity;
+}
+
+/** BIG: 30 files and 60 entities (the directory `pay` holds 2 files and 5 entities). SMALL: 1 file, 2 entities. */
+function bigEntities(): Entity[] {
+	const out: Entity[] = [
+		ent(BIG, 'file', 'settle.ts', 'pay/settle.ts'), ent(BIG, 'function', 'settle', 'pay/settle.ts'), ent(BIG, 'function', 'refund', 'pay/settle.ts'),
+		ent(BIG, 'file', 'ledger.ts', 'pay/ledger.ts'), ent(BIG, 'class', 'Ledger', 'pay/ledger.ts'),
+	];
+	for (let i = 0; i < 28; i++) {
+		const rel = `gen/f${String(i).padStart(2, '0')}.ts`;
+		out.push(ent(BIG, 'file', rel.split('/').pop()!, rel));
+		if (i < 27) out.push(ent(BIG, 'function', `fn${i}`, rel));
+	}
+	return out;
+}
+const smallEntities = (): Entity[] => [ent(SMALL, 'file', 'one.ts', 'one.ts'), ent(SMALL, 'function', 'one', 'one.ts')];
+
+test.beforeEach(async () => {
+	await closeGraphStore();
+	dir = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-measure-pass-')));
+	WS = join(dir, 'ws'); BIG = join(WS, 'big'); SMALL = join(WS, 'small'); EMPTY = join(dir, 'empty');
+	for (const d of [join(BIG, 'pay'), join(BIG, 'gen'), join(BIG, 'vacant'), SMALL, EMPTY]) mkdirSync(d, { recursive: true });
+	setGraphStorePath(join(dir, 'graph.lmdb'));
+	for (const path of [BIG, SMALL, EMPTY]) await addRepo(null, { path, name: '', addedAt: NOW, status: 'ready' });
+	await upsertEntities(await getDb(), [...bigEntities(), ...smallEntities()]);
+});
+
+test.afterEach(async () => {
+	_setMeasureDepsForTest(undefined);
+	_setDataPoolSourceForTest(undefined);
+	_setTaskScopeDepsForTest(undefined);
+	await closeGraphStore();
+	rmSync(dir, { recursive: true, force: true });
+});
+
+const ref = (kind: AnalyzeScopeRef['kind'], value: string): AnalyzeScopeRef => ({ kind, value });
+const counts = (m: RequestMeasure): unknown => ({ source: m.source, items: m.items, files: m.files, size: m.size, determined: m.determined });
+const undetermined = (m: RequestMeasure): unknown => ({ items: m.items, files: m.files, characters: m.characters, size: m.size, determined: m.determined });
+const UNDETERMINED = { items: 0, files: 0, characters: null, size: 'XL', determined: false };
+
+/** The scope function's real readers, with one or more replaced. */
+function scopeReaders(over: Partial<ScopeDeps> = {}): ScopeDeps {
+	return {
+		listRepos:           () => listRepos(null),
+		findEntitiesByFile:  file => findEntitiesByFile(null, file),
+		listEntitiesForRepo: repo => listEntitiesForRepo(null, repo),
+		loadConnections,
+		...over,
+	};
+}
+
+// ---------------------------------------------------------------------------
+// The stored graph
+// ---------------------------------------------------------------------------
+
+test('measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)', async () => {
+	// One request ("how does this work"), two scopes. The measure takes no prompt: the size comes from the counts alone.
+	const whole = await measureRequestScope(ref('repo', BIG), 'code');
+	const part  = await measureRequestScope(ref('module', join(BIG, 'pay')), 'code');
+	assert.deepEqual(counts(whole), { source: 'named-area', items: 60, files: 30, size: 'M', determined: true });
+	assert.deepEqual(counts(part),  { source: 'named-area', items: 5,  files: 2,  size: 'S', determined: true });
+	assert.notEqual(whole.size, part.size);
+	// A file and a symbol of the same repo: smaller still.
+	assert.deepEqual(counts(await measureRequestScope(ref('file', join(BIG, 'pay/settle.ts')), 'code')),
+		{ source: 'named-area', items: 3, files: 1, size: 'XS', determined: true });
+	assert.deepEqual(counts(await measureRequestScope(ref('symbol', `${join(BIG, 'pay/settle.ts')}#refund`), 'code')),
+		{ source: 'named-area', items: 1, files: 1, size: 'XS', determined: true });
+	// The docs family counts the same stored area.
+	assert.deepEqual(counts(await measureRequestScope(ref('module', join(BIG, 'pay')), 'docs')), counts(part));
+	// The other repo is its own count.
+	assert.deepEqual(counts(await measureRequestScope(ref('repo', SMALL), 'code')),
+		{ source: 'named-area', items: 2, files: 1, size: 'XS', determined: true });
+
+	// No model call: the module that measures names no provider and makes no completion.
+	const source = readFileSync(fileURLToPath(new URL('../measure.ts', import.meta.url)), 'utf8');
+	for (const word of ['Provider', 'completeStructured', '.complete(', 'resolveRoleProvider', 'shaper']) {
+		assert.ok(!source.includes(word), `measure.ts does not mention '${word}'`);
+	}
+});
+
+test('measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)', async () => {
+	const elsewhere = join(dir, 'elsewhere');
+	mkdirSync(elsewhere);
+
+	// A scope that cannot be resolved: a symbol value with no entity name. The scope error's own message is the reason.
+	const unresolved = await measureRequestScope(ref('symbol', 'nonsense'), 'code', 'S');
+	assert.deepEqual(undetermined(unresolved), UNDETERMINED);
+	assert.match(unresolved.note!, /kind='symbol' expects '<absolute file path>#<entity name>'/);
+	assert.equal(unresolved.sizeHint, 'S');
+	// A kind of scope its source refuses.
+	const refused = await measureRequestScope(ref('file', join(BIG, 'pay/settle.ts')), 'infra');
+	assert.deepEqual(undetermined(refused), UNDETERMINED);
+	assert.match(refused.note!, /scopeRef\.kind='file' is incompatible with target='infra'/);
+
+	// A scope no registered repo contains. The code family's index check refuses it; a generic request is not checked
+	// by anyone, and must still not be counted as zero.
+	for (const target of ['code', 'docs', 'generic'] as const) {
+		const m = await measureRequestScope(ref('repo', elsewhere), target);
+		assert.deepEqual(undetermined(m), UNDETERMINED, `${target}: a path the index does not hold`);
+		assert.ok(m.note!.length > 0 && m.note!.includes(elsewhere), `${target}: the reason names the path: ${m.note}`);
+	}
+	assert.equal((await measureRequestScope(ref('repo', elsewhere), 'generic')).note,
+		`the index holds nothing for the path ${elsewhere}: no registered repository contains it`);
+
+	// A registered repo that holds no stored entity.
+	for (const target of ['code', 'generic'] as const) {
+		const m = await measureRequestScope(ref('repo', EMPTY), target);
+		assert.deepEqual(undetermined(m), UNDETERMINED, `${target}: a repo with no stored entity`);
+	}
+	assert.equal((await measureRequestScope(ref('repo', EMPTY), 'generic')).note,
+		`the index holds nothing for the path ${EMPTY}: the repository ${EMPTY} holds no stored entity`);
+	assert.equal((await measureRequestScope(ref('module', join(EMPTY, 'src')), 'generic')).determined, false);
+
+	// A failed read of the store while the area is counted.
+	_setMeasureDepsForTest({ listEntities: async () => { throw new Error('the graph store is closed'); } });
+	const failedRead = await measureRequestScope(ref('repo', BIG), 'generic');
+	assert.deepEqual(undetermined(failedRead), UNDETERMINED);
+	assert.equal(failedRead.note, 'the count could not be taken (the graph store is closed)');
+	_setMeasureDepsForTest(undefined);
+
+	// A registry read that rejects while a symbol scope, then a connection scope, is being resolved. Neither read has
+	// a guard of its own in the resolution, and the error is none of the scope errors.
+	const rejecting = scopeReaders({ listRepos: async () => { throw new Error('the registry cannot be read'); } });
+	_setMeasureDepsForTest({ scope: rejecting });
+	const symbol = await measureRequestScope(ref('symbol', `${join(BIG, 'pay/settle.ts')}#refund`), 'code');
+	assert.deepEqual(undetermined(symbol), UNDETERMINED);
+	assert.equal(symbol.note, 'the scope could not be resolved, because a read of the registry or the store failed (the registry cannot be read)');
+	const connection = await measureRequestScope(ref('connection', 'ledger-db'), 'data');
+	assert.deepEqual(undetermined(connection), UNDETERMINED);
+	assert.equal(connection.source, 'data-source');
+	assert.match(connection.note!, /a read of the registry or the store failed \(the registry cannot be read\)/);
+	_setMeasureDepsForTest(undefined);
+
+	// An empty directory inside an indexed repo is a count: XS, determined.
+	const vacant = await measureRequestScope(ref('module', join(BIG, 'vacant')), 'code');
+	assert.deepEqual(counts(vacant), { source: 'named-area', items: 0, files: 0, size: 'XS', determined: true });
+	assert.equal(vacant.note, undefined);
+	assert.deepEqual(counts(await measureRequestScope(ref('module', join(BIG, 'vacant')), 'generic')), counts(vacant));
+});
+
+test("a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)", async () => {
+	// The scope the agent tools send: a workspace at the path they were given.
+	for (const target of ['code', 'docs', 'generic'] as const) {
+		assert.deepEqual(counts(await measureRequestScope(ref('workspace', BIG), target)),
+			{ source: 'named-area', items: 60, files: 30, size: 'M', determined: true }, `${target}: a workspace at the repo's path`);
+		assert.deepEqual(counts(await measureRequestScope(ref('workspace', join(BIG, 'pay')), target)),
+			{ source: 'named-area', items: 5, files: 2, size: 'S', determined: true }, `${target}: a workspace inside the repo`);
+	}
+
+	// A workspace above the repos: the sum over the registered repos under it, each read once.
+	const reads: string[] = [];
+	_setMeasureDepsForTest({ listEntities: async (repo) => { reads.push(repo); return listEntitiesForRepo(null, repo); } });
+	const summed = await measureRequestScope(ref('workspace', WS), 'generic');
+	assert.deepEqual(counts(summed), { source: 'named-area', items: 62, files: 31, size: 'M', determined: true });
+	assert.deepEqual([...reads].sort(), [BIG, SMALL], 'each repo under the workspace read once, and the repo outside it not read');
+	// A direct call with a resolved scope reaches the same sum, whatever the kind of source.
+	reads.length = 0;
+	const above: ResolvedScope = { kind: 'workspace', value: WS, repoPath: null, lookupPath: WS };
+	assert.deepEqual(counts(await measureResolvedScope(above, 'code', 'L')), counts(summed));
+	assert.deepEqual([...reads].sort(), [BIG, SMALL]);
+	assert.equal((await measureResolvedScope(above, 'code', 'L')).sizeHint, 'L');
+	// A registry row for shared modules is not a repo of the workspace: it is not read and does not spoil the sum.
+	reads.length = 0;
+	_setMeasureDepsForTest({
+		listEntities: async (repo) => { reads.push(repo); return listEntitiesForRepo(null, repo); },
+		listRepos:    async () => [...await listRepos(null), { path: join(WS, 'shared-npm'), name: 'npm', addedAt: NOW, status: 'ready', kind: 'shared-modules' }] as never,
+	});
+	assert.deepEqual(counts(await measureRequestScope(ref('workspace', WS), 'generic')), counts(summed));
+	assert.deepEqual([...reads].sort(), [BIG, SMALL]);
+	_setMeasureDepsForTest(undefined);
+
+	// A workspace under which no registered repo lies.
+	const nothing = join(dir, 'nothing');
+	mkdirSync(nothing);
+	const none = await measureRequestScope(ref('workspace', nothing), 'generic');
+	assert.deepEqual(undetermined(none), UNDETERMINED);
+	assert.equal(none.note, `no registered repository lies under the workspace ${nothing}`);
+	// A workspace that holds a repo with no stored entity is not a count either.
+	const withEmpty = await measureResolvedScope({ kind: 'workspace', value: dir, repoPath: null, lookupPath: dir }, 'generic');
+	assert.deepEqual(undetermined(withEmpty), UNDETERMINED);
+	assert.match(withEmpty.note!, /holds no stored entity/);
+
+	// A code or docs request on a workspace above the repos is refused by the index check: not determined.
+	for (const target of ['code', 'docs'] as const) {
+		const m = await measureRequestScope(ref('workspace', WS), target);
+		assert.deepEqual(undetermined(m), UNDETERMINED, target);
+		assert.ok(m.note!.includes(WS), m.note);
+	}
+});
+
+// ---------------------------------------------------------------------------
+// A data source
+// ---------------------------------------------------------------------------
+
+interface StandInConnection { readonly id: string; readonly kind: string; readonly family: 'rdbms' | 'kv' | 'file'; readonly driver?: Record<string, unknown>; readonly path?: string; readonly recursive?: boolean; readonly unreachable?: boolean }
+
+/** A pool of stand-in connections that records what was opened, acquired and asked of each listing. */
+function standInPool(connections: readonly StandInConnection[]): { opened: string[]; acquired: string[]; asked: Array<Record<string, unknown> | undefined> } {
+	const opened: string[] = [];
+	const acquired: string[] = [];
+	const asked: Array<Record<string, unknown> | undefined> = [];
+	const pool = {
+		reload:  async () => undefined,
+		list:    () => connections.map(c => ({ id: c.id, kind: c.kind, family: c.family, label: c.id, ...(c.path !== undefined ? { path: c.path } : {}), ...(c.recursive !== undefined ? { recursive: c.recursive } : {}) })),
+		acquire: async (id: string) => {
+			acquired.push(id);
+			const c = connections.find(x => x.id === id);
+			if (c === undefined) throw new Error(`no connection '${id}'`);
+			if (c.unreachable === true) throw new Error('connect ECONNREFUSED 127.0.0.1:5432');
+			return { family: c.family, kind: c.kind, ...(c.driver ?? {}) };
+		},
+	};
+	_setDataPoolSourceForTest((async (path: string) => { opened.push(path); return pool; }) as never);
+	return { opened, acquired, asked };
+}
+const tables = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `t${i}`, kind: 'table' as const }));
+const spaces = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `ns${i}` }));
+/** A table listing that holds `n` tables and cuts at 500 unless asked for the complete mode. */
+const tableListing = (n: number, asked?: Array<Record<string, unknown> | undefined>) => ({
+	listTables: async (opts?: { complete?: boolean }) => {
+		asked?.push(opts);
+		return opts?.complete === true ? { target: 't', tables: tables(n), truncated: false } : { target: 't', tables: tables(Math.min(n, 500)), truncated: n > 500 };
+	},
+});
+const namespaceListing = (n: number, asked?: Array<Record<string, unknown> | undefined>) => ({
+	listNamespaces: async (opts?: { complete?: boolean }) => {
+		asked?.push(opts);
+		return opts?.complete === true ? { namespaces: spaces(n), truncated: false, supported: true } : { namespaces: spaces(Math.min(n, 200)), truncated: n > 200, supported: true };
+	},
+});
+
+test("measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)", async () => {
+	const data = join(dir, 'data');
+	mkdirSync(join(data, 'sub'), { recursive: true });
+	// More files than the data tasks' own file-list limit would matter for; walked to the end.
+	for (let i = 0; i < 30; i++) writeFileSync(join(data, i % 2 === 0 ? '' : 'sub', `f${String(i).padStart(2, '0')}.csv`), 'a,b\n');
+
+	const asked: Array<Record<string, unknown> | undefined> = [];
+	const p = standInPool([
+		{ id: 'warehouse', kind: 'postgres', family: 'rdbms', driver: tableListing(6000, asked) },
+		{ id: 'ledger',    kind: 'sqlite',   family: 'rdbms', driver: tableListing(40, asked) },
+		{ id: 'catalog',   kind: 'mongodb',  family: 'kv',    driver: namespaceListing(1300, asked) },
+		{ id: 'exports',   kind: 'csv',      family: 'file',  path: data, recursive: true },
+		{ id: 'flat',      kind: 'csv',      family: 'file',  path: data },
+	]);
+	const measure = (id: string, hint?: 'S'): Promise<RequestMeasure> => measureDataSource({ poolPath: BIG, connectionId: id }, hint);
+
+	// A relational source: every table, far beyond the 500 the limited mode returns and the 5,000 it can be raised to.
+	const warehouse = await measure('warehouse', 'S');
+	assert.deepEqual(warehouse, { source: 'data-source', items: 6000, files: 0, characters: null, size: 'XL', determined: true, sizeHint: 'S' });
+	// The objects are compared with the FILES column: 40 tables are M, where the entities column would say XS.
+	const ledger = await measure('ledger');
+	assert.deepEqual(counts(ledger), { source: 'data-source', items: 40, files: 0, size: 'M', determined: true });
+	assert.equal(ledger.size, sizeOfCounts({ files: 40, items: 0 }));
+	assert.notEqual(ledger.size, sizeOfCounts({ files: 0, items: 40 }));
+	// A namespace source: every namespace, beyond the 200 of the limited mode and its cap of 1,000.
+	assert.deepEqual(counts(await measure('catalog')), { source: 'data-source', items: 1300, files: 0, size: 'L', determined: true });
+	// Each listing was asked for the complete mode.
+	assert.deepEqual(asked, [{ complete: true }, { complete: true }, { complete: true }]);
+
+	// A file source: every file, with the connection's own recursive setting; the files are objects and files.
+	assert.deepEqual(counts(await measure('exports')), { source: 'data-source', items: 30, files: 30, size: 'M', determined: true });
+	assert.deepEqual(counts(await measure('flat')),    { source: 'data-source', items: 15, files: 15, size: 'S', determined: true });
+	assert.deepEqual(p.opened, [BIG, BIG, BIG, BIG, BIG]);
+
+	// Through the measuring pass, a connection scope reaches the same count: for a data and for a generic request.
+	_setMeasureDepsForTest({ scope: scopeReaders({ loadConnections: async (repo) => ({ file: { connections: [] }, resolved: repo === BIG ? [{ id: 'warehouse', kind: 'postgres' }] : [], warnings: [] }) as never }) });
+	assert.deepEqual(counts(await measureRequestScope(ref('connection', 'warehouse'), 'data')), counts(warehouse));
+	assert.equal(p.opened.at(-1), BIG, 'the pool of the repo that declares the connection');
+});
+
+test('measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not', async () => {
+	const cut = { listTables: async () => ({ target: 't', tables: tables(5000), truncated: true }) };
+	const p = standInPool([
+		{ id: 'bare-sql',  kind: 'odd-sql',    family: 'rdbms', driver: {} },
+		{ id: 'bare-kv',   kind: 'odd-kv',     family: 'kv',    driver: {} },
+		{ id: 'cache',     kind: 'memcached',  family: 'kv',    driver: { listNamespaces: async () => ({ namespaces: [], truncated: false, supported: false }) } },
+		{ id: 'cut-sql',   kind: 'postgres',   family: 'rdbms', driver: cut },
+		{ id: 'cut-kv',    kind: 'cassandra',  family: 'kv',    driver: { listNamespaces: async () => ({ namespaces: spaces(1000), truncated: true, supported: true }) } },
+		{ id: 'sessions',  kind: 'redis',      family: 'kv',    driver: namespaceListing(50) },
+		{ id: 'coord',     kind: 'etcd',       family: 'kv',    driver: namespaceListing(50) },
+		{ id: 'events',    kind: 'clickhouse', family: 'rdbms', driver: { listTables: async () => { throw new Error('listTables() not yet implemented for clickhouse'); } } },
+		{ id: 'down',      kind: 'postgres',   family: 'rdbms', unreachable: true },
+		{ id: 'no-path',   kind: 'csv',        family: 'file' },
+	]);
+	const reasons: Record<string, string> = {
+		'bare-sql': "the driver 'odd-sql' of 'bare-sql' has no table listing",
+		'bare-kv':  "the driver 'odd-kv' of 'bare-kv' has no namespace listing",
+		'cache':    "the source 'cache' (memcached) answers that listing its namespaces is not supported",
+		'cut-sql':  "the table listing of 'cut-sql' was cut at 5000 tables",
+		'cut-kv':   "the namespace listing of 'cut-kv' was cut at 1000 namespaces",
+		'sessions': "the source 'sessions' (redis) has no namespaces to count; its listing is a sample of keys",
+		'coord':    "the source 'coord' (etcd) has no namespaces to count; its listing is a sample of keys",
+		'events':   "the listing of 'events' failed (listTables() not yet implemented for clickhouse)",
+		'down':     "the source 'down' cannot be reached (connect ECONNREFUSED 127.0.0.1:5432)",
+		'no-path':  "the file connection 'no-path' has no path",
+	};
+	for (const [id, note] of Object.entries(reasons)) {
+		const m = await measureDataSource({ poolPath: BIG, connectionId: id }, 'M');
+		assert.deepEqual(m, { source: 'data-source', items: 0, files: 0, characters: null, size: 'XL', determined: false, sizeHint: 'M', note }, id);
+	}
+	// A connection the pool does not hold, and a scope that names none.
+	assert.match((await measureDataSource({ poolPath: BIG, connectionId: 'ghost' })).note!, /the source 'ghost' cannot be reached \(no connection 'ghost'\)/);
+	assert.equal((await measureDataSource({ poolPath: BIG })).determined, false);
+	// A cut count is never the count: it is in the note only.
+	assert.equal((await measureDataSource({ poolPath: BIG, connectionId: 'cut-sql' })).items, 0);
+	void p;
+
+	// A data request over several connections, one of which cannot be counted: not a count.
+	standInPool([
+		{ id: 'ledger',   kind: 'sqlite', family: 'rdbms', driver: tableListing(40) },
+		{ id: 'sessions', kind: 'redis',  family: 'kv',    driver: namespaceListing(50) },
+	]);
+	const mixed = await measureRequestScope(ref('repo', BIG), 'data', 'S');
+	assert.deepEqual(undetermined(mixed), UNDETERMINED);
+	assert.deepEqual([mixed.source, mixed.sizeHint], ['data-source', 'S']);
+	assert.equal(mixed.note,
+		`1 of the 2 connections registered at ${BIG} could not be counted: the source 'sessions' (redis) has no namespaces to count; ` +
+		`its listing is a sample of keys; 40 objects were counted in the other 1`);
+});
+
+test('dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id', async () => {
+	// The rule, on resolved scopes: a connection opens the pool of the repo that declares it; every other kind opens
+	// the pool at the scope's OWN path, also when a registered repo contains that path.
+	const inside = join(BIG, 'deploy');
+	assert.deepEqual(dataScopeOf({ kind: 'connection', value: 'ledger-db', repoPath: BIG, lookupPath: BIG, connectionId: 'ledger-db' }),
+		{ poolPath: BIG, connectionId: 'ledger-db' });
+	for (const kind of ['repo', 'workspace', 'manifest-dir'] as const) {
+		assert.deepEqual(dataScopeOf({ kind, value: inside, repoPath: BIG, lookupPath: inside }), { poolPath: inside }, kind);
+		assert.ok(!('connectionId' in dataScopeOf({ kind, value: inside, repoPath: BIG, lookupPath: inside })));
+	}
+
+	// resolveDataScope, which the data tasks call, gives exactly what it gave before for each kind it accepts.
+	_setTaskScopeDepsForTest(scopeReaders({ loadConnections: async (repo) => ({ file: { connections: [] }, resolved: repo === BIG ? [{ id: 'ledger-db', kind: 'sqlite' }] : [], warnings: [] }) as never }));
+	const argsFor = (scopeRef: AnalyzeScopeRef): TemplateExecuteArgs => ({
+		task: { taskId: 't01', template: 'data.discovery.connections', kind: 'leaf', params: {}, produces: [], rationale: 'test' } as unknown as PlannedTask,
+		intent: { target: 'data', scope: 'S', focused: false, scopeRef, reasoning: 'test' } as ClassifiedIntent,
+		upstreamOutputs: new Map(), runId: 'r1',
+	});
+	assert.deepEqual(await resolveDataScope(argsFor(ref('connection', 'ledger-db')), 'x'), { poolPath: BIG, connectionId: 'ledger-db' });
+	assert.deepEqual(await resolveDataScope(argsFor(ref('repo', BIG)), 'x'), { poolPath: BIG });
+	assert.deepEqual(await resolveDataScope(argsFor(ref('manifest-dir', inside)), 'x'), { poolPath: inside });
+	assert.deepEqual(await resolveDataScope(argsFor(ref('workspace', WS)), 'x'), { poolPath: WS });
+	_setTaskScopeDepsForTest(undefined);
+
+	// A data request on a repo: one call per registered connection, each with its connection id, in the pool's order.
+	const asked: Array<Record<string, unknown> | undefined> = [];
+	const p = standInPool([
+		{ id: 'ledger',    kind: 'sqlite',   family: 'rdbms', driver: tableListing(40, asked) },
+		{ id: 'warehouse', kind: 'postgres', family: 'rdbms', driver: tableListing(700, asked) },
+		{ id: 'catalog',   kind: 'mongodb',  family: 'kv',    driver: namespaceListing(10, asked) },
+	]);
+	const summed = await measureRequestScope(ref('repo', BIG), 'data');
+	assert.deepEqual(summed, { source: 'data-source', items: 750, files: 0, characters: null, size: 'L', determined: true });
+	assert.deepEqual(p.acquired, ['ledger', 'warehouse', 'catalog']);
+	assert.deepEqual(asked, [{ complete: true }, { complete: true }, { complete: true }]);
+	assert.ok(p.opened.every(path => path === BIG));
+	// A manifest directory inside the repo opens the pool at its own path.
+	p.opened.length = 0;
+	await measureRequestScope(ref('manifest-dir', inside), 'data');
+	assert.ok(p.opened.length > 0 && p.opened.every(path => path === inside));
+
+	// A repo with no registered connection: a count of zero, XS, determined.
+	standInPool([]);
+	assert.deepEqual(await measureRequestScope(ref('repo', BIG), 'data'), { source: 'data-source', items: 0, files: 0, characters: null, size: 'XS', determined: true });
+});
+
+// ---------------------------------------------------------------------------
+// Infra and generic
+// ---------------------------------------------------------------------------
+
+test("an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)", async () => {
+	// A manifest directory in no registered repo: 25 files in two directories, and one the walk never enters.
+	const deploy = join(dir, 'deploy');
+	mkdirSync(join(deploy, 'k8s'), { recursive: true });
+	mkdirSync(join(deploy, 'node_modules/pkg'), { recursive: true });
+	for (let i = 0; i < 25; i++) writeFileSync(join(deploy, i % 2 === 0 ? '' : 'k8s', `m${String(i).padStart(2, '0')}.yaml`), 'k: v\n');
+	writeFileSync(join(deploy, 'node_modules/pkg/skipped.yaml'), 'k: v\n');
+
+	// The stored graph is not read at all, and the walk is asked for no cap.
+	const caps: unknown[] = [];
+	_setMeasureDepsForTest({
+		listEntities: async () => { throw new Error('the stored graph must not be read for an infra request'); },
+		walk: (root, cap) => { caps.push(cap); return walkFiles(root, cap); },
+	});
+	const m = await measureRequestScope(ref('manifest-dir', deploy), 'infra', 'XS');
+	assert.deepEqual(m, { source: 'named-area', items: 25, files: 25, characters: null, size: 'M', determined: true, sizeHint: 'XS' });
+	assert.deepEqual(caps, [null], 'the walk runs with no cap');
+
+	// A registered repo: its files on disk are counted, not its 60 stored entities. BIG holds three files on disk.
+	for (const rel of ['pay/a.yaml', 'gen/b.yaml', 'c.yaml']) writeFileSync(join(BIG, rel), 'k: v\n');
+	for (const kind of ['repo', 'workspace', 'manifest-dir'] as const) {
+		assert.deepEqual(counts(await measureRequestScope(ref(kind, BIG), 'infra')),
+			{ source: 'named-area', items: 3, files: 3, size: 'S', determined: true }, kind);
+	}
+	_setMeasureDepsForTest(undefined);
+
+	// A directory that cannot be read: not determined, with the path.
+	const missing = join(dir, 'missing');
+	const gone = await measureRequestScope(ref('manifest-dir', missing), 'infra');
+	assert.deepEqual(undetermined(gone), UNDETERMINED);
+	assert.ok(gone.note!.startsWith(`the directory ${missing} could not be read (`), gone.note);
+	// A directory below the root that cannot be read: the count is of part of the area, so it is not a count.
+	if (userInfo().uid !== 0) {
+		const locked = join(deploy, 'locked');
+		mkdirSync(locked);
+		writeFileSync(join(locked, 'hidden.yaml'), 'k: v\n');
+		chmodSync(locked, 0o000);
+		try {
+			const partial = await measureRequestScope(ref('manifest-dir', deploy), 'infra');
+			assert.deepEqual(undetermined(partial), UNDETERMINED);
+			assert.equal(partial.note, `1 of the directories under ${deploy} could not be read (locked); 25 files were counted in the rest`);
+		} finally {
+			chmodSync(locked, 0o755);
+		}
+	}
+	// A walk that says it was cut is never a count, whatever cut it.
+	_setMeasureDepsForTest({ walk: async () => ({ files: [{ absPath: '/x', relPath: 'x' }], truncated: true, unreadable: [] }) });
+	assert.equal((await measureRequestScope(ref('manifest-dir', deploy), 'infra')).determined, false);
+});
+
+test('a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution', async () => {
+	// A path and an entity scope: the stored graph, exactly as a code request counts it.
+	for (const scopeRef of [ref('repo', BIG), ref('module', join(BIG, 'pay')), ref('file', join(BIG, 'pay/settle.ts')), ref('symbol', `${join(BIG, 'pay/settle.ts')}#refund`)]) {
+		assert.deepEqual(counts(await measureRequestScope(scopeRef, 'generic')), counts(await measureRequestScope(scopeRef, 'code')), scopeRef.kind);
+	}
+	assert.deepEqual(counts(await measureRequestScope(ref('repo', BIG), 'generic')),
+		{ source: 'named-area', items: 60, files: 30, size: 'M', determined: true });
+
+	// A connection scope, which only the generic resolution and the data family accept: the live source.
+	const p = standInPool([{ id: 'ledger-db', kind: 'sqlite', family: 'rdbms', driver: tableListing(40) }]);
+	const readers = scopeReaders({ loadConnections: async (repo) => ({ file: { connections: [] }, resolved: repo === SMALL ? [{ id: 'ledger-db', kind: 'sqlite' }] : [], warnings: [] }) as never });
+	_setMeasureDepsForTest({ scope: readers });
+	const live = await measureRequestScope(ref('connection', 'ledger-db'), 'generic', 'L');
+	assert.deepEqual(live, { source: 'data-source', items: 40, files: 0, characters: null, size: 'M', determined: true, sizeHint: 'L' });
+	assert.deepEqual([p.opened, p.acquired], [[SMALL], ['ledger-db']], 'the pool of the repo that declares the connection');
+	// The code family refuses a connection scope: through the task scope function the request is not determined.
+	const refused = await measureRequestScope(ref('connection', 'ledger-db'), 'code');
+	assert.deepEqual(undetermined(refused), UNDETERMINED);
+	assert.match(refused.note!, /scopeRef\.kind='connection' is incompatible with target='code'/);
+	// A connection no repo declares.
+	assert.match((await measureRequestScope(ref('connection', 'ghost'), 'generic')).note!, /Connection 'ghost' is not registered in any repo/);
+});

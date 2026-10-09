@@ -8,3 +8,5 @@ Taken on 2026-10-09 at commit `31a381e6` (the approval of the Story's build plan
 | the gated file | `INSRC_LIVE_TESTS=1 npx tsx --test src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts` | # tests 11 # pass 11 # fail 0 # skipped 0  |
 
 `analyze.txt` and `deterministic-runtimes.gated.txt` hold the result line of every top-level test (`ok` or `not ok`, with its name). The Story's last Task compares the same two runs against them by test name.
+
+The summary line of the analyze suite counts 1077 tests: 982 pass, 92 skipped and 3 marked todo, none failing.

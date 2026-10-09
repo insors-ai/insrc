@@ -21,7 +21,7 @@
  * because the folder of a Story with no other anchor is dated by it.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -130,20 +130,34 @@ function isRecord(v: unknown): v is TestRecord {
 			&& Array.isArray((t as { tests?: unknown }).tests));
 }
 
+/** What is on disk for a Story's test record: nothing, a record, or a file
+ *  that cannot be used (with why). */
+export type TestRecordState =
+	| { readonly kind: 'absent' }
+	| { readonly kind: 'record'; readonly record: TestRecord }
+	| { readonly kind: 'unreadable'; readonly reason: string };
+
+/** Read a Story's test record, telling an absent one from one that cannot be used. Never throws. */
+export function testRecordState(repoPath: string, epicHash: string, storyId: string): TestRecordState {
+	const jsonPath = artifactJsonPath(repoPath, testsArtifactId(epicHash, storyId));
+	if (!existsSync(jsonPath)) return { kind: 'absent' };
+	try {
+		const parsed: unknown = JSON.parse(readFileSync(jsonPath, 'utf8'));
+		if (isRecord(parsed)) return { kind: 'record', record: parsed };
+		log.warn({ jsonPath }, 'testRecordState: the stored record does not have the record\'s shape; treating it as absent');
+		return { kind: 'unreadable', reason: 'it does not have the record\'s shape' };
+	} catch (err) {
+		const reason = err instanceof Error ? err.message : String(err);
+		log.warn({ jsonPath, err: reason }, 'testRecordState: the stored record is unreadable; treating it as absent');
+		return { kind: 'unreadable', reason };
+	}
+}
+
 /** The Story's test record, or null when there is none or it cannot be read
  *  (an unreadable or misshapen record is logged and treated as absent). */
 export function readTestRecord(repoPath: string, epicHash: string, storyId: string): TestRecord | null {
-	const jsonPath = artifactJsonPath(repoPath, testsArtifactId(epicHash, storyId));
-	if (!existsSync(jsonPath)) return null;
-	try {
-		const parsed: unknown = JSON.parse(readFileSync(jsonPath, 'utf8'));
-		if (isRecord(parsed)) return parsed;
-		log.warn({ jsonPath }, 'readTestRecord: the stored record does not have the record\'s shape; treating it as absent');
-		return null;
-	} catch (err) {
-		log.warn({ jsonPath, err: err instanceof Error ? err.message : String(err) }, 'readTestRecord: the stored record is unreadable; treating it as absent');
-		return null;
-	}
+	const state = testRecordState(repoPath, epicHash, storyId);
+	return state.kind === 'record' ? state.record : null;
 }
 
 /**
@@ -230,8 +244,23 @@ export function persistTestRecordTask(
 		body: { tasks },
 	};
 	const paths = pathsFor(repoPath, rec);
+	// The json and its document are two files. If the document cannot be written
+	// after the json was, the json is put back as it was (or removed, when it is
+	// new): a caller told "the record was not written" must find the earlier run
+	// in BOTH files, and must not find this turn's mapping stored.
+	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
 	writeAtomic(paths.json, JSON.stringify(rec, null, 2) + '\n');
-	writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
+	try {
+		writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
+	} catch (err) {
+		try {
+			if (priorJson !== undefined) writeAtomic(paths.json, priorJson);
+			else rmSync(paths.json, { force: true });
+		} catch (undoErr) {
+			log.warn({ json: paths.json, err: undoErr instanceof Error ? undoErr.message : String(undoErr) }, 'persistTestRecordTask: the json could not be put back after the document failed to write');
+		}
+		throw err;
+	}
 	return paths;
 }
 
@@ -270,6 +299,12 @@ export function testRecordTotals(tasks: readonly TestRecordTask[]): TestRecordTo
 	return { pass, fail, skipped, notFound, reported };
 }
 
+/** Text that came from the builder (a name, a title, evidence, a note): one
+ *  line, so it cannot add lines that read as the record's own. */
+function flat(s: string): string {
+	return s.replace(/[\r\n\u2028\u2029]+/g, ' ');
+}
+
 /** A table cell: one line, no column break. */
 function cell(s: string): string {
 	return s.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
@@ -306,12 +341,12 @@ export function renderTestRecordMd(rec: TestRecord): string {
 				`Tests check: **${task.testsPassed ? 'passed' : 'failed'}**. ${totalsLine(testRecordTotals([task]))}`,
 			'',
 		);
-		if (task.note !== undefined) lines.push(task.note, '');
+		if (task.note !== undefined) lines.push(flat(task.note), '');
 		if (task.tests.length === 0) lines.push('No tests were named for this Task.', '');
 		const byFile = new Map(task.files.map(f => [f.file, f]));
 
 		for (const t of task.tests) {
-			lines.push(`**${t.level !== undefined ? `${t.level}: ` : ''}${t.name}**`, '');
+			lines.push(`**${t.level !== undefined ? `${flat(t.level)}: ` : ''}${flat(t.name)}**`, '');
 			if (t.source === 'mapping' && t.cases.length > 0) {
 				lines.push('| Result | Test | File |', '| :--- | :--- | :--- |');
 				for (const c of t.cases) lines.push(`| ${c.result} | ${cell(c.title)} | \`${c.file}\` |`);
@@ -334,7 +369,7 @@ export function renderTestRecordMd(rec: TestRecord): string {
 				lines.push(t.source === 'none' ? 'Not mapped: no test case was named for this test, and nothing was run for it.' : 'No test case was named for this test.', '');
 			}
 			if (t.reported !== undefined) {
-				lines.push(`Reported by the builder, not run by the gate: **${t.reported.result}**. Evidence: ${t.reported.evidence}`, '');
+				lines.push(`Reported by the builder, not run by the gate: **${flat(String(t.reported.result))}**. Evidence: ${flat(t.reported.evidence)}`, '');
 			}
 		}
 
@@ -350,7 +385,7 @@ export function renderTestRecordMd(rec: TestRecord): string {
 			const others = task.files.filter(f => f.otherFailures.length > 0);
 			if (others.length > 0) {
 				lines.push('**Failures outside the named cases**', '');
-				for (const f of others) for (const title of f.otherFailures) lines.push(`- \`${f.file}\`: ${title}`);
+				for (const f of others) for (const title of f.otherFailures) lines.push(`- \`${f.file}\`: ${flat(title)}`);
 				lines.push('');
 			}
 		}

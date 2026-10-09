@@ -1,0 +1,1230 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "S001",
+    "createdAt": "2026-10-08T18:45:46.904Z",
+    "updatedAt": "2026-10-08T18:45:46.904Z",
+    "standalone": true
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "f1972e70",
+        "ranAt": "2026-10-08T18:45:46.904Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tap-results.test.ts: the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/tap-results.test.ts"
+            ]
+          },
+          {
+            "name": "tap-results.test.ts: a title nested in a suite or a subtest is found at its depth by its own title",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/tap-results.test.ts"
+            ]
+          },
+          {
+            "name": "tap-results.test.ts: TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/tap-results.test.ts"
+            ]
+          },
+          {
+            "name": "tap-results.test.ts: a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/tap-results.test.ts"
+            ]
+          },
+          {
+            "name": "tap-results.test.ts: output with no TAP version line and no result line is reported as not understood, with no titles",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/tap-results.test.ts"
+            ]
+          },
+          {
+            "name": "test-mapping.test.ts: a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/test-mapping.test.ts"
+            ]
+          },
+          {
+            "name": "test-mapping.test.ts: a correct mapping with cases, with a reported result on a live test, and with both, is accepted",
+            "level": "unit",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/test-mapping.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "validation-checks.test.ts: trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/validation-checks.test.ts"
+            ]
+          },
+          {
+            "name": "test-record.test.ts: the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/test-record.test.ts"
+            ]
+          },
+          {
+            "name": "test-record.test.ts: the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/test-record.test.ts"
+            ]
+          },
+          {
+            "name": "test-record.test.ts: the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/test-record.test.ts"
+            ]
+          },
+          {
+            "name": "test-record.test.ts: the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/test-record.test.ts"
+            ]
+          },
+          {
+            "name": "build-record.test.ts: a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/build-record.test.ts"
+            ]
+          },
+          {
+            "name": "artifact-kinds.test.ts: with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/artifact-kinds.test.ts"
+            ]
+          },
+          {
+            "name": "artifact-kinds.test.ts: approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/artifact-kinds.test.ts"
+            ]
+          },
+          {
+            "name": "migrate-docs-tree.test.ts: converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/migrate-docs-tree.test.ts"
+            ]
+          },
+          {
+            "name": "daemon-gateway.test.ts: the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "render.test.ts: the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/render.test.ts",
+              "src/workflow/artifacts/companion/__tests__/render.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "completion-record.test.ts: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/completion-record.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "build-step.test.ts: a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+            "level": "integration",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/mcp/build-step/__tests__/build-step.test.ts"
+            ]
+          },
+          {
+            "name": "Task t1 of Story s7 of the analyzer epic, whose plan names its tests in prose, is submitted with a mapping converted from docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/tests.map.json: the gate runs the three test files, every case is pass, the tests check passes, and TESTS.md is written by the gate in that Story's folder in place of the hand-made one",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Run of 2026-10-08T18:44:10Z through the installed daemon at be6abc9c. The gate's own record is .insrc/artifacts/TESTS-b9d5c5c40df5a574-s7.json and docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/TESTS.md: Task t1, three files run on their own, 12 cases pass, tests check passed; BUILD-b9d5c5c40df5a574-s7.json records t1 passed true and links to TESTS.md. Committed in f1972e70, which also removes tests.map.json."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/build-step/__tests__/build-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7628,
+            "titles": [
+              {
+                "title": "implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref",
+                "result": "pass"
+              },
+              {
+                "title": "implement: does NOT gate on the LLD open questions (resolved at stage-start now)",
+                "result": "pass"
+              },
+              {
+                "title": "implement: unapproved plan returns next=refused with reason plan-unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "implement: a non-task target (a story) is a resolution error",
+                "result": "pass"
+              },
+              {
+                "title": "validate: returns the judge verdict from a stubbed CliProvider review session",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a failing judge verdict gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a BUILD-record persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a persist failure is swallowed — the verdict is still returned",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: a Small build with no resolvable identity → err(no-identity)",
+                "result": "pass"
+              },
+              {
+                "title": "validate[standalone]: the persisted record is approvable by the completion gate",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict",
+                "result": "pass"
+              },
+              {
+                "title": "implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '## Scope' for its body.focus",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section",
+                "result": "pass"
+              },
+              {
+                "title": "t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story",
+                "result": "pass"
+              },
+              {
+                "title": "t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped",
+                "result": "pass"
+              },
+              {
+                "title": "CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change",
+                "result": "pass"
+              },
+              {
+                "title": "t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range",
+                "result": "pass"
+              },
+              {
+                "title": "t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a SUPPLIED summary reaches body.summary",
+                "result": "pass"
+              },
+              {
+                "title": "t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference",
+                "result": "pass"
+              },
+              {
+                "title": "validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head",
+                "result": "pass"
+              },
+              {
+                "title": "validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "0855311b — completion: an LLD-only story's record is written standalone, beside the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path",
+                "result": "pass"
+              },
+              {
+                "title": "validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results",
+                "result": "pass"
+              },
+              {
+                "title": "a judge passed:true with a failing typecheck gives passed:false",
+                "result": "pass"
+              },
+              {
+                "title": "a judge timeout returns verdict-session-timeout and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "the validate judge is called through runReviewSession with the repo as cwd and a verdict schema",
+                "result": "pass"
+              },
+              {
+                "title": "a judge object without a boolean passed gives unparseable-verdict",
+                "result": "pass"
+              },
+              {
+                "title": "a non-timeout judge error gives verdict-session-failed and writes no BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "plan-driven and standalone validate each hand the check runner the plan for their route",
+                "result": "pass"
+              },
+              {
+                "title": "implement and validate return merge-in-progress while a merge is uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails",
+                "result": "pass"
+              },
+              {
+                "title": "the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field",
+                "result": "pass"
+              },
+              {
+                "title": "a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path",
+                "result": "pass"
+              },
+              {
+                "title": "when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)",
+                "result": "pass"
+              },
+              {
+                "title": "when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)",
+                "result": "pass"
+              },
+              {
+                "title": "a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 653,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/build-step/__tests__/tap-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 367,
+            "titles": [
+              {
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "title": "a title nested in a suite or a subtest is found at its depth by its own title",
+                "result": "pass"
+              },
+              {
+                "title": "TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+                "result": "pass"
+              },
+              {
+                "title": "a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+                "result": "pass"
+              },
+              {
+                "title": "output with no TAP version line and no result line is reported as not understood, with no titles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/build-step/__tests__/test-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 363,
+            "titles": [
+              {
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "title": "a correct mapping with cases, with a reported result on a live test, and with both, is accepted",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6535,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/artifact-kinds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 601,
+            "titles": [
+              {
+                "title": "with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws",
+                "result": "pass"
+              },
+              {
+                "title": "approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/migrate-docs-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3588,
+            "titles": [
+              {
+                "title": "planMigration: every member of the epic resolves to ONE folder; story artifacts under S<nnn>/; DEF-anchored (no split)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: both locate paths — slug-named md via marker, markerless BUILD via hash filename",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a hand-written non-artifact doc is never enumerated (not moved, not unmappable)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a standalone item resolves under docs/standalone/ with the LLD createdAt as anchor",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: an artifact already at its nested destination is SKIPPED (idempotent)",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a work item with NO slug source is placed under its HASH, mirroring the writer",
+                "result": "pass"
+              },
+              {
+                "title": "planMigration: a work item with no ANCHOR is still fail-loud unmappable",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: git mv relocates each md (history followed), no flat md remains, .insrc/artifacts byte-identical",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a plan with a non-empty unmappable[] is REFUSED (throws, names files) before any move",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a commit failing on a LATER epic chunk rolls the WHOLE run back to the pre-run commit (no partial mix)",
+                "result": "pass"
+              },
+              {
+                "title": "applyMigration: a git-mv failure rolls the run back and leaves no partial mix",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — a pre-seeded FOUR-folder work item converges onto ONE",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — the raw-hash-labelled folder and the wrong-top-level folder are both handled",
+                "result": "pass"
+              },
+              {
+                "title": "converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — planMigration is READ-ONLY: planning leaves the docs tree BYTE-IDENTICAL",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — convergence is idempotent: a second plan after applying has nothing left to move",
+                "result": "pass"
+              },
+              {
+                "title": "t6 — an artifact whose md is missing entirely is reported UNMAPPABLE, not guessed at",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — the ISSUE is enumerated as the work item definition head (not discarded as a non-artifact)",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — the definition head WINS the slug vote over a sorted-earlier ledger slug",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — a MARKERLESS nested BUILD md is located by its (kind, hash8, story) shape, not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "t6a — end to end: the disagreeing work item converges onto exactly ONE folder",
+                "result": "pass"
+              },
+              {
+                "title": "t8 — a link in an UNMOVED file pointing at a moved path is rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "t8 — a file never rewrites a reference to its OWN old path",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a companion moves WITH its artifact, so no folder survives on an orphaned html",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a companion is never overwritten at its destination",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — a DUPLICATE render is skipped, not moved and not refused, and neither copy is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t9 — an ORPHANED companion is placed from its work item, with no sibling md move to follow",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 573,
+            "titles": [
+              {
+                "title": "renderErCompanion: ok → writes the sibling HTML + returns a diagram-mermaid ref (ac2/ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "renderErCompanion: ofSectionId is carried onto the ref when supplied",
+                "result": "pass"
+              },
+              {
+                "title": "renderErCompanion: a non-ok DocGenOutcome → DiagramGenerationError + no file written",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1000,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified \"at persist time\" semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/completion-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 737,
+            "titles": [
+              {
+                "title": "create: no prior BUILD json + a changed set writes a plan-driven BUILD record with a 2-entry change-log",
+                "result": "pass"
+              },
+              {
+                "title": "merge/idempotent: calling twice keeps exactly ONE BUILD json for the id",
+                "result": "pass"
+              },
+              {
+                "title": "empty: an empty changed set writes a record with NO changeLog key",
+                "result": "pass"
+              },
+              {
+                "title": "failure swallow: a throwing listChanged still writes a record (no changeLog) and does NOT throw",
+                "result": "pass"
+              },
+              {
+                "title": "no-op: an empty epicHash returns undefined and writes no file",
+                "result": "pass"
+              },
+              {
+                "title": "parse round-trip: buildArtifactId round-trips through parseBuildArtifactRef (incl. a hyphen-bearing storyId)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an ISSUE-anchored work item gets standalone true and lands under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an epic-parented work item is unaffected: a DEF without the flag stays epic",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an explicit standalone FALSE on the definition artifact is not written through as false",
+                "result": "pass"
+              },
+              {
+                "title": "completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 561,
+            "titles": [
+              {
+                "title": "the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+                "result": "pass"
+              },
+              {
+                "title": "the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+                "result": "pass"
+              },
+              {
+                "title": "the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 362,
+            "titles": [
+              {
+                "title": "status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "status() rejects GatewayReadError when daemon.status fails",
+                "result": "pass"
+              },
+              {
+                "title": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)",
+                "result": "pass"
+              },
+              {
+                "title": "mcpClients() tolerates a debug-status payload with no clients (empty view, not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() returns empty rows when artifactsRoot is undefined (valid empty state)",
+                "result": "pass"
+              },
+              {
+                "title": "the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError",
+                "result": "pass"
+              },
+              {
+                "title": "scanOrphans() maps the injected scan and rejects GatewayReadError on failure (and never kills)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

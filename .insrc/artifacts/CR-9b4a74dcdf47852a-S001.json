@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791486001205-mwq9fg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-08T19:00:01.347Z",
+    "model": "claude:opus",
+    "elapsedMs": 285376,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "S001",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/fixtures/tap-sample.tap",
+        "src/mcp/build-step/__tests__/render.test.ts",
+        "src/mcp/build-step/__tests__/tap-results.test.ts",
+        "src/mcp/build-step/__tests__/test-mapping.test.ts",
+        "src/mcp/build-step/__tests__/validation-checks.test.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/build-step/render.ts",
+        "src/mcp/build-step/tap-results.ts",
+        "src/mcp/build-step/test-mapping.ts",
+        "src/mcp/build-step/types.ts",
+        "src/mcp/build-step/validation-checks.ts",
+        "src/mcp/server.ts",
+        "src/prompts/build/implement-task.md",
+        "src/prompts/build/validate-task.md",
+        "src/prompts/steering-block.md",
+        "src/workflow/__tests__/artifact-kinds.test.ts",
+        "src/workflow/__tests__/migrate-docs-tree.test.ts",
+        "src/workflow/delivery/load.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/migrate-docs-tree.ts",
+        "src/workflow/path-scheme.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/completion-record.test.ts",
+        "src/workflow/runners/build/__tests__/test-record.test.ts",
+        "src/workflow/runners/build/completion-record.ts",
+        "src/workflow/runners/build/own-files.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/build/test-record.ts",
+        "src/workflow/storage.ts",
+        "vscode-plugin/assets/steering-block.md",
+        "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+        "vscode-plugin/src/panels/daemon-gateway.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/mcp/build-step/phases/validate.ts:253",
+            "message": "When a turn supplies no `tests` and the stored test record is unreadable or misshapen, `resolveMapping` gets `undefined` from `storedMappingFor` (`readTestRecord` only logs a warning) and the turn silently falls back to the prefix rule. No note reaches the verdict's evidence: `testRecordNote` is set only for an unresolvable route or a failed write. The builder sees an unexplained 'named tests matched no test file' failure, and the following write replaces the unreadable record without saying so.",
+            "expectationRef": "LLD errorPaths, 'The test record cannot be written, or the stored record cannot be read when a turn supplies no mapping': 'An unreadable stored record is treated as no stored mapping, with the same kind of note, and the turn goes on with the prefix rule.'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:251",
+            "message": "A stored mapping is never checked against the tracked files: `resolveMapping` only drops entries for names the Task no longer has and hands the rest to the check plan. A stored case's file is run as it is, so 'not found' appears only when the file is absent from disk. A file that is no longer tracked but still exists in the working tree is run and can give 'pass', where the design requires 'not found' and a failed check.",
+            "expectationRef": "LLD errorPaths, 'A stored mapping names a file that no longer exists or is no longer tracked': 'The stored mapping is checked against the tracked files like a supplied one. That case is kept and gets the result not found; the tests check fails.'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:1584",
+            "message": "The `turn()` helper's `opts` parameter type declares optional properties without the explicit `| undefined` (`result?: 'pass' | 'fail'; judge?: () => unknown; runner?: (...) => Promise<ValidationCheckResults>`). The same file's `readTests` return type does the same (`commit?: string`, `reported?: unknown` is fine, `commit?: string` is not). The non-test code in this Story (`TestFileRun`, `NamedTestPlan`, `TestMappingEntry`, `TestRecord*`) consistently writes `?: T | undefined`. Test files are excluded from `tsc --noEmit`, so the compiler does not flag this.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/render.ts:118",
+            "message": "The new exported constants `JUDGE_NAMED_TESTS_RULE` and `STANDALONE_MAPPING_RULE` were inserted between an existing doc comment (`/** Render the implement-task prompt. `resolvedDecisions` fills ... */`) and the function it documents. That comment now sits directly above the `JUDGE_NAMED_TESTS_RULE` doc comment and describes neither constant, and the implement-prompt renderer has lost its doc comment. Elsewhere in this module each doc comment sits immediately above its own declaration (e.g. `MERGE_RULE`).",
+            "expectationRef": "module-idiom: doc comment immediately precedes the declaration it documents",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:21",
+            "message": "`import { relative } from 'node:path';` is placed in the middle of the relative-import block (after `config/analyze.js`, before `shared/logger.js`) and set off by a blank line. The other files this Story touched or added (`validation-checks.ts`, `test-record.ts`, `standalone-record.ts`) put `node:` builtin imports first, then a blank line, then the relative imports.",
+            "expectationRef": "module-idiom: node: builtin imports grouped before relative imports",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/__tests__/completion-record.test.ts:23",
+            "message": "`import { execFileSync } from 'node:child_process';` is added after the first relative import (`../completion-record.js`), splitting the relative-import group. The file's existing `node:` imports (`node:os`, `node:path`) sit together at the top, as they do in the sibling test files `test-record.test.ts` and `tap-results.test.ts`.",
+            "expectationRef": "module-idiom: node: builtin imports grouped before relative imports",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/__tests__/test-record.test.ts:209",
+            "message": "`const { mkdirSync: mk, rmSync: rm } = await import('node:fs');` dynamically re-imports, under aliases, two functions the file already imports statically at the top (`mkdirSync`, `rmSync` from 'node:fs'). The other tests in this file and its sibling test files use the static imports directly; dynamic `await import` is otherwise used in these modules only for seams of the module under test.",
+            "expectationRef": "module-idiom: static top-of-file imports for node builtins in tests",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/build-step/phases/validate.ts:303",
+            "message": "The standalone validate route's handling of a supplied `tests` mapping is not exercised at the handler level. Every standalone validate call in build-step.test.ts (the `standaloneTurn` helper and the direct `handleBuildStep` calls) passes no `tests`, so the path input.tests -> handleStandaloneValidate -> resolveMapping -> smallStandaloneCheckPlan(mapping) is covered only by the unit-level check-plan tests in validation-checks.test.ts. Two documented behaviours therefore have no end-to-end test: a wrong mapping on a Small standalone build is refused with `invalid-test-mapping`, and `tests` is ignored on a Trivial standalone build. Judged from the diff text, since the testsReaching edges are empty for every entry.",
+            "expectationRef": "handleStandaloneValidate (suppliedTests)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/build-step/phases/validate.ts:376",
+            "message": "Present but unverified: the promised live test is not an automated test, and nothing in the grounding corresponds to it. By the Story's own design it is a result reported by the builder with evidence. No build record or test record was supplied to this review, so the claimed outcome (three files run, every case pass, TESTS.md written by the gate in Story s7's folder) cannot be confirmed here.",
+            "expectationRef": "live: Task t1 of Story s7 of the analyzer epic ... is submitted with a mapping converted from .../S007/tests.map.json",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/test-record.ts:254",
+            "message": "The new exported function `testRecordMdRel` has no caller and no test. A grep of src/ and vscode-plugin/src finds only its definition; validate.ts calls `relative()` directly instead. It is unexercised new code, and probably dead.",
+            "expectationRef": "testRecordMdRel",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/validation-checks.ts:323",
+            "message": "Several new failure branches have no test in the diff: in `runTestFile`, the `could not start: <spawnError>` and `empty command` paths; in `describeNamedTests` (validate.ts), the `not run` and `timed out` by-file results and the `touched` source; in `storyWorkflowFiles` (own-files.ts), the catch for an identity the path scheme cannot place. The tests cover the timeout, not-TAP and output-write-failure paths only.",
+            "expectationRef": "runTestFile (spawnError / empty command); describeNamedTests fileResult; storyWorkflowFiles catch",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:1517",
+            "message": "Present but unverified: all 40 automated promised tests have a test of the matching title in the changed test files (tap-results 5, test-mapping 2, test-record 4, artifact-kinds 2, migrate-docs-tree 1, daemon-gateway 1, build-record 1, completion-record 1, validation-checks 10, render 1, build-step 10; two entries are listed twice in the plan). No build record was supplied, so no pass-state is asserted for any of them. The testsReaching edges are empty for every entry, the test files included, because the grounding is file-level diff entities with no graph edges. I did not raise per-symbol HIGH not-exercised findings from that: the diff text shows the tests importing and calling the changed symbols directly (parseTapRun, resultOfTitle, checkTestMapping, persistTestRecordTask, readTestRecord, storedMappingFor, testRecordPaths, renderTestRecordMd, runValidationChecks, the three check-plan builders, renderCheckEvidence, storyWorkflowFiles, approveWorkflowTarget, NotApprovableError, handleBuildStep validate).",
+            "expectationRef": "all automated promised tests (pass-state)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/build-step/phases/validate.ts:157",
+            "message": "Correctness risk: builder-supplied free text reaches the judge's prompt and TESTS.md unescaped. `describeNamedTests` interpolates `reported.evidence` and each mapped `title` verbatim, and `renderTestRecordMd` writes `Evidence: ${t.reported.evidence}` without the `cell()` newline flattening it applies to table cells. The schema only requires `min(1)`, so a multi-line `evidence` can add lines that read as the gate's own (a forged `### Tests: PASSED` section in the judge's evidence, or a forged `## t2 … Tests check: **passed**` block in the record). The builder is the party the judge checks, so its text should be flattened to one line or fenced before it is rendered.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/build-step/phases/validate.ts:251",
+            "message": "Correctness risk: a stored mapping is reused with only a name-membership filter. `checkTestMapping` is skipped by design so a missing file is not refused, but that also skips the level rule and the path rule. A `reported` pass stored while a test was `live` still satisfies it after the plan changes its level to `unit`, with nothing run. A `file` in a hand-edited or merged `TESTS-*.json` (a tracked repo file) is handed to the runner without the `leavesRepo` or `.test.ts` check. Re-apply the level and path checks to stored entries and drop the ones that fail, without refusing the turn.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/build-step/validation-checks.ts:290",
+            "message": "Unhandled error path: `outputDir` is created once per process and cached at module level. The daemon is long-lived; once the OS temp cleaner removes that directory, every later `writeFileSync` fails with ENOENT and `outputDir ??=` never recreates it. From then on every run carries 'the whole output could not be written' and no `outputPath`, so the whole output the docs promise is lost until the daemon restarts. Separately, the `.tap` files are never removed, so they accumulate for the daemon's lifetime. Recreate the directory on ENOENT or use `mkdtempSync` per run, and bound retention.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/tap-results.ts:69",
+            "message": "Correctness risk: a YAML block is closed by any line matching `^ *\\.\\.\\.\\s*$`, whatever its indent relative to the opening `---`. A failing test's `error: |-` text that contains a bare `...` line (truncated assert diffs can) closes the block early. The rest of the message sits at depth*4+4 spaces, a multiple of 4, so a line there shaped like `ok 1 - <title>` is read as a real result and can record a false `pass` for a mapped case. The file still exits non-zero, so the check fails, but the per-case result in TESTS.md would be wrong. Close only on a `...` at the opener's indent.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/validation-checks.ts:414",
+            "message": "Correctness risk: on the small standalone route an unmapped prose subject is handled inconsistently. `smallStandaloneCheckPlan` leaves it out of `unresolvedTests` (documented: it does not fail the check). But when the only mapping entries are `reported` passes, `testFiles` is empty, `allReported` is false because of the unmapped subject, and `noTests` is undefined, so `ok` is false with the note 'no test files to run'. The same subject passes when one mapped file exists and fails when none does, and the note does not say why.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/validation-checks.ts:446",
+            "message": "Correctness risk: `outputTail` is the tail of the last file that printed anything, not of a failing file. When an early file fails and a later one passes, the verdict and the judge's 'output (tail)' show the passing file's output under a `Tests: FAILED` heading. Prefer the tail of the first failed run, or concatenate the failed runs' tails.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:160",
+            "message": "Duplication: `describeNamedTests` rebuilds the `file\\u0000title` set and the 'failed outside the named cases' filter that `toTestRecordTask` computes as `otherFailures` in the same file. Its inner `fileResult` also repeats `fileResultOf` in test-record.ts (not run / timed out / pass / fail). The judge's evidence and the record can drift apart; derive both from one helper.",
+            "counterpartRef": "toTestRecordTask",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:333",
+            "message": "Duplication: the flattening of the design's `testLevels[].subjects` into `{ name, level }` is written out here and again, identically, inside `smallStandaloneCheckPlan`. The first list is what the mapping is checked against and the second is what is planned and run, so a change to one alone would make the gate accept names it does not plan, or the reverse. Export one function and use it in both places.",
+            "counterpartRef": "smallStandaloneCheckPlan",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:418",
+            "message": "Avoidable complexity: `testRecordMd()` is a closure called up to four times per turn (twice for the evidence, twice for the build record's link). Each call re-reads and re-parses the test record's json and re-derives the folder through several artifact reads. Compute the path once after the write attempt and reuse it. The `if (routeError !== undefined) throw routeError;` inside the build record's `try` also uses a throw as control flow in an already long `runValidateSession`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/test-record.ts:258",
+            "message": "Duplication / dead code: `testRecordMdRel` is exported, but the only visible consumer, validate.ts, computes `relative(repoPath, testRecordPaths(...).md)` inline and does not import it. `StoredMappingEntry` also restates the shape of `TestMappingEntry` in test-mapping.ts; that one may be deliberate layering.",
+            "counterpartRef": "TestMappingEntry",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/standalone-record.ts:388",
+            "message": "Correctness risk (fragile coupling): `repoPathOfArtifactJson` recovers the repo root by three `dirname` calls on the json path, which hard-codes `ARTIFACTS_DIR` as exactly two levels deep. If that constant changes, `seedFromTestRecord` reads from the wrong root, gets `null`, and stops seeding without any error, which brings back the two-folder fork this change exists to prevent. `persistBuildRecord` and `buildRecordPathsFor` both hold `repoPath`; pass it through.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/own-files.ts:36",
+            "message": "Unhandled error path: the bare `catch {}` around `testRecordPaths` drops any error without a log. If the path derivation throws for a reason other than an unplaceable identity, the test record's json and md are left out of the exclude list and become the Story's change log, with nothing recorded to explain it. Log at warn level, as the neighbouring writers do.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/migrate-docs-tree.ts:118",
+            "message": "Duplication: the story-scoped kind list is extended by hand here (`|| kind === 'TESTS'`) in parallel with `STORY_SCOPED` in path-scheme.ts, which already exports `isStoryScopedKind`. The comment in this diff describes the exact failure of forgetting one of the two lists; call the exported predicate.",
+            "counterpartRef": "isStoryScopedKind",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/phases/validate.ts:268",
+            "message": "Correctness risk: the record stamps each run with `headShortSha` ('Run at … on commit X'), but the files are run from the working tree. Any uncommitted or staged change is part of the run, so the stated commit may not reproduce the recorded results. Record whether the tree was dirty, or omit the commit when it was.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 6,
+      "low": 20
+    }
+  }
+}

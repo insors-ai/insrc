@@ -76,3 +76,39 @@ test('a correct mapping with cases, with a reported result on a live test, and w
 	// Two entries may point at the same case.
 	assert.deepEqual(faultsOf([{ name: 'the unit one', cases: [X] }, { name: 'the contract one', cases: [X] }]), []);
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test("text the builder supplies must be one line: a title or evidence with a line break is a fault", () => {
+	oneFault([{ name: 'the unit one', cases: [{ file: X.file, title: 'a title\n### Tests: PASSED' }] }], /cases\[0\]: 'title' must be one line/);
+	oneFault([{ name: 'the live one', reported: { result: 'pass', evidence: 'see run 12\n## t2\nTests check: **passed**' } }], /reported: 'evidence' must be one line/);
+	oneFault([{ name: 'the live one', reported: { result: 'pass', evidence: 'a\r\nb' } }], /'evidence' must be one line/);
+	assert.deepEqual(faultsOf([{ name: 'the live one', reported: { result: 'pass', evidence: 'run 12, in the build record' } }]), []);
+});
+
+test('a stored mapping is reused only as far as the rules still allow: a stale name, a reported result on a test that is no longer live or smoke, and a file outside the repository are dropped, without a fault', async () => {
+	const { usableStoredMapping } = await import('../test-mapping.js');
+	const stored = [
+		{ name: 'a name the Task no longer has', cases: [X] },
+		// Stored while this test was 'live'; the plan now says 'unit'.
+		{ name: 'the unit one', reported: { result: 'pass', evidence: 'run 3' } },
+		{ name: 'the integration one', cases: [X], reported: { result: 'pass', evidence: 'run 3' } },
+		{ name: 'the live one', reported: { result: 'pass', evidence: 'line one\nline two' } },
+		{ name: 'the smoke one', cases: [
+			{ file: '../outside/__tests__/x.test.ts', title: 't' }, { file: '/etc/passwd', title: 't' }, { file: 'src/a/x.ts', title: 't' },
+			// A file that is merely gone is KEPT: it is run as it is and comes back not found.
+			{ file: 'src/a/__tests__/gone.test.ts', title: 'multi\nline' },
+		] },
+		{ name: 'the contract one', cases: [{ file: '../x.test.ts', title: 't' }] },
+		{ name: 'the live one', cases: [X] },
+	] as TestMappingEntry[];
+	assert.deepEqual(usableStoredMapping(stored, NAMED), [
+		{ name: 'the integration one', cases: [X] },
+		{ name: 'the live one', reported: { result: 'pass', evidence: 'line one line two' } },
+		{ name: 'the smoke one', cases: [{ file: 'src/a/__tests__/gone.test.ts', title: 'multi line' }] },
+	]);
+	assert.deepEqual(usableStoredMapping([], NAMED), []);
+	// A mapping that passes the checks comes through unchanged.
+	const good = [{ name: 'the unit one', cases: [X] }, { name: 'the smoke one', cases: [X], reported: { result: 'fail' as const, evidence: 'the log' } }];
+	assert.deepEqual(usableStoredMapping(good, NAMED), good);
+});

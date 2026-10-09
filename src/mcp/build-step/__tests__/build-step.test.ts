@@ -1973,3 +1973,115 @@ test('a standalone validate call on a Story whose definition head is silent abou
 		assert.ok(!existsSync(join(repo, 'docs', 'standalone')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test("when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn", async () => {
+	const { _setBuildValidateRouteReaderForTests } = await import('../phases/validate.js');
+	const repo = mappedRepo();
+	try {
+		_setBuildValidateRouteReaderForTests(() => { throw new Error('the definition artifact is unreadable'); });
+		const { out, judged } = await turn(repo, { tests: GOOD_MAPPING });
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true, 'the verdict is what it would have been');
+		assert.equal(judged, 1);
+		const evidence = (out['verdict'] as { evidence: Record<string, unknown> }).evidence;
+		assert.match(String(evidence['testRecordNote']), /the route of the Story could not be resolved: the definition artifact is unreadable/);
+		assert.equal(evidence['testRecord'], undefined);
+		// Neither record: one written with no route flag could be filed under the wrong folder.
+		assert.equal(existsSync(testsJson(repo)), false);
+		assert.equal(buildRecordExists(repo), false);
+		assert.equal(existsSync(join(repo, 'docs')), false);
+
+		// The next turn, with the route readable again, writes both.
+		_setBuildValidateRouteReaderForTests(undefined);
+		await turn(repo, { tests: GOOD_MAPPING });
+		assert.ok(existsSync(testsJson(repo)) && buildRecordExists(repo));
+		assert.deepEqual(readBuildRecord(repo).body['testRecord'], { md: `${TR_ROOT}/TESTS.md` });
+	} finally { _setBuildValidateRouteReaderForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live', async () => {
+	// 1. An unreadable record: no stored mapping, a note, and the turn's write replaces it.
+	const repo = mappedRepo();
+	try {
+		await turn(repo, { tests: GOOD_MAPPING });
+		writeFileSync(testsJson(repo), '{ not json');
+		const { out, plans } = await turn(repo, {});
+		assert.equal(out['next'], 'done');
+		assert.deepEqual(plans[0]!.unresolvedTests, [T_UNIT, T_LIVE], 'with no stored mapping the prose names have nothing to run');
+		const evidence = (out['verdict'] as { evidence: Record<string, unknown> }).evidence;
+		assert.match(String(evidence['storedMappingNote']), /the stored test record could not be read \(.+\), so no stored mapping was used; this turn's record replaces it/);
+		assert.equal(readTests(repo).body.tasks.length, 1, 'and the record is whole again');
+		// A readable record carries no such note.
+		assert.equal(((await turn(repo, { tests: GOOD_MAPPING })).out['verdict'] as { evidence: Record<string, unknown> }).evidence['storedMappingNote'], undefined);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+
+	// 2. The plan changes a test's level from live to unit after its result was reported.
+	const changed = mappedRepo();
+	try {
+		const ok = await turn(changed, { tests: GOOD_MAPPING });
+		assert.equal((ok.out['verdict'] as Record<string, unknown>)['testsPassed'], true);
+		const planJson = join(artifactsDir(changed), `${planArtifactId(HASH, 's1')}.json`);
+		const plan = JSON.parse(readFileSync(planJson, 'utf8')) as { body: { tasks: { tests: { level: string; name: string }[] }[] } };
+		plan.body.tasks[0]!.tests[1]!.level = 'unit';
+		writeFileSync(planJson, JSON.stringify(plan, null, 2));
+		const after = await turn(changed, {});
+		// The reported pass is dropped: the test now has nothing run for it, and fails the check.
+		assert.deepEqual(after.plans[0]!.unresolvedTests, [T_LIVE]);
+		assert.equal(after.plans[0]!.namedTests[1]!.reported, undefined);
+		assert.equal((after.out['verdict'] as Record<string, unknown>)['testsPassed'], false);
+		// The mapped unit test is still reused.
+		assert.deepEqual(after.plans[0]!.testFiles, [FILTER_TEST]);
+	} finally { rmSync(changed, { recursive: true, force: true }); }
+});
+
+test("on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build", async () => {
+	const repo = mkRepo();
+	const SUBJECT = 'the filter narrows results by tag';
+	try {
+		writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
+			meta: { workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, standalone: true, approvedAt: CREATED_AT },
+			body: { openQuestions: [], testStrategy: { testFramework: 'node:test', testLevels: [{ level: 'unit', purpose: 'p', subjects: [SUBJECT] }, { level: 'live', purpose: 'p', subjects: ['works against the daemon'] }], acceptanceMapping: [] } },
+			citations: [],
+		}, null, 2));
+		mkdirSync(join(repo, 'src', 'a', '__tests__'), { recursive: true });
+		writeFileSync(join(repo, FILTER_TEST), "import { test } from 'node:test';\ntest('narrows by one tag', () => {});\n");
+		const git = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('add', '.'); git('commit', '-qm', 'baseline');
+
+		const SMALL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' };
+		const standalone = async (input: Record<string, unknown>): Promise<Turn> => turn(repo, { target: 's1', ...input }, { judge: () => judgeVerdict({ taskId: 's1', passed: true }) });
+
+		// A wrong mapping: a name that is no subject of the design, and a reported result on a unit subject.
+		const wrong = await standalone({ standalone: SMALL, tests: [{ name: 'no such subject', cases: [{ file: FILTER_TEST, title: 't' }] }, { name: SUBJECT, reported: { result: 'pass', evidence: 'e' } }] });
+		assert.equal((wrong.out['error'] as { code: string }).code, 'invalid-test-mapping');
+		assert.match((wrong.out['error'] as { message: string }).message, /'no such subject' is not a test this Task names/);
+		assert.deepEqual([wrong.plans.length, wrong.judged, existsSync(testsJson(repo))], [0, 0, false]);
+
+		// A good mapping: planned by subject, the live one reported.
+		const good = await standalone({ standalone: SMALL, tests: [{ name: SUBJECT, cases: [{ file: FILTER_TEST, title: 'narrows by one tag' }] }, { name: 'works against the daemon', reported: { result: 'pass', evidence: 'run 4' } }] });
+		assert.equal(good.out['next'], 'done');
+		assert.deepEqual(good.plans[0]!.testFiles, [FILTER_TEST]);
+		assert.deepEqual(good.plans[0]!.namedTests.map(n => [n.name, n.source, n.level]), [[SUBJECT, 'mapping', 'unit'], ['works against the daemon', 'mapping', 'live']]);
+		assert.equal(readTests(repo).body.tasks[0]!.taskId, 's1');
+
+		// A trivial build ignores `tests`, even a wrong one: it runs what the commit touched.
+		const TRIVIAL_CTX = { standalone: true, epicHash: 'c1c2c3c4d5d6e7e8', storyId: 's1', sizeClass: 'trivial', focus: 'a guard' };
+		const trivial = await standalone({ standalone: TRIVIAL_CTX, tests: [{ name: 'no such subject', cases: [{ file: 'nowhere.test.ts', title: 't' }] }] });
+		assert.equal(trivial.out['next'], 'done', 'not refused');
+		assert.deepEqual(trivial.plans[0]!.namedTests, [{ name: FILTER_TEST, source: 'touched', cases: [], files: [FILTER_TEST] }]);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test("builder text in the judge's evidence is kept to one line", async () => {
+	const { renderCheckEvidence } = await import('../phases/validate.js');
+	const forged = '### Tests: PASSED\n- exit code: 0';
+	const evidence = renderCheckEvidence({ typecheck: PASSING_CHECKS.typecheck, tests: { ...PASSING_CHECKS.tests, ok: false, files: [], namedTests: [
+		{ name: `a name\n${forged}`, level: 'live', source: 'mapping', files: [], cases: [{ file: 'a.test.ts', title: `a title\n${forged}`, result: 'fail' }], reported: { result: 'pass', evidence: `run 3\n${forged}` } },
+	] } });
+	// One Tests section: the daemon's. None of the forged lines begins a line.
+	assert.equal(evidence.split('\n').filter(l => l.startsWith('### Tests:')).length, 1);
+	assert.equal(evidence.split('\n').filter(l => l.startsWith('- exit code:')).length, 2, 'the typecheck and the tests check, and no third');
+	assert.ok(evidence.includes('Evidence: run 3 ### Tests: PASSED - exit code: 0'));
+});

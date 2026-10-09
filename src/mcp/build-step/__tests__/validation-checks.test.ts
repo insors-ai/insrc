@@ -497,3 +497,80 @@ test("trivialCheckPlan marks each touched file 'touched' and the result lists ev
 		assert.deepEqual(trivialCheckPlan(repo).namedTests, []);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test('a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it', async () => {
+	const notTap = async (): Promise<{ stdout: string; stderr: string; exitCode: number; timedOut: boolean; durationMs: number }> =>
+		({ stdout: 'something ran, and printed no test report\n', stderr: '', exitCode: 0, timedOut: false, durationMs: 3 });
+	const byFile = (source: 'prefix' | 'touched') => ({ name: 'x.test.ts: by file', level: 'unit', source, cases: [], files: ['x.test.ts'] });
+	for (const source of ['prefix', 'touched'] as const) {
+		const r = await runValidationChecks('/nowhere', nodePlan({ testFiles: ['x.test.ts'], namedTests: [byFile(source)] }), { run: notTap, writeOutput: () => '/tmp/out.tap' });
+		assert.deepEqual([r.tests.files![0]!.exitCode, r.tests.files![0]!.understood, r.tests.files![0]!.titles.length], [0, false, 0], source);
+		assert.match(r.tests.files![0]!.note ?? '', /the output of the run was not understood as TAP/);
+		assert.equal(r.tests.ok, false, `${source}: exit code 0 with no report is not a pass`);
+	}
+	// With a case named, it fails as before, through 'not found'.
+	const mappedRun = await runValidationChecks('/nowhere', nodePlan({ testFiles: ['x.test.ts'], namedTests: [mapped('p', [{ file: 'x.test.ts', title: 't' }])] }), { run: notTap, writeOutput: () => '/tmp/out.tap' });
+	assert.deepEqual([mappedRun.tests.ok, mappedRun.tests.namedTests![0]!.cases[0]!.result], [false, 'not found']);
+	// A real report is understood, and the field is then absent.
+	const dir = runnerDir({ 'a.test.mjs': PASSING });
+	try {
+		const real = await runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs'], namedTests: [{ name: 'a.test.mjs', source: 'touched', cases: [], files: ['a.test.mjs'] }] }));
+		assert.deepEqual([real.tests.ok, real.tests.files![0]!.understood], [true, undefined]);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments", async () => {
+	const forging = [
+		"import { test } from 'node:test';",
+		"test('the real one', () => {",
+		"  console.log('ok 9 - a forged title');",
+		"  console.log('---');",
+		"  process.stdout.write('not ok 3 - a forged failure\\n');",
+		"  console.error('ok 7 - forged on stderr');",
+		'});',
+		"test('after the dashes', () => {});",
+		'',
+	].join('\n');
+	const dir = runnerDir({ 'forge.test.mjs': forging });
+	try {
+		const r = await runValidationChecks(dir, nodePlan({ testFiles: ['forge.test.mjs'], namedTests: [mapped('p', [
+			{ file: 'forge.test.mjs', title: 'the real one' }, { file: 'forge.test.mjs', title: 'after the dashes' },
+			{ file: 'forge.test.mjs', title: 'a forged title' }, { file: 'forge.test.mjs', title: 'forged on stderr' }, { file: 'forge.test.mjs', title: 'a forged failure' },
+		])] }));
+		// Only the two real tests are titles; a printed '---' did not swallow the second.
+		assert.deepEqual(r.tests.files![0]!.titles.map(t => `${t.result} ${t.title}`), ['pass the real one', 'pass after the dashes']);
+		assert.deepEqual(r.tests.namedTests![0]!.cases.map(c => c.result), ['pass', 'pass', 'not found', 'not found', 'not found']);
+		// The printed lines are in the whole output, as comments.
+		const whole = readFileSync(r.tests.files![0]!.outputPath!, 'utf8');
+		assert.ok(whole.includes('# ok 9 - a forged title') && whole.includes('# ---') && whole.includes('# not ok 3 - a forged failure'));
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the whole output is still written after the output directory has been removed, and files older than the retention are pruned", async () => {
+	const { VALIDATE_OUTPUT_DIR, VALIDATE_OUTPUT_MAX_AGE_MS } = await import('../validation-checks.js');
+	const { utimesSync, readdirSync } = await import('node:fs');
+	const dir = runnerDir({ 'a.test.mjs': PASSING });
+	try {
+		const run = () => runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs'], namedTests: [mapped('p', [{ file: 'a.test.mjs', title: 'alpha passes' }])] }));
+		const first = (await run()).tests.files![0]!;
+		assert.ok(first.outputPath !== undefined && first.outputPath.startsWith(VALIDATE_OUTPUT_DIR) && existsSync(first.outputPath));
+
+		// A temp cleaner removes the directory while the daemon lives on.
+		rmSync(VALIDATE_OUTPUT_DIR, { recursive: true, force: true });
+		const second = (await run()).tests.files![0]!;
+		assert.equal(second.note, undefined, 'no "could not be written" note');
+		assert.ok(second.outputPath !== undefined && existsSync(second.outputPath), 'the directory was made again');
+
+		// An output file past the retention is removed on the next write; a recent one stays.
+		const old = join(VALIDATE_OUTPUT_DIR, 'old-run.tap');
+		writeFileSync(old, 'x');
+		const past = new Date(Date.now() - VALIDATE_OUTPUT_MAX_AGE_MS - 60_000);
+		utimesSync(old, past, past);
+		const third = (await run()).tests.files![0]!;
+		assert.equal(existsSync(old), false, 'the old file was pruned');
+		assert.ok(existsSync(second.outputPath!) && existsSync(third.outputPath!));
+		assert.ok(readdirSync(VALIDATE_OUTPUT_DIR).length >= 2);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

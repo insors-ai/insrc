@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -65,6 +65,9 @@ export interface TestFileRun {
 	readonly durationMs:  number;
 	/** Every result line the file's run printed. */
 	readonly titles:      readonly TapTitle[];
+	/** False when the run's output was not understood as TAP (no version line
+	 *  and no result line): the run then proves nothing, whatever its exit code. */
+	readonly understood?: boolean | undefined;
 	/** A file holding the run's WHOLE output (stdout then stderr); absent when it could not be written. */
 	readonly outputPath?: string | undefined;
 	readonly note?:       string | undefined;
@@ -283,11 +286,31 @@ async function runOne(repoPath: string, argv: readonly string[], timeoutMs: numb
 	return { ok: r.exitCode === 0, command: line, exitCode: r.exitCode, timedOut: false, durationMs: r.durationMs, outputTail: output };
 }
 
-/** The default writer of one test file's whole output. */
-let outputDir: string | undefined;
+/** Where the whole output of each test file's run is kept, and for how long. */
+export const VALIDATE_OUTPUT_DIR = join(tmpdir(), 'insrc-validate-output');
+export const VALIDATE_OUTPUT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * The default writer of one test file's whole output.
+ *
+ * The directory is made on EVERY write, not once per process: the daemon lives
+ * long, and a temp cleaner that removed a directory made at start-up would
+ * otherwise lose every later output until a restart. Files older than the
+ * retention are removed on the way, so they do not pile up for the daemon's
+ * lifetime.
+ */
 function writeOutputFile(file: string, output: string): string {
-	outputDir ??= mkdtempSync(join(tmpdir(), 'insrc-validate-output-'));
-	const path = join(outputDir, `${file.replace(/[^A-Za-z0-9._-]+/g, '_')}.${Date.now()}.tap`);
+	mkdirSync(VALIDATE_OUTPUT_DIR, { recursive: true, mode: 0o700 });
+	const now = Date.now();
+	try {
+		for (const name of readdirSync(VALIDATE_OUTPUT_DIR)) {
+			const path = join(VALIDATE_OUTPUT_DIR, name);
+			if (now - statSync(path).mtimeMs > VALIDATE_OUTPUT_MAX_AGE_MS) rmSync(path, { force: true });
+		}
+	} catch (err) {
+		log.debug({ err: err instanceof Error ? err.message : String(err) }, 'validate: old output files could not be pruned');
+	}
+	const path = join(VALIDATE_OUTPUT_DIR, `${file.replace(/[^A-Za-z0-9._-]+/g, '_')}.${now}.${process.pid}.tap`);
 	writeFileSync(path, output, { mode: 0o600 });
 	return path;
 }
@@ -349,6 +372,7 @@ async function runTestFile(
 			timedOut:   r.timedOut,
 			durationMs: r.durationMs,
 			titles:     tap.titles,
+			...(r.spawnError === undefined && !tap.understood ? { understood: false } : {}),
 			...(outputPath !== undefined ? { outputPath } : {}),
 			...(notes.length > 0 ? { note: notes.join('; ') } : {}),
 		},
@@ -423,7 +447,10 @@ export async function runValidationChecks(
 		}
 		const results = namedResults(named, runs);
 		const badCases = results.flatMap(n => n.cases.filter(c => c.result !== 'pass').map(c => `${c.result}: '${c.title}' in ${c.file}`));
-		const failedFiles = runs.filter(r => r.exitCode !== 0 || r.timedOut);
+		// A run whose output is not TAP gave no result for any title: with no cases
+		// named (a name run by its file) nothing else would notice, and exit code 0
+		// alone would read as a pass. It fails the check like a file that failed.
+		const failedFiles = runs.filter(r => r.exitCode !== 0 || r.timedOut || r.understood === false);
 		const notes = [
 			...runs.filter(r => r.note !== undefined).map(r => `${r.file}: ${r.note}`),
 			...(badCases.length > 0 ? [`named test cases that did not pass: ${badCases.join('; ')}`] : []),
@@ -433,7 +460,7 @@ export async function runValidationChecks(
 		tests = {
 			ok: failedFiles.length === 0 && badCases.length === 0 && plan.unresolvedTests.length === 0 && reportedFail.length === 0,
 			command:    runs.map(r => r.command).join('\n'),
-			exitCode:   failedFiles.length === 0 ? 0 : failedFiles[0]!.exitCode,
+			exitCode:   failedFiles.length === 0 ? 0 : failedFiles.find(r => r.exitCode !== 0)?.exitCode ?? failedFiles[0]!.exitCode,
 			timedOut:   runs.some(r => r.timedOut),
 			durationMs: runs.reduce((sum, r) => sum + r.durationMs, 0),
 			outputTail: tail(lastOutput),

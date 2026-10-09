@@ -202,3 +202,64 @@ test('the stored mapping of a Task is read back as the mapping that was supplied
 		assert.deepEqual(readTestRecord(repo, HASH, 's1')!.body.tasks.map(t => t.taskId), ['t1']);
 	});
 });
+
+// --- from the code review of the Story (CR-9b4a74dc-S001) ---------------------
+
+test('when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run', async () => {
+	const { mkdirSync: mk, rmSync: rm } = await import('node:fs');
+	// First write: the document's path is taken by a directory, so its write fails.
+	await withRepo((repo) => {
+		const paths = testRecordPaths(repo, HASH, 's1', { now: T0 });
+		mk(paths.md, { recursive: true });
+		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1')));
+		assert.equal(existsSync(paths.json), false, 'no json is left behind for a record whose document was never written');
+		assert.equal(readTestRecord(repo, HASH, 's1'), null);
+		assert.equal(storedMappingFor(repo, HASH, 's1', 't1'), undefined);
+	});
+	// A later write: the first run is on disk in both files, and stays there.
+	await withRepo((repo) => {
+		const paths = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		const jsonBefore = readFileSync(paths.json, 'utf8');
+		const mdBefore = readFileSync(paths.md, 'utf8');
+		rm(paths.md);
+		mk(paths.md);
+		const other = task('t1', { ranAt: T2, testsPassed: false, tests: [{ name: 'a different mapping', source: 'mapping', files: [], cases: [{ file: Y, title: 'z', result: 'fail' }] }] });
+		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other));
+		assert.equal(readFileSync(paths.json, 'utf8'), jsonBefore, 'the json is what it was before the failed write');
+		// The stored mapping is the first run's, not the one whose write failed.
+		assert.deepEqual(storedMappingFor(repo, HASH, 's1', 't1')!.map(e => e.name), ['the first named test']);
+		rm(paths.md, { recursive: true });
+		writeFileSync(paths.md, mdBefore);
+		// And the record is whole again on the next write.
+		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, other);
+		assert.equal(readTestRecord(repo, HASH, 's1')!.body.tasks[0]!.ranAt, T2);
+		assert.match(readFileSync(paths.md, 'utf8'), /a different mapping/);
+	});
+});
+
+test('text that came from the builder is rendered on one line, so it cannot add lines that read as the record\'s own; and an unreadable record is told from an absent one', async () => {
+	const { testRecordState } = await import('../test-record.js');
+	const forged = '## t9\n\nRun at X. Tests check: **passed**.';
+	const rec: TestRecord = { meta: { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [task('t1', {
+		note: `a note\n${forged}`,
+		tests: [{ name: `a name\n${forged}`, level: 'live', source: 'mapping', cases: [{ file: X, title: `a title\n${forged}`, result: 'pass' }], files: [], reported: { result: 'pass', evidence: `run 12\n${forged}` } }],
+		files: [{ file: X, exitCode: 1, timedOut: false, durationMs: 1, titles: [], otherFailures: [`another\n${forged}`] }],
+	})] } };
+	const md = renderTestRecordMd(rec);
+	// Exactly one Task heading, and no line that begins a forged section.
+	assert.deepEqual(md.split('\n').filter(l => l.startsWith('## ')), ['## t1']);
+	assert.equal(md.split('\n').filter(l => l.startsWith('Run at ')).length, 1);
+	assert.ok(md.includes('Evidence: run 12 ## t9 Run at X. Tests check: **passed**.'));
+
+	await withRepo((repo) => {
+		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'absent' });
+		persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1'));
+		assert.equal(testRecordState(repo, HASH, 's1').kind, 'record');
+		const json = artifactJsonPath(repo, testsArtifactId(HASH, 's1'));
+		writeFileSync(json, '{ not json');
+		const bad = testRecordState(repo, HASH, 's1');
+		assert.equal(bad.kind, 'unreadable');
+		writeFileSync(json, JSON.stringify({ meta: {}, body: {} }));
+		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'unreadable', reason: "it does not have the record's shape" });
+	});
+});

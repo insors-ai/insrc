@@ -1,0 +1,105 @@
+{
+  "ok": true,
+  "runId": "s7-live-data-S-mv0sqby9",
+  "intent": {
+    "target": "data",
+    "focused": true,
+    "focus": "what data sources and schemas does this repository use",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "scope": "S",
+    "reasoning": "target hinted via slash command (classifier skipped); scope hinted via slash command suffix"
+  },
+  "finalReport": {
+    "summary": "Incomplete: 6 failed: run context / db.tables.list [e2] — skipped: placeholder(s) [$e1.connections[0].id] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors. | run context / db.table.describe [e3] — skipped: placeholder(s) [$e1.connections[0].id, $e2.tables[0].name] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors. | t02 — runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext). | t03 — runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext). | t04 — runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext). | t05 — runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)..\n\nThis run targeted the data layer of the repository (Target: data, Scope: S) with the focus \"what data sources and schemas does this repository use\". The only upstream output that was produced is the `connections` task, and it returned an empty list: no data connections were enumerated. No object listings, table or file schemas, or distribution summaries were supplied to this aggregation.\n\nFour further tasks (t02, t03, t04, t05) were each supposed to produce an adherence-report and all four are absent, each for the same reason: the runtime threw `data.adherence.check: no constraints available`. Nothing is known about what those reports would have held.\n\nTop-level conclusion: on the evidence available to this report, the question cannot be answered positively. The run surfaced zero data connections and no schemas, so this report does not identify any data source or schema used by the repository. That is a statement about what the run surfaced, not a verified statement that the repository uses no data sources.",
+    "findings": [
+      {
+        "title": "No data connections were enumerated",
+        "detail": "**Fact surfaced (per `connections`):** the task output is an empty array (`[]`). No connection ids, tables, files, or schema sources were returned.\n\n**Implication (mine, not surfaced upstream):** an empty enumeration means only that this run found no registered/indexed data connections. It does not by itself establish that the repository uses no data sources; the enumeration may simply have had nothing registered to list. No schema-level claim can be made from this output.",
+        "sources": [
+          "connections"
+        ]
+      },
+      {
+        "title": "No schema, object-listing, or distribution outputs were available",
+        "detail": "The upstream block contains only the `connections` output. No per-table or per-file schema, object listing, or distribution summary was handed to this aggregation, so this report names no tables, columns, files, or types. The focus question (\"what data sources and schemas does this repository use\") is therefore unanswered by this run beyond the empty connection list (per `connections`).",
+        "sources": [
+          "connections"
+        ]
+      },
+      {
+        "title": "All four adherence-report inputs are absent (t02, t03, t04, t05)",
+        "detail": "The adherence-report inputs that tasks `t02`, `t03`, `t04` and `t05` should have produced are absent. The reason given is identical for each:\n\n- `runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext).`\n\nNothing is known about these reports beyond their absence, and this report does not cover adherence in any way.",
+        "sources": [
+          "connections"
+        ]
+      }
+    ],
+    "metadata": {
+      "target": "data",
+      "scope": "S",
+      "runId": "s7-live-data-S-mv0sqby9",
+      "tasksAnalyzed": 1
+    }
+  },
+  "tasksCompleted": 2,
+  "tasksFailed": [
+    {
+      "taskId": "t02",
+      "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+    },
+    {
+      "taskId": "t03",
+      "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+    },
+    {
+      "taskId": "t04",
+      "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+    },
+    {
+      "taskId": "t05",
+      "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+    }
+  ],
+  "durationMs": 67761,
+  "report": {
+    "completeness": {
+      "complete": false,
+      "incomplete": [],
+      "failed": [
+        {
+          "sourceId": "run context / db.tables.list [e2]",
+          "sourceKind": "lookup",
+          "reason": "skipped: placeholder(s) [$e1.connections[0].id] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors."
+        },
+        {
+          "sourceId": "run context / db.table.describe [e3]",
+          "sourceKind": "lookup",
+          "reason": "skipped: placeholder(s) [$e1.connections[0].id, $e2.tables[0].name] resolved to empty/undefined against prior outputs. The dependent exploration produced no data for these accessors."
+        },
+        {
+          "sourceId": "t02",
+          "sourceKind": "plan-task",
+          "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+        },
+        {
+          "sourceId": "t03",
+          "sourceKind": "plan-task",
+          "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+        },
+        {
+          "sourceId": "t04",
+          "sourceKind": "plan-task",
+          "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+        },
+        {
+          "sourceId": "t05",
+          "sourceKind": "plan-task",
+          "reason": "runtime-threw: data.adherence.check: no constraints available. Provide one of: params.constraintsSource (upstream taskId of a docs.constraint.enumerate task), params.constraints (inline list), OR params.constraintIds (list of doc-summary entity ids -- the runtime hydrates their keyConstraints from the LiveProjectContext)."
+        }
+      ]
+    }
+  }
+}

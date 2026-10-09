@@ -1,0 +1,3 @@
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"classify","stageLabel":"classify started","index":0,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"classify","stageLabel":"classified: infra/S","index":1,"total":null}}
+{"id":1,"stream":"progress","data":{"kind":"stage","operation":"analyze.run","stageId":"plan","stageLabel":"plan started","index":2,"total":null}}

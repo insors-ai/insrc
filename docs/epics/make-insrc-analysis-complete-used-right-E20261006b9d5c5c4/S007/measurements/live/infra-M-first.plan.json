@@ -1,0 +1,186 @@
+{
+	"planId": "infra-insrc-build-release-inventory",
+	"goal": "Inventory the infrastructure the insrc repository defines and establish how it is built and released from its four GitHub Actions workflows",
+	"target": "infra",
+	"scope": "M",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "infra.discovery.families",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"families"
+			],
+			"rationale": "Detect every IaC family in the insrc repo to confirm or correct the bundle's ci-only picture, since graph coverage is not established."
+		},
+		{
+			"taskId": "t02",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/ci.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of ci.yml; the bundle has only its path, so the build and test path is unevidenced."
+		},
+		{
+			"taskId": "t03",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/pages.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of pages.yml to establish what the pages workflow builds and where it publishes."
+		},
+		{
+			"taskId": "t04",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/jetbrains-plugin.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of jetbrains-plugin.yml to establish the JetBrains plugin build and release steps."
+		},
+		{
+			"taskId": "t05",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/vscode-plugin.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of vscode-plugin.yml to establish the VS Code plugin build and release steps."
+		},
+		{
+			"taskId": "t06",
+			"template": "infra.inventory.docker",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"docker-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Check for Dockerfiles and compose files repo-wide; the bundle shows none, so this confirms whether any image build path exists."
+		},
+		{
+			"taskId": "t07",
+			"template": "infra.inventory.kubernetes",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"k8s-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Confirm the bundle's zero Kubernetes manifests repo-wide so the report can state whether any cluster resources are defined."
+		},
+		{
+			"taskId": "t08",
+			"template": "infra.inventory.helm",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"helm-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Confirm the bundle's zero Helm charts repo-wide so the report can state whether any chart-based deployment is defined."
+		},
+		{
+			"taskId": "t09",
+			"template": "infra.inventory.terraform",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"tf-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Confirm the bundle's zero Terraform configurations repo-wide so the report can state whether cloud resources are provisioned."
+		},
+		{
+			"taskId": "t10",
+			"template": "infra.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"families",
+				"ci-inventory",
+				"docker-inventory",
+				"k8s-inventory",
+				"helm-inventory",
+				"tf-inventory"
+			],
+			"rationale": "Stitch the family detection, four workflow inventories and absence checks into the final report on defined infra, build and release."
+		}
+	],
+	"reasoning": "The bundle shows ci as the only populated family: four GitHub Actions workflows whose contents were not returned, so the build and release path is unevidenced. The plan runs family discovery, then one infra.inventory.ci task per workflow file (ci.yml, pages.yml, jetbrains-plugin.yml, vscode-plugin.yml) to capture triggers, jobs and step uses. Because the graph's coverage of the repo is not established, repo-wide docker, kubernetes, helm and terraform inventories verify the reported absences rather than assuming them. infra.adherence.check is deliberately omitted: the focus is an inventory, and no doc-derived constraints are available to check against. The aggregator stitches all outputs."
+}

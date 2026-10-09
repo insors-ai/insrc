@@ -1,0 +1,15 @@
+{
+  "label": "infra-S",
+  "runId": "s7-live-infra-S-mv0sl21o",
+  "params": {
+    "runId": "s7-live-infra-S-mv0sl21o",
+    "userPrompt": "what infrastructure does this repository define, and how is it built and released",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "targetHint": "infra",
+    "scopeHint": "S"
+  },
+  "startedAt": "2026-10-09T09:57:54.204Z"
+}

@@ -1,0 +1,18 @@
+{
+  "label": "docs-S",
+  "runId": "s7-live-docs-S-mv0t4fka",
+  "params": {
+    "runId": "s7-live-docs-S-mv0t4fka",
+    "userPrompt": "what do the design documents decide about the analyze framework",
+    "scopeRef": {
+      "kind": "repo",
+      "value": "/Users/subhagho/work/projects/insors/insrc"
+    },
+    "targetHint": "docs",
+    "scopeHint": "S"
+  },
+  "startedAt": "2026-10-09T10:12:58.186Z",
+  "endedAt": "2026-10-09T10:22:04.647Z",
+  "seconds": 546,
+  "frames": 29
+}

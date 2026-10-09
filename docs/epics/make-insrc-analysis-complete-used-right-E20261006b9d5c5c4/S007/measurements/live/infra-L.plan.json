@@ -1,0 +1,283 @@
+{
+	"planId": "infra-insrc-build-release-inventory",
+	"goal": "Inventory the infrastructure the insrc repository defines and establish how it is built and released from its four GitHub Actions workflows",
+	"target": "infra",
+	"scope": "L",
+	"tasks": [
+		{
+			"taskId": "t01",
+			"template": "infra.discovery.families",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"families"
+			],
+			"rationale": "Detect every IaC family in the insrc repo so the report can state which families exist; the bundle shows only ci but graph coverage is not established."
+		},
+		{
+			"taskId": "t02",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/ci.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of ci.yml, the main pipeline, to establish how the repository is built and tested; the bundle has no file contents."
+		},
+		{
+			"taskId": "t03",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/pages.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of pages.yml to establish what the pages pipeline publishes and when, as one release path of the repo."
+		},
+		{
+			"taskId": "t04",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/jetbrains-plugin.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of jetbrains-plugin.yml to establish how the JetBrains plugin is built and released."
+		},
+		{
+			"taskId": "t05",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "file",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/vscode-plugin.yml"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate triggers, jobs and step uses of vscode-plugin.yml to establish how the VS Code plugin is built and released."
+		},
+		{
+			"taskId": "t06",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "manifest-dir",
+					"value": "/Users/subhagho/work/projects/insors/insrc/.github/workflows"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate the whole .github/workflows directory to catch any workflow or reusable-workflow file the graph did not index beyond the four known ones."
+		},
+		{
+			"taskId": "t07",
+			"template": "infra.inventory.ci",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"ci-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Enumerate CI pipelines repo-wide to catch pipelines outside .github/workflows, such as a .gitlab-ci.yml, since graph coverage is not established."
+		},
+		{
+			"taskId": "t08",
+			"template": "infra.inventory.docker",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"docker-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Check the repo for Dockerfiles and compose files; the bundle reports 0 docker hits, so this confirms or corrects that no container build is defined."
+		},
+		{
+			"taskId": "t09",
+			"template": "infra.inventory.kubernetes",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"k8s-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Check the repo for Kubernetes manifests; the bundle reports 0 hits, so this confirms or corrects that no deployment target is defined."
+		},
+		{
+			"taskId": "t10",
+			"template": "infra.inventory.helm",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"helm-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Check the repo for Helm charts; the bundle reports 0 hits, so this confirms or corrects that no chart-based release is defined."
+		},
+		{
+			"taskId": "t11",
+			"template": "infra.inventory.terraform",
+			"kind": "leaf",
+			"params": {
+				"scopeRef": {
+					"kind": "repo",
+					"value": "/Users/subhagho/work/projects/insors/insrc"
+				}
+			},
+			"produces": [
+				"tf-inventory"
+			],
+			"consumes": [
+				"families"
+			],
+			"rationale": "Check the repo for Terraform configurations; the bundle reports 0 hits, so this confirms or corrects that no provisioning is defined."
+		},
+		{
+			"taskId": "t12",
+			"template": "infra.adherence.check",
+			"kind": "leaf",
+			"params": {
+				"infraSubject": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/ci.yml"
+			},
+			"produces": [
+				"adherence-report"
+			],
+			"consumes": [
+				"ci-inventory"
+			],
+			"rationale": "Compare ci.yml with whatever build and test rules the repo's docs state, keeping both positions on any contradiction; no constraints are in the bundle, so none are supplied inline."
+		},
+		{
+			"taskId": "t13",
+			"template": "infra.adherence.check",
+			"kind": "leaf",
+			"params": {
+				"infraSubject": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/pages.yml"
+			},
+			"produces": [
+				"adherence-report"
+			],
+			"consumes": [
+				"ci-inventory"
+			],
+			"rationale": "Compare pages.yml with whatever publishing rules the repo's docs state, keeping both positions on any contradiction; no constraints are supplied inline."
+		},
+		{
+			"taskId": "t14",
+			"template": "infra.adherence.check",
+			"kind": "leaf",
+			"params": {
+				"infraSubject": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/jetbrains-plugin.yml"
+			},
+			"produces": [
+				"adherence-report"
+			],
+			"consumes": [
+				"ci-inventory"
+			],
+			"rationale": "Compare jetbrains-plugin.yml with whatever JetBrains plugin release rules the repo's docs state, keeping both positions on any contradiction; no constraints are supplied inline."
+		},
+		{
+			"taskId": "t15",
+			"template": "infra.adherence.check",
+			"kind": "leaf",
+			"params": {
+				"infraSubject": "/Users/subhagho/work/projects/insors/insrc/.github/workflows/vscode-plugin.yml"
+			},
+			"produces": [
+				"adherence-report"
+			],
+			"consumes": [
+				"ci-inventory"
+			],
+			"rationale": "Compare vscode-plugin.yml with whatever VS Code plugin release rules the repo's docs state, keeping both positions on any contradiction; no constraints are supplied inline."
+		},
+		{
+			"taskId": "t16",
+			"template": "infra.aggregate.report",
+			"kind": "leaf",
+			"params": {},
+			"produces": [
+				"report"
+			],
+			"consumes": [
+				"families",
+				"ci-inventory",
+				"docker-inventory",
+				"k8s-inventory",
+				"helm-inventory",
+				"tf-inventory",
+				"adherence-report"
+			],
+			"rationale": "Stitch the family detection, the six CI inventories, the four absent-family checks and the four per-workflow adherence reports into the final infrastructure and build/release report."
+		}
+	],
+	"reasoning": "The bundle shows ci as the only populated family: four GitHub Actions workflows whose contents were not returned, so build and release are not yet established. The plan runs family discovery, then one infra.inventory.ci task per workflow file, plus a .github/workflows directory pass and a repo-wide pass to catch pipelines the graph did not index. Repo-level docker, kubernetes, helm and terraform inventories confirm or correct the zero-hit result rather than assuming absence, since graph coverage is not established. To meet the L band (15-60), four per-workflow infra.adherence.check tasks are added. The bundle holds no doc constraints, so these carry only infraSubject and no invented constraints; they may return empty results, and the report should say so rather than read that as conformance. Sixteen tasks sits at the low end of the band because the repo has only four manifests."
+}

@@ -176,22 +176,50 @@ function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | n
   };
 }
 
-export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
+/** One story or issue that matches the selection: its item, its epic, its (known) stage and its card. */
+export interface MatchedCard {
+  readonly item: DeliveryItemView;
+  readonly epic: DeliveryItemView | null;
+  readonly stage: DeliveryStage;
+  readonly card: CardView;
+}
+
+/** A story or issue whose stage is one of the six: what can be a card at all. */
+function isPlaceable(item: DeliveryItemView): item is CardItem & { readonly stage: NonNullable<DeliveryItemView['stage']> } {
+  return isCardKind(item) && item.stage !== null && KNOWN_STAGES.has(item.stage.stage);
+}
+
+/** How many items in the snapshot can be cards, whatever the selection; zero means an empty board, not an empty selection. */
+export function placeableCount(snapshot: DeliverySnapshot): number {
+  return snapshot.items.filter(isPlaceable).length;
+}
+
+/**
+ * Every story and issue with a known stage that matches the selection's scope,
+ * search and attention filter, in snapshot order. The board, the epic rollup
+ * and the issue view all build from this one step, so they count the same
+ * matches (E2 s3).
+ */
+export function selectMatches(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): readonly MatchedCard[] {
   const byId: ItemIndex = new Map(snapshot.items.map(i => [i.id, i]));
   const needle = selection.search.trim().toLowerCase();
-  const matches = new Map<DeliveryStage, CardView[]>(STAGE_ORDER.map(s => [s, []]));
-  let placeable = 0;
-  let needsAttention = 0;
+  const out: MatchedCard[] = [];
   for (const item of snapshot.items) {
-    if (!isCardKind(item) || item.stage === null) continue;
-    const column = matches.get(item.stage.stage);
-    if (column === undefined) continue;   // an unknown stage: left off the board (unknownStages reports it)
-    placeable++;
+    if (!isPlaceable(item)) continue;   // an unknown stage is left off every view (unknownStages reports it)
     const epic = epicOf(item, byId);
     if (!inScope(item, epic, selection) || !matchesSearch(item, epic, needle)) continue;
     if (selection.needsAttentionOnly && !item.needsAttention) continue;
-    column.push(cardOf(item, item.stage.stage, epic, labels));
-    if (item.needsAttention) needsAttention++;
+    out.push({ item, epic, stage: item.stage.stage, card: cardOf(item, item.stage.stage, epic, labels) });
+  }
+  return out;
+}
+
+export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
+  const matches = new Map<DeliveryStage, CardView[]>(STAGE_ORDER.map(s => [s, []]));
+  let needsAttention = 0;
+  for (const m of selectMatches(snapshot, selection, labels)) {
+    matches.get(m.stage)?.push(m.card);
+    if (m.item.needsAttention) needsAttention++;
   }
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {
     const all = matches.get(stage) ?? [];
@@ -203,6 +231,6 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
     columns,
     totals: { items, needsAttention },
     scopeOptions: snapshot.items.filter(i => i.kind === 'epic').map(e => ({ epicItemId: e.id, title: titleOf(e) })),
-    emptySelection: placeable > 0 && items === 0,
+    emptySelection: placeableCount(snapshot) > 0 && items === 0,
   };
 }

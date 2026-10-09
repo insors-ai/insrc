@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BOARD_PAGE_SIZE, buildBoardViewModel, showMore, unknownStages, type BoardPaging } from '../board-model.js';
+import { BOARD_PAGE_SIZE, buildBoardViewModel, placeableCount, selectMatches, showMore, unknownStages, type BoardPaging } from '../board-model.js';
 import type { BoardViewModel } from '../board-protocol.js';
 import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
@@ -190,4 +190,25 @@ test('a failed story-level result shows Validation failed, badges never repeat a
   assert.deepEqual(newer.badges, [{ kind: 'notice', label: 'from-a-newer-daemon', tone: 'neutral' }], 'an unlabelled notice code shows its id, never undefined');
   assert.doesNotMatch(newer.accessibleLabel, /undefined/);
   assert.equal(standalone.accessibleLabel, 'Issue: S9. Stage: Scoped. Standalone. Signals: Unrecorded.');
+});
+
+test('selectMatches returns the board\'s matches in snapshot order, each with its epic and card', () => {
+  const snap = snapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Epic one' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'complete' }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'scoped', title: 'Board work' }),
+    item({ id: 'I1', kind: 'issue', correctsRef: { resolvedItemId: 'E1:S001' } as never, stage: 'design-plan' }),
+    item({ id: 'S9', standalone: true, stage: 'shipped' }),
+    item({ id: 'T1', kind: 'task' }),
+  ]);
+  const all = selectMatches(snap, INITIAL_SELECTION, DISPLAY_LABELS);
+  assert.deepEqual(all.map(m => [m.item.id, m.stage, m.epic?.id ?? null, m.card.itemId]),
+    [['E1:S001', 'scoped', 'E1', 'E1:S001'], ['E1:S002', 'complete', 'E1', 'E1:S002'], ['I1', 'design-plan', 'E1', 'I1']],
+    'snapshot order; epics, tasks and unknown stages are not matches');
+  assert.equal(placeableCount(snap), 3);
+  assert.equal(build(snap).totals.items, all.length, 'the board counts exactly these matches');
+
+  const searched = selectMatches(snap, { ...INITIAL_SELECTION, search: 'board' }, DISPLAY_LABELS);
+  assert.deepEqual(searched.map(m => m.item.id), ['E1:S001']);
+  assert.deepEqual(cardIds(build(snap, { search: 'board' })).flat(), ['E1:S001']);
 });

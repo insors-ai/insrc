@@ -13,8 +13,8 @@
  * The 'items' down-message (HLD amendment AMD-6a1315585c38c41c-1) carried s1's
  * interim item list; s2's board view model (sc5) replaces it, and the variant
  * stays declared but unsent. The 'show-more' up-message (AMD-6a1315585c38c41c-2)
- * asks for the next page of one column. The other view models are declared by
- * the stories that own them (s3, s4).
+ * asks for the next page of one column. The epic rollup and issue view models
+ * are s3's; the item details model is declared by the story that owns it (s4).
  */
 
 import type { Envelope } from '../chat/protocol.js';
@@ -76,9 +76,66 @@ export interface BoardViewModel {
   readonly emptySelection: boolean;
 }
 
-/** Declared by their owning stories: EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */
-export type EpicRollupViewModel = unknown;
-export type IssueViewModel = unknown;
+/** One stage's cards inside an epic group (s3). */
+export interface StageGroupView {
+  readonly stage: DeliveryStage;
+  readonly label: string;
+  readonly cards: readonly CardView[];
+}
+
+export interface EpicGroupView {
+  /** null for the 'Not in an epic' group. */
+  readonly epicItemId: string | null;
+  readonly title: string;
+  /** e.g. '2 of 5 stories complete'; names its denominator. */
+  readonly completionLabel: string;
+  readonly storiesComplete: number;
+  readonly storiesTotal: number;
+  readonly issueCount: number;
+  /** Matching cards in this group. */
+  readonly total: number;
+  /** Non-empty stages only, in STAGE_ORDER. */
+  readonly stages: readonly StageGroupView[];
+}
+
+/** The epic rollup (s3): one group per listed epic, then the work that counts towards no epic. */
+export interface EpicRollupViewModel {
+  readonly epics: readonly EpicGroupView[];
+  readonly notInEpic: EpicGroupView;
+  readonly totals: { readonly items: number; readonly needsAttention: number };
+  readonly selectedItemId: string | null;
+  readonly emptySelection: boolean;
+}
+
+/** A followable reference to another work item; ids only, resolved by the host. */
+export interface LinkView {
+  readonly itemId: string;
+  readonly kind: 'epic' | 'story' | 'task' | 'issue';
+  readonly title: string;
+  /** null for an epic or an item with no stage. */
+  readonly stageLabel: string | null;
+}
+
+export interface IssueEntryView {
+  readonly card: CardView;
+  readonly stageLabel: string;
+  /** The story or epic the issue corrects; null when it names none or cannot be resolved. */
+  readonly parent: LinkView | null;
+  /** The issue's unresolved-parent notice message, or a fixed text when its resolved parent is not on the board. */
+  readonly parentNotice: string | null;
+  /** Each fix story among the issue's children, in childIds order. */
+  readonly fixStories: readonly LinkView[];
+}
+
+/** The issue view (s3): each matching issue with its parent and its fix stories. */
+export interface IssueViewModel {
+  readonly issues: readonly IssueEntryView[];
+  readonly totals: { readonly issues: number; readonly needsAttention: number };
+  readonly selectedItemId: string | null;
+  readonly emptySelection: boolean;
+}
+
+/** Declared by its owning story: ItemDetailsViewModel (s4). */
 export type ItemDetailsViewModel = unknown;
 
 /** Host -> webview. Each message replaces what it names; nothing is merged. */

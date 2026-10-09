@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
-import { bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
+import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
 import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
@@ -1173,15 +1173,11 @@ function loadFr(): (record: unknown) => { el: BodyStub; degradation?: unknown } 
   return make(doc) as ReturnType<typeof loadFr>;
 }
 
-/** Every node in the tree, root first. */
-function frAll(n: BodyStub): BodyStub[] {
-  return [n, ...n.children.flatMap(frAll)];
-}
-const frItems = (root: BodyStub): BodyStub[] => frAll(root).filter((n) => n.className === 'insrc-fr-item');
+const frItems = (root: BodyStub): BodyStub[] => allOf(root).filter((n) => n.className === 'insrc-fr-item');
 const frIds = (root: BodyStub): string[] =>
-  frAll(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
+  allOf(root).filter((n) => n.className === 'insrc-fr-id').map((n) => n.textContent);
 const frGroupLabels = (root: BodyStub): string[] =>
-  frAll(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
+  allOf(root).filter((n) => n.className === 'insrc-fr-group-label').map((n) => n.textContent);
 
 const REC = {
   requirements: [
@@ -1209,14 +1205,14 @@ test('t2: one discrete element per requirement, every string via textContent, id
 
   // All three displayable fields survive, so the substitution is lossless against
   // the markdown form it replaces.
-  const texts = frAll(el).map((n) => n.textContent);
+  const texts = allOf(el).map((n) => n.textContent);
   assert.ok(texts.includes('Doc-level one.'));
   assert.ok(texts.includes('because one'), 'the rationale is carried');
-  assert.equal(frAll(el).filter((n) => n.className === 'insrc-fr-why').length, 1,
+  assert.equal(allOf(el).filter((n) => n.className === 'insrc-fr-why').length, 1,
     'and only where the record has one');
 
   // EXECUTED, not grepped: every write that put a string on screen was textContent.
-  const written = frAll(el).flatMap((n) => n.writes);
+  const written = allOf(el).flatMap((n) => n.writes);
   assert.ok(written.length > 0, 'the stub recorded writes');
   assert.deepEqual([...new Set(written.map((w) => w.prop))].sort(), ['className', 'textContent'],
     'no markup-bearing property was ever assigned');
@@ -1233,13 +1229,13 @@ test('t2: hostile content — an id with * _ ` [ and a statement with <script> c
   // markdown path (prose generation -> marked -> guardMd) can be reformatted;
   // this one cannot, because it is copied and never parsed.
   assert.deepEqual(frIds(el), [HOSTILE_ID], 'the identifier is byte-identical to the record value');
-  const stmt = frAll(el).find((n) => n.className === 'insrc-fr-stmt');
+  const stmt = allOf(el).find((n) => n.className === 'insrc-fr-stmt');
   assert.ok(stmt);
   assert.equal(stmt!.textContent, HOSTILE_STMT, 'the statement is text, not markup');
 
   // The <script> became TEXT, not a node: one id span + one statement span only.
   assert.equal(frItems(el)[0]!.children.length, 2, 'no element was created from the markup');
-  assert.equal(frAll(el).flatMap((n) => n.writes).filter((w) => w.prop !== 'className' && w.prop !== 'textContent').length, 0,
+  assert.equal(allOf(el).flatMap((n) => n.writes).filter((w) => w.prop !== 'className' && w.prop !== 'textContent').length, 0,
     'nothing was assigned through innerHTML/outerHTML');
 });
 
@@ -1290,7 +1286,7 @@ test("t2: malformed record table — non-array requirements, non-object entry, n
   });
   assert.deepEqual(frIds(dup.el), ['E:FR001', 'E:FR001'], 'a duplicate is shown, not silently collapsed');
   assert.deepEqual(
-    frAll(dup.el).filter((n) => n.className === 'insrc-fr-stmt').map((n) => n.textContent),
+    allOf(dup.el).filter((n) => n.className === 'insrc-fr-stmt').map((n) => n.textContent),
     ['First.', 'Second, same id.'], 'and both statements survive, in record order');
 });
 
@@ -2079,7 +2075,7 @@ test('the functional-requirement items carry LIST semantics, not just visual sep
   // The per-story grouping is programmatic too: a group is an li carrying a
   // label and a NESTED list, so the structure a screen reader reports matches
   // the structure the record carries.
-  const groups = frAll(el).filter((n) => n.className === 'insrc-fr-group');
+  const groups = allOf(el).filter((n) => n.className === 'insrc-fr-group');
   assert.equal(groups.length, 2);
   for (const g of groups) {
     assert.equal(g.tagName, 'li');
@@ -2480,13 +2476,6 @@ function loadDg(): DgApi {
   return { ...api, created, createdHtml };
 }
 
-/** Flatten a built tree for assertions. */
-function dgFlatten(n: BodyStub, out: BodyStub[] = []): BodyStub[] {
-  out.push(n);
-  for (const c of n.children) dgFlatten(c, out);
-  return out;
-}
-
 /** Rebuild the DAEMON's node-label format from the client's derived attributes, so
  *  the attribute derivation is compared and not just the node ids. */
 function dgDaemonStyleLabel(node: { id: string; attrs: { name: string; range: string }[] }): string {
@@ -2598,7 +2587,7 @@ test('t4: a self-reference and a 3-cycle both terminate and draw — layout iter
 
   // A self-edge is drawn as a visible loop rather than silently dropped or
   // collapsed to a zero-length line.
-  const flat = dgFlatten(selfRef!.el);
+  const flat = allOf(selfRef!.el);
   const lines = flat.filter((n) => n.tag === 'line');
   const degenerate = lines.filter((l) => l.attrs['x1'] === l.attrs['x2'] && l.attrs['y1'] === l.attrs['y2']);
   assert.equal(degenerate.length, 0, 'no zero-length line stands in for a self-reference');
@@ -2608,7 +2597,7 @@ test('t4: a self-reference and a 3-cycle both terminate and draw — layout iter
 test('t4: determinism — the same record renders an identical element tree every time', () => {
   const rec = { classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } } };
   const shape = (api: DgApi): string =>
-    dgFlatten(api.dgRenderEr(rec)!.el)
+    allOf(api.dgRenderEr(rec)!.el)
       .map((n) => `${n.ns ?? '-'}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`)
       .join('\n');
   // Two independent evaluations, so no cached state can make them agree.
@@ -2620,7 +2609,7 @@ test('t4 ac4: every element is createElementNS in the SVG namespace and every la
   const built = dg.dgRenderEr({
     classes: { Order: { attributes: { id: { range: 'string' }, by: { range: 'Customer' } } }, Customer: { attributes: { id: { range: 'string' } } } },
   })!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   assert.ok(flat.length > 5, 'a non-trivial tree was built');
 
   // Namespace on EVERY node, and the HTML factory never touched.
@@ -2643,7 +2632,7 @@ test('t4 ac4: hostile class and slot names survive character-for-character and r
   const hostile = '<script>alert(1)</script>';
   const slot = 'a & b';
   const built = dg.dgRenderEr({ classes: { [hostile]: { attributes: { [slot]: { range: 'string' }, ref: { range: 'Plain' } } }, Plain: {} } })!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
 
   const texts = flat.map((n) => n.textContent);
   assert.ok(texts.includes(hostile), 'the class name is present verbatim as TEXT');
@@ -2939,7 +2928,7 @@ test('t5: every participant and every message from the REAL record is rendered, 
   const rec = realSeqRecord();
   const model = dg.dgDeriveSeq(rec)!;
   const built = dg.dgRenderSeq(rec)!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   const texts = flat.map((n) => n.textContent);
 
   for (const p of model.nodes) {
@@ -2963,7 +2952,7 @@ test('t5: every participant and every message from the REAL record is rendered, 
 test('t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup', () => {
   const dg = loadDg();
   const built = dg.dgRenderSeq(realSeqRecord())!;
-  const flat = dgFlatten(built.el);
+  const flat = allOf(built.el);
   for (const n of flat) {
     assert.equal(n.ns, 'http://www.w3.org/2000/svg', `${n.tag} created in the SVG namespace`);
   }
@@ -2991,7 +2980,7 @@ test('t5: an empty or malformed sequence record is ABSENT and creates no element
 test('t5: determinism — the same sequence record renders an identical tree every time', () => {
   const rec = realSeqRecord();
   const shape = (api: DgApi): string =>
-    dgFlatten(api.dgRenderSeq(rec)!.el).map((n) => `${n.ns}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
+    allOf(api.dgRenderSeq(rec)!.el).map((n) => `${n.ns}|${n.tag}|${JSON.stringify(n.attrs)}|${n.textContent}`).join('\n');
   assert.equal(shape(loadDg()), shape(loadDg()));
 });
 
@@ -3016,7 +3005,7 @@ test('t5: the factory dispatches on the RECORD present, never on the ref kind', 
   // whichever key happened to be enumerated first.
   const both = dg.dgBuildDiagramSlot({ erDefinition: ER, sequenceDefinition: SEQ }, ref, undefined);
   assert.equal(both['state'], 'rendered');
-  const flat = dgFlatten(both['body'] as BodyStub);
+  const flat = allOf(both['body'] as BodyStub);
   assert.ok(flat.some((n) => n.textContent === 'Order'), 'the entity model is the one drawn');
 });
 
@@ -3034,7 +3023,7 @@ test('t5 layout: no caption escapes the canvas and no two participant heads over
   const vb = built.el.attrs['viewBox'].split(' ').map(Number);
   const [, , width, height] = vb as [number, number, number, number];
 
-  const heads = dgFlatten(built.el).filter((n) => n.tag === 'rect');
+  const heads = allOf(built.el).filter((n) => n.tag === 'rect');
   assert.ok(heads.length >= 2, 'participant heads are drawn');
   for (let i = 0; i < heads.length; i++) {
     for (let j = i + 1; j < heads.length; j++) {
@@ -3046,7 +3035,7 @@ test('t5 layout: no caption escapes the canvas and no two participant heads over
   }
   // Every caption fits inside the canvas — the ER renderer's clipping defect in the
   // other geometry.
-  for (const t of dgFlatten(built.el).filter((n) => n.tag === 'text')) {
+  for (const t of allOf(built.el).filter((n) => n.tag === 'text')) {
     const cx = Number(t.attrs['x']);
     const half = (t.attrs['text-anchor'] === 'start' ? 0 : t.textContent.length * 6.75 / 2);
     assert.ok(cx - half >= -1, `"${t.textContent.slice(0, 30)}" escapes the left edge`);
@@ -3070,8 +3059,6 @@ const DG_ER = { classes: { Order: { attributes: { id: { range: 'string' }, by: {
 const DG_SEQ = { participants: [{ id: 'a', label: 'Host' }, { id: 'b', label: 'Webview' }], messages: [{ from: 'a', to: 'b', label: 'post' }] };
 const DG_REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
 
-/** Every node under a stub, root first. */
-function allOf(n: BodyStub): BodyStub[] { return [n, ...n.children.flatMap(allOf)]; }
 const slotsIn = (r: WebviewRun): BodyStub[] =>
   [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)]
     .filter((n) => n.className === 'insrc-dg-slot');
@@ -3884,12 +3871,6 @@ function loadUx(): UxApi {
   return { ...api, created, texts, nodes };
 }
 
-/** Every element in a rendered subtree, flattened — for "does each class appear". */
-function uxFlatten(n: BodyStub): BodyStub[] {
-  const out: BodyStub[] = [n];
-  for (const c of n.children) if (!isText(c)) out.push(...uxFlatten(c));
-  return out;
-}
 
 /** All text a subtree puts in the DOM, in order, from BOTH non-parsing channels. */
 function uxAllText(n: BodyStub): string[] {
@@ -4109,7 +4090,7 @@ test('t2: Image shows its url as TEXT — no img element, no src, nothing fetcha
   // THE invariant, structurally: no img was ever created, anywhere in the run.
   assert.ok(!ux.created.includes('img'), 'no img element is created');
   assert.ok(!ux.created.some((t) => t.startsWith('NS:')), 'and no SVG image either');
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     assert.equal(n.attrs['src'], undefined, 'no src attribute on any node');
     assert.equal(n.attrs['href'], undefined);
   }
@@ -4214,7 +4195,7 @@ test('t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART,
   assert.deepEqual(uxAllText(link), ['Open companion', 'https://example.invalid/c.html', '\u2197']);
   // And the url reaches NO attribute anywhere — ac5 kept absolute, which is the
   // reason it is shown as text rather than mirrored into `title=`.
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const v of Object.values(n.attrs)) {
       assert.ok(!v.includes('example.invalid'), 'no record text in any attribute value');
     }
@@ -4275,12 +4256,12 @@ test('t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY', async 
     const expected = countRecord(record.body);
     // One DOM element per record element at minimum (several members render a
     // small subtree), and crucially NOT FEWER.
-    const rendered = uxFlatten(el).length - 1; // minus the ux-card wrapper
+    const rendered = allOf(el).length - 1; // minus the ux-card wrapper
     assert.ok(rendered >= expected,
       `${f}: ${expected} record elements must all appear; the tree has ${rendered} elements`);
     // And nothing degraded: a real, valid record must produce no ux-unknown.
     assert.equal(
-      uxFlatten(el).filter((n) => n.className === 'ux-unknown').length, 0,
+      allOf(el).filter((n) => n.className === 'ux-unknown').length, 0,
       `${f} renders with no unrenderable element`,
     );
     checked += 1;
@@ -4348,7 +4329,7 @@ test('t2: every element is created with createElement and every string written w
 
   // EXECUTED, not grepped: every node in the tree came from createElement, and the
   // only property writes anywhere are className, textContent and style/attributes.
-  const all = uxFlatten(el);
+  const all = allOf(el);
   assert.ok(all.length > 5, 'a non-trivial tree to inspect');
   for (const n of all) {
     for (const w of n.writes) {
@@ -4388,7 +4369,7 @@ test('t2: hostile text renders character-for-character and creates no element an
   // No element was conjured out of the text, and no attribute carries any of it.
   assert.ok(!ux.created.includes('img'), 'the <img ...> in the text created no img');
   assert.ok(!ux.created.includes('script'), 'and no script');
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const [k, v] of Object.entries(n.attrs)) {
       assert.ok(!v.includes('alert') && !v.includes('javascript:'),
         `attribute ${k} must not carry record text, got: ${v}`);
@@ -4411,7 +4392,7 @@ test('t2: no attribute value anywhere is built from record text', () => {
     ],
   });
 
-  for (const n of uxFlatten(el)) {
+  for (const n of allOf(el)) {
     for (const [k, v] of Object.entries(n.attrs)) {
       assert.ok(!v.includes(marker), `attribute ${k}="${v}" was built from record text`);
     }
@@ -4422,7 +4403,7 @@ test('t2: no attribute value anywhere is built from record text', () => {
   // size/color DO reach the className — which is a class name, not an attribute
   // value carrying free text, and is exactly what the daemon does. Stated here so
   // the distinction is deliberate rather than an oversight.
-  assert.ok(uxFlatten(el).some((n) => n.className.includes(`ux-size-${marker}`)),
+  assert.ok(allOf(el).some((n) => n.className.includes(`ux-size-${marker}`)),
     'the size modifier reaches the class, as the daemon does');
 });
 
@@ -4434,7 +4415,7 @@ test('t2: the renderer emits NO node/edge construct — the uxDefinitionToIr reg
   // node-and-edge DocumentIR, and publishing that as an "experience mock" produced
   // ~3.37 MB of graph picture where a 7 KB interface belonged. The nearest existing
   // function is the wrong one, and this guard is what stops someone reaching for it.
-  const classes = uxFlatten(el).map((n) => n.className).join(' ');
+  const classes = allOf(el).map((n) => n.className).join(' ');
   for (const bad of ['node', 'edge', 'graph', 'mermaid', 'flowchart']) {
     assert.ok(!classes.includes(bad), `no ${bad} construct in the rendered classes`);
   }
@@ -4530,7 +4511,7 @@ test('t2 PARITY of vocabulary: every ux-* class the client emits is one the daem
 
   const emitted = new Set<string>();
   for (const fx of [...UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE]) {
-    for (const n of uxFlatten(loadUx().uxRenderCard(fx.card).el)) {
+    for (const n of allOf(loadUx().uxRenderCard(fx.card).el)) {
       for (const c of n.className.split(/\s+/)) if (c.length > 0) emitted.add(c);
     }
   }
@@ -4943,7 +4924,7 @@ test('t4: EVERY one of the four real records renders UNTRUNCATED — the bound n
     const record = JSON.parse(readFileSync(p, 'utf8')).body.uxDefinition;
     const { el } = loadUx().uxRenderCard(record);
     // The guard's own degradation names depth. NONE may appear.
-    const truncated = uxFlatten(el).filter((n) => n.className === 'ux-unknown' && /nesting deeper/.test(n.textContent));
+    const truncated = allOf(el).filter((n) => n.className === 'ux-unknown' && /nesting deeper/.test(n.textContent));
     assert.deepEqual(truncated.map((n) => n.textContent), [], `${f} renders untruncated`);
     checked += 1;
   }
@@ -4957,7 +4938,7 @@ test('t4: a synthetic over-deep structure TRIPS the guard, names depth as the re
   for (let i = 0; i < 40; i += 1) deep = { type: 'Container', items: [deep] };
 
   const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [deep] });
-  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  const cut = allOf(el).filter((n) => n.className === 'ux-unknown');
   assert.equal(cut.length, 1, 'exactly one cut point, at the bound');
   assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/,
     'and it NAMES depth as the reason, so a reviewer can tell a guard from a truncation');
@@ -4975,7 +4956,7 @@ test('t4: a CYCLIC structure terminates — the case that would hang without a b
   cyclic['items'] = [cyclic];
 
   const { el } = loadUx().uxRenderCard({ type: 'AdaptiveCard', body: [cyclic] });
-  const cut = uxFlatten(el).filter((n) => n.className === 'ux-unknown');
+  const cut = allOf(el).filter((n) => n.className === 'ux-unknown');
   assert.equal(cut.length, 1, 'the cycle is cut exactly once');
   assert.match(cut[0]!.textContent, /nesting deeper than 24 levels/);
 });

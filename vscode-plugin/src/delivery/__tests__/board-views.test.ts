@@ -144,6 +144,11 @@ test('an issue with two fix stories lists each as its own child with its own sta
   ], 'each fix story is its own entry with its own stage; tasks and missing ids are skipped');
   assert.deepEqual(issues(snap).issues.find(e => e.card.itemId === 'I2')!.fixStories, []);
 
+  // A board with no issues at all is not an empty selection; a search that misses every issue is.
+  const noIssues = snapshot([item({ id: 'S1' })]);
+  assert.deepEqual([issues(noIssues).issues.length, issues(noIssues).emptySelection], [0, false]);
+  assert.equal(issues(snap, { search: 'nothing like this' }).emptySelection, true);
+
   const board = buildBoardViewModel(snap, sel({ search: 'slow' }), {}, DISPLAY_LABELS);
   assert.equal(m.totals.issues, board.columns.flatMap(c => c.cards).filter(c => c.kind === 'issue').length, 'the board shows the same issue cards');
 });

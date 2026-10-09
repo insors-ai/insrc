@@ -10,7 +10,7 @@
  * board. Pure and vscode-free.
  */
 
-import { placeableCount, selectMatches, type MatchedCard } from './board-model.js';
+import { isPlaceable, placeableCount, selectMatches, type MatchedCard } from './board-model.js';
 import type { CardView, EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
@@ -135,6 +135,7 @@ export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelec
     issues,
     totals: { issues: issues.length, needsAttention },
     selectedItemId: selection.selectedItemId,
-    emptySelection: placeableCount(snapshot) > 0 && issues.length === 0,
+    // 'Nothing matches' only when there are issues to match: a board with no issues is not an empty selection.
+    emptySelection: issues.length === 0 && snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)),
   };
 }

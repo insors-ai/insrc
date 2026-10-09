@@ -185,7 +185,7 @@ export interface MatchedCard {
 }
 
 /** A story or issue whose stage is one of the six: what can be a card at all. */
-function isPlaceable(item: DeliveryItemView): item is CardItem & { readonly stage: NonNullable<DeliveryItemView['stage']> } {
+export function isPlaceable(item: DeliveryItemView): item is CardItem & { readonly stage: NonNullable<DeliveryItemView['stage']> } {
   return isCardKind(item) && item.stage !== null && KNOWN_STAGES.has(item.stage.stage);
 }
 

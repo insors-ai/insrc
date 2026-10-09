@@ -126,7 +126,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `function renderIssues(m){markTab('issues');clear(board);`,
   `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const e of m.issues)board.appendChild(renderIssue(e));`,
-  `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  `empty.textContent=m.emptySelection?EMPTY:m.issues.length===0?'There are no issues on the board.':'';}`,
   `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=m.totals.items+' item'+(m.totals.items===1?'':'s')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
@@ -187,8 +187,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let generation = 0;
 
   /**
-   * Derive the messages first; the new state and paging are kept only when they render, so a bad snapshot or
-   * selection never becomes the board's. A throw leaves both as they were and posts nothing.
+   * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
+   * snapshot or selection never becomes the board's, and a throw while deriving leaves both as they were and posts
+   * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
   function apply(next: BoardState, nextPaging: BoardPaging): void {
     const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);

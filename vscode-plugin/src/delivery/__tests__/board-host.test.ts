@@ -566,4 +566,10 @@ test('the epic rollup and issue view render as text, and their tabs and links po
   deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
   assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
   assert.deepEqual(el['board']!.children.map(g => g.children[0]!.textContent), [], 'no epic matches the search');
+
+  // An issue view over a board with no issues says so, rather than that nothing matches.
+  const plain = await openWith(fixtureSnapshot([item({ id: 'S1' })]));
+  plain.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  deliver({ v: 1, payload: lastOf(plain.ch, 'issues')! });
+  assert.equal(el['empty']!.textContent, 'There are no issues on the board.');
 });

@@ -380,7 +380,7 @@
           "internal": "Private implementation of s8: The code tasks of a broad analysis work on a repository whose graph has no modules for its directories"
         }
       ],
-      "rolloutPhase": "Phase D — measured sizing",
+      "rolloutPhase": "Phase D \u2014 measured sizing",
       "nonFunctional": {
         "performance": "A request small enough for one pass makes the same model calls as today, and one fewer on the plan tree, where the model call that picked a size is replaced by a count from the graph store. A request handled in parts makes one call per part plus the combination, serially; that time is accepted because accuracy comes before cost. After the limits are removed, a complete text search over a large repository is the cost of a text lookup.",
         "observability": "Every answer on both paths states its completeness, its measured size and counts, and its handling method and part count; each lookup and plan-task result states its own completeness. A failed lookup, part or answer-writing step carries its reason.",
@@ -494,14 +494,50 @@
           ],
           "returns": {
             "type": "Promise<RequestMeasure>",
-            "meaning": "The one measuring pass for a request that has run no lookup. By kind of scope: a repo, module or manifest directory, a file, a symbol: resolveTaskScope, then listEntitiesForRepo of the repo that was read, then measureNamedArea. A workspace: the sum of that over the registered repos under it. A data connection: measureDataSource. A data request that names a repo, a workspace or a manifest directory: the sum of measureDataSource over the connections registered there. Never throws: when the scope cannot be resolved, is not indexed, or a count cannot be taken, it returns a measure with determined false, size 'XL' and the reason in `note`."
+            "meaning": "The one measuring pass for a request that has run no lookup. It resolves the scope and calls measureResolvedScope. The scope is resolved with resolveTaskScope for a code, docs, infra or data request, and with resolveScopeForTarget(scopeRef, 'generic') for a generic request, which resolveTaskScope does not accept. Never throws: when the scope cannot be resolved, is of a kind its source refuses, or is not indexed, it returns a measure with determined false, size 'XL' and the error's message in `note`."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
             "Makes no model call.",
-            "Reads a repo's entities once per repo, one repo after another.",
             "A scope the existing checks refuse is still refused where it is refused today; this function only records that it could not be measured."
+          ]
+        },
+        {
+          "name": "RequestMeasure: measureResolvedScope",
+          "signature": "function measureResolvedScope(scope: ResolvedScope, target: AnalyzeTarget, sizeHint?: AnalyzeScope): Promise<RequestMeasure>",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "ResolvedScope",
+              "purpose": "A scope already resolved; the context builder and the free-form lookup hold one and call this directly.",
+              "optional": false
+            },
+            {
+              "name": "target",
+              "type": "AnalyzeTarget",
+              "purpose": "The kind of source, which decides what is counted.",
+              "optional": false
+            },
+            {
+              "name": "sizeHint",
+              "type": "AnalyzeScope",
+              "purpose": "A stated size, recorded as a hint.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<RequestMeasure>",
+            "meaning": "What is counted, by kind of source and kind of scope. CODE and DOCS, and a GENERIC request on a path or an entity (repo, module, manifest directory, file, symbol): the stored entities of the scope's area, by listEntitiesForRepo of the repo that was read and measureNamedArea. This is a count only when a registered repo contains the scope and holds stored entities: when the resolved scope has no repo (`repoPath` is null: no registered repo contains it, or the registry holds none) or the read of that repo returns no entity at all, the measure is determined false, size 'XL', with that reason. An area that holds nothing inside a repo that does hold entities is a count: items 0, files 0, XS. A WORKSPACE: the sum of the above over the registered repos under it; not determined when none lies under it or when any one of them is not determined. INFRA (repo, manifest directory, workspace): the files on disk that the infra tasks' own file walk would visit under the scope's directory (walkFiles in src/analyze/runtimes/infra/_shared.ts, with its directory exclusions), walked to the end with no cap: items and files are both that number, source 'named-area'. The stored graph is not used, because the infra tasks do not read it. Not determined when the walk throws because the root cannot be read, and when the walk lists a directory below the root as unreadable, since the count is then of part of the area; the note names what could not be read. This is the stakeholder's decision of 2026-10-09. DATA with a connection scope, and a GENERIC request with a connection scope: measureDataSource. DATA with a repo, workspace or manifest directory: the sum of measureDataSource over the connections registered there; not determined when any one of them is not; items 0 and XS when none is registered. Never throws: a failed read of the store, of the disk or of a source gives determined false, size 'XL' and the reason."
+          },
+          "errors": [],
+          "preconditions": [
+            "The scope was resolved for this target."
+          ],
+          "postconditions": [
+            "Makes no model call.",
+            "Reads a repo's entities once per repo, one repo after another.",
+            "No request is given a size below XL on a count of zero taken from a path the index does not hold."
           ]
         },
         {
@@ -652,7 +688,7 @@
           "parameters": [],
           "returns": {
             "type": "none",
-            "meaning": "src/analyze/classifier/scope-picker.ts, its prompt src/prompts/analyze/scope-picker.system.md, its three error classes and its export from src/analyze/classifier/index.ts are removed, together with the places that name it (the role taxonomy, the boot validator's prompt list, and the tests that list prompts or roles)."
+            "meaning": "Removed with everything that names it: src/analyze/classifier/scope-picker.ts with its three error classes and its test hook; its prompt src/prompts/analyze/scope-picker.system.md; its export from src/analyze/classifier/index.ts; its role row `analyze.scope.pick` in src/config/role-taxonomy.ts; its entry in the boot validator's prompt list (src/analyze/context/boot-validator.ts); the comment that names it in src/analyze/context/driver.ts; the two tests that import its classes, src/analyze/__tests__/model-schemas-draft-2020.test.ts and src/analyze/context/__tests__/model-failure-callers.test.ts, which lose those cases; and the other tests that list prompts or roles. The role is also a setting a user can have stored and that the VS Code extension declares: `insrc.models.tasks.analyze.scope.pick` in vscode-plugin/package.json. That declaration is removed in the same change, with the extension's per-role tests under vscode-plugin/src/config/__tests__ and a release of the extension; and the stored key `models.tasks.analyze.scope.pick` is added to the list of retired settings (RETIRED_PATHS in src/config/config-catalog.ts), so that the reconcile on boot and update drops a stored value for a role that no longer exists."
           },
           "errors": [],
           "preconditions": [],
@@ -687,7 +723,7 @@
           "preconditions": [],
           "postconditions": [
             "A child plan's task band is that of its measured size.",
-            "The depth cap is still taken from the root's size, as today (`rootScope`), which is now a measured size."
+            "The depth cap is still taken from the root's size, as today (`rootScope`), which is a measured size: the recursive planner passes the root's measured size down unchanged."
           ]
         },
         {
@@ -717,12 +753,34 @@
           "parameters": [],
           "returns": {
             "type": "string",
-            "meaning": "Unchanged. A new function beside it, renderMeasureLine(measure: RequestMeasure): string, gives one line, and every place that writes the completeness line at the head of an answer writes the measure line under it when the report has a measure: src/mcp/bundle-md.ts, src/mcp/analyze-step/answer-turn.ts, src/daemon/workflow-rpc.ts and the plan tree's final report (src/analyze/orchestrator/driver.ts)."
+            "meaning": "Unchanged. A new function beside it, renderMeasureLine(measure: RequestMeasure): string, gives one line. The head of an answer is written through two functions today, renderCompletenessLine and completenessHeadLine (which returns the completeness line when there is a report); both get the measure through one new function, renderReportHead(report: AnswerReport): string, which is the completeness line and, when the report has a measure, the measure line under it. completenessHeadLine returns renderReportHead for a report, and the direct callers of renderCompletenessLine that write the head of an answer call renderReportHead in its place. The writers, all of which then carry the measure line: assembleMarkdown in src/analyze/context/bundle.ts (through completenessHeadLine; its text goes into the classifier's and planner's prompts, and the measure line goes with it, since it is one line of fact about the run context); the two writers in src/mcp/bundle-md.ts (one through completenessHeadLine, one direct); src/mcp/analyze-step/answer-turn.ts; the two writers in src/daemon/workflow-rpc.ts; and the plan tree's final report in src/analyze/orchestrator/driver.ts (headFinalReport)."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "The line states the size, the source of the measure and the counts: for example 'Size: L, measured from the area the request names: 1,204 files, 18,330 entities.'; for lookup results it also gives the characters; when not determined: 'Size: XL, not determined: <note>.'; a hint is added as 'The caller asked for S.'"
+            "The line states the size, the source of the measure and the counts: for example 'Size: L, measured from the area the request names: 1,204 files, 18,330 entities.'; for lookup results it also gives the characters; when not determined: 'Size: XL, not determined: <note>.'; a hint is added as 'The caller asked for S.'",
+            "On the plan tree the report is built by mergeAnswerReports, which returns the completeness part and the answer failure only and so carries no measure. The driver adds the run's named-area measure to the merged report after the merge and before the final report's head is written and the run is completed, so the stored report and the head line both carry it. A resumed run returns the stored text and report as they were written."
+          ]
+        },
+        {
+          "name": "walkFiles",
+          "signature": "function walkFiles(root: string, cap?: number | null): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }>   // today: cap: number = DEFAULT_FILE_CAP",
+          "parameters": [
+            {
+              "name": "cap",
+              "type": "number | null",
+              "purpose": "Unchanged default. New: null means no cap, the walk goes to the end and `truncated` is false. Only the measure passes null.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }>",
+            "meaning": "As today: the result's shape is unchanged, a directory below the root that cannot be read is listed in `unreadable`, and a root that cannot be read throws. The one change is that the cap can be switched off."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every existing caller, which passes a number or nothing, gets what it gets today, including the cap that Story s4 removes for them."
           ]
         }
       ]
@@ -757,27 +815,35 @@
       {
         "entity": "The context builder's inputs (the lookup pipeline)",
         "change": "field-add",
-        "details": "The builder becomes the one writer of the size in the lookup pipeline. Its inputs take the intent as UnsizedIntent (an incoming `scope` is not read) and gain an optional `sizeHint`. After it resolves the scope, which it already does once for every mode, it takes the named-area measure with measureRequestScope and gives the planning call an intent with that size. After the plan has been executed it takes measureLookupResults, gives the answer step an intent with that size, and passes the measure to reportFromLookups. The four places that set M today pass no size: the one-shot tool and the step tool pass the caller's optional `scope` input as `sizeHint`; the daemon's workflow runner passes none; the free-form lookup's inner intent is given the size of the request it runs for. The step tool does not go through the builder's driver: its start phase takes the named-area measure for the planning prompt and its bundle phase takes measureLookupResults for the report.",
+        "details": "The builder becomes the one writer of the size in the lookup pipeline. Its inputs take the intent as UnsizedIntent (an incoming `scope` is not read) and gain an optional `sizeHint`. After it resolves the scope, which it already does once for every mode, it takes the named-area measure with measureResolvedScope and gives the planning call an intent with that size. After the plan has been executed it takes measureLookupResults, gives the answer step an intent with that size, and passes the measure to reportFromLookups. The four places that set M today pass no size: the one-shot tool and the step tool pass the caller's optional `scope` input as `sizeHint`; the daemon's workflow runner passes none. The step tool does not go through the builder's driver: its start phase takes the named-area measure for the planning prompt and its bundle phase takes measureLookupResults for the report. The free-form lookup receives no intent: runFreeformProbe is given the lookup and an ExplorationRunnerContext, which holds the run id, the repo path, the resolved scope and the readers, and no size. So the runner context gains one optional field, `requestSize?: AnalyzeScope` (src/analyze/explore/types.ts), set at the three places the executor builds a context (src/analyze/explore/executor.ts) from a new optional argument of the executor's entry points, which the context builder and the step tool's plan and narrow phases (through stepPlan) fill with the request's named-area size. When a caller supplies none, the free-form lookup measures its own resolved scope with measureResolvedScope, so its inner intent never takes a default.",
         "callSites": [
           "src/analyze/context/driver.ts",
           "src/mcp/analyze-step/phases/start.ts",
           "src/mcp/server.ts",
           "src/daemon/workflow-rpc.ts",
           "src/analyze/explore/freeform-probe.ts",
-          "src/analyze/context/decomposer.ts"
+          "src/analyze/context/decomposer.ts",
+          "src/analyze/explore/types.ts",
+          "src/analyze/explore/executor.ts",
+          "src/mcp/analyze-step/phases/plan.ts",
+          "src/mcp/analyze-step/phases/narrow.ts"
         ]
       },
       {
         "entity": "AnswerReport.measure",
         "change": "field-modify",
-        "details": "Typed RequestMeasure (it is `unknown` today). Filled on both paths: in the lookup pipeline with the measure from lookup results; on the plan tree's final report with the named-area measure of the run. A report stored before the change has no measure and is read as it is.",
+        "details": "Typed RequestMeasure (it is `unknown` today). Filled on both paths: in the lookup pipeline with the measure from lookup results, passed to reportFromLookups; on the plan tree with the named-area measure of the run, set by the driver on the merged report after mergeAnswerReports, which does not carry a measure. A report stored before the change has no measure and is read as it is.",
         "schemaDiff": "readonly measure?: RequestMeasure | undefined;",
         "callSites": [
           "src/analyze/completeness.ts",
           "src/analyze/explore/answer-report.ts",
           "src/analyze/context/driver.ts",
           "src/analyze/orchestrator/driver.ts",
-          "src/analyze/orchestrator/types.ts"
+          "src/analyze/orchestrator/types.ts",
+          "src/analyze/context/bundle.ts",
+          "src/mcp/bundle-md.ts",
+          "src/mcp/analyze-step/answer-turn.ts",
+          "src/daemon/workflow-rpc.ts"
         ]
       },
       {
@@ -792,7 +858,7 @@
       {
         "entity": "The daemon's requests that carry a size",
         "change": "invariant-change",
-        "details": "The run request's `scopeHint`, the size on the plan request's intent and its `rootScope` are kept in the request shapes and become hints: the handler measures the intent's scope and uses the measured size for the bands and the depth. No request shape changes.",
+        "details": "The run request's `scopeHint` and the size on the plan request's intent are kept in the request shapes and become hints: the handler measures the intent's scope and uses the measured size for the task band. The depth cap keeps its rule, the root's size. On the plan request, at `currentDepth` 0 (or absent) the intent IS the root: the measured size is used for the depth cap as well and a `rootScope` in the request is a hint. At a greater depth the intent is a child's: the caller's `rootScope` is kept for the depth cap, as today, because it is the root's size handed down by whoever planned the root, like `parentTaskPath` and `currentDepth` beside it; when it is absent the child's measured size is used. No request shape changes.",
         "callSites": [
           "src/daemon/analyze-rpc.ts"
         ]
@@ -837,6 +903,20 @@
           "detection": "measureRequestScope catches the three scope error classes thrown by resolveTaskScope (it recognises them with the one mapping, scopeErrorMapping).",
           "response": "It returns a measure with determined false, size 'XL' and the error's message as the note; it does not fail the request. The existing check after the run context is built still refuses the run with the scope error's own code, as today; in the lookup pipeline the builder's existing scope checks still refuse it.",
           "userImpact": "Unchanged where a request is refused today. Where it is not refused, the answer says the size could not be determined and why.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The scope resolves, but no registered repo contains it, or the repo that was read holds no stored entity (a path the index does not hold). The scope checks do not refuse this for an infra or data request, nor for a code or docs request when the registry holds no repo.",
+          "detection": "measureResolvedScope tests the resolved scope's `repoPath` for null, and tests whether the read of the repo returned any entity at all, before it counts the area.",
+          "response": "For a code, docs or generic request: determined false, size 'XL', note that the index holds nothing for the path. It does not return a count of zero.",
+          "userImpact": "A request on a path that is not indexed is never sized XS; the answer says its size was not determined and why.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An infra request's directory, or a directory below it, cannot be read while its files are counted (it does not exist, or permission is denied).",
+          "detection": "walkFiles throws for a root it cannot read, and returns the directories below the root it could not read in `unreadable`; measureResolvedScope catches the first and tests the second.",
+          "response": "determined false, size 'XL', note with the path and the reason. A count that leaves out an unreadable directory is put in the note, never in `items`.",
+          "userImpact": "The answer says the infra request could not be sized.",
           "recoverable": true
         },
         {
@@ -915,7 +995,7 @@
         },
         {
           "input": "A scope whose area holds nothing (an empty directory inside an indexed repo).",
-          "expected": "items 0, files 0: XS, determined true. An empty area is a count, not a failure to count."
+          "expected": "items 0, files 0: XS, determined true, because the repo that contains it does hold stored entities. An empty area inside an indexed repo is a count; a path the index does not hold is not (see the error case)."
         },
         {
           "input": "A workspace scope over three registered repos.",
@@ -966,8 +1046,24 @@
           "expected": "It has no measure and is read as it is; nothing requires one."
         },
         {
-          "input": "The daemon's plan request with an intent whose size is M and a rootScope of L, for an area that measures S.",
-          "expected": "The plan is built with size S for both the bands and the depth; M and L are hints."
+          "input": "The daemon's plan request at depth 0 with an intent whose size is M and a rootScope of L, for an area that measures S; and the same request at depth 2 for a child area that measures XS.",
+          "expected": "At depth 0 the plan is built with size S for both the band and the depth, and M and L are hints. At depth 2 the band is XS's and the depth cap is L's, the root's size the caller handed down."
+        },
+        {
+          "input": "An infra request on a manifest directory in no registered repo, holding 340 files the walk visits.",
+          "expected": "items 340, files 340, source 'named-area': L, determined true. The graph is not consulted."
+        },
+        {
+          "input": "An infra request on a repository with 12,000 files the walk visits, more than the cap the infra tasks apply today.",
+          "expected": "All 12,000 are counted, with no cap: XL, determined true."
+        },
+        {
+          "input": "A generic request with a repo scope, and one with a connection scope.",
+          "expected": "The first is counted from the stored graph like a code request; the second from the live source like a data request."
+        },
+        {
+          "input": "A free-form lookup run by a caller that supplies no request size.",
+          "expected": "It measures its own resolved scope and uses that size; it never takes a default."
         }
       ],
       "invariantsToPreserve": [
@@ -1028,16 +1124,19 @@
           "purpose": "The measuring pass against a temporary graph store and stand-in data drivers, and its effect on the plan tree, the lookup pipeline and the report.",
           "subjects": [
             "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
-            "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope in a repo that is not indexed, and a failed read of the store, and does not throw",
+            "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, and a failed read of the store, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
             "measureRequestScope sums a workspace over its registered repos, reading each once, and is not determined when no registered repo lies under it",
             "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)",
             "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
             "each relational driver's table listing and the four namespace drivers' listing apply no limit in the complete mode and behave exactly as before without it; the file listing walks to the end when no limit is given",
             "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
             "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)",
-            "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report; the one-shot tool, the step tool, the workflow runner and the free-form lookup set no size of their own",
-            "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size",
-            "the answer text on both paths carries the measure line under the completeness line, and a report or a run record stored before the change is read as it is"
+            "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and measures its own scope when it carries none",
+            "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+            "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+            "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)",
+            "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+            "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a stored value for the role"
           ],
           "fixturesNeeded": [
             "a temporary LMDB graph store with two registered repos of different sizes",
@@ -1065,9 +1164,11 @@
           "criterionId": "ac1",
           "provingTests": [
             "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
-            "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report; the one-shot tool, the step tool, the workflow runner and the free-form lookup set no size of their own",
+            "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and measures its own scope when it carries none",
             "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
-            "the classifier's output schema has no size property and rejects an answer that carries one; ClassifiedIntent still has the field"
+            "the classifier's output schema has no size property and rejects an answer that carries one; ClassifiedIntent still has the field",
+            "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
+            "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a stored value for the role"
           ]
         },
         {
@@ -1075,29 +1176,31 @@
           "provingTests": [
             "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)",
             "measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)",
-            "through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size"
+            "through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size",
+            "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
             "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given",
-            "the answer text on both paths carries the measure line under the completeness line, and a report or a run record stored before the change is read as it is"
+            "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is"
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
-            "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope in a repo that is not indexed, and a failed read of the store, and does not throw",
+            "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, and a failed read of the store, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)",
             "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not",
-            "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record"
+            "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record",
+            "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)"
           ]
         },
         {
           "criterionId": "ac5",
           "provingTests": [
             "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)",
-            "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size",
+            "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
             "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)"
           ]
         }
@@ -1139,7 +1242,7 @@
         },
         {
           "order": 7,
-          "action": "Remove the size from the classifier's output schema, prompt and validator, and remove the scope picker with its prompt, its errors and every place that names it. Done last, when nothing reads a size from either.",
+          "action": "Remove the size from the classifier's output schema, prompt and validator, and remove the scope picker with everything that names it: its module, prompt, error classes and export; its role row and its boot-validator entry; the two tests that import its classes; the VS Code extension's declared setting for the role, with a release; and retire the stored per-role key so the reconcile drops it. Done last, when nothing reads a size from either.",
           "rollbackable": true
         },
         {
@@ -1148,7 +1251,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No request shape changes: the run request's `scopeHint`, the size on the plan request's intent, its `rootScope`, and the optional `scope` input of the two agent tools are all still accepted, and are now hints. The daemon's classify response keeps its size field, now a measured one. The intent type and every stored intent keep their fields. What changes for a caller is behaviour: a stated size no longer decides how many tasks are planned or how deep the plan nests, and a request can get a different size from the one the picker, the classifier, the planner model or the default M gave. The classifier's own output loses its size; a model answer that still carries one is rejected by the schema and retried. Run records and answer reports written before the change have no measure and are read as they are. The data listings' existing callers get exactly what they get today. One internal model role (the scope picker) and its prompt file are removed; nothing outside the analyzer names them except the role taxonomy and the boot validator's prompt list, which are updated in the same step.",
+      "backwardCompat": "No request shape changes: the run request's `scopeHint`, the size on the plan request's intent, its `rootScope`, and the optional `scope` input of the two agent tools are all still accepted, and are now hints. The daemon's classify response keeps its size field, now a measured one. The intent type and every stored intent keep their fields. What changes for a caller is behaviour: a stated size no longer decides how many tasks are planned or how deep the plan nests, and a request can get a different size from the one the picker, the classifier, the planner model or the default M gave. The classifier's own output loses its size; a model answer that still carries one is rejected by the schema and retried. Run records and answer reports written before the change have no measure and are read as they are. The data listings' existing callers get exactly what they get today. One model role (the scope picker, `analyze.scope.pick`) and its prompt file are removed. The role is named outside the analyzer by the role taxonomy, the boot validator's prompt list and the VS Code extension's declared setting `insrc.models.tasks.analyze.scope.pick`; all three are updated in the same step, the extension is released, and a value a user has stored for the role is dropped by the reconcile through the list of retired settings.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -1297,6 +1400,54 @@
       "kind": "stakeholder",
       "ref": "decision of 2026-10-09 in the design session",
       "quotedText": "A. Both counts, the larger size wins, fixed thresholds (recommended)."
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/shared/task-scope.ts",
+      "quotedText": "const GRAPH_FAMILIES: ReadonlySet<TaskFamily> = new Set(['code', 'docs']);"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/infra/_shared.ts",
+      "quotedText": "export async function walkFiles("
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/analyze/completeness.ts",
+      "quotedText": "if (report !== undefined) return renderCompletenessLine(report);"
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts",
+      "quotedText": "{ id: 'analyze.scope.pick',"
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json",
+      "quotedText": "\"insrc.models.tasks.analyze.scope.pick\": {"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/daemon/analyze-rpc.ts",
+      "quotedText": "const rootScope = parsed.rootScope ?? parsed.intent.scope;"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/analyze/context/bundle.ts",
+      "quotedText": "const head = completenessHeadLine(bundle.report, 'nothing');"
+    },
+    {
+      "id": "c22",
+      "kind": "stakeholder",
+      "ref": "decision of 2026-10-09 in the design session",
+      "quotedText": "A. Count the files on disk that the infra tasks' own file walk would visit (recommended)."
     }
   ]
 }

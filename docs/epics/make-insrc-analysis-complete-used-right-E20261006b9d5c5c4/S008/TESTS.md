@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -49,3 +49,40 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/mak
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/shared/__tests__/source-modules.test.ts` | 0 | 5 | 0.6 s |  |
+
+## t2
+
+Run at 2026-10-09T13:13:50.489Z on commit `5fdce3d2`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: on a graph with no module entity for the repository's directories, the module list returns the directories that hold source, and its record's rule says what a module is (mutation: keep only entities of kind 'module', as before)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | on a graph with no module entity for the repository's directories, the module list returns the directories that hold source, and its record's rule says what a module is (mutation: keep only entities of kind 'module', as before) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**integration: the module list keeps a stored module entity with the fields it had and lists no directory in or under its directory; a file scope that names a module entity's own file returns that module; a run scoped under a stored module's directory lists none (mutation: make a directory module of the sub-directory)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the module list keeps a stored module entity with the fields it had and lists no directory in or under its directory; a file scope that names a module entity's own file returns that module; a run scoped under a stored module's directory lists none (mutation: make a directory module of the sub-directory) | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+| pass | a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` |
+
+**integration: under a module scope the module list keeps to the area, and under a file scope on a source file and a symbol scope it is empty**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | under a module scope the module list keeps to the area, and under a file scope on a source file and a symbol scope it is empty | `src/analyze/runtimes/code/__tests__/module-directories.test.ts` |
+
+**unit: the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time) | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 5 | 0.4 s |  |
+| `src/analyze/runtimes/code/__tests__/module-directories.test.ts` | 0 | 3 | 0.7 s |  |
+| `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 0.9 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s8",
     "createdAt": "2026-10-09T13:06:19.852Z",
-    "updatedAt": "2026-10-09T13:08:04.779Z",
+    "updatedAt": "2026-10-09T13:13:50.489Z",
     "authoredBy": "controller"
   },
   "body": {
@@ -12,9 +12,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "The baseline of the analyze suite (1077 tests, 982 pass, 0 fail, 92 skipped) and of the gated file deterministic-runtimes.test.ts (11 pass) was recorded at 31a381e6 on a clean tree and committed on its own before the first source change. Then one new file, src/analyze/runtimes/shared/source-modules.ts: sourceModulesOf (the modules of a scope's area), moduleOfEntityId (a value looked up as an entity id, with no scope) and moduleOfDirectory (a directory path under a resolved scope). Nothing calls them yet. The gate's first verdict refused the task because the id reader's message for an entity of another kind had lost its '(taskId=…)'; the function now takes the task's id as a third argument and the message is word for word the one before this Story (75899025). That third argument is a departure from the design's two-argument signature, made so that the design's own 'today's message' holds. Sixteen mutations were each caught by the five unit tests.",
+    "summary": "code.discovery.modules takes its modules from the one definition: on a graph with no module entity for the repository's directories it returns every directory that directly holds a stored source file, sorted by directory, where it returned nothing. A stored module entity keeps its fields and gains `directory` and `fileCount`; a directory has no `entityId`. The completeness record states what a module is. The runtime reads the repo's entities once and keeps the result whole; the source scan now holds a form per code runtime. The template's description says what is returned. Eight mutations were each caught, the three the plan names among them. The analyze suite compared by name with the Story's baseline loses no test, and the two gated files pass with INSRC_LIVE_TESTS=1.",
     "testRecord": {
       "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/TESTS.md"
     },
@@ -24,37 +28,65 @@
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:08:04.779Z"
+        "timestamp": "2026-10-09T13:13:50.489Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/analyze.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:08:04.779Z"
+        "timestamp": "2026-10-09T13:13:50.489Z"
       },
       {
         "target": {
           "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/deterministic-runtimes.gated.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:08:04.779Z"
+        "timestamp": "2026-10-09T13:13:50.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/code/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:13:50.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:13:50.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:13:50.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/discovery-modules.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:13:50.489Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:08:04.779Z"
+        "timestamp": "2026-10-09T13:13:50.489Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/source-modules.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-09T13:08:04.779Z"
+        "timestamp": "2026-10-09T13:13:50.489Z"
       }
     ],
-    "commit": "75899025"
+    "commit": "5fdce3d2"
   }
 }

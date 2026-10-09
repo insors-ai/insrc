@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T05:34:32.198Z"
+    "updatedAt": "2026-10-09T05:51:37.184Z"
   },
   "body": {
     "tasks": [
@@ -566,6 +566,285 @@
               },
               {
                 "title": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1603be22",
+        "ranAt": "2026-10-09T05:51:37.184Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a data task with a connection scope works on that connection only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "a data task with a connection scope works on that connection only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+                "title": "an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 385,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 826,
+            "titles": [
+              {
+                "title": "a data task with a connection scope works on that connection only",
+                "result": "pass"
+              },
+              {
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "title": "the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: present non-empty -> returns; missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: empty string -> throws (empty != non-empty)",
+                "result": "pass"
+              },
+              {
+                "title": "optionalStringParam: present -> value; missing -> undefined; empty -> throws",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all 4 data runtimes",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.connections: lists the registered sqlite connection (no secret leak)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: lists rdbms tables for the sqlite connection",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: kind filter narrows the result",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: unknown connectionId -> throws (no such connection)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: missing connectionId param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes the users table -- columns + types + nullability",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes orders table -- FK to users surfaces",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: missing table param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: nonexistent table -> driver error propagates",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1441,
+            "titles": [
+              {
+                "title": "readScopeRef: well-formed -> returns",
+                "result": "pass"
+              },
+              {
+                "title": "readScopeRef: missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "baseName: directory-stripped",
+                "result": "pass"
+              },
+              {
+                "title": "classifyFile: terraform / dockerfile / helm chart / gha / gitlab / compose",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: minimal valid manifest -> record",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: no metadata.name -> null (dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: no apiVersion/kind -> null",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: label coercion of non-string values",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key",
+                "result": "pass"
+              },
+              {
+                "title": "infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation",
+                "result": "pass"
+              },
+              {
+                "title": "INFRA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "walkFiles: node_modules is skipped (SKIP_DIRS); other files visible",
+                "result": "pass"
+              },
+              {
+                "title": "an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before",
+                "result": "pass"
+              },
+              {
+                "title": "discovery.families: classifies all expected families against the fixture",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.kubernetes: enumerates resources with kind/name/namespace/labels",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.kubernetes: Chart.yaml is skipped (helm metadata, not k8s)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.terraform: extracts resources / data / providers / variables / outputs",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.terraform: captures indented blocks + drops invalid HCL (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped",
+                "result": "pass"
+              },
+              {
+                "title": "inventory runtimes: empty scope yields well-formed empty inventories, no throw",
                 "result": "pass"
               }
             ],

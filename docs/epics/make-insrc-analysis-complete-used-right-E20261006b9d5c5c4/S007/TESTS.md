@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -113,3 +113,41 @@ Run at 2026-10-09T05:34:32.198Z on commit `4ebed9de`. Tests check: **passed**. 7
 | `src/analyze/executor/__tests__/walker.test.ts` | 0 | 24 | 0.8 s |  |
 | `src/analyze/orchestrator/__tests__/run-report.test.ts` | 0 | 6 | 1 s |  |
 | `src/analyze/orchestrator/__tests__/shaper-error-mapping.test.ts` | 0 | 7 | 0.8 s |  |
+
+## t4
+
+Run at 2026-10-09T05:51:37.184Z on commit `1603be22`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a data task with a connection scope works on that connection only**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a data task with a connection scope works on that connection only | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` |
+
+**integration: a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo) | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` |
+
+**integration: an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before | `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` |
+| pass | the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` |
+
+**unit: the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+| pass | the unrelated resolveRepoPath under src/mcp is untouched | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 2 | 0.4 s |  |
+| `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` | 0 | 19 | 0.8 s |  |
+| `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 1.4 s |  |

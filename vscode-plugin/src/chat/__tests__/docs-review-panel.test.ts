@@ -64,7 +64,11 @@ function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: st
   let inside = false;
   try { inside = run('rev-parse', '--is-inside-work-tree').trim() === 'true'; } catch { /* not a repository */ }
   if (!inside) return skip(`not a git work tree: ${root}`);
-  if (run('rev-parse', '--is-shallow-repository').trim() === 'true') {
+  let shallow = '';
+  try { shallow = run('rev-parse', '--is-shallow-repository').trim(); } catch { /* reported below */ }
+  // A git too old for the flag echoes it back; anything but 'false' cannot be trusted to have the history.
+  if (shallow !== 'false' && shallow !== 'true') return skip(`cannot tell whether ${root} is a shallow clone`);
+  if (shallow === 'true') {
     const what = [...(need.commits ?? []), ...(need.window ? [`${need.window.from} .. ${need.window.to}`] : [])];
     return skip(`shallow clone: history needed for ${what.join(', ') || 'this check'}`);
   }
@@ -74,8 +78,11 @@ function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: st
   if (need.window) {
     const { from, to } = need.window;
     const noWindow = (why: string): null => skip(`no build window between ${from} and ${to}: ${why}`);
-    const a = run('log', '--format=%H', '-1', '--', from).trim();
-    const b = run('log', '--format=%H', '-1', '--', to).trim();
+    const last = (file: string): string => {
+      try { return run('log', '--format=%H', '-1', '--', file).trim(); } catch { return ''; }
+    };
+    const a = last(from);
+    const b = last(to);
     if (a === '' || b === '') return noWindow(`no commit touches ${a === '' ? from : to}`);
     if (a === b) return noWindow('both ends are the same commit');
     if (!succeeds('merge-base', '--is-ancestor', a, b)) return noWindow(`the ${from} commit is not an ancestor of the ${to} commit`);
@@ -670,6 +677,14 @@ async function openWithContent(content: DocsContent | string): Promise<Record<st
   assert.ok(msg, 'posted docs-content for the opened artifact');
   return msg!.payload;
 }
+
+test('the file builds no fake DOM and declares no tree flatten of its own — both come from fake-dom.ts', () => {
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  for (const name of ['stubEl', 'node', 'frNode', 'dgNode', 'uxNodeStub', 'bodyStub', 'frAll', 'dgFlatten', 'uxFlatten', 'allOf']) {
+    assert.equal(new RegExp(`function ${name}\\(|const ${name} = \\(`).test(src), false, `${name} is not declared here`);
+  }
+  assert.match(src, /import \{ allOf, bodyStub, [^}]*\} from '\.\/fake-dom\.js';/, 'the builder and the flatten are imported');
+});
 
 test('there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads', async () => {
   const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
@@ -3121,36 +3136,35 @@ const DG_ER = { classes: { Order: { attributes: { id: { range: 'string' }, by: {
 const DG_SEQ = { participants: [{ id: 'a', label: 'Host' }, { id: 'b', label: 'Webview' }], messages: [{ from: 'a', to: 'b', label: 'post' }] };
 const DG_REF = { kind: 'diagram-mermaid', relPath: 'docs/epics/x/S003/er.html', title: 'Entity model' };
 
-const slotsIn = (r: WebviewRun): BodyStub[] =>
-  [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)]
-    .filter((n) => n.className === 'insrc-dg-slot');
 /** The EXPERIENCE slot, found by its kind modifier wherever it ended up — the host
  *  when unanchored, the BODY when it anchored beside a heading. Looking only in the
  *  host would miss exactly the anchored case these tests exist to cover. */
 const uxSlotsIn = (r: WebviewRun): BodyStub[] =>
   [...allOf(r.experience), ...allOf(r.body)]
     .filter((n) => n.className === 'insrc-dg-slot insrc-dg-slot--experience');
-/** The DIAGRAM slot keeps the bare class it has always had. */
+/** The DIAGRAM slot keeps the bare class it has always had. Every host is searched,
+ *  the experience host included, so a diagram slot mounted in the wrong host still
+ *  counts against "exactly one" and "none". */
 const dgSlotsIn = (r: WebviewRun): BodyStub[] =>
-  [...allOf(r.diagram), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
+  [...allOf(r.diagram), ...allOf(r.experience), ...allOf(r.body)].filter((n) => n.className === 'insrc-dg-slot');
 
 test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap', () => {
   // ref absent + record absent -> nothing anywhere
   let r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
-  assert.equal(slotsIn(r).length, 0, 'no ref + no record -> no slot');
+  assert.equal(dgSlotsIn(r).length, 0, 'no ref + no record -> no slot');
 
   // ref present + record present -> rendered
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] });
-  let slot = slotsIn(r)[0];
+  let slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'ref + record -> a slot');
   assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'), 'and it carries a drawn diagram');
 
   // ref present + record absent -> unshowable, NAMED
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, companions: [DG_REF] });
-  slot = slotsIn(r)[0];
+  slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'ref alone -> a slot');
   const why = allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!;
   assert.match(why.textContent, /could not be shown here/);
@@ -3160,7 +3174,7 @@ test('t6 gate: the four-combination table, driven through the SHIPPED bootstrap'
   // ref ABSENT + record present -> RENDERED (the contested row, q7f574776)
   r = runWebview();
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER });
-  slot = slotsIn(r)[0];
+  slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'a record with no companion ref still draws — record gates content');
   assert.ok(allOf(slot!).some((n) => n.tagName === 'svg'));
   assert.equal(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), false, 'and offers no link');
@@ -3187,7 +3201,7 @@ test('t6 ac2: the dominant path does ZERO DOM work and leaves the body region un
   // The slot path created nothing: no svg namespace call at all, and no slot div.
   assert.equal(bare.created.filter((t) => t.startsWith('ns:')).length, 0, 'not one createElementNS call');
   assert.equal(bare.diagram.children.length, 0, 'the slot host is empty');
-  assert.equal(slotsIn(bare).length, 0);
+  assert.equal(dgSlotsIn(bare).length, 0);
   assert.ok(bare.created.length > before, 'the rest of the surface still rendered');
 
   // And the BODY REGION is what it would be without this Story: the slot never
@@ -3205,7 +3219,7 @@ test("t6: `classes: {}` and an empty sequence record are ABSENT, not an empty fr
   ]) {
     const r = runWebview();
     r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, ...records });
-    assert.equal(slotsIn(r).length, 0, `${JSON.stringify(records)} must reserve no space`);
+    assert.equal(dgSlotsIn(r).length, 0, `${JSON.stringify(records)} must reserve no space`);
     assert.equal(r.created.filter((t) => t.startsWith('ns:')).length, 0);
   }
 });
@@ -3217,7 +3231,7 @@ test('t6: diagram-html routes to the stated failure (lc1), never a silent nothin
     erDefinition: DG_ER,
     companions: [{ kind: 'diagram-html', relPath: 'docs/x/t.html', title: 'Some diagram' }],
   });
-  const slot = slotsIn(r)[0];
+  const slot = dgSlotsIn(r)[0];
   assert.ok(slot, 'a declared-but-unproduced kind still produces a slot');
   assert.match(allOf(slot!).find((n) => n.className === 'insrc-dg-slot-why')!.textContent, /diagram-html/);
   assert.ok(allOf(slot!).some((n) => n.className === 'insrc-dg-slot-link'), 'the authentic file stays reachable');
@@ -3229,7 +3243,7 @@ test('t6: the link-out is offered in the FAILURE state, where it matters most', 
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     companions: [{ kind: 'diagram-mermaid', relPath: 'docs/x/S002/sequence-diagram.html', title: 'Sequence diagram' }],
   });
-  const slot = slotsIn(r)[0]!;
+  const slot = dgSlotsIn(r)[0]!;
   const link = allOf(slot).find((n) => n.className === 'insrc-dg-slot-link');
   assert.ok(link, 'a reviewer who cannot see the diagram is the one who most needs the file');
   assert.match(link!.textContent, /sequence-diagram\.html/);
@@ -3276,7 +3290,7 @@ test('t6 placement: a resolving anchor mounts beside that heading; a stale one f
     artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS,
     erDefinition: DG_ER, companions: [DG_REF], diagramAnchorSlug: 'no-such-section',
   });
-  assert.equal(slotsIn(stale).length, 1, 'the visual is NOT dropped');
+  assert.equal(dgSlotsIn(stale).length, 1, 'the visual is NOT dropped');
   assert.equal(stale.diagram.children.length, 1, 'it falls back to the default position');
 });
 
@@ -3284,12 +3298,12 @@ test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third car
   const r = runWebview();
   const msg = { artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
   r.deliver(msg);
-  const first = slotsIn(r).length;
+  const first = dgSlotsIn(r).length;
   r.deliver(msg);
   assert.equal(first, 1, 'one slot after the first message');
-  assert.equal(slotsIn(r).length, 1, 'still exactly one after the second — the host is cleared, not appended to');
+  assert.equal(dgSlotsIn(r).length, 1, 'still exactly one after the second — the host is cleared, not appended to');
   r.deliver({ artifactId: 'a', markdown: DG_MD, openQuestions: [], blocked: false, sections: DG_SECTIONS });
-  assert.equal(slotsIn(r).length, 0, 'and a message carrying neither clears it');
+  assert.equal(dgSlotsIn(r).length, 0, 'and a message carrying neither clears it');
 
   // The same, ANCHORED into the body, where the body rebuild is what clears it.
   const probe = runWebview();
@@ -3298,7 +3312,7 @@ test('t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third car
   const a = runWebview();
   const anchoredMsg = { ...msg, diagramAnchorSlug: slug };
   a.deliver(anchoredMsg); a.deliver(anchoredMsg);
-  assert.equal(slotsIn(a).length, 1, 'one slot in the body after two identical renders');
+  assert.equal(dgSlotsIn(a).length, 1, 'one slot in the body after two identical renders');
 });
 
 test('t6 resilience: a forced throw in the slot build leaves all five other surfaces intact', () => {
@@ -3314,7 +3328,7 @@ test('t6 resilience: a forced throw in the slot build leaves all five other surf
   assert.equal(r.oq.children.length, 1, 'the open question still rendered');
   const labels = r.actions.children.map((c) => c.textContent);
   assert.deepEqual(labels, ['approve', 'request changes'], 'both controls still rendered');
-  assert.equal(slotsIn(r).length, 0, 'and no half-built slot was left behind');
+  assert.equal(dgSlotsIn(r).length, 0, 'and no half-built slot was left behind');
 });
 
 test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged', () => {
@@ -3354,7 +3368,7 @@ test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
   // too — a reviewer who never saw the body is never shown a diagram drawn from it.
   const r = runWebview();
   r.deliver({ artifactId: 'LLD-x', markdown: 'unavailable: daemon unreachable', openQuestions: [], blocked: true, commentable: true });
-  assert.equal(slotsIn(r).length, 0);
+  assert.equal(dgSlotsIn(r).length, 0);
   assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
 });
 

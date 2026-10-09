@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 
 import { allOf, bodyStub, fire, textNode } from './fake-dom.js';
 
-test('the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, querying and listeners', () => {
+test('the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, moves, querying and listeners', () => {
   // Write recording, in order, for every assignment the suites assert on.
   const el = bodyStub('div');
   el.className = 'card';
@@ -60,7 +60,17 @@ test('the shared fake DOM records writes, parses and traps innerHTML, clears chi
   assert.equal(b.parentNode, list);
   list.removeChild(b);
   assert.deepEqual(list.children.map((x) => x.id), ['a', 'c']);
+  assert.equal(b.parentNode, null, 'a removed node has no parent');
   assert.throws(() => list.removeChild(bodyStub('li')), /not a child/);
+
+  // Inserting a node that already has a parent moves it, within a parent or across.
+  list.insertBefore(c, a);
+  assert.deepEqual(list.children.map((x) => x.id), ['c', 'a']);
+  const other = bodyStub('ol');
+  other.appendChild(a);
+  assert.deepEqual(list.children.map((x) => x.id), ['c'], 'a node has one parent');
+  assert.equal(a.parentNode, other);
+  assert.deepEqual(allOf(list).map((x) => x.tagName), ['ul', 'li'], 'and a walk finds it once');
 
   // Querying: '#id' through the tree, a SyntaxError on a digit-leading id, and tags.
   const root = bodyStub('div');

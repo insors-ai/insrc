@@ -15,8 +15,9 @@
  *   lines (and is recorded, so a suite can assert a renderer never assigned markup);
  *   textContent assignment clears the children, as in the real DOM;
  * - the namespace an element was created in (`ns`), and text nodes (nodeType 3);
- * - parent and sibling links, appendChild/insertBefore/removeChild (removeChild
- *   asserts the child is present), querySelector('#id') — which throws a SyntaxError
+ * - parent and sibling links, appendChild/insertBefore/removeChild (insertion
+ *   moves a node that already has a parent; removeChild asserts the child is
+ *   present and clears its parent), querySelector('#id') — which throws a SyntaxError
  *   on a digit-leading id, as the real DOM does — and querySelectorAll by tag;
  * - listeners as arrays per type, and scrollIntoView.
  *
@@ -94,7 +95,13 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
   let html = '';
   let txt = text;
   let cls = '';
-  const adopt = (c: BodyStub): BodyStub => { c.parentNode = n; return c; };
+  // Inserting a node that already has a parent MOVES it, as in the real DOM.
+  const adopt = (c: BodyStub): BodyStub => {
+    const from = c.parentNode;
+    if (from) { const i = from.children.indexOf(c); if (i >= 0) from.children.splice(i, 1); }
+    c.parentNode = n;
+    return c;
+  };
   const n: BodyStub = {
     nodeType, tagName, ns, id, data: '', value: '', style: {}, attrs: {}, children, writes,
     listeners: {}, scrolled: false, parentNode: null,
@@ -127,14 +134,16 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
     },
     appendChild(c) { children.push(adopt(c)); return c; },
     insertBefore(c, ref) {
+      adopt(c); // first, so a move within this parent cannot shift ref's index
       const i = ref === null ? children.length : children.indexOf(ref);
-      children.splice(i < 0 ? children.length : i, 0, adopt(c));
+      children.splice(i < 0 ? children.length : i, 0, c);
       return c;
     },
     removeChild(c) {
       const i = children.indexOf(c);
       assert.ok(i >= 0, 'removeChild was called with a node that is not a child');
       children.splice(i, 1);
+      c.parentNode = null;
       return c;
     },
     setAttribute(k, v) { n.attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },

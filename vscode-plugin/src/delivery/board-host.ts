@@ -126,7 +126,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `TABS[VIEWS[(VIEWS.indexOf(v)+step+VIEWS.length)%VIEWS.length]].focus();});}`,
   `let shownView='board';`,
   `function markTab(view){shownView=view;board.setAttribute('data-view',view);for(const v of VIEWS){TABS[v].setAttribute('aria-selected',v===view?'true':'false');TABS[v].setAttribute('tabindex',v===view?'0':'-1');}}`,
-  // State panels (s5 mock F): #panel holds the status panel, then the current view's no-matches panel.
+  // State panels (s5 mock F): #panel holds the status panel, then the current view's empty panel; both come from the host.
   `const statusPanel=make('div');const matchPanel=make('div');panel.appendChild(statusPanel);panel.appendChild(matchPanel);`,
   `function renderPanel(box,p){clear(box);if(p===null||p===undefined)return;const d=make('div',undefined,'panel');d.setAttribute('data-kind',p.kind);d.setAttribute('role','note');`,
   `d.appendChild(make('p',p.title,'panel-title'));if(p.text)d.appendChild(make('p',p.text));`,
@@ -137,8 +137,6 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(p.action==='retry')acts.appendChild(button('Retry',function(){send({type:'refresh'});}));`,
   `if(p.action==='clear-filters')acts.appendChild(button('Clear filters',function(){search.value='';markAttention(false);send({type:'clear-filters'});}));`,
   `if(acts.firstChild)d.appendChild(acts);box.appendChild(d);}`,
-  `const NO_MATCHES={kind:'no-matches',title:'Nothing matches this view',text:'Work exists, but none matches the current search, scope and attention filter.',action:'clear-filters',stale:false,affected:[]};`,
-  `const NO_ISSUES={kind:'no-issues',title:'No issues on the board',text:'There are no issues on the board.',action:null,stale:false,affected:[]};`,
   `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
   `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
@@ -164,7 +162,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const r of m.epics)board.appendChild(renderRow(r));`,
   `if(m.notInEpic.total>0)board.appendChild(renderRow(m.notInEpic));`,
-  `renderPanel(matchPanel,m.emptySelection?NO_MATCHES:null);}`,
+  `renderPanel(matchPanel,m.emptyPanel);}`,
   `function renderIssue(e){const sec=make('section',undefined,'issue');sec.setAttribute('data-item-id',e.card.itemId);`,
   `const cards=make('ul');cards.appendChild(renderCard(e.card));sec.appendChild(cards);`,
   `sec.appendChild(make('p','Stage: '+e.stageLabel,'issue-stage'));`,
@@ -177,7 +175,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `function renderIssues(m){markTab('issues');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const e of m.issues)board.appendChild(renderIssue(e));`,
-  `renderPanel(matchPanel,m.emptySelection?NO_MATCHES:m.issues.length===0?NO_ISSUES:null);}`,
+  `renderPanel(matchPanel,m.emptyPanel);}`,
   `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
   // Every stage heading carries its label and a count chip; an empty stage is marked so a narrow pane wraps it last.
@@ -187,7 +185,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
   `board.appendChild(sec);}`,
-  `renderPanel(matchPanel,m.emptySelection?NO_MATCHES:null);}`,
+  `renderPanel(matchPanel,m.emptyPanel);}`,
   // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
   `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
 

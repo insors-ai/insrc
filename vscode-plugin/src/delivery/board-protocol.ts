@@ -26,11 +26,12 @@ export type { Envelope };
 
 /** A titled state panel (s5 mock F): an empty store, an unavailable daemon, a failed refresh, or partial evidence. */
 export interface StatePanelView {
-  readonly kind: 'empty' | 'unavailable' | 'refresh-failed' | 'partial';
+  /** The status panels, and the views' 'no-matches' and 'no-issues' panels. */
+  readonly kind: 'empty' | 'unavailable' | 'refresh-failed' | 'partial' | 'no-matches' | 'no-issues';
   readonly title: string;
   readonly text: string;
-  /** 'retry' posts refresh. */
-  readonly action: 'retry' | null;
+  /** 'retry' posts refresh; 'clear-filters' clears the search and attention filter. */
+  readonly action: 'retry' | 'clear-filters' | null;
   /** True when the last good board is still shown behind the panel. */
   readonly stale: boolean;
   /** What could not be read: each store notice with its records, and the unreadable-record count. */
@@ -95,6 +96,8 @@ export interface BoardViewModel {
   readonly totals: { readonly items: number; readonly needsAttention: number };
   readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
 /** One epic's rollup row (s3): counts only, no cards. The 'Not in an epic' row has no epic id and no compact id. */
@@ -126,6 +129,8 @@ export interface EpicRollupViewModel {
   readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
 /** A followable reference to another work item; ids only, resolved by the host. */
@@ -156,6 +161,8 @@ export interface IssueViewModel {
   readonly scopeOptions: BoardViewModel['scopeOptions'];
   readonly selectedItemId: string | null;
   readonly emptySelection: boolean;
+  /** The panel the view shows instead of matches: no matches (with Clear filters), or, for issues, none on the board. */
+  readonly emptyPanel: StatePanelView | null;
 }
 
 /** One task of the selected story (s4): its result, and its dependencies and checks from the story's PLAN. */

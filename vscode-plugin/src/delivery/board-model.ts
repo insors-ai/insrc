@@ -17,7 +17,7 @@
  * derived here. The same arguments always give an equal model.
  */
 
-import type { BadgeView, BoardViewModel, CardView, ColumnView } from './board-protocol.js';
+import type { BadgeView, BoardViewModel, CardView, ColumnView, StatePanelView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
 import { approvalTone, labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
@@ -265,6 +265,13 @@ export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<Deliv
   return out;
 }
 
+/** The panel a view shows when its selection matches nothing, or (issues only) when the board has no issues. */
+export function selectionPanel(kind: 'no-matches' | 'no-issues', labels: DisplayLabels): StatePanelView {
+  return kind === 'no-matches'
+    ? { kind, title: labels.noMatchesTitle, text: labels.noMatchesText, action: 'clear-filters', stale: false, affected: [] }
+    : { kind, title: labels.noIssuesTitle, text: labels.noIssuesText, action: null, stale: false, affected: [] };
+}
+
 export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: BoardSelection, paging: BoardPaging, labels: DisplayLabels): BoardViewModel {
   const matches = selectMatches(snapshot, selection, labels);
   const byStage = groupByStage(matches);
@@ -280,5 +287,6 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
     totals: { items, needsAttention },
     scopeOptions: scopeOptionsOf(snapshot),
     emptySelection: placeableCount(snapshot) > 0 && items === 0,
+    emptyPanel: placeableCount(snapshot) > 0 && items === 0 ? selectionPanel('no-matches', labels) : null,
   };
 }

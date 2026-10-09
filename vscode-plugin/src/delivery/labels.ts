@@ -34,6 +34,10 @@ export interface DisplayLabels {
   readonly conflictHeadline: string;
   /** The title of the panel shown when a view's selection matches nothing. */
   readonly noMatchesTitle: string;
+  readonly noMatchesText: string;
+  /** The panel of an issue view over a board that has no issues at all (nothing is filtered out). */
+  readonly noIssuesTitle: string;
+  readonly noIssuesText: string;
 }
 
 /** A label from the table, or the code itself when the daemon publishes one this build does not know. */
@@ -106,4 +110,7 @@ export const DISPLAY_LABELS: DisplayLabels = {
   chain: { notRecorded: 'Not recorded' },
   conflictHeadline: 'Two records disagree',
   noMatchesTitle: 'Nothing matches this view',
+  noMatchesText: 'Work exists, but none matches the current search, scope and attention filter.',
+  noIssuesTitle: 'No issues on the board',
+  noIssuesText: 'There are no issues on the board.',
 };

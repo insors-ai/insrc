@@ -66,4 +66,5 @@ test('DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTi
   assert.equal(DISPLAY_LABELS.chain.notRecorded, 'Not recorded');
   assert.equal(DISPLAY_LABELS.conflictHeadline, 'Two records disagree');
   assert.equal(DISPLAY_LABELS.noMatchesTitle, 'Nothing matches this view');
+  for (const k of ['noMatchesText', 'noIssuesTitle', 'noIssuesText'] as const) assert.ok(DISPLAY_LABELS[k].length > 0, k);
 });

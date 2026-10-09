@@ -10,7 +10,7 @@
  * board. Pure and vscode-free.
  */
 
-import { attentionCount, compactIdOf, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectMatches, titleOf, type MatchedCard } from './board-model.js';
+import { attentionCount, compactIdOf, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectionPanel, selectMatches, titleOf, type MatchedCard } from './board-model.js';
 import type { EpicRollupRowView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
@@ -93,6 +93,7 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSele
     scopeOptions: scopeOptionsOf(snapshot),
     selectedItemId: selection.selectedItemId,
     emptySelection: placeableCount(snapshot) > 0 && matches.length === 0,
+    emptyPanel: placeableCount(snapshot) > 0 && matches.length === 0 ? selectionPanel('no-matches', labels) : null,
   };
 }
 
@@ -143,5 +144,7 @@ export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelec
     selectedItemId: selection.selectedItemId,
     // 'Nothing matches' only when there are issues to match: a board with no issues is not an empty selection.
     emptySelection: issues.length === 0 && snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)),
+    emptyPanel: issues.length > 0 ? null
+      : snapshot.items.some(i => i.kind === 'issue' && isPlaceable(i)) ? selectionPanel('no-matches', labels) : selectionPanel('no-issues', labels),
   };
 }

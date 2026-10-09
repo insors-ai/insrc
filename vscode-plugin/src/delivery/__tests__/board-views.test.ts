@@ -238,3 +238,16 @@ test('an epic row\'s compactId is the epic\'s compact id and the \'Not in an epi
   ]);
   assert.equal(m.notInEpic.compactId, null);
 });
+
+test('each view carries the panel it shows instead of matches, with its text from DisplayLabels', () => {
+  const snap = snapshot([item({ id: 'E1', kind: 'epic' }), item({ id: 'E1:S001', parentId: 'E1' })]);
+  const noMatch = { kind: 'no-matches', title: DISPLAY_LABELS.noMatchesTitle, text: DISPLAY_LABELS.noMatchesText, action: 'clear-filters', stale: false, affected: [] };
+  assert.deepEqual(buildBoardViewModel(snap, sel({ search: 'zzz' }), {}, DISPLAY_LABELS).emptyPanel, noMatch);
+  assert.deepEqual(rollup(snap, { search: 'zzz' }).emptyPanel, noMatch);
+  assert.equal(rollup(snap).emptyPanel, null);
+  assert.deepEqual(issues(snap).emptyPanel, { kind: 'no-issues', title: DISPLAY_LABELS.noIssuesTitle, text: DISPLAY_LABELS.noIssuesText, action: null, stale: false, affected: [] },
+    'a board with no issues says so, with no Clear filters');
+  const withIssue = snapshot([item({ id: 'I1', kind: 'issue', standalone: true })]);
+  assert.deepEqual(issues(withIssue, { search: 'zzz' }).emptyPanel, noMatch);
+  assert.equal(issues(withIssue).emptyPanel, null);
+});

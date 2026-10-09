@@ -12,7 +12,7 @@ import { BOARD_PAGE_SIZE, buildBoardViewModel, compactIdOf, placeableCount, sele
 import type { BoardViewModel } from '../board-protocol.js';
 import { INITIAL_SELECTION, type BoardSelection } from '../board-state.js';
 import { DISPLAY_LABELS, STAGE_ORDER } from '../labels.js';
-import { item, snapshot } from './board-fixtures.js';
+import { evidence as fixtureEvidence, item, snapshot } from './board-fixtures.js';
 
 const build = (snap: ReturnType<typeof snapshot>, selection: Partial<BoardSelection> = {}, paging: BoardPaging = {}): BoardViewModel =>
   buildBoardViewModel(snap, { ...INITIAL_SELECTION, ...selection }, paging, DISPLAY_LABELS);
@@ -126,7 +126,7 @@ test('unknownStages counts every stage id outside the six, and those items are i
 });
 
 const ev = (artifactId: string, state: 'approved' | 'rejected' | 'pending', review: unknown = null) =>
-  ({ artifactId, kind: 'LLD', mdPath: null, openWith: 'review-view', approval: { state, at: null }, review, reviewCurrency: null });
+  fixtureEvidence(artifactId, 'LLD', { openWith: 'review-view', approval: { state, at: null }, review: review as never });
 const review = (effectiveVerdict: 'pass' | 'warn' | 'block', blocking: boolean) =>
   ({ verdict: effectiveVerdict, reviewedAt: '', reviewedBy: 'daemon', counts: { high: 0, med: 0, low: 0 }, override: null, resolvedFindings: 0, effectiveVerdict, blocking });
 const cardOfId = (m: BoardViewModel, id: string) => m.columns.flatMap(c => c.cards).find(c => c.itemId === id);
@@ -252,9 +252,9 @@ test('accessibleLabel carries the compactId and task summary, and badges are unc
 });
 
 test('an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label', () => {
-  const evOf = (artifactId: string, state: string, verdict: string | null) => ({
-    artifactId, kind: 'LLD', mdPath: null, openWith: 'evidence-read', approval: { state, at: null }, reviewCurrency: null,
-    review: verdict === null ? null : { verdict, effectiveVerdict: verdict, blocking: false, override: null },
+  const evOf = (artifactId: string, state: string, verdict: string | null) => fixtureEvidence(artifactId, 'LLD', {
+    approval: { state: state as never, at: null },
+    review: verdict === null ? null : { ...review('pass', false), verdict: verdict as never, effectiveVerdict: verdict as never },
   });
   const s1 = item({ id: 'S1', stage: 'design-plan', reasonIds: ['A', 'B'],
     evidence: [evOf('A', 'approved', 'pass'), evOf('B', 'superseded', 'escalated')] as never });

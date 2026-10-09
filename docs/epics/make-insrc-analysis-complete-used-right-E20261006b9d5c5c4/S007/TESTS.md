@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 34 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -151,3 +151,34 @@ Run at 2026-10-09T05:51:37.184Z on commit `1603be22`. Tests check: **passed**. 6
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 2 | 0.4 s |  |
 | `src/analyze/runtimes/data/__tests__/data-runtimes.test.ts` | 0 | 19 | 0.8 s |  |
 | `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 1.4 s |  |
+
+## t5
+
+Run at 2026-10-09T06:23:32.912Z on commit `5726792b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` |
+
+**integration: the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused | `src/analyze/runtimes/code/__tests__/scope-area.test.ts` |
+| pass | an adherence check whose model call fails is recorded by the walk as a failed task | `src/analyze/runtimes/__tests__/dropped-or-failed.test.ts` |
+
+**unit: the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path | `src/analyze/runtimes/__tests__/scope-sources.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/dropped-or-failed.test.ts` | 0 | 3 | 0.9 s |  |
+| `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 3 | 0.4 s |  |
+| `src/analyze/runtimes/code/__tests__/scope-area.test.ts` | 0 | 2 | 0.8 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T05:51:37.184Z"
+    "updatedAt": "2026-10-09T06:23:32.912Z"
   },
   "body": {
     "tasks": [
@@ -845,6 +845,119 @@
               },
               {
                 "title": "inventory runtimes: empty scope yields well-formed empty inventories, no throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5726792b",
+        "ranAt": "2026-10-09T06:23:32.912Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+                "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+                "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/dropped-or-failed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 915,
+            "titles": [
+              {
+                "title": "the count of catch clauses in the runtime files equals the number of classified entries",
+                "result": "pass"
+              },
+              {
+                "title": "an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)",
+                "result": "pass"
+              },
+              {
+                "title": "an adherence check whose model call fails is recorded by the walk as a failed task",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 375,
+            "titles": [
+              {
+                "title": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path",
+                "result": "pass"
+              },
+              {
+                "title": "the unrelated resolveRepoPath under src/mcp is untouched",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/code/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 786,
+            "titles": [
+              {
+                "title": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity",
+                "result": "pass"
+              },
+              {
+                "title": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused",
                 "result": "pass"
               }
             ],

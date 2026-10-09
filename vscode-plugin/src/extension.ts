@@ -642,7 +642,7 @@ export function activate(context: vscode.ExtensionContext): void {
     createWebviewPanel: (viewType, title) =>
       vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true }),
     rpc: client.rpc,
-    repo: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
+    repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
     logger: { warn: panelLog.warn, error: (message: string): void => console.error(`[insrc] ${message}`) },
   });
 

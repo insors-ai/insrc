@@ -11,6 +11,8 @@
  * behaviour is tested with fakes.
  */
 
+import { randomBytes } from 'node:crypto';
+
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
 import type { CommandRegistry } from '../surfaces/command-registry.js';
 import type { DisposableSink } from '../surfaces/types.js';
@@ -35,8 +37,8 @@ export interface DeliveryBoardWiringDeps {
   /** vscode.window.createWebviewPanel in the active editor column, scripts enabled. */
   readonly createWebviewPanel: (viewType: string, title: string) => BoardWebviewPanel;
   readonly rpc: DeliveryClientDeps['rpc'];
-  /** The first workspace folder's path, or null without one. */
-  readonly repo: string | null;
+  /** The first workspace folder's path at the time of the call, or null without one. */
+  readonly repo: () => string | null;
   readonly logger: ChatPanelLogger;
 }
 
@@ -64,12 +66,17 @@ function panelChannel(panel: BoardWebviewPanel): ChatPanelChannel {
 }
 
 export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): void {
+  const clientNow = () => createDeliveryClient({ rpc: deps.rpc, repo: deps.repo(), deadlinesMs: DELIVERY_DEADLINES_MS });
   const host = createDeliveryBoardHost({
     createPanel: ({ viewType, title }) => panelChannel(deps.createWebviewPanel(viewType, title)),
-    client: createDeliveryClient({ rpc: deps.rpc, repo: deps.repo, deadlinesMs: DELIVERY_DEADLINES_MS }),
+    // A client per call, so each request reads the workspace folder as it is now.
+    client: {
+      snapshot: () => clientNow().snapshot(),
+      evidence: (artifactId) => clientNow().evidence(artifactId),
+    },
     logger: deps.logger,
     now: () => new Date().toISOString(),
-    genNonce: () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`,
+    genNonce: () => randomBytes(16).toString('base64'),
   });
   deps.subscriptions.push({ dispose: () => host.dispose() });
   deps.commands.register({ id: 'insrc.delivery.openBoard', title: 'insrc: Open delivery board' }, async () => {

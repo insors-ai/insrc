@@ -70,7 +70,7 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   assert.ok(call >= 0 && (call < gateStart || call >= gateEnd), 'registerDeliveryBoard is called outside the chat gate');
   const args = EXT.slice(call, EXT.indexOf('});', call));
   assert.match(args, /rpc: client\.rpc/);
-  assert.match(args, /repo: vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null/);
+  assert.match(args, /repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null/);
   assert.match(args, /warn: panelLog\.warn, error: .*console\.error/);
   assert.match(args, /vscode\.ViewColumn\.Active, \{ enableScripts: true \}/);
 
@@ -81,6 +81,7 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   const panels: { viewType: string; title: string; panel: FakePanel }[] = [];
   const rpcCalls: { method: string; params: unknown }[] = [];
   const logs = { warn: [] as string[], error: [] as string[] };
+  let repo: string | null = '/ws';
   registerDeliveryBoard({
     commands,
     subscriptions: { push: (d) => disposables.push(d as { dispose(): void }) },
@@ -89,7 +90,7 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
       rpcCalls.push({ method, params });
       throw new Error('daemon is not running — start it with: insrc daemon start');
     }) as never,
-    repo: '/ws',
+    repo: () => repo,
     logger: { warn: m => logs.warn.push(m), error: m => logs.error.push(m) },
   });
   const open = handlers.get('insrc.delivery.openBoard');
@@ -100,6 +101,8 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   assert.deepEqual(panels.map(p => [p.viewType, p.title]), [['insrc.deliveryBoard', 'Delivery board']]);
   const first = panels[0]!.panel;
   assert.match(first.webview.html, /default-src 'none'/);
+  const nonce = /script-src 'nonce-([^']+)'/.exec(first.webview.html)?.[1] ?? '';
+  assert.match(nonce, /^[A-Za-z0-9+/]{22}==$/, 'the nonce is 16 random bytes, base64');
   assert.deepEqual(rpcCalls, [{ method: 'workflow.delivery', params: { repo: '/ws' } }], 'the client is scoped to the workspace folder');
   const states = first.posted.map(m => (m as { payload: { type: string; status?: { state: string } } }).payload).filter(p => p.type === 'status').map(p => p.status?.state);
   assert.deepEqual(states, ['loading', 'unavailable']);
@@ -111,6 +114,11 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   assert.equal(panels.length, 1, 'a second run reveals the same panel');
   assert.equal(first.reveals, 1);
   assert.equal(rpcCalls.length, 2, 'and refreshes');
+
+  repo = '/other';
+  await open();
+  await flush();
+  assert.deepEqual(rpcCalls[2], { method: 'workflow.delivery', params: { repo: '/other' } }, 'each refresh reads the workspace folder as it is now');
 
   assert.equal(disposables.length, 1);
   disposables[0]!.dispose();

@@ -114,6 +114,9 @@ export function createDeliveryClient(deps: DeliveryClientDeps): DeliveryClient {
       if (r.value['schemaVersion'] !== 1) {
         return fail('read-failed', `The daemon returned delivery snapshot schemaVersion ${String(r.value['schemaVersion'])}; this board reads schemaVersion 1.`);
       }
+      for (const field of ['items', 'rootIds', 'notices'] as const) {
+        if (!Array.isArray(r.value[field])) return fail('read-failed', `The daemon returned a delivery snapshot whose ${field} is not a list.`);
+      }
       return { ok: true, value: r.value as unknown as DeliverySnapshot };
     },
 

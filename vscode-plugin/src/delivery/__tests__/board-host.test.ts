@@ -127,6 +127,15 @@ test('when the earlier refresh answers after the later one, only the later snaps
   assert.equal(logs.error.length, 1, 'a failed refresh is logged through error()');
   assert.match(logs.error[0]!, /refresh 3 timed-out/);
   assert.deepEqual(lastItems(ch), ['new'], 'the last board stays shown');
+
+  // A client that throws instead of returning a typed failure still ends the refresh.
+  calls.length = 0;
+  ch.send({ v: 1, payload: { type: 'refresh' } });
+  (calls[0] as unknown as { resolve(v: unknown): void }).resolve(Promise.reject(new Error('socket exploded')));
+  await flush();
+  const status = payloads(ch).filter(p => p.type === 'status').at(-1);
+  assert.equal(status?.type === 'status' ? status.status.state : null, 'failed', 'not stuck on loading');
+  assert.match(status?.type === 'status' ? status.status.message ?? '' : '', /socket exploded/);
 });
 
 test('an answer or timeout that arrives after the panel is closed is neither posted nor logged', async () => {

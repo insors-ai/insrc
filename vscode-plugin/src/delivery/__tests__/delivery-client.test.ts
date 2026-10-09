@@ -59,6 +59,8 @@ test('the client classifies a missing workspace, a stopped daemon, a daemon erro
   assert.equal(await kindOf(async () => { throw new Error('Unknown method: workflow.delivery'); }), 'read-failed', 'an older daemon without the method');
   assert.equal(await kindOf(async () => ({ error: 'workflow.delivery: delivery: artifact store cannot be read' })), 'read-failed', "the daemon's { error } arm");
   assert.equal(await kindOf(async () => ({ ...SNAPSHOT, schemaVersion: 2 })), 'read-failed');
+  assert.equal(await kindOf(async () => ({ ...SNAPSHOT, items: undefined })), 'read-failed', 'a schemaVersion-1 answer without an items list');
+  assert.equal(await kindOf(async () => ({ ...SNAPSHOT, notices: 'x' })), 'read-failed');
   assert.equal(await kindOf(async () => 'not an object'), 'read-failed');
   assert.equal(await kindOf(async () => SNAPSHOT), 'ok');
 

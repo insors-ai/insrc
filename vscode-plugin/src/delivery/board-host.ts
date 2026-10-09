@@ -23,7 +23,8 @@
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
 import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import { boardDownMessages, initialBoardState, reduceBoardState, type BoardEvent, type BoardState } from './board-state.js';
-import type { DeliveryClient } from './delivery-client.js';
+import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
+import type { DeliverySnapshot } from './delivery-contract.js';
 import { DISPLAY_LABELS } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
@@ -114,7 +115,11 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const seq = ++nextSeq;
     const started = deps.now();
     dispatch({ type: 'refresh-requested', seq });
-    const result = await deps.client.snapshot();
+    // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
+    const result: DeliveryResult<DeliverySnapshot> = await deps.client.snapshot().catch((err: unknown) => ({
+      ok: false as const,
+      failure: { kind: 'read-failed' as const, message: err instanceof Error ? err.message : String(err) },
+    }));
     if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
     const at = deps.now();
     if (seq !== state.latestSeq) {
@@ -126,7 +131,14 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (!result.ok) {
       deps.logger.error(`delivery board: refresh ${seq} ${result.failure.kind} after ${elapsedMs(started)} ms: ${result.failure.message}`);
     }
-    dispatch({ type: 'snapshot-arrived', seq, result, at });
+    try {
+      dispatch({ type: 'snapshot-arrived', seq, result, at });
+    } catch (err) {
+      // A malformed snapshot that slipped past the client: show it as a failed refresh rather than a frozen board.
+      const message = err instanceof Error ? err.message : String(err);
+      deps.logger.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
+      dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });
+    }
   }
 
   function handle(msg: BoardUpMessage): void {

@@ -21,8 +21,8 @@
  * not one of the six are logged once per applied refresh.
  *
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
- * renders the status and the s1 item list as text (textContent only) and posts
- * only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ * renders the status and the board's columns, cards and controls as text
+ * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
  */
 
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
@@ -61,30 +61,57 @@ function attr(v: string): string {
 
 /**
  * The webview script. Everything shown is set with textContent, and the only
- * messages posted are the 'ready' and 'refresh' board up-messages.
+ * messages posted are board up-messages: ready, refresh, set-search,
+ * set-scope, set-attention and show-more.
  */
-export const BOARD_WEBVIEW_SCRIPT =
-  `(function(){` +
-  `const vs=acquireVsCodeApi();` +
-  `const send=function(p){vs.postMessage({v:1,payload:p});};` +
-  `const status=document.getElementById('status');` +
-  `const notice=document.getElementById('notice');` +
-  `const list=document.getElementById('items');` +
-  `document.getElementById('refresh').addEventListener('click',function(){send({type:'refresh'});});` +
-  `window.addEventListener('message',function(e){` +
-  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;` +
-  `if(p.type==='status'){const s=p.status;` +
-  `const parts=[];if(s.message)parts.push(s.message);else parts.push(s.state==='ready'?'Up to date.':s.state);` +
-  `if(s.takenAt)parts.push('Snapshot taken at '+s.takenAt+(s.stale?' (stale).':'.'));` +
-  `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);` +
-  `notice.textContent=s.partialNotice||'';return;}` +
-  `if(p.type==='items'){while(list.firstChild)list.removeChild(list.firstChild);` +
-  `for(const it of p.items){const li=document.createElement('li');` +
-  `li.textContent=it.kind+' \\u00b7 '+(it.title===null?it.itemId:it.title)+(it.stageLabel===null?'':' \\u00b7 '+it.stageLabel);` +
-  `li.setAttribute('data-item-id',it.itemId);list.appendChild(li);}return;}` +
-  `});` +
-  `send({type:'ready'});` +
-  `})();`;
+export const BOARD_WEBVIEW_SCRIPT = [
+  `(function(){`,
+  `const vs=acquireVsCodeApi();`,
+  `const send=function(p){vs.postMessage({v:1,payload:p});};`,
+  `const byId=function(id){return document.getElementById(id);};`,
+  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty');`,
+  `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
+  `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
+  `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
+  `const KIND={story:'Story',issue:'Issue'};`,
+  `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
+  `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
+  `attention.addEventListener('change',function(){send({type:'set-attention',on:attention.checked===true});});`,
+  `scope.addEventListener('change',function(){const v=String(scope.value);`,
+  `send({type:'set-scope',scope:v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)}});});`,
+  // The scope options are rebuilt from each board; the reader's current choice is kept.
+  `function renderScope(options){const current=String(scope.value||'all');clear(scope);`,
+  `const add=function(value,text){const o=make('option',text);o.value=value;scope.appendChild(o);};`,
+  `add('all','All work');add('standalone','Standalone');`,
+  `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
+  `scope.value=current;}`,
+  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);`,
+  `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
+  `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
+  `const badges=make('ul',undefined,'badges');`,
+  `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
+  `li.appendChild(badges);return li;}`,
+  `function renderBoard(m){renderScope(m.scopeOptions);clear(board);`,
+  `totals.textContent=m.totals.items+' item'+(m.totals.items===1?'':'s')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
+  `sec.appendChild(make('h2',col.label+' ('+col.total+')'));`,
+  `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
+  `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
+  `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
+  `board.appendChild(sec);}`,
+  `empty.textContent=m.emptySelection?'Nothing on the board matches the search and filters.':'';}`,
+  `window.addEventListener('message',function(e){`,
+  `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
+  `if(p.type==='status'){const s=p.status;`,
+  `const parts=[];if(s.message)parts.push(s.message);else parts.push(s.state==='ready'?'Up to date.':s.state);`,
+  `if(s.takenAt)parts.push('Snapshot taken at '+s.takenAt+(s.stale?' (stale).':'.'));`,
+  `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);`,
+  `notice.textContent=s.partialNotice||'';return;}`,
+  `if(p.type==='board'){renderBoard(p.model);return;}`,
+  `});`,
+  `send({type:'ready'});`,
+  `})();`,
+].join('');
 
 export function renderBoardDocument(nonce: string): string {
   const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
@@ -95,7 +122,14 @@ export function renderBoardDocument(nonce: string): string {
     `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
     `<p id="status" role="status" aria-live="polite"></p>` +
     `<p id="notice"></p>` +
-    `<ul id="items" aria-label="Work items"></ul>` +
+    `<div class="controls">` +
+    `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
+    `<select id="scope" aria-label="Scope"><option value="all">All work</option></select>` +
+    `<label><input id="attention" type="checkbox"> Needs attention</label>` +
+    `</div>` +
+    `<p id="totals"></p>` +
+    `<p id="empty"></p>` +
+    `<div id="board" class="board"></div>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }

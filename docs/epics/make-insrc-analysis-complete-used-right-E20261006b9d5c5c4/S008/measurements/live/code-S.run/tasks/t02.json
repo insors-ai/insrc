@@ -1,0 +1,2625 @@
+{
+	"taskId": "t02",
+	"template": "code.discovery.entrypoints",
+	"kind": "leaf",
+	"produces": [
+		"entrypoints"
+	],
+	"status": "ok",
+	"outputs": {
+		"entrypoints": [
+			{
+				"name": "ClassifierLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 69,
+				"endLine": 76,
+				"language": "typescript",
+				"entityId": "f9992e75574e13e44fb60a35f52b5290"
+			},
+			{
+				"name": "ClassifierSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 78,
+				"endLine": 83,
+				"language": "typescript",
+				"entityId": "c81e03772a76273c80d7eb3c47a74b52"
+			},
+			{
+				"name": "ClassifierValidationExhausted",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 85,
+				"endLine": 96,
+				"language": "typescript",
+				"entityId": "ae9b6d5bb6218826d7d8502d40d73bc0"
+			},
+			{
+				"name": "ClassifierPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 98,
+				"endLine": 103,
+				"language": "typescript",
+				"entityId": "6a05eac45cf7b2cac0b0ad37e13d0f9d"
+			},
+			{
+				"name": "connectionCheckFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 121,
+				"endLine": 125,
+				"language": "typescript",
+				"signature": "connectionCheckFor(\n\targs: Pick<ClassifyDriverArgs, 'connectionExists'>,\n): (id: string) => Promise<boolean>",
+				"entityId": "e6d9dab97ae220004bd498dbc7491bdd"
+			},
+			{
+				"name": "classify",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/driver.ts",
+				"startLine": 127,
+				"endLine": 203,
+				"language": "typescript",
+				"signature": "classify(args: ClassifyDriverArgs): Promise<ClassifiedIntent>",
+				"entityId": "4f0ffb9c8d4ff8920e8d68def35937b0"
+			},
+			{
+				"name": "validateIntentShape",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+				"startLine": 86,
+				"endLine": 89,
+				"language": "typescript",
+				"signature": "validateIntentShape(value: unknown): value is ClassifiedIntent",
+				"entityId": "3cf45d06681ea27b4cf5fe4f8558a5fa"
+			},
+			{
+				"name": "validateIntentShapeWithErrors",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/schema.ts",
+				"startLine": 91,
+				"endLine": 99,
+				"language": "typescript",
+				"signature": "validateIntentShapeWithErrors(value: unknown): IntentValidationResult",
+				"entityId": "fd78ed084bc4e9a36367f4f511582b37"
+			},
+			{
+				"name": "ScopePickerLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+				"startLine": 82,
+				"endLine": 89,
+				"language": "typescript",
+				"entityId": "d5a26778de265e3c16d5d76865184af1"
+			},
+			{
+				"name": "ScopePickerSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+				"startLine": 91,
+				"endLine": 96,
+				"language": "typescript",
+				"entityId": "4457ccb10d475753c4cb40975925297f"
+			},
+			{
+				"name": "ScopePickerPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+				"startLine": 98,
+				"endLine": 103,
+				"language": "typescript",
+				"entityId": "f0017277d61fe417a181c02330596433"
+			},
+			{
+				"name": "pickScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/scope-picker.ts",
+				"startLine": 124,
+				"endLine": 179,
+				"language": "typescript",
+				"signature": "pickScope(args: PickScopeArgs): Promise<PickScopeResult>",
+				"entityId": "fb836cba3c96f50c1bbcc0715ddadc74"
+			},
+			{
+				"name": "validateIntentSemantics",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+				"startLine": 91,
+				"endLine": 102,
+				"language": "typescript",
+				"signature": "validateIntentSemantics(\n\tintent: ClassifiedIntent,\n\tconnectionExists?: (id: string) => Promise<boolean>,\n): Promise<ValidationFailure | null>",
+				"entityId": "32dbeee4001fa732a4cf93601f63d360"
+			},
+			{
+				"name": "isKindCompatibleWithTarget",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/validate.ts",
+				"startLine": 105,
+				"endLine": 111,
+				"language": "typescript",
+				"signature": "isKindCompatibleWithTarget(\n\ttarget: AnalyzeTarget,\n\tkind:   AnalyzeScopeRef['kind'],\n): boolean",
+				"entityId": "038d741743d56f700052b1c10cf279a4"
+			},
+			{
+				"name": "isCompletenessRecord",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 72,
+				"endLine": 79,
+				"language": "typescript",
+				"signature": "isCompletenessRecord(v: unknown): v is Completeness",
+				"entityId": "89503b168ef40a42523806340626fd9a"
+			},
+			{
+				"name": "buildCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 109,
+				"endLine": 163,
+				"language": "typescript",
+				"signature": "buildCompleteness(facts: CompletenessFacts): Completeness",
+				"entityId": "4b50134ef6c7b6282dac2e6b0e40590b"
+			},
+			{
+				"name": "isAnswerReport",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 191,
+				"endLine": 197,
+				"language": "typescript",
+				"signature": "isAnswerReport(v: unknown): v is AnswerReport",
+				"entityId": "4ef1860ae170ced23a9cc0def3712236"
+			},
+			{
+				"name": "deriveAnswerReport",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 244,
+				"endLine": 274,
+				"language": "typescript",
+				"signature": "deriveAnswerReport(sources: readonly ReportSource[]): AnswerReport",
+				"entityId": "c5c9978e36168b29df61b69e686d3c6f"
+			},
+			{
+				"name": "renderCompletenessLine",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 281,
+				"endLine": 295,
+				"language": "typescript",
+				"signature": "renderCompletenessLine(report: AnswerReport): string",
+				"entityId": "8aee96b0f18f3fa1234a5c4776227a94"
+			},
+			{
+				"name": "mergeAnswerReports",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 317,
+				"endLine": 333,
+				"language": "typescript",
+				"signature": "mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix = ''): AnswerReport",
+				"entityId": "cf2e6ac4345820617b05ddec61536072"
+			},
+			{
+				"name": "completenessHeadLine",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/completeness.ts",
+				"startLine": 345,
+				"endLine": 351,
+				"language": "typescript",
+				"signature": "completenessHeadLine(\n\treport: AnswerReport | undefined,\n\twhenAbsent: 'say-not-recorded' | 'nothing',\n): string | undefined",
+				"entityId": "ac36cac5e90bfab199a01fc5e33b3373"
+			},
+			{
+				"name": "setupFixtures",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures/setup.ts",
+				"startLine": 55,
+				"endLine": 58,
+				"language": "typescript",
+				"signature": "setupFixtures(): FixtureSet",
+				"entityId": "f2703730e0deb40e7b6418587732d2bb"
+			},
+			{
+				"name": "setupFixturesAt",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures/setup.ts",
+				"startLine": 61,
+				"endLine": 80,
+				"language": "typescript",
+				"signature": "setupFixturesAt(root: string): FixtureSet",
+				"entityId": "69c1115ec6df29a985c5cc21b17117a8"
+			},
+			{
+				"name": "teardownFixtures",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures/setup.ts",
+				"startLine": 82,
+				"endLine": 84,
+				"language": "typescript",
+				"signature": "teardownFixtures(fixtures: FixtureSet): void",
+				"entityId": "26b1b50c66043119be8c4faa329179a0"
+			},
+			{
+				"name": "AnalyzePromptValidationError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/boot-validator.ts",
+				"startLine": 74,
+				"endLine": 88,
+				"language": "typescript",
+				"entityId": "4afe30adcdf2a11f52b2fb3b4314068e"
+			},
+			{
+				"name": "validateAnalyzePrompts",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/boot-validator.ts",
+				"startLine": 141,
+				"endLine": 186,
+				"language": "typescript",
+				"signature": "validateAnalyzePrompts(): void",
+				"entityId": "7458aaaf8ef0385b071523e6ac26e69a"
+			},
+			{
+				"name": "omitEmpty",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/bundle.ts",
+				"startLine": 72,
+				"endLine": 77,
+				"language": "typescript",
+				"signature": "omitEmpty(label: string, body: string): string",
+				"entityId": "8c30dfd6db37417b27f6c8aa91a08ab9"
+			},
+			{
+				"name": "assembleMarkdown",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/bundle.ts",
+				"startLine": 88,
+				"endLine": 117,
+				"language": "typescript",
+				"signature": "assembleMarkdown(bundle: AnalyzeContextBundle): string",
+				"entityId": "3f59876744a0af368887114ac67e44d0"
+			},
+			{
+				"name": "cacheFilePathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/cache.ts",
+				"startLine": 71,
+				"endLine": 83,
+				"language": "typescript",
+				"signature": "cacheFilePathFor(runId: string, key: CacheKey): string",
+				"entityId": "e789c1a79cd3e33230130bac5c24a465"
+			},
+			{
+				"name": "readBundle",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/cache.ts",
+				"startLine": 106,
+				"endLine": 169,
+				"language": "typescript",
+				"signature": "readBundle(\n\trunId: string,\n\tkey:   CacheKey,\n\topts:  ShapeOpts,\n\tcurrentLastIndexedAt?: number,\n): AnalyzeContextBundle | null",
+				"entityId": "7fec1706b6278ff8bb9a6737e93f3740"
+			},
+			{
+				"name": "isStaleByIndexer",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/cache.ts",
+				"startLine": 187,
+				"endLine": 196,
+				"language": "typescript",
+				"signature": "isStaleByIndexer(\n\tbundle: AnalyzeContextBundle,\n\tcurrentLastIndexedAt: number,\n): boolean",
+				"entityId": "3b5f634006718b82f18b5159341c7556"
+			},
+			{
+				"name": "writeBundle",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/cache.ts",
+				"startLine": 204,
+				"endLine": 221,
+				"language": "typescript",
+				"signature": "writeBundle(\n\trunId:  string,\n\tkey:    CacheKey,\n\tbundle: AnalyzeContextBundle,\n): void",
+				"entityId": "3c48ff9ef7cea29534917e3714e83ae2"
+			},
+			{
+				"name": "invalidateBundle",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/cache.ts",
+				"startLine": 228,
+				"endLine": 230,
+				"language": "typescript",
+				"signature": "invalidateBundle(runId: string, key: CacheKey): void",
+				"entityId": "1e3f9fdd51da44ba4563acfa57b8ceae"
+			},
+			{
+				"name": "DecomposerLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 57,
+				"endLine": 68,
+				"language": "typescript",
+				"entityId": "c281070883bf4fef7281b6fcd60e4bf6"
+			},
+			{
+				"name": "DecomposerSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 70,
+				"endLine": 75,
+				"language": "typescript",
+				"entityId": "e981f1dfee91fa243051d51d968da116"
+			},
+			{
+				"name": "DecomposerPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 77,
+				"endLine": 85,
+				"language": "typescript",
+				"entityId": "a0fb19abfe1b02b852f9fd7208bee84d"
+			},
+			{
+				"name": "decompose",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 169,
+				"endLine": 220,
+				"language": "typescript",
+				"signature": "decompose(args: DecomposeArgs): Promise<ExplorationPlan>",
+				"entityId": "abc4693bbb531211477b22c839f9998e"
+			},
+			{
+				"name": "prepareDecompose",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 248,
+				"endLine": 256,
+				"language": "typescript",
+				"signature": "prepareDecompose(intent: ClassifiedIntent, scope: ResolvedScope): DecomposePrepared",
+				"entityId": "94a78830faf5c5ab06e0fec5c2105b42"
+			},
+			{
+				"name": "finalizeDecompose",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/decomposer.ts",
+				"startLine": 266,
+				"endLine": 281,
+				"language": "typescript",
+				"signature": "finalizeDecompose(raw: unknown): ExplorationPlan",
+				"entityId": "161f8e81688af6082245258745f6d041"
+			},
+			{
+				"name": "ShaperLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 148,
+				"endLine": 163,
+				"language": "typescript",
+				"entityId": "5cadd0fbe407560745081d8ceadc77b7"
+			},
+			{
+				"name": "toolOutputText",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 170,
+				"endLine": 177,
+				"language": "typescript",
+				"signature": "toolOutputText(output: unknown): string",
+				"entityId": "b62f397a6850f13f9fe0bdfa68950857"
+			},
+			{
+				"name": "ShaperToolLoopExhausted",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 188,
+				"endLine": 210,
+				"language": "typescript",
+				"entityId": "bb351a9aca5f20f5d6a03d5a7fb89213"
+			},
+			{
+				"name": "toolLoopExhausted",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 216,
+				"endLine": 218,
+				"language": "typescript",
+				"signature": "toolLoopExhausted(turns: number, toolResults: readonly PartialFinding[]): ShaperToolLoopExhausted",
+				"entityId": "976ce446e462d4c041a78133c14f2b96"
+			},
+			{
+				"name": "saveToolResults",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 225,
+				"endLine": 239,
+				"language": "typescript",
+				"signature": "saveToolResults(\n\ttoolResults: readonly PartialFinding[],\n\tdir: string = join(tmpdir(), 'insrc-analyze'),\n): SavedToolResults | undefined",
+				"entityId": "a335a7305ed9ebb5f2e71750e2dc456c"
+			},
+			{
+				"name": "toolLoopExhaustedData",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 246,
+				"endLine": 250,
+				"language": "typescript",
+				"signature": "toolLoopExhaustedData(err: ShaperToolLoopExhausted): Readonly<Record<string, unknown>>",
+				"entityId": "93bb958d2fb839929461fa0fbebfdc31"
+			},
+			{
+				"name": "ShaperSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 252,
+				"endLine": 260,
+				"language": "typescript",
+				"entityId": "418aca94cff6811789b4eb4b8d9718e9"
+			},
+			{
+				"name": "ShaperPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 262,
+				"endLine": 275,
+				"language": "typescript",
+				"entityId": "dbc73d6c59afb06a308f7023eb68eede"
+			},
+			{
+				"name": "ShaperInvalidInputError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 279,
+				"endLine": 284,
+				"language": "typescript",
+				"entityId": "3e5b24a9699adb2203df11a1e0463576"
+			},
+			{
+				"name": "ShaperNoPlanError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 287,
+				"endLine": 292,
+				"language": "typescript",
+				"entityId": "6cde92d648aac557b00e35719964ac51"
+			},
+			{
+				"name": "ShaperAnswerStepFailedError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 309,
+				"endLine": 320,
+				"language": "typescript",
+				"entityId": "a724e6cc86b6a6d4f14f1c37de14e066"
+			},
+			{
+				"name": "runShaper",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 326,
+				"endLine": 489,
+				"language": "typescript",
+				"signature": "runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle>",
+				"entityId": "6768732856df781ae78d433d188cf811"
+			},
+			{
+				"name": "runShaperToolLoop",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 700,
+				"endLine": 729,
+				"language": "typescript",
+				"signature": "runShaperToolLoop(\n\targs: RunShaperToolLoopArgs,\n): Promise<ShaperToolLoopResult>",
+				"entityId": "ae24aed36294ad38dfa6d08bfbceb99d"
+			},
+			{
+				"name": "_runToolLoopForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 737,
+				"endLine": 737,
+				"language": "typescript",
+				"signature": "_runToolLoopForTest(...a: Parameters<typeof runToolLoop>): ReturnType<typeof runToolLoop>",
+				"entityId": "533311b429641338dcf1e56b9470d761"
+			},
+			{
+				"name": "prepareScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 1101,
+				"endLine": 1112,
+				"language": "typescript",
+				"signature": "prepareScope(\n\tinvocationMode: ShaperMode,\n\tinputs:         RunShaperArgs['inputs'],\n\tdeps?:          ScopeDeps,\n): Promise<ResolvedScope>",
+				"entityId": "debb0aa4d813ba9eae7b14e1f40b235d"
+			},
+			{
+				"name": "resolveRepoLastIndexedAt",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 1132,
+				"endLine": 1161,
+				"language": "typescript",
+				"signature": "resolveRepoLastIndexedAt(scopePath: string): Promise<number | undefined>",
+				"entityId": "c2ea3c57fe4a10411a431c43ebb5af3d"
+			},
+			{
+				"name": "errorForPipelineCause",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 1236,
+				"endLine": 1274,
+				"language": "typescript",
+				"signature": "errorForPipelineCause(\n\tcause:   PipelineCause,\n\tmessage: string,\n\textra:   PipelineCauseExtra = {},\n): Error",
+				"entityId": "91870ef0b8e399d363baa895d83c3bda"
+			},
+			{
+				"name": "settlePipelineOutcome",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/driver.ts",
+				"startLine": 1283,
+				"endLine": 1297,
+				"language": "typescript",
+				"signature": "settlePipelineOutcome(\n\toutcome: PipelineOutcome,\n\tstamp:   (raw: BundleLayers, explorationCount: number, report: AnswerReport) => AnalyzeContextBundle,\n): { bundle: AnalyzeContextBundle; explorationCount: number } | null",
+				"entityId": "51218ceda268c9a14d6130c1fe94bd0d"
+			},
+			{
+				"name": "legacyShaperPromptPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/index.ts",
+				"startLine": 67,
+				"endLine": 71,
+				"language": "typescript",
+				"signature": "legacyShaperPromptPathFor(\n\tshaperId: 'code' | 'docs' | 'data' | 'infra' | 'generic',\n): string",
+				"entityId": "b8ba7e47a2b48e106449e87a524af2ab"
+			},
+			{
+				"name": "shaperFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/index.ts",
+				"startLine": 84,
+				"endLine": 148,
+				"language": "typescript",
+				"signature": "shaperFor(\n\tmode:    'classification' | 'run' | 'task',\n\ttarget?: RunTarget | TaskTarget,\n): ClassificationShaper | RunShaper | TaskShaper",
+				"entityId": "e64310d583a6f4e6df29c016df0832d9"
+			},
+			{
+				"name": "ScopeRefUnresolvedError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/invariants.ts",
+				"startLine": 49,
+				"endLine": 54,
+				"language": "typescript",
+				"entityId": "b238b035688df8fe83e6bf8414a48f79"
+			},
+			{
+				"name": "ScopeKindTargetMismatchError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/invariants.ts",
+				"startLine": 57,
+				"endLine": 65,
+				"language": "typescript",
+				"entityId": "13240c0c083a0732d32870e7c683a198"
+			},
+			{
+				"name": "ScopeNotIndexedError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/invariants.ts",
+				"startLine": 67,
+				"endLine": 85,
+				"language": "typescript",
+				"entityId": "cc357827e0f9078e8d3186faf38b552e"
+			},
+			{
+				"name": "scopeErrorMapping",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/invariants.ts",
+				"startLine": 105,
+				"endLine": 112,
+				"language": "typescript",
+				"signature": "scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined",
+				"entityId": "4609631edc3b36c7e8808548895dd3fe"
+			},
+			{
+				"name": "ensureNonEmptyClosure",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/invariants.ts",
+				"startLine": 140,
+				"endLine": 221,
+				"language": "typescript",
+				"signature": "ensureNonEmptyClosure(\n\tscope: ResolvedScope,\n\tdeps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'>,\n): Promise<string | undefined>",
+				"entityId": "56f2fc7f4764665d7dc382f566c5dbd4"
+			},
+			{
+				"name": "assembleLiveProjectContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/live-project-context.ts",
+				"startLine": 131,
+				"endLine": 291,
+				"language": "typescript",
+				"signature": "assembleLiveProjectContext(\n\tdb:   DbClient,\n\trepo: string,\n\topts: AssembleLiveProjectContextOpts = {},\n): Promise<LiveProjectContext>",
+				"entityId": "fd3c9d62f6c967af9fab6056f3fcf724"
+			},
+			{
+				"name": "isModelCallFailure",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/model-failure.ts",
+				"startLine": 67,
+				"endLine": 85,
+				"language": "typescript",
+				"signature": "isModelCallFailure(err: unknown): boolean",
+				"entityId": "7f87c55e5d316073fe346a12a1d8bf6a"
+			},
+			{
+				"name": "modelCallFailureDetail",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/model-failure.ts",
+				"startLine": 91,
+				"endLine": 94,
+				"language": "typescript",
+				"signature": "modelCallFailureDetail(err: unknown): string",
+				"entityId": "e340ced50b8d3f5475ab25055d6fec47"
+			},
+			{
+				"name": "createRepoIgnoreFilter",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/repo-ignore-filter.ts",
+				"startLine": 97,
+				"endLine": 160,
+				"language": "typescript",
+				"signature": "createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter",
+				"entityId": "3c2ca8604090c1f06fa864ae7a9ecf59"
+			},
+			{
+				"name": "permissiveIgnoreFilter",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/repo-ignore-filter.ts",
+				"startLine": 180,
+				"endLine": 182,
+				"language": "typescript",
+				"signature": "permissiveIgnoreFilter(repoPath = ''): RepoIgnoreFilter",
+				"entityId": "e8d8b4e70056142e946c8f4b58da04d0"
+			},
+			{
+				"name": "resolveRole",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/role-router.ts",
+				"startLine": 160,
+				"endLine": 167,
+				"language": "typescript",
+				"signature": "resolveRole(\n\trole:      RoleId,\n\tcfg:       AnalyzeConfig,\n\trepoPath:  string | undefined,\n\tdeps:      RoleRouterDeps = {},\n): RoleResolution",
+				"entityId": "5e471ae54f37f0361b0829b3f6183c6c"
+			},
+			{
+				"name": "createRoleRouter",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/role-router.ts",
+				"startLine": 189,
+				"endLine": 215,
+				"language": "typescript",
+				"signature": "createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter",
+				"entityId": "2f825d78733175b07070499af2bae548"
+			},
+			{
+				"name": "modelFacingBundleSchema",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/schema.ts",
+				"startLine": 208,
+				"endLine": 225,
+				"language": "typescript",
+				"signature": "modelFacingBundleSchema(opts: { readonly withMeta: boolean }): Record<string, unknown>",
+				"entityId": "7bf913ed9fc9ad90885b6fd518428448"
+			},
+			{
+				"name": "validateBundle",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/schema.ts",
+				"startLine": 262,
+				"endLine": 267,
+				"language": "typescript",
+				"signature": "validateBundle(\n\tvalue: unknown,\n): value is AnalyzeContextBundle",
+				"entityId": "0ea380a8cf0c7afe579332077256f308"
+			},
+			{
+				"name": "validateBundleWithErrors",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/schema.ts",
+				"startLine": 269,
+				"endLine": 277,
+				"language": "typescript",
+				"signature": "validateBundleWithErrors(value: unknown): BundleValidationResult",
+				"entityId": "9b55edd8bf51f524ef14dcc2033401a0"
+			},
+			{
+				"name": "resolveScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/scope.ts",
+				"startLine": 83,
+				"endLine": 113,
+				"language": "typescript",
+				"signature": "resolveScope(\n\tref:  AnalyzeScopeRef,\n\tdeps: ScopeDeps = REAL_DEPS,\n): Promise<ResolvedScope>",
+				"entityId": "d8f6c28156f20e57f4cf74dc2fcd021f"
+			},
+			{
+				"name": "resolveScopeForTarget",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/scope.ts",
+				"startLine": 123,
+				"endLine": 135,
+				"language": "typescript",
+				"signature": "resolveScopeForTarget(\n\tref:    AnalyzeScopeRef,\n\ttarget: AnalyzeTarget,\n\tdeps?:  ScopeDeps,\n\t/** The table of kinds per kind of source. Always the classifier's; a test\n\t *  passes a stand-in to show that no other list is consulted. */\n\ttable:  KindsPerTarget = TARGET_TO_KINDS,\n): Promise<ResolvedScope>",
+				"entityId": "a5793c44941e42bf33c6841f408b1793"
+			},
+			{
+				"name": "freshnessPathOf",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/scope.ts",
+				"startLine": 143,
+				"endLine": 146,
+				"language": "typescript",
+				"signature": "freshnessPathOf(scope: ResolvedScope): string",
+				"entityId": "23e560915111ef51a2a3689448cffe78"
+			},
+			{
+				"name": "longestPrefixRepo",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/scope.ts",
+				"startLine": 149,
+				"endLine": 160,
+				"language": "typescript",
+				"signature": "longestPrefixRepo(\n\tpath:  string,\n\trepos: readonly RegisteredRepo[],\n): RegisteredRepo | undefined",
+				"entityId": "a8ffbce639e9978bab3ec8e38e9d8734"
+			},
+			{
+				"name": "connectionIsRegistered",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/scope.ts",
+				"startLine": 248,
+				"endLine": 267,
+				"language": "typescript",
+				"signature": "connectionIsRegistered(\n\tconnectionId: string,\n\tdeps: ScopeDeps = REAL_DEPS,\n): Promise<boolean>",
+				"entityId": "be043fa9f03549bb60bcfe4092ce94bc"
+			},
+			{
+				"name": "runWithSamplerContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 121,
+				"endLine": 127,
+				"language": "typescript",
+				"signature": "runWithSamplerContext(\n\tsampler:    SamplingCallback,\n\tmodelHints: readonly string[],\n\tfn:         () => Promise<T>,\n): Promise<T>",
+				"entityId": "21c7036302e2aa4a1f766e9f63f5f4ab"
+			},
+			{
+				"name": "currentSamplerContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 134,
+				"endLine": 136,
+				"language": "typescript",
+				"signature": "currentSamplerContext(): SamplerContext | undefined",
+				"entityId": "cbf3b07a1abddcdbd8a17a2c9f745719"
+			},
+			{
+				"name": "runWithClientProviderContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 149,
+				"endLine": 154,
+				"language": "typescript",
+				"signature": "runWithClientProviderContext(\n\tkind: AnalyzeShaperProviderKind,\n\tfn:   () => Promise<T>,\n): Promise<T>",
+				"entityId": "6b8a2d3a501f19f741d2c6239b29fd55"
+			},
+			{
+				"name": "runWithRoutingContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 179,
+				"endLine": 181,
+				"language": "typescript",
+				"signature": "runWithRoutingContext(ctx: RoutingSeamContext, fn: () => Promise<T>): Promise<T>",
+				"entityId": "578729c54e197bf13d5a01503d384e86"
+			},
+			{
+				"name": "currentRoutingContext",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 185,
+				"endLine": 187,
+				"language": "typescript",
+				"signature": "currentRoutingContext(): RoutingSeamContext | undefined",
+				"entityId": "32da86ab80db41e25985009e4ad9af4f"
+			},
+			{
+				"name": "resolveRoleProvider",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 200,
+				"endLine": 213,
+				"language": "typescript",
+				"signature": "resolveRoleProvider(\n\trole:            RoleId,\n\tcfg:             AnalyzeConfig,\n\tlegacyFallback?: () => LLMProvider,\n): LLMProvider",
+				"entityId": "3f80e58515666da5cddd2706291a37cb"
+			},
+			{
+				"name": "resolveShaperKind",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 231,
+				"endLine": 243,
+				"language": "typescript",
+				"signature": "resolveShaperKind(inputs: {\n\treadonly repoOverride:   AnalyzeShaperProviderKind | undefined;\n\treadonly globalExplicit: AnalyzeShaperProviderKind | undefined;\n\treadonly clientDefault:  AnalyzeShaperProviderKind | undefined;\n\t/** Optional HIGHEST-priority signal (S003 RoleRouter): the tier-resolved\n\t *  runner. When present and a valid union member it wins over every other\n\t *  signal; a non-union value is coerced to `undefined` so it falls through\n\t *  the chain to the `?? 'ollama'` floor (no direct-REST path can slip in). */\n\treadonly roleResolved?:  AnalyzeShaperProviderKind | undefined;\n}): AnalyzeShaperProviderKind",
+				"entityId": "279b9e405dac3e53dde8d5341e0340ec"
+			},
+			{
+				"name": "isOllamaModelId",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 257,
+				"endLine": 259,
+				"language": "typescript",
+				"signature": "isOllamaModelId(model: string): boolean",
+				"entityId": "349269002fef0bb3eabe545942bc754d"
+			},
+			{
+				"name": "buildShaperProvider",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 277,
+				"endLine": 346,
+				"language": "typescript",
+				"signature": "buildShaperProvider(\n\tcfg:       AnalyzeConfig,\n\toverrides?: ShaperProviderOverrides,\n): LLMProvider",
+				"entityId": "28618a771e99821f2c6abfe07a0f7eee"
+			},
+			{
+				"name": "buildSummariserProvider",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/shaper-provider.ts",
+				"startLine": 361,
+				"endLine": 374,
+				"language": "typescript",
+				"signature": "buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider",
+				"entityId": "ce9b043958bbc048196117ad38a6d32a"
+			},
+			{
+				"name": "SynthesizerLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 59,
+				"endLine": 70,
+				"language": "typescript",
+				"entityId": "99c5396c150b339a41c1850e2525510b"
+			},
+			{
+				"name": "SynthesizerSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 72,
+				"endLine": 77,
+				"language": "typescript",
+				"entityId": "3a5f61d7a16b0e6644e9fd13bd41d42d"
+			},
+			{
+				"name": "SynthesizerPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 79,
+				"endLine": 87,
+				"language": "typescript",
+				"entityId": "9cef82e40a085e134b23ebbf32eb37ec"
+			},
+			{
+				"name": "synthesize",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 123,
+				"endLine": 164,
+				"language": "typescript",
+				"signature": "synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>>",
+				"entityId": "f3951f8a398e963133ca1010f55fa4a3"
+			},
+			{
+				"name": "prepareSynthesize",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 186,
+				"endLine": 198,
+				"language": "typescript",
+				"signature": "prepareSynthesize(\n\targs: Omit<SynthesizeArgs, 'runId' | 'provider'>,\n): SynthesizePrepared",
+				"entityId": "3d3b24e05c6c6fdd4f93dfbcdf2b4a04"
+			},
+			{
+				"name": "finalizeSynthesize",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 207,
+				"endLine": 218,
+				"language": "typescript",
+				"signature": "finalizeSynthesize(raw: unknown): Omit<AnalyzeContextBundle, 'meta'>",
+				"entityId": "833b0d43f440cf3c9e11b22237fe3288"
+			},
+			{
+				"name": "_setSynthesizerPromptPathForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 308,
+				"endLine": 311,
+				"language": "typescript",
+				"signature": "_setSynthesizerPromptPathForTest(target: SynthesizerPromptKey, path: string | undefined): void",
+				"entityId": "bee506566155155bb2c54e95bbcaef49"
+			},
+			{
+				"name": "_resetStrippedSchemaCacheForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 351,
+				"endLine": 351,
+				"language": "typescript",
+				"signature": "_resetStrippedSchemaCacheForTest(): void",
+				"entityId": "c7a13eab621221c791bed0e1bcd096a3"
+			},
+			{
+				"name": "getSynthesizerPromptPathForBoot",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/synthesizer.ts",
+				"startLine": 360,
+				"endLine": 362,
+				"language": "typescript",
+				"signature": "getSynthesizerPromptPathForBoot(): string",
+				"entityId": "322bf194d1fcae24b65e8cfa04ffff83"
+			},
+			{
+				"name": "ReadOnlyToolRegistryMismatch",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/tool-surface.ts",
+				"startLine": 155,
+				"endLine": 165,
+				"language": "typescript",
+				"entityId": "f24e6fbff7476e6bcbc4fc7e2ab0531e"
+			},
+			{
+				"name": "getReadOnlyTools",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/tool-surface.ts",
+				"startLine": 179,
+				"endLine": 206,
+				"language": "typescript",
+				"signature": "getReadOnlyTools(): ToolDefinition[]",
+				"entityId": "5193079d2cd8a0adbd8db6ee2b2ee1ee"
+			},
+			{
+				"name": "isReadOnlyShaperTool",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/tool-surface.ts",
+				"startLine": 215,
+				"endLine": 217,
+				"language": "typescript",
+				"signature": "isReadOnlyShaperTool(toolId: string): boolean",
+				"entityId": "51bdabba7fb0fd3ebcf5e17c23c40464"
+			},
+			{
+				"name": "_setVectorPassForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/docs-retrieval.ts",
+				"startLine": 52,
+				"endLine": 54,
+				"language": "typescript",
+				"signature": "_setVectorPassForTest(deps: Partial<VectorPassDeps> | undefined): void",
+				"entityId": "d39fab00d9112aad09b797173e84f34c"
+			},
+			{
+				"name": "inDocsArea",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/docs-retrieval.ts",
+				"startLine": 98,
+				"endLine": 101,
+				"language": "typescript",
+				"signature": "inDocsArea(area: DocsArea, file: string): boolean",
+				"entityId": "1637ed42945794838229ec6ac9ce2dad"
+			},
+			{
+				"name": "retrieveDocSections",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/docs-retrieval.ts",
+				"startLine": 164,
+				"endLine": 345,
+				"language": "typescript",
+				"signature": "retrieveDocSections(\n\targs: DocsRetrievalArgs,\n): Promise<DocSectionResult[]>",
+				"entityId": "564cf2388f1489198429ed6bea8feac3"
+			},
+			{
+				"name": "retrieveDocSectionsInRepo",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/docs-retrieval.ts",
+				"startLine": 353,
+				"endLine": 364,
+				"language": "typescript",
+				"signature": "retrieveDocSectionsInRepo(\n\trepo:  string,\n\tquery: string,\n\topts:  Omit<DocsRetrievalArgs, 'db' | 'closureRepos' | 'query'> = {},\n): Promise<DocSectionResult[]>",
+				"entityId": "3fbb538ca2edfc36cd8f231a31bf0299"
+			},
+			{
+				"name": "hydrateDocSection",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/docs-retrieval.ts",
+				"startLine": 372,
+				"endLine": 377,
+				"language": "typescript",
+				"signature": "hydrateDocSection(\n\tdb:       DbClient,\n\tentityId: string,\n): Promise<Entity | null>",
+				"entityId": "bbbd69f9b6dfd49fe6a5c03bc8b95889"
+			},
+			{
+				"name": "taskOutputPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+				"startLine": 43,
+				"endLine": 45,
+				"language": "typescript",
+				"signature": "taskOutputPathFor(runId: string, taskId: string): string",
+				"entityId": "88e46de58cc0cfef9c2e4887295d3f82"
+			},
+			{
+				"name": "writeTaskOutput",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+				"startLine": 47,
+				"endLine": 55,
+				"language": "typescript",
+				"signature": "writeTaskOutput(runId: string, record: TaskExecutionRecord): string",
+				"entityId": "44dd235999a59a283d928f9b73a47c1e"
+			},
+			{
+				"name": "readTaskOutput",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+				"startLine": 57,
+				"endLine": 66,
+				"language": "typescript",
+				"signature": "readTaskOutput(runId: string, taskId: string): TaskExecutionRecord | null",
+				"entityId": "ba18b2d069dfd436865799a38b90d48e"
+			},
+			{
+				"name": "purgeTaskOutput",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+				"startLine": 69,
+				"endLine": 77,
+				"language": "typescript",
+				"signature": "purgeTaskOutput(runId: string, taskId: string): void",
+				"entityId": "406cc1a7660f423c371335a11f7e9065"
+			},
+			{
+				"name": "purgeAllTaskOutputs",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/cache.ts",
+				"startLine": 80,
+				"endLine": 91,
+				"language": "typescript",
+				"signature": "purgeAllTaskOutputs(runId: string): void",
+				"entityId": "ef78127a310aa7d9f51b8a932b55bec7"
+			},
+			{
+				"name": "taskPath",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/plan-sources.ts",
+				"startLine": 32,
+				"endLine": 34,
+				"language": "typescript",
+				"signature": "taskPath(parent: string | undefined, taskId: string): string",
+				"entityId": "6a85d47369593e0f138049d682e7bb4f"
+			},
+			{
+				"name": "collectPlanSources",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/plan-sources.ts",
+				"startLine": 43,
+				"endLine": 87,
+				"language": "typescript",
+				"signature": "collectPlanSources(\n\ttree:       PlanTreeNode,\n\texecuted:   ExecutorResult,\n\tparentPath?: string,\n): ReportSource[]",
+				"entityId": "6f4ac35f267c1a162c9ba90f5d9285fc"
+			},
+			{
+				"name": "TemplateRuntimeRegistrationError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+				"startLine": 26,
+				"endLine": 31,
+				"language": "typescript",
+				"entityId": "2994255f3c499896a391f26055768d72"
+			},
+			{
+				"name": "registerTemplateRuntime",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+				"startLine": 39,
+				"endLine": 47,
+				"language": "typescript",
+				"signature": "registerTemplateRuntime(runtime: TemplateRuntime): void",
+				"entityId": "2968caad31048bf92098904e9760574b"
+			},
+			{
+				"name": "getRuntime",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+				"startLine": 49,
+				"endLine": 51,
+				"language": "typescript",
+				"signature": "getRuntime(templateId: string): TemplateRuntime | undefined",
+				"entityId": "08745b389ff241c69a73d34c46ac3b4b"
+			},
+			{
+				"name": "listRegisteredRuntimes",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+				"startLine": 53,
+				"endLine": 55,
+				"language": "typescript",
+				"signature": "listRegisteredRuntimes(): readonly string[]",
+				"entityId": "bc49aed077952ddfb0e543c9cac925a7"
+			},
+			{
+				"name": "_resetRuntimeRegistryForTests",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/registry.ts",
+				"startLine": 58,
+				"endLine": 60,
+				"language": "typescript",
+				"signature": "_resetRuntimeRegistryForTests(): void",
+				"entityId": "25878822f9b55de765fac12aef738ff6"
+			},
+			{
+				"name": "ExecutorRuntimeMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/types.ts",
+				"startLine": 199,
+				"endLine": 210,
+				"language": "typescript",
+				"entityId": "76f027094e8867a2778343ebe93cd23c"
+			},
+			{
+				"name": "ExecutorOutputShapeError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/types.ts",
+				"startLine": 212,
+				"endLine": 235,
+				"language": "typescript",
+				"entityId": "24c0aac464c4f5dc6edf1661be459acc"
+			},
+			{
+				"name": "runExecutor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/walker.ts",
+				"startLine": 79,
+				"endLine": 83,
+				"language": "typescript",
+				"signature": "runExecutor(args: RunExecutorArgs): Promise<ExecutorResult>",
+				"entityId": "8325c21e1e9a95d0dc43fd4dc853cd18"
+			},
+			{
+				"name": "lookupSourceId",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/answer-report.ts",
+				"startLine": 17,
+				"endLine": 19,
+				"language": "typescript",
+				"signature": "lookupSourceId(e: ExecutedExploration): string",
+				"entityId": "e2e506db65efcc97e83547530a0f9022"
+			},
+			{
+				"name": "reportFromLookups",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/answer-report.ts",
+				"startLine": 33,
+				"endLine": 43,
+				"language": "typescript",
+				"signature": "reportFromLookups(results: readonly ExecutedExploration[]): AnswerReport",
+				"entityId": "32838972d3ea974b2edf7d768d168344"
+			},
+			{
+				"name": "runCapabilityReuseCheck",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/capability-reuse-check.ts",
+				"startLine": 121,
+				"endLine": 172,
+				"language": "typescript",
+				"signature": "runCapabilityReuseCheck(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n\t/** The model that judges the candidates; a test passes a stand-in. */\n\tnarrowProvider?: LLMProvider,\n): Promise<CapabilityReuseCheckOutput>",
+				"entityId": "a4929464bdbd258ddcd66d76006a2f5a"
+			},
+			{
+				"name": "prepareCapabilityReuseCheck",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/capability-reuse-check.ts",
+				"startLine": 218,
+				"endLine": 310,
+				"language": "typescript",
+				"signature": "prepareCapabilityReuseCheck(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<CapabilityReuseCheckPrepareResult>",
+				"entityId": "f264ffb892c4800f522a7bf783da20a1"
+			},
+			{
+				"name": "finalizeCapabilityReuseCheck",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/capability-reuse-check.ts",
+				"startLine": 318,
+				"endLine": 385,
+				"language": "typescript",
+				"signature": "finalizeCapabilityReuseCheck(\n\tprepared:      CapabilityReuseCheckPrepared,\n\traw:           CapabilityReuseCheckLLMOutput | undefined,\n\tllmSkipReason: string | undefined,\n\trunId?:        string,\n): CapabilityReuseCheckOutput",
+				"entityId": "09a256b3cefc0e03ac36dba1d75ce501"
+			},
+			{
+				"name": "runClassHierarchy",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/class-hierarchy.ts",
+				"startLine": 76,
+				"endLine": 206,
+				"language": "typescript",
+				"signature": "runClassHierarchy(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ClassHierarchyOutput>",
+				"entityId": "cd4a1eebe75a47406e76f3bac7890bd7"
+			},
+			{
+				"name": "vectorPassSkipped",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/completeness-facts.ts",
+				"startLine": 40,
+				"endLine": 45,
+				"language": "typescript",
+				"signature": "vectorPassSkipped(reason: string | undefined): SkippedItem[]",
+				"entityId": "abbc45b9df41c8acd7af81e6c88a69bc"
+			},
+			{
+				"name": "reachedLimit",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/completeness-facts.ts",
+				"startLine": 48,
+				"endLine": 60,
+				"language": "typescript",
+				"signature": "reachedLimit(\n\twhat:  string,\n\tlimit: number,\n\tscope: ReachedLimit['scope'],\n\tfound: number | null,\n): ReachedLimit",
+				"entityId": "4aa6d9fc8305aeb7210b1c67f079268f"
+			},
+			{
+				"name": "graphCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/completeness-facts.ts",
+				"startLine": 66,
+				"endLine": 84,
+				"language": "typescript",
+				"signature": "graphCompleteness(args: {\n\treadonly returned:  number;\n\treadonly found?:    number | null | undefined;\n\treadonly limited?:  readonly ReachedLimit[] | undefined;\n\treadonly skipped?:  readonly SkippedItem[] | undefined;\n\treadonly partlyRead?: readonly PartlyReadItem[] | undefined;\n\t/** A rule of this lookup that bounds what it looks at, added to the basis note. */\n\treadonly rule?:     string | undefined;\n}): Completeness",
+				"entityId": "175267cc7417362c42a5c3514dc07d3a"
+			},
+			{
+				"name": "textSearchCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/completeness-facts.ts",
+				"startLine": 92,
+				"endLine": 129,
+				"language": "typescript",
+				"signature": "textSearchCompleteness(data: SearchGrepData, limit: number): Completeness",
+				"entityId": "83fd9f7f973edb139740a9aa7c0b1957"
+			},
+			{
+				"name": "carriedCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/completeness-facts.ts",
+				"startLine": 147,
+				"endLine": 167,
+				"language": "typescript",
+				"signature": "carriedCompleteness(\n\treturned: number,\n\tbasis:    Completeness['basis'],\n\tfacts:    CarriedCompletenessFacts | undefined,\n\tnote?:    string,\n): Completeness",
+				"entityId": "632be0b24490d46212a1f0cc4f9f59c3"
+			},
+			{
+				"name": "runConceptResolve",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/concept-resolve.ts",
+				"startLine": 533,
+				"endLine": 636,
+				"language": "typescript",
+				"signature": "runConceptResolve(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ConceptResolveOutput>",
+				"entityId": "84be30a3def4487cfe7632d5da50529d"
+			},
+			{
+				"name": "runConfigTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/config-trace.ts",
+				"startLine": 87,
+				"endLine": 140,
+				"language": "typescript",
+				"signature": "runConfigTrace(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ConfigTraceOutput>",
+				"entityId": "1756249eb48bb730f5c5344c231c23c6"
+			},
+			{
+				"name": "classifyRole",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/config-trace.ts",
+				"startLine": 162,
+				"endLine": 197,
+				"language": "typescript",
+				"signature": "classifyRole(file: string, text: string, key: string): ConfigTraceRole",
+				"entityId": "5eaa8734110da6bc347f11401eb2010c"
+			},
+			{
+				"name": "runConventionDetect",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/convention-detect.ts",
+				"startLine": 88,
+				"endLine": 186,
+				"language": "typescript",
+				"signature": "runConventionDetect(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ConventionDetectOutput>",
+				"entityId": "716616ddffd7a1c78a2151470d873b8f"
+			},
+			{
+				"name": "classifyName",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/convention-detect.ts",
+				"startLine": 196,
+				"endLine": 217,
+				"language": "typescript",
+				"signature": "classifyName(name: string): NamingCase",
+				"entityId": "a3463f6cdf31c2b077ecbd6a894e47f0"
+			},
+			{
+				"name": "runDataModelTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/data-model-trace.ts",
+				"startLine": 74,
+				"endLine": 224,
+				"language": "typescript",
+				"signature": "runDataModelTrace(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<DataModelTraceOutput>",
+				"entityId": "cdb180c1dcc3542375669c5fb9fd2bfe"
+			},
+			{
+				"name": "runDbConnectionsList",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/db-connections-list.ts",
+				"startLine": 38,
+				"endLine": 74,
+				"language": "typescript",
+				"signature": "runDbConnectionsList(\n\t_exp: Exploration,\n\tctx: ExplorationRunnerContext,\n\t/** The connection pool's source; a test passes a stand-in. */\n\tacquire: typeof acquirePool = acquirePool,\n): Promise<DbConnectionsListOutput>",
+				"entityId": "8986e7b47a2a5411c2f2735e55638997"
+			},
+			{
+				"name": "runDbTableDescribe",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/db-table-describe.ts",
+				"startLine": 54,
+				"endLine": 153,
+				"language": "typescript",
+				"signature": "runDbTableDescribe(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n\t/** The connection pool's source; a test passes a stand-in. */\n\tacquire: typeof acquirePool = acquirePool,\n): Promise<DbTableDescribeOutput>",
+				"entityId": "a6840b8e6818b20dc50942307fa1b882"
+			},
+			{
+				"name": "runDbTablesList",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/db-tables-list.ts",
+				"startLine": 74,
+				"endLine": 171,
+				"language": "typescript",
+				"signature": "runDbTablesList(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n\t/** The connection pool's source; a test passes a stand-in. */\n\tacquire: typeof acquirePool = acquirePool,\n): Promise<DbTablesListOutput>",
+				"entityId": "38643842cdf3bf55c25d8f90205cf323"
+			},
+			{
+				"name": "runSharedDocConstraintEnumerate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-constraint-enumerate.ts",
+				"startLine": 116,
+				"endLine": 158,
+				"language": "typescript",
+				"signature": "runSharedDocConstraintEnumerate(\n\targs: RunDocConstraintEnumerateArgs,\n): Promise<DocConstraintEnumerateOutput>",
+				"entityId": "5ab0836ba8c30c76118608d64a03bbf3"
+			},
+			{
+				"name": "prepareDocConstraintEnumerate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-constraint-enumerate.ts",
+				"startLine": 200,
+				"endLine": 290,
+				"language": "typescript",
+				"signature": "prepareDocConstraintEnumerate(\n\targs: RunDocConstraintEnumerateArgs,\n): Promise<DocConstraintEnumeratePrepareResult>",
+				"entityId": "1b7e233addbf4877da1b669d8d3cd9d5"
+			},
+			{
+				"name": "finalizeDocConstraintEnumerate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-constraint-enumerate.ts",
+				"startLine": 292,
+				"endLine": 321,
+				"language": "typescript",
+				"signature": "finalizeDocConstraintEnumerate(\n\tprepared:   DocConstraintEnumeratePrepared,\n\traw:        DocConstraintEnumerateLLMOutput,\n\trunId?:     string,\n\tlogContext?: string,\n): DocConstraintEnumerateOutput",
+				"entityId": "c51e03992ad03cf96621a221a4c4d4ee"
+			},
+			{
+				"name": "runDocConstraintEnumerate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-constraint-enumerate.ts",
+				"startLine": 344,
+				"endLine": 358,
+				"language": "typescript",
+				"signature": "runDocConstraintEnumerate(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<DocConstraintEnumerateOutput>",
+				"entityId": "da99a614020a87187099b79da23bc718"
+			},
+			{
+				"name": "runSharedDocDecisionTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-decision-trace.ts",
+				"startLine": 121,
+				"endLine": 165,
+				"language": "typescript",
+				"signature": "runSharedDocDecisionTrace(\n\targs: RunDocDecisionTraceArgs,\n): Promise<DocDecisionTraceOutput>",
+				"entityId": "a7326cbcd5f70716fc454670a6a1991b"
+			},
+			{
+				"name": "prepareDocDecisionTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-decision-trace.ts",
+				"startLine": 213,
+				"endLine": 305,
+				"language": "typescript",
+				"signature": "prepareDocDecisionTrace(\n\targs: RunDocDecisionTraceArgs,\n): Promise<DocDecisionTracePrepareResult>",
+				"entityId": "662edf73b4e72b79d1f83974fe11afff"
+			},
+			{
+				"name": "finalizeDocDecisionTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-decision-trace.ts",
+				"startLine": 312,
+				"endLine": 343,
+				"language": "typescript",
+				"signature": "finalizeDocDecisionTrace(\n\tprepared:   DocDecisionTracePrepared,\n\traw:        DocDecisionTraceLLMOutput,\n\trunId?:     string,\n\tlogContext?: string,\n): DocDecisionTraceOutput",
+				"entityId": "0af158b5223d1dc814ae7d03b405e92e"
+			},
+			{
+				"name": "runDocDecisionTrace",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-decision-trace.ts",
+				"startLine": 366,
+				"endLine": 380,
+				"language": "typescript",
+				"signature": "runDocDecisionTrace(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<DocDecisionTraceOutput>",
+				"entityId": "684727d722acee568321f65279035aa9"
+			},
+			{
+				"name": "runDocMention",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/doc-mention.ts",
+				"startLine": 98,
+				"endLine": 163,
+				"language": "typescript",
+				"signature": "runDocMention(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<DocMentionOutput>",
+				"entityId": "10608d278cba1d03482bf19ef4447dc8"
+			},
+			{
+				"name": "executePlan",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 138,
+				"endLine": 258,
+				"language": "typescript",
+				"signature": "executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan>",
+				"entityId": "edff7ca8cf3470f7db92b71bb009d5a5"
+			},
+			{
+				"name": "getNarrowRunner",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 397,
+				"endLine": 399,
+				"language": "typescript",
+				"signature": "getNarrowRunner(type: ExplorationType): NarrowRunnerEntry | undefined",
+				"entityId": "f4a7f98a7806c74a7da11e3747016a3a"
+			},
+			{
+				"name": "stepPlan",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 447,
+				"endLine": 625,
+				"language": "typescript",
+				"signature": "stepPlan(\n\targs: ExecutePlanArgs & {\n\t\treadonly resumeState?: StepPlanResumeState;\n\t},\n): Promise<StepPlanResult>",
+				"entityId": "9bf1b199d180e617fabfb24dc2e2435c"
+			},
+			{
+				"name": "failedOutput",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 636,
+				"endLine": 645,
+				"language": "typescript",
+				"signature": "failedOutput(exp: Exploration, err: unknown): FailedExplorationOutput",
+				"entityId": "34feb231d7ee7d414bdf6e0d335bc25d"
+			},
+			{
+				"name": "_overrideRunnerForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 847,
+				"endLine": 853,
+				"language": "typescript",
+				"signature": "_overrideRunnerForTest(\n\ttype:   ExplorationType,\n\trunner: ExplorationRunner | undefined,\n): void",
+				"entityId": "941e25d31b74fb17e6a70ef336b6142c"
+			},
+			{
+				"name": "_getRunnersForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts",
+				"startLine": 856,
+				"endLine": 858,
+				"language": "typescript",
+				"signature": "_getRunnersForTest(): Readonly<Partial<Record<ExplorationType, ExplorationRunner>>>",
+				"entityId": "0843d8f3080dc3d6be1d2910a9b19fdd"
+			},
+			{
+				"name": "runFreeformProbe",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/freeform-probe.ts",
+				"startLine": 85,
+				"endLine": 184,
+				"language": "typescript",
+				"signature": "runFreeformProbe(\n\texp:  Exploration,\n\tctx:  ExplorationRunnerContext,\n\t/** The tool loop; a test passes a stand-in. */\n\tloop: typeof runShaperToolLoop = runShaperToolLoop,\n): Promise<FreeformProbeOutput>",
+				"entityId": "3bee7df14c4c45d50b5bd1d67c815c73"
+			},
+			{
+				"name": "runImportGraph",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/import-graph.ts",
+				"startLine": 78,
+				"endLine": 210,
+				"language": "typescript",
+				"signature": "runImportGraph(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ImportGraphOutput>",
+				"entityId": "d400d78fac0e6196b95f0c4954d4e2a8"
+			},
+			{
+				"name": "summarisedFrom",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/item-measure.ts",
+				"startLine": 47,
+				"endLine": 54,
+				"language": "typescript",
+				"signature": "summarisedFrom(\n\tmeasurer:      ItemMeasurer,\n\tentity:        StoredItem,\n\tsummariserCut: number,\n): Promise<PartlyReadItem | undefined>",
+				"entityId": "a796f41e65162859ee0a95459fe6d138"
+			},
+			{
+				"name": "createItemMeasurer",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/item-measure.ts",
+				"startLine": 57,
+				"endLine": 88,
+				"language": "typescript",
+				"signature": "createItemMeasurer(db: DbClient, entities?: readonly Entity[]): ItemMeasurer",
+				"entityId": "ccf5799d0252b9b9244708aca91d9e24"
+			},
+			{
+				"name": "LookupFailedError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/lookup-failed.ts",
+				"startLine": 20,
+				"endLine": 28,
+				"language": "typescript",
+				"entityId": "4c2d39ae128703b653b4dbaa0e2a84f2"
+			},
+			{
+				"name": "errorMessage",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/lookup-failed.ts",
+				"startLine": 31,
+				"endLine": 33,
+				"language": "typescript",
+				"signature": "errorMessage(err: unknown): string",
+				"entityId": "11003759cfdd9ea40c087a2cf9a95f95"
+			},
+			{
+				"name": "runManifestsLocate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 83,
+				"endLine": 188,
+				"language": "typescript",
+				"signature": "runManifestsLocate(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ManifestsLocateOutput>",
+				"entityId": "c5cdcee25f5d8ab152a16ba0b3c5f0b7"
+			},
+			{
+				"name": "classifyFamily",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 209,
+				"endLine": 219,
+				"language": "typescript",
+				"signature": "classifyFamily(file: string): ManifestFamily",
+				"entityId": "12728304795d3f24b9f55302973ff08d"
+			},
+			{
+				"name": "isK8sPath",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 221,
+				"endLine": 223,
+				"language": "typescript",
+				"signature": "isK8sPath(file: string): boolean",
+				"entityId": "cd00130223e7ed1b149aa30455086ef6"
+			},
+			{
+				"name": "isHelmPath",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 225,
+				"endLine": 229,
+				"language": "typescript",
+				"signature": "isHelmPath(file: string): boolean",
+				"entityId": "842a448036d74b7e4f191c4ef5ba7e0c"
+			},
+			{
+				"name": "isCIPath",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 231,
+				"endLine": 241,
+				"language": "typescript",
+				"signature": "isCIPath(file: string): boolean",
+				"entityId": "985d810bbc3c8c0bfb1761fea11d93ab"
+			},
+			{
+				"name": "inferResourceKind",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 251,
+				"endLine": 267,
+				"language": "typescript",
+				"signature": "inferResourceKind(file: string, family: ManifestFamily): string | undefined",
+				"entityId": "e86afa006ac33dd0a9c5779d3d0c5d26"
+			},
+			{
+				"name": "resourceKindFromBody",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 285,
+				"endLine": 310,
+				"language": "typescript",
+				"signature": "resourceKindFromBody(file: string, family: ManifestFamily, body: string): string | undefined",
+				"entityId": "b4a0b704de5e0ba6385fa8d1bd7c11f5"
+			},
+			{
+				"name": "manifestBodyUnparsable",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/manifests-locate.ts",
+				"startLine": 313,
+				"endLine": 318,
+				"language": "typescript",
+				"signature": "manifestBodyUnparsable(family: ManifestFamily, body: string): boolean",
+				"entityId": "5793d7dc7b57a248e38d026a61554b76"
+			},
+			{
+				"name": "runModuleProfile",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/module-profile.ts",
+				"startLine": 121,
+				"endLine": 184,
+				"language": "typescript",
+				"signature": "runModuleProfile(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<ModuleProfileOutput>",
+				"entityId": "23132839adb4d466b3f5a021067a28c2"
+			},
+			{
+				"name": "runSearchText",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/search-text.ts",
+				"startLine": 87,
+				"endLine": 142,
+				"language": "typescript",
+				"signature": "runSearchText(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<SearchTextOutput>",
+				"entityId": "7b062fcf7efbb83dd94d67f2f8dec40e"
+			},
+			{
+				"name": "runSymbolLocate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/symbol-locate.ts",
+				"startLine": 89,
+				"endLine": 173,
+				"language": "typescript",
+				"signature": "runSymbolLocate(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<SymbolLocateOutput>",
+				"entityId": "ab6733a5c82eece075a19c20fdb264aa"
+			},
+			{
+				"name": "runTestLocate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/test-locate.ts",
+				"startLine": 79,
+				"endLine": 188,
+				"language": "typescript",
+				"signature": "runTestLocate(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<TestLocateOutput>",
+				"entityId": "a6bf915eeb8195f0a92517f9463ba2df"
+			},
+			{
+				"name": "runUsageExample",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/usage-example.ts",
+				"startLine": 91,
+				"endLine": 199,
+				"language": "typescript",
+				"signature": "runUsageExample(\n\texp: Exploration,\n\tctx: ExplorationRunnerContext,\n): Promise<UsageExampleOutput>",
+				"entityId": "f07914564d1b4a3554c91f69179dd8dc"
+			},
+			{
+				"name": "indexerFileHash",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/item-length.ts",
+				"startLine": 55,
+				"endLine": 57,
+				"language": "typescript",
+				"signature": "indexerFileHash(source: string): string",
+				"entityId": "7627f5c72535b3cc5c8130bc1e04f7dd"
+			},
+			{
+				"name": "measureItem",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/item-length.ts",
+				"startLine": 67,
+				"endLine": 97,
+				"language": "typescript",
+				"signature": "measureItem(entity: MeasuredEntity, opts: MeasureItemOptions): ItemMeasure",
+				"entityId": "2d48c29e8db31f423c9fb0e41f4d05c8"
+			},
+			{
+				"name": "partlyReadEntry",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/item-length.ts",
+				"startLine": 100,
+				"endLine": 107,
+				"language": "typescript",
+				"signature": "partlyReadEntry(what: string, readChars: number, measure: ItemMeasure): PartlyReadItem",
+				"entityId": "6afaee41f7d7a424bf5a8fec5b9d2182"
+			},
+			{
+				"name": "runAnalyze",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+				"startLine": 99,
+				"endLine": 175,
+				"language": "typescript",
+				"signature": "runAnalyze(\n\targs: RunAnalyzeArgs,\n\topts: RunAnalyzeOpts = {},\n): Promise<RunAnalyzeResult>",
+				"entityId": "ad537693ce8bd9aece85b8d604f93a4f"
+			},
+			{
+				"name": "concludeRun",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+				"startLine": 556,
+				"endLine": 567,
+				"language": "typescript",
+				"signature": "concludeRun(\n\ttree:          PlanTreeNode,\n\texecuted:      ExecutorResult,\n\tcontextReport: AnswerReport | undefined,\n): { readonly report: AnswerReport; readonly finalReport: unknown }",
+				"entityId": "47f7234367f722b6462e4bbe5995d9eb"
+			},
+			{
+				"name": "completeRun",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+				"startLine": 575,
+				"endLine": 611,
+				"language": "typescript",
+				"signature": "completeRun(args: {\n\treadonly record:        RunRecord;\n\treadonly intent:        ClassifiedIntent;\n\treadonly tree:          PlanTreeNode;\n\treadonly executed:      ExecutorResult;\n\t/** The report of the run context, the run's first step. */\n\treadonly contextReport: AnswerReport | undefined;\n\t/** When the run started, in milliseconds. */\n\treadonly start:         number;\n}): RunAnalyzeResult",
+				"entityId": "51b8cc915551037b0495a2784bb9a29b"
+			},
+			{
+				"name": "hintedIntentBase",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+				"startLine": 654,
+				"endLine": 685,
+				"language": "typescript",
+				"signature": "hintedIntentBase(\n\ttarget:      AnalyzeTarget,\n\tuserPrompt:  string,\n\tscopeRef:    AnalyzeScopeRef,\n\tconnectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,\n): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }>",
+				"entityId": "f40583285c9dc2065a3226eee7ceec2c"
+			},
+			{
+				"name": "raiseRunLive",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+				"startLine": 22,
+				"endLine": 24,
+				"language": "typescript",
+				"signature": "raiseRunLive(runId: string): void",
+				"entityId": "046d315197d953b7347f21f649b1129a"
+			},
+			{
+				"name": "lowerRunLive",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+				"startLine": 27,
+				"endLine": 31,
+				"language": "typescript",
+				"signature": "lowerRunLive(runId: string): void",
+				"entityId": "2111da28b1785b8f7167e5db1686743b"
+			},
+			{
+				"name": "liveRunCount",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+				"startLine": 34,
+				"endLine": 36,
+				"language": "typescript",
+				"signature": "liveRunCount(runId: string): number",
+				"entityId": "e1bc90d2383b84a1b5f15d58e82b177b"
+			},
+			{
+				"name": "isRunLive",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+				"startLine": 39,
+				"endLine": 41,
+				"language": "typescript",
+				"signature": "isRunLive(runId: string): boolean",
+				"entityId": "26bf725f2ebfe404890f41f393261901"
+			},
+			{
+				"name": "runRecordPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 31,
+				"endLine": 33,
+				"language": "typescript",
+				"signature": "runRecordPathFor(runId: string): string",
+				"entityId": "785de126e0ba21b07d355ab5d9dcda23"
+			},
+			{
+				"name": "readRunRecord",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 35,
+				"endLine": 44,
+				"language": "typescript",
+				"signature": "readRunRecord(runId: string): RunRecord | null",
+				"entityId": "50681388acd3937ef3dd87e42832cc7f"
+			},
+			{
+				"name": "writeRunRecord",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 46,
+				"endLine": 54,
+				"language": "typescript",
+				"signature": "writeRunRecord(record: RunRecord): string",
+				"entityId": "9fce5ee7f5def02e4bb1e75b82e1995e"
+			},
+			{
+				"name": "abandonRunRecord",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 107,
+				"endLine": 121,
+				"language": "typescript",
+				"signature": "abandonRunRecord(record: RunRecord): RunRecord",
+				"entityId": "ffa8711527ba0555d42621b416f69c03"
+			},
+			{
+				"name": "purgeRun",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 123,
+				"endLine": 160,
+				"language": "typescript",
+				"signature": "purgeRun(\n\trunId: string,\n\topts:  {\n\t\treadonly force?: boolean;\n\t\t/** Says whether a run is live. Only a caller in the process that starts\n\t\t *  the runs can know; one that cannot passes nothing, and an\n\t\t *  'in-progress' record is then refused. */\n\t\treadonly isLive?: ((runId: string) => boolean) | undefined;\n\t} = {},\n): PurgeRunResult | PurgeRunRefused",
+				"entityId": "99bb0f85e688af2cc12f74eaf79c1f6f"
+			},
+			{
+				"name": "purgeRunForTests",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+				"startLine": 163,
+				"endLine": 166,
+				"language": "typescript",
+				"signature": "purgeRunForTests(runId: string): void",
+				"entityId": "6ffe63fe98fd7bb7e06b3cb0db3562d6"
+			},
+			{
+				"name": "planDirFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 66,
+				"endLine": 81,
+				"language": "typescript",
+				"signature": "planDirFor(args: PersistArgs): string",
+				"entityId": "a768a1feba6db417820987a399ffebf3"
+			},
+			{
+				"name": "planFinalPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 97,
+				"endLine": 99,
+				"language": "typescript",
+				"signature": "planFinalPathFor(args: PersistArgs): string",
+				"entityId": "abe34cc520865eda161900227b95d8a5"
+			},
+			{
+				"name": "planAttemptsDirFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 101,
+				"endLine": 103,
+				"language": "typescript",
+				"signature": "planAttemptsDirFor(args: PersistArgs): string",
+				"entityId": "02f6eff85e98c0a75d6bf117567917a4"
+			},
+			{
+				"name": "planAttemptPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 106,
+				"endLine": 108,
+				"language": "typescript",
+				"signature": "planAttemptPathFor(args: PersistArgs, attemptNumber: number): string",
+				"entityId": "a2407fa6540b0c9136e0e5cb2eee8999"
+			},
+			{
+				"name": "planFeedbackPathFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 111,
+				"endLine": 113,
+				"language": "typescript",
+				"signature": "planFeedbackPathFor(args: PersistArgs, attemptNumber: number): string",
+				"entityId": "d2af9cdd41144d717b9475e055e4f3c6"
+			},
+			{
+				"name": "writeAttempt",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 127,
+				"endLine": 136,
+				"language": "typescript",
+				"signature": "writeAttempt(\n\targs:          PersistArgs,\n\tattemptNumber: number,\n\tplan:          PlanTask,\n): string",
+				"entityId": "f89a2416fada3b7edd922b698472164a"
+			},
+			{
+				"name": "writeFeedback",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 142,
+				"endLine": 151,
+				"language": "typescript",
+				"signature": "writeFeedback(\n\targs:          PersistArgs,\n\tattemptNumber: number,\n\tfailure:       PlanValidationFailure,\n): string",
+				"entityId": "b2e71d8dd059215930167ed8bafa9b88"
+			},
+			{
+				"name": "writePlanFinal",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 158,
+				"endLine": 163,
+				"language": "typescript",
+				"signature": "writePlanFinal(args: PersistArgs, plan: PlanTask): string",
+				"entityId": "593620489e54305c691e53620bf9fba1"
+			},
+			{
+				"name": "readPlanFinal",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 178,
+				"endLine": 187,
+				"language": "typescript",
+				"signature": "readPlanFinal(args: PersistArgs): PlanTask | null",
+				"entityId": "d7c0af5fd56eb4df7ecce1fa73d25ee6"
+			},
+			{
+				"name": "purgePlan",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+				"startLine": 195,
+				"endLine": 204,
+				"language": "typescript",
+				"signature": "purgePlan(args: PersistArgs): void",
+				"entityId": "27e50c28a1003aca06de9eabb3b72348"
+			},
+			{
+				"name": "PlanBuilderLlmUnavailableError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 73,
+				"endLine": 80,
+				"language": "typescript",
+				"entityId": "c7878be59dab413627a2252348104daa"
+			},
+			{
+				"name": "PlanBuilderSchemaUnrecoverable",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 82,
+				"endLine": 87,
+				"language": "typescript",
+				"entityId": "6e94bd84a459a16db6fb819bbb8c0850"
+			},
+			{
+				"name": "PlanBuilderExhausted",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 89,
+				"endLine": 105,
+				"language": "typescript",
+				"entityId": "1a8cc83e7f824fc0e93b652217aa12d3"
+			},
+			{
+				"name": "PlanBuilderPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 107,
+				"endLine": 112,
+				"language": "typescript",
+				"entityId": "4e3e34bf8b0d512e0201e3af6291fa02"
+			},
+			{
+				"name": "MaxPlanDepthExceededError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 114,
+				"endLine": 132,
+				"language": "typescript",
+				"entityId": "85efb491ab504d5e911af28639606bde"
+			},
+			{
+				"name": "runPlanner",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+				"startLine": 144,
+				"endLine": 302,
+				"language": "typescript",
+				"signature": "runPlanner(args: RunPlannerArgs): Promise<PlanTask>",
+				"entityId": "1346cc548f277ce719ae17af856859fc"
+			},
+			{
+				"name": "invariantFixHint",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/invariant-fix-hints.ts",
+				"startLine": 177,
+				"endLine": 179,
+				"language": "typescript",
+				"signature": "invariantFixHint(id: PlanInvariantId): InvariantFixHint",
+				"entityId": "b00727a7ac44ec30f9517e836c84098a"
+			},
+			{
+				"name": "renderFixHint",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/invariant-fix-hints.ts",
+				"startLine": 186,
+				"endLine": 197,
+				"language": "typescript",
+				"signature": "renderFixHint(hint: InvariantFixHint): string",
+				"entityId": "ac6883a16afe9faaf158f508c642332c"
+			},
+			{
+				"name": "runRecursivePlanner",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+				"startLine": 94,
+				"endLine": 102,
+				"language": "typescript",
+				"signature": "runRecursivePlanner(args: RecursivePlannerArgs): Promise<PlanTreeNode>",
+				"entityId": "aad82aa6ac64c12379df385bb9983941"
+			},
+			{
+				"name": "countNodes",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+				"startLine": 217,
+				"endLine": 223,
+				"language": "typescript",
+				"signature": "countNodes(node: PlanTreeNode): number",
+				"entityId": "ba86e6d5d57f13adc548f44779cdfa44"
+			},
+			{
+				"name": "countPlannerTasks",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+				"startLine": 226,
+				"endLine": 235,
+				"language": "typescript",
+				"signature": "countPlannerTasks(node: PlanTreeNode): number",
+				"entityId": "58446c760641f5ad4d255a3a9b6894d0"
+			},
+			{
+				"name": "maxDepth",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+				"startLine": 238,
+				"endLine": 245,
+				"language": "typescript",
+				"signature": "maxDepth(node: PlanTreeNode): number",
+				"entityId": "3201812f237c8fc88a56fe8bfa86e952"
+			},
+			{
+				"name": "renderCatalog",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/render-catalog.ts",
+				"startLine": 30,
+				"endLine": 36,
+				"language": "typescript",
+				"signature": "renderCatalog(catalog: readonly AnalyzeTaskTemplate[]): string",
+				"entityId": "08a7b307f49f3d2ea8205d91b131b472"
+			},
+			{
+				"name": "renderDepthPolicy",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/render-catalog.ts",
+				"startLine": 73,
+				"endLine": 93,
+				"language": "typescript",
+				"signature": "renderDepthPolicy(scope: 'XS' | 'S' | 'M' | 'L' | 'XL', focused: boolean): string",
+				"entityId": "a96ac3715c9a14d82ee121d6f637d5e1"
+			},
+			{
+				"name": "validatePlanShape",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+				"startLine": 136,
+				"endLine": 139,
+				"language": "typescript",
+				"signature": "validatePlanShape(value: unknown): value is PlanTask",
+				"entityId": "fcb173d8425795cdca64897cf7e362a1"
+			},
+			{
+				"name": "validatePlanShapeWithErrors",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+				"startLine": 141,
+				"endLine": 148,
+				"language": "typescript",
+				"signature": "validatePlanShapeWithErrors(value: unknown): PlanValidationResult",
+				"entityId": "dfd20586a309fc610826e3520bafe6df"
+			},
+			{
+				"name": "validatePlannedTaskShape",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+				"startLine": 150,
+				"endLine": 153,
+				"language": "typescript",
+				"signature": "validatePlannedTaskShape(value: unknown): value is PlannedTask",
+				"entityId": "b978345bf4258cbcd312eeed260a779b"
+			},
+			{
+				"name": "validatePlannedTaskShapeWithErrors",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+				"startLine": 155,
+				"endLine": 162,
+				"language": "typescript",
+				"signature": "validatePlannedTaskShapeWithErrors(value: unknown): PlanValidationResult",
+				"entityId": "243fe7b69aafde32e3533852b7183be2"
+			},
+			{
+				"name": "registerBuiltinTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/bootstrap.ts",
+				"startLine": 30,
+				"endLine": 42,
+				"language": "typescript",
+				"signature": "registerBuiltinTemplates(): void",
+				"entityId": "5df286a99d77195c436b973a56cc2a25"
+			},
+			{
+				"name": "_resetTemplateBootstrapLatchForTests",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/bootstrap.ts",
+				"startLine": 45,
+				"endLine": 47,
+				"language": "typescript",
+				"signature": "_resetTemplateBootstrapLatchForTests(): void",
+				"entityId": "04209c7388b1d5ea1b5e7143cf587b4a"
+			},
+			{
+				"name": "registerCodeTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code/index.ts",
+				"startLine": 251,
+				"endLine": 255,
+				"language": "typescript",
+				"signature": "registerCodeTemplates(): void",
+				"entityId": "8540439f64335a7fc49b6f7f0fd1088a"
+			},
+			{
+				"name": "registerDataTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data/index.ts",
+				"startLine": 150,
+				"endLine": 154,
+				"language": "typescript",
+				"signature": "registerDataTemplates(): void",
+				"entityId": "dafc52dd9ce9d51b8ee1d0bd55c8c750"
+			},
+			{
+				"name": "registerDocsTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs/index.ts",
+				"startLine": 254,
+				"endLine": 258,
+				"language": "typescript",
+				"signature": "registerDocsTemplates(): void",
+				"entityId": "00a8de4e8ba1cfc5a35ab2f73c3a5401"
+			},
+			{
+				"name": "registerGenericTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic/index.ts",
+				"startLine": 41,
+				"endLine": 45,
+				"language": "typescript",
+				"signature": "registerGenericTemplates(): void",
+				"entityId": "067100e77e3af0517dc034f05a379a69"
+			},
+			{
+				"name": "registerInfraTemplates",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra/index.ts",
+				"startLine": 206,
+				"endLine": 210,
+				"language": "typescript",
+				"signature": "registerInfraTemplates(): void",
+				"entityId": "ab19a2fa2808d97e38c0309c968bf20b"
+			},
+			{
+				"name": "TemplateRegistrationError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 30,
+				"endLine": 35,
+				"language": "typescript",
+				"entityId": "ec41ef1622095ac42eb8b40a4c82e74d"
+			},
+			{
+				"name": "registerTemplate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 47,
+				"endLine": 84,
+				"language": "typescript",
+				"signature": "registerTemplate(t: AnalyzeTaskTemplate): void",
+				"entityId": "edd911596e0fe706c7dfdf2a423a7cc0"
+			},
+			{
+				"name": "getTemplateCatalog",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 87,
+				"endLine": 89,
+				"language": "typescript",
+				"signature": "getTemplateCatalog(): readonly AnalyzeTaskTemplate[]",
+				"entityId": "169e932903baf30efced2ddb782dfd89"
+			},
+			{
+				"name": "getTemplatesForTarget",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 96,
+				"endLine": 101,
+				"language": "typescript",
+				"signature": "getTemplatesForTarget(planTarget: AnalyzeTarget): readonly AnalyzeTaskTemplate[]",
+				"entityId": "b90da44f2ee2c0628079b2a9883516c5"
+			},
+			{
+				"name": "getTemplate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 104,
+				"endLine": 106,
+				"language": "typescript",
+				"signature": "getTemplate(id: string): AnalyzeTaskTemplate | undefined",
+				"entityId": "6e6611ba08d21446a666102da0b64e15"
+			},
+			{
+				"name": "getAggregatorFor",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 114,
+				"endLine": 116,
+				"language": "typescript",
+				"signature": "getAggregatorFor(target: AnalyzeTarget): AnalyzeTaskTemplate | undefined",
+				"entityId": "e1a5f5c8ef82f1a87239660d8721bfa2"
+			},
+			{
+				"name": "_resetTemplateRegistryForTests",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+				"startLine": 119,
+				"endLine": 121,
+				"language": "typescript",
+				"signature": "_resetTemplateRegistryForTests(): void",
+				"entityId": "efdf02d79b28131080373f631c033867"
+			},
+			{
+				"name": "validatePlan",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+				"startLine": 95,
+				"endLine": 356,
+				"language": "typescript",
+				"signature": "validatePlan(\n\tplan:     PlanTask,\n\tcatalog:  readonly AnalyzeTaskTemplate[],\n\topts:    ValidateOpts = {},\n): PlanValidationFailure | null",
+				"entityId": "5870fb54d727616957570e9c52ac6c38"
+			},
+			{
+				"name": "registerBuiltinRuntimes",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/bootstrap.ts",
+				"startLine": 44,
+				"endLine": 68,
+				"language": "typescript",
+				"signature": "registerBuiltinRuntimes(): void",
+				"entityId": "3000e92a190bee05c3239ad4fdc07c04"
+			},
+			{
+				"name": "_resetRuntimeBootstrapLatchForTests",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/bootstrap.ts",
+				"startLine": 74,
+				"endLine": 77,
+				"language": "typescript",
+				"signature": "_resetRuntimeBootstrapLatchForTests(): void",
+				"entityId": "a3ffa315005e57a63131c5ae41b58f89"
+			},
+			{
+				"name": "readScopeRef",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+				"startLine": 34,
+				"endLine": 51,
+				"language": "typescript",
+				"signature": "readScopeRef(args: TemplateExecuteArgs, templateLabel: string): ScopeRef",
+				"entityId": "1c74f517da5af81383c1c6ceca3b4673"
+			},
+			{
+				"name": "compareEntitiesByLocation",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+				"startLine": 58,
+				"endLine": 62,
+				"language": "typescript",
+				"signature": "compareEntitiesByLocation(a: Entity, b: Entity): number",
+				"entityId": "68c32af20d8006c2f9faaf33bddb2b9b"
+			},
+			{
+				"name": "modulePrefixOf",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/_shared.ts",
+				"startLine": 70,
+				"endLine": 74,
+				"language": "typescript",
+				"signature": "modulePrefixOf(moduleFile: string): string",
+				"entityId": "73b688a8d26bf7809e829d819bda1be7"
+			},
+			{
+				"name": "resolveDataScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 39,
+				"endLine": 49,
+				"language": "typescript",
+				"signature": "resolveDataScope(\n\targs:          TemplateExecuteArgs,\n\ttemplateLabel: string,\n): Promise<DataScope>",
+				"entityId": "ae75106bddb3b0f1e356dc7bb9469c38"
+			},
+			{
+				"name": "connectionWithinScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 55,
+				"endLine": 63,
+				"language": "typescript",
+				"signature": "connectionWithinScope(scope: DataScope, named: string, templateLabel: string): string",
+				"entityId": "23c26173330d47f4342981cdd80fd8bf"
+			},
+			{
+				"name": "requireStringParam",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 69,
+				"endLine": 82,
+				"language": "typescript",
+				"signature": "requireStringParam(\n\targs:          TemplateExecuteArgs,\n\tkey:           string,\n\ttemplateLabel: string,\n): string",
+				"entityId": "a82e9905f71c0807637434d06e306384"
+			},
+			{
+				"name": "optionalStringParam",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 88,
+				"endLine": 101,
+				"language": "typescript",
+				"signature": "optionalStringParam(\n\targs:          TemplateExecuteArgs,\n\tkey:           string,\n\ttemplateLabel: string,\n): string | undefined",
+				"entityId": "77077b12d2e3022be97131a83b9dbe29"
+			},
+			{
+				"name": "acquireDataPool",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 111,
+				"endLine": 113,
+				"language": "typescript",
+				"signature": "acquireDataPool(repoPath: string): ReturnType<PoolSource>",
+				"entityId": "386461a15f19ffa365d0e22650252431"
+			},
+			{
+				"name": "_setDataPoolSourceForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/_shared.ts",
+				"startLine": 116,
+				"endLine": 118,
+				"language": "typescript",
+				"signature": "_setDataPoolSourceForTest(source: PoolSource | undefined): void",
+				"entityId": "fcb6a5765101bdf9d861c886ae59da94"
+			},
+			{
+				"name": "countedSkip",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/family-summarise.ts",
+				"startLine": 89,
+				"endLine": 93,
+				"language": "typescript",
+				"signature": "countedSkip(files: readonly string[], reason: string): SkippedItem[]",
+				"entityId": "5ef8f98a817bdc9d0b6bd5c8f3fb4840"
+			},
+			{
+				"name": "readScopeRef",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+				"startLine": 30,
+				"endLine": 47,
+				"language": "typescript",
+				"signature": "readScopeRef(args: TemplateExecuteArgs, templateLabel: string): ScopeRef",
+				"entityId": "71b16d1850bf18df7818be5ec024c83f"
+			},
+			{
+				"name": "fileWalkCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+				"startLine": 86,
+				"endLine": 110,
+				"language": "typescript",
+				"signature": "fileWalkCompleteness(\n\treturned:  number,\n\ttruncated: boolean,\n\textra: {\n\t\treadonly limited?: readonly ReachedLimit[] | undefined;\n\t\treadonly skipped?: readonly SkippedItem[] | undefined;\n\t\treadonly cap?:     number | undefined;\n\t} = {},\n): Completeness",
+				"entityId": "d5d941e94760ff6dce695d7796aa175e"
+			},
+			{
+				"name": "unreadableFile",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+				"startLine": 113,
+				"endLine": 115,
+				"language": "typescript",
+				"signature": "unreadableFile(relPath: string, err: unknown): SkippedItem",
+				"entityId": "f77ccbfd9c5039ef26e6c7c652133619"
+			},
+			{
+				"name": "walkFiles",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts",
+				"startLine": 132,
+				"endLine": 175,
+				"language": "typescript",
+				"signature": "walkFiles(\n\troot: string,\n\tcap:  number = DEFAULT_FILE_CAP,\n): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }>",
+				"entityId": "095f40b993d3702a33604e8d8c4c062c"
+			},
+			{
+				"name": "runAdherenceCheck",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+				"startLine": 192,
+				"endLine": 314,
+				"language": "typescript",
+				"signature": "runAdherenceCheck(args: AdherenceRunArgs): Promise<AdherenceResult>",
+				"entityId": "56623d6f814d37a4649c983802045fdf"
+			},
+			{
+				"name": "_resolveConstraintsForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/adherence.ts",
+				"startLine": 535,
+				"endLine": 545,
+				"language": "typescript",
+				"signature": "_resolveConstraintsForTest(\n\targs:   TemplateExecuteArgs,\n\tparams: Record<string, unknown>,\n\tfacts?: { limited: ReachedLimit[]; partlyRead: PartlyReadItem[] },\n): Promise<ConstraintInput[]>",
+				"entityId": "1a32c87078b3a6c5374cb2843f8d16e5"
+			},
+			{
+				"name": "aggregateReportCompleteness",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+				"startLine": 85,
+				"endLine": 91,
+				"language": "typescript",
+				"signature": "aggregateReportCompleteness(): Completeness",
+				"entityId": "bb3f7dc77b0cc56c3c90f29a2e0ca67e"
+			},
+			{
+				"name": "runAggregator",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/aggregator.ts",
+				"startLine": 97,
+				"endLine": 151,
+				"language": "typescript",
+				"signature": "runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>",
+				"entityId": "bc26c13741464db7ce33486dcfbf3952"
+			},
+			{
+				"name": "_setTaskScopeDepsForTest",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 40,
+				"endLine": 42,
+				"language": "typescript",
+				"signature": "_setTaskScopeDepsForTest(deps: ScopeDeps | undefined): void",
+				"entityId": "1e5245109dfedc1ea1b5f3acb9499067"
+			},
+			{
+				"name": "resolveTaskScope",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 56,
+				"endLine": 77,
+				"language": "typescript",
+				"signature": "resolveTaskScope(\n\tscopeRef:      AnalyzeScopeRef,\n\tfamily:        TaskFamily,\n\ttemplateLabel: string,\n\tdeps?:         ScopeDeps,\n\t/** A stand-in for the classifier's table, for a test; never passed in production. */\n\ttable:         KindsPerTarget = TARGET_TO_KINDS,\n): Promise<ResolvedScope>",
+				"entityId": "2472e0b2c5c1a760dbee4b7eef3468e8"
+			},
+			{
+				"name": "graphRepoOf",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 88,
+				"endLine": 90,
+				"language": "typescript",
+				"signature": "graphRepoOf(scope: ResolvedScope): string",
+				"entityId": "221b2f59c0094dc5ebd823260e3352a8"
+			},
+			{
+				"name": "inAreaOf",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 101,
+				"endLine": 107,
+				"language": "typescript",
+				"signature": "inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; readonly file: string }) => boolean",
+				"entityId": "7db4b4d2f87d53a5f72e6d8b4d96ae57"
+			},
+			{
+				"name": "docsAreaOf",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 115,
+				"endLine": 119,
+				"language": "typescript",
+				"signature": "docsAreaOf(scope: ResolvedScope): DocsArea | undefined",
+				"entityId": "a3a7566292cb448b86d51b5b825f29f8"
+			},
+			{
+				"name": "familyOfTemplate",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/task-scope.ts",
+				"startLine": 122,
+				"endLine": 126,
+				"language": "typescript",
+				"signature": "familyOfTemplate(templateId: string): TaskFamily",
+				"entityId": "2e571e6430b2b6b99e6b29124956b2ce"
+			},
+			{
+				"name": "DocSummariserPromptMissingError",
+				"kind": "class",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+				"startLine": 68,
+				"endLine": 73,
+				"language": "typescript",
+				"entityId": "23df2bbc6d4ca17ceb7a29ae29899e69"
+			},
+			{
+				"name": "summariseDoc",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/driver.ts",
+				"startLine": 179,
+				"endLine": 299,
+				"language": "typescript",
+				"signature": "summariseDoc(args: SummariseDocArgs): Promise<SummariseDocResult>",
+				"entityId": "2d12b3b45d7d505577ce5fd33b9b57b8"
+			},
+			{
+				"name": "inferDocFamily",
+				"kind": "function",
+				"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/family.ts",
+				"startLine": 101,
+				"endLine": 109,
+				"language": "typescript",
+				"signature": "inferDocFamily(file: string): DocFamily",
+				"entityId": "6444d581ac0560f7041e572c44ffd2d1"
+			}
+		]
+	},
+	"completedAt": "2026-10-09T13:37:31.066Z",
+	"completeness": {
+		"complete": true,
+		"total": 264,
+		"returned": 264,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+	}
+}

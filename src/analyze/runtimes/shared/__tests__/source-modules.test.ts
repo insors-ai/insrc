@@ -7,8 +7,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 
+import { makeEntityId } from '../../../../indexer/parser/base.js';
 import type { Entity, EntityKind } from '../../../../shared/types.js';
 import type { ResolvedScope } from '../../../context/scope.js';
 import { moduleOfDirectory, moduleOfEntityId, sourceModulesOf } from '../source-modules.js';
@@ -20,7 +20,7 @@ function ent(kind: EntityKind, name: string, rel: string, extra: Partial<Entity>
 	const file = rel === '' ? '' : `${REPO}/${rel}`;
 	return {
 		// A stored id is a hex string: it holds no path separator.
-		id: createHash('sha256').update(`${kind}\x00${rel}\x00${name}`).digest('hex').slice(0, 32), kind, name, language: 'typescript', repoId: 1, repo: REPO, file,
+		id: makeEntityId(REPO, file, kind, name), kind, name, language: 'typescript', repoId: 1, repo: REPO, file,
 		startLine: 1, endLine: 5, body: '', embedding: [], indexedAt: '2026-10-09T00:00:00.000Z', ...extra,
 	} as Entity;
 }
@@ -102,6 +102,8 @@ test('sourceModulesOf keeps a stored module entity with its id and lists no dire
 	// An imported module, as a parser stores it (empty file), owns no directory of the repo.
 	const imported = ent('module', 'lodash', '', { repo: '' });
 	assert.deepEqual(sourceModulesOf(dirScope('repo'), [src('ship/track.ts')], [imported]).map(m => m.name), ['ship']);
+	// Nor is it a module of the area, should one ever be among the area's entities: it has no directory.
+	assert.deepEqual(sourceModulesOf(dirScope('repo'), [imported, src('ship/track.ts')], [imported]).map(m => m.name), ['ship']);
 
 	// Under a file scope and a symbol scope no directory is a module; a stored module entity the area contains is kept.
 	assert.deepEqual(view(fileScope('ship/track.ts'), all), []);
@@ -135,6 +137,10 @@ test("moduleOfDirectory reads an absolute path, a relative path, a trailing slas
 	// '.', the empty relative path and the repo's own path name the repo's directory.
 	for (const value of ['.', './', '', REPO, `${REPO}/`]) {
 		assert.deepEqual(moduleOfDirectory(value, scope, all), { directory: REPO, name: '.', path: REPO }, JSON.stringify(value));
+	}
+	// '.' and '..' segments are resolved before anything is tested: the path names the directory it leads to.
+	for (const value of ['src/./pay', 'src/pay/rules/..', 'src/other/../pay', `${REPO}/src/../src/pay/.`]) {
+		assert.deepEqual(moduleOfDirectory(value, scope, all), pay, value);
 	}
 	// A directory that holds source only in its sub-directories is a valid value.
 	assert.deepEqual(moduleOfDirectory('src', scope, all), { directory: `${REPO}/src`, name: 'src', path: `${REPO}/src` });
@@ -177,6 +183,11 @@ test("moduleOfDirectory fails for a directory with no stored source under it, fo
 		`code.surface.functional: the module value 'src/ship' names the directory '${REPO}/src/ship', which lies outside the area of the run's scope ('${REPO}/src/pay').`);
 	assert.match(message(() => moduleOfDirectory('src', payScope, inPay)), /lies outside the area/, 'the parent of the area is outside it');
 	assert.equal(moduleOfDirectory('src/pay', payScope, inPay).directory, `${REPO}/src/pay`, 'the area itself is in it');
+	// A path that climbs out of the area is outside it, and is told so; one that climbs out of the repo too.
+	assert.equal(message(() => moduleOfDirectory('src/pay/../ship', payScope, inPay)),
+		`code.surface.functional: the module value 'src/pay/../ship' names the directory '${REPO}/src/ship', which lies outside the area of the run's scope ('${REPO}/src/pay').`);
+	assert.match(message(() => moduleOfDirectory('../elsewhere', repo, all)), /names the directory '\/work\/elsewhere', which lies outside the area/);
+	assert.equal(moduleOfDirectory('src/ship/../pay', payScope, inPay).directory, `${REPO}/src/pay`, 'a path that climbs and comes back into the area is in it');
 	// --- a directory path under a file scope or a symbol scope: refused before anything else is tested ---
 	for (const scope of [fileScope('src/pay/a.ts'), symbolScope(ent('function', 'settle', 'src/pay/a.ts'))]) {
 		for (const value of ['src/pay', '/elsewhere', 'src/none']) {

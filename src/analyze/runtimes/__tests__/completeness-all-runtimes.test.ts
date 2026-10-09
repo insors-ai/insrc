@@ -227,7 +227,7 @@ test('a table test over every registered plan-task runtime still finds a complet
 		assert.ok(c.basisNote?.startsWith(GRAPH_BASIS_NOTE), value);
 		assert.equal(c.complete, true, value);
 		// The directory holds the two functions the module entity's surface holds.
-		const out = result.outputs.get('functional-surface') as { module: { directory: string; entityId?: string }; exports: unknown[]; internalHelpers: unknown[] };
+		const out = result.outputs.get('functional-surface') as { module: { directory: string; entityId?: string | undefined }; exports: unknown[]; internalHelpers: unknown[] };
 		assert.equal(c.returned, 2, value);
 		assert.equal(out.exports.length + out.internalHelpers.length, 2, value);
 		assert.ok(!('entityId' in out.module), value);

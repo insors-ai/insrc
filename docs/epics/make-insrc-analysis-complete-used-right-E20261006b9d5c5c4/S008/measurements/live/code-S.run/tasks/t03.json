@@ -1,0 +1,798 @@
+{
+	"taskId": "t03",
+	"template": "code.structure.module-tree",
+	"kind": "leaf",
+	"produces": [
+		"module-tree"
+	],
+	"status": "ok",
+	"outputs": {
+		"module-tree": {
+			"repo": "/Users/subhagho/work/projects/insors/insrc",
+			"modules": [
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"name": "src/analyze",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+					"name": "src/analyze/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"name": "src/analyze/classifier",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__",
+					"name": "src/analyze/classifier/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"name": "src/analyze/context",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"name": "src/analyze/context/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+					"name": "src/analyze/context/__tests__/fixtures",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"name": "src/analyze/executor",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+					"name": "src/analyze/executor/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"name": "src/analyze/explore",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+					"name": "src/analyze/explore/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"name": "src/analyze/orchestrator",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"name": "src/analyze/orchestrator/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"name": "src/analyze/planner",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+					"name": "src/analyze/planner/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"name": "src/analyze/planner/templates",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+					"name": "src/analyze/planner/templates/code",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+					"name": "src/analyze/planner/templates/data",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+					"name": "src/analyze/planner/templates/docs",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic",
+					"name": "src/analyze/planner/templates/generic",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+					"name": "src/analyze/planner/templates/infra",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"name": "src/analyze/runtimes",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"name": "src/analyze/runtimes/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"name": "src/analyze/runtimes/code",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"name": "src/analyze/runtimes/code/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"name": "src/analyze/runtimes/data",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"name": "src/analyze/runtimes/data/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"name": "src/analyze/runtimes/docs",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"name": "src/analyze/runtimes/docs/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+					"name": "src/analyze/runtimes/generic",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+					"name": "src/analyze/runtimes/generic/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"name": "src/analyze/runtimes/infra",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"name": "src/analyze/runtimes/infra/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"name": "src/analyze/runtimes/shared",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+					"name": "src/analyze/runtimes/shared/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+					"name": "src/analyze/summariser",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+					"language": "typescript"
+				},
+				{
+					"id": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/__tests__",
+					"name": "src/analyze/summariser/__tests__",
+					"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/__tests__",
+					"language": "typescript"
+				}
+			],
+			"edges": [
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 6
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 6
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 9
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 22
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 7
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 9
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 13
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 4
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 4
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 5
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 6
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+					"viaImports": 4
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 4
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 7
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 8
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 4
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+					"viaImports": 3
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 6
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+					"viaImports": 1
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+					"viaImports": 2
+				},
+				{
+					"from": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+					"to": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+					"viaImports": 2
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:31.709Z",
+	"completeness": {
+		"complete": true,
+		"total": 37,
+		"returned": 37,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed. A file whose module is not in the area is not part of the tree, and neither are its imports. An import whose target lies outside the area is not an edge."
+	}
+}

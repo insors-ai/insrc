@@ -1,0 +1,558 @@
+{
+	"taskId": "t04",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/orchestrator",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator"
+			},
+			"exports": [
+				{
+					"name": "runAnalyze",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 99,
+					"endLine": 175,
+					"language": "typescript",
+					"signature": "runAnalyze(\n\targs: RunAnalyzeArgs,\n\topts: RunAnalyzeOpts = {},\n): Promise<RunAnalyzeResult>",
+					"body": "async function runAnalyze(\n\targs: RunAnalyzeArgs,\n\topts: RunAnalyzeOpts = {},\n): Promise<RunAnalyzeResult> {\n\tconst start = Date.now();\n\tconst runId = args.runId;\n\n\t// Local emit() that swallows callback exceptions so a broken\n\t// subscriber can't take the run down. The `done` event is the\n\t// only one the orchestrator GUARANTEES fires; intermediate events\n\t// are best-effort observers.\n\tconst emit = (event: AnalyzeRunEvent): void => {\n\t\tif (opts.onEvent === undefined) return;\n\t\ttry { opts.onEvent(event); }\n\t\tcatch (err) {\n\t\t\tlog.warn({ runId, eventType: event.type, err: (err as Error).message },\n\t\t\t\t'runAnalyze: onEvent callback threw; ignoring');\n\t\t}\n\t};\n\n\t// emitDoneAndReturn wraps every terminal exit -- success, failure,\n\t// cache hit -- to keep the \"done fires EXACTLY ONCE\" invariant in\n\t// one place.\n\tconst emitDoneAndReturn = (result: RunAnalyzeResult): RunAnalyzeResult => {\n\t\temit({ type: 'done', result });\n\t\treturn result;\n\t};\n\n\t// What the run has reached, for the handler of an error nothing else\n\t// catches. The stage starts as 'classify', the first stage and the one the\n\t// initial record carries, so an error raised before any stage has started\n\t// is reported there.\n\tconst reached: RunReached = { stage: 'classify', record: undefined, intent: undefined };\n\n\t// The run is live from here, before its first read of a record, until it\n\t// returns or throws.\n\traiseRunLive(runId);\n\ttry {\n\t\treturn await runStages(args, opts, { start, emit, emitDoneAndReturn, reached });\n\t} catch (err) {\n\t\t// An error no stage's own handler caught. The run does not leave as a\n\t\t// rejection: its record says failed at the stage reached, and that\n\t\t// failure is returned.\n\t\tconst failure: RunFailure = { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };\n\t\tlog.error({ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed');\n\t\ttry {\n\t\t\t// The record is marked failed only when it is this run's to mark:\n\t\t\t//   - a record that already says how a run ended ('ok' or 'failed') is\n\t\t\t//     left as it is, also when the error was raised after that write;\n\t\t\t//   - while another run is going under the same id the record is shared\n\t\t\t//     and the run still going writes it, so this run leaves it alone.\n\t\t\tconst onDisk = readRunRecord(runId);\n\t\t\tif (onDisk !== null && onDisk.status !== 'in-progress') {\n\t\t\t\tlog.warn({ runId, status: onDisk.status, stage: onDisk.stage }, 'runAnalyze: the run record already says how the run ended; it is left as it is');\n\t\t\t} else if (liveRunCount(runId) > 1) {\n\t\t\t\tlog.warn({ runId }, 'runAnalyze: another run is going under this id; the shared run record is left to it');\n\t\t\t} else {\n\t\t\t\tconst base: RunRecord = reached.record ?? {\n\t\t\t\t\trunId, createdAt: nowIso(), updatedAt: nowIso(),\n\t\t\t\t\tuserPrompt: args.userPrompt, initialScopeRef: args.scopeRef,\n\t\t\t\t\tstage: reached.stage, status: 'in-progress',\n\t\t\t\t};\n\t\t\t\twriteRunRecord(patch(base, {\n\t\t\t\t\tstage: reached.stage, status: 'failed', error: failure,\n\t\t\t\t\t...(reached.intent !== undefined ? { intent: reached.intent } : {}),\n\t\t\t\t}));\n\t\t\t}\n\t\t} catch (writeErr) {\n\t\t\t// The disk may be the very cause of the first error. The record is left\n\t\t\t// as it was; the run is no longer live, so a reader corrects it.\n\t\t\tlog.error({ runId, err: (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written');\n\t\t}\n\t\treturn emitDoneAndReturn(failResult(reached.stage, failure, reached.intent, start, runId));\n\t} finally {\n\t\tlowerRunLive(runId);\n\t}\n}",
+					"entityId": "ad537693ce8bd9aece85b8d604f93a4f"
+				},
+				{
+					"name": "concludeRun",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 556,
+					"endLine": 567,
+					"language": "typescript",
+					"signature": "concludeRun(\n\ttree:          PlanTreeNode,\n\texecuted:      ExecutorResult,\n\tcontextReport: AnswerReport | undefined,\n): { readonly report: AnswerReport; readonly finalReport: unknown }",
+					"body": "function concludeRun(\n\ttree:          PlanTreeNode,\n\texecuted:      ExecutorResult,\n\tcontextReport: AnswerReport | undefined,\n): { readonly report: AnswerReport; readonly finalReport: unknown } {\n\tconst report = mergeAnswerReports(\n\t\tcontextReport ?? RUN_CONTEXT_NOT_RECORDED,\n\t\tderiveAnswerReport(collectPlanSources(tree, executed)),\n\t\tRUN_CONTEXT_SOURCE_PREFIX,\n\t);\n\treturn { report, finalReport: headFinalReport(executed.root.finalReport, renderCompletenessLine(report)) };\n}",
+					"entityId": "47f7234367f722b6462e4bbe5995d9eb"
+				},
+				{
+					"name": "completeRun",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 575,
+					"endLine": 611,
+					"language": "typescript",
+					"signature": "completeRun(args: {\n\treadonly record:        RunRecord;\n\treadonly intent:        ClassifiedIntent;\n\treadonly tree:          PlanTreeNode;\n\treadonly executed:      ExecutorResult;\n\t/** The report of the run context, the run's first step. */\n\treadonly contextReport: AnswerReport | undefined;\n\t/** When the run started, in milliseconds. */\n\treadonly start:         number;\n}): RunAnalyzeResult",
+					"body": "function completeRun(args: {\n\treadonly record:        RunRecord;\n\treadonly intent:        ClassifiedIntent;\n\treadonly tree:          PlanTreeNode;\n\treadonly executed:      ExecutorResult;\n\t/** The report of the run context, the run's first step. */\n\treadonly contextReport: AnswerReport | undefined;\n\t/** When the run started, in milliseconds. */\n\treadonly start:         number;\n}): RunAnalyzeResult {\n\tconst { record, intent, tree, executed } = args;\n\tconst rootPlan = executed.root;\n\tconst concluded = concludeRun(tree, executed, args.contextReport);\n\twriteRunRecord(patch(record, {\n\t\tstage: 'done',\n\t\tstatus: 'ok',\n\t\tfinalReport: concluded.finalReport,\n\t\treport: concluded.report,\n\t\ttasksCompleted: rootPlan.tasksCompleted,\n\t\ttasksFailed: rootPlan.tasksFailed,\n\t}));\n\tconst durationMs = Date.now() - args.start;\n\tlog.info(\n\t\t{ runId: record.runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },\n\t\t'runAnalyze: ok',\n\t);\n\treturn {\n\t\tok: true,\n\t\trunId: record.runId,\n\t\tintent,\n\t\tfinalReport: concluded.finalReport,\n\t\ttasksCompleted: rootPlan.tasksCompleted,\n\t\ttasksFailed: rootPlan.tasksFailed,\n\t\tdurationMs,\n\t\treport: concluded.report,\n\t};\n}",
+					"entityId": "51b8cc915551037b0495a2784bb9a29b"
+				},
+				{
+					"name": "hintedIntentBase",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 654,
+					"endLine": 685,
+					"language": "typescript",
+					"signature": "hintedIntentBase(\n\ttarget:      AnalyzeTarget,\n\tuserPrompt:  string,\n\tscopeRef:    AnalyzeScopeRef,\n\tconnectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,\n): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }>",
+					"body": "async function hintedIntentBase(\n\ttarget:      AnalyzeTarget,\n\tuserPrompt:  string,\n\tscopeRef:    AnalyzeScopeRef,\n\tconnectionExists: (id: string) => Promise<boolean> = connectionIsRegistered,\n): Promise<{ ok: true; base: HintedIntentBase } | { ok: false; failure: RunFailure }> {\n\tconst focus = userPrompt.trim();\n\tconst base: HintedIntentBase = focus.length > 0\n\t\t? { target, focused: true, focus, scopeRef }\n\t\t: { target, focused: false, scopeRef };\n\t// The size is not part of either check; 'M' is a placeholder here.\n\tlet failure: Awaited<ReturnType<typeof validateIntentSemantics>>;\n\ttry {\n\t\tfailure = await validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, connectionExists);\n\t} catch (err) {\n\t\t// The connection check can throw (an unreadable connections file,\n\t\t// a registry that cannot be read). That is a failure of this\n\t\t// stage like any other: it gets a code and a failed run record,\n\t\t// not an unhandled rejection that leaves the record in progress.\n\t\treturn { ok: false, failure: classifyShaperError(err) };\n\t}\n\tif (failure !== null) {\n\t\treturn {\n\t\t\tok: false,\n\t\t\tfailure: {\n\t\t\t\tcode:    failure.code as RunFailure['code'],\n\t\t\t\tmessage: failure.message,\n\t\t\t},\n\t\t};\n\t}\n\treturn { ok: true, base };\n}",
+					"entityId": "f40583285c9dc2065a3226eee7ceec2c"
+				},
+				{
+					"name": "raiseRunLive",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+					"startLine": 22,
+					"endLine": 24,
+					"language": "typescript",
+					"signature": "raiseRunLive(runId: string): void",
+					"body": "function raiseRunLive(runId: string): void {\n\tliveCount.set(runId, (liveCount.get(runId) ?? 0) + 1);\n}",
+					"entityId": "046d315197d953b7347f21f649b1129a"
+				},
+				{
+					"name": "lowerRunLive",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+					"startLine": 27,
+					"endLine": 31,
+					"language": "typescript",
+					"signature": "lowerRunLive(runId: string): void",
+					"body": "function lowerRunLive(runId: string): void {\n\tconst count = liveCount.get(runId) ?? 0;\n\tif (count <= 1) liveCount.delete(runId);\n\telse liveCount.set(runId, count - 1);\n}",
+					"entityId": "2111da28b1785b8f7167e5db1686743b"
+				},
+				{
+					"name": "liveRunCount",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+					"startLine": 34,
+					"endLine": 36,
+					"language": "typescript",
+					"signature": "liveRunCount(runId: string): number",
+					"body": "function liveRunCount(runId: string): number {\n\treturn liveCount.get(runId) ?? 0;\n}",
+					"entityId": "e1bc90d2383b84a1b5f15d58e82b177b"
+				},
+				{
+					"name": "isRunLive",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/live-runs.ts",
+					"startLine": 39,
+					"endLine": 41,
+					"language": "typescript",
+					"signature": "isRunLive(runId: string): boolean",
+					"body": "function isRunLive(runId: string): boolean {\n\treturn liveRunCount(runId) > 0;\n}",
+					"entityId": "26bf725f2ebfe404890f41f393261901"
+				},
+				{
+					"name": "runRecordPathFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 31,
+					"endLine": 33,
+					"language": "typescript",
+					"signature": "runRecordPathFor(runId: string): string",
+					"body": "function runRecordPathFor(runId: string): string {\n\treturn PATHS.analyzeRunRecord(runId);\n}",
+					"entityId": "785de126e0ba21b07d355ab5d9dcda23"
+				},
+				{
+					"name": "readRunRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 35,
+					"endLine": 44,
+					"language": "typescript",
+					"signature": "readRunRecord(runId: string): RunRecord | null",
+					"body": "function readRunRecord(runId: string): RunRecord | null {\n\tconst path = runRecordPathFor(runId);\n\tif (!existsSync(path)) return null;\n\ttry {\n\t\treturn JSON.parse(readFileSync(path, 'utf8')) as RunRecord;\n\t} catch (err) {\n\t\tlog.warn({ path, err: (err as Error).message }, 'run record unreadable; treating as miss');\n\t\treturn null;\n\t}\n}",
+					"entityId": "50681388acd3937ef3dd87e42832cc7f"
+				},
+				{
+					"name": "writeRunRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 46,
+					"endLine": 54,
+					"language": "typescript",
+					"signature": "writeRunRecord(record: RunRecord): string",
+					"body": "function writeRunRecord(record: RunRecord): string {\n\tconst path = runRecordPathFor(record.runId);\n\tatomicWriteJson(path, record);\n\tlog.debug(\n\t\t{ runId: record.runId, stage: record.stage, status: record.status },\n\t\t'wrote run record',\n\t);\n\treturn path;\n}",
+					"entityId": "9fce5ee7f5def02e4bb1e75b82e1995e"
+				},
+				{
+					"name": "abandonRunRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 107,
+					"endLine": 121,
+					"language": "typescript",
+					"signature": "abandonRunRecord(record: RunRecord): RunRecord",
+					"body": "function abandonRunRecord(record: RunRecord): RunRecord {\n\tconst abandoned: RunRecord = {\n\t\t...record,\n\t\tstatus:    'failed',\n\t\terror:     { code: 'run-abandoned', message: RUN_ABANDONED_MESSAGE },\n\t\tupdatedAt: new Date().toISOString(),\n\t};\n\ttry {\n\t\twriteRunRecord(abandoned);\n\t\tlog.info({ runId: record.runId, stage: record.stage }, 'run record rewritten as abandoned: in-progress with no live run');\n\t} catch (err) {\n\t\tlog.warn({ runId: record.runId, err: (err as Error).message }, 'the abandoned run record could not be written; it is reported as abandoned all the same');\n\t}\n\treturn abandoned;\n}",
+					"entityId": "ffa8711527ba0555d42621b416f69c03"
+				},
+				{
+					"name": "purgeRun",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 123,
+					"endLine": 160,
+					"language": "typescript",
+					"signature": "purgeRun(\n\trunId: string,\n\topts:  {\n\t\treadonly force?: boolean;\n\t\t/** Says whether a run is live. Only a caller in the process that starts\n\t\t *  the runs can know; one that cannot passes nothing, and an\n\t\t *  'in-progress' record is then refused. */\n\t\treadonly isLive?: ((runId: string) => boolean) | undefined;\n\t} = {},\n): PurgeRunResult | PurgeRunRefused",
+					"body": "function purgeRun(\n\trunId: string,\n\topts:  {\n\t\treadonly force?: boolean;\n\t\t/** Says whether a run is live. Only a caller in the process that starts\n\t\t *  the runs can know; one that cannot passes nothing, and an\n\t\t *  'in-progress' record is then refused. */\n\t\treadonly isLive?: ((runId: string) => boolean) | undefined;\n\t} = {},\n): PurgeRunResult | PurgeRunRefused {\n\tconst dir = dirname(runRecordPathFor(runId));\n\n\tif (opts.force !== true) {\n\t\tconst record = readRunRecord(runId);\n\t\tif (record !== null && record.status === 'in-progress' && opts.isLive !== undefined && !opts.isLive(runId)) {\n\t\t\t// No live run stands behind the record: it is abandoned, and is\n\t\t\t// purged without force. The rewrite is best effort; the purge follows.\n\t\t\tabandonRunRecord(record);\n\t\t} else if (record !== null && record.status === 'in-progress') {\n\t\t\tlog.info(\n\t\t\t\t{ runId, stage: record.stage },\n\t\t\t\t'purgeRun refused: run is in-progress (use force=true to override)',\n\t\t\t);\n\t\t\treturn { ok: false, code: 'run-in-progress', stage: record.stage };\n\t\t}\n\t}\n\n\ttry {\n\t\trmSync(dir, { recursive: true });\n\t\tlog.info({ runId, dir }, 'purgeRun: run directory removed');\n\t\treturn { ok: true, purged: true };\n\t} catch (err) {\n\t\tif ((err as NodeJS.ErrnoException).code === 'ENOENT') {\n\t\t\treturn { ok: true, purged: false };\n\t\t}\n\t\tthrow err;\n\t}\n}",
+					"entityId": "99bb0f85e688af2cc12f74eaf79c1f6f"
+				},
+				{
+					"name": "purgeRunForTests",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 163,
+					"endLine": 166,
+					"language": "typescript",
+					"signature": "purgeRunForTests(runId: string): void",
+					"body": "function purgeRunForTests(runId: string): void {\n\tconst result = purgeRun(runId, { force: true });\n\tvoid result;\n}",
+					"entityId": "6ffe63fe98fd7bb7e06b3cb0db3562d6"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "never",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 56,
+					"endLine": 56,
+					"language": "typescript",
+					"signature": "never(): Promise<boolean>",
+					"body": "const never = async (): Promise<boolean> => { throw new Error('the connection check must not be called'); };",
+					"entityId": "c5e142f8a2194c98e3f2f5948ece8345"
+				},
+				{
+					"name": "runId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 58,
+					"endLine": 60,
+					"language": "typescript",
+					"signature": "runId(tag: string): string",
+					"body": "function runId(tag: string): string {\n\treturn `hinted-${tag}-${Math.floor(Math.random() * 1e9).toString(16)}`;\n}",
+					"entityId": "77980a14ab66ce5cabb1e4d84b793da1"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 107,
+					"endLine": 111,
+					"language": "typescript",
+					"signature": "run(id: string, args: Omit<Parameters<typeof runAnalyze>[0], 'runId'>)",
+					"body": "async function run(id: string, args: Omit<Parameters<typeof runAnalyze>[0], 'runId'>) {\n\tconst events: AnalyzeRunEvent[] = [];\n\tconst result = await runAnalyze({ runId: id, ...args }, { onEvent: e => events.push(e) });\n\treturn { result, events, record: readRunRecord(id) };\n}",
+					"entityId": "73fa61b4f821a599d980194920039e97"
+				},
+				{
+					"name": "unreadable",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 191,
+					"endLine": 193,
+					"language": "typescript",
+					"signature": "unreadable(): Promise<boolean>",
+					"body": "const unreadable = async (): Promise<boolean> => {\n\t\tthrow new ScopeRefUnresolvedError(\"Connection 'ledger-db' could not be checked: the connections file of repo '/a' could not be read (invalid JSON).\");\n\t};",
+					"entityId": "7997bfa8fdeccdd2dce90557d8d29e80"
+				},
+				{
+					"name": "own",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 220,
+					"endLine": 220,
+					"language": "typescript",
+					"signature": "own(): Promise<boolean>",
+					"body": "const own = async (): Promise<boolean> => true;",
+					"entityId": "dc41ddb95e2b1291e970492f7eb87dce"
+				},
+				{
+					"name": "conns",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 225,
+					"endLine": 226,
+					"language": "typescript",
+					"signature": "conns(ids: string[]): LoadedConnections",
+					"body": "const conns = (ids: string[]): LoadedConnections =>\n\t\t({ file: { connections: [] }, resolved: ids.map(id => ({ id, kind: 'sqlite' })), warnings: [] } as unknown as LoadedConnections);",
+					"entityId": "36ebafa8fe5033a7b0cbde7ab49cef38"
+				},
+				{
+					"name": "deps",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/hinted-branch.test.ts",
+					"startLine": 227,
+					"endLine": 232,
+					"language": "typescript",
+					"signature": "deps(byRepo: Record<string, string[] | Error>): ScopeDeps",
+					"body": "const deps = (byRepo: Record<string, string[] | Error>): ScopeDeps => ({\n\t\tlistRepos:           async () => Object.keys(byRepo).map(path => ({ path, status: 'ready' } as unknown as RegisteredRepo)),\n\t\tfindEntitiesByFile:  async () => [],\n\t\tlistEntitiesForRepo: async () => [],\n\t\tloadConnections:     async (repo) => { const v = byRepo[repo]!; if (v instanceof Error) throw v; return conns(v); },\n\t});",
+					"entityId": "427e626388ca98b08e643993d12b71dc"
+				},
+				{
+					"name": "guard",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/orchestrator.test.ts",
+					"startLine": 603,
+					"endLine": 608,
+					"language": "typescript",
+					"signature": "guard(record: null | { status: string; stage: string; intent?: unknown; finalReport?: unknown }): boolean",
+					"body": "const guard = (record: null | { status: string; stage: string; intent?: unknown; finalReport?: unknown }): boolean =>\n\t\trecord !== null\n\t\t&& record.status === 'ok'\n\t\t&& record.stage === 'done'\n\t\t&& record.intent !== undefined\n\t\t&& record.finalReport !== undefined;",
+					"entityId": "6a2179935c0029103eea80f3acbcb2a2"
+				},
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 44,
+					"endLine": 46,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"body": "function uniqueRunId(label: string): string {\n\treturn `run-report-${label}-${Math.floor(Math.random() * 1e9).toString(16)}`;\n}",
+					"entityId": "32b8fd197afff0852658520ecbe917dd"
+				},
+				{
+					"name": "task",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 48,
+					"endLine": 50,
+					"language": "typescript",
+					"signature": "task(over: Partial<PlannedTask> & { taskId: string }): PlannedTask",
+					"body": "function task(over: Partial<PlannedTask> & { taskId: string }): PlannedTask {\n\treturn { template: 'demo.leaf', kind: 'leaf', params: {}, produces: ['out'], rationale: 'fixture task for the run report tests', ...over };\n}",
+					"entityId": "b303b884cb7cf37b5e8c60bc2c883f9c"
+				},
+				{
+					"name": "plan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 52,
+					"endLine": 54,
+					"language": "typescript",
+					"signature": "plan(tasks: PlannedTask[]): PlanTask",
+					"body": "function plan(tasks: PlannedTask[]): PlanTask {\n\treturn { planId: 'p', goal: 'g', target: 'code', scope: 'XS', reasoning: 'fixture plan for the run report tests', tasks };\n}",
+					"entityId": "384596428215197f5df42c63aaaa47b5"
+				},
+				{
+					"name": "node",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 56,
+					"endLine": 58,
+					"language": "typescript",
+					"signature": "node(p: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTreeNode",
+					"body": "function node(p: PlanTask, children = new Map<string, PlanTreeNode>()): PlanTreeNode {\n\treturn { plan: p, children, childErrors: new Map() };\n}",
+					"entityId": "50e1061fb48f9054b485a48c94b1f9a5"
+				},
+				{
+					"name": "runtime",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 60,
+					"endLine": 62,
+					"language": "typescript",
+					"signature": "runtime(templateId: string, outputs: Record<string, unknown>, completeness: Completeness): TemplateRuntime",
+					"body": "function runtime(templateId: string, outputs: Record<string, unknown>, completeness: Completeness): TemplateRuntime {\n\treturn { templateId, execute: async () => ({ outputs: new Map(Object.entries(outputs)), completeness }) };\n}",
+					"entityId": "3ee385748f7f35dffc8a5b72dccd3b65"
+				},
+				{
+					"name": "storedRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/run-report.test.ts",
+					"startLine": 216,
+					"endLine": 230,
+					"language": "typescript",
+					"signature": "storedRecord(runId: string, extra: Partial<RunRecord>): RunRecord",
+					"body": "function storedRecord(runId: string, extra: Partial<RunRecord>): RunRecord {\n\treturn {\n\t\trunId,\n\t\tcreatedAt: '2026-10-08T00:00:00.000Z',\n\t\tupdatedAt: '2026-10-08T00:00:05.000Z',\n\t\tuserPrompt: 'p',\n\t\tinitialScopeRef: { kind: 'repo', value: '/r' },\n\t\tstage: 'done',\n\t\tstatus: 'ok',\n\t\tintent: INTENT,\n\t\ttasksCompleted: 2,\n\t\ttasksFailed: [],\n\t\t...extra,\n\t};\n}",
+					"entityId": "89094fa504c967d6c811ce0ce3153253"
+				},
+				{
+					"name": "smallest",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+					"startLine": 62,
+					"endLine": 78,
+					"language": "typescript",
+					"signature": "smallest(schema: unknown): unknown",
+					"body": "function smallest(schema: unknown): unknown {\n\tconst s = (schema ?? {}) as Record<string, unknown>;\n\tif (s['const'] !== undefined) return s['const'];\n\tif (Array.isArray(s['enum'])) return s['enum'][0];\n\tconst type = Array.isArray(s['type']) ? s['type'][0] : s['type'];\n\tconst properties = s['properties'] as Record<string, unknown> | undefined;\n\tif (type === 'object' || properties !== undefined) {\n\t\tconst out: Record<string, unknown> = {};\n\t\tfor (const key of (s['required'] as string[] | undefined) ?? Object.keys(properties ?? {})) out[key] = smallest(properties?.[key]);\n\t\treturn out;\n\t}\n\tif (type === 'array') return Array.from({ length: (s['minItems'] as number | undefined) ?? 0 }, () => smallest(s['items']));\n\tif (type === 'string') return 'x'.repeat(Math.max(1, (s['minLength'] as number | undefined) ?? 1));\n\tif (type === 'number' || type === 'integer') return (s['minimum'] as number | undefined) ?? 0;\n\tif (type === 'boolean') return false;\n\treturn null;\n}",
+					"entityId": "be698ecbe8b0cf784100ac8bbcd25f0a"
+				},
+				{
+					"name": "run",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+					"startLine": 88,
+					"endLine": 103,
+					"language": "typescript",
+					"signature": "run(target: AnalyzeTarget, scopeRef: AnalyzeScopeRef): Promise<Run>",
+					"body": "async function run(target: AnalyzeTarget, scopeRef: AnalyzeScopeRef): Promise<Run> {\n\tconst runId = `scope-before-plan-${target}-${Math.floor(Math.random() * 1e9).toString(16)}`;\n\tconst roles: string[] = [];\n\tconst model = { completeStructured: async (_m: unknown, schema: unknown) => smallest(schema) } as unknown as LLMProvider;\n\tconst routing = { router: { resolveProviderForRole: (role: string) => { roles.push(role); return { provider: model }; } } } as unknown as RoutingSeamContext;\n\tconst events: AnalyzeRunEvent[] = [];\n\ttry {\n\t\tconst result = await runWithRoutingContext(routing, () => runAnalyze(\n\t\t\t{ runId, userPrompt: 'what is here', scopeRef, targetHint: target, scopeHint: 'S' },\n\t\t\t{ onEvent: e => { events.push(e); } },\n\t\t));\n\t\treturn { result, events, roles, record: readRunRecord(runId) };\n\t} finally {\n\t\tpurgeRunForTests(runId);\n\t}\n}",
+					"entityId": "ca9463f50e068d6f8afe874dfe753056"
+				},
+				{
+					"name": "plannerStarted",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+					"startLine": 105,
+					"endLine": 105,
+					"language": "typescript",
+					"signature": "plannerStarted(r: Run): boolean",
+					"body": "const plannerStarted = (r: Run): boolean => r.events.some(e => e.type === 'stage-substep' && e.substep === 'planner');",
+					"entityId": "236b6827e36c3d66d0338b6507f6ab63"
+				},
+				{
+					"name": "outcome",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+					"startLine": 106,
+					"endLine": 106,
+					"language": "typescript",
+					"signature": "outcome(r: Run): string",
+					"body": "const outcome = (r: Run): string => r.result.ok ? 'ok' : `${r.result.stage}/${r.result.error.code}`;",
+					"entityId": "15c43c0301094a5e95f1ef595af4707e"
+				},
+				{
+					"name": "emit",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 110,
+					"endLine": 117,
+					"language": "typescript",
+					"signature": "emit(event: AnalyzeRunEvent): void",
+					"body": "const emit = (event: AnalyzeRunEvent): void => {\n\t\tif (opts.onEvent === undefined) return;\n\t\ttry { opts.onEvent(event); }\n\t\tcatch (err) {\n\t\t\tlog.warn({ runId, eventType: event.type, err: (err as Error).message },\n\t\t\t\t'runAnalyze: onEvent callback threw; ignoring');\n\t\t}\n\t};",
+					"entityId": "7b9adf563ac0e2c460e6b56f96c1ff99"
+				},
+				{
+					"name": "emitDoneAndReturn",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 122,
+					"endLine": 125,
+					"language": "typescript",
+					"signature": "emitDoneAndReturn(result: RunAnalyzeResult): RunAnalyzeResult",
+					"body": "const emitDoneAndReturn = (result: RunAnalyzeResult): RunAnalyzeResult => {\n\t\temit({ type: 'done', result });\n\t\treturn result;\n\t};",
+					"entityId": "48b854c3c3b6395135fc6640cf3b2ffc"
+				},
+				{
+					"name": "runStages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 196,
+					"endLine": 517,
+					"language": "typescript",
+					"signature": "runStages(\n\targs: RunAnalyzeArgs,\n\topts: RunAnalyzeOpts,\n\tctx:  RunStagesContext,\n): Promise<RunAnalyzeResult>",
+					"body": "async function runStages(\n\targs: RunAnalyzeArgs,\n\topts: RunAnalyzeOpts,\n\tctx:  RunStagesContext,\n): Promise<RunAnalyzeResult> {\n\tconst { start, emit, emitDoneAndReturn, reached } = ctx;\n\tconst { runId, userPrompt, scopeRef: initialScopeRef } = args;\n\n\t// Every write of the run record by a stage goes through here, so the\n\t// handler knows the record last written and the stage the run is in.\n\tconst saveRunRecord = (r: RunRecord): string => {\n\t\tconst path = writeRunRecord(r);\n\t\treached.record = r;\n\t\tif (r.status === 'in-progress' && r.stage !== 'done') reached.stage = r.stage;\n\t\tif (r.intent !== undefined) reached.intent = r.intent;\n\t\treturn path;\n\t};\n\n\t// (resume) If <runRoot>/run.json shows a previously-completed run\n\t// (status='ok' + stage='done' + intent + finalReport all present),\n\t// short-circuit and return the cached result. See O3 commit for\n\t// the full rationale on which records DO and DON'T short-circuit.\n\tconst cached = readRunRecord(runId);\n\tif (\n\t\tcached !== null\n\t\t&& cached.status === 'ok'\n\t\t&& cached.stage === 'done'\n\t\t&& cached.intent !== undefined\n\t\t&& cached.finalReport !== undefined\n\t) {\n\t\tlog.info({ runId }, 'runAnalyze: resume cache hit; returning persisted RunAnalyzeOk');\n\t\treturn emitDoneAndReturn(resumedResult(cached, cached.intent));\n\t}\n\n\t// (0) Stamp the initial RunRecord so observers (IDE, resume) see\n\t//     the run exists even if stage 1 hangs.\n\tlet record: RunRecord = {\n\t\trunId,\n\t\tcreatedAt: nowIso(),\n\t\tupdatedAt: nowIso(),\n\t\tuserPrompt,\n\t\tinitialScopeRef,\n\t\tstage: 'classify',\n\t\tstatus: 'in-progress',\n\t};\n\tsaveRunRecord(record);\n\n\t// Pre-stage abort check helper. Returns a terminal fail result\n\t// when aborted; caller short-circuits with it.\n\tconst checkAborted = (stage: RunStage, intent?: ClassifiedIntent): RunAnalyzeResult | null => {\n\t\tif (opts.signal?.aborted !== true) return null;\n\t\tconst failure: RunFailure = {\n\t\t\tcode: 'aborted',\n\t\t\tmessage: `runAnalyze: aborted before stage='${stage}' could start`,\n\t\t};\n\t\trecord = patch(record, {\n\t\t\tstage,\n\t\t\tstatus: 'failed',\n\t\t\terror: failure,\n\t\t\t...(intent !== undefined ? { intent } : {}),\n\t\t});\n\t\tsaveRunRecord(record);\n\t\tlog.info({ runId, stage }, 'runAnalyze: aborted via signal');\n\t\treturn failResult(stage, failure, intent, start, runId);\n\t};\n\n\t// ----- (1) Classify -----\n\t{\n\t\tconst abortedHere = checkAborted('classify');\n\t\tif (abortedHere !== null) return emitDoneAndReturn(abortedHere);\n\t}\n\temit({ type: 'stage-started', stage: 'classify' });\n\n\tlet intent: ClassifiedIntent;\n\tif (args.targetHint !== undefined) {\n\t\t// No classifier runs on this branch, so no validator does either.\n\t\t// Make its two checks here, before any model call: the pairing of\n\t\t// the scope's kind with the hinted kind of source, and that the\n\t\t// scope resolves.\n\t\tconst hinted = await hintedIntentBase(args.targetHint, userPrompt, initialScopeRef);\n\t\tif (!hinted.ok) {\n\t\t\trecord = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });\n\t\t\tsaveRunRecord(record);\n\t\t\tlog.warn({ runId, code: hinted.failure.code }, 'runAnalyze: hinted request failed validation');\n\t\t\treturn emitDoneAndReturn(failResult('classify', hinted.failure, undefined, start, runId));\n\t\t}\n\t\t// Skip the full classifier -- caller (chat panel slash command)\n\t\t// has explicitly picked the target. Saves the ~3-min classifier\n\t\t// round-trip. But the classifier ALSO picks the scope band; if\n\t\t// the slash command didn't append :xs|:s|:m|:l|:xl we run a\n\t\t// cheap scope-only picker (~30 s) instead of hardcoding 'M'\n\t\t// (ISSUES.md I-001). The picker sees a compact workspace-signals\n\t\t// block + the user prompt and returns a scope enum + reasoning.\n\t\t// Falls back to 'M' if the picker throws.\n\t\tlet pickedScope: AnalyzeScope;\n\t\tlet pickReasoning: string;\n\t\tif (args.scopeHint !== undefined) {\n\t\t\tpickedScope = args.scopeHint;\n\t\t\tpickReasoning = 'scope hinted via slash command suffix';\n\t\t} else {\n\t\t\temit({\n\t\t\t\ttype: 'stage-substep',\n\t\t\t\tstage: 'classify',\n\t\t\t\tsubstep: 'scope-picker',\n\t\t\t\tdetail: 'picking scope band',\n\t\t\t});\n\t\t\ttry {\n\t\t\t\tconst picked = await pickScope({\n\t\t\t\t\tuserPrompt,\n\t\t\t\t\ttarget:   args.targetHint,\n\t\t\t\t\tscopeRef: initialScopeRef,\n\t\t\t\t\trunId,\n\t\t\t\t});\n\t\t\t\tpickedScope   = picked.scope;\n\t\t\t\tpickReasoning = picked.reasoning;\n\t\t\t} catch (err) {\n\t\t\t\t// Preserve the slash-command promise: don't fail the whole\n\t\t\t\t// run just because the picker had a hiccup. Fall back to\n\t\t\t\t// M with a note in the reasoning so downstream stages\n\t\t\t\t// (and the run.json) can see why.\n\t\t\t\tpickedScope   = 'M';\n\t\t\t\tpickReasoning = `scope-picker failed (${(err as Error).message}); ` +\n\t\t\t\t\t'falling back to default scope=M';\n\t\t\t\tlog.warn(\n\t\t\t\t\t{ runId, err: (err as Error).message },\n\t\t\t\t\t'runAnalyze: scope-picker failed; falling back to M',\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\t\tintent = {\n\t\t\t...hinted.base,\n\t\t\tscope:  pickedScope,\n\t\t\treasoning: `target hinted via slash command (classifier skipped); ${pickReasoning}`,\n\t\t};\n\t\tlog.info(\n\t\t\t{\n\t\t\t\trunId,\n\t\t\t\ttarget: intent.target,\n\t\t\t\tscope:  intent.scope,\n\t\t\t\tsource: args.scopeHint !== undefined ? 'scopeHint' : 'scope-picker',\n\t\t\t},\n\t\t\t'runAnalyze: classifier skipped via targetHint',\n\t\t);\n\t} else {\n\t\ttry {\n\t\t\tintent = await classify({\n\t\t\t\tinput: { userPrompt, scopeRef: initialScopeRef },\n\t\t\t\topts: { runId },\n\t\t\t});\n\t\t} catch (err) {\n\t\t\tconst failure = classifyClassifierError(err);\n\t\t\trecord = patch(record, { stage: 'classify', status: 'failed', error: failure });\n\t\t\tsaveRunRecord(record);\n\t\t\tlog.warn({ runId, code: failure.code }, 'runAnalyze: classify failed');\n\t\t\treturn emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));\n\t\t}\n\t}\n\temit({ type: 'classified', intent });\n\trecord = patch(record, { stage: 'plan', intent });\n\tsaveRunRecord(record);\n\tlog.info({ runId, target: intent.target, scope: intent.scope }, 'runAnalyze: classified');\n\n\t// ----- (2) Build run-level context bundle + (3) plan -----\n\t{\n\t\tconst abortedHere = checkAborted('plan', intent);\n\t\tif (abortedHere !== null) return emitDoneAndReturn(abortedHere);\n\t}\n\temit({ type: 'stage-started', stage: 'plan' });\n\n\t// The plan stage has two multi-minute sub-steps that would\n\t// otherwise sit silent (see ISSUES.md I-002). Emit stage-substep\n\t// events at their boundaries so the UI has something to show\n\t// during the 5-15 min plan window.\n\temit({\n\t\ttype: 'stage-substep',\n\t\tstage: 'plan',\n\t\tsubstep: 'bundle-shaper',\n\t\tdetail: `building ${intent.target}/${intent.scope} run bundle`,\n\t});\n\tlet contextBundle;\n\ttry {\n\t\tconst shaper = shaperFor('run', intent.target);\n\t\tcontextBundle = await shaper.buildRunBundle(\n\t\t\t{ intent },\n\t\t\t{\n\t\t\t\trunId,\n\t\t\t\tonTrace: (traceEvent) => forwardShaperTrace('plan', traceEvent, emit),\n\t\t\t},\n\t\t);\n\t} catch (err) {\n\t\tconst failure = classifyShaperError(err);\n\t\trecord = patch(record, { stage: 'plan', status: 'failed', error: failure });\n\t\tsaveRunRecord(record);\n\t\tlog.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');\n\t\treturn emitDoneAndReturn(failResult('plan', failure, intent, start, runId));\n\t}\n\t// The run checks its intent's scope once, before it plans, with the scope\n\t// function every plan task will use. For a docs run this is the first place\n\t// the index is checked (the context builder checks it for the code source\n\t// only): without it, a docs run on a scope in no registered repo would be\n\t// planned and then fail in every task. A generic intent has no family row\n\t// and is not checked.\n\tif (intent.target !== 'generic') {\n\t\ttry {\n\t\t\tawait resolveTaskScope(intent.scopeRef, intent.target, 'the run');\n\t\t} catch (err) {\n\t\t\tconst scoped = scopeErrorMapping(err);\n\t\t\t// Anything that is not a refused scope goes to runAnalyze's handler.\n\t\t\tif (scoped === undefined) throw err;\n\t\t\t// The mapping is a run failure as it stands: the code, the message and,\n\t\t\t// for a scope that is not indexed, the scope's path and its registration.\n\t\t\tconst failure: RunFailure = scoped;\n\t\t\trecord = patch(record, { stage: 'plan', status: 'failed', error: failure });\n\t\t\tsaveRunRecord(record);\n\t\t\tlog.warn({ runId, code: failure.code }, \"runAnalyze: the run's scope was refused before planning\");\n\t\t\treturn emitDoneAndReturn(failResult('plan', failure, intent, start, runId));\n\t\t}\n\t}\n\temit({\n\t\ttype: 'stage-substep',\n\t\tstage: 'plan',\n\t\tsubstep: 'planner',\n\t\tdetail: 'composing task list',\n\t});\n\n\tlet tree;\n\ttry {\n\t\ttree = await runRecursivePlanner({\n\t\t\tinput: {\n\t\t\t\tintent,\n\t\t\t\tcontextBundle,\n\t\t\t\tcatalog: getTemplatesForTarget(intent.target),\n\t\t\t},\n\t\t\topts: {\n\t\t\t\trunId,\n\t\t\t\tonLlmToken: (preview) => emit({\n\t\t\t\t\ttype:    'llm-token',\n\t\t\t\t\tstage:   'plan',\n\t\t\t\t\tsubstep: 'planner',\n\t\t\t\t\tpreview,\n\t\t\t\t}),\n\t\t\t},\n\t\t});\n\t} catch (err) {\n\t\tconst failure = classifyPlannerError(err);\n\t\trecord = patch(record, { stage: 'plan', status: 'failed', error: failure });\n\t\tsaveRunRecord(record);\n\t\tlog.warn({ runId, code: failure.code }, 'runAnalyze: plan build failed');\n\t\treturn emitDoneAndReturn(failResult('plan', failure, intent, start, runId));\n\t}\n\temit({\n\t\ttype: 'plan-accepted',\n\t\ttaskCount: tree.plan.tasks.length,\n\t\tplanId: tree.plan.planId,\n\t});\n\trecord = patch(record, { stage: 'execute' });\n\tsaveRunRecord(record);\n\n\t// ----- (4) Execute -----\n\t{\n\t\tconst abortedHere = checkAborted('execute', intent);\n\t\tif (abortedHere !== null) return emitDoneAndReturn(abortedHere);\n\t}\n\temit({ type: 'stage-started', stage: 'execute' });\n\n\t// S2: wire per-task events from the executor through opts.onEvent.\n\t// The executor's TaskExecutionEvent shape matches our AnalyzeRunEvent\n\t// task-started / task-completed variants 1:1; we just pass them\n\t// through. parentTaskPath threads naturally for tasks inside child\n\t// plans dispatched by planner-template tasks.\n\tconst execResult = await runExecutor({\n\t\ttree,\n\t\tintent,\n\t\trunId,\n\t\tonTaskEvent: (event) => {\n\t\t\tif (event.type === 'task-started') {\n\t\t\t\temit({\n\t\t\t\t\ttype: 'task-started',\n\t\t\t\t\ttaskId: event.taskId,\n\t\t\t\t\ttemplate: event.template,\n\t\t\t\t\tindex: event.index,\n\t\t\t\t\ttotal: event.total,\n\t\t\t\t\t...(event.parentTaskPath !== undefined ? { parentTaskPath: event.parentTaskPath } : {}),\n\t\t\t\t});\n\t\t\t} else {\n\t\t\t\temit({\n\t\t\t\t\ttype: 'task-completed',\n\t\t\t\t\ttaskId: event.taskId,\n\t\t\t\t\tstatus: event.status,\n\t\t\t\t\t...(event.parentTaskPath !== undefined ? { parentTaskPath: event.parentTaskPath } : {}),\n\t\t\t\t});\n\t\t\t}\n\t\t},\n\t});\n\tconst rootPlan = execResult.root;\n\n\tif (rootPlan.finalReport === undefined) {\n\t\tconst failure: RunFailure = {\n\t\t\tcode: 'executor-aggregator-failed',\n\t\t\tmessage: 'Run executor completed but the aggregator produced no report.',\n\t\t\tdata: {\n\t\t\t\ttasksCompleted: rootPlan.tasksCompleted,\n\t\t\t\ttasksFailed: rootPlan.tasksFailed,\n\t\t\t},\n\t\t};\n\t\trecord = patch(record, {\n\t\t\tstage: 'execute',\n\t\t\tstatus: 'failed',\n\t\t\terror: failure,\n\t\t\ttasksCompleted: rootPlan.tasksCompleted,\n\t\t\ttasksFailed: rootPlan.tasksFailed,\n\t\t});\n\t\tsaveRunRecord(record);\n\t\tlog.warn({ runId, tasksFailed: rootPlan.tasksFailed.length }, 'runAnalyze: aggregator failed');\n\t\treturn emitDoneAndReturn(failResult('execute', failure, intent, start, runId));\n\t}\n\n\t// ----- (done) -----\n\t// The answer report, derived by code from the run context's report and\n\t// from each plan task's own record; its line heads the final report's text.\n\treturn emitDoneAndReturn(completeRun({ record, intent, tree, executed: execResult, contextReport: contextBundle.report, start }));\n}",
+					"entityId": "a54c822507bd66d8a12ee383801296cc"
+				},
+				{
+					"name": "saveRunRecord",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 206,
+					"endLine": 212,
+					"language": "typescript",
+					"signature": "saveRunRecord(r: RunRecord): string",
+					"body": "const saveRunRecord = (r: RunRecord): string => {\n\t\tconst path = writeRunRecord(r);\n\t\treached.record = r;\n\t\tif (r.status === 'in-progress' && r.stage !== 'done') reached.stage = r.stage;\n\t\tif (r.intent !== undefined) reached.intent = r.intent;\n\t\treturn path;\n\t};",
+					"entityId": "99ccf0f1098b29ff2cf943c59c46c630"
+				},
+				{
+					"name": "checkAborted",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 245,
+					"endLine": 260,
+					"language": "typescript",
+					"signature": "checkAborted(stage: RunStage, intent?: ClassifiedIntent): RunAnalyzeResult | null",
+					"body": "const checkAborted = (stage: RunStage, intent?: ClassifiedIntent): RunAnalyzeResult | null => {\n\t\tif (opts.signal?.aborted !== true) return null;\n\t\tconst failure: RunFailure = {\n\t\t\tcode: 'aborted',\n\t\t\tmessage: `runAnalyze: aborted before stage='${stage}' could start`,\n\t\t};\n\t\trecord = patch(record, {\n\t\t\tstage,\n\t\t\tstatus: 'failed',\n\t\t\terror: failure,\n\t\t\t...(intent !== undefined ? { intent } : {}),\n\t\t});\n\t\tsaveRunRecord(record);\n\t\tlog.info({ runId, stage }, 'runAnalyze: aborted via signal');\n\t\treturn failResult(stage, failure, intent, start, runId);\n\t};",
+					"entityId": "07108e91a79fd08c3c90b65473561f81"
+				},
+				{
+					"name": "headFinalReport",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 540,
+					"endLine": 545,
+					"language": "typescript",
+					"signature": "headFinalReport(finalReport: unknown, line: string): unknown",
+					"body": "function headFinalReport(finalReport: unknown, line: string): unknown {\n\tif (typeof finalReport !== 'object' || finalReport === null) return finalReport;\n\tconst summary = (finalReport as Record<string, unknown>)['summary'];\n\tif (typeof summary !== 'string') return finalReport;\n\treturn { ...finalReport, summary: `${line}\\n\\n${summary}` };\n}",
+					"entityId": "f8f2b7e98ba27ae230943a2db1852de9"
+				},
+				{
+					"name": "resumedResult",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 621,
+					"endLine": 634,
+					"language": "typescript",
+					"signature": "resumedResult(cached: RunRecord, intent: ClassifiedIntent): RunAnalyzeResult",
+					"body": "function resumedResult(cached: RunRecord, intent: ClassifiedIntent): RunAnalyzeResult {\n\treturn {\n\t\tok: true,\n\t\trunId: cached.runId,\n\t\tintent,\n\t\tfinalReport: cached.report !== undefined\n\t\t\t? cached.finalReport\n\t\t\t: headFinalReport(cached.finalReport, RUN_COMPLETENESS_NOT_RECORDED),\n\t\ttasksCompleted: cached.tasksCompleted ?? 0,\n\t\ttasksFailed: cached.tasksFailed ?? [],\n\t\tdurationMs: 0,\n\t\t...(cached.report !== undefined ? { report: cached.report } : {}),\n\t};\n}",
+					"entityId": "c993c749ce22c2441abdd513c78b3126"
+				},
+				{
+					"name": "classifyClassifierError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 691,
+					"endLine": 710,
+					"language": "typescript",
+					"signature": "classifyClassifierError(err: unknown): RunFailure",
+					"body": "function classifyClassifierError(err: unknown): RunFailure {\n\tif (err instanceof ClassifierLlmUnavailableError) return wrap('classifier-llm-unavailable', err);\n\tif (err instanceof ClassifierSchemaUnrecoverable) return wrap('classifier-schema-unrecoverable', err);\n\t// The validator's failure arrives wrapped. Surface its own code\n\t// (scope-ref-unresolved / scope-ref-kind-target-mismatch) as the\n\t// run's code, as the daemon's mapping does, so a run names the\n\t// precise reason and not \"validation exhausted\".\n\tif (err instanceof ClassifierValidationExhausted) {\n\t\treturn {\n\t\t\tcode:    err.lastFailure.code as RunFailure['code'],\n\t\t\tmessage: err.message,\n\t\t\tdata:    { lastFailure: { code: err.lastFailure.code, message: err.lastFailure.message } },\n\t\t};\n\t}\n\tif (err instanceof ClassifierPromptMissingError) return wrap('classifier-prompt-missing', err);\n\t// Anything else came from the classifier's own context build (the\n\t// classification bundle): map it as a context error, so a scope\n\t// that is not indexed or a model that is unavailable keeps its cause.\n\treturn classifyShaperError(err);\n}",
+					"entityId": "c05f9974f4d95135eddda665aba07c66"
+				},
+				{
+					"name": "classifyShaperError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 712,
+					"endLine": 741,
+					"language": "typescript",
+					"signature": "classifyShaperError(err: unknown): RunFailure",
+					"body": "function classifyShaperError(err: unknown): RunFailure {\n\t// The three scope errors: one mapping, shared with the daemon and the plan walk.\n\tconst scoped = scopeErrorMapping(err);\n\tif (scoped !== undefined) return scoped;\n\tif (err instanceof ShaperLlmUnavailableError) return wrap('shaper-llm-unavailable', err);\n\tif (err instanceof ShaperToolLoopExhausted) {\n\t\t// What the tools returned before the limit is not lost with the failure:\n\t\t// it is in the file the message names (or in `data`, had the file not been written).\n\t\treturn { code: 'shaper-tool-loop-exhausted', message: err.message, data: toolLoopExhaustedData(err) };\n\t}\n\tif (err instanceof ShaperSchemaUnrecoverable) return wrap('shaper-schema-unrecoverable', err);\n\tif (err instanceof ShaperPromptMissingError) {\n\t\t// The answer prompt is loaded after the lookups ran: what they found goes with the failure.\n\t\treturn err.found !== undefined\n\t\t\t? { code: 'shaper-prompt-missing', message: err.message, data: { results: err.found.results, report: err.found.report } }\n\t\t\t: wrap('shaper-prompt-missing', err);\n\t}\n\tif (err instanceof ShaperInvalidInputError) return wrap('invalid-input', err);\n\tif (err instanceof ShaperNoPlanError) return wrap('no-plan-for-request', err);\n\t// The lookups ran and the answer could not be written: the failure\n\t// carries what they found, and the report says the answer step failed.\n\tif (err instanceof ShaperAnswerStepFailedError) {\n\t\treturn {\n\t\t\tcode: 'answer-step-failed',\n\t\t\tmessage: err.message,\n\t\t\tdata: { reason: err.reason, results: err.found.results, report: err.found.report },\n\t\t};\n\t}\n\treturn wrap('internal-error', err);\n}",
+					"entityId": "ef8083fb41b7fe78c52a884530b93f64"
+				},
+				{
+					"name": "classifyPlannerError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 743,
+					"endLine": 768,
+					"language": "typescript",
+					"signature": "classifyPlannerError(err: unknown): RunFailure",
+					"body": "function classifyPlannerError(err: unknown): RunFailure {\n\tif (err instanceof MaxPlanDepthExceededError) {\n\t\treturn {\n\t\t\tcode: 'max-plan-depth-exceeded',\n\t\t\tmessage: err.message,\n\t\t\tdata: { currentDepth: err.currentDepth, rootScope: err.rootScope, cap: err.cap },\n\t\t};\n\t}\n\tif (err instanceof PlanBuilderExhausted) {\n\t\treturn {\n\t\t\tcode: 'plan-invariant-failed',\n\t\t\tmessage: err.message,\n\t\t\tdata: {\n\t\t\t\tlastFailure: {\n\t\t\t\t\tinvariantId: err.lastFailure.invariantId,\n\t\t\t\t\tmessage: err.lastFailure.message,\n\t\t\t\t},\n\t\t\t\ttotalAttempts: err.attempts.length,\n\t\t\t},\n\t\t};\n\t}\n\tif (err instanceof PlanBuilderLlmUnavailableError) return wrap('plan-builder-llm-unavailable', err);\n\tif (err instanceof PlanBuilderSchemaUnrecoverable) return wrap('plan-builder-schema-unrecoverable', err);\n\tif (err instanceof PlanBuilderPromptMissingError) return wrap('plan-builder-prompt-missing', err);\n\treturn wrap('internal-error', err);\n}",
+					"entityId": "b15e27ec75fddd8d2f81c80b8d1f3833"
+				},
+				{
+					"name": "wrap",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 770,
+					"endLine": 773,
+					"language": "typescript",
+					"signature": "wrap(code: RunFailure['code'], err: unknown): RunFailure",
+					"body": "function wrap(code: RunFailure['code'], err: unknown): RunFailure {\n\tconst message = err instanceof Error ? err.message : String(err);\n\treturn { code, message };\n}",
+					"entityId": "c4a8848fab69b9dd65fcd66f89d2f8ac"
+				},
+				{
+					"name": "patch",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 779,
+					"endLine": 781,
+					"language": "typescript",
+					"signature": "patch(prev: RunRecord, change: Partial<RunRecord>): RunRecord",
+					"body": "function patch(prev: RunRecord, change: Partial<RunRecord>): RunRecord {\n\treturn { ...prev, ...change, updatedAt: nowIso() };\n}",
+					"entityId": "69917024890fddacca586c39868ba328"
+				},
+				{
+					"name": "failResult",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 783,
+					"endLine": 799,
+					"language": "typescript",
+					"signature": "failResult(\n\tstage: RunStage,\n\tfailure: RunFailure,\n\tintent: ClassifiedIntent | undefined,\n\tstart: number,\n\trunId: string,\n): RunAnalyzeResult",
+					"body": "function failResult(\n\tstage: RunStage,\n\tfailure: RunFailure,\n\tintent: ClassifiedIntent | undefined,\n\tstart: number,\n\trunId: string,\n): RunAnalyzeResult {\n\tconst durationMs = Date.now() - start;\n\treturn {\n\t\tok: false,\n\t\trunId,\n\t\tstage,\n\t\terror: failure,\n\t\t...(intent !== undefined ? { intent } : {}),\n\t\tdurationMs,\n\t};\n}",
+					"entityId": "bdb535ff232edc1da1fe113e02e1eace"
+				},
+				{
+					"name": "nowIso",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 801,
+					"endLine": 803,
+					"language": "typescript",
+					"signature": "nowIso(): string",
+					"body": "function nowIso(): string {\n\treturn new Date().toISOString();\n}",
+					"entityId": "b901248559fccfbce3ce908073faaee4"
+				},
+				{
+					"name": "forwardShaperTrace",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/driver.ts",
+					"startLine": 814,
+					"endLine": 846,
+					"language": "typescript",
+					"signature": "forwardShaperTrace(\n\tstage: 'classify' | 'plan' | 'execute',\n\ttrace: ShaperTraceEvent,\n\temit:  (event: AnalyzeRunEvent) => void,\n): void",
+					"body": "function forwardShaperTrace(\n\tstage: 'classify' | 'plan' | 'execute',\n\ttrace: ShaperTraceEvent,\n\temit:  (event: AnalyzeRunEvent) => void,\n): void {\n\tswitch (trace.type) {\n\t\tcase 'tool-call':\n\t\t\temit({\n\t\t\t\ttype:  'shaper-tool-call',\n\t\t\t\tstage,\n\t\t\t\ttool:  trace.tool,\n\t\t\t\t...(trace.argsPreview !== undefined ? { argsPreview: trace.argsPreview } : {}),\n\t\t\t});\n\t\t\treturn;\n\t\tcase 'tool-response':\n\t\t\temit({\n\t\t\t\ttype:  'shaper-tool-response',\n\t\t\t\tstage,\n\t\t\t\ttool:  trace.tool,\n\t\t\t\tok:    trace.ok,\n\t\t\t\t...(trace.notePreview !== undefined ? { notePreview: trace.notePreview } : {}),\n\t\t\t});\n\t\t\treturn;\n\t\tcase 'llm-token':\n\t\t\temit({\n\t\t\t\ttype:    'llm-token',\n\t\t\t\tstage,\n\t\t\t\tsubstep: 'bundle-shaper',\n\t\t\t\tpreview: trace.preview,\n\t\t\t});\n\t\t\treturn;\n\t}\n}",
+					"entityId": "0989b72b32a13669b588b239e402bb66"
+				},
+				{
+					"name": "atomicWriteJson",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/persistence.ts",
+					"startLine": 168,
+					"endLine": 174,
+					"language": "typescript",
+					"signature": "atomicWriteJson(path: string, value: unknown): void",
+					"body": "function atomicWriteJson(path: string, value: unknown): void {\n\tmkdirSync(dirname(path), { recursive: true });\n\tconst json = JSON.stringify(value, null, '\\t');\n\tconst tmp = `${path}.tmp-${process.pid}-${Date.now()}`;\n\twriteFileSync(tmp, json, 'utf8');\n\trenameSync(tmp, path);\n}",
+					"entityId": "41b188f8672c2db740b64f08055bb38c"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:32.312Z",
+	"completeness": {
+		"complete": true,
+		"total": 48,
+		"returned": 48,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

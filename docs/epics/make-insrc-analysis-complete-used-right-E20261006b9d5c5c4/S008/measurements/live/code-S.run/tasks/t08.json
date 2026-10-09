@@ -1,0 +1,864 @@
+{
+	"taskId": "t08",
+	"template": "code.surface.functional",
+	"kind": "leaf",
+	"produces": [
+		"functional-surface"
+	],
+	"status": "ok",
+	"outputs": {
+		"functional-surface": {
+			"module": {
+				"name": "src/analyze/planner",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner"
+			},
+			"exports": [
+				{
+					"name": "planDirFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 66,
+					"endLine": 81,
+					"language": "typescript",
+					"signature": "planDirFor(args: PersistArgs): string",
+					"entityId": "a768a1feba6db417820987a399ffebf3"
+				},
+				{
+					"name": "planFinalPathFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 97,
+					"endLine": 99,
+					"language": "typescript",
+					"signature": "planFinalPathFor(args: PersistArgs): string",
+					"entityId": "abe34cc520865eda161900227b95d8a5"
+				},
+				{
+					"name": "planAttemptsDirFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 101,
+					"endLine": 103,
+					"language": "typescript",
+					"signature": "planAttemptsDirFor(args: PersistArgs): string",
+					"entityId": "02f6eff85e98c0a75d6bf117567917a4"
+				},
+				{
+					"name": "planAttemptPathFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 106,
+					"endLine": 108,
+					"language": "typescript",
+					"signature": "planAttemptPathFor(args: PersistArgs, attemptNumber: number): string",
+					"entityId": "a2407fa6540b0c9136e0e5cb2eee8999"
+				},
+				{
+					"name": "planFeedbackPathFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 111,
+					"endLine": 113,
+					"language": "typescript",
+					"signature": "planFeedbackPathFor(args: PersistArgs, attemptNumber: number): string",
+					"entityId": "d2af9cdd41144d717b9475e055e4f3c6"
+				},
+				{
+					"name": "writeAttempt",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 127,
+					"endLine": 136,
+					"language": "typescript",
+					"signature": "writeAttempt(\n\targs:          PersistArgs,\n\tattemptNumber: number,\n\tplan:          PlanTask,\n): string",
+					"entityId": "f89a2416fada3b7edd922b698472164a"
+				},
+				{
+					"name": "writeFeedback",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 142,
+					"endLine": 151,
+					"language": "typescript",
+					"signature": "writeFeedback(\n\targs:          PersistArgs,\n\tattemptNumber: number,\n\tfailure:       PlanValidationFailure,\n): string",
+					"entityId": "b2e71d8dd059215930167ed8bafa9b88"
+				},
+				{
+					"name": "writePlanFinal",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 158,
+					"endLine": 163,
+					"language": "typescript",
+					"signature": "writePlanFinal(args: PersistArgs, plan: PlanTask): string",
+					"entityId": "593620489e54305c691e53620bf9fba1"
+				},
+				{
+					"name": "readPlanFinal",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 178,
+					"endLine": 187,
+					"language": "typescript",
+					"signature": "readPlanFinal(args: PersistArgs): PlanTask | null",
+					"entityId": "d7c0af5fd56eb4df7ecce1fa73d25ee6"
+				},
+				{
+					"name": "purgePlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 195,
+					"endLine": 204,
+					"language": "typescript",
+					"signature": "purgePlan(args: PersistArgs): void",
+					"entityId": "27e50c28a1003aca06de9eabb3b72348"
+				},
+				{
+					"name": "PlanBuilderLlmUnavailableError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 73,
+					"endLine": 80,
+					"language": "typescript",
+					"entityId": "c7878be59dab413627a2252348104daa"
+				},
+				{
+					"name": "PlanBuilderSchemaUnrecoverable",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 82,
+					"endLine": 87,
+					"language": "typescript",
+					"entityId": "6e94bd84a459a16db6fb819bbb8c0850"
+				},
+				{
+					"name": "PlanBuilderExhausted",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 89,
+					"endLine": 105,
+					"language": "typescript",
+					"entityId": "1a8cc83e7f824fc0e93b652217aa12d3"
+				},
+				{
+					"name": "PlanBuilderPromptMissingError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 107,
+					"endLine": 112,
+					"language": "typescript",
+					"entityId": "4e3e34bf8b0d512e0201e3af6291fa02"
+				},
+				{
+					"name": "MaxPlanDepthExceededError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 114,
+					"endLine": 132,
+					"language": "typescript",
+					"entityId": "85efb491ab504d5e911af28639606bde"
+				},
+				{
+					"name": "runPlanner",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 144,
+					"endLine": 302,
+					"language": "typescript",
+					"signature": "runPlanner(args: RunPlannerArgs): Promise<PlanTask>",
+					"entityId": "1346cc548f277ce719ae17af856859fc"
+				},
+				{
+					"name": "invariantFixHint",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/invariant-fix-hints.ts",
+					"startLine": 177,
+					"endLine": 179,
+					"language": "typescript",
+					"signature": "invariantFixHint(id: PlanInvariantId): InvariantFixHint",
+					"entityId": "b00727a7ac44ec30f9517e836c84098a"
+				},
+				{
+					"name": "renderFixHint",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/invariant-fix-hints.ts",
+					"startLine": 186,
+					"endLine": 197,
+					"language": "typescript",
+					"signature": "renderFixHint(hint: InvariantFixHint): string",
+					"entityId": "ac6883a16afe9faaf158f508c642332c"
+				},
+				{
+					"name": "runRecursivePlanner",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 94,
+					"endLine": 102,
+					"language": "typescript",
+					"signature": "runRecursivePlanner(args: RecursivePlannerArgs): Promise<PlanTreeNode>",
+					"entityId": "aad82aa6ac64c12379df385bb9983941"
+				},
+				{
+					"name": "countNodes",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 217,
+					"endLine": 223,
+					"language": "typescript",
+					"signature": "countNodes(node: PlanTreeNode): number",
+					"entityId": "ba86e6d5d57f13adc548f44779cdfa44"
+				},
+				{
+					"name": "countPlannerTasks",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 226,
+					"endLine": 235,
+					"language": "typescript",
+					"signature": "countPlannerTasks(node: PlanTreeNode): number",
+					"entityId": "58446c760641f5ad4d255a3a9b6894d0"
+				},
+				{
+					"name": "maxDepth",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 238,
+					"endLine": 245,
+					"language": "typescript",
+					"signature": "maxDepth(node: PlanTreeNode): number",
+					"entityId": "3201812f237c8fc88a56fe8bfa86e952"
+				},
+				{
+					"name": "renderCatalog",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/render-catalog.ts",
+					"startLine": 30,
+					"endLine": 36,
+					"language": "typescript",
+					"signature": "renderCatalog(catalog: readonly AnalyzeTaskTemplate[]): string",
+					"entityId": "08a7b307f49f3d2ea8205d91b131b472"
+				},
+				{
+					"name": "renderDepthPolicy",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/render-catalog.ts",
+					"startLine": 73,
+					"endLine": 93,
+					"language": "typescript",
+					"signature": "renderDepthPolicy(scope: 'XS' | 'S' | 'M' | 'L' | 'XL', focused: boolean): string",
+					"entityId": "a96ac3715c9a14d82ee121d6f637d5e1"
+				},
+				{
+					"name": "validatePlanShape",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 136,
+					"endLine": 139,
+					"language": "typescript",
+					"signature": "validatePlanShape(value: unknown): value is PlanTask",
+					"entityId": "fcb173d8425795cdca64897cf7e362a1"
+				},
+				{
+					"name": "validatePlanShapeWithErrors",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 141,
+					"endLine": 148,
+					"language": "typescript",
+					"signature": "validatePlanShapeWithErrors(value: unknown): PlanValidationResult",
+					"entityId": "dfd20586a309fc610826e3520bafe6df"
+				},
+				{
+					"name": "validatePlannedTaskShape",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 150,
+					"endLine": 153,
+					"language": "typescript",
+					"signature": "validatePlannedTaskShape(value: unknown): value is PlannedTask",
+					"entityId": "b978345bf4258cbcd312eeed260a779b"
+				},
+				{
+					"name": "validatePlannedTaskShapeWithErrors",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 155,
+					"endLine": 162,
+					"language": "typescript",
+					"signature": "validatePlannedTaskShapeWithErrors(value: unknown): PlanValidationResult",
+					"entityId": "243fe7b69aafde32e3533852b7183be2"
+				},
+				{
+					"name": "registerBuiltinTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/bootstrap.ts",
+					"startLine": 30,
+					"endLine": 42,
+					"language": "typescript",
+					"signature": "registerBuiltinTemplates(): void",
+					"entityId": "5df286a99d77195c436b973a56cc2a25"
+				},
+				{
+					"name": "_resetTemplateBootstrapLatchForTests",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/bootstrap.ts",
+					"startLine": 45,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "_resetTemplateBootstrapLatchForTests(): void",
+					"entityId": "04209c7388b1d5ea1b5e7143cf587b4a"
+				},
+				{
+					"name": "registerCodeTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code/index.ts",
+					"startLine": 251,
+					"endLine": 255,
+					"language": "typescript",
+					"signature": "registerCodeTemplates(): void",
+					"entityId": "8540439f64335a7fc49b6f7f0fd1088a"
+				},
+				{
+					"name": "registerDataTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data/index.ts",
+					"startLine": 150,
+					"endLine": 154,
+					"language": "typescript",
+					"signature": "registerDataTemplates(): void",
+					"entityId": "dafc52dd9ce9d51b8ee1d0bd55c8c750"
+				},
+				{
+					"name": "registerDocsTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs/index.ts",
+					"startLine": 254,
+					"endLine": 258,
+					"language": "typescript",
+					"signature": "registerDocsTemplates(): void",
+					"entityId": "00a8de4e8ba1cfc5a35ab2f73c3a5401"
+				},
+				{
+					"name": "registerGenericTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic/index.ts",
+					"startLine": 41,
+					"endLine": 45,
+					"language": "typescript",
+					"signature": "registerGenericTemplates(): void",
+					"entityId": "067100e77e3af0517dc034f05a379a69"
+				},
+				{
+					"name": "registerInfraTemplates",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra/index.ts",
+					"startLine": 206,
+					"endLine": 210,
+					"language": "typescript",
+					"signature": "registerInfraTemplates(): void",
+					"entityId": "ab19a2fa2808d97e38c0309c968bf20b"
+				},
+				{
+					"name": "TemplateRegistrationError",
+					"kind": "class",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 30,
+					"endLine": 35,
+					"language": "typescript",
+					"entityId": "ec41ef1622095ac42eb8b40a4c82e74d"
+				},
+				{
+					"name": "registerTemplate",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 47,
+					"endLine": 84,
+					"language": "typescript",
+					"signature": "registerTemplate(t: AnalyzeTaskTemplate): void",
+					"entityId": "edd911596e0fe706c7dfdf2a423a7cc0"
+				},
+				{
+					"name": "getTemplateCatalog",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 87,
+					"endLine": 89,
+					"language": "typescript",
+					"signature": "getTemplateCatalog(): readonly AnalyzeTaskTemplate[]",
+					"entityId": "169e932903baf30efced2ddb782dfd89"
+				},
+				{
+					"name": "getTemplatesForTarget",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 96,
+					"endLine": 101,
+					"language": "typescript",
+					"signature": "getTemplatesForTarget(planTarget: AnalyzeTarget): readonly AnalyzeTaskTemplate[]",
+					"entityId": "b90da44f2ee2c0628079b2a9883516c5"
+				},
+				{
+					"name": "getTemplate",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 104,
+					"endLine": 106,
+					"language": "typescript",
+					"signature": "getTemplate(id: string): AnalyzeTaskTemplate | undefined",
+					"entityId": "6e6611ba08d21446a666102da0b64e15"
+				},
+				{
+					"name": "getAggregatorFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 114,
+					"endLine": 116,
+					"language": "typescript",
+					"signature": "getAggregatorFor(target: AnalyzeTarget): AnalyzeTaskTemplate | undefined",
+					"entityId": "e1a5f5c8ef82f1a87239660d8721bfa2"
+				},
+				{
+					"name": "_resetTemplateRegistryForTests",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/registry.ts",
+					"startLine": 119,
+					"endLine": 121,
+					"language": "typescript",
+					"signature": "_resetTemplateRegistryForTests(): void",
+					"entityId": "efdf02d79b28131080373f631c033867"
+				},
+				{
+					"name": "validatePlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 95,
+					"endLine": 356,
+					"language": "typescript",
+					"signature": "validatePlan(\n\tplan:     PlanTask,\n\tcatalog:  readonly AnalyzeTaskTemplate[],\n\topts:    ValidateOpts = {},\n): PlanValidationFailure | null",
+					"entityId": "5870fb54d727616957570e9c52ac6c38"
+				}
+			],
+			"internalHelpers": [
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/cache.test.ts",
+					"startLine": 44,
+					"endLine": 47,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "62c43b57c80642423f6e540fcbb5240a"
+				},
+				{
+					"name": "mkPlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/cache.test.ts",
+					"startLine": 49,
+					"endLine": 68,
+					"language": "typescript",
+					"signature": "mkPlan(over: Partial<PlanTask> = {}): PlanTask",
+					"entityId": "44e8237d87fc16599e7094e53f1ce9af"
+				},
+				{
+					"name": "mkFailure",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/cache.test.ts",
+					"startLine": 70,
+					"endLine": 72,
+					"language": "typescript",
+					"signature": "mkFailure(): PlanValidationFailure",
+					"entityId": "b5cdc054b8385abd2c576dd16b7674a1"
+				},
+				{
+					"name": "uniqueRunId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/planner.live.test.ts",
+					"startLine": 104,
+					"endLine": 107,
+					"language": "typescript",
+					"signature": "uniqueRunId(label: string): string",
+					"entityId": "918519a7364769dcd814d5cd2df83694"
+				},
+				{
+					"name": "buildRunBundleFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/planner.live.test.ts",
+					"startLine": 109,
+					"endLine": 115,
+					"language": "typescript",
+					"signature": "buildRunBundleFor(\n\tintent: ClassifiedIntent,\n\trunId:  string,\n): Promise<AnalyzeContextBundle>",
+					"entityId": "971226d86def9f32a32469d018a35bf9"
+				},
+				{
+					"name": "makeStubProvider",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/recursive.test.ts",
+					"startLine": 173,
+					"endLine": 191,
+					"language": "typescript",
+					"signature": "makeStubProvider(queue: PlanTask[]): LLMProvider",
+					"entityId": "4a83e953722a2a5d520b89f545866293"
+				},
+				{
+					"name": "rootIntent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/recursive.test.ts",
+					"startLine": 198,
+					"endLine": 206,
+					"language": "typescript",
+					"signature": "rootIntent(scope: ClassifiedIntent['scope']): ClassifiedIntent",
+					"entityId": "c67dfdc8ccaa8114cebd40c2a5dd9aff"
+				},
+				{
+					"name": "makeRootPlanWithOnePlannerTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/recursive.test.ts",
+					"startLine": 208,
+					"endLine": 254,
+					"language": "typescript",
+					"signature": "makeRootPlanWithOnePlannerTask(scope: ClassifiedIntent['scope'], childIntent: ClassifiedIntent): PlanTask",
+					"entityId": "993e0ddd79c22435323b990b6a8d71c6"
+				},
+				{
+					"name": "makeLeafOnlyPlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/recursive.test.ts",
+					"startLine": 256,
+					"endLine": 297,
+					"language": "typescript",
+					"signature": "makeLeafOnlyPlan(scope: ClassifiedIntent['scope']): PlanTask",
+					"entityId": "b8475f13b5dc0a77cbe343d9673f836b"
+				},
+				{
+					"name": "freshRegistry",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/templates.test.ts",
+					"startLine": 52,
+					"endLine": 55,
+					"language": "typescript",
+					"signature": "freshRegistry(): void",
+					"entityId": "14d4fe9c978c7a7a3f199fb28a20d0ad"
+				},
+				{
+					"name": "mkTask",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/validate.test.ts",
+					"startLine": 141,
+					"endLine": 154,
+					"language": "typescript",
+					"signature": "mkTask(n: number, over: Partial<PlannedTask> = {}): PlannedTask",
+					"entityId": "9b1c5632f45737769812253c3f707d35"
+				},
+				{
+					"name": "buildValidPlan",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/validate.test.ts",
+					"startLine": 160,
+					"endLine": 189,
+					"language": "typescript",
+					"signature": "buildValidPlan(): PlanTask",
+					"entityId": "85dfce2a420c9259f002e919fdd53ba0"
+				},
+				{
+					"name": "assertFailure",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__/validate.test.ts",
+					"startLine": 191,
+					"endLine": 200,
+					"language": "typescript",
+					"signature": "assertFailure(\n\tplan:        PlanTask,\n\texpectedId:  PlanInvariantId,\n\topts:        Parameters<typeof validatePlan>[2] = {},\n): void",
+					"entityId": "87dc697f70274ab541375a30a09035a2"
+				},
+				{
+					"name": "expandTaskPathSegments",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 88,
+					"endLine": 95,
+					"language": "typescript",
+					"signature": "expandTaskPathSegments(taskPath: string): string[]",
+					"entityId": "e3f457b4d4f64ebd31096fd387a8c59a"
+				},
+				{
+					"name": "pad2",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 115,
+					"endLine": 117,
+					"language": "typescript",
+					"signature": "pad2(n: number): string",
+					"entityId": "e7feb4c3c19ef2302aa84bfc8f299295"
+				},
+				{
+					"name": "atomicWriteJson",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 210,
+					"endLine": 216,
+					"language": "typescript",
+					"signature": "atomicWriteJson(path: string, value: unknown): void",
+					"entityId": "34eddefe0483b552abfe6edc88bfa3fe"
+				},
+				{
+					"name": "safeRm",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 218,
+					"endLine": 226,
+					"language": "typescript",
+					"signature": "safeRm(path: string): void",
+					"entityId": "9b79aa43f055251f3e52021fe684dc32"
+				},
+				{
+					"name": "safeRmDir",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/cache.ts",
+					"startLine": 228,
+					"endLine": 236,
+					"language": "typescript",
+					"signature": "safeRmDir(path: string): void",
+					"entityId": "afdbc2bb8c189483e8eca7c1b04dcf3d"
+				},
+				{
+					"name": "buildInitialMessages",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 316,
+					"endLine": 356,
+					"language": "typescript",
+					"signature": "buildInitialMessages(args: BuildMessagesArgs): LLMMessage[]",
+					"entityId": "5054f44e0b0dcfbde419fed4fde66302"
+				},
+				{
+					"name": "appendCorrectionTurn",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 358,
+					"endLine": 391,
+					"language": "typescript",
+					"signature": "appendCorrectionTurn(\n\tprior:         LLMMessage[],\n\trejected:      PlanTask,\n\tfailure:       PlanValidationFailure,\n\tpriorFailures: readonly PlanValidationFailure[],\n): LLMMessage[]",
+					"entityId": "19ffd2f393a44906f87a152212ebb430"
+				},
+				{
+					"name": "renderOffendingTaskSnippet",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 406,
+					"endLine": 440,
+					"language": "typescript",
+					"signature": "renderOffendingTaskSnippet(\n\trejected: PlanTask,\n\tfailure:  PlanValidationFailure,\n): string",
+					"entityId": "0ecd8202f69cdddf39742aa35e484ba5"
+				},
+				{
+					"name": "repetitionBannerFor",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 450,
+					"endLine": 469,
+					"language": "typescript",
+					"signature": "repetitionBannerFor(\n\tcurrent: PlanValidationFailure,\n\tprior:   readonly PlanValidationFailure[],\n): string",
+					"entityId": "0b2458f77815d21cb6bf8aa284d4a7a8"
+				},
+				{
+					"name": "targetIdentity",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 471,
+					"endLine": 477,
+					"language": "typescript",
+					"signature": "targetIdentity(f: PlanValidationFailure): string",
+					"entityId": "1ceeeb4a6f413d26cd6000d21a34b705"
+				},
+				{
+					"name": "loadPromptFile",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 483,
+					"endLine": 495,
+					"language": "typescript",
+					"signature": "loadPromptFile(): string",
+					"entityId": "82af4d1626366b8bf5ebb68adbf0def2"
+				},
+				{
+					"name": "resolveRelativeToInsrcRoot",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 497,
+					"endLine": 502,
+					"language": "typescript",
+					"signature": "resolveRelativeToInsrcRoot(relativePath: string): string",
+					"entityId": "5ac6aa67d46865040852e057096ae428"
+				},
+				{
+					"name": "classifyError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/driver.ts",
+					"startLine": 508,
+					"endLine": 512,
+					"language": "typescript",
+					"signature": "classifyError(err: unknown): Error",
+					"entityId": "da39100e91e98715fdb41b99a5de626c"
+				},
+				{
+					"name": "walk",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 104,
+					"endLine": 170,
+					"language": "typescript",
+					"signature": "walk(\n\tinput:     PlanBuilderInput,\n\topts:      PlanBuilderOpts,\n\tprovider:  PlanBuilderArgs['provider'],\n\trootScope: 'XS' | 'S' | 'M' | 'L' | 'XL',\n): Promise<PlanTreeNode>",
+					"entityId": "1744d362b582a80ce76f4f1b4aaeda14"
+				},
+				{
+					"name": "extractChildIntent",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 181,
+					"endLine": 198,
+					"language": "typescript",
+					"signature": "extractChildIntent(task: PlannedTask): ClassifiedIntent | null",
+					"entityId": "d0176f1d25d3b18c7255e37643532aec"
+				},
+				{
+					"name": "buildParentTaskPath",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/recursive.ts",
+					"startLine": 205,
+					"endLine": 209,
+					"language": "typescript",
+					"signature": "buildParentTaskPath(parent: string | undefined, taskId: string): string",
+					"entityId": "f686b263c47aa44073ca82fdd280c971"
+				},
+				{
+					"name": "renderTemplate",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/render-catalog.ts",
+					"startLine": 38,
+					"endLine": 63,
+					"language": "typescript",
+					"signature": "renderTemplate(t: AnalyzeTaskTemplate): string",
+					"entityId": "ebaeedcd5135da958f6694e57396b6b6"
+				},
+				{
+					"name": "planValidator",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 117,
+					"endLine": 122,
+					"language": "typescript",
+					"signature": "planValidator(): ValidateFunction",
+					"entityId": "c1cfd11acf610381c4f8f1cf122c1033"
+				},
+				{
+					"name": "plannedTaskValidator",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 124,
+					"endLine": 129,
+					"language": "typescript",
+					"signature": "plannedTaskValidator(): ValidateFunction",
+					"entityId": "58a78dc106285956c802295cc56dfa78"
+				},
+				{
+					"name": "formatError",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/schema.ts",
+					"startLine": 164,
+					"endLine": 168,
+					"language": "typescript",
+					"signature": "formatError(e: ErrorObject): string",
+					"entityId": "2757512d032bc09fb47edb02a55e13a9"
+				},
+				{
+					"name": "focusedLowerBound",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 68,
+					"endLine": 70,
+					"language": "typescript",
+					"signature": "focusedLowerBound(scope: AnalyzeScope): number",
+					"entityId": "2685933ec85a1c70dbe5e1f2d6aa7baa"
+				},
+				{
+					"name": "indexCatalog",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 362,
+					"endLine": 368,
+					"language": "typescript",
+					"signature": "indexCatalog(catalog: readonly AnalyzeTaskTemplate[]): CatalogIndex",
+					"entityId": "457c58c731797a2a9d87a9c9e5c61284"
+				},
+				{
+					"name": "makeTaskId",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 370,
+					"endLine": 372,
+					"language": "typescript",
+					"signature": "makeTaskId(n: number): string",
+					"entityId": "1b5f7419ce5b14e5de4f0b2d59a603ab"
+				},
+				{
+					"name": "isTargetCompatible",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 379,
+					"endLine": 383,
+					"language": "typescript",
+					"signature": "isTargetCompatible(planTarget: AnalyzeTarget, templateTarget: AnalyzeTarget): boolean",
+					"entityId": "58c0d23a7454cead5207b1e401f0a8f7"
+				},
+				{
+					"name": "findNestedTaskArray",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 391,
+					"endLine": 415,
+					"language": "typescript",
+					"signature": "findNestedTaskArray(value: unknown, path: string = ''): string | null",
+					"entityId": "38161baff35f68f5a06f4d1de49be467"
+				},
+				{
+					"name": "findDagCycle",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 422,
+					"endLine": 474,
+					"language": "typescript",
+					"signature": "findDagCycle(tasks: readonly PlannedTask[]): string[] | null",
+					"entityId": "24884d9e98f375a2bb140fefb582c39f"
+				},
+				{
+					"name": "dfs",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 447,
+					"endLine": 465,
+					"language": "typescript",
+					"signature": "dfs(node: string): string[] | null",
+					"entityId": "ce2bd7980e0756e0cfc3d68f0dc7a4bc"
+				},
+				{
+					"name": "checkTopologicalOrder",
+					"kind": "function",
+					"file": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/validate.ts",
+					"startLine": 483,
+					"endLine": 504,
+					"language": "typescript",
+					"signature": "checkTopologicalOrder(tasks: readonly PlannedTask[]): string | null",
+					"entityId": "585ebbc1bf8917a7a98dc45ee16bdef7"
+				}
+			]
+		}
+	},
+	"completedAt": "2026-10-09T13:37:34.845Z",
+	"completeness": {
+		"complete": true,
+		"total": 84,
+		"returned": 84,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. The surface lists the functions, methods and classes of every stored source file under the module's directory, including its sub-directories."
+	}
+}

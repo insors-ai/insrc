@@ -1,0 +1,113 @@
+{
+	"taskId": "t12",
+	"template": "code.aggregate.report",
+	"kind": "leaf",
+	"produces": [
+		"report"
+	],
+	"status": "ok",
+	"outputs": {
+		"report": {
+			"summary": "Target: code, scope S, focus \"how is the analyze framework structured\". The four upstream outputs (`modules`, `module-tree`, `entrypoints`, `functional-surface`) describe `src/analyze` in the repo `/Users/subhagho/work/projects/insors/insrc` as 37 modules: 21 source modules and 16 test/fixture modules. The source is split into eight sub-packages plus a small root: `classifier`, `context`, `explore`, `planner` (with `planner/templates/{code,data,docs,generic,infra}`), `executor`, `runtimes` (with `runtimes/{code,data,docs,generic,infra,shared}`), `orchestrator` and `summariser`.\n\nThe structure is a staged pipeline. `orchestrator` is the top: nothing but its own tests imports it, and it imports `classifier`, `context`, `planner`, `executor` and `runtimes/shared`, with `runAnalyze` as the run-level function. `context` is the hub that almost every other package imports; it holds scope resolution, the shaper driver, decomposer, synthesizer, provider/role routing, bundle schema and cache. `explore` holds 20 `run*` exploration runners behind `executePlan` / `stepPlan`. `planner` and `executor` are each paired with a registry: planner templates and template runtimes, both split into the same five target families.\n\nThe analysis is lossy in three ways. `functional-surface` covered only `src/analyze/summariser`. `entrypoints` is a flat list of exported functions and classes with no call edges, so stage ordering is inferred from import edges and names, not observed. No upstream output covers types or interfaces.",
+			"findings": [
+				{
+					"title": "Module layout: eight sub-packages plus a small root, 37 modules in total",
+					"detail": "Per `modules`, `src/analyze` has 37 modules, 21 source and 16 test/fixture. Source modules and file counts:\n\n- `src/analyze` (root): 5 files. Per `entrypoints` these include `completeness.ts`, `docs-retrieval.ts` and `item-length.ts`.\n- `src/analyze/classifier`: 6\n- `src/analyze/context`: 17\n- `src/analyze/explore`: 27 (the largest source module)\n- `src/analyze/planner`: 9, plus `planner/templates`: 3, plus one file each in `planner/templates/{code,data,docs,generic,infra}`\n- `src/analyze/executor`: 6\n- `src/analyze/runtimes`: 1, plus `runtimes/code`: 8, `runtimes/data`: 7, `runtimes/docs`: 6, `runtimes/generic`: 2, `runtimes/infra`: 10, `runtimes/shared`: 4\n- `src/analyze/orchestrator`: 5\n- `src/analyze/summariser`: 3\n\nEvery source package except `planner/templates/*` has a sibling `__tests__` module. The heaviest are `context/__tests__` (41 files) and `explore/__tests__` (16 files). `context/__tests__/fixtures` (1 file, exporting `setupFixtures` / `setupFixturesAt` / `teardownFixtures` per `entrypoints`) is also imported by `orchestrator/__tests__` per `module-tree`.",
+					"sources": [
+						"modules",
+						"module-tree",
+						"entrypoints"
+					]
+				},
+				{
+					"title": "Orchestrator is the top of the pipeline; `runAnalyze` is the run-level function",
+					"detail": "Per `module-tree`, `src/analyze/orchestrator` imports `classifier` (3), `context` (5), `executor` (3), `planner` (2), `runtimes/shared` (1) and the root (2). Only `orchestrator/__tests__` imports it, so it sits at the top of the dependency graph.\n\nPer `entrypoints` it exports:\n\n- `orchestrator/driver.ts`: `runAnalyze(args, opts): Promise<RunAnalyzeResult>`, `concludeRun`, `completeRun`, `hintedIntentBase`\n- `orchestrator/persistence.ts`: `runRecordPathFor`, `readRunRecord`, `writeRunRecord`, `abandonRunRecord`, `purgeRun`, `purgeRunForTests`\n- `orchestrator/live-runs.ts`: `raiseRunLive`, `lowerRunLive`, `liveRunCount`, `isRunLive`\n\nThe signatures of `concludeRun` / `completeRun` take a `PlanTreeNode`, an `ExecutorResult`, a `ClassifiedIntent` and a context `AnswerReport`. That points to the order classify, then context, then plan, then execute, then conclude. This order is inferred from signatures and import edges; no call graph was provided upstream.",
+					"sources": [
+						"module-tree",
+						"entrypoints"
+					]
+				},
+				{
+					"title": "`context` is the hub package that nearly every other package imports",
+					"detail": "Per `module-tree`, `src/analyze/context` is imported by `classifier` (6), `explore` (7), `executor` (2), `orchestrator` (5), `planner` (3), `runtimes/shared` (6) and `summariser` (2). It imports back into `classifier` (2), `explore` (2) and the root (5), so `context`/`classifier` and `context`/`explore` are mutually dependent pairs.\n\nPer `entrypoints`, its 17 files cover:\n\n- **Shaper driver** (`context/driver.ts`): `runShaper`, `runShaperToolLoop`, `prepareScope`, `resolveRepoLastIndexedAt`, `errorForPipelineCause`, `settlePipelineOutcome`, and the `Shaper*` error classes.\n- **Decompose and synthesize**: `decompose` / `prepareDecompose` / `finalizeDecompose` in `context/decomposer.ts`; `synthesize` / `prepareSynthesize` / `finalizeSynthesize` in `context/synthesizer.ts`.\n- **Scope**: `resolveScope`, `resolveScopeForTarget`, `freshnessPathOf`, `longestPrefixRepo`, `connectionIsRegistered` in `context/scope.ts`; `ensureNonEmptyClosure` and the `Scope*Error` classes in `context/invariants.ts`.\n- **Provider and role routing**: `buildShaperProvider`, `buildSummariserProvider`, `resolveRoleProvider`, `resolveShaperKind`, `runWithSamplerContext`, `runWithRoutingContext` in `context/shaper-provider.ts`; `resolveRole`, `createRoleRouter` in `context/role-router.ts`.\n- **Bundle**: `assembleMarkdown` in `context/bundle.ts`; `validateBundle`, `modelFacingBundleSchema` in `context/schema.ts`; `readBundle` / `writeBundle` / `invalidateBundle` / `isStaleByIndexer` in `context/cache.ts`.\n- **Guards and helpers**: `validateAnalyzePrompts` (`context/boot-validator.ts`), `getReadOnlyTools` / `isReadOnlyShaperTool` (`context/tool-surface.ts`), `createRepoIgnoreFilter` (`context/repo-ignore-filter.ts`), `isModelCallFailure` (`context/model-failure.ts`), `assembleLiveProjectContext` (`context/live-project-context.ts`), `shaperFor` (`context/index.ts`).",
+					"sources": [
+						"module-tree",
+						"entrypoints"
+					]
+				},
+				{
+					"title": "Classifier: intent classification, scope picking and validation",
+					"detail": "Per `entrypoints`, `src/analyze/classifier` exports:\n\n- `classifier/driver.ts`: `classify(args): Promise<ClassifiedIntent>`, `connectionCheckFor`, and the error classes `ClassifierLlmUnavailableError`, `ClassifierSchemaUnrecoverable`, `ClassifierValidationExhausted`, `ClassifierPromptMissingError`.\n- `classifier/scope-picker.ts`: `pickScope(args): Promise<PickScopeResult>` and its `ScopePicker*` error classes.\n- `classifier/schema.ts`: `validateIntentShape`, `validateIntentShapeWithErrors`.\n- `classifier/validate.ts`: `validateIntentSemantics`, `isKindCompatibleWithTarget`.\n\nPer `module-tree`, it is imported by `orchestrator` (3), `context` (2) and `runtimes/shared` (1).",
+					"sources": [
+						"entrypoints",
+						"module-tree"
+					]
+				},
+				{
+					"title": "Explore: 20 exploration runners behind one plan executor",
+					"detail": "Per `entrypoints`, `src/analyze/explore/executor.ts` exports `executePlan(args): Promise<ExecutedPlan>`, `stepPlan` (which accepts a `resumeState`), `getNarrowRunner`, `failedOutput`, and the test hooks `_overrideRunnerForTest` / `_getRunnersForTest`.\n\nThe runners all take `(exp: Exploration, ctx: ExplorationRunnerContext)`. There are 20, one per file:\n\n- Graph and code: `runClassHierarchy`, `runImportGraph`, `runModuleProfile`, `runSymbolLocate`, `runUsageExample`, `runTestLocate`, `runConventionDetect`, `runConceptResolve`, `runDataModelTrace`, `runConfigTrace`, `runSearchText`\n- Docs: `runDocMention`, `runDocConstraintEnumerate`, `runDocDecisionTrace`\n- Data: `runDbConnectionsList`, `runDbTablesList`, `runDbTableDescribe`\n- Infra: `runManifestsLocate`\n- LLM-judged or open-ended: `runCapabilityReuseCheck`, `runFreeformProbe` (which takes `runShaperToolLoop` from `context/driver.ts` as its loop)\n\nSupporting files: `explore/completeness-facts.ts`, `explore/answer-report.ts`, `explore/item-measure.ts`, `explore/lookup-failed.ts`.\n\nPer `module-tree`, `explore` imports the root (22) and `context` (7). It is imported by `context` (2), `runtimes/code` (4), `runtimes/docs` (6) and `runtimes/shared` (2).",
+					"sources": [
+						"entrypoints",
+						"module-tree"
+					]
+				},
+				{
+					"title": "Planner and executor are each paired with a registry, split into the same five families",
+					"detail": "**Planner** (`src/analyze/planner`), per `entrypoints`:\n\n- `planner/driver.ts`: `runPlanner(args): Promise<PlanTask>`, plus `PlanBuilder*` error classes and `MaxPlanDepthExceededError`.\n- `planner/recursive.ts`: `runRecursivePlanner(args): Promise<PlanTreeNode>`, `countNodes`, `countPlannerTasks`, `maxDepth`.\n- `planner/validate.ts`: `validatePlan(plan, catalog, opts)`; `planner/schema.ts`: shape validators; `planner/invariant-fix-hints.ts`: `invariantFixHint`, `renderFixHint`.\n- `planner/render-catalog.ts`: `renderCatalog`, `renderDepthPolicy` (scope `'XS' | 'S' | 'M' | 'L' | 'XL'`).\n- `planner/cache.ts`: attempt, feedback and final-plan persistence (`writeAttempt`, `writeFeedback`, `writePlanFinal`, `readPlanFinal`, `purgePlan`).\n- `planner/templates/registry.ts`: `registerTemplate`, `getTemplateCatalog`, `getTemplatesForTarget`, `getTemplate`, `getAggregatorFor`.\n- `planner/templates/bootstrap.ts`: `registerBuiltinTemplates`, which fans out to `registerCodeTemplates`, `registerDataTemplates`, `registerDocsTemplates`, `registerGenericTemplates`, `registerInfraTemplates`.\n\n**Executor** (`src/analyze/executor`), per `entrypoints`:\n\n- `executor/walker.ts`: `runExecutor(args): Promise<ExecutorResult>`.\n- `executor/registry.ts`: `registerTemplateRuntime`, `getRuntime`, `listRegisteredRuntimes`.\n- `executor/cache.ts`: per-task output persistence (`writeTaskOutput`, `readTaskOutput`, `purgeTaskOutput`, `purgeAllTaskOutputs`).\n- `executor/plan-sources.ts`: `collectPlanSources`; `executor/types.ts`: `ExecutorRuntimeMissingError`, `ExecutorOutputShapeError`.\n\nPer `module-tree`, `executor` imports `planner` (2) and `context` (2). Each `planner/templates/{code,data,docs,infra}` module imports `planner` (1) and `planner/templates` (2). No import edges were reported for `planner/templates/generic`.",
+					"sources": [
+						"entrypoints",
+						"module-tree",
+						"modules"
+					]
+				},
+				{
+					"title": "Runtimes: per-family template implementations registered into the executor",
+					"detail": "Per `entrypoints`, `src/analyze/runtimes/bootstrap.ts` exports `registerBuiltinRuntimes`. Per `module-tree`, `runtimes` imports only `executor` (1), and every family module imports `executor` (`code` 5, `data` 5, `docs` 5, `generic` 1, `infra` 8).\n\nFamily-specific dependencies per `module-tree`:\n\n- `runtimes/code`: imports `explore` (4).\n- `runtimes/docs`: imports `explore` (6), `summariser` (4) and `runtimes/code` (1), the only cross-family edge.\n- `runtimes/data` and `runtimes/infra`: import only the root and `executor`.\n- `runtimes/shared`: imports `context` (6), `classifier` (1), `executor` (2), `explore` (2), `summariser` (1) and the root (3).\n\nExported helpers per `entrypoints`:\n\n- `runtimes/shared/aggregator.ts`: `runAggregator(args): Promise<AggregateReport>`, `aggregateReportCompleteness`.\n- `runtimes/shared/adherence.ts`: `runAdherenceCheck`.\n- `runtimes/shared/task-scope.ts`: `resolveTaskScope`, `graphRepoOf`, `inAreaOf`, `docsAreaOf`, `familyOfTemplate`.\n- `runtimes/code/_shared.ts`: `readScopeRef`, `compareEntitiesByLocation`, `modulePrefixOf`.\n- `runtimes/data/_shared.ts`: `resolveDataScope`, `connectionWithinScope`, `requireStringParam`, `optionalStringParam`, `acquireDataPool`.\n- `runtimes/infra/_shared.ts`: `readScopeRef`, `walkFiles`, `fileWalkCompleteness`, `unreadableFile`.\n- `runtimes/docs/family-summarise.ts`: `countedSkip`.\n\n`readScopeRef` is defined separately, with the same signature, in both `runtimes/code/_shared.ts` and `runtimes/infra/_shared.ts`.",
+					"sources": [
+						"entrypoints",
+						"module-tree"
+					]
+				},
+				{
+					"title": "Summariser: the only module with a full functional-surface breakdown",
+					"detail": "Per `functional-surface`, `src/analyze/summariser` exports three symbols:\n\n- `summariseDoc(args: SummariseDocArgs): Promise<SummariseDocResult>` in `summariser/driver.ts`\n- `DocSummariserPromptMissingError` in `summariser/driver.ts`\n- `inferDocFamily(file: string): DocFamily` in `summariser/family.ts`\n\nInternal helpers, all in `summariser/driver.ts`: `buildMessages`, `buildPlaceholder`, `sha256`, `classifyErrorCode`, `loadPromptFile`, `resolveRelativeToInsrcRoot`.\n\nPer `module-tree`, `summariser` imports only `context` (2) and is imported by `runtimes/docs` (4) and `runtimes/shared` (1).",
+					"sources": [
+						"functional-surface",
+						"module-tree"
+					]
+				},
+				{
+					"title": "Recurring conventions: prepare/finalize pairs, per-stage error classes, test seams",
+					"detail": "All from the names and signatures in `entrypoints`:\n\n- **Prepare/finalize split around the model call.** `prepareDecompose` / `finalizeDecompose`, `prepareSynthesize` / `finalizeSynthesize`, `prepareCapabilityReuseCheck` / `finalizeCapabilityReuseCheck`, `prepareDocConstraintEnumerate` / `finalizeDocConstraintEnumerate`, `prepareDocDecisionTrace` / `finalizeDocDecisionTrace`. Each sits beside a one-shot variant (`decompose`, `synthesize`, `runCapabilityReuseCheck`, and so on). With `stepPlan`'s `resumeState` and `getNarrowRunner`, this looks like a design where the model call can be made outside the function; that reading is inferred from names only.\n- **Per-stage error classes with the same three suffixes.** `*LlmUnavailableError`, `*SchemaUnrecoverable` and `*PromptMissingError` exist for Classifier, ScopePicker, Decomposer, Synthesizer and PlanBuilder. The shaper has the same three plus `ShaperToolLoopExhausted`, `ShaperInvalidInputError`, `ShaperNoPlanError` and `ShaperAnswerStepFailedError`.\n- **Completeness reporting runs through every layer.** The root `completeness.ts` exports `buildCompleteness`, `deriveAnswerReport`, `mergeAnswerReports`, `renderCompletenessLine`, `completenessHeadLine`. `explore/completeness-facts.ts` exports `graphCompleteness`, `textSearchCompleteness`, `carriedCompleteness`, `reachedLimit`, `vectorPassSkipped`. `runtimes/infra/_shared.ts` exports `fileWalkCompleteness`, and `runtimes/shared/aggregator.ts` exports `aggregateReportCompleteness`.\n- **Underscore-prefixed test seams.** For example `_runToolLoopForTest`, `_overrideRunnerForTest`, `_resetTemplateRegistryForTests`, `_resetRuntimeBootstrapLatchForTests`, `_setDataPoolSourceForTest`, `_setTaskScopeDepsForTest`, `_setVectorPassForTest`.\n- **Four separate on-disk caches.** `context/cache.ts` (bundles), `planner/cache.ts` (plan attempts, feedback, final), `executor/cache.ts` (task outputs), `orchestrator/persistence.ts` (run records).",
+					"sources": [
+						"entrypoints"
+					]
+				},
+				{
+					"title": "Coverage gaps in this analysis",
+					"detail": "- **`functional-surface` covered one module only.** It reports exports and internal helpers for `src/analyze/summariser` and nothing else. For the other 20 source modules there is no exported-versus-internal breakdown.\n- **`entrypoints` is a flat symbol list.** It contains exported functions and classes with file, line range and signature, but no call edges. Stage order and who-calls-whom are inferred from `module-tree` import counts and from signatures.\n- **No types or interfaces.** Names such as `ClassifiedIntent`, `PlanTreeNode`, `ExecutorResult` and `AnalyzeContextBundle` appear only inside signatures; their definitions and files were not provided.\n- **Some modules have no listed symbols.** `entrypoints` shows nothing from `runtimes/generic` and only helper files (`_shared.ts`, `family-summarise.ts`) for the other runtime families, so the individual template runtimes are not enumerated. The `planner/templates/*` modules show only their `register*Templates` functions.\n- **Import edges are directory-level.** `module-tree` gives counts between directories, not which files or symbols are imported.\n- **Repo path.** Every path upstream is under `/Users/subhagho/work/projects/insors/insrc`; that is the indexed repo this report describes.",
+					"sources": [
+						"functional-surface",
+						"entrypoints",
+						"module-tree",
+						"modules"
+					]
+				}
+			],
+			"metadata": {
+				"target": "code",
+				"scope": "S",
+				"runId": "s8-live-code-S-mv10dmxn",
+				"tasksAnalyzed": 4
+			}
+		}
+	},
+	"completedAt": "2026-10-09T13:38:53.862Z",
+	"completeness": {
+		"complete": true,
+		"total": 1,
+		"returned": 1,
+		"basis": "model-directed",
+		"basisNote": "a summary written by a model from the other tasks' results; its completeness is that of the tasks it summarises"
+	}
+}

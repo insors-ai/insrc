@@ -1,0 +1,280 @@
+{
+	"taskId": "t01",
+	"template": "code.discovery.modules",
+	"kind": "leaf",
+	"produces": [
+		"modules"
+	],
+	"status": "ok",
+	"outputs": {
+		"modules": [
+			{
+				"name": "src/analyze",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze",
+				"fileCount": 5
+			},
+			{
+				"name": "src/analyze/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/__tests__",
+				"fileCount": 4
+			},
+			{
+				"name": "src/analyze/classifier",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier",
+				"fileCount": 6
+			},
+			{
+				"name": "src/analyze/classifier/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/classifier/__tests__",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/context",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context",
+				"fileCount": 17
+			},
+			{
+				"name": "src/analyze/context/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__",
+				"fileCount": 41
+			},
+			{
+				"name": "src/analyze/context/__tests__/fixtures",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/context/__tests__/fixtures",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/executor",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor",
+				"fileCount": 6
+			},
+			{
+				"name": "src/analyze/executor/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/executor/__tests__",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/explore",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore",
+				"fileCount": 27
+			},
+			{
+				"name": "src/analyze/explore/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/__tests__",
+				"fileCount": 16
+			},
+			{
+				"name": "src/analyze/orchestrator",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator",
+				"fileCount": 5
+			},
+			{
+				"name": "src/analyze/orchestrator/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/orchestrator/__tests__",
+				"fileCount": 6
+			},
+			{
+				"name": "src/analyze/planner",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner",
+				"fileCount": 9
+			},
+			{
+				"name": "src/analyze/planner/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/__tests__",
+				"fileCount": 7
+			},
+			{
+				"name": "src/analyze/planner/templates",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/planner/templates/code",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/code",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/planner/templates/data",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/data",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/planner/templates/docs",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/docs",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/planner/templates/generic",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/generic",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/planner/templates/infra",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/planner/templates/infra",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/runtimes",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes",
+				"fileCount": 1
+			},
+			{
+				"name": "src/analyze/runtimes/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/__tests__",
+				"fileCount": 5
+			},
+			{
+				"name": "src/analyze/runtimes/code",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code",
+				"fileCount": 8
+			},
+			{
+				"name": "src/analyze/runtimes/code/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/code/__tests__",
+				"fileCount": 4
+			},
+			{
+				"name": "src/analyze/runtimes/data",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data",
+				"fileCount": 7
+			},
+			{
+				"name": "src/analyze/runtimes/data/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/data/__tests__",
+				"fileCount": 2
+			},
+			{
+				"name": "src/analyze/runtimes/docs",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs",
+				"fileCount": 6
+			},
+			{
+				"name": "src/analyze/runtimes/docs/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/docs/__tests__",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/runtimes/generic",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic",
+				"fileCount": 2
+			},
+			{
+				"name": "src/analyze/runtimes/generic/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/generic/__tests__",
+				"fileCount": 2
+			},
+			{
+				"name": "src/analyze/runtimes/infra",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra",
+				"fileCount": 10
+			},
+			{
+				"name": "src/analyze/runtimes/infra/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/__tests__",
+				"fileCount": 2
+			},
+			{
+				"name": "src/analyze/runtimes/shared",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared",
+				"fileCount": 4
+			},
+			{
+				"name": "src/analyze/runtimes/shared/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/shared/__tests__",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/summariser",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser",
+				"fileCount": 3
+			},
+			{
+				"name": "src/analyze/summariser/__tests__",
+				"path": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/__tests__",
+				"repo": "/Users/subhagho/work/projects/insors/insrc",
+				"directory": "/Users/subhagho/work/projects/insors/insrc/src/analyze/summariser/__tests__",
+				"fileCount": 1
+			}
+		]
+	},
+	"completedAt": "2026-10-09T13:37:30.456Z",
+	"completeness": {
+		"complete": true,
+		"total": 37,
+		"returned": 37,
+		"basis": "graph",
+		"basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established. A module is a stored module entity in the area, or a directory that directly holds at least one source file the index stores and lies neither in nor under a stored module entity's directory. A directory whose files the index does not hold is not listed. Under a scope of one file or one symbol no directory is listed."
+	}
+}

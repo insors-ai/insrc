@@ -62,12 +62,12 @@ import type { SkippedItem } from '../../completeness.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.structure.module-tree';
+const log = getLogger('analyze:runtimes:code:structure-module-tree');
 
 /** What the tree rests on, for its completeness record. */
 export const MODULE_TREE_RULE =
 	`${MODULE_RULE} A file whose module is not in the area is not part of the tree, and neither are its imports. ` +
 	'An import whose target lies outside the area is not an edge.';
-const log = getLogger('analyze:runtimes:code:structure-module-tree');
 
 interface ModuleNode {
 	readonly id:       string;

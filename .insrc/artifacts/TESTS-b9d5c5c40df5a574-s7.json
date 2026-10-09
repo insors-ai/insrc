@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:50:14.917Z"
+    "updatedAt": "2026-10-09T06:54:27.128Z"
   },
   "body": {
     "tasks": [
@@ -1231,6 +1231,144 @@
               },
               {
                 "title": "compactEntityVecTable result survives close + reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "10b075c0",
+        "ranAt": "2026-10-09T06:54:27.128Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 646,
+            "titles": [
+              {
+                "title": "each of the five aggregate-report runtimes hands absentInputs to the aggregator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "stableStringify: object keys sorted",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: Map entries sorted + emitted as object",
+                "result": "pass"
+              },
+              {
+                "title": "stableStringify: arrays preserve order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: empty map -> \"No upstream outputs\" sentinel",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: tasks emitted in sorted taskId order",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream rendered as unavailable note",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: JSON output rendered in fenced block",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: system has prompt content, user has Target/Scope/upstream",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus is included in the user message when present",
+                "result": "pass"
+              },
+              {
+                "title": "buildMessages: focus omitted when undefined",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: Ollama-down patterns -> aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError: non-Error -> aggregator-internal wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: stub provider -> report carries LLM output + runtime metadata",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: focus passed through to the user message",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "runAggregator: missing prompt file -> \"aggregator prompt missing\"",
+                "result": "pass"
+              },
+              {
+                "title": "AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false",
+                "result": "pass"
+              },
+              {
+                "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
                 "result": "pass"
               }
             ],

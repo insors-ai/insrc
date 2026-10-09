@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 40 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -250,3 +250,26 @@ Run at 2026-10-09T06:50:14.917Z on commit `3dfa5044`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts` | 0 | 1 | 1 s |  |
 | `src/db/lance/__tests__/entity-vec.test.ts` | 0 | 22 | 1.2 s |  |
+
+## t9
+
+Run at 2026-10-09T06:54:27.128Z on commit `10b075c0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent | `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` |
+
+**integration: each of the five aggregate-report runtimes hands absentInputs to the aggregator**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each of the five aggregate-report runtimes hands absentInputs to the aggregator | `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` | 0 | 20 | 0.6 s |  |

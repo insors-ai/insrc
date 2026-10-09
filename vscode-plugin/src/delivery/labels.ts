@@ -51,6 +51,16 @@ export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'dan
   return Object.hasOwn(APPROVAL_TONES, state) ? APPROVAL_TONES[state] : 'neutral';
 }
 
+/** The tone of a recorded task result: Passed success, Failed danger, Unrecorded (or a result this build does not know) neutral. */
+export function taskResultTone(result: TaskResult): 'success' | 'danger' | 'neutral' {
+  return result === 'passed' ? 'success' : result === 'failed' ? 'danger' : 'neutral';
+}
+
+/** The tone of an effective review verdict as a card shows it: pass success, warn warning, a block that no longer blocks neutral. */
+export function verdictTone(verdict: ReviewVerdict): 'success' | 'warning' | 'neutral' {
+  return verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral';
+}
+
 /** The six stages in workflow order, the order the board shows its columns. */
 export const STAGE_ORDER: readonly DeliveryStage[] = [
   'scoped',

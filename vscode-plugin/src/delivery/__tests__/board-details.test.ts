@@ -235,3 +235,10 @@ test('an item kind or approval state this build does not know still gives a read
   assert.equal(d.kicker, 'MILESTONE · X1');
   assert.deepEqual(d.chain.map(r => [r.kind, r.label, r.tone]), [['LLD', 'superseded', 'neutral']]);
 });
+
+test('the tasks chip is danger when the story-level result failed, even with every task passed', () => {
+  const s1 = item({ id: 'S1', stage: 'complete', validation: { passed: 3, failed: 0, unrecorded: 0, unplanned: 0 }, storyLevelResult: 'failed' });
+  const d = buildItemDetails(snapshot([s1]), 'S1', NONE, null, DISPLAY_LABELS)!;
+  assert.deepEqual(d.chips.find(c => c.kind === 'tasks'), { kind: 'tasks', label: '3/3 tasks passed', tone: 'danger' });
+  assert.ok(d.chips.some(c => c.label === 'Validation failed' && c.tone === 'danger'), 'agreeing with the card badge');
+});

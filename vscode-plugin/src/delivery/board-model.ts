@@ -20,7 +20,7 @@
 import type { BadgeView, BoardViewModel, CardView, ColumnView, StatePanelView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { approvalTone, labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
+import { approvalTone, labelOf, STAGE_ORDER, verdictTone, type DisplayLabels } from './labels.js';
 
 /** Cards shown per column before show-more, and how many each show-more adds. */
 export const BOARD_PAGE_SIZE = 50;
@@ -130,7 +130,7 @@ export function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeV
   } else {
     const verdict = named.flatMap(e => (e.review === null ? [] : [e.review.effectiveVerdict])).sort((a, b) => rankOf(VERDICT_RANK, a) - rankOf(VERDICT_RANK, b))[0];
     // A 'block' that no longer blocks (overridden, or its gate approved) is shown, but not as danger.
-    if (verdict !== undefined) add('review', labelOf(labels.reviewVerdict, verdict), verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral');
+    if (verdict !== undefined) add('review', labelOf(labels.reviewVerdict, verdict), verdictTone(verdict));
   }
 
   // Validation: task results and the story-level result together.

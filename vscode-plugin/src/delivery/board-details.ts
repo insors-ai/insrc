@@ -18,7 +18,7 @@ import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from '.
 import type { DisplayLabels } from './labels.js';
 import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
-import { approvalTone, labelOf } from './labels.js';
+import { approvalTone, labelOf, taskResultTone } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -50,7 +50,7 @@ function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, label
       title: taskItem?.title ?? null,
       resultLabel: t.planned ? labelOf(labels.taskResult, t.result) : labels.unplanned,
       planned: t.planned,
-      resultTone: !t.planned ? 'neutral' : t.result === 'passed' ? 'success' : t.result === 'failed' ? 'danger' : 'neutral',
+      resultTone: t.planned ? taskResultTone(t.result) : 'neutral',
       dependsOn: planTask === undefined ? null : planTask.dependsOn.map(d => {
         const dep = itemForPlanId(d);
         return dep === undefined ? d : titleOf(dep);
@@ -150,7 +150,8 @@ function chipsOf(item: DeliveryItemView, labels: DisplayLabels): BadgeView[] {
   if (item.stage !== null) chips.push({ kind: 'stage', label: labelOf(labels.stage, item.stage.stage), tone: 'neutral' });
   const summary = taskSummaryOf(item);
   if (summary !== null) {
-    const failed = (item.validation?.failed ?? 0) > 0;
+    // Red whenever the card says Validation failed: a failed task or a failed story-level result.
+    const failed = (item.validation?.failed ?? 0) > 0 || item.storyLevelResult === 'failed';
     chips.push({ kind: 'tasks', label: summary.label, tone: failed ? 'danger' : summary.passed === summary.total ? 'success' : 'neutral' });
   }
   if (isCardKind(item)) chips.push(...badgesOf(item, labels));

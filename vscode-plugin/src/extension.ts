@@ -57,6 +57,8 @@ import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
+import { createDeliveryBoardHost } from './delivery/board-host.js';
+import { createDeliveryClient } from './delivery/delivery-client.js';
 import { execFile as nodeExecFile } from 'node:child_process';
 import { promises as nodeFsp } from 'node:fs';
 import { relative as pathRelative, isAbsolute as pathIsAbsolute, join as pathJoin } from 'node:path';
@@ -632,6 +634,44 @@ export function activate(context: vscode.ExtensionContext): void {
       docsReviewHost.open();
     });
   }
+
+  // E2 s1: the delivery board — a read-only editor tab over the daemon's workflow.delivery
+  // snapshot for the first workspace folder. Not gated on insrc.chat.enabled.
+  const deliveryBoardHost = createDeliveryBoardHost({
+    createPanel: ({ viewType, title }) => {
+      const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+      return {
+        setHtml: (html) => {
+          panel.webview.html = html;
+        },
+        postMessage: (message) => {
+          panel.webview.postMessage(message).then(undefined, () => {
+            /* ignore posts to a disposed/hidden panel */
+          });
+        },
+        onMessage: (listener) => {
+          panel.webview.onDidReceiveMessage((m) => listener(m));
+        },
+        onDidDispose: (listener) => {
+          panel.onDidDispose(listener);
+        },
+        reveal: () => panel.reveal(),
+        dispose: () => panel.dispose(),
+      };
+    },
+    client: createDeliveryClient({
+      rpc: client.rpc,
+      repo: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
+      deadlinesMs: { snapshot: 30_000, evidence: 15_000 },
+    }),
+    logger: { warn: panelLog.warn, error: (message: string): void => console.error(`[insrc] ${message}`) },
+    now: () => new Date().toISOString(),
+    genNonce: () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`,
+  });
+  context.subscriptions.push({ dispose: () => deliveryBoardHost.dispose() });
+  commands.register({ id: 'insrc.delivery.openBoard', title: 'insrc: Open delivery board' }, async () => {
+    deliveryBoardHost.open();
+  });
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

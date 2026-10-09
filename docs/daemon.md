@@ -39,10 +39,11 @@ The daemon does **not**:
 8. [Usage via Claude Code (MCP)](#usage-via-claude-code)
 9. [Usage via Codex CLI (MCP)](#usage-via-codex-cli)
 10. [What an answer says about its completeness](#what-an-answer-says-about-its-completeness)
-11. [What a build records about its tests](#what-a-build-records-about-its-tests)
-12. [CLI reference](#cli-reference)
-13. [Troubleshooting](#troubleshooting)
-14. [Uninstall](#uninstall)
+11. [What a plan-tree run does about scope, failed tasks and runs that died](#what-a-plan-tree-run-does-about-scope-failed-tasks-and-runs-that-died)
+12. [What a build records about its tests](#what-a-build-records-about-its-tests)
+13. [CLI reference](#cli-reference)
+14. [Troubleshooting](#troubleshooting)
+15. [Uninstall](#uninstall)
 
 ---
 
@@ -658,6 +659,143 @@ The IDE mirrors these types and is not changed from here. It needs:
 
 ---
 
+## What a plan-tree run does about scope, failed tasks and runs that died
+
+A plan-tree run (`analyze.run.start`) classifies the request, builds a run
+context, plans a list of tasks, runs them and writes one final report. The
+rules below hold from 2026-10-09.
+
+### The kinds of scope each family of tasks accepts
+
+Every plan task turns its scope into a repo, a path, an entity or a
+connection through one function, and accepts exactly the kinds its family's
+row gives:
+
+| Family | Kinds of scope accepted |
+|---|---|
+| code | `repo`, `module`, `file`, `symbol`, `manifest-dir`, `workspace` |
+| docs | `repo`, `module`, `file`, `workspace` |
+| infra | `repo`, `manifest-dir`, `workspace` |
+| data | `connection`, `repo`, `manifest-dir`, `workspace` |
+
+Before, the code and docs tasks accepted `repo` and `manifest-dir` only, and
+no data task accepted a `connection`.
+
+- A code or docs task keeps to the **area** the scope names: for a `module`
+  scope the entities or documents whose file lies under that directory, for a
+  `file` scope that file's, for a `symbol` scope the one entity. For a
+  `repo`, `manifest-dir` or `workspace` scope the area is the directory, as
+  before.
+- The docs constraint and decision tasks keep to the area when they retrieve:
+  sections are selected, ranked and counted within it, by keywords and by
+  vector search alike.
+- A data task with a `connection` scope works on that connection alone. For
+  the other kinds it opens the connection pool at the scope's own directory,
+  as before.
+- A code or docs task needs its scope indexed. An infra or data task does not
+  read the stored graph and is not checked for an index.
+
+### The code on a failed task
+
+A task that refuses its scope fails with the scope error's own code. The task
+record (`tasks/<taskId>.json`) and each entry of `tasksFailed`, on a plan's
+result, on the run's result, in the run record and in the daemon's response,
+carry an optional `code`:
+
+```jsonc
+"tasksFailed": [
+  { "taskId": "t01", "reason": "Scope /r/app/src produced an empty graph closure.", "code": "scope-not-indexed" },
+  { "taskId": "t02", "reason": "runtime-threw: the graph store is closed" }
+]
+```
+
+`code` is one of `scope-ref-kind-target-mismatch`, `scope-ref-unresolved` and
+`scope-not-indexed`, and is present only for those three. Such a task's
+`reason` is the error's message with no `runtime-threw:` in front. Every other
+failure has no `code`, and an entry without one has no `code` key at all. A
+record written before the change has none, and nothing requires one.
+
+A task whose record cannot be written fails with
+`task-record-unwritable: <the error>`; the tasks after it still run.
+
+### The final report is written from the inputs that exist
+
+The last task of every plan writes the report. It used to be skipped as soon
+as one task before it had failed, so a run with one failed task returned no
+report at all. Now:
+
+- it is skipped in one case only: it consumes at least one input and **none**
+  of them was produced. The run then fails with `executor-aggregator-failed`,
+  as before;
+- otherwise it runs on the inputs that exist, and is told which are absent:
+  each one's name, the task that should have produced it and why it did not.
+  It is instructed to state nothing about an absent input except that it is
+  absent;
+- every other task with a missing input is skipped as before
+  (`skipped-dependency-unavailable`).
+
+So a report can now be written although a task failed. Read its first line:
+the completeness line (see above) names every failed and skipped task, by its
+path for a task of a child plan, and it is written by code, not by the model.
+A child plan with a failed task still returns its report to its parent.
+
+### A run that stops says so
+
+- An error that nothing inside the run catches no longer leaves the run
+  record reading `in-progress`: the record is written as `failed` at the stage
+  the run had reached, with `internal-error` and the error's message, and that
+  failure is the run's result. An error before any stage has started is
+  reported at `classify`.
+- `run-abandoned`: a run record that is `in-progress` means a run is live in
+  the daemon. A record left `in-progress` with no live run behind it (the
+  daemon was restarted, or the run's process died) is **abandoned**. The
+  status request (`analyze.run.status`) rewrites it as `failed` with
+  `run-abandoned` at the stage it had reached and returns it so; the purge
+  request (`analyze.run.purge`) removes it without `force`. A record of a run
+  that is live is returned unchanged and its purge is refused with
+  `run-in-progress`, as before. A record that is `ok` or `failed` is never
+  changed by a reader.
+- Starting a run under the id of a record left `in-progress` replaces that
+  record with the new run's first record; a completed run asked for again
+  returns its stored result, as before.
+- For an error that escapes the run altogether, the daemon's response carries
+  the stage of the run record where it used to say `classify` always.
+
+### The scope is checked once before planning
+
+After the run context is built and before the planner is asked, the run
+resolves its scope for its kind of source. In practice this ends one case
+early: a **docs** run on a scope that no registered repo contains, or one
+with no stored entities, now fails at stage `plan` with `scope-not-indexed`
+and no plan is made. Before, it was planned and then failed in every task. A
+generic run is not checked here. A pairing the table refuses still fails at
+stage `classify` with `scope-ref-kind-target-mismatch`.
+
+### A request with no prompt
+
+`analyze.run.start` accepts the empty string as `userPrompt` when `targetHint`
+states the kind of source: the run is then unfocused. With no `targetHint` the
+empty string is refused with `invalid-params`, and the message says a kind of
+source must be stated, because there would be nothing to classify. A prompt of
+only white space is not empty and is accepted in both cases, as before.
+
+### Note for clients that mirror these types
+
+The plan of this work called this the note for the IDE repository. That
+repository is no longer maintained; the clients are the VS Code and JetBrains
+plugins in this repository, and neither calls the plan-tree run requests
+today. A client
+that mirrors the daemon's types needs:
+
+- the optional `code` on each entry of `tasksFailed` and on a task record (a
+  mirror that rejects unknown fields rejects an entry that carries one);
+- `run-abandoned` and `internal-error` as codes a run record's `error` can
+  carry when the status request returns it;
+- `invalid-params` for an empty `userPrompt` with no `targetHint`, and an
+  empty `userPrompt` being valid with one.
+
+---
+
 ## What a build records about its tests
 
 When a Task (or a standalone Story) is submitted to the build validation gate
@@ -801,7 +939,7 @@ sampling client).
 | `invalid-input` | The request was built wrongly (unknown kind of source, no intent). |
 | `no-plan-for-request` | The plan for the request has no lookups. |
 | `answer-step-failed` | The lookups ran and the answer could not be written. `data` is `{ reason, results, report }`: `reason` is `model-failed` (the answer-writing call failed), `invalid-answer` (its output was not in the required shape) or `invalid-bundle` (the assembled bundle failed validation); `results` is what each lookup returned; `report` is the answer report with `answerFailure` set. No other way of answering is tried. |
-| `run-abandoned` | Declared; not raised yet. |
+| `run-abandoned` | On a run record returned by `analyze.run.status`: the record was left `in-progress` and no live run stands behind it (the daemon was restarted, or the run died). The record is rewritten as failed at the stage it had reached. Raised from 2026-10-09. |
 
 `no-plan-for-request`, `answer-step-failed` and `run-abandoned` were added on
 2026-10-07 to both of the daemon's code lists (`RunErrorCode` and

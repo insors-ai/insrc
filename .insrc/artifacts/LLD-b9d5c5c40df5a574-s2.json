@@ -240,6 +240,15 @@
     "reviewOverride": {
       "reason": "Stakeholder's decision of 2026-10-09 (\"B. Approve by override now\"), after five daemon reviews. The review stamp is the fifth review's block (2 medium, 0 high, 14 premises hold): both findings (a pure rule from a resolved scope to a data scope; every place the classifier names a size) were addressed in the design at cc91cf72 and were not reviewed again. The four earlier reviews' findings (1 high and 13 medium in all) were each addressed and held in the following review.",
       "at": "2026-10-09T16:10:55.868Z"
+    },
+    "questionResolutions": {
+      "qf22edf66": {
+        "question": "A request is measured from its lookup results by the same table as a named area: the files the results name and the items returned. The length of the results in characters is recorded for Story s3 and does not take part in the size. Should the size of lookup results also depend on their length in characters?",
+        "status": "resolved",
+        "choice": "No: size lookup results by files and items only, and record the characters for Story s3",
+        "rationale": "Stakeholder took the recommendation on 2026-10-09: Story s3 owns the rule for when results are too large for one pass and will set that threshold from the characters; using them here would make two rules for one question.",
+        "resolvedAt": "2026-10-09T16:12:52.050Z"
+      }
     }
   },
   "body": {

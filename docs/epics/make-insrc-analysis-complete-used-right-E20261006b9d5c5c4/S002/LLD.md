@@ -631,3 +631,45 @@ ClassifiedIntent loses `scope`. The planner driver, the recursive planner, the p
 
 - A request is measured from its lookup results by the same table as a named area: the files the results name and the items returned. The length of the results in characters is recorded for Story s3 and does not take part in the size. Should the size of lookup results also depend on their length in characters?
 - A data source's objects (tables, collections, files) are compared with the FILES column of the table, so a source with 21 to 200 tables is M and one with more than 1,500 is XL. Should a data source's objects be compared with the files column, or with the entities column (where up to 500 tables would be S)?
+
+## Resolved questions
+
+- `qf22edf66` — A request is measured from its lookup results by the same table as a named area: the files the results name and the items returned. The length of the results in characters is recorded for Story s3 and does not take part in the size. Should the size of lookup results also depend on their length in characters?
+  - **resolved**: No: size lookup results by files and items only, and record the characters for Story s3 — Stakeholder took the recommendation on 2026-10-09: Story s3 owns the rule for when results are too large for one pass and will set that threshold from the characters; using them here would make two rules for one question. _(2026-10-09T16:12:52.050Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/planner/validate.ts` — "export const SCOPE_BAND"
+- **[[c2]]** `code` `src/analyze/runtimes/shared/task-scope.ts` — "export function inAreaOf"
+- **[[c3]]** `code` `src/analyze/orchestrator/driver.ts` — "await resolveTaskScope(intent.scopeRef, intent.target, 'the run');"
+- **[[c4]]** `code` `src/daemon/db/drivers/sqlite.ts` — "function clampListLimit(n: number | undefined): number {"
+- **[[c5]]** `code` `src/analyze/completeness.ts` — "readonly measure?:  unknown;"
+- **[[c6]]** `code` `src/analyze/classifier/scope-picker.ts` — "const ents = await listEntitiesForRepo({} as never, r.path);"
+- **[[c7]]** `code` `src/shared/analyze-types.ts` — "readonly scope:     AnalyzeScope;"
+- **[[c8]]** `code` `src/analyze/classifier/schema.ts` — "required:   ['target', 'scope', 'focused', 'scopeRef', 'reasoning'],"
+- **[[c9]]** `code` `src/mcp/analyze-step/phases/start.ts` — "const scope  = input.scope  ?? 'M';"
+- **[[c10]]** `code` `src/prompts/analyze/scope-picker.system.md` — "Very small workspace (< 500 indexed entities)"
+- **[[c11]]** `code` `src/analyze/planner/recursive.ts` — "const childIntent = extractChildIntent(task);"
+- **[[c12]]** `code` `src/daemon/db/list-files.ts` — "if (out.length >= opts.limit) { truncated = true; return; }"
+- **[[c13]]** `code` `src/analyze/explore/answer-report.ts` — "export function reportFromLookups(results: readonly ExecutedExploration[]): AnswerReport {"
+- **[[c14]]** `stakeholder` `decision of 2026-10-09 in the design session` — "A. Both counts, the larger size wins, fixed thresholds (recommended)."
+- **[[c15]]** `code` `src/analyze/runtimes/shared/task-scope.ts` — "const GRAPH_FAMILIES: ReadonlySet<TaskFamily> = new Set(['code', 'docs']);"
+- **[[c16]]** `code` `src/analyze/runtimes/infra/_shared.ts` — "export async function walkFiles("
+- **[[c17]]** `code` `src/analyze/completeness.ts` — "if (report !== undefined) return renderCompletenessLine(report);"
+- **[[c18]]** `code` `src/config/role-taxonomy.ts` — "{ id: 'analyze.scope.pick',"
+- **[[c19]]** `code` `vscode-plugin/package.json` — ""insrc.models.tasks.analyze.scope.pick": {"
+- **[[c20]]** `code` `src/daemon/analyze-rpc.ts` — "const rootScope = parsed.rootScope ?? parsed.intent.scope;"
+- **[[c21]]** `code` `src/analyze/context/bundle.ts` — "const head = completenessHeadLine(bundle.report, 'nothing');"
+- **[[c22]]** `stakeholder` `decision of 2026-10-09 in the design session` — "A. Count the files on disk that the infra tasks' own file walk would visit (recommended)."
+- **[[c23]]** `code` `src/config/reconcile.ts` — "const keys = r.path.split('.');"
+- **[[c24]]** `code` `src/daemon/db/drivers/oracle.ts` — "clampOracleListLimit"
+- **[[c25]]** `code` `src/daemon/db/drivers/mssql.ts` — "clampMssqlListLimit"
+- **[[c26]]** `code` `src/mcp/analyze-step/answer-turn.ts` — "report: reportFromLookups(args.executed.results)"
+- **[[c27]]** `code` `src/analyze/context/driver.ts` — "h.update(stableStringify(inputs))"
+- **[[c28]]** `code` `src/mcp/analyze-step/phases/start.ts` — "kind: 'workspace'"
+- **[[c29]]** `code` `src/mcp/analyze-step/state.ts` — "export interface StepStatePayload"
+- **[[c30]]** `code` `src/analyze/explore/types.ts` — "export type ExplorationOutput ="
+- **[[c31]]** `code` `src/analyze/context/scope.ts` — "const repos = await deps.listRepos();"
+- **[[c32]]** `code` `src/analyze/classifier/driver.ts` — "Required fields: target, scope, "
+- **[[c33]]** `code` `src/analyze/runtimes/data/_shared.ts` — "export async function resolveDataScope("
+- **[[c34]]** `code` `src/analyze/orchestrator/driver.ts` — "// The size is not part of either check; 'M' is a placeholder here."

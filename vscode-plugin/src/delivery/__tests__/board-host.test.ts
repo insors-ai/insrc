@@ -153,6 +153,24 @@ test('when the earlier refresh answers after the later one, only the later snaps
   assert.deepEqual(lastItems(ch), ['fresh'], 'and the next refresh recovers');
 });
 
+test('a client that throws synchronously ends the refresh as failed instead of leaving the board loading', async () => {
+  const posted: Envelope<BoardDownMessage>[] = [];
+  const ch = fakeChannel();
+  const host = createDeliveryBoardHost({
+    createPanel: () => ch,
+    client: { snapshot: () => { throw new Error('no folder api'); }, evidence: () => { throw new Error('unused'); } },
+    logger: { warn: () => undefined, error: () => undefined },
+    now: () => '2026-10-09T12:00:00.000Z',
+    genNonce: () => 'N0NCE',
+  });
+  host.open();
+  await flush();
+  posted.push(...ch.posted);
+  const last = posted.map(e => e.payload).filter(p => p.type === 'status').at(-1);
+  assert.equal(last?.type === 'status' ? last.status.state : null, 'failed');
+  assert.match(last?.type === 'status' ? last.status.message ?? '' : '', /no folder api/);
+});
+
 test('an answer or timeout that arrives after the panel is closed is neither posted nor logged', async () => {
   const { host, channels, created, logs, calls } = setup();
   host.open();

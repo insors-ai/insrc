@@ -119,10 +119,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const started = deps.now();
     dispatch({ type: 'refresh-requested', seq });
     // The client resolves every failure to a typed result; a throw is turned into one so the board never stays on 'loading'.
-    const result: DeliveryResult<DeliverySnapshot> = await deps.client.snapshot().catch((err: unknown) => ({
-      ok: false as const,
-      failure: { kind: 'read-failed' as const, message: err instanceof Error ? err.message : String(err) },
-    }));
+    let result: DeliveryResult<DeliverySnapshot>;
+    try {
+      result = await deps.client.snapshot();
+    } catch (err) {
+      result = { ok: false, failure: { kind: 'read-failed', message: err instanceof Error ? err.message : String(err) } };
+    }
     if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
     const at = deps.now();
     if (seq !== state.latestSeq) {
@@ -141,7 +143,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       // board, so this shows a failed refresh over it rather than a frozen board.
       const message = err instanceof Error ? err.message : String(err);
       deps.logger.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
-      dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });
+      try {
+        dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });
+      } catch (again) {
+        // Last resort: the board keeps whatever it last posted.
+        deps.logger.error(`delivery board: refresh ${seq} failure could not be shown: ${again instanceof Error ? again.message : String(again)}`);
+      }
     }
   }
 

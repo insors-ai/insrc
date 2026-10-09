@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -63,3 +63,21 @@ Run at 2026-10-09T16:31:36.297Z on commit `c5b16af1`. Tests check: **passed**. 8
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/__tests__/measure.test.ts` | 0 | 8 | 0.6 s |  |
+
+## t2
+
+Run at 2026-10-09T16:41:15.265Z on commit `ed05329b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined | `src/daemon/db/__tests__/list-complete.test.ts` |
+| pass | the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` | 0 | 1 | 0.4 s |  |
+| `src/daemon/db/__tests__/list-complete.test.ts` | 0 | 1 | 1.5 s |  |

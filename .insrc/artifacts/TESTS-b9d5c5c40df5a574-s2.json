@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T16:31:36.297Z"
+    "updatedAt": "2026-10-09T16:41:15.265Z"
   },
   "body": {
     "tasks": [
@@ -156,6 +156,60 @@
               },
               {
                 "title": "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ed05329b",
+        "ranAt": "2026-10-09T16:41:15.265Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/list-complete.test.ts",
+                "title": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
+                "title": "the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 425,
+            "titles": [
+              {
+                "title": "the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/list-complete.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1459,
+            "titles": [
+              {
+                "title": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined",
                 "result": "pass"
               }
             ],

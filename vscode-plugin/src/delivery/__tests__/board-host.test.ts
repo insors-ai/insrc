@@ -246,16 +246,16 @@ test('the board view renders titles and notices containing markup and script as 
 
   const columns = el['board']!.children;
   assert.equal(columns.length, 6);
-  assert.deepEqual(columns.map(c => c.children[0]!.textContent),
-    ['Scoped (1)', 'Design & plan (0)', 'Ready · design approved (0)', 'Ready · plan approved (0)', 'Build recorded (0)', 'Complete (1)']);
+  assert.deepEqual(columns.map(c => texts(c.children[0]!)),
+    [['Scoped', '1'], ['Design & plan', '0'], ['Ready · design approved', '0'], ['Ready · plan approved', '0'], ['Build recorded', '0'], ['Complete', '1']]);
   const cards = cardsIn(el['board']!);
   assert.deepEqual(cards.map(c => c.attrs['data-item-id']), ['I1', 'S1']);
   const s1 = cards[1]!;
-  assert.deepEqual(texts(s1), [`Story · ${hostile}`, `Epic: Epic ${hostile}`, 'Validation conflict', 'Unknown route'],
-    'the title, epic and badge labels are literal text');
+  assert.deepEqual(texts(s1), ['STORY · S1', hostile, `Epic: Epic ${hostile}`, 'Validation conflict', 'Unknown route'],
+    'the kicker, title, epic and badge labels are literal text');
   assert.equal(s1.attrs['aria-label'], model.columns[5]!.cards[0]!.accessibleLabel);
   assert.deepEqual(findAll(s1, x => x.attrs['class'] === 'badge').map(b => b.attrs['data-tone']), ['danger', 'warning']);
-  assert.deepEqual(texts(cards[0]!), ['Issue · Plain issue', 'Standalone']);
+  assert.deepEqual(texts(cards[0]!), ['ISSUE · I1', 'Plain issue', 'Standalone']);
   assert.equal(el['totals']!.textContent, '2 items, 0 needing attention');
   assert.equal(el['empty']!.textContent, '');
 });
@@ -488,23 +488,23 @@ test('the epic rollup and issue view render as text, and their tabs and links po
   deliver({ v: 1, payload: epics });
   const rows = el['board']!.children;
   assert.deepEqual(rows.map(g => texts(g)), [
-    ['EPIC · E1', `Epic ${hostile}`, '1 of 2 stories complete', '2 stories · 0 tasks', 'No open gates'],
-    ['Not in an epic', '1 of 2 stories complete', '2 stories · 0 tasks · 2 issues', 'No open gates'],
+    ['EPIC · E1', `Epic ${hostile}`, '2 stories · 0 tasks', '1 of 2 stories complete', 'No open gates'],
+    ['Not in an epic', '2 stories · 0 tasks · 2 issues', '1 of 2 stories complete', 'No open gates'],
   ], 'titles, completion labels and counts as literal text; the fix stories (parent: their issue) are not in an epic');
   assert.equal(rows[0]!.attrs['data-epic'], 'E1');
   assert.equal(rows[1]!.attrs['data-epic'], undefined, "the 'Not in an epic' row names no epic");
   assert.equal(findAll(el['board']!, x => x.attrs['class'] === 'card').length, 0, 'the rollup lists counts, not cards');
-  assert.equal(el['tab-epics']!.attrs['aria-pressed'], 'true');
-  assert.equal(el['tab-board']!.attrs['aria-pressed'], 'false');
+  assert.equal(el['tab-epics']!.attrs['aria-selected'], 'true');
+  assert.equal(el['tab-board']!.attrs['aria-selected'], 'false');
   assert.equal(el['totals']!.textContent, '6 items, 0 needing attention');
 
   deliver({ v: 1, payload: issues });
   const entries = el['board']!.children;
   assert.deepEqual(entries.map(e => e.attrs['data-item-id']), ['I1', 'I2']);
-  assert.deepEqual(texts(entries[0]!).filter(t => !t.startsWith('Issue')), ['Standalone', 'Stage: Design & plan', 'Corrects: ', 'Story · Columns · Complete', 'Fix stories', 'Story · Wrap the text · Complete', 'Story · Measure first · Design & plan']);
+  assert.deepEqual(texts(entries[0]!), ['ISSUE · I1', 'Overflow', 'Standalone', 'Stage: Design & plan', 'Corrects: ', 'Story · Columns · Complete', 'Fix stories', 'Story · Wrap the text · Complete', 'Story · Measure first · Design & plan']);
   assert.ok(texts(entries[1]!).includes(`cannot find ${hostile}`), 'the unresolved-parent notice is literal text');
   assert.ok(texts(entries[1]!).includes('No fix stories yet'));
-  assert.equal(el['tab-issues']!.attrs['aria-pressed'], 'true');
+  assert.equal(el['tab-issues']!.attrs['aria-selected'], 'true');
 
   // The links and tabs post only select-item and set-view.
   const links = findAll(el['board']!, x => x.attrs['class'] === 'link');
@@ -1271,4 +1271,100 @@ test('BOARD_STYLE\'s 600 px block orders empty stage sections after non-empty on
   for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /overflow:\s*hidden/, /height:\s*0/]) {
     assert.doesNotMatch(narrow, hiding, `no ${hiding} rule in the narrow block`);
   }
+});
+
+test('a rendered card shows its kicker, title, epic line, task summary and tone pills (data-tone) in the six-column board', async () => {
+  const model = await boardModelFor(fixtureSnapshot([
+    item({ id: 'E20261009abcdef01', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E20261009abcdef01:S001', parentId: 'E20261009abcdef01', title: 'Columns', stage: 'build-recorded',
+      validation: { passed: 2, failed: 1, unrecorded: 0, unplanned: 0 }, needsAttention: true, attentionReasons: ['validation-failed'] }),
+  ]));
+  const { deliver, el } = runScript();
+  deliver({ v: 1, payload: { type: 'board', model } });
+  assert.equal(el['board']!.children.length, 6, 'six columns');
+  const card = cardsIn(el['board']!)[0]!;
+  assert.deepEqual(card.children.map(c => [c.attrs['class'], c.textContent]).slice(0, 4), [
+    ['kicker', 'STORY · ABCDEF01 / S001'], ['card-title', 'Columns'], ['card-epic', 'Epic: Board epic'], ['card-tasks', '2/3 tasks passed'],
+  ]);
+  const pills = findAll(card, x => x.attrs['class'] === 'badge');
+  assert.deepEqual(pills.map(b => [b.textContent, b.attrs['data-tone']]), [['Validation failed', 'danger']]);
+});
+
+test('every board column heading renders its label and a count chip holding the column total, for empty and non-empty stages alike', async () => {
+  const model = await boardModelFor(fixtureSnapshot([item({ id: 'S1', stage: 'scoped' }), item({ id: 'S2', stage: 'scoped' }), item({ id: 'S3', stage: 'complete' })]));
+  const { deliver, el } = runScript();
+  deliver({ v: 1, payload: { type: 'board', model } });
+  const sections = el['board']!.children;
+  assert.deepEqual(sections.map(sec => {
+    const h = sec.children.find(c => c.tag === 'h2')!;
+    const count = h.children.find(c => c.attrs['class'] === 'count')!;
+    return [h.children[0]!.textContent, count.textContent, count.attrs['aria-label'], sec.attrs['data-empty']];
+  }), [
+    ['Scoped', '2', '2 items', 'false'], ['Design & plan', '0', '0 items', 'true'], ['Ready · design approved', '0', '0 items', 'true'],
+    ['Ready · plan approved', '0', '0 items', 'true'], ['Build recorded', '0', '0 items', 'true'], ['Complete', '1', '1 item', 'false'],
+  ]);
+});
+
+test('clicking a rollup row title posts set-scope for that epic (standalone for \'Not in an epic\') and then set-view board, and the meter exposes completionLabel and aria-valuenow/max', async () => {
+  const host = await openWith(fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped' }),
+    item({ id: 'E1:S003', parentId: 'E1', stage: 'scoped' }),
+    item({ id: 'SA1', standalone: true }),
+  ]));
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  const { posted, deliver, el } = runScript();
+  deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
+  const rows = el['board']!.children;
+  const meter = findAll(rows[0]!, x => x.attrs['role'] === 'meter')[0]!;
+  assert.deepEqual([meter.attrs['aria-label'], meter.attrs['aria-valuenow'], meter.attrs['aria-valuemin'], meter.attrs['aria-valuemax']],
+    ['1 of 3 stories complete', '1', '0', '3']);
+  assert.equal(meter.children[0]!.attrs['style'], 'width:33%');
+  const titleOf = (row: FakeEl) => findAll(row, x => (x.attrs['class'] ?? '').split(' ').includes('row-title'))[0]!;
+  posted.length = 0;
+  titleOf(rows[0]!).listeners['click']!();
+  titleOf(rows[1]!).listeners['click']!();
+  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null);
+  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
+    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } }, { type: 'set-view', view: 'board' },
+    { type: 'set-scope', scope: { kind: 'standalone' } }, { type: 'set-view', view: 'board' },
+  ]);
+  assert.equal(el['scope']!.value, 'standalone', 'the scope control follows');
+});
+
+test('scope and attention chips post set-scope / set-attention with aria-pressed; tabs are role=tab with aria-selected and arrow-key movement', async () => {
+  const model = await boardModelFor(fixtureSnapshot([item({ id: 'E1', kind: 'epic', title: 'Board epic' }), item({ id: 'E1:S001', parentId: 'E1' })]));
+  const { posted, deliver, el } = runScript();
+  deliver({ v: 1, payload: { type: 'board', model } });
+  const chips = el['scope-chips']!.children;
+  assert.deepEqual(chips.map(c => [c.textContent, c.attrs['data-scope'], c.attrs['aria-pressed']]), [
+    ['All work', 'all', 'true'], ['Standalone', 'standalone', 'false'], ['Board epic', 'epic:E1', 'false'],
+  ]);
+  posted.length = 0;
+  chips[2]!.listeners['click']!();
+  assert.deepEqual(chips.map(c => c.attrs['aria-pressed']), ['false', 'false', 'true']);
+  el['attention-chip']!.listeners['click']!();
+  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'true');
+  el['attention-chip']!.listeners['click']!();
+  assert.equal(el['attention-chip']!.attrs['aria-pressed'], 'false');
+  for (const m of posted) assert.notEqual(parseBoardUpMessage(m), null);
+  assert.deepEqual(posted.map(m => (m as { payload: unknown }).payload), [
+    { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } }, { type: 'set-attention', on: true }, { type: 'set-attention', on: false },
+  ]);
+
+  const doc = renderBoardDocument('N0NCE');
+  assert.match(doc, /<nav class="tabs" role="tablist" aria-label="Views">/);
+  for (const t of ['tab-board', 'tab-epics', 'tab-issues']) assert.match(doc, new RegExp(`<button id="${t}" type="button" role="tab" aria-selected="(true|false)"`));
+  assert.deepEqual(['tab-board', 'tab-epics', 'tab-issues'].map(t => [el[t]!.attrs['aria-selected'], el[t]!.attrs['tabindex']]), [['true', '0'], ['false', '-1'], ['false', '-1']]);
+  const right = keyEvent('ArrowRight');
+  el['tab-board']!.listeners['keydown']!(right);
+  assert.equal(right.prevented, true);
+  assert.equal(focusState.active, el['tab-epics']);
+  el['tab-epics']!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, el['tab-issues']);
+  el['tab-issues']!.listeners['keydown']!(keyEvent('ArrowRight'));
+  assert.equal(focusState.active, el['tab-board'], 'Right from the last tab wraps to the first');
+  el['tab-board']!.listeners['keydown']!(keyEvent('ArrowLeft'));
+  assert.equal(focusState.active, el['tab-issues'], 'Left from the first tab wraps to the last');
 });

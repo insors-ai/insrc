@@ -77,18 +77,28 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const send=function(p){vs.postMessage({v:1,payload:p});};`,
   `const byId=function(id){return document.getElementById(id);};`,
   `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty'),details=byId('details');`,
-  `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
+  `const search=byId('search'),scope=byId('scope'),attention=byId('attention'),scopeChips=byId('scope-chips'),attentionChip=byId('attention-chip');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
   `const KIND={story:'Story',issue:'Issue',epic:'Epic',task:'Task'};`,
+  `const KICKER={story:'STORY',issue:'ISSUE',epic:'EPIC',task:'TASK'};`,
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
   `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
-  `attention.addEventListener('change',function(){send({type:'set-attention',on:attention.checked===true});});`,
-  `scope.addEventListener('change',function(){const v=String(scope.value);`,
-  `send({type:'set-scope',scope:v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)}});});`,
+  // The attention chip and the checkbox are one filter: either posts set-attention and both show the choice.
+  `const markAttention=function(on){attention.checked=on;attentionChip.setAttribute('aria-pressed',on?'true':'false');};`,
+  `attention.addEventListener('change',function(){const on=attention.checked===true;markAttention(on);send({type:'set-attention',on:on});});`,
+  `attentionChip.addEventListener('click',function(){const on=attentionChip.getAttribute('aria-pressed')!=='true';markAttention(on);send({type:'set-attention',on:on});});`,
+  // A scope value: 'all', 'standalone' or 'epic:<id>'; the chips and the select show the same choice.
+  `const scopeOf=function(v){return v==='all'?{kind:'all'}:v==='standalone'?{kind:'standalone'}:{kind:'epic',epicItemId:v.slice(5)};};`,
+  `const markScope=function(v){scope.value=v;for(const c of scopeChips.children)c.setAttribute('aria-pressed',c.getAttribute('data-scope')===v?'true':'false');};`,
+  `const chooseScope=function(v){markScope(v);send({type:'set-scope',scope:scopeOf(v)});};`,
+  `scope.addEventListener('change',function(){chooseScope(String(scope.value));});`,
   // The scope options are rebuilt from each board; the reader's current choice is kept.
   `function renderScope(options){const current=String(scope.value||'all');clear(scope);`,
-  `const add=function(value,text){const o=make('option',text);o.value=value;scope.appendChild(o);};`,
+  `clear(scopeChips);`,
+  `const add=function(value,text){const o=make('option',text);o.value=value;scope.appendChild(o);`,
+  `const c=make('button',text,'chip');c.setAttribute('type','button');c.setAttribute('data-scope',value);c.setAttribute('aria-pressed',value===current?'true':'false');`,
+  `c.addEventListener('click',function(){chooseScope(value);});scopeChips.appendChild(c);};`,
   `add('all','All work');add('standalone','Standalone');`,
   `for(const o of options)add('epic:'+o.epicItemId,o.title);`,
   // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
@@ -101,28 +111,43 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(e.key==='Enter'||e.key===' '){e.preventDefault();send({type:'select-item',itemId:id});}`,
   `else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}};};`,
   `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
-  `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
-  `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
+  `li.appendChild(make('div',KICKER[c.kind]+' \u00b7 '+c.compactId,'kicker'));`,
+  `li.appendChild(make('div',c.title,'card-title'));`,
+  `const epicLine=c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle;if(epicLine!=='')li.appendChild(make('div',epicLine,'card-epic'));`,
+  `if(c.taskSummary!==null)li.appendChild(make('div',c.taskSummary.label,'card-tasks'));`,
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
   `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});li.addEventListener('keydown',onCardKey(li,c.itemId));return li;}`,
   // View tabs: each posts set-view; the shown view's tab is marked pressed.
   `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
-  `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
+  // Tabs (role=tab): the shown view's tab is selected and in the tab order; Left and Right move between the tabs.
+  `const VIEWS=['board','epics','issues'];`,
+  `for(const v of VIEWS){TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
+  `TABS[v].addEventListener('keydown',function(e){const step=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(step===0)return;e.preventDefault();`,
+  `TABS[VIEWS[(VIEWS.indexOf(v)+step+VIEWS.length)%VIEWS.length]].focus();});}`,
   `let shownView='board';`,
-  `function markTab(view){shownView=view;for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
+  `function markTab(view){shownView=view;for(const v of VIEWS){TABS[v].setAttribute('aria-selected',v===view?'true':'false');TABS[v].setAttribute('tabindex',v===view?'0':'-1');}}`,
   `const EMPTY='Nothing on the board matches the search and filters.';`,
   `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
   `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
   `b.setAttribute('type','button');b.setAttribute('data-item-id',l.itemId);b.addEventListener('click',function(){send({type:'select-item',itemId:l.itemId});});return b;}`,
-  // An epic rollup row (s3): the epic's counts as text; the 'Not in an epic' row has no compact id.
+  // An epic rollup row (s3, mock A): kicker, title, counts; the completion meter; the attention chip. The title opens
+  // the epic's board (the 'Not in an epic' row opens the standalone scope).
   `function renderRow(r){const sec=make('section',undefined,'epic-row');if(r.epicItemId!==null)sec.setAttribute('data-epic',r.epicItemId);`,
-  `if(r.compactId!==null)sec.appendChild(make('div','EPIC \u00b7 '+r.compactId,'kicker'));`,
-  `sec.appendChild(make('h2',r.title));`,
-  `sec.appendChild(make('p',r.completionLabel,'completion'));`,
-  `sec.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \u00b7 '),'counts'));`,
-  `const att=make('p',r.attentionLabel,'attention');att.setAttribute('data-tone',r.attentionTone);sec.appendChild(att);`,
+  `const main=make('div',undefined,'row-main');`,
+  `if(r.compactId!==null)main.appendChild(make('div','EPIC \u00b7 '+r.compactId,'kicker'));`,
+  `const h=make('h2');const open=make('button',r.title,'row-title link');open.setAttribute('type','button');`,
+  `open.addEventListener('click',function(){chooseScope(r.epicItemId===null?'standalone':'epic:'+r.epicItemId);send({type:'set-view',view:'board'});});`,
+  `h.appendChild(open);main.appendChild(h);`,
+  `main.appendChild(make('p',[plural(r.storiesTotal,'story','stories'),plural(r.taskCount,'task','tasks')].concat(r.issueCount>0?[plural(r.issueCount,'issue','issues')]:[]).join(' \u00b7 '),'counts muted'));`,
+  `sec.appendChild(main);`,
+  `const prog=make('div',undefined,'row-progress');prog.appendChild(make('p',r.completionLabel,'completion muted'));`,
+  `const meter=make('div',undefined,'meter');meter.setAttribute('role','meter');meter.setAttribute('aria-label',r.completionLabel);`,
+  `meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax',String(r.storiesTotal));meter.setAttribute('aria-valuenow',String(r.storiesComplete));`,
+  `const fill=make('span');fill.setAttribute('style','width:'+(r.storiesTotal===0?0:Math.round(100*r.storiesComplete/r.storiesTotal))+'%');meter.appendChild(fill);`,
+  `prog.appendChild(meter);sec.appendChild(prog);`,
+  `const att=make('span',r.attentionLabel,'pill attention');att.setAttribute('data-tone',r.attentionTone);sec.appendChild(att);`,
   `return sec;}`,
   `function renderEpics(m){markTab('epics');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
@@ -144,8 +169,9 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `empty.textContent=m.emptySelection?EMPTY:m.issues.length===0?'There are no issues on the board.':'';}`,
   `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
-  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
-  `sec.appendChild(make('h2',col.label+' ('+col.total+')'));`,
+  // Every stage heading carries its label and a count chip; an empty stage is marked so a narrow pane wraps it last.
+  `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);sec.setAttribute('data-empty',col.total===0?'true':'false');`,
+  `const h=make('h2');h.appendChild(make('span',col.label,'stage-label'));const count=make('span',String(col.total),'count');count.setAttribute('aria-label',plural(col.total,'item','items'));h.appendChild(count);sec.appendChild(h);`,
   `const ul=make('ul');ul.setAttribute('aria-label',col.label);for(const c of col.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);`,
   `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
@@ -311,10 +337,10 @@ export function renderBoardDocument(nonce: string): string {
     `<h1 class="page-title">${BOARD_TITLE}</h1>` +
     `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
     `<p id="notice"></p>` +
-    `<nav class="tabs" aria-label="Views">` +
-    `<button id="tab-board" type="button" aria-pressed="true">Board</button>` +
-    `<button id="tab-epics" type="button" aria-pressed="false">Epics</button>` +
-    `<button id="tab-issues" type="button" aria-pressed="false">Issues</button>` +
+    `<nav class="tabs" role="tablist" aria-label="Views">` +
+    `<button id="tab-board" type="button" role="tab" aria-selected="true" tabindex="0">Board</button>` +
+    `<button id="tab-epics" type="button" role="tab" aria-selected="false" tabindex="-1">Epics</button>` +
+    `<button id="tab-issues" type="button" role="tab" aria-selected="false" tabindex="-1">Issues</button>` +
     `</nav>` +
     // Chip toolbar (mock A); the scope <select> and attention checkbox remain until the renderers switch to the chips.
     `<div class="toolbar">` +

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T17:04:30.339Z"
+    "updatedAt": "2026-10-09T17:24:58.342Z"
   },
   "body": {
     "tasks": [
@@ -401,6 +401,138 @@
             "titles": [
               {
                 "title": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "64f0a0ff",
+        "ranAt": "2026-10-09T17:24:58.342Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+                "title": "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/recursive.test.ts",
+                "title": "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1006,
+            "titles": [
+              {
+                "title": "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/planner/__tests__/recursive.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "extractChildIntent: well-formed childIntent -> returns it",
+                "result": "pass"
+              },
+              {
+                "title": "extractChildIntent: missing childIntent -> null",
+                "result": "pass"
+              },
+              {
+                "title": "extractChildIntent: malformed childIntent (missing required field) -> null",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: root parent (undefined) -> taskId verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: empty parent string -> taskId verbatim",
+                "result": "pass"
+              },
+              {
+                "title": "buildParentTaskPath: nested -> parent.taskId",
+                "result": "pass"
+              },
+              {
+                "title": "countNodes / countPlannerTasks / maxDepth on a single-node tree",
+                "result": "pass"
+              },
+              {
+                "title": "countNodes / countPlannerTasks / maxDepth on a 3-level tree",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: root with one planner-template task spawns a child plan; tree has 2 nodes",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: depth-cap hit on a deeper subtree -> childError = MaxPlanDepthExceededError",
+                "result": "pass"
+              },
+              {
+                "title": "runRecursivePlanner: child plans inherit rootScope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 821,
+            "titles": [
+              {
+                "title": "the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)",
                 "result": "pass"
               }
             ],

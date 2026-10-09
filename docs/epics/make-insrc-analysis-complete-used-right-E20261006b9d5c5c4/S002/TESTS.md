@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -155,3 +155,33 @@ Run at 2026-10-09T17:04:30.339Z on commit `6ced233b`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/__tests__/report-head.test.ts` | 0 | 1 | 1 s |  |
+
+## t5
+
+Run at 2026-10-09T17:24:58.342Z on commit `64f0a0ff`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size) | `src/analyze/orchestrator/__tests__/run-measure.test.ts` |
+
+**integration: a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan's task band and its depth cap both follow the measured size, and a child plan is measured from the area it names when it is spawned, with the planner model's figure kept as the hint (mutation: keep the model's figure as the child's size) | `src/analyze/planner/__tests__/recursive.test.ts` |
+
+**integration: the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the daemon's run request, plan request and classify request treat a stated size as a hint and return the measured size; a plan request at depth 0 takes the measured size for the band and the depth, and one at a greater depth takes the measured size for the band and the caller's root size for the depth (mutation: take the child's size for the depth) | `src/daemon/__tests__/analyze-rpc-measure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/orchestrator/__tests__/run-measure.test.ts` | 0 | 1 | 1 s |  |
+| `src/analyze/planner/__tests__/recursive.test.ts` | 0 | 12 | 0.7 s |  |
+| `src/daemon/__tests__/analyze-rpc-measure.test.ts` | 0 | 1 | 0.8 s |  |

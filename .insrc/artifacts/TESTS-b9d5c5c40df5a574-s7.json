@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T09:28:21.278Z"
+    "updatedAt": "2026-10-09T09:38:48.555Z"
   },
   "body": {
     "tasks": [
@@ -1909,6 +1909,59 @@
               },
               {
                 "title": "no reader changes a record that is 'ok' or 'failed'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "733e2a0b",
+        "ranAt": "2026-10-09T09:38:48.555Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+                "title": "an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+                "title": "a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/analyze-run-empty-prompt.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 986,
+            "titles": [
+              {
+                "title": "an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message",
+                "result": "pass"
+              },
+              {
+                "title": "a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)",
                 "result": "pass"
               }
             ],

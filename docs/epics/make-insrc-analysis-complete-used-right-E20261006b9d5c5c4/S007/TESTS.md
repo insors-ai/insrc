@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -415,3 +415,25 @@ Run at 2026-10-09T09:28:21.278Z on commit `5b42df41`. Tests check: **passed**. 6
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/analyze-rpc.test.ts` | 0 | 44 | 0.9 s |  |
 | `src/daemon/__tests__/analyze-run-abandoned.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t15
+
+Run at 2026-10-09T09:38:48.555Z on commit `733e2a0b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message | `src/daemon/__tests__/analyze-run-empty-prompt.test.ts` |
+
+**unit: a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser) | `src/daemon/__tests__/analyze-run-empty-prompt.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/analyze-run-empty-prompt.test.ts` | 0 | 2 | 1 s |  |

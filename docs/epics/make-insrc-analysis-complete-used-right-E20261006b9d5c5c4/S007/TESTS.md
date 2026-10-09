@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 40 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -227,3 +227,26 @@ Run at 2026-10-09T06:37:15.408Z on commit `7d2ada00`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` | 0 | 1 | 1.4 s |  |
+
+## t8
+
+Run at 2026-10-09T06:50:14.917Z on commit `3dfa5044`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside) | `src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts` |
+
+**integration: the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before | `src/db/lance/__tests__/entity-vec.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts` | 0 | 1 | 1 s |  |
+| `src/db/lance/__tests__/entity-vec.test.ts` | 0 | 22 | 1.2 s |  |

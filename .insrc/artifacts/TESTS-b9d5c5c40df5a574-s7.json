@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:37:15.408Z"
+    "updatedAt": "2026-10-09T06:50:14.917Z"
   },
   "body": {
     "tasks": [
@@ -1085,6 +1085,152 @@
             "titles": [
               {
                 "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "3dfa5044",
+        "ranAt": "2026-10-09T06:50:14.917Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+                "title": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/lance/__tests__/entity-vec.test.ts",
+                "title": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 967,
+            "titles": [
+              {
+                "title": "a docs task with a module scope whose sections are not among the repository's nearest matches still gets them from the vector pass (mutation: search the whole repository and drop what lies outside)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/lance/__tests__/entity-vec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1197,
+            "titles": [
+              {
+                "title": "writeEntityEmbedding stores a single row",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbedding upsert: same id replaces row",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbeddings bulk upsert",
+                "result": "pass"
+              },
+              {
+                "title": "writeEntityEmbeddings on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns ANN hits ordered by distance",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs respects closure-repo scope",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs filter=code excludes artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs filter=artifact returns only artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns [] for empty query vector",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs returns [] for empty closureRepos",
+                "result": "pass"
+              },
+              {
+                "title": "searchEntityVecs excludes the seed sentinel row",
+                "result": "pass"
+              },
+              {
+                "title": "the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVec removes a single row",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVecsByIds bulk drop",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntityVecsForRepo removes all rows for a repo",
+                "result": "pass"
+              },
+              {
+                "title": "delete on empty input is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "strings with single quotes are escaped in delete + search",
+                "result": "pass"
+              },
+              {
+                "title": "rows survive close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable reduces on-disk fragment count",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable preserves all rows + searchability",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable on a fresh / single-fragment table is a cheap no-op",
+                "result": "pass"
+              },
+              {
+                "title": "compactEntityVecTable result survives close + reopen",
                 "result": "pass"
               }
             ],

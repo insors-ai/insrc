@@ -142,12 +142,12 @@ interface ClientCalls {
   approve: string[];
   comment: Array<{ id: string; note: string }>;
 }
-function fakeClient(over: Partial<{
-  pending: () => DocsArtifactSummary[];
-  content: (id: string) => DocsContent;
-  approve: (id: string) => WorkflowApproveResult;
-  comment: (id: string, note: string) => void;
-}> = {}): { client: DocsReviewClient; calls: ClientCalls } {
+function fakeClient(over: {
+  pending?: (() => DocsArtifactSummary[]) | undefined;
+  content?: ((id: string) => DocsContent) | undefined;
+  approve?: ((id: string) => WorkflowApproveResult) | undefined;
+  comment?: ((id: string, note: string) => void) | undefined;
+} = {}): { client: DocsReviewClient; calls: ClientCalls } {
   const calls: ClientCalls = { pending: 0, content: [], approve: [], comment: [] };
   const defPending: DocsArtifactSummary[] = [
     { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },

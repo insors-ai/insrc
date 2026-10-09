@@ -52,7 +52,7 @@ You are building the bundle for a specific leaf or planner task fired by the pla
 
 - `system` — your role intro.
 - `focus` — intent block + a short task pointer line: `Task: <template-id> (taskId=<id>)`.
-- `summary` — narrowed to the task's subject (e.g. "Focus: decisions around the analyze framework's scope-picker").
+- `summary` — narrowed to the task's subject (e.g. "Focus: decisions around how the analyze framework sizes a request").
 - `structure` — narrowed to the task's locality (which docs / families the task probes).
 - `surface` — one-line pointer to the run-mode bundle's `surface`.
 - `artefacts` — the section excerpts the task's `params` reference. Cite as `cite: { kind: 'section', entityId, file, heading, lineStart, lineEnd }`.

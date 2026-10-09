@@ -118,7 +118,8 @@ function buildConnectionConfig(p: MssqlParams): ConnectionConfiguration {
 	};
 }
 
-class MssqlDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class MssqlDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'mssql';
 
@@ -299,8 +300,9 @@ class MssqlDriver implements RdbmsDriver {
 		return executeTemporalGapStats({ ...this.orchestratorDeps(target, cols), request });
 	}
 
-	async listTables(opts?: { schema?: string; limit?: number }): Promise<TableListing> {
-		const cap = clampMssqlListLimit(opts?.limit);
+	async listTables(opts?: { schema?: string; limit?: number; complete?: boolean }): Promise<TableListing> {
+		// The complete mode: every table, with no limit in the query.
+		const cap = opts?.complete === true ? null : clampMssqlListLimit(opts?.limit);
 		// MSSQL: union sys.tables + sys.views, exclude sys schemas.
 		// schema filter is bound; the LIMIT-equivalent is TOP at SELECT.
 		const params: unknown[] = [];
@@ -310,7 +312,7 @@ class MssqlDriver implements RdbmsDriver {
 			schemaWhere += ` AND s.name = @p1`;
 		}
 		const sql = `
-			SELECT TOP ${cap + 1} schema_name, name, kind
+			SELECT ${cap === null ? '' : `TOP ${cap + 1} `}schema_name, name, kind
 			FROM (
 				SELECT s.name AS schema_name, t.name AS name, 'table' AS kind
 				FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id
@@ -322,8 +324,8 @@ class MssqlDriver implements RdbmsDriver {
 			ORDER BY u.schema_name, u.name
 		`;
 		const rows = await withTimeout(this.run(sql, params as unknown[]), SAMPLE_TIMEOUT_MS);
-		const truncated = rows.length > cap;
-		const sliced = truncated ? rows.slice(0, cap) : rows;
+		const truncated = cap !== null && rows.length > cap;
+		const sliced = cap !== null && truncated ? rows.slice(0, cap) : rows;
 		return {
 			target: 'mssql',
 			tables: sliced.map(r => ({

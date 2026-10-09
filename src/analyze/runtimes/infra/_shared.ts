@@ -125,14 +125,17 @@ export interface WalkedFile {
  * deterministic depth-first, name-sorted order). Symlinks are NOT
  * followed. SKIP_DIRS are excluded.
  *
- * Stops + flags `truncated=true` after `cap` files. A directory below the
+ * Stops + flags `truncated=true` after `cap` files; a null cap walks to the
+ * end, with `truncated` false. A directory below the
  * root that cannot be read is returned in `unreadable`; a root that cannot
  * be read throws. The caller puts both in its completeness record.
  */
 export async function walkFiles(
 	root: string,
-	cap:  number = DEFAULT_FILE_CAP,
+	capArg: number | null = DEFAULT_FILE_CAP,
 ): Promise<{ files: readonly WalkedFile[]; truncated: boolean; unreadable: readonly SkippedItem[] }> {
+	// null: no cap, the walk goes to the end. Only the request measure asks for it.
+	const cap = capArg ?? Infinity;
 	const out: WalkedFile[] = [];
 	let truncated = false;
 	const unreadable: SkippedItem[] = [];

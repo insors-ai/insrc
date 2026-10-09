@@ -76,7 +76,8 @@ function clampListLimit(n: number | undefined): number {
 	return Math.min(Math.max(1, Math.floor(n)), 5000);
 }
 
-class MysqlDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class MysqlDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind: string;
 
@@ -262,21 +263,22 @@ class MysqlDriver implements RdbmsDriver {
 		return executeTemporalGapStats({ ...this.orchestratorDeps(target, cols), request });
 	}
 
-	async listTables(opts?: { schema?: string; limit?: number }): Promise<TableListing> {
-		const cap = clampListLimit(opts?.limit);
+	async listTables(opts?: { schema?: string; limit?: number; complete?: boolean }): Promise<TableListing> {
+		// The complete mode: every table, with no limit in the query.
+		const cap = opts?.complete === true ? null : clampListLimit(opts?.limit);
 		const params: unknown[] = [];
 		let where = `WHERE table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')`;
 		if (typeof opts?.schema === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(opts.schema)) {
 			params.push(opts.schema);
 			where += ` AND table_schema = ?`;
 		}
-		const sql = `SELECT table_schema, table_name, table_type FROM information_schema.tables ${where} ORDER BY table_schema, table_name LIMIT ${cap + 1}`;
+		const sql = `SELECT table_schema, table_name, table_type FROM information_schema.tables ${where} ORDER BY table_schema, table_name${cap === null ? '' : ` LIMIT ${cap + 1}`}`;
 		const [rows] = await withTimeout(
 			this.pool.query(sql, params as unknown[]),
 			SAMPLE_TIMEOUT_MS,
 		) as unknown as [{ TABLE_SCHEMA?: string; table_schema?: string; TABLE_NAME?: string; table_name?: string; TABLE_TYPE?: string; table_type?: string }[], unknown];
-		const truncated = rows.length > cap;
-		const sliced = truncated ? rows.slice(0, cap) : rows;
+		const truncated = cap !== null && rows.length > cap;
+		const sliced = cap !== null && truncated ? rows.slice(0, cap) : rows;
 		return {
 			target: 'mysql',
 			tables: sliced.map(r => {

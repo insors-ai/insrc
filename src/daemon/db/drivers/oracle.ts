@@ -92,7 +92,8 @@ function parseUrl(url: string): oracledb.PoolAttributes {
 	};
 }
 
-class OracleDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class OracleDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'oracle';
 
@@ -306,8 +307,9 @@ class OracleDriver implements RdbmsDriver {
 		return executeTemporalGapStats({ ...this.orchestratorDeps(target, cols), request });
 	}
 
-	async listTables(opts?: { schema?: string; limit?: number }): Promise<TableListing> {
-		const cap = clampOracleListLimit(opts?.limit);
+	async listTables(opts?: { schema?: string; limit?: number; complete?: boolean }): Promise<TableListing> {
+		// The complete mode: every table, with no limit in the query.
+		const cap = opts?.complete === true ? null : clampOracleListLimit(opts?.limit);
 		const params: unknown[] = [];
 		// Excluded owners: Oracle's standard system schemas. Customer schemas live elsewhere.
 		const exclusions = `'SYS','SYSTEM','XDB','OUTLN','MDSYS','CTXSYS','EXFSYS','DBSNMP','APPQOSSYS','GSMADMIN_INTERNAL','LBACSYS','OJVMSYS','ORDDATA','ORDPLUGINS','ORDSYS','SI_INFORMTN_SCHEMA','WMSYS','REMOTE_SCHEDULER_AGENT','OLAPSYS','GSMUSER','ANONYMOUS','APEX_PUBLIC_USER','APEX_INSTANCE_ADMIN_USER','GSMCATUSER','SYSBACKUP','SYSDG','SYSKM','SYSRAC'`;
@@ -321,7 +323,7 @@ class OracleDriver implements RdbmsDriver {
 				SELECT owner, table_name AS name, 'table' AS kind FROM all_tables ${where}
 				UNION ALL
 				SELECT owner, view_name AS name, 'view' AS kind FROM all_views ${where}
-			) ORDER BY owner, name FETCH FIRST ${cap + 1} ROWS ONLY
+			) ORDER BY owner, name${cap === null ? '' : ` FETCH FIRST ${cap + 1} ROWS ONLY`}
 		`;
 		const pool = await this.poolPromise;
 		const conn = await pool.getConnection();
@@ -331,8 +333,8 @@ class OracleDriver implements RdbmsDriver {
 				{ outFormat: oracledb.OUT_FORMAT_OBJECT },
 			);
 			const rows = res.rows ?? [];
-			const truncated = rows.length > cap;
-			const sliced = truncated ? rows.slice(0, cap) : rows;
+			const truncated = cap !== null && rows.length > cap;
+			const sliced = cap !== null && truncated ? rows.slice(0, cap) : rows;
 			return {
 				target: 'oracle',
 				tables: sliced.map(r => ({

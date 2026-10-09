@@ -43,7 +43,8 @@ import { prismaSchemaDescription } from './rdbms-prisma.js';
 
 const log = getLogger('db-clickhouse');
 
-class ClickHouseDriver implements RdbmsDriver {
+/** Exported for its tests; the registry is how the daemon reaches it. */
+export class ClickHouseDriver implements RdbmsDriver {
 	readonly family = 'rdbms' as const;
 	readonly kind = 'clickhouse';
 

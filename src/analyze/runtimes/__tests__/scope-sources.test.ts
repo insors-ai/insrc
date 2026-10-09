@@ -101,7 +101,7 @@ test("the code family's scope function and its test hook are gone and no code ru
 const READ_FORM: Readonly<Record<string, 'area' | 'whole'>> = {
 	'code/discovery-entrypoints.ts':  'area',
 	'code/discovery-modules.ts':      'whole',
-	'code/structure-module-tree.ts':  'area',
+	'code/structure-module-tree.ts':  'whole',
 };
 
 /** Check one runtime's source against its form; returns what is wrong, or null. */

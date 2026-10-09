@@ -17,7 +17,7 @@ import type { ChatPanelLogger } from '../chat/chat-panel.js';
 import { webviewChannel, type WebviewPanelLike } from '../chat/webview-channel.js';
 import type { CommandRegistry } from '../surfaces/command-registry.js';
 import type { DisposableSink } from '../surfaces/types.js';
-import { createDeliveryBoardHost } from './board-host.js';
+import { createDeliveryBoardHost, type DeliveryBoardHostDeps } from './board-host.js';
 import { createDeliveryClient, type DeliveryClientDeps } from './delivery-client.js';
 
 /** The slice of vscode.WebviewPanel the board uses. */
@@ -32,6 +32,8 @@ export interface DeliveryBoardWiringDeps {
   /** The first workspace folder's path at the time of the call, or null without one. */
   readonly repo: () => string | null;
   readonly logger: ChatPanelLogger;
+  /** The review pane, when the chat setting created one (s4); without it the board reads records itself. */
+  readonly reviewPane?: DeliveryBoardHostDeps['reviewPane'];
 }
 
 export const DELIVERY_DEADLINES_MS = { snapshot: 30_000, evidence: 15_000 } as const;
@@ -48,6 +50,7 @@ export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): void {
     logger: deps.logger,
     now: () => new Date().toISOString(),
     genNonce: () => randomBytes(16).toString('base64'),
+    reviewPane: deps.reviewPane,
   });
   deps.subscriptions.push({ dispose: () => host.dispose() });
   deps.commands.register({ id: 'insrc.delivery.openBoard', title: 'insrc: Open delivery board' }, async () => {

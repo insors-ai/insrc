@@ -1,0 +1,868 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791547519791-sa3xxc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T12:11:36.310Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 376515,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "hldEffectiveHash": "d362668c917b0c5323a185b5ce5c8cf152d68ef62f2e324ee06d52d96319213a",
+    "hldAmendmentsApplied": [
+      "AMD-6a1315585c38c41c-1",
+      "AMD-6a1315585c38c41c-2"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD designs all five S005 acceptance criteria (narrow-pane stage-grouped list, keyboard reach with focus return, single announcements of selection and refresh, density without hiding, the 1,000-record/500-item timing) and builds no non-goal.",
+          "evidence": "DEF.md:184-188 lists ac1–ac5 for S005, and HLD.md:368 scopes s5 to 'narrow-pane layout…, keyboard navigation and focus return, live-region announcements…, density styles, and the 500-item performance fixture'. LLD §2.1–2.3 covers each one, and the acceptance mapping in §6 names a test per ac. The LLD writes nothing to disk or workspace state (§3.1), which matches k3/FR-09. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the document has no stylesheet, #status carries role=status with aria-live, cards have no tabindex, and nothing in the plugin calls getState/setState or sets retainContextWhenHidden.",
+          "evidence": "board-host.ts:195 `<p id=\"status\" role=\"status\" aria-live=\"polite\">`. There is no <style> in renderBoardDocument (188-213). renderCard (97-102) sets only data-item-id, aria-label and a click listener. A grep for getState|setState|retainContextWhenHidden in vscode-plugin/src finds only comments. extension.ts:615 creates the panel with `{ enableScripts: true }` only. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The CSP is already `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-…'`, so an inline <style> needs no widening.",
+          "evidence": "board-host.ts:189 `const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`` [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "close-details already posts a null details model, and select-item already rejects ids that are not on the board (onBoard), so the script can key focus return on a null details message.",
+          "evidence": "board-host.ts:371-381: select-item checks `!onBoard(msg.itemId)` and warns; close-details runs `select({...sel, selectedItemId: null}); channel?.postMessage({ ... type: 'details', model: null })`. apply() posts a details message only while an item is selected (detailsMessage 235-240). [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'announce' down-message and 'set-density' up-message are already declared in sc3 and parsed, and 'announce' is unsent today.",
+          "evidence": "board-protocol.ts:191 `| { readonly type: 'announce'; readonly text: string }`; 208 is the set-density variant; parseBoardUpMessage 245-246 parses set-density. board-host.ts:382 handles set-density by mirroring into selection.density. There is no 'announce' post anywhere in board-host.ts. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The refresh announcement reuses placeableCount and attentionCount from board-model.ts as 'N = the snapshot's placeable count and M = the attention count'.",
+          "evidence": "board-model.ts:199 `placeableCount(snapshot: DeliverySnapshot)` counts the whole snapshot whatever the selection. board-model.ts:228 `attentionCount(matches: readonly MatchedCard[])` takes the selection's matches, not a snapshot. So M depends on the selection's filters while N does not. 'Board refreshed: N items, M needing attention' then mixes an unfiltered total with a filtered count, and it disagrees with the totals line the board renders (`totals: { items, needsAttention }` from the filtered matches, 248-251). [files: vscode-plugin/src/delivery/board-model.ts]",
+          "action": "State one basis for both numbers. Either use the shown view model's totals (filtered, as on screen) or compute M as snapshot.items.filter(isPlaceable).filter(i=>i.needsAttention). Name the function used.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Restoring focus to 'the card whose data-item-id is the remembered item' identifies a card unambiguously.",
+          "evidence": "data-item-id is also set on non-card elements: the issue <section> (board-host.ts:123 `sec.setAttribute('data-item-id',e.card.itemId)`), link buttons (111), the details <aside> itself (149) and task rows (157). A lookup by attribute alone can therefore match the issue section or the details aside before the li.card. The LLD's postconditions do not restrict the lookup to elements with class 'card'. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "Specify the lookup as the li.card element (class 'card') with that data-item-id, inside #board.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The test harness extension named in §6 (focus(), document.activeElement, getState/setState) is enough to drive the new script.",
+          "evidence": "The fake DOM (board-host.test.ts:224-252) has no document.body, no querySelector/querySelectorAll, no keydown event object (listeners are `() => void` with no event), and acquireVsCodeApi returns only postMessage. The script as designed needs body[data-density] (2.1/2.2), key handlers that read e.key and preventDefault, and a way to find the next or previous card and the card by data-item-id. The harness inventory in §6 leaves these out. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts]",
+          "action": "Add to the fixture list: document.body, listener events carrying key, and either a tree query or querySelector over the fake tree.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The density lives only in webview state, with a missing or invalid value (including a getState throw) falling back to 'comfortable', and BoardSelection.density already exists with default 'comfortable'.",
+          "evidence": "board-state.ts:49 `readonly density: Density;` and :73 `density: 'comfortable'` in INITIAL_SELECTION. LLD §5 handles absent, invalid and throwing getState. Nothing is persisted to disk, so there are no older records to migrate. [files: vscode-plugin/src/delivery/board-state.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "s5 changes no sc3 variant or field and does not amend an s1-owned contract. Its edits to renderBoardDocument and the script are within the HLD's s5 scope.",
+          "evidence": "HLD.md:152 and :165 already declare 'announce' and 'set-density'. HLD.md:368 gives s5 the layout, keyboard, live region, density and fixture. The LLD rejects a2 precisely because it would amend StatusView (s1). Removing aria-live from #status is the only s1-authored markup change, and it serves s5's ac3 without changing the protocol. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md, vscode-plugin/src/delivery/board-protocol.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "If posting the announce throws, 'a throw is caught by the existing handle catch or by the refresh catch and logged through error(), and the board state stays as it was kept'.",
+          "evidence": "The refresh catch (board-host.ts:306-320) does not just log. When anything inside `dispatch({type:'snapshot-arrived',...})` throws, it dispatches a second 'snapshot-arrived' with `{ ok:false, failure:{kind:'read-failed', message} }`, which turns a board that rendered into a failed refresh. If the announce is posted inside that try (for example inside apply/dispatch), a post throw yields a 'The refresh failed' status rather than 'board stays as kept'. Also, webviewChannel.postMessage (chat/webview-channel.ts:31-35) already swallows rejections, so the throw path is mostly hypothetical, and the stated handling does not match the code. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/chat/webview-channel.ts]",
+          "action": "Post the refresh announce after the `applied` try block (as logUnknownStages is), in its own try that only logs. Restate the error path accordingly.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An announcement is skipped when the selected item is missing from the shown snapshot, and superseded or closed-panel answers post nothing.",
+          "evidence": "board-host.ts:294 returns when `gen !== generation || channel === undefined`, and 296-300 returns on `seq !== state.latestSeq` before dispatching. onBoard (347-350) rejects unknown ids before select, so the 'missing item' case is reachable only defensively, as the LLD says. [files: vscode-plugin/src/delivery/board-host.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "ac5 is proven by board-perf.test.ts, which measures the first render within 1 s and each filter change within 150 ms 'through the real host and script'.",
+          "evidence": "The only script harness is the fake DOM in board-host.test.ts:224-252 (makeEl records children; it has no layout or paint). A timing through it measures view-model building plus fake-node creation, not a webview render 'on the reference environment' (DEF.md:188, HLD.md:372). The vscode-plugin test script `tsx --test 'src/**/__tests__/*.test.ts'` (package.json:775) will also pick up board-perf.test.ts, so a hard wall-clock assertion runs in every suite run and can be flaky on a loaded machine. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/package.json, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
+          "action": "State what the test measures (host derive plus fake-DOM build) and record that the real-webview render on the reference environment is a manual measurement. Alternatively, gate the timing assertion behind an env var and only report timings in the default run.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every other acceptance criterion maps to a named test, and the fixture helpers it extends exist.",
+          "evidence": "§6 maps ac1–ac4 to named board-host.test.ts tests. board-fixtures.ts exports item (13), snapshot (24, which sets recordCount from the item count, so the large fixture must override recordCount to 1000 as §3.3 says) and evidence (33). [files: vscode-plugin/src/delivery/__tests__/board-fixtures.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 5,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-09T12:11:49.075Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "new-versus-reuse.2": {
+        "findingId": "new-versus-reuse.2",
+        "status": "resolved",
+        "note": "Applied. Both refresh-announcement counts now use one basis, the whole applied snapshot: N = placeableCount(snapshot) and M = the placeable items with needsAttention. They are deliberately independent of the filters that the on-screen totals reflect (createDeliveryBoardHost postcondition 2).",
+        "resolvedAt": "2026-10-09T12:14:17.448Z"
+      },
+      "change-sites.1": {
+        "findingId": "change-sites.1",
+        "status": "resolved",
+        "note": "Applied. Focus return now looks up the li.card inside #board with that data-item-id. The postcondition names the other data-item-id carriers it must skip (issue sections, link buttons, the details pane, task rows). Arrow navigation uses #board.querySelectorAll('li.card').",
+        "resolvedAt": "2026-10-09T12:14:17.449Z"
+      },
+      "change-sites.2": {
+        "findingId": "change-sites.2",
+        "status": "resolved",
+        "note": "Applied. The harness fixtures now list document.body, document.activeElement, focus(), listener events carrying key and preventDefault, querySelectorAll over the fake tree for 'li.card', and getState/setState on acquireVsCodeApi.",
+        "resolvedAt": "2026-10-09T12:14:17.450Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Applied. The refresh announce is posted after the refresh's apply try block, in its own try that only logs, as logUnknownStages is, so a post failure cannot turn a rendered board into a failed refresh. The selection announce is posted after apply() keeps the state, so the onMessage catch only logs. The error case notes that webviewChannel.postMessage already swallows rejections.",
+        "resolvedAt": "2026-10-09T12:14:17.451Z"
+      },
+      "tests.1": {
+        "findingId": "tests.1",
+        "status": "resolved",
+        "note": "Applied. The timing test is now stated to measure the host's derive and post plus the script's DOM build on the fake DOM, best of three, with timings always reported. The default run asserts a 5x regression tripwire, and INSRC_PERF=1 asserts the exact 1 s / 150 ms targets. The real-webview render on the reference environment is mapped to ac5 as a separate manual measurement, recorded in the BUILD record.",
+        "resolvedAt": "2026-10-09T12:14:17.451Z"
+      }
+    },
+    "approvedAt": "2026-10-09T12:19:40.389Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story makes the delivery board usable in every way a reader works. In a narrow pane, the six columns stack into one list grouped by stage, with nothing hidden. A keyboard user can reach every card and control with a visible focus ring, open an item's details, and close them back to the same card. A screen reader hears each selection and each refresh result exactly once. Compact and comfortable density change only spacing, and the board stays fast for a 500-item workspace, measured by a timing test.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A host-side board model with a thin webview renderer (alternative a1). Inside the VS Code plugin, a delivery client wraps the daemon's workflow.delivery and workflow.deliveryEvidence methods over the shared IPC client. A board host, a vscode-free deps-injected factory like the existing panel hosts, owns the last successful snapshot, refresh sequencing, the load status and the reader's selection. Pure board-model functions turn snapshot plus selection into view models for the board, the epic rollup, the issue view and item details, using one display-label map for stages and signals. The webview is one CSP-locked inline script that renders those view models as text-only DOM and posts reader intents back in the plugin's versioned envelope. Evidence opens through a new additive open-by-artifact entry point on the existing review pane, or, for records the daemon marks evidence-read, as a read-only record the host reads through workflow.deliveryEvidence. A story's task dependencies and acceptance checks come from its PLAN, read through workflow.deliveryEvidence when its details open.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Delivery client",
+          "purpose": "The board's only path to delivery data: the two daemon read methods for the open workspace's repo, each bounded by a deadline, with failures typed so the host can tell an unavailable daemon, a failed or timed-out read and a missing workspace apart.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot, DeliveryEvidenceRecord } from './delivery-contract.js';\n\ntype DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';\n\ninterface DeliveryFailure {\n  readonly kind: DeliveryFailureKind;\n  /** The daemon's error text, or the socket error message. */\n  readonly message: string;\n}\n\ntype DeliveryResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly failure: DeliveryFailure };\n\n/** The client sends `repo` (the open workspace's root) in every DeliverySnapshotRequest and DeliveryEvidenceRequest,\n *  so the board never falls back to the daemon's INSRC_REPO; with no workspace folder it returns 'no-workspace'\n *  without calling the daemon. Each call races a deadline (snapshot 30 s, evidence 15 s) and returns 'timed-out'\n *  when it passes, because the shared IPC client sets no timeout of its own. */\ninterface DeliveryClientDeps {\n  readonly rpc: <T>(method: string, params?: unknown) => Promise<T>;\n  /** The workspace root, or null when no folder is open. */\n  readonly repo: string | null;\n  readonly deadlinesMs: { readonly snapshot: number; readonly evidence: number };\n}\n\ninterface DeliveryClient {\n  snapshot(): Promise<DeliveryResult<DeliverySnapshot>>;\n  evidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord>>;\n}"
+        },
+        {
+          "id": "sc2",
+          "name": "Board state: load status and selection",
+          "purpose": "What the host knows at any moment: the latest applied snapshot, why the board looks the way it does, and what the reader has chosen, kept across refreshes.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c10"
+          ],
+          "interfaceSketch": "import type { DeliverySnapshot } from './delivery-contract.js';\n\ntype LoadStatus =\n  | { readonly state: 'loading'; readonly last: AppliedSnapshot | null }\n  | { readonly state: 'ready'; readonly current: AppliedSnapshot }\n  | { readonly state: 'empty'; readonly current: AppliedSnapshot }\n  | { readonly state: 'unavailable'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string }\n  | { readonly state: 'failed'; readonly last: AppliedSnapshot | null; readonly message: string; readonly at: string };\n\ninterface AppliedSnapshot {\n  readonly snapshot: DeliverySnapshot;\n  /** Monotonic request number the snapshot answered; older responses are dropped. */\n  readonly requestSeq: number;\n  /** True when the snapshot reports unreadable records or store-level notices. */\n  readonly partial: boolean;\n}\n\ntype BoardView = 'board' | 'epics' | 'issues';\ntype BoardScope = { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' };\ntype Density = 'compact' | 'comfortable';\n\ninterface BoardSelection {\n  readonly view: BoardView;\n  readonly scope: BoardScope;\n  readonly search: string;\n  readonly needsAttentionOnly: boolean;\n  readonly selectedItemId: string | null;\n  readonly density: Density;\n}\n\n/** 'unavailable' covers daemon-unavailable and no-workspace; 'failed' covers read-failed and timed-out. A request that\n *  times out ends its 'loading' state like any other failure. */\ninterface BoardState {\n  readonly status: LoadStatus;\n  readonly selection: BoardSelection;\n  /** Set when a refresh removed the selected item. */\n  readonly selectionNotice: string | null;\n}"
+        },
+        {
+          "id": "sc3",
+          "name": "Board webview message protocol",
+          "purpose": "The only traffic between the board's host and its webview: view models down, reader intents up, both in the plugin's versioned envelope.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface Envelope<T> { readonly v: 1; readonly payload: T }\n\n/** Host -> webview. Each message replaces what it names; nothing is merged. */\ntype BoardDownMessage =\n  | { readonly type: 'status'; readonly status: StatusView }\n  | { readonly type: 'board'; readonly model: BoardViewModel }\n  | { readonly type: 'epics'; readonly model: EpicRollupViewModel }\n  | { readonly type: 'issues'; readonly model: IssueViewModel }\n  | { readonly type: 'details'; readonly model: ItemDetailsViewModel | null }\n  | { readonly type: 'announce'; readonly text: string };\n\n/** Webview -> host. Ids only; the host resolves them against the current snapshot. */\ntype BoardUpMessage =\n  | { readonly type: 'ready' }\n  | { readonly type: 'refresh' }\n  | { readonly type: 'set-view'; readonly view: 'board' | 'epics' | 'issues' }\n  | { readonly type: 'set-scope'; readonly scope: { readonly kind: 'all' } | { readonly kind: 'epic'; readonly epicItemId: string } | { readonly kind: 'standalone' } }\n  | { readonly type: 'set-search'; readonly search: string }\n  | { readonly type: 'set-attention'; readonly on: boolean }\n  | { readonly type: 'select-item'; readonly itemId: string }\n  | { readonly type: 'close-details' }\n  | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }\n  | { readonly type: 'set-density'; readonly density: 'compact' | 'comfortable' };\n\ninterface StatusView {\n  readonly state: 'loading' | 'ready' | 'empty' | 'unavailable' | 'failed';\n  readonly takenAt: string | null;\n  readonly message: string | null;\n  readonly partialNotice: string | null;\n  readonly stale: boolean;\n}\n\n/** Declared by their owning stories: BoardViewModel (s2), EpicRollupViewModel and IssueViewModel (s3), ItemDetailsViewModel (s4). */\ntype BoardViewModel = unknown;\ntype EpicRollupViewModel = unknown;\ntype IssueViewModel = unknown;\ntype ItemDetailsViewModel = unknown;\n  // + BoardDownMessage 'items' variant: { readonly type: 'items'; readonly items: readonly { readonly itemId: string; readonly kind: 'epic' | 'story' | 'task' | 'issue'; readonly title: string | null; readonly stageLabel: string | null }[] };  // Lets s1 list every readable item (title, kind, stage label) before s2's BoardViewModel exists; s2 stops sending it once 'board' is posted. (amend:AMD-6a1315585c38c41c-1)\n  // + BoardUpMessage 'show-more' variant: { readonly type: 'show-more'; readonly stage: DeliveryStage };  // Lets the reader reveal the next page of one board column; the host validates the stage id and raises that column's visible limit (sc5 hiddenCount). (amend:AMD-6a1315585c38c41c-2)"
+        },
+        {
+          "id": "sc4",
+          "name": "Display labels",
+          "purpose": "One text label for every stage id and every signal the daemon publishes, so colour is never the only carrier and every view uses the same words.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11"
+          ],
+          "interfaceSketch": "/** s1 extends the type mirror additively to re-export these six types from src/workflow/delivery/types.ts; tsconfig.delivery-contract.json keeps compiling them. */\nimport type { DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict } from './delivery-contract.js';\n\ninterface DisplayLabels {\n  /** Exhaustive: a new stage id fails to compile. 'complete' -> 'Complete', 'ready-plan-approved' -> 'Ready · plan approved', ... */\n  readonly stage: Readonly<Record<DeliveryStage, string>>;\n  readonly attention: Readonly<Record<AttentionReason, string>>;\n  readonly notice: Readonly<Record<NoticeCode, string>>;\n  readonly taskResult: Readonly<Record<TaskResult, string>>;\n  readonly approval: Readonly<Record<ApprovalState, string>>;\n  readonly reviewVerdict: Readonly<Record<ReviewVerdict, string>>;\n  readonly unplanned: string;\n}"
+        },
+        {
+          "id": "sc5",
+          "name": "Board view model",
+          "purpose": "What the board view shows for a snapshot and selection: six columns in the daemon's order, the cards in each with their badges, and counts over the whole selection.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "import type { DeliveryStage } from './delivery-contract.js';\n\ninterface BadgeView {\n  readonly kind: 'approval' | 'review' | 'validation' | 'conflict' | 'attention' | 'notice';\n  /** Text from sc4; always present. */\n  readonly label: string;\n  readonly tone: 'neutral' | 'warning' | 'danger' | 'success';\n}\n\ninterface CardView {\n  readonly itemId: string;\n  readonly kind: 'story' | 'issue';\n  readonly title: string;\n  readonly standalone: boolean;\n  readonly epicTitle: string | null;\n  readonly badges: readonly BadgeView[];\n  readonly needsAttention: boolean;\n  /** One line naming every badge, for screen readers. */\n  readonly accessibleLabel: string;\n}\n\ninterface ColumnView {\n  readonly stage: DeliveryStage;\n  readonly label: string;\n  /** Matches in the selection, including cards behind show-more. */\n  readonly total: number;\n  readonly cards: readonly CardView[];\n  readonly hiddenCount: number;\n}\n\ninterface BoardViewModel {\n  readonly columns: readonly ColumnView[];\n  readonly totals: { readonly items: number; readonly needsAttention: number };\n  readonly scopeOptions: readonly { readonly epicItemId: string; readonly title: string }[];\n  readonly emptySelection: boolean;\n}"
+        },
+        {
+          "id": "sc6",
+          "name": "Item details view model and evidence opening",
+          "purpose": "What a selected item's details show, including tasks with dependencies, checks and results, the stage reason and its cited records, and how each evidence entry opens.",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c17"
+          ],
+          "interfaceSketch": "/**\n * Join rule: a PLAN task (PlanTask.id, e.g. 't1') belongs to the snapshot task item whose sourceIds contain that id;\n * a PLAN task with no such item is not shown as a task row. dependsOn ids are shown by the matched item's title,\n * or as the raw plan id when no item matches.\n * Opened-record text: renderedMarkdown when present, otherwise meta and body pretty-printed as JSON (two-space indent);\n * always inserted as textContent.\n */\ninterface TaskRowView {\n  readonly taskItemId: string;\n  readonly title: string | null;\n  /** Result label from sc4, or the unplanned label. */\n  readonly resultLabel: string;\n  readonly planned: boolean;\n  /** From the story's PLAN, read through workflow.deliveryEvidence; null when no PLAN or it could not be read. */\n  readonly dependsOn: readonly string[] | null;\n  readonly acceptanceChecks: readonly string[] | null;\n}\n\ninterface EvidenceRowView {\n  readonly artifactId: string;\n  readonly kindLabel: string;\n  readonly approvalLabel: string;\n  readonly reviewLabel: string | null;\n  readonly overrideLabel: string | null;\n  readonly opensIn: 'review-pane' | 'read-only';\n}\n\ninterface ItemDetailsViewModel {\n  readonly itemId: string;\n  readonly title: string;\n  readonly stageLabel: string | null;\n  readonly stageReason: { readonly text: string; readonly artifactIds: readonly string[] } | null;\n  readonly tasks: readonly TaskRowView[];\n  readonly taskCounts: { readonly passed: number; readonly failed: number; readonly unrecorded: number; readonly unplanned: number } | null;\n  readonly conflict: string | null;\n  readonly evidence: readonly EvidenceRowView[];\n  readonly notices: readonly string[];\n  readonly linked: readonly { readonly itemId: string; readonly title: string; readonly relation: 'parent' | 'child' | 'corrects' }[];\n  readonly sourceIds: readonly string[];\n  /** Set when the PLAN read failed; the rest of the details still render. */\n  readonly planNotice: string | null;\n  /** The read-only text of an evidence-read record the reader opened, rendered as preformatted text. */\n  readonly openedRecord: { readonly artifactId: string; readonly text: string } | null;\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The narrow-pane layout (stage-grouped list), keyboard navigation and focus return, live-region announcements of selection and refresh results, the compact and comfortable density styles, and the 500-item performance fixture with its measured render and filter timings. Its LLD maps every acceptance criterion to a named test, with ac5 as the measured fixture."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The open-board command and its entry in the plugin's command list, the webview panel creation in an editor tab with its CSP and nonce, the refresh sequencing (request numbers and dropping superseded responses), the mapping of client failures to load states, and the status bar of the board (taken-at time, stale and partial notices, the empty, unavailable and failed messages). s1 also records the editor-tab versus sidebar placement check. It renders a minimal list of item titles until s2 supplies columns. s1 also extends vscode-plugin/src/delivery/delivery-contract.ts additively with the stage, attention, notice, task-result, approval and review-verdict types sc4 needs. Its LLD maps every acceptance criterion to a named test, including ac4 (an earlier response arriving after a later one is dropped, with fake out-of-order responses) and ac6 (repeated open and refresh against a temporary git repository leave the store, docs and git untouched)."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The pure functions that filter the snapshot by scope, search and attention, group the matches into the six columns in the daemon's order, count over the whole selection, page each column behind show-more, and build each card's badges and accessible label from the snapshot's published fields; and the board view's rendering in the webview script, text-only. Its LLD maps every acceptance criterion to a named test, including ac6 (a title and a notice containing markup and script render as literal text)."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The epic rollup view model (per-epic completion counts that name their denominator, stories grouped by stage, a separate standalone group) and the issue view model (each issue with its fix stories as children and its parent relationship or unresolved-parent notice), both built from the same filtered selection as sc5, and their rendering. Its LLD maps every acceptance criterion to a named test."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6",
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Building item details from the snapshot item, reading the story's PLAN through the delivery client and caching it per snapshot, joining the plan's dependencies and acceptance checks to the snapshot's task results, fetching an evidence-read record and showing it as preformatted text, routing a review-view entry to the review pane's openArtifact, the change inside the review pane that implements openArtifact without altering its list, rendering or approval behaviour, and the details rendering. Its LLD maps every acceptance criterion to a named test, including ac5 for both paths: a review-view record opens through openArtifact, and when the review pane is unavailable or the record is evidence-read the record is shown read-only from workflow.deliveryEvidence; the review pane's existing tests run unchanged."
+        }
+      ],
+      "rolloutPhase": "Phase D — narrow pane, accessibility, density and performance",
+      "nonFunctional": {
+        "performance": "After a snapshot arrives, the first board view model is built and rendered within one second for the 1,000-record, 500-item fixture; each filter or search change rebuilds and posts the view model and re-renders within 150 ms, measured best of three on the reference environment. Item details add at most one workflow.deliveryEvidence read per story per snapshot.",
+        "security": "The webview runs one nonce'd inline script under a restrictive Content-Security-Policy, as the plugin's other webviews do, and builds DOM with text nodes only; no artifact text is inserted as HTML. Up-messages carry only ids that the host resolves against the current snapshot, so a crafted message cannot name a path. The board calls only workflow.delivery and workflow.deliveryEvidence and has no route to any approval or write method; openArtifact shows non-pending artifacts without actions.",
+        "observability": "The host takes the plugin's ChatPanelLogger (warn and error). It logs failed refreshes and failed or timed-out evidence and PLAN reads through error(), and superseded responses through warn(), each with the request number, the item count where known and the elapsed time; successful refreshes are not logged, because the plugin has no info channel.",
+        "durability": "The board persists nothing to disk or workspace state; the selection lives for the life of the panel and is kept across refreshes, and the last successful snapshot is kept in memory until the panel closes."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderBoardDocument",
+          "signature": "function renderBoardDocument(nonce: string): string",
+          "parameters": [
+            {
+              "name": "nonce",
+              "type": "string",
+              "purpose": "The script nonce, as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The board document, now with one inline <style>, a density control and one announcement live region."
+          },
+          "errors": [],
+          "preconditions": [
+            "The CSP stays default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-<nonce>'. It is not widened."
+          ],
+          "postconditions": [
+            "The one <style> uses only VS Code theme variables (--vscode-*). Wide panes lay the board view's six columns out side by side. Below 600 px, a media query stacks them as one list grouped by stage, with each column's h2 as its group heading.",
+            "No rule hides content: the stylesheet has no display:none, visibility:hidden or clipping on cards, badges, notices or labels. Only the [hidden] details pane is hidden, and only while no item is selected.",
+            "body[data-density=compact] and body[data-density=comfortable] change only padding, gaps and font size.",
+            ":focus-visible gives every focusable element a 2 px outline in var(--vscode-focusBorder).",
+            "#status keeps role=status but drops aria-live, so status changes are no longer announced. A new #announce element (aria-live=polite, aria-atomic=true) is the single announcer.",
+            "The header gains a density control: two buttons, #density-compact and #density-comfortable, each with aria-pressed."
+          ]
+        },
+        {
+          "name": "BOARD_WEBVIEW_SCRIPT",
+          "signature": "const BOARD_WEBVIEW_SCRIPT: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The one webview script, extended for keyboard use, focus return, announcements and density."
+          },
+          "errors": [],
+          "preconditions": [
+            "acquireVsCodeApi() provides getState and setState."
+          ],
+          "postconditions": [
+            "Every card, in all three views, has tabindex=0 and keeps its aria-label (accessibleLabel). Enter or Space (keydown, e.key, with preventDefault) posts select-item for it, as a click does. ArrowDown and ArrowUp move focus to the next or previous card in document order, found with #board.querySelectorAll('li.card').",
+            "When a details message names a different item than the last one, the script remembers that itemId and moves focus to the details heading (tabindex=-1). Escape inside the details posts close-details.",
+            "When a details message has model null after an item was shown, focus returns to the li.card inside #board whose data-item-id is the remembered item (other elements carry data-item-id too: issue sections, link buttons, the details pane and task rows, so the lookup is restricted to li.card). If no such card exists, focus goes to the tab of the shown view.",
+            "An 'announce' message clears #announce and then sets its textContent, once per message.",
+            "On boot, the script reads density from getState() (default 'comfortable'), applies it as body[data-density], marks the matching button aria-pressed=true, and posts set-density with it. A density button applies and saves (setState) its density, then posts set-density.",
+            "Everything is still set with textContent and nothing touches innerHTML. The script posts only BoardUpMessage envelopes."
+          ]
+        },
+        {
+          "name": "createDeliveryBoardHost",
+          "signature": "function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBoardHost",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "DeliveryBoardHostDeps",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DeliveryBoardHost",
+            "meaning": "The host, which now posts sc3 'announce' messages."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An accepted select-item that changes the selected item posts one { type: 'announce', text } after the view and details messages. The text is 'Selected: <title>', followed by ' · <stage label>' when the item has a stage. A select-item for the already-selected item posts no announce. It is posted inside the existing handle() path after apply() has kept the state, so a post failure is caught by the onMessage catch and only logged; the kept state stands.",
+            "A refresh that settles posts one announce after its status and view messages, outside the refresh's apply try block (as logUnknownStages is), in its own try that only logs through error(). ready: 'Board refreshed: N items, M needing attention', both counted over the whole applied snapshot on one basis: N = placeableCount(snapshot) and M = the placeable items whose needsAttention is true. This is deliberately independent of the reader's filters, which the on-screen totals line reflects. empty, unavailable or failed: the status message text. A superseded or closed-panel answer posts none, and 'refresh-requested' (loading) posts none.",
+            "close-details, set-view, set-search, set-scope, set-attention, set-density and show-more post no announce.",
+            "set-density keeps mirroring into selection.density and posts the derived messages, as today."
+          ]
+        },
+        {
+          "name": "BoardDownMessage",
+          "signature": "{ readonly type: 'announce'; readonly text: string }",
+          "parameters": [],
+          "returns": {
+            "type": "BoardDownMessage",
+            "meaning": "The sc3 variant, already declared, now sent."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The variant is unchanged; s5 is its first sender."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Webview state (acquireVsCodeApi getState/setState)",
+        "change": "new",
+        "details": "{ density: 'compact' | 'comfortable' }. Written by the webview's density control, read on boot, and kept by VS Code for the panel's life, across the webview reloads that happen without retainContextWhenHidden. Nothing is written to disk or workspace state.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "BoardSelection.density",
+        "change": "invariant-change",
+        "details": "Becomes a mirror of the webview's density. The webview posts set-density on boot and on every change. No view model reads it, and none needs to.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-state.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      },
+      {
+        "entity": "Board performance fixture (test helper)",
+        "change": "new",
+        "details": "A deterministic builder for a snapshot of 500 work items formed from 1,000 records: 20 epics, 400 stories with 2 evidence entries each across the six stages, and 80 issues, with a fixed share needing attention. recordCount is 1000. The timing test measures through it.",
+        "callSites": [
+          "vscode-plugin/src/delivery/__tests__/board-fixtures.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Unchanged. The performance fixture stands in for the client's snapshot."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "selection.density is mirrored through the existing set-density path. The selection and load status decide when an announcement is due."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Sends the declared 'announce' down-message and receives the declared 'set-density' up-message. No variant or field changes."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "The selection announcement names the stage by its sc4 label."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "The narrow layout restyles its columns without changing the model. The refresh announcement uses placeableCount and attentionCount from board-model.ts."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Focus moves to the details heading on open and back to the card on close. The selection announcement uses the selected item's title."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The webview's saved state is missing or not one of the two densities, for example from an older build or a cleared state.",
+          "detection": "On boot the script checks getState()?.density for 'compact' or 'comfortable'. Anything else, including a throw from getState, is treated as absent.",
+          "response": "Use 'comfortable', apply it, and post set-density 'comfortable'.",
+          "userImpact": "The board opens at the default density, and nothing breaks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The card that opened the details is gone when they close, because a refresh removed it or a filter now hides it.",
+          "detection": "After a null details model, the script finds no card element whose data-item-id is the remembered item.",
+          "response": "Focus the tab of the shown view (the pressed tab) instead, and forget the remembered item.",
+          "userImpact": "Focus lands on a known, visible control, never on the document body.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The announcement text cannot be built because the selected item is missing from the shown snapshot.",
+          "detection": "The host looks the item up in the shown snapshot after keeping the state and does not find it.",
+          "response": "Post no announce. The select-item guard (onBoard) already rejects ids that are not on the board.",
+          "userImpact": "No stray or empty announcement.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Posting an announce message throws.",
+          "detection": "channel.postMessage throws inside the host. In practice webviewChannel.postMessage already swallows rejections (chat/webview-channel.ts), so this is defensive.",
+          "response": "The selection announce is posted after apply() kept the state, inside handle(); the onMessage catch logs the throw through error(). The refresh announce is posted after the refresh's apply try block, in its own try that only logs, so a post failure can never turn a rendered board into a failed refresh.",
+          "userImpact": "The board stays as it was kept; only the spoken announcement is lost.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The reader presses Enter on the already-selected card.",
+          "expected": "select-item is posted. The host keeps the same selection and posts no announce, so nothing is said twice."
+        },
+        {
+          "input": "A refresh is requested again before the first one settles, so the first is superseded.",
+          "expected": "Only the refresh that is applied announces. The dropped answer posts no announce."
+        },
+        {
+          "input": "The webview reloads (the tab is hidden and shown) and sends 'ready'.",
+          "expected": "The host re-posts status, view and details but no announce, so nothing is announced again. The webview restores its density from its saved state and posts set-density."
+        },
+        {
+          "input": "ArrowDown on the last card, or ArrowUp on the first.",
+          "expected": "Focus stays where it is; there is no wrap-around."
+        },
+        {
+          "input": "A narrow pane showing the epic rollup or the issue view.",
+          "expected": "Those views are already lists. The narrow rules change only their spacing, and every card, badge and notice stays."
+        },
+        {
+          "input": "Compact density with long titles, many badges and notices.",
+          "expected": "Text wraps rather than being truncated or clipped. Every badge and accessible label is still rendered."
+        },
+        {
+          "input": "The 500-item fixture with every column holding more than the 50-card page.",
+          "expected": "The first board renders the first page of each column plus show-more. The timing covers building and rendering that board."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The webview builds DOM with textContent only, posts only BoardUpMessage envelopes, and keeps the CSP unwidened (k4, k8).",
+          "source": "c7"
+        },
+        {
+          "text": "No navigation, density change or refresh writes any artifact, approval, file or Git state; density lives only in the webview's own state (k3).",
+          "source": "c6"
+        },
+        {
+          "text": "Every colour-coded state also has a text label, and no density or width hides a card, badge, warning or label (k11).",
+          "source": "c23"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (npx tsx --test), as in vscode-plugin/src/delivery/__tests__",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The board document's stylesheet and regions: narrow layout, density, focus ring, no hiding rules, and a single live region.",
+          "subjects": [
+            "renderBoardDocument"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The real webview script on the fake DOM, driven by models built by the real host: card focus and keys, focus into the details and back to the card, the announce region, and density restore and persistence.",
+          "subjects": [
+            "BOARD_WEBVIEW_SCRIPT",
+            "createDeliveryBoardHost"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts runScript/makeEl extended with: document.body, document.activeElement, focus() on elements, listener events carrying key and preventDefault, querySelectorAll over the fake tree for 'li.card', and an acquireVsCodeApi with getState/setState",
+            "board-fixtures.ts item/snapshot/evidence"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Host announcements: one per selection change and one per settled refresh. None for loading, a superseded answer, a webview reload or the other intents.",
+          "subjects": [
+            "createDeliveryBoardHost"
+          ],
+          "fixturesNeeded": [
+            "board-host.test.ts detailsSetup/openOn"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The measured performance fixture (ac5): the host's derive and post plus the real script's DOM build on the fake DOM, for the first board and for each filter change, best of three. Timings are always reported through the test's diagnostics. The default run asserts a regression tripwire of five times each target, so a loaded machine cannot fail unrelated builds; INSRC_PERF=1 asserts the exact targets (1 s, 150 ms). The fake DOM has no layout or paint, so the real-webview render on the reference environment is a separate manual measurement, recorded in the BUILD record when it is taken.",
+          "subjects": [
+            "createDeliveryBoardHost",
+            "BOARD_WEBVIEW_SCRIPT"
+          ],
+          "fixturesNeeded": [
+            "board-fixtures.ts largeSnapshot(): 500 items from 1,000 records"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "board-host.test.ts: 'a narrow pane stacks the columns into one list grouped by stage, and no rule hides a card, badge or warning'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "board-host.test.ts: 'every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card'",
+            "board-host.test.ts: 'when the card that opened the details is gone, closing them focuses the shown view's tab'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "board-host.test.ts: 'a selection and a settled refresh are each announced once, and loading, superseded answers, reloads and other intents announce nothing'",
+            "board-host.test.ts: 'the announce region is the only live region and is set once per message'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "board-host.test.ts: 'density is restored from the webview state, saved on change and mirrored to the host, and both densities render every badge, warning and label'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three'",
+            "Manual: the real webview on the reference environment, measured and recorded in the BUILD record"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Webview presentation, host announcements, webview-kept density",
+        "oneLineSummary": "One inline stylesheet (narrow layout and density), focusable cards with focus return, host-posted 'announce' messages to a single live region, and density kept in the webview's own state and mirrored to the host with set-density.",
+        "approach": "renderBoardDocument gains one <style> under the existing style-src 'unsafe-inline' CSP. It uses VS Code theme variables only. A narrow media query stacks the six column sections into one stage-grouped list, and nothing is set to display:none. Density is a data-density attribute on the board root that changes only spacing and font size. The script makes every card a focusable element: tabindex 0, Enter and Space post select-item, and arrow keys move between cards. It records the element that opened the details and refocuses that item's card (by data-item-id) after close-details, falling back to the shown view's tab. :focus-visible gets a visible outline. The host posts the already-declared 'announce' down-message once per selection change ('Selected: <title>') and once per settled refresh ('Board refreshed: N items' or the failure), never for loading. The webview writes it into one #announce region (aria-live polite, cleared then set). The status paragraph keeps role=status, but its aria-live is removed so a result is not announced twice. A density control (two buttons, aria-pressed) applies the attribute, saves it with acquireVsCodeApi().setState, restores it on boot, and posts set-density so the host's selection matches. The 500-item, 1,000-record fixture is a test helper. A timing test measures building and rendering the first board, and each filter change through the real host and the real script, best of three.",
+        "pros": [
+          "No shared-contract change: 'announce' and 'set-density' are already declared in sc3, and nothing s1 to s4 owns changes shape.",
+          "Density survives the webview reload that happens without retainContextWhenHidden, because webview state is kept for the panel's life.",
+          "Each event has one announcer, the host, which knows when a refresh has settled or a selection changed, so 'announced once' is testable from the host's posts.",
+          "A CSS-only narrow layout cannot drop information: the DOM is identical at every width."
+        ],
+        "cons": [
+          "The density truth lives in the webview; the host's selection.density is only a mirror.",
+          "The narrow layout is CSS, so tests check the stylesheet's rules and the unchanged DOM rather than a rendered width."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Host-owned density carried down on the status",
+        "oneLineSummary": "Same as a1, except the host is the density's single source of truth and posts it on every status message.",
+        "approach": "As a1 for the stylesheet, keyboard and announcements. StatusView (sc3, owned by s1) gains a density field through an HLD fieldAdd amendment. The webview applies the density it is sent and never stores it; set-density round-trips through the host, and a reload is answered with the host's density on 'ready'.",
+        "pros": [
+          "One source of truth for density, in the host, testable through the host alone."
+        ],
+        "cons": [
+          "Amends a contract s1 owns, and status messages would carry presentation state that has nothing to do with load status.",
+          "A density click shows nothing until the host's next status post arrives, adding a round trip to a purely visual change."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Works, but amends an s1 contract and adds a round trip for a purely visual change (sc3 partial, ac4 partial)."
+      },
+      {
+        "id": "a3",
+        "name": "Webview-composed announcements",
+        "oneLineSummary": "As a1, but the webview derives announcements itself by comparing successive status and details messages, and 'announce' stays unsent.",
+        "approach": "The script remembers the last status state and the last details itemId. When a details message names a new item it announces the selection; when the status goes from loading to ready, empty, unavailable or failed it announces the result. The host posts no 'announce'.",
+        "pros": [
+          "The host stays unchanged for announcements."
+        ],
+        "cons": [
+          "Every webview reload replays the posts and re-announces them, which breaks 'announced once'.",
+          "Announcement wording and timing live in untyped script strings rather than in tested host code, and the declared 'announce' message stays dead."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates ac3's 'announced once' on every webview reload."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md",
+      "quotedText": "Fix sc7 in this HLD, version it with schemaVersion, and allow only additive optional fields after approval; any breaking change goes through an HLD amendment before E2 consumes it."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly tasks:            readonly TaskValidation[];"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Refresh strategy: manual refresh is sufficient for the first increment; confirm whether existing daemon events can support later automatic updates."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/plans/delivery-board-epics.md",
+      "quotedText": "| Completion wording | Keep \"Complete\"; test it in E2's usability session | E2 S2 |"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/delivery/types.ts",
+      "quotedText": "readonly openWith:       'review-view' | 'evidence-read';"
+    },
+    {
+      "id": "c24",
+      "kind": "stakeholder",
+      "ref": "Stakeholder decision in chat, 2026-10-09: option A, add an open-this-artifact entry to the review pane",
+      "quotedText": "go with A"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "FR-09Keep the MVP read-only: all navigation and filtering leave artifacts, approvals, code, and Git state unchanged."
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Safe rendering: render artifact text as data. Never execute embedded HTML/scripts or follow arbitrary file paths from artifact content. File navigation must use the host’s existing authorized viewer."
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "The initial board renders within one second of data arrival; each local filter change responds within 150 ms."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/webview-host.ts",
+      "quotedText": "<meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">"
+    },
+    {
+      "id": "c23",
+      "kind": "doc",
+      "ref": "docs/insrc-delivery-board-prd.html",
+      "quotedText": "Accessibility: keyboard navigation, visible focus, screen-reader labels, and text labels for every color-coded state. Card selection and refresh results are announced without excessive chatter."
+    },
+    {
+      "id": "c21",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/board-host.ts (BOARD_WEBVIEW_SCRIPT, renderBoardDocument: no stylesheet, cards without tabindex, status aria-live)"
+    },
+    {
+      "id": "c22",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/board-state.ts and board-protocol.ts (selection.density, the declared announce and set-density messages)"
+    },
+    {
+      "id": "c25",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/board-wiring.ts and extension.ts (panel options without retainContextWhenHidden; no getState/setState in the plugin)"
+    },
+    {
+      "id": "c26",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/delivery/__tests__ (fake-DOM harness, fixtures; no timing test exists)"
+    }
+  ]
+}

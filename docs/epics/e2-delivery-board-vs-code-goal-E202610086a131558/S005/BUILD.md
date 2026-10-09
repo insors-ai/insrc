@@ -1,0 +1,48 @@
+<!-- insrc:artifact BUILD-6a1315585c38c41c-s5 -->
+
+# Build (plan-driven) — Story s5
+
+**Standalone:** no  ·  **Created:** 2026-10-09T12:32:53.414Z  ·  **Updated:** 2026-10-09T13:02:59.615Z
+
+**Commit:** 4b2b82b2
+
+## Summary
+
+t5 done (commit 430e4364).
+
+**Fixture.** board-fixtures.ts gains largeSnapshot(): 20 epics, each with 20 stories (400 stories, each carrying LLD and PLAN evidence, stages cycling through all six), plus 80 standalone issues. That is 500 items, recordCount 1000, and every seventh card needs attention. The fixture is deterministic, and the test deep-equals two builds.
+
+**Timing test.** board-perf.test.ts drives createDeliveryBoardHost over a channel whose postMessage delivers each message into the real BOARD_WEBVIEW_SCRIPT on the fake DOM. A post therefore includes the script's DOM build. The test measures:
+- the first board, from open() to snapshot to flush, best of three fresh hosts;
+- each filter change (search, attention, scope), best of three, reset between runs, asserting that each one changes the cards shown.
+
+**Reporting and thresholds.** Timings are always reported through t.diagnostic. The default run asserts five times the targets; INSRC_PERF=1 asserts the exact 1 s and 150 ms.
+
+**Measured here (best of three).**
+- first board 1.7–1.9 ms;
+- search 0.9–1.0 ms;
+- attention 0.4 ms;
+- scope 0.3 ms.
+
+A separate sanity run confirmed the first board posts 4 messages and builds 300 cards (1,268 nodes), at about 10 ms cold and 2 ms warm. Both modes pass. The fake DOM has no layout or paint, so a real-webview render on the reference environment is a separate manual measurement. I have not taken one.
+
+**Harness refactor.** The fake-DOM harness (FakeEl, makeEl, runScript, findAll, texts, focusState, keyEvent) moved verbatim from board-host.test.ts into the new board-webview-harness.ts, so the host and performance tests share it.
+
+**Results.** Host suite 25/25. Plugin suite 897 pass plus the known manifest-catalog failure. All typechecks clean.
+
+## Tasks validated
+
+- ✓ `t1`
+- ✓ `t2`
+- ✓ `t3`
+- ✓ `t4`
+- ✓ `t5`
+
+## Changes
+
+- `vscode-plugin/src/delivery/__tests__/board-fixtures.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)
+- `vscode-plugin/src/delivery/__tests__/board-host.test.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)
+- `vscode-plugin/src/delivery/__tests__/board-perf.test.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)
+- `vscode-plugin/src/delivery/__tests__/board-webview-harness.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)
+- `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)
+- `vscode-plugin/src/delivery/board-state.ts` — **insrc-build** (2026-10-09T13:02:59.615Z)

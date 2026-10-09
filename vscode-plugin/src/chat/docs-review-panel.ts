@@ -13,7 +13,7 @@
  */
 import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
 import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
-import type { ChatPanelChannel, ChatPanelLogger } from './chat-panel.js';
+import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.js';
 import type { DocsReviewClient, DocsContent } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
@@ -1216,9 +1216,6 @@ export function companionVisualKind(kind: CompanionRefKind): CompanionVisualKind
 }
 
 /** Escape a value for safe embedding in an HTML attribute / the CSP meta content. */
-function attr(v: string): string {
-  return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const log = deps.logger ?? NOOP_LOGGER;

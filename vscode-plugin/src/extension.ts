@@ -54,7 +54,7 @@ import { createChatGroupLock } from './chat/group-lock.js';
 import { createMementoChatSessionStore } from './chat/session-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import { defaultComputeDiff, type DiffView } from './chat/edit-governor.js';
-import { createDocsReviewHost } from './chat/docs-review-panel.js';
+import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { registerDeliveryBoard } from './delivery/board-wiring.js';
@@ -427,6 +427,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // ProviderRegistry over the installed claude/codex CLIs. The chat command is
   // registered ONLY when the flag is on, so the surface is invisible until opted in.
   const chatEnabled = vscode.workspace.getConfiguration().get<boolean>('insrc.chat.enabled') === true;
+  // E2 s4: the docs-review pane, when the chat gate creates one, is also where the
+  // delivery board opens a record awaiting review; declared here so the board,
+  // registered outside the gate, can receive it.
+  let docsReviewHost: DocsReviewHost | undefined;
   if (chatEnabled) {
     // S005: cap extension-local chat history (k3) so globalState does not grow unbounded
     // (the S003 L4 follow-up). save() evicts the oldest non-active sessions beyond this.
@@ -591,14 +595,15 @@ export function activate(context: vscode.ExtensionContext): void {
     // by the JetBrains ide-artifact-review-panel epic). It only reads + acts on
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
-    const docsReviewHost = createDocsReviewHost({
+    const reviewHost = createDocsReviewHost({
       client: createDocsReviewClient(client),
       createPanel: ({ viewType, title }) =>
         webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
     });
     commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {
-      docsReviewHost.open();
+      reviewHost.open();
     });
+    docsReviewHost = reviewHost;
   }
 
   // E2 s1: the delivery board — a read-only editor tab over the daemon's workflow.delivery
@@ -611,6 +616,7 @@ export function activate(context: vscode.ExtensionContext): void {
     rpc: client.rpc,
     repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null,
     logger: panelLog,
+    reviewPane: docsReviewHost,
   });
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over

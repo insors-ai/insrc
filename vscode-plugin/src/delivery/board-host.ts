@@ -23,17 +23,24 @@
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
  * renders the status and the board's columns, cards and controls as text
  * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ *
+ * The item details (E2 s4): while an item is selected, every derive also posts
+ * its details after the view message, from the details memory
+ * (details-memory.ts). The host tells the memory each state it keeps, routes
+ * open-evidence to it, and starts a new memory with each panel.
  */
 
-import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
-import { showMore, unknownStages, type BoardPaging } from './board-model.js';
-import { parseBoardUpMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
+import type { Envelope } from '../chat/protocol.js';
+import { isPlaceable, placeableCount, showMore, titleOf, unknownStages, type BoardPaging } from './board-model.js';
+import { parseBoardUpMessage, type BoardDownMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
 import {
-  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot,
+  boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot, statusView,
   type BoardEvent, type BoardSelection, type BoardState,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
+import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
 import { DISPLAY_LABELS } from './labels.js';
 
@@ -47,6 +54,8 @@ export interface DeliveryBoardHostDeps {
   /** ISO-8601 time; stamps failures and measures elapsed time. */
   readonly now: () => string;
   readonly genNonce: () => string;
+  /** The review pane, when the chat setting created one; a review-view record opens there. */
+  readonly reviewPane?: { openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void } | undefined;
 }
 
 export interface DeliveryBoardHost {
@@ -54,23 +63,20 @@ export interface DeliveryBoardHost {
   dispose(): void;
 }
 
-/** Escape a value for an HTML attribute (the CSP meta content). */
-function attr(v: string): string {
-  return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /**
  * The webview script. Everything shown is set with textContent, and the only
  * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention, show-more, set-view (the tabs) and select-item
- * (follow links in the issue view).
+ * set-scope, set-attention, show-more, set-view (the tabs), select-item (a
+ * card in any view, a follow link or a linked item in the details),
+ * close-details and open-evidence (the details pane, s4).
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
   `const vs=acquireVsCodeApi();`,
   `const send=function(p){vs.postMessage({v:1,payload:p});};`,
   `const byId=function(id){return document.getElementById(id);};`,
-  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty');`,
+  `const status=byId('status'),notice=byId('notice'),totals=byId('totals'),board=byId('board'),empty=byId('empty'),details=byId('details');`,
   `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
@@ -88,16 +94,23 @@ export const BOARD_WEBVIEW_SCRIPT = [
   // An epic the reader scoped to that a refresh removed stays selectable, so the reader sees why nothing matches.
   `if(current.indexOf('epic:')===0&&!options.some(function(o){return 'epic:'+o.epicItemId===current;}))add(current,'Epic no longer on the board');`,
   `scope.value=current;}`,
-  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);`,
+  // Keyboard (s5): every card is focusable; Enter or Space selects it, the arrows move between the cards in document order.
+  `const cardsOnBoard=function(){return Array.prototype.slice.call(board.querySelectorAll('li.card'));};`,
+  `const moveFocus=function(from,step){const cards=cardsOnBoard();const next=cards[cards.indexOf(from)+step];if(next)next.focus();};`,
+  `const onCardKey=function(li,id){return function(e){`,
+  `if(e.key==='Enter'||e.key===' '){e.preventDefault();send({type:'select-item',itemId:id});}`,
+  `else if(e.key==='ArrowDown'){e.preventDefault();moveFocus(li,1);}else if(e.key==='ArrowUp'){e.preventDefault();moveFocus(li,-1);}};};`,
+  `function renderCard(c){const li=make('li',undefined,'card');li.setAttribute('data-item-id',c.itemId);li.setAttribute('aria-label',c.accessibleLabel);li.setAttribute('tabindex','0');`,
   `li.appendChild(make('div',KIND[c.kind]+' · '+c.title,'card-title'));`,
   `li.appendChild(make('div',c.standalone?'Standalone':c.epicTitle===null?'':'Epic: '+c.epicTitle,'card-epic'));`,
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
-  `li.appendChild(badges);return li;}`,
+  `li.appendChild(badges);li.addEventListener('click',function(){send({type:'select-item',itemId:c.itemId});});li.addEventListener('keydown',onCardKey(li,c.itemId));return li;}`,
   // View tabs: each posts set-view; the shown view's tab is marked pressed.
   `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
   `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
-  `function markTab(view){for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
+  `let shownView='board';`,
+  `function markTab(view){shownView=view;for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
   `const EMPTY='Nothing on the board matches the search and filters.';`,
   `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
   // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
@@ -136,6 +149,39 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
   `board.appendChild(sec);}`,
   `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  // The details pane (s4): every field as text, the opened record in a <pre>; a null model clears it.
+  `const RELATION={parent:'Parent',child:'Child',corrects:'Corrects'};`,
+  `const button=function(text,onClick){const b=make('button',text);b.setAttribute('type','button');b.addEventListener('click',onClick);return b;};`,
+  // Focus (s5): opening an item's details focuses their heading; closing them returns focus to that item's card, or to
+  // the shown view's tab when the card is gone. Escape inside the details closes them.
+  `let detailsOf=null;`,
+  `details.addEventListener('keydown',function(e){if(e.key==='Escape'){e.preventDefault();send({type:'close-details'});}});`,
+  `const returnFocus=function(id){const card=cardsOnBoard().filter(function(c){return c.getAttribute('data-item-id')===id;})[0];if(card)card.focus();else TABS[shownView].focus();};`,
+  `function renderDetails(m){clear(details);if(m===null){details.setAttribute('hidden','');if(detailsOf!==null){const id=detailsOf;detailsOf=null;returnFocus(id);}return;}details.removeAttribute('hidden');`,
+  `const heading=make('h2',m.title);heading.setAttribute('tabindex','-1');details.setAttribute('data-item-id',m.itemId);details.appendChild(heading);`,
+  `details.appendChild(button('Close details',function(){send({type:'close-details'});}));`,
+  `if(m.stageLabel!==null)details.appendChild(make('p','Stage: '+m.stageLabel,'details-stage'));`,
+  `if(m.stageReason!==null)details.appendChild(make('p',m.stageReason.text+(m.stageReason.artifactIds.length>0?' ('+m.stageReason.artifactIds.join(', ')+')':''),'details-reason'));`,
+  `if(m.conflict!==null)details.appendChild(make('p',m.conflict,'details-conflict'));`,
+  `if(m.tasks.length>0||m.taskCounts!==null){details.appendChild(make('h3','Tasks'));`,
+  `if(m.taskCounts!==null){const k=m.taskCounts;details.appendChild(make('p',k.passed+' passed, '+k.failed+' failed, '+k.unrecorded+' unrecorded, '+k.unplanned+' unplanned','task-counts'));}`,
+  `const ul=make('ul');ul.setAttribute('aria-label','Tasks');`,
+  `for(const t of m.tasks){const li=make('li',undefined,'task');li.setAttribute('data-item-id',t.taskItemId);li.appendChild(make('div',(t.title===null?t.taskItemId:t.title)+' \u00b7 '+t.resultLabel,'task-title'));`,
+  `if(t.dependsOn!==null)li.appendChild(make('div','Depends on: '+(t.dependsOn.length===0?'nothing':t.dependsOn.join(', ')),'task-deps'));`,
+  `if(t.acceptanceChecks!==null&&t.acceptanceChecks.length>0){const cl=make('ul',undefined,'task-checks');for(const c of t.acceptanceChecks)cl.appendChild(make('li',c));li.appendChild(cl);}`,
+  `ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.planNotice!==null)details.appendChild(make('p',m.planNotice,'plan-notice'));`,
+  `if(m.evidence.length>0){details.appendChild(make('h3','Records'));const ul=make('ul');ul.setAttribute('aria-label','Records');`,
+  `for(const r of m.evidence){const li=make('li',undefined,'record');li.setAttribute('data-artifact-id',r.artifactId);`,
+  `li.appendChild(make('span',[r.kindLabel+' '+r.artifactId,r.approvalLabel].concat(r.reviewLabel===null?[]:[r.reviewLabel]).concat(r.overrideLabel===null?[]:[r.overrideLabel]).join(' \u00b7 ')));`,
+  `li.appendChild(button(r.opensIn==='review-pane'?'Open in review':'Open read-only',function(){send({type:'open-evidence',itemId:m.itemId,artifactId:r.artifactId});}));`,
+  `ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.notices.length>0){details.appendChild(make('h3','Notices'));const ul=make('ul');for(const n of m.notices)ul.appendChild(make('li',n,'notice'));details.appendChild(ul);}`,
+  `if(m.linked.length>0){details.appendChild(make('h3','Linked'));const ul=make('ul');`,
+  `for(const l of m.linked){const li=make('li');li.appendChild(button(RELATION[l.relation]+': '+l.title,function(){send({type:'select-item',itemId:l.itemId});}));ul.appendChild(li);}details.appendChild(ul);}`,
+  `if(m.sourceIds.length>0)details.appendChild(make('p','Sources: '+m.sourceIds.join(', '),'source-ids'));`,
+  `if(m.openedRecord!==null){details.appendChild(make('h3','Record '+m.openedRecord.artifactId));details.appendChild(make('pre',m.openedRecord.text,'opened-record'));}`,
+  `if(m.itemId!==detailsOf){detailsOf=m.itemId;heading.focus();}}`,
   `window.addEventListener('message',function(e){`,
   `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
   `if(p.type==='status'){const s=p.status;`,
@@ -146,9 +192,52 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(p.type==='board'){renderBoard(p.model);return;}`,
   `if(p.type==='epics'){renderEpics(p.model);return;}`,
   `if(p.type==='issues'){renderIssues(p.model);return;}`,
+  `if(p.type==='details'){renderDetails(p.model);return;}`,
+  // The one live region (s5): cleared, then set, so a repeated text is announced again.
+  `if(p.type==='announce'){announceEl.textContent='';announceEl.textContent=String(p.text);return;}`,
   `});`,
+  // Density (s5) lives in the webview's own state, kept by VS Code across reloads, and is mirrored to the host.
+  `const announceEl=byId('announce');`,
+  `const DENSITIES=['compact','comfortable'];`,
+  `const savedState=function(){try{const st=vs.getState();return st&&typeof st==='object'?st:{};}catch(e){return {};}};`,
+  `const applyDensity=function(d){document.body.setAttribute('data-density',d);for(const x of DENSITIES)byId('density-'+x).setAttribute('aria-pressed',x===d?'true':'false');};`,
+  `const chooseDensity=function(d){applyDensity(d);try{vs.setState(Object.assign({},savedState(),{density:d}));}catch(e){}send({type:'set-density',density:d});};`,
+  `for(const d of DENSITIES)byId('density-'+d).addEventListener('click',function(){chooseDensity(d);});`,
+  `const restored=savedState().density;`,
+  `const initialDensity=restored==='compact'||restored==='comfortable'?restored:'comfortable';`,
+  `applyDensity(initialDensity);send({type:'set-density',density:initialDensity});`,
   `send({type:'ready'});`,
   `})();`,
+].join('');
+
+/**
+ * The board's one stylesheet (E2 s5), under the existing style-src 'unsafe-inline'. Theme colours come only from
+ * VS Code's --vscode-* variables. Wide panes set the six board columns side by side; below 600 px the same sections
+ * stack into one list grouped by stage, each column's heading leading its group. No rule hides content: the DOM is the
+ * same at every width and density, and only the [hidden] details pane is out of view while nothing is selected.
+ * Density changes spacing and font size only.
+ */
+export const BOARD_STYLE = [
+  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:8px 12px;}`,
+  `header,.tabs,.controls,.density{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}`,
+  `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);padding:2px 8px;cursor:pointer;}`,
+  `button[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
+  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);}`,
+  `:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}`,
+  `.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--gap);align-items:start;}`,
+  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
+  `.card{border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
+  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}`,
+  `.badge{border:1px solid var(--vscode-panel-border);padding:0 4px;font-size:var(--small);}`,
+  `.badge[data-tone="danger"]{border-color:var(--vscode-errorForeground);color:var(--vscode-errorForeground);}`,
+  `.badge[data-tone="warning"]{border-color:var(--vscode-editorWarning-foreground);color:var(--vscode-editorWarning-foreground);}`,
+  `.badge[data-tone="success"]{border-color:var(--vscode-testing-iconPassed);}`,
+  `#details{border-left:2px solid var(--vscode-focusBorder);margin-top:12px;padding:var(--pad);overflow-wrap:anywhere;}`,
+  `#details pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
+  `body[data-density="comfortable"]{--gap:10px;--pad:8px;--small:0.9em;}`,
+  `body[data-density="compact"]{--gap:4px;--pad:3px;--small:0.85em;font-size:0.92em;}`,
+  `body:not([data-density]){--gap:10px;--pad:8px;--small:0.9em;}`,
+  `@media (max-width:600px){.board{display:block;}.board>section{margin-bottom:12px;}.board h2{font-size:1em;margin:8px 0 4px;}}`,
 ].join('');
 
 export function renderBoardDocument(nonce: string): string {
@@ -156,9 +245,15 @@ export function renderBoardDocument(nonce: string): string {
   return (
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-    `<title>${BOARD_TITLE}</title></head><body>` +
-    `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
-    `<p id="status" role="status" aria-live="polite"></p>` +
+    `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
+    `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button>` +
+    `<div class="density" role="group" aria-label="Density">` +
+    `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
+    `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
+    `</div></header>` +
+    // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
+    `<p id="status" role="status"></p>` +
+    `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
     `<p id="notice"></p>` +
     `<nav class="tabs" aria-label="Views">` +
     `<button id="tab-board" type="button" aria-pressed="true">Board</button>` +
@@ -173,6 +268,7 @@ export function renderBoardDocument(nonce: string): string {
     `<p id="totals"></p>` +
     `<p id="empty"></p>` +
     `<div id="board" class="board"></div>` +
+    `<aside id="details" aria-label="Item details" hidden></aside>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }
@@ -190,6 +286,28 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
+  /** The details memory (s4); a new one with each panel. */
+  const newMemory = (): DetailsMemory => createDetailsMemory({
+    client: deps.client, log, labels: DISPLAY_LABELS, reviewPane: deps.reviewPane, rerender: applyAfterRead,
+  });
+  let memory = newMemory();
+
+  /** The details message for a state: posted while an item is selected and a snapshot is shown. */
+  function detailsMessage(s: BoardState): Envelope<BoardDownMessage> | null {
+    const shown = shownSnapshot(s.status);
+    const id = s.selection.selectedItemId;
+    if (shown === null || id === null) return null;
+    return { v: 1, payload: { type: 'details', model: memory.model(shown.snapshot, id) } };
+  }
+
+  /** A re-derive after an answer arrives; a throw is logged, and apply() leaves the board as it was. */
+  function applyAfterRead(what: string): void {
+    try {
+      apply(state, paging);
+    } catch (err) {
+      log.error(`delivery board: ${what} could not be shown: ${errorText(err)}`);
+    }
+  }
 
   /**
    * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
@@ -197,9 +315,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
    * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
   function apply(next: BoardState, nextPaging: BoardPaging): void {
-    const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);
+    const details = detailsMessage(next);
+    const messages = details === null
+      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging)
+      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging), details];
     state = next;
     paging = nextPaging;
+    memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
     for (const m of messages) channel?.postMessage(m);
   }
 
@@ -257,6 +379,12 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         log.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
       }
     }
+    // Outside the tries, like the stage log below: an announcement that cannot be posted is only logged.
+    try {
+      announceRefresh(seq);
+    } catch (err) {
+      log.error(`delivery board: refresh ${seq} result could not be announced: ${errorText(err)}`);
+    }
     // Outside the try: a failure to log must never turn a board that rendered into a failed refresh.
     if (applied && result.ok) {
       try {
@@ -265,6 +393,30 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         log.error(`delivery board: refresh ${seq} unknown stages could not be listed: ${errorText(err)}`);
       }
     }
+  }
+
+  /** Fire-and-forget refresh: every step after its await is already guarded, and anything else is still logged. */
+  function startRefresh(): void {
+    refresh().catch((err: unknown) => log.error(`delivery board: refresh failed unexpectedly: ${errorText(err)}`));
+  }
+
+  /** One announcement per settled refresh (s5): the snapshot-wide counts when ready, else the status message. */
+  function announceRefresh(seq: number): void {
+    if (seq !== state.latestSeq || state.status.state === 'loading') return;
+    const shown = shownSnapshot(state.status);
+    if (state.status.state === 'ready' && shown !== null) {
+      const n = placeableCount(shown.snapshot);
+      const attention = shown.snapshot.items.filter(i => isPlaceable(i) && i.needsAttention).length;
+      announce(`Board refreshed: ${n} item${n === 1 ? '' : 's'}, ${attention} needing attention`);
+      return;
+    }
+    const message = statusView(state.status).message;
+    if (message !== null) announce(message);
+  }
+
+  /** The sc3 'announce' message, written by the webview into its one live region. */
+  function announce(text: string): void {
+    channel?.postMessage({ v: 1, payload: { type: 'announce', text } });
   }
 
   /** Once per applied refresh: the items left off the board because their stage is not one of the six. */
@@ -288,6 +440,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     return shown !== null && shown.snapshot.items.some(i => i.id === itemId);
   }
 
+  /** Posted after the state is kept, so a failure here is only logged by the message handler (s5). */
+  function announceSelection(itemId: string): void {
+    const item = shownSnapshot(state.status)?.snapshot.items.find(i => i.id === itemId);
+    if (item === undefined) return;
+    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${DISPLAY_LABELS.stage[item.stage.stage] ?? item.stage.stage}`}`);
+  }
+
   function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {
     dispatch({ type: 'selection-changed', selection }, nextPaging);
   }
@@ -296,7 +455,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const sel = state.selection;
     switch (msg.type) {
       case 'ready': apply(state, paging); return;
-      case 'refresh': void refresh(); return;
+      case 'refresh': startRefresh(); return;
       case 'set-view': select({ ...sel, view: msg.view }); return;
       case 'set-scope':
         if (!knownScope(msg.scope)) {
@@ -313,11 +472,15 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           return;
         }
         select({ ...sel, selectedItemId: msg.itemId });
+        if (msg.itemId !== sel.selectedItemId) announceSelection(msg.itemId);
         return;
-      case 'close-details': select({ ...sel, selectedItemId: null }); return;
+      case 'close-details':
+        select({ ...sel, selectedItemId: null });
+        channel?.postMessage({ v: 1, payload: { type: 'details', model: null } });
+        return;
       case 'set-density': select({ ...sel, density: msg.density }); return;
       case 'show-more': apply(state, showMore(paging, msg.stage)); return;
-      case 'open-evidence': return;   // opening evidence is s4's
+      case 'open-evidence': memory.openEvidence(msg.itemId, msg.artifactId); return;
     }
   }
 
@@ -327,13 +490,15 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     state = initialBoardState();
     paging = {};
     nextSeq = 0;
+    memory.dispose();
+    memory = newMemory();
   }
 
   return {
     open(): void {
       if (channel !== undefined) {
         channel.reveal();
-        void refresh();
+        startRefresh();
         return;
       }
       const opened = deps.createPanel({ viewType: BOARD_VIEW_TYPE, title: BOARD_TITLE });
@@ -353,7 +518,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         }
       });
       opened.setHtml(renderBoardDocument(deps.genNonce()));
-      void refresh();
+      startRefresh();
     },
     dispose(): void {
       const open = channel;

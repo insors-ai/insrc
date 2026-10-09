@@ -132,7 +132,8 @@ function partialNotice(s: DeliverySnapshot): string | null {
   return parts.join(' ');
 }
 
-function statusView(status: LoadStatus): StatusView {
+/** The status bar's view of a load status; also the source of the refresh announcement's text (s5). */
+export function statusView(status: LoadStatus): StatusView {
   const shown = shownSnapshot(status);
   const takenAt = shown?.snapshot.takenAt ?? null;
   const partial = shown === null ? null : partialNotice(shown.snapshot);

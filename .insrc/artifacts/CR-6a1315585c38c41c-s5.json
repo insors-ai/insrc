@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791550151232-5jti03",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T12:49:11.232Z",
+    "model": "claude:opus",
+    "elapsedMs": 66750,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/board-fixtures.ts",
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-perf.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-webview-harness.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-state.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/__tests__/board-perf.test.ts:55",
+            "message": "The promised perf test is present and passes, but by default it asserts 5× the stated targets (5 s first render, 750 ms per filter change). It only checks the exact 1 s / 150 ms budgets when INSRC_PERF=1 is set. In this run the measured times were far under the exact targets (first board 2.1 ms; search 1.2 ms, attention 0.4 ms, scope 0.3 ms), so nothing is breached today. The test as written does not enforce the promised thresholds, though.",
+            "expectationRef": "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three'",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

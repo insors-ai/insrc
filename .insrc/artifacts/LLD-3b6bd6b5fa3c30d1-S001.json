@@ -1,0 +1,626 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791552370732-5sywlc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T13:31:15.599Z",
+    "epicCreatedAt": "2026-10-09T13:11:02.374Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 304865,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "epicSlug": "defects-review-pane-s-test-file",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1791552370732-5sywlc",
+    "hldEffectiveHash": "bb128977d8fb4158b456642eb1c98b451553ef1d3856d488f2aa872323d44852",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers every part of the ISSUE's fix intent: one fake DOM (including the inert dgPickRef document at :5315), one flatten, one opener, guards on git and tsc that skip with a reason, every assertion kept, and test-only scope.",
+          "evidence": "ISSUE.md fix intent, lines 44-48, lists five bullets. LLD §3.1 deletes stubEl/node/frNode/dgNode/uxNodeStub and the local bodyStub, and builds the loaders 'and the dgPickRef documents' from bodyStub. The inline doc at test.ts:5314-5316 is `{ createElement: () => ({}), createElementNS: () => ({}) }`. §2.2 merges the four flattens, §2.3 the openers, and §2.4/§2.5 guard tsc and git. The invariants keep every assertion and change no production file. [files: docs/standalone/defects-review-pane-s-test-file-E202610093b6bd6b5/ISSUE.md, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's fakes behave as the design says. bodyStub keeps listeners as arrays and clears children on textContent and innerHTML (parsing TAG\\ttext). StubNode stores one listener per type. uxNodeStub records writes, traps innerHTML/outerHTML, does not clear children on textContent, and has text nodes { nodeType: 3, data }.",
+          "evidence": "test.ts:1543 `listeners: Record<string, Array<() => void>>`, :1555-1566 innerHTML setter parses `TAG\\ttext` and `set textContent(v) { txt = v; html = ''; children.length = 0; }`. :722 `addEventListener(k, fn) { this.listeners[k] = fn; }`. :4106-4117: the textContent setter only records the write, and the innerHTML/outerHTML trap loop records each write. :4089 `interface UxTextNode { nodeType: 3; data: string }`. :4161-4164 uxFlatten skips isText children. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "openAndGetContent has 6 callers, and the two openers together have 18 call sites (LLD §2.3, migration step 4, ac3 mapping).",
+          "evidence": "A grep of docs-review-panel.test.ts finds openAndGetContent( called at :621, :637 (once, inside a for loop), :645, :666 and :689, which is 5 callers, not 6. openWithContent( is called at :976, :990, :2316, :2353, :2367, :3755, :3796, :3814, :3832, :3856 and :3881, which is 11. The total is 16, not 18. The merge itself is still right, but the counts the ac3 proof relies on are wrong. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "Correct the counts to 5 openAndGetContent callers and 16 opener call sites in total, in §2.3, migration step 4 and the ac3 mapping.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every git and tsc site is listed: the direct execFileSync git show calls at :1501 and :3567, the local git helper at :4010 used at :4023-:4030, the direct log/diff calls at :5648-:5655, and the tsc existence asserts at :2449 and :2549.",
+          "evidence": "Grepping for `execFileSync('git'` finds exactly :1501, :3567, :4011 (inside the helper at :4010) and :5648/:5652/:5655. typescript/bin/tsc is resolved only at :2448 and :2548, with the asserts at :2449 and :2549. typecheckAgainstPanel (:2447) is called at :2479 and :2492 from a test declared `() =>`, so that test also needs a `t` parameter. That is implied by the signature change. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Clearing children on every textContent assignment keeps all 200 tests passing, because the renderers set textContent before they append children.",
+          "evidence": "Every `textContent=` in the shipped renderer sources (docs-review-panel.ts:97, 132, 137, 149, 200-235, 498, 777-791, 898, 1629-1733) assigns text to a freshly created element before anything is appended, e.g. `st.textContent=r.statement;it.appendChild(st)` and uxTextNode at :898. I found no case that sets textContent on an element after giving it children, so the stricter rule should not cause failures. The design still treats any such failure as a finding (§4) instead of weakening the fake. uxAllText (:4168) reads both textContent and text-node children, and that keeps working. [files: vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Changing the :807/:826 listener calls to fire every listener in the array keeps those assertions' behaviour.",
+          "evidence": ":807 and :826 call `sel.listeners['change']!()` against StubNode's one listener per type (:722). The chooser registers one change listener, so firing each entry of the array gives the same `picked` results asserted at :808 and :827. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Each acceptance criterion has a test that would fail without the fix. In particular, ac3 (one opener) is proven by a test.",
+          "evidence": "ac4 has a real failing-first test: the recording-context guard tests and 'history and compiler checks skip with a stated reason…' need git(t, need) and typecheckAgainstPanel(t, …), which do not exist yet. ac1 and ac2 have new fake-dom.test.ts contract tests. The ac3 entry is 'the 18 former … call sites pass through the one openWithContent'. That is the existing suite, which passes today with two openers, so nothing would fail if openAndGetContent were left in place. The figure 18 is also wrong; there are 16 call sites (see current-behaviour). [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
+          "action": "Give ac3 a check that fails without the fix: for example, a source scan asserting that the file declares exactly one opener (no `function openAndGetContent`), plus a direct test that openWithContent(string) and openWithContent({markdown, openQuestions: [], blocked: false}) return identical payloads.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-09T13:31:20.869Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "current-behaviour.2": {
+        "findingId": "current-behaviour.2",
+        "status": "resolved",
+        "note": "Applied. grep confirms 6 openAndGetContent( and 12 openWithContent( occurrences, each count including the definition. That is 5 callers plus 11 callers, 16 opener call sites in all. The figures are corrected in openWithContent's postconditions, migration step 4 and the ac3 mapping.",
+        "resolvedAt": "2026-10-09T13:32:47.835Z"
+      },
+      "tests.1": {
+        "findingId": "tests.1",
+        "status": "resolved",
+        "note": "Applied. ac3 now has a failing-first test: 'there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads'. It is a source scan asserting the file has no openAndGetContent declaration and exactly one openWithContent, plus a direct equality check of the two payloads. It fails while openAndGetContent still exists.",
+        "resolvedAt": "2026-10-09T13:32:47.836Z"
+      }
+    },
+    "approvedAt": "2026-10-09T13:34:24.692Z",
+    "rangeBase": "5806f16a2efec747da4457b81174f21982d303fd"
+  },
+  "body": {
+    "summary": {
+      "prose": "This fixes the review pane's 200-test file in four ways. Its six private fake DOMs become one shared model, so every renderer is tested against the same DOM rules. Its four tree walks become one, and its two document openers become one. Checks that read git history or run the TypeScript compiler now confirm that history or compiler is present first; when it isn't, they skip with a stated reason instead of failing or passing on nothing. No production code changes.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Share one fake DOM, one flatten and one opener in the review pane tests, and skip env-dependent checks with a reason"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "bodyStub",
+          "signature": "function bodyStub(tagName: string, id?: string, text?: string, ns?: string | null): BodyStub",
+          "parameters": [
+            {
+              "name": "tagName",
+              "type": "string",
+              "purpose": "The element tag. It is stored as tagName and also exposed as tag for the suites that read tag.",
+              "optional": false
+            },
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The element id that querySelector('#id') matches.",
+              "optional": true
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "Initial text content.",
+              "optional": true
+            },
+            {
+              "name": "ns",
+              "type": "string | null",
+              "purpose": "The namespace. createElementNS passes it; createElement leaves it null.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "BodyStub",
+            "meaning": "The single fake element every review-pane suite builds from. It moves out of docs-review-panel.test.ts into a new module, vscode-plugin/src/chat/__tests__/fake-dom.ts."
+          },
+          "errors": [
+            {
+              "type": "AssertionError",
+              "condition": "removeChild is called with a node that is not a child, as today."
+            },
+            {
+              "type": "SyntaxError",
+              "condition": "querySelector('#<digit-leading id>'), as in the real DOM and today's bodyStub."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "BodyStub is the union of the six fakes' members. It has tag/tagName, ns, id, value, className, style, attrs, children (elements and text nodes), parentNode, nextSibling, firstChild, listeners as arrays, scrolled and scrollIntoView(). It has appendChild, insertBefore, removeChild, setAttribute, querySelector('#id') with a tree walk, querySelectorAll(tag), addEventListener, and writes.",
+            "writes records every textContent, className, setAttribute ('attr:<k>'), innerHTML and outerHTML assignment, in order. These are the records the frNode, dgNode and uxNodeStub suites assert on.",
+            "Assigning innerHTML records the write and also replaces the children by parsing the harness's 'TAG\\ttext' lines, as bodyStub does today. Assigning outerHTML only records the write.",
+            "Assigning textContent clears the children, as in the real DOM. This is now true for every suite, not only bodyStub's.",
+            "className is independent of attrs['class'], as in all six fakes today. This is stated in the module as the one known divergence from the real DOM.",
+            "Text nodes are { nodeType: 3, data } and are never elements."
+          ]
+        },
+        {
+          "name": "allOf",
+          "signature": "function allOf(n: BodyStub): BodyStub[]",
+          "parameters": [
+            {
+              "name": "n",
+              "type": "BodyStub",
+              "purpose": "The root of a built tree.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BodyStub[]",
+            "meaning": "Every element in the tree in pre-order, root first, skipping text nodes."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "It replaces frAll, dgFlatten, allOf and uxFlatten. It moves to fake-dom.ts. Callers that passed dgFlatten an out accumulator use the return value instead.",
+            "For trees without text nodes it returns exactly what frAll, dgFlatten and allOf return today. For trees with text nodes it returns exactly what uxFlatten returns today."
+          ]
+        },
+        {
+          "name": "openWithContent",
+          "signature": "async function openWithContent(content: DocsContent | string): Promise<Record<string, unknown>>",
+          "parameters": [
+            {
+              "name": "content",
+              "type": "DocsContent | string",
+              "purpose": "The document the fake client serves. A string is markdown, served as { markdown, openQuestions: [], blocked: false } exactly as openAndGetContent does today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Record<string, unknown>>",
+            "meaning": "The docs-content payload posted for LLD-abc-s7."
+          },
+          "errors": [
+            {
+              "type": "AssertionError",
+              "condition": "No docs-content message is posted for the opened artifact, as today."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "It replaces openAndGetContent. That function's 5 call sites (:621, :637 inside a loop, :645, :666, :689) call openWithContent(markdown); the 11 existing openWithContent call sites are unchanged. That makes 16 opener call sites in all.",
+            "openWithContent(markdown) and openWithContent({ markdown, openQuestions: [], blocked: false }) return identical payloads."
+          ]
+        },
+        {
+          "name": "typecheckAgainstPanel",
+          "signature": "function typecheckAgainstPanel(t: TestContext, snippet: string): { ok: boolean; out: string } | null",
+          "parameters": [
+            {
+              "name": "t",
+              "type": "TestContext",
+              "purpose": "The calling test, used to skip it.",
+              "optional": false
+            },
+            {
+              "name": "snippet",
+              "type": "string",
+              "purpose": "The probe source, as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: boolean; out: string } | null",
+            "meaning": "The tsc result, or null after it has skipped the test because the compiler is not installed."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "When node_modules/typescript/bin/tsc is missing, it calls t.skip('TypeScript compiler not installed at <path>') and returns null, and the caller returns. It no longer asserts the compiler exists.",
+            "The never-witness check (:2549) uses the same rule through this function's tsc lookup. Once the compiler is present, every existing assertion about tsc's output is unchanged."
+          ]
+        },
+        {
+          "name": "git",
+          "signature": "function git(t: TestContext, need: { readonly commits?: readonly string[]; readonly window?: { readonly from: string; readonly to: string } }): ((...args: string[]) => string) | null",
+          "parameters": [
+            {
+              "name": "t",
+              "type": "TestContext",
+              "purpose": "The calling test, used to skip it.",
+              "optional": false
+            },
+            {
+              "name": "need",
+              "type": "{ commits?: readonly string[]; window?: { from: string; to: string } }",
+              "purpose": "What history the check relies on: named commits that must exist, or a window between the last commits touching two files (from, to) that must be two distinct commits with from an ancestor of to.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "((...args: string[]) => string) | null",
+            "meaning": "A git runner bound to the repo root, or null after it has skipped the test with the reason."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "It replaces the local git(...) helper at :4010 and the direct execFileSync('git', …) calls at :1501, :3567 and :5648-:5655.",
+            "It skips with a stated reason when the directory is not a git work tree, when the clone is shallow (rev-parse --is-shallow-repository), when a named commit is missing (cat-file -e), or when the window's ends are missing, equal, or out of ancestry order. A check never runs on an empty or invented window.",
+            "When the history is present, each check runs exactly the git commands and assertions it runs today."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "vscode-plugin/src/chat/__tests__/fake-dom.ts",
+        "change": "new",
+        "details": "A new non-.test.ts test module holding BodyStub/bodyStub and allOf, so the plugin glob does not run it as a test. docs-review-panel.test.ts imports them, and stubEl, node/StubNode, frNode/FrNode, dgNode/DgNode, uxNodeStub/UxNode and frAll/dgFlatten/uxFlatten are deleted. Each loader (loadRenderer, loadSections, loadFr, loadFrAnchor, loadPlace, runWebview, loadDg, loadUx and the dgPickRef documents) builds its document from bodyStub. Where a suite records the elements it creates (created, createdHtml, texts, nodes), it keeps doing so.",
+        "callSites": [
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        ]
+      },
+      {
+        "entity": "Listener firing at :807 and :826",
+        "change": "invariant-change",
+        "details": "StubNode stored one listener per type (listeners[k] = fn), so these sites fire `sel.listeners['change']!()`. BodyStub stores arrays, so the two sites fire each listener in the array. That is the real DOM's rule, and bodyStub's today.",
+        "callSites": [
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        ]
+      },
+      {
+        "entity": "textContent assignment",
+        "change": "invariant-change",
+        "details": "Assigning textContent now clears the children in every suite. Before, only bodyStub cleared them; frNode, dgNode and uxNodeStub kept them. If a test fails because of this, it shows a renderer that set textContent on an element it had already filled. That is reported as a finding, not hidden by weakening the fake.",
+        "callSites": [
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Under the stricter shared fake, a renderer test fails because the renderer set textContent on an element after giving it children, which the old fake allowed.",
+          "detection": "That suite's existing assertions fail once the shared BodyStub clears children when textContent is assigned.",
+          "response": "Report the failure as a finding against the renderer, with the test and element. Do not weaken the fake or the assertion. Fixing the renderer is a production change, outside this test-only issue, so it is raised as its own tracked issue.",
+          "userImpact": "A real renderer bug, previously hidden by a lenient fake, becomes visible.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A check runs in a source tarball or a directory that is not a git work tree.",
+          "detection": "In git(t, need), `git rev-parse --is-inside-work-tree` throws or does not print 'true'.",
+          "response": "Skip the test with 'not a git work tree: <repo root>'.",
+          "userImpact": "The test reports skipped with a reason instead of a raw subprocess error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A check runs in a shallow clone.",
+          "detection": "`git rev-parse --is-shallow-repository` prints 'true'.",
+          "response": "Skip with 'shallow clone: history needed for <what>'. This also covers the window check, which would otherwise pass vacuously on the single grafted commit.",
+          "userImpact": "No vacuous pass and no raw failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A named commit (09e6efa, 8908338) is missing, for example after a history rewrite.",
+          "detection": "`git cat-file -e <sha>^{commit}` exits non-zero.",
+          "response": "Skip with 'commit <sha> is not in this history'.",
+          "userImpact": "The test is skipped with a reason.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A window's ends do not form a real window: one end is missing, both are the same commit, or the start is not an ancestor of the end.",
+          "detection": "In git(t, need), the `git log -1 --format=%H -- <file>` results are empty or equal, or `git merge-base --is-ancestor from to` exits non-zero.",
+          "response": "Skip with 'no build window between <from file> and <to file>: <which condition>'.",
+          "userImpact": "The window check never inspects an empty or inverted diff.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The TypeScript compiler is not installed where the probes look for it.",
+          "detection": "In typecheckAgainstPanel, and in the never-witness check through the same lookup, existsSync(node_modules/typescript/bin/tsc) is false.",
+          "response": "Skip with 'TypeScript compiler not installed at <path>', and return null.",
+          "userImpact": "The test is skipped with a reason, where it used to fail on the assertion.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A dgFlatten caller that passed its own out accumulator.",
+          "expected": "It uses allOf's return value (spread or concatenated where it accumulated), with the same element order as before."
+        },
+        {
+          "input": "A ux tree with text nodes passed to allOf.",
+          "expected": "The text nodes are skipped, as uxFlatten did; uxAllText still reads them."
+        },
+        {
+          "input": "A suite that asserts no innerHTML writes, on a renderer that writes none.",
+          "expected": "writes has no innerHTML entry, and the parse never runs, so behaviour is unchanged."
+        },
+        {
+          "input": "openWithContent('markdown text'), where an openAndGetContent call used to be.",
+          "expected": "The fake client serves { markdown, openQuestions: [], blocked: false }, and the returned payload is identical to openAndGetContent's."
+        },
+        {
+          "input": "Every history check run in the full clone.",
+          "expected": "No skip. Each runs exactly its current git commands and assertions, and the suite stays at 200 passing."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every assertion in docs-review-panel.test.ts is kept. The full-clone run stays at 200 tests passing with no skips.",
+          "source": "c3"
+        },
+        {
+          "text": "Each existing fake-DOM behaviour a suite asserts on keeps working: write recording, the innerHTML/outerHTML trap and parse, the SVG namespace, text nodes, parent and sibling links, querySelector's digit-leading SyntaxError, removeChild's presence check, listeners, scrollIntoView, and className kept apart from attrs['class'] for the serialized snapshots.",
+          "source": "c1"
+        },
+        {
+          "text": "The flatten order (pre-order, root first, text nodes skipped) and the openers' returned payloads are unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "The shared module is a non-.test.ts file under __tests__, so the plugin glob does not run it as a test. No production file changes.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (cd vscode-plugin && npx tsx --test 'src/**/__tests__/*.test.ts'), as in vscode-plugin/src/chat/__tests__",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The shared fake DOM's own contract, tested once and directly, so the guarantees every suite relies on are fixed in one place.",
+          "subjects": [
+            "bodyStub",
+            "allOf"
+          ],
+          "fixturesNeeded": [
+            "a new fake-dom.test.ts beside fake-dom.ts"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The environment guards, driven against real temporary directories (not a work tree; a one-commit repository, where the window ends coincide) and a missing compiler path. A recording test context stands in for t, so each skip and its reason can be asserted.",
+          "subjects": [
+            "git",
+            "typecheckAgainstPanel"
+          ],
+          "fixturesNeeded": [
+            "mkdtemp directories; `git init` plus one commit in a temporary repository",
+            "a recording { skip(reason) } context"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The whole of docs-review-panel.test.ts, rebuilt on the shared fake, flatten and opener, with every existing assertion kept. A source scan pins one opener.",
+          "subjects": [
+            "openWithContent",
+            "bodyStub",
+            "allOf"
+          ],
+          "fixturesNeeded": [
+            "the existing suite"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "fake-dom.test.ts: 'the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, querying and listeners'",
+            "docs-review-panel.test.ts: all 200 existing tests pass unchanged in assertion on the shared fake (full clone)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "fake-dom.test.ts: 'allOf walks pre-order, root first, and skips text nodes'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "docs-review-panel.test.ts: 'there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads'. It is a source scan asserting the file declares no openAndGetContent and exactly one openWithContent, plus a direct equality check of the two payloads. It fails while openAndGetContent still exists.",
+            "docs-review-panel.test.ts: the 16 opener call sites pass through openWithContent (the existing suite)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "docs-review-panel.test.ts: 'history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window'",
+            "Manual: a git clone --depth 1 run of docs-review-panel.test.ts reports 0 failures, with the history-dependent tests skipped with reasons and none vacuously passing"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "docs-review-panel.test.ts has 200 tests and 5,740 lines, and no file imports from it (c1). It carries:\n- six private fake-DOM builders: stubEl, node, frNode, bodyStub, dgNode and uxNodeStub (c1);\n- four pre-order flatten helpers and two identical document openers (c2);\n- git checks that call git unguarded (:1501, :3567, the window helper at :4010/:4023-:4030, and :5648-:5655);\n- tsc probes that assert the compiler exists (:2449, :2549).\nIn a shallow clone 197 tests pass and 3 fail, and the second 't6' passes vacuously (c3). The full clone passes 200/200.",
+      "stateAfter": "A new non-test module, vscode-plugin/src/chat/__tests__/fake-dom.ts, holds the one fake element (bodyStub/BodyStub) and the one flatten (allOf). The test file imports both and keeps one opener, openWithContent(content | markdown). Its git and tsc checks run through git(t, need) and typecheckAgainstPanel(t, …), which skip with a stated reason when the history or compiler they need is missing. The full clone still passes all 200 existing tests, plus the new fake-DOM and environment-guard tests. A shallow clone reports no failures, with the history-dependent tests skipped and reasons given.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add fake-dom.ts with the superset bodyStub/BodyStub and allOf, and its own contract tests in fake-dom.test.ts. The existing test file is not changed yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Repoint each suite's document from its private builder (stubEl, node, frNode, dgNode, uxNodeStub, and the local bodyStub) to the shared bodyStub, one suite at a time. Delete each private builder once nothing uses it. Fire the :807/:826 listeners through the listener array. Run the file after each suite.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Replace frAll, dgFlatten and uxFlatten with the shared allOf. dgFlatten accumulator callers switch to the return value.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Fold openAndGetContent into openWithContent(content | markdown) and repoint its 5 call sites. The 11 existing openWithContent call sites are unchanged, 16 in all.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the git(t, need) guard and route the :1501, :3567, :4023-:4030 and :5648-:5655 checks through it. Change typecheckAgainstPanel and the never-witness probe to skip with a reason when tsc is missing. Add the environment-guard tests, and verify once in a --depth 1 clone.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API is affected. Every change is in the plugin's test tree. No production module, IPC payload or package manifest changes, and no file outside docs-review-panel.test.ts imports the helpers that move.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One faithful superset fake DOM in a shared module",
+        "oneLineSummary": "A single FakeElement/FakeText model and a recording fakeDocument in a new __tests__/fake-dom.ts. It does the union of today's behaviours, adopts the real-DOM rule that textContent clears children, and leaves className independent of the class attribute.",
+        "approach": "A new test module, vscode-plugin/src/chat/__tests__/fake-dom.ts, exports a FakeElement with these fields:\n- tag and tagName;\n- ns, which is null for createElement and the namespace for createElementNS;\n- id, value, className, style, attrs, children, parentNode, nextSibling, firstChild;\n- listeners as arrays;\n- scrolled and scrollIntoView;\n- appendChild, insertBefore, and a removeChild that asserts the child is present;\n- setAttribute;\n- querySelector('#id'), which throws SyntaxError on a digit-leading id;\n- querySelectorAll by tag;\n- `writes`, which records every textContent, className, attribute, innerHTML and outerHTML write.\nThe innerHTML setter records the write and also replaces the children by parsing the harness's TAG\\ttext lines. The two never conflict: suites that trap innerHTML assert there are no such writes, and the webview suites rely on the parse. Setting textContent clears the children, as the real DOM does. className stays independent of attrs['class'], as all six fakes keep it today, and the module states this as a known divergence. FakeText is {nodeType: 3, data}.\nfakeDocument() records what it creates (created, createdNS, texts and nodes) through createElement, createElementNS and createTextNode, and every loader is built on it. The module also exports flatten(n), a pre-order walk that skips text nodes and replaces frAll, dgFlatten, allOf and uxFlatten, and fire(el, type) to run listeners. In the test file, openDoc(content: string | DocsContent) replaces both openers. requireHistory(t, need) and requireTsc(t) helpers come before every git and tsc use.",
+        "pros": [
+          "One definition of the DOM contract, so a renderer cannot pass against its own laxer fake.",
+          "No new dependency; consistent with the existing shared-harness convention (board-webview-harness.ts, board-fixtures.ts).",
+          "The trap and the parse are compatible, so one innerHTML setter serves every suite.",
+          "The textContent rule makes the fake behave more like the real DOM, so any test it breaks reveals a renderer that depends on a fake-only behaviour."
+        ],
+        "cons": [
+          "About 70 call sites change. The listener firing at :807/:826 and the dgFlatten accumulator callers have to adapt.",
+          "className still does not reflect the class attribute; changing that would alter the serialized snapshots, so it is recorded rather than fixed here."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Shared core with per-suite behaviour profiles",
+        "oneLineSummary": "One base builder with option flags (innerHTML: 'trap' | 'parse', textContentClears, record) that reproduces each of today's fakes exactly.",
+        "approach": "fake-dom.ts exports makeElement(tag, profile), where the profile switches the innerHTML behaviour, whether textContent clears the children, and whether writes are recorded. Each suite passes the profile that matches its old fake, so every suite keeps its current behaviour bit for bit. The flatten, opener and environment guards are as in a1.",
+        "pros": [
+          "Lowest risk of a behaviour change: each suite keeps exactly the semantics it has today."
+        ],
+        "cons": [
+          "It keeps the divergence, now behind flags, so a renderer can still pass against a laxer profile. That is the defect the issue names.",
+          "More configuration surface than a single model."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "It is the safest option, but i1 is only partial: the flags preserve the divergence the issue exists to remove."
+      },
+      {
+        "id": "a3",
+        "name": "A real DOM implementation as a devDependency",
+        "oneLineSummary": "Replace the fakes with happy-dom or jsdom.",
+        "approach": "Add a DOM library as a plugin devDependency and evaluate the renderer sources against its document. Write recording and the innerHTML trap would be added through proxies or MutationObservers.",
+        "pros": [
+          "The most faithful DOM semantics."
+        ],
+        "cons": [
+          "Adds a new dependency to the plugin package, which the issue's test-only scope does not cover.",
+          "Write recording and the innerHTML-trap assertions need proxy layers on top. The harness's TAG\\ttext innerHTML convention would be replaced by real HTML parsing, which changes the webview harness tests.",
+          "Heavier and slower for 200 tests."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "It violates i2 and i5."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, the six fake-DOM builders and the behaviours each suite asserts on"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: docs-review-panel.test.ts, the four flatten helpers and the two document openers"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: docs-review-panel.test.ts, the git-history and tsc checks; the shallow-clone run (197 pass, 3 fail, one vacuous pass) and the full clone (200/200)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1: shared test scaffolding convention, non-.test.ts modules under __tests__ (delivery/__tests__/board-fixtures.ts, board-webview-harness.ts)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-3b6bd6b5fa3c30d1 (docs/standalone/defects-review-pane-s-test-file-E202610093b6bd6b5/ISSUE.md), the approved defect record this LLD fixes"
+    }
+  ]
+}

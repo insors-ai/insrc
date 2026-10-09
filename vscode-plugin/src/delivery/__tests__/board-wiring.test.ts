@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 
 import type { CommandDescriptor, CommandRegistry } from '../../surfaces/command-registry.js';
 import { registerDeliveryBoard, type BoardWebviewPanel } from '../board-wiring.js';
+import { item, snapshot } from './board-fixtures.js';
 import { flush } from './flush.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -126,4 +127,59 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
   assert.equal(first.disposed, true, 'deactivation closes the board');
   await open();
   assert.equal(panels.length, 2, 'the next run opens a new panel');
+});
+
+test('the board receives the review pane when the chat setting creates one, and reads evidence itself when it does not', async () => {
+  // extension.ts: docsReviewHost is declared before the chat gate, assigned inside it, and handed to the board outside it.
+  const [gateStart, gateEnd] = chatGateSpan(EXT);
+  const decl = EXT.indexOf('let docsReviewHost: DocsReviewHost | undefined;');
+  assert.ok(decl >= 0 && decl < gateStart, 'docsReviewHost is declared before the chat gate');
+  const assign = EXT.indexOf('docsReviewHost = reviewHost;');
+  assert.ok(assign > gateStart && assign < gateEnd, 'and assigned inside it');
+  const call = EXT.indexOf('registerDeliveryBoard({');
+  assert.match(EXT.slice(call, EXT.indexOf('});', call)), /reviewPane: docsReviewHost,/, 'and passed to the board outside it');
+
+  const snap = snapshot([item({ id: 'S1', evidence: [
+    { artifactId: 'LLD-x', kind: 'LLD', mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view', approval: { state: 'pending', at: null }, review: null, reviewCurrency: null },
+  ] as never })]);
+
+  /** Register the board over fakes, open it, select S1 and ask to open its LLD; returns what reached the pane and the daemon. */
+  async function run(withPane: boolean) {
+    const handlers = new Map<string, () => Promise<void>>();
+    const toHost: ((m: unknown) => void)[] = [];
+    const rpcCalls: { method: string; params: unknown }[] = [];
+    const paneOpens: { artifactId: string; mdPath: string }[] = [];
+    const panel = fakePanel();
+    panel.webview.onDidReceiveMessage = (l: (m: unknown) => void) => { toHost.push(l); return { dispose() {} }; };
+    registerDeliveryBoard({
+      commands: { register: (d: CommandDescriptor, r) => { handlers.set(d.id, r); } },
+      subscriptions: { push: () => undefined },
+      createWebviewPanel: () => panel,
+      rpc: (async (method: string, params?: unknown) => {
+        rpcCalls.push({ method, params });
+        return method === 'workflow.delivery' ? snap : { artifactId: 'LLD-x', kind: 'LLD', meta: {}, body: {}, renderedMarkdown: '# LLD' };
+      }) as never,
+      repo: () => '/ws',
+      logger: { warn: () => {}, error: () => {} },
+      ...(withPane ? { reviewPane: { openArtifact: (t: { artifactId: string; mdPath: string }) => { paneOpens.push({ ...t }); } } } : {}),
+    });
+    await handlers.get('insrc.delivery.openBoard')!();
+    await flush();
+    const sendUp = (payload: unknown) => { for (const l of toHost) l({ v: 1, payload }); };
+    sendUp({ type: 'select-item', itemId: 'S1' });
+    sendUp({ type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' });
+    await flush();
+    const details = panel.posted.map(m => (m as { payload: { type: string; model?: { openedRecord?: unknown } } }).payload).filter(p => p.type === 'details');
+    return { paneOpens, rpcCalls, details };
+  }
+
+  const withPane = await run(true);
+  assert.deepEqual(withPane.paneOpens, [{ artifactId: 'LLD-x', mdPath: 'docs/e/S001/LLD.md' }], 'the record opens in the review pane');
+  assert.deepEqual(withPane.rpcCalls.map(c => c.method), ['workflow.delivery'], 'and the board reads nothing itself');
+
+  const without = await run(false);
+  assert.deepEqual(without.paneOpens, []);
+  assert.deepEqual(without.rpcCalls.map(c => c.method), ['workflow.delivery', 'workflow.deliveryEvidence'], 'without a pane the board reads the record');
+  assert.deepEqual(without.rpcCalls[1]!.params, { repo: '/ws', artifactId: 'LLD-x' });
+  assert.deepEqual(without.details.at(-1)!.model!.openedRecord, { artifactId: 'LLD-x', text: '# LLD' }, 'and shows it read-only');
 });

@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s2",
     "createdAt": "2026-10-09T16:31:36.297Z",
-    "updatedAt": "2026-10-09T17:55:35.726Z"
+    "updatedAt": "2026-10-09T18:12:25.659Z"
   },
   "body": {
     "tasks": [
@@ -702,6 +702,85 @@
             "titles": [
               {
                 "title": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "990a5fce",
+        "ranAt": "2026-10-09T18:12:25.659Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+                "title": "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/retired-roles.test.ts",
+                "title": "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/classifier/__tests__/no-size.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 938,
+            "titles": [
+              {
+                "title": "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
+                "result": "pass"
+              },
+              {
+                "title": "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/retired-roles.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 375,
+            "titles": [
+              {
+                "title": "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)",
                 "result": "pass"
               }
             ],

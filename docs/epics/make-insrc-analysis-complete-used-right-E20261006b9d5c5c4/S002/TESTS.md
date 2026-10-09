@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -231,3 +231,32 @@ Run at 2026-10-09T17:55:35.726Z on commit `555b9166`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/lookup-measure.test.ts` | 0 | 3 | 1 s |  |
 | `src/mcp/__tests__/analyze-step-measure.test.ts` | 0 | 1 | 0.7 s |  |
+
+## t8
+
+Run at 2026-10-09T18:12:25.659Z on commit `990a5fce`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field | `src/analyze/classifier/__tests__/no-size.test.ts` |
+
+**unit: a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default) | `src/analyze/classifier/__tests__/no-size.test.ts` |
+
+**integration: the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path) | `src/config/__tests__/retired-roles.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/classifier/__tests__/no-size.test.ts` | 0 | 2 | 0.9 s |  |
+| `src/config/__tests__/retired-roles.test.ts` | 0 | 1 | 0.4 s |  |

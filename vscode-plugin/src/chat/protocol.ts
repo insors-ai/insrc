@@ -138,6 +138,10 @@ export type HostToWebview =
       // a SECOND, weaker section identity. Absent when there is no ux-mock ref, no
       // ofSectionId on it, or it names no section in this document.
       readonly experienceAnchorSlug?: string | undefined;
+      // E2 S004 (additive): set by openArtifact for an artifact that is not awaiting
+      // review, so the webview shows the document with no approve or request-changes
+      // control. Absent on every other open.
+      readonly readOnly?: boolean | undefined;
     }
   // S001 sc2 (additive): the live echo of the user's prompt on submit, so it appears
   // during the turn (not only on a later session-restored replay). `key` is the row's

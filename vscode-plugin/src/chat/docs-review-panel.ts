@@ -39,6 +39,12 @@ export interface DocsReviewHostDeps {
 export interface DocsReviewHost {
   open(): void;
   dispose(): void;
+  /**
+   * E2 S004 (sc7): open the pane on one artifact, by the id and docs/ markdown path
+   * the delivery board took from the daemon's snapshot. Pending or read-only is
+   * decided from this call's own pending read, never from the pane's refresh.
+   */
+  openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void;
 }
 
 const VIEW_TYPE = 'insrc.docsReviewPanel';
@@ -1253,16 +1259,47 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       post({ type: 'docs-list', artifacts });
     } catch (err) {
       if (mySeq !== refreshSeq) return;
-      log.warn(`[docs-review] pending failed: ${String(err)}`);
-      post({ type: 'docs-list', artifacts: [] });
-      post({
-        type: 'docs-content',
-        artifactId: '',
-        markdown: `docs-review unavailable: ${errText(err)}`,
-        openQuestions: [],
-        blocked: false,
-      });
+      postUnavailable(err);
     }
+  }
+
+  /** A failed pending read: an empty list plus the inline unavailable notice. */
+  function postUnavailable(err: unknown): void {
+    log.warn(`[docs-review] pending failed: ${String(err)}`);
+    post({ type: 'docs-list', artifacts: [] });
+    post({
+      type: 'docs-content',
+      artifactId: '',
+      markdown: `docs-review unavailable: ${errText(err)}`,
+      openQuestions: [],
+      blocked: false,
+    });
+  }
+
+  /**
+   * E2 S004 — openArtifact's own pending read. It bumps refreshSeq so a refresh
+   * already in flight (open()'s, or the boot ping's) is dropped, and posts the
+   * list from this answer while no newer refresh has started. Pending or
+   * read-only is decided from this answer either way, so a later refresh that
+   * supersedes it cannot turn a pending artifact read-only.
+   */
+  async function openArtifactFrom(target: { readonly artifactId: string; readonly mdPath: string }): Promise<void> {
+    const mySeq = ++refreshSeq;
+    let summary: DocsArtifactSummary | undefined;
+    try {
+      const artifacts = await deps.client.pending();
+      if (mySeq === refreshSeq) {
+        pending.clear();
+        for (const a of artifacts) pending.set(a.id, a);
+        post({ type: 'docs-list', artifacts });
+      }
+      summary = artifacts.find((a) => a.id === target.artifactId);
+    } catch (err) {
+      if (mySeq === refreshSeq) postUnavailable(err);
+    }
+    if (disposed) return;
+    if (summary !== undefined) void openDoc(target.artifactId, { kind: summary.kind });
+    else void openDoc(target.artifactId, { path: target.mdPath, readOnly: true });
   }
 
   /**
@@ -1290,11 +1327,20 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  async function openDoc(artifactId: string): Promise<void> {
-    const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
+  /**
+   * Open one document. A list-row open passes no options; openArtifact passes the
+   * kind from its own pending read, or, for an artifact not awaiting review, the
+   * docs/ path to read and readOnly, which the webview shows with no decision control.
+   */
+  async function openDoc(
+    artifactId: string,
+    opts: { readonly kind?: string; readonly path?: string; readonly readOnly?: boolean } = {},
+  ): Promise<void> {
+    const commentable = COMMENTABLE_KINDS.has(opts.kind ?? pending.get(artifactId)?.kind ?? '');
+    const readOnly = opts.readOnly === true ? { readOnly: true } : {};
     const mySeq = ++openSeq;
     try {
-      const content = await deps.client.content(artifactId);
+      const content = await deps.client.content(opts.path ?? artifactId);
       if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
       // t5 — derive the index ONCE per opened document (not per interaction) and
       // post it on the SAME message as the markdown it came from. Deriving it
@@ -1323,6 +1369,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         openQuestions: content.openQuestions,
         blocked: content.blocked,
         commentable,
+        ...readOnly,
         sections,
         // Only when it actually degraded: a successful derivation posts no
         // degradation at all, so `=== undefined` means "nothing went wrong".
@@ -1390,6 +1437,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         openQuestions: [],
         blocked: true,
         commentable,
+        ...readOnly,
       });
     }
   }
@@ -1679,7 +1727,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
       `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +
-      `if(m.artifactId){` +
+      // E2 S004 — a read-only open (not awaiting review) shows a note and no decision control.
+      `if(m.artifactId&&m.readOnly){var ro=document.createElement('div');ro.className='insrc-diff-ctx';ro.textContent='read-only: not awaiting review';actEl.appendChild(ro);}` +
+      `else if(m.artifactId){` +
       `if(m.blocked){var w=document.createElement('div');w.className='insrc-diff-del';w.textContent='blocked — not approvable';actEl.appendChild(w);}` +
       `else{var ok=document.createElement('button');ok.textContent='approve';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:m.artifactId,accept:true}});});actEl.appendChild(ok);}` +
       // request-changes only for kinds the daemon can record a comment on (commentable !== false).
@@ -1762,7 +1812,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  return {
+  const host: DocsReviewHost = {
     open(): void {
       disposed = false;
       if (channel !== undefined) {
@@ -1783,6 +1833,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // consumer (test double) sees the list without waiting for the ping.
       void refreshPending();
     },
+    openArtifact(target): void {
+      host.open();
+      void openArtifactFrom(target);
+    },
     dispose(): void {
       disposed = true;
       channel?.dispose();
@@ -1790,6 +1844,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       pending.clear();
     },
   };
+  return host;
 }
 
 function errText(err: unknown): string {

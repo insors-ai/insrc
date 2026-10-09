@@ -1096,6 +1096,11 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *       off `querySelector('#'+slug)`, which THROWS on a digit-leading slug and
  *       therefore could never anchor on a numbered heading — the format every
  *       real insrc document uses.
+ *   E2 S004/t3 (+172 chars, +172 bytes): the read-only branch of the decision
+ *       controls. An artifact the delivery board opens that is not awaiting review
+ *       arrives with readOnly, and the webview shows a 'read-only: not awaiting
+ *       review' note in place of approve and request-changes. Declared below as
+ *       BOOTSTRAP_DELTA_E2_S004_T3 so the accounting still closes.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1109,9 +1114,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  87244,
-  bytes:  87304,
-  sha256: '8fa812b18dadf8c59a90cecb4fca8f8d7a3ea66e14d1aab024fdcac04472e23d',
+  chars:  87416,
+  bytes:  87476,
+  sha256: 'ad3fbbad6ad13d76316612be6b72a957b7d9d6e95a1893626959131800d61177',
 } as const;
 
 /**
@@ -1144,6 +1149,12 @@ const SHELL_BASELINE_BEFORE_S004_T2 = { chars: 79530, bytes: 79582 } as const;
  * that cannot be named would otherwise hide inside a moved hash.
  */
 const BOOTSTRAP_DELTA_S004_T6 = 498;
+
+/**
+ * E2 S004/t3's BOOTSTRAP delta, declared the same way: the read-only branch ahead of
+ * the decision controls (one note element, no control). Computed at the fixed nonce.
+ */
+const BOOTSTRAP_DELTA_E2_S004_T3 = 172;
 
 function renderShellFor(nonce: string): string {
   const fc = fakeChannel();
@@ -3971,9 +3982,9 @@ test('t2: the pin moved by EXACTLY the declared source string and CSS fragment �
   // shell, this sum would not close. That is what turns a moved pin from "I changed
   // it" into "here is what changed and why it is all of it".
   assert.equal(
-    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars + BOOTSTRAP_DELTA_S004_T6,
+    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars + BOOTSTRAP_DELTA_S004_T6 + BOOTSTRAP_DELTA_E2_S004_T3,
     SHELL_BASELINE.chars,
-    'the delta is exactly the source string, its CSS fragment and the declared t6 bootstrap change',
+    'the delta is exactly the source string, its CSS fragment, the declared t6 bootstrap change and the E2 S004/t3 read-only branch',
   );
   // The bootstrap delta is SMALL on purpose — t6 is one call and one host. If this
   // ever needed to grow materially, the Story would be doing something other than
@@ -5637,4 +5648,86 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
   const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..HEAD`], { cwd: repoRoot, encoding: 'utf8' });
   assert.ok(!changed.includes('docs-sections.ts'),
     'S004 consumes sc3 and mints none of its own section identity');
+});
+
+// E2 S004/t3 — the delivery board's entry point: open the pane on one artifact,
+// read-only when it is not awaiting review.
+test('openArtifact opens a non-pending artifact without approve or request-changes, and a pending one as its list row does', async () => {
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: 'docs/e/S007/BUILD.md' });
+  await tick();
+  await tick();
+  assert.deepEqual(calls.content, ['docs/e/S007/BUILD.md'], 'a non-pending artifact is read by its docs/ path');
+  const ro = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+  assert.equal(ro.payload.artifactId, 'BUILD-abc-s7');
+  assert.equal(ro.payload['readOnly'], true);
+  // A decision on it is dropped by the existing guard: it is not pending.
+  fc.send(env('docs-decision', { artifactId: 'BUILD-abc-s7', accept: true }));
+  await tick();
+  assert.deepEqual(calls.approve, []);
+
+  // The pending one opens as a list-row click: no readOnly key, its actions intact.
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
+  await tick();
+  await tick();
+  assert.equal(calls.content.at(-1), 'LLD-abc-s7', 'opened by id, as a list row is');
+  const live = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+  assert.equal(live.payload.artifactId, 'LLD-abc-s7');
+  assert.equal('readOnly' in live.payload, false);
+  assert.equal(live.payload['commentable'], true);
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  await tick();
+  assert.deepEqual(calls.approve, ['LLD-abc-s7']);
+
+  // Webview side: read-only shows the note and no decision control; without the flag the controls stay.
+  const w = runWebview();
+  w.deliver({ artifactId: 'BUILD-abc-s7', markdown: '# Build', openQuestions: [], blocked: false, commentable: false, readOnly: true });
+  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['read-only: not awaiting review']);
+  const w2 = runWebview();
+  w2.deliver({ artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, commentable: true });
+  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+});
+
+test('openArtifact on a cold pane decides pending from its own pending read, even when the boot ping\'s refresh is superseded', async () => {
+  const fc = fakeChannel();
+  const lld: DocsArtifactSummary[] = [{ id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' }];
+  const gates: Array<(v: DocsArtifactSummary[]) => void> = [];
+  const contents: string[] = [];
+  const client: DocsReviewClient = {
+    pending: () => new Promise<DocsArtifactSummary[]>((resolve) => { gates.push(resolve); }),
+    async content(id) { contents.push(id); return { markdown: '# body', openQuestions: [], blocked: false }; },
+    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
+    async comment() {},
+  };
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' }); // open()'s refresh #0, openArtifact's read #1
+  await tick();
+  fc.send(env('open-doc', { artifactId: '' })); // the boot ping's refresh #2 supersedes #1
+  await tick();
+  assert.equal(gates.length, 3);
+  gates[0]!([]);   // open()'s stale answer, superseded: dropped
+  gates[1]!(lld);  // openArtifact's own answer: the artifact is pending
+  await tick();
+  await tick();
+  assert.deepEqual(contents, ['LLD-abc-s7'], 'opened as pending, by id');
+  const doc = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+  assert.equal('readOnly' in doc.payload, false);
+  assert.equal(doc.payload['commentable'], true);
+  assert.equal(fc.posted.filter((p) => p.payload.type === 'docs-list').length, 0, 'superseded reads post no list');
+  gates[2]!(lld);  // the boot ping's refresh lands and posts the list
+  await tick();
+  assert.equal(fc.posted.filter((p) => p.payload.type === 'docs-list').length, 1);
+
+  // And when openArtifact's own read is the latest, it posts the list itself; a failed read opens read-only.
+  const fc2 = fakeChannel();
+  const { client: c2, calls: calls2 } = fakeClient({ pending: () => { throw new Error('daemon down'); } });
+  createDocsReviewHost({ createPanel: () => fc2.channel, client: c2 }).openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
+  await tick();
+  await tick();
+  assert.deepEqual(calls2.content, ['docs/e/S007/LLD.md']);
+  const notices = fc2.posted.filter((p) => p.payload.type === 'docs-content').map((p) => p.payload.markdown);
+  assert.match(String(notices[0]), /^docs-review unavailable: daemon down/);
+  assert.equal(fc2.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!.payload['readOnly'], true);
 });

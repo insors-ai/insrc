@@ -1,0 +1,128 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/** E2 s1 / sc2 — the board state: one coherent snapshot, the load statuses, a stale board on failure, and the selection across refreshes. */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { boardDownMessages, initialBoardState, INITIAL_SELECTION, reduceBoardState, type BoardEvent, type BoardState } from '../board-state.js';
+import type { BoardDownMessage, StatusView } from '../board-protocol.js';
+import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
+import type { DeliveryFailureKind } from '../delivery-client.js';
+import { DISPLAY_LABELS } from '../labels.js';
+
+function item(id: string, title: string, stage: string | null = 'scoped'): DeliveryItem {
+  return { id, kind: 'story', title, stage: stage === null ? null : { stage } } as unknown as DeliveryItem;
+}
+
+function snapshot(items: readonly DeliveryItem[], extra: Partial<DeliverySnapshot> = {}): DeliverySnapshot {
+  return {
+    schemaVersion: 1, repo: '/ws', takenAt: '2026-10-09T10:00:00.000Z', recordCount: items.length, unreadableCount: 0,
+    items, rootIds: items.map(i => i.id), notices: [], counts: {}, attentionRule: '', ...extra,
+  } as unknown as DeliverySnapshot;
+}
+
+const arrived = (seq: number, s: DeliverySnapshot): BoardEvent => ({ type: 'snapshot-arrived', seq, result: { ok: true, value: s }, at: '2026-10-09T10:00:01.000Z' });
+const failed = (seq: number, kind: DeliveryFailureKind, message: string, at = '2026-10-09T11:00:00.000Z'): BoardEvent =>
+  ({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind, message } }, at });
+
+function run(events: readonly BoardEvent[], from: BoardState = initialBoardState()): BoardState {
+  return events.reduce(reduceBoardState, from);
+}
+
+function statusOf(state: BoardState): StatusView {
+  const first = boardDownMessages(state, DISPLAY_LABELS)[0]?.payload;
+  assert.ok(first !== undefined && first.type === 'status', 'the status message comes first');
+  return first.status;
+}
+
+function itemsOf(state: BoardState): readonly string[] | null {
+  const m = boardDownMessages(state, DISPLAY_LABELS).map(e => e.payload).find((p): p is Extract<BoardDownMessage, { type: 'items' }> => p.type === 'items');
+  return m === undefined ? null : m.items.map(i => i.itemId);
+}
+
+test('an answer to a superseded refresh is dropped and nothing from it is applied', () => {
+  const old = snapshot([item('a', 'Old')]);
+  const fresh = snapshot([item('b', 'Fresh')]);
+  const s = run([
+    { type: 'refresh-requested', seq: 1 },
+    { type: 'refresh-requested', seq: 2 },
+    arrived(1, old),
+  ]);
+  assert.equal(s.status.state, 'loading', 'the seq-1 answer is not applied');
+  assert.equal(s.status.state === 'loading' ? s.status.last : 'x', null);
+  assert.equal(reduceBoardState(s, failed(1, 'read-failed', 'boom')), s, 'a superseded failure leaves state unchanged');
+
+  const done = reduceBoardState(s, arrived(2, fresh));
+  assert.equal(done.status.state, 'ready');
+  assert.deepEqual(itemsOf(done), ['b']);
+  assert.equal(reduceBoardState(done, arrived(1, old)), done, 'a late answer after the newest one is dropped too');
+});
+
+test('empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty', () => {
+  const empty = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([]))]);
+  assert.equal(statusOf(empty).state, 'empty');
+  assert.deepEqual(itemsOf(empty), []);
+
+  assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'daemon-unavailable', 'daemon is not running')])).state, 'unavailable');
+  assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'no-workspace', 'no folder')])).state, 'unavailable');
+  assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'read-failed', 'bad store')])).state, 'failed');
+  assert.equal(statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'timed-out', 'timed out')])).state, 'failed');
+
+  const notice = { code: 'store-incomplete', message: 'The plans folder is missing.', itemIds: [], artifactIds: [], fileNames: [] } as unknown as DeliverySnapshot['notices'][number];
+  const partial = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A'), item('b', 'B', null)], { unreadableCount: 2, notices: [notice] }))]);
+  const pv = statusOf(partial);
+  assert.equal(pv.state, 'ready');
+  assert.match(pv.partialNotice ?? '', /2 records could not be read/);
+  assert.match(pv.partialNotice ?? '', /The plans folder is missing\./);
+  assert.deepEqual(itemsOf(partial), ['a', 'b'], 'every readable item is listed');
+  const entries = boardDownMessages(partial, DISPLAY_LABELS).map(e => e.payload).find(p => p.type === 'items');
+  assert.deepEqual(entries?.type === 'items' ? entries.items.map(i => i.stageLabel) : null, [DISPLAY_LABELS.stage.scoped, null]);
+
+  const unreadableOnly = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([], { unreadableCount: 1 }))]);
+  assert.equal(statusOf(unreadableOnly).state, 'ready', 'not empty: a record failed to load');
+  assert.match(statusOf(unreadableOnly).partialNotice ?? '', /1 record could not be read/);
+});
+
+test('a failed refresh keeps the last snapshot as stale with the failure and its time', () => {
+  const good = run([{ type: 'refresh-requested', seq: 1 }, arrived(1, snapshot([item('a', 'A')]))]);
+  const loading = reduceBoardState(good, { type: 'refresh-requested', seq: 2 });
+  assert.equal(statusOf(loading).state, 'loading');
+  assert.deepEqual(itemsOf(loading), ['a'], 'the last board stays visible while loading');
+
+  const down = reduceBoardState(loading, failed(2, 'timed-out', 'the delivery read took longer than 30 s', '2026-10-09T11:22:33.000Z'));
+  const v = statusOf(down);
+  assert.equal(v.state, 'failed');
+  assert.equal(v.stale, true);
+  assert.equal(v.takenAt, '2026-10-09T10:00:00.000Z', 'the shown board is the last good one');
+  assert.match(v.message ?? '', /2026-10-09T11:22:33\.000Z/);
+  assert.match(v.message ?? '', /took longer than 30 s/);
+  assert.deepEqual(itemsOf(down), ['a']);
+
+  const neverLoaded = statusOf(run([{ type: 'refresh-requested', seq: 1 }, failed(1, 'read-failed', 'bad')]));
+  assert.equal(neverLoaded.stale, false, 'nothing to be stale without a last snapshot');
+});
+
+test('a refresh keeps the selection, and clears a selected item that is gone with a notice', () => {
+  const selection = { ...INITIAL_SELECTION, view: 'issues' as const, search: 'auth', needsAttentionOnly: true, selectedItemId: 'a', density: 'compact' as const };
+  const s = run([
+    { type: 'refresh-requested', seq: 1 },
+    arrived(1, snapshot([item('a', 'A'), item('b', 'B')])),
+    { type: 'selection-changed', selection },
+  ]);
+  assert.deepEqual(s.selection, selection, 'selection-changed changes only the selection');
+
+  const kept = run([{ type: 'refresh-requested', seq: 2 }, arrived(2, snapshot([item('a', 'A2')]))], s);
+  assert.deepEqual(kept.selection, selection);
+  assert.equal(kept.selectionNotice, null);
+
+  const gone = run([{ type: 'refresh-requested', seq: 3 }, arrived(3, snapshot([item('b', 'B')]))], kept);
+  assert.deepEqual(gone.selection, { ...selection, selectedItemId: null });
+  assert.match(gone.selectionNotice ?? '', /no longer in the board/);
+
+  const failedRefresh = run([{ type: 'refresh-requested', seq: 4 }, failed(4, 'read-failed', 'x')], kept);
+  assert.deepEqual(failedRefresh.selection, selection, 'a failed refresh does not touch the selection');
+});

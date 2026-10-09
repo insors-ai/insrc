@@ -61,6 +61,7 @@ import {
 	runRecursivePlanner,
 } from '../planner/index.js';
 import { collectPlanSources, runExecutor } from '../executor/index.js';
+import { resolveTaskScope } from '../runtimes/shared/task-scope.js';
 import type { ExecutorResult } from '../executor/types.js';
 import type { PlanTreeNode } from '../planner/recursive.js';
 import {
@@ -378,6 +379,28 @@ async function runStages(
 		writeRunRecord(record);
 		log.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
+	}
+	// The run checks its intent's scope once, before it plans, with the scope
+	// function every plan task will use. For a docs run this is the first place
+	// the index is checked (the context builder checks it for the code source
+	// only): without it, a docs run on a scope in no registered repo would be
+	// planned and then fail in every task. A generic intent has no family row
+	// and is not checked.
+	if (intent.target !== 'generic') {
+		try {
+			await resolveTaskScope(intent.scopeRef, intent.target, 'the run');
+		} catch (err) {
+			const scoped = scopeErrorMapping(err);
+			// Anything that is not a refused scope goes to runAnalyze's handler.
+			if (scoped === undefined) throw err;
+			// The mapping is a run failure as it stands: the code, the message and,
+			// for a scope that is not indexed, the scope's path and its registration.
+			const failure: RunFailure = scoped;
+			record = patch(record, { stage: 'plan', status: 'failed', error: failure });
+			writeRunRecord(record);
+			log.warn({ runId, code: failure.code }, "runAnalyze: the run's scope was refused before planning");
+			return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
+		}
 	}
 	emit({
 		type: 'stage-substep',

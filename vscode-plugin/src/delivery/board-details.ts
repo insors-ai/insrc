@@ -18,6 +18,7 @@ import type { DeliveryEvidenceView, DeliveryItemView, DeliverySnapshot } from '.
 import type { DisplayLabels } from './labels.js';
 import type { BadgeView, ChainRowView, EvidenceRowView, ItemDetailsViewModel, TaskRowView } from './board-protocol.js';
 import { badgesOf, compactIdOf, indexItems, isCardKind, taskSummaryOf, titleOf, type ItemIndex } from './board-model.js';
+import { approvalTone, labelOf } from './labels.js';
 
 export interface PlanTaskView {
   readonly id: string;
@@ -35,10 +36,6 @@ export type PlanRead =
 /** An evidence-read record the reader opened, as read-only text. */
 export interface OpenedRecord { readonly artifactId: string; readonly text: string }
 
-/** A label from the table, or the code itself when the daemon publishes one the plugin does not know. */
-function labelOf<K extends string>(table: Readonly<Record<K, string>>, code: K): string {
-  return Object.hasOwn(table, code) ? table[code] : String(code);
-}
 
 function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, labels: DisplayLabels): TaskRowView[] {
   const taskItems = item.tasks.map(t => byId.get(t.taskItemId)).filter((t): t is DeliveryItemView => t !== undefined);
@@ -112,7 +109,6 @@ const EXPECTED_BY_ROUTE: Readonly<Record<DeliveryRoute, readonly ChainKind[]>> =
 
 const isChainKind = (kind: string): kind is ChainKind => (CHAIN_ORDER as readonly string[]).includes(kind);
 
-const APPROVAL_TONE: Readonly<Record<DeliveryEvidenceView['approval']['state'], BadgeView['tone']>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
 
 /**
  * The item's artifact chain: its own DEF/HLD/ISSUE/LLD/PLAN/BUILD records, the DEF and HLD of its parent epic, and the
@@ -137,7 +133,7 @@ function chainOf(item: DeliveryItemView, byId: ItemIndex, labels: DisplayLabels)
       rows.push({
         kind, status: 'recorded', artifactId: e.artifactId,
         label: labelOf(labels.approval, e.approval.state),
-        tone: Object.hasOwn(APPROVAL_TONE, e.approval.state) ? APPROVAL_TONE[e.approval.state] : 'neutral',
+        tone: approvalTone(e.approval.state),
         note: e.review === null ? null : labelOf(labels.reviewVerdict, e.review.verdict),
       });
     }
@@ -190,7 +186,7 @@ export function buildItemDetails(
   const conflictText = conflictSentence(item, byId);
   return {
     itemId: item.id,
-    kicker: `${KICKER_KIND[item.kind]} \u00b7 ${compactIdOf(item.id)}`,
+    kicker: `${Object.hasOwn(KICKER_KIND, item.kind) ? KICKER_KIND[item.kind] : String(item.kind).toUpperCase()} \u00b7 ${compactIdOf(item.id)}`,
     title: titleOf(item),
     stageLabel: stage === null ? null : labelOf(labels.stage, stage.stage),
     stageReason: stage === null ? null : { text: stage.reason.text, artifactIds: [...stage.reason.artifactIds] },

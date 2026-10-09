@@ -250,3 +250,18 @@ test('accessibleLabel carries the compactId and task summary, and badges are unc
   assert.equal(card.accessibleLabel, 'Story: Ship it. Id: ABCDEF01 / S001. Stage: Scoped. 3/3 tasks passed. Signals: Passed.');
   assert.deepEqual(card.badges, [{ kind: 'validation', label: 'Passed', tone: 'success' }], 'the badges are the same as before');
 });
+
+test('an approval state or review verdict this build does not know shows its code, ranks worst and is neutral, with no undefined label', () => {
+  const evOf = (artifactId: string, state: string, verdict: string | null) => ({
+    artifactId, kind: 'LLD', mdPath: null, openWith: 'evidence-read', approval: { state, at: null }, reviewCurrency: null,
+    review: verdict === null ? null : { verdict, effectiveVerdict: verdict, blocking: false, override: null },
+  });
+  const s1 = item({ id: 'S1', stage: 'design-plan', reasonIds: ['A', 'B'],
+    evidence: [evOf('A', 'approved', 'pass'), evOf('B', 'superseded', 'escalated')] as never });
+  const card = cardOfId(build(snapshot([s1])), 'S1')!;
+  assert.deepEqual(card.badges.slice(0, 2), [
+    { kind: 'approval', label: 'superseded', tone: 'neutral' },
+    { kind: 'review', label: 'escalated', tone: 'neutral' },
+  ], 'the unknown code is the worst, so it is the one shown, as its own text');
+  assert.doesNotMatch(card.accessibleLabel, /undefined/);
+});

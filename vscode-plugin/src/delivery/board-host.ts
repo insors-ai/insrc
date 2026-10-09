@@ -42,7 +42,7 @@ import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
 import { createDetailsMemory, type DetailsMemory } from './details-memory.js';
 import { errorText } from './guards.js';
-import { DISPLAY_LABELS } from './labels.js';
+import { DISPLAY_LABELS, labelOf } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
 export const BOARD_TITLE = 'Delivery board';
@@ -434,9 +434,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     const messages = details === null
       ? boardDownMessages(next, DISPLAY_LABELS, nextPaging, now)
       : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging, now), details];
+    // Told before anything is kept, so a throw here leaves state and paging as they were and posts nothing.
+    memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
     state = next;
     paging = nextPaging;
-    memory.kept(shownSnapshot(next.status)?.snapshot ?? null, next.selection.selectedItemId);
     for (const m of messages) channel?.postMessage(m);
   }
 
@@ -559,7 +560,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   function announceSelection(itemId: string): void {
     const item = shownSnapshot(state.status)?.snapshot.items.find(i => i.id === itemId);
     if (item === undefined) return;
-    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${DISPLAY_LABELS.stage[item.stage.stage] ?? item.stage.stage}`}`);
+    announce(`Selected: ${titleOf(item)}${item.stage === null ? '' : ` \u00b7 ${labelOf(DISPLAY_LABELS.stage, item.stage.stage)}`}`);
   }
 
   function select(selection: BoardSelection, nextPaging: BoardPaging = paging): void {

@@ -36,6 +36,17 @@ export interface DisplayLabels {
   readonly noMatchesTitle: string;
 }
 
+/** A label from the table, or the code itself when the daemon publishes one this build does not know. */
+export function labelOf<K extends string>(table: Readonly<Record<K, string>>, code: K): string {
+  return Object.hasOwn(table, code) ? table[code] : String(code);
+}
+
+/** The tone of each approval state; a state this build does not know is neutral. */
+const APPROVAL_TONES: Readonly<Record<ApprovalState, 'success' | 'warning' | 'danger'>> = { approved: 'success', pending: 'warning', rejected: 'danger' };
+export function approvalTone(state: ApprovalState): 'success' | 'warning' | 'danger' | 'neutral' {
+  return Object.hasOwn(APPROVAL_TONES, state) ? APPROVAL_TONES[state] : 'neutral';
+}
+
 /** The six stages in workflow order, the order the board shows its columns. */
 export const STAGE_ORDER: readonly DeliveryStage[] = [
   'scoped',

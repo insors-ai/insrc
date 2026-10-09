@@ -20,7 +20,7 @@
 import type { BadgeView, BoardViewModel, CardView, ColumnView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { AttentionReason, DeliveryItemView, DeliverySnapshot, DeliveryStage } from './delivery-contract.js';
-import { STAGE_ORDER, type DisplayLabels } from './labels.js';
+import { approvalTone, labelOf, STAGE_ORDER, type DisplayLabels } from './labels.js';
 
 /** Cards shown per column before show-more, and how many each show-more adds. */
 export const BOARD_PAGE_SIZE = 50;
@@ -93,9 +93,10 @@ function matchesSearch(item: DeliveryItemView, epic: DeliveryItemView | null, ne
 export type CardItem = DeliveryItemView & { readonly kind: 'story' | 'issue' };
 type Tone = BadgeView['tone'];
 
-const APPROVAL_RANK = { rejected: 0, pending: 1, approved: 2 } as const;
-const APPROVAL_TONE: Readonly<Record<keyof typeof APPROVAL_RANK, Tone>> = { rejected: 'danger', pending: 'warning', approved: 'success' };
-const VERDICT_RANK = { block: 0, warn: 1, pass: 2 } as const;
+const APPROVAL_RANK: Readonly<Record<string, number>> = { rejected: 0, pending: 1, approved: 2 };
+const VERDICT_RANK: Readonly<Record<string, number>> = { block: 0, warn: 1, pass: 2 };
+/** A code's rank, worst first; a code this build does not know ranks worst, so it is the one shown. */
+const rankOf = (table: Readonly<Record<string, number>>, code: string): number => (Object.hasOwn(table, code) ? table[code]! : -1);
 const ATTENTION_TONE: Readonly<Record<AttentionReason, Tone>> = {
   'pending-decision': 'warning',
   'rejected': 'danger',
@@ -120,16 +121,16 @@ export function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeV
   const named = item.evidence.filter(e => deciding.has(e.artifactId));
 
   // Approval: the worst approval among the records the stage reason names.
-  const approval = named.map(e => e.approval.state).sort((a, b) => APPROVAL_RANK[a] - APPROVAL_RANK[b])[0];
-  if (approval !== undefined) add('approval', labels.approval[approval], APPROVAL_TONE[approval]);
+  const approval = named.map(e => e.approval.state).sort((a, b) => rankOf(APPROVAL_RANK, a) - rankOf(APPROVAL_RANK, b))[0];
+  if (approval !== undefined) add('approval', labelOf(labels.approval, approval), approvalTone(approval));
 
   // Review: any blocking review blocks; otherwise the worst effective verdict among the named records.
   if (item.evidence.some(e => e.review?.blocking === true)) {
     add('review', labels.reviewVerdict.block, 'danger');
   } else {
-    const verdict = named.flatMap(e => (e.review === null ? [] : [e.review.effectiveVerdict])).sort((a, b) => VERDICT_RANK[a] - VERDICT_RANK[b])[0];
+    const verdict = named.flatMap(e => (e.review === null ? [] : [e.review.effectiveVerdict])).sort((a, b) => rankOf(VERDICT_RANK, a) - rankOf(VERDICT_RANK, b))[0];
     // A 'block' that no longer blocks (overridden, or its gate approved) is shown, but not as danger.
-    if (verdict !== undefined) add('review', labels.reviewVerdict[verdict], verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral');
+    if (verdict !== undefined) add('review', labelOf(labels.reviewVerdict, verdict), verdict === 'pass' ? 'success' : verdict === 'warn' ? 'warning' : 'neutral');
   }
 
   // Validation: task results and the story-level result together.
@@ -153,7 +154,7 @@ export function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeV
     if (codes.has(n.code)) continue;
     codes.add(n.code);
     // A code this build has no label for (a newer daemon) shows its id rather than nothing.
-    const label = Object.hasOwn(labels.notice, n.code) ? labels.notice[n.code] : String(n.code);
+    const label = labelOf(labels.notice, n.code);
     add('notice', label, n.attention ? 'warning' : 'neutral');
   }
   return out;
@@ -190,7 +191,7 @@ function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | n
   const badges = badgesOf(item, labels);
   const compactId = compactIdOf(item.id);
   const taskSummary = taskSummaryOf(item);
-  const parts = [`${KIND_TEXT[item.kind]}: ${title}.`, `Id: ${compactId}.`, `Stage: ${labels.stage[stage]}.`];
+  const parts = [`${KIND_TEXT[item.kind]}: ${title}.`, `Id: ${compactId}.`, `Stage: ${labelOf(labels.stage, stage)}.`];
   if (taskSummary !== null) parts.push(`${taskSummary.label}.`);
   if (item.standalone) parts.push('Standalone.');
   else if (epicTitle !== null) parts.push(`Epic: ${epicTitle}.`);
@@ -271,7 +272,7 @@ export function buildBoardViewModel(snapshot: DeliverySnapshot, selection: Board
   const columns: ColumnView[] = STAGE_ORDER.map(stage => {
     const all = (byStage.get(stage) ?? []).map(m => m.card);
     const shown = all.slice(0, Math.max(0, paging[stage] ?? BOARD_PAGE_SIZE));
-    return { stage, label: labels.stage[stage], total: all.length, cards: shown, hiddenCount: all.length - shown.length };
+    return { stage, label: labelOf(labels.stage, stage), total: all.length, cards: shown, hiddenCount: all.length - shown.length };
   });
   const items = columns.reduce((n, c) => n + c.total, 0);
   return {

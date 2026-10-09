@@ -14,7 +14,7 @@ import { attentionCount, compactIdOf, indexItems, isPlaceable, placeableCount, s
 import type { EpicRollupRowView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
-import type { DisplayLabels } from './labels.js';
+import { labelOf, type DisplayLabels } from './labels.js';
 
 export const NOT_IN_EPIC_TITLE = 'Not in an epic';
 
@@ -103,7 +103,7 @@ function linkOf(item: DeliveryItemView, labels: DisplayLabels): LinkView {
     itemId: item.id,
     kind: item.kind,
     title: titleOf(item),
-    stageLabel: stage === undefined ? null : Object.hasOwn(labels.stage, stage) ? labels.stage[stage] : String(stage),
+    stageLabel: stage === undefined ? null : labelOf(labels.stage, stage),
   };
 }
 
@@ -130,7 +130,7 @@ export function buildIssueView(snapshot: DeliverySnapshot, selection: BoardSelec
     }
     issues.push({
       card: m.card,
-      stageLabel: labels.stage[m.stage],
+      stageLabel: labelOf(labels.stage, m.stage),
       parent: parentItem === undefined ? null : linkOf(parentItem, labels),
       parentNotice: parentItem !== undefined ? null : notice ?? (recordedButMissing ? PARENT_NOT_ON_BOARD : null),
       fixStories,

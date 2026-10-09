@@ -228,3 +228,10 @@ test('the chain takes DEF and HLD only from a parent epic, and ISSUE only from a
   assert.deepEqual(chainOf(snap, 'E1:S001'), [['DEF', 'DEF-e'], ['HLD', 'HLD-e'], ['LLD', 'LLD-a'], ['PLAN', 'Not recorded'], ['BUILD', 'Not recorded']],
     "an epic story shows its epic's DEF and HLD, never an ISSUE recorded on the epic");
 });
+
+test('an item kind or approval state this build does not know still gives a readable kicker and a neutral chain row', () => {
+  const odd = { ...item({ id: 'X1', stage: null, evidence: [ev('LLD-x', 'LLD', { approval: { state: 'superseded' as never, at: null } })] as never }), kind: 'milestone' } as never;
+  const d = buildItemDetails(snapshot([odd]), 'X1', NONE, null, DISPLAY_LABELS)!;
+  assert.equal(d.kicker, 'MILESTONE · X1');
+  assert.deepEqual(d.chain.map(r => [r.kind, r.label, r.tone]), [['LLD', 'superseded', 'neutral']]);
+});

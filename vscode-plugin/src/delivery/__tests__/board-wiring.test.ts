@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/** E2 s1 / t6 — extension.ts wires the delivery board: the command, its logger, its client, and that none of it sits behind the chat gate. */
+/** E2 s1 / t6 — the delivery board's wiring: running the registered command over fakes, and that extension.ts calls it outside the chat gate. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,12 +11,40 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import type { CommandDescriptor, CommandRegistry } from '../../surfaces/command-registry.js';
+import { registerDeliveryBoard, type BoardWebviewPanel } from '../board-wiring.js';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EXT = readFileSync(join(HERE, '..', '..', 'extension.ts'), 'utf8');
-const REGISTRY = readFileSync(join(HERE, '..', '..', 'surfaces', 'command-registry.ts'), 'utf8');
 const PKG = JSON.parse(readFileSync(join(HERE, '..', '..', '..', 'package.json'), 'utf8')) as {
   contributes?: { commands?: Array<{ command: string; title: string; category?: string }> };
 };
+
+interface FakePanel extends BoardWebviewPanel {
+  readonly posted: unknown[];
+  reveals: number;
+  disposed: boolean;
+  close(): void;
+}
+
+function fakePanel(): FakePanel {
+  let onDispose: (() => void) | undefined;
+  const p: FakePanel = {
+    webview: {
+      html: '',
+      postMessage: (m) => { p.posted.push(m); return Promise.resolve(true); },
+      onDidReceiveMessage: () => undefined,
+    },
+    posted: [],
+    reveals: 0,
+    disposed: false,
+    onDidDispose: (l) => { onDispose = l; },
+    reveal: () => { p.reveals++; },
+    dispose: () => { p.disposed = true; onDispose?.(); },
+    close: () => onDispose?.(),
+  };
+  return p;
+}
 
 /** [start, end) of the `if (chatEnabled) { … }` block, found by brace matching. */
 function chatGateSpan(src: string): readonly [number, number] {
@@ -30,27 +58,63 @@ function chatGateSpan(src: string): readonly [number, number] {
   throw new Error('unbalanced chat gate');
 }
 
-test('extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client', () => {
+const flush = () => new Promise<void>(r => setImmediate(r));
+
+test('extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client', async () => {
   const cmd = PKG.contributes?.commands?.find(c => c.command === 'insrc.delivery.openBoard');
   assert.deepEqual(cmd, { command: 'insrc.delivery.openBoard', title: 'Open delivery board', category: 'insrc' });
-  assert.match(REGISTRY, /\| 'insrc\.delivery\.openBoard'/);
 
+  // extension.ts calls the wiring once, outside the insrc.chat.enabled gate, with the workspace folder and the two-sink logger.
   const [gateStart, gateEnd] = chatGateSpan(EXT);
-  const at = (needle: string): number => {
-    const i = EXT.indexOf(needle);
-    assert.ok(i >= 0, `extension.ts contains ${needle}`);
-    return i;
-  };
-  for (const needle of ["commands.register({ id: 'insrc.delivery.openBoard'", 'createDeliveryBoardHost({', 'createDeliveryClient({']) {
-    const i = at(needle);
-    assert.ok(i < gateStart || i >= gateEnd, `${needle} sits outside the insrc.chat.enabled gate`);
-  }
+  const call = EXT.indexOf('registerDeliveryBoard({');
+  assert.ok(call >= 0 && (call < gateStart || call >= gateEnd), 'registerDeliveryBoard is called outside the chat gate');
+  const args = EXT.slice(call, EXT.indexOf('});', call));
+  assert.match(args, /rpc: client\.rpc/);
+  assert.match(args, /repo: vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null/);
+  assert.match(args, /warn: panelLog\.warn, error: .*console\.error/);
+  assert.match(args, /vscode\.ViewColumn\.Active, \{ enableScripts: true \}/);
 
-  const wiring = EXT.slice(at('createDeliveryBoardHost({'), at("commands.register({ id: 'insrc.delivery.openBoard'"));
-  assert.match(wiring, /logger: \{ warn: panelLog\.warn, error: \(message: string\): void => console\.error\(`\[insrc\] \$\{message\}`\) \}/);
-  assert.match(wiring, /rpc: client\.rpc,/);
-  assert.match(wiring, /repo: vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \?\? null,/);
-  assert.match(wiring, /deadlinesMs: \{ snapshot: 30_000, evidence: 15_000 \}/);
-  assert.match(wiring, /createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\)/);
-  assert.match(EXT, /const client = createIpcClient\(\);/);
+  // Running the registered command over fakes.
+  const handlers = new Map<string, () => Promise<void>>();
+  const commands: CommandRegistry = { register: (d: CommandDescriptor, run) => { handlers.set(d.id, run); } };
+  const disposables: { dispose(): void }[] = [];
+  const panels: { viewType: string; title: string; panel: FakePanel }[] = [];
+  const rpcCalls: { method: string; params: unknown }[] = [];
+  const logs = { warn: [] as string[], error: [] as string[] };
+  registerDeliveryBoard({
+    commands,
+    subscriptions: { push: (d) => disposables.push(d as { dispose(): void }) },
+    createWebviewPanel: (viewType, title) => { const panel = fakePanel(); panels.push({ viewType, title, panel }); return panel; },
+    rpc: (async (method: string, params?: unknown) => {
+      rpcCalls.push({ method, params });
+      throw new Error('daemon is not running — start it with: insrc daemon start');
+    }) as never,
+    repo: '/ws',
+    logger: { warn: m => logs.warn.push(m), error: m => logs.error.push(m) },
+  });
+  const open = handlers.get('insrc.delivery.openBoard');
+  assert.ok(open, 'the command is registered');
+
+  await open();
+  await flush();
+  assert.deepEqual(panels.map(p => [p.viewType, p.title]), [['insrc.deliveryBoard', 'Delivery board']]);
+  const first = panels[0]!.panel;
+  assert.match(first.webview.html, /default-src 'none'/);
+  assert.deepEqual(rpcCalls, [{ method: 'workflow.delivery', params: { repo: '/ws' } }], 'the client is scoped to the workspace folder');
+  const states = first.posted.map(m => (m as { payload: { type: string; status?: { state: string } } }).payload).filter(p => p.type === 'status').map(p => p.status?.state);
+  assert.deepEqual(states, ['loading', 'unavailable']);
+  assert.equal(logs.error.length, 1, 'the failure reaches the logger\'s error sink');
+  assert.match(logs.error[0]!, /daemon-unavailable/);
+
+  await open();
+  await flush();
+  assert.equal(panels.length, 1, 'a second run reveals the same panel');
+  assert.equal(first.reveals, 1);
+  assert.equal(rpcCalls.length, 2, 'and refreshes');
+
+  assert.equal(disposables.length, 1);
+  disposables[0]!.dispose();
+  assert.equal(first.disposed, true, 'deactivation closes the board');
+  await open();
+  assert.equal(panels.length, 2, 'the next run opens a new panel');
 });

@@ -119,7 +119,7 @@ test('when the earlier refresh answers after the later one, only the later snaps
   assert.deepEqual(lastItems(ch), ['new']);
   assert.equal(payloads(ch).some(p => p.type === 'items' && p.items.some(i => i.itemId === 'old')), false);
   assert.equal(logs.warn.length, 1);
-  assert.match(logs.warn[0]!, /dropped the answer to refresh 1/);
+  assert.match(logs.warn[0]!, /dropped the answer to refresh 1 \(1 item\)/);
 
   ch.send({ v: 1, payload: { type: 'refresh' } });
   calls[2]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took longer than 30 s' } });

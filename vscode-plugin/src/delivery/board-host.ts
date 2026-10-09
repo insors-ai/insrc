@@ -118,7 +118,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
     const at = deps.now();
     if (seq !== state.latestSeq) {
-      deps.logger.warn(`delivery board: dropped the answer to refresh ${seq}; refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
+      const n = result.ok ? result.value.items.length : 0;
+      const answer = result.ok ? `${n} item${n === 1 ? '' : 's'}` : result.failure.kind;
+      deps.logger.warn(`delivery board: dropped the answer to refresh ${seq} (${answer}); refresh ${state.latestSeq} is newer (${elapsedMs(started)} ms)`);
       return;
     }
     if (!result.ok) {

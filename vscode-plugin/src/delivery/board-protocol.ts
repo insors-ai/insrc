@@ -16,6 +16,7 @@
  */
 
 import type { Envelope } from '../chat/protocol.js';
+import { isObject } from './guards.js';
 
 export type { Envelope };
 
@@ -67,7 +68,6 @@ export type BoardUpMessage =
   | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }
   | { readonly type: 'set-density'; readonly density: Density };
 
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
 function parseScope(v: unknown): BoardScope | null {

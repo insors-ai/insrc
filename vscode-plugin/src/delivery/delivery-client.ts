@@ -17,6 +17,7 @@
  */
 
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from './delivery-contract.js';
+import { isObject } from './guards.js';
 
 export type DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';
 
@@ -49,7 +50,6 @@ const NO_WORKSPACE = 'Open a folder to see its delivery board.';
 
 const fail = <T>(kind: DeliveryFailureKind, message: string): DeliveryResult<T> => ({ ok: false, failure: { kind, message } });
 
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** One rpc call bounded by a deadline; resolves to the answer, a rejection, or the timeout, whichever comes first. */
 function race(call: () => Promise<unknown>, deadlineMs: number): Promise<{ readonly kind: 'answer'; readonly value: unknown } | { readonly kind: 'rejected'; readonly error: unknown } | { readonly kind: 'timeout' }> {
@@ -87,37 +87,40 @@ function daemonError(value: unknown): string | null {
   return isObject(value) && typeof value['error'] === 'string' ? value['error'] : null;
 }
 
+/** One bounded daemon call, classified: no workspace, timeout, rejection, the daemon's { error } arm, or a non-object answer. */
+async function callDaemon(
+  deps: DeliveryClientDeps,
+  method: 'workflow.delivery' | 'workflow.deliveryEvidence',
+  params: Record<string, string>,
+  deadlineMs: number,
+  what: string,
+): Promise<DeliveryResult<Record<string, unknown>>> {
+  if (deps.repo === null) return fail('no-workspace', NO_WORKSPACE);
+  const repo = deps.repo;
+  const outcome = await race(() => deps.rpc(method, { repo, ...params }), deadlineMs);
+  if (outcome.kind === 'timeout') return fail('timed-out', `The daemon did not answer ${method} within ${deadlineMs / 1000} s.`);
+  if (outcome.kind === 'rejected') return rejectionFailure(outcome.error);
+  const error = daemonError(outcome.value);
+  if (error !== null) return fail('read-failed', error);
+  if (!isObject(outcome.value)) return fail('read-failed', `The daemon returned ${what} that is not an object.`);
+  return { ok: true, value: outcome.value };
+}
+
 export function createDeliveryClient(deps: DeliveryClientDeps): DeliveryClient {
   return {
     async snapshot() {
-      if (deps.repo === null) return fail('no-workspace', NO_WORKSPACE);
-      const repo = deps.repo;
-      const outcome = await race(() => deps.rpc('workflow.delivery', { repo }), deps.deadlinesMs.snapshot);
-      if (outcome.kind === 'timeout') {
-        return fail('timed-out', `The daemon did not answer workflow.delivery within ${deps.deadlinesMs.snapshot / 1000} s.`);
+      const r = await callDaemon(deps, 'workflow.delivery', {}, deps.deadlinesMs.snapshot, 'a delivery snapshot');
+      if (!r.ok) return r;
+      if (r.value['schemaVersion'] !== 1) {
+        return fail('read-failed', `The daemon returned delivery snapshot schemaVersion ${String(r.value['schemaVersion'])}; this board reads schemaVersion 1.`);
       }
-      if (outcome.kind === 'rejected') return rejectionFailure(outcome.error);
-      const error = daemonError(outcome.value);
-      if (error !== null) return fail('read-failed', error);
-      if (!isObject(outcome.value)) return fail('read-failed', 'The daemon returned a delivery snapshot that is not an object.');
-      if (outcome.value['schemaVersion'] !== 1) {
-        return fail('read-failed', `The daemon returned delivery snapshot schemaVersion ${String(outcome.value['schemaVersion'])}; this board reads schemaVersion 1.`);
-      }
-      return { ok: true, value: outcome.value as unknown as DeliverySnapshot };
+      return { ok: true, value: r.value as unknown as DeliverySnapshot };
     },
 
     async evidence(artifactId) {
-      if (deps.repo === null) return fail('no-workspace', NO_WORKSPACE);
-      const repo = deps.repo;
-      const outcome = await race(() => deps.rpc('workflow.deliveryEvidence', { repo, artifactId }), deps.deadlinesMs.evidence);
-      if (outcome.kind === 'timeout') {
-        return fail('timed-out', `The daemon did not answer workflow.deliveryEvidence within ${deps.deadlinesMs.evidence / 1000} s.`);
-      }
-      if (outcome.kind === 'rejected') return rejectionFailure(outcome.error);
-      const error = daemonError(outcome.value);
-      if (error !== null) return fail('read-failed', error);
-      if (!isObject(outcome.value)) return fail('read-failed', 'The daemon returned an evidence record that is not an object.');
-      return { ok: true, value: outcome.value as unknown as DeliveryEvidenceRecord };
+      const r = await callDaemon(deps, 'workflow.deliveryEvidence', { artifactId }, deps.deadlinesMs.evidence, 'an evidence record');
+      if (!r.ok) return r;
+      return { ok: true, value: r.value as unknown as DeliveryEvidenceRecord };
     },
   };
 }

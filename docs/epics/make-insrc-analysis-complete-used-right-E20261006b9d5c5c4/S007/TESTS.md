@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 37 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -211,3 +211,19 @@ Run at 2026-10-09T06:30:49.274Z on commit `214914ce`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/__tests__/scope-sources.test.ts` | 0 | 4 | 0.5 s |  |
 | `src/analyze/runtimes/docs/__tests__/docs-scope.test.ts` | 0 | 2 | 1.1 s |  |
+
+## t7
+
+Run at 2026-10-09T06:37:15.408Z on commit `7d2ada00`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare) | `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` | 0 | 1 | 1.4 s |  |

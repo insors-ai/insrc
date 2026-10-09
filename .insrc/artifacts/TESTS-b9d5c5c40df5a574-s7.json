@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:30:49.274Z"
+    "updatedAt": "2026-10-09T06:37:15.408Z"
   },
   "body": {
     "tasks": [
@@ -1049,6 +1049,42 @@
               },
               {
                 "title": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7d2ada00",
+        "ranAt": "2026-10-09T06:37:15.408Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1446,
+            "titles": [
+              {
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
                 "result": "pass"
               }
             ],

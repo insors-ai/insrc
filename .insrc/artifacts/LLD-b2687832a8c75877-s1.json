@@ -175,6 +175,13 @@
         "choice": "Accept the LLD deviation (wrap empty labels inline)",
         "rationale": "Confirmed by the user in chat on 2026-10-09; recorded on the LLD review as fix-targets-defect.1 resolved.",
         "resolvedAt": "2026-10-09T16:45:38.059Z"
+      },
+      "qb1dffdca": {
+        "question": "Standalone bugfix stories carry no acceptance criteria (6f31771d); ac1-ac8 in the test strategy are derived from ISSUE-b2687832's fix intent. Confirm they stand in for the story's criteria.",
+        "status": "resolved",
+        "choice": "Accept ac1-ac8 as the story's criteria",
+        "rationale": "Standalone bugfix stories carry no criteria (6f31771d); ac1-ac8 trace one-to-one to the approved ISSUE-b2687832 fix intent.",
+        "resolvedAt": "2026-10-09T16:45:58.325Z"
       }
     }
   },

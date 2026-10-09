@@ -477,6 +477,8 @@ First story: rewrite BOARD_STYLE and the document chrome, restyle existing eleme
 
 - `q20f1064b` — Mock E folds empty stages under an 'Other stages · 0 matching' disclosure; this LLD instead wraps empty stage labels (each with its 0 count chip) onto one compact line in narrow panes, because the same DOM serves the wide board where empty columns must stay visible and the no-hiding rule forbids collapsing them. Confirm this deviation from the ISSUE's fix intent.
   - **resolved**: Accept the LLD deviation (wrap empty labels inline) — Confirmed by the user in chat on 2026-10-09; recorded on the LLD review as fix-targets-defect.1 resolved. _(2026-10-09T16:45:38.059Z)_
+- `qb1dffdca` — Standalone bugfix stories carry no acceptance criteria (6f31771d); ac1-ac8 in the test strategy are derived from ISSUE-b2687832's fix intent. Confirm they stand in for the story's criteria.
+  - **resolved**: Accept ac1-ac8 as the story's criteria — Standalone bugfix stories carry no criteria (6f31771d); ac1-ac8 trace one-to-one to the approved ISSUE-b2687832 fix intent. _(2026-10-09T16:45:58.325Z)_
 
 ## Citations
 

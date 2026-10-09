@@ -262,8 +262,10 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let planSnapshot: DeliverySnapshot | null = null;
   let plans = new Map<string, PlanRead>();
   let opened: (OpenedRecord & { readonly itemId: string }) | null = null;
-  /** Bumped by every open-evidence, close and selection change; only the latest record read is shown. */
+  /** Bumped by every accepted open-evidence, close, selection change and new snapshot; only the latest record read is shown. */
   let recordSeq = 0;
+  /** The snapshot the last kept state showed; a different one supersedes record reads made against it. */
+  let shownLast: DeliverySnapshot | null = null;
 
   /** One evidence read, a throw turned into a typed failure; null when the panel closed meanwhile. */
   async function readEvidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord> | null> {
@@ -386,6 +388,11 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     state = next;
     paging = nextPaging;
     for (const m of messages) channel?.postMessage(m);
+    const shown = shownSnapshot(next.status)?.snapshot ?? null;
+    if (shown !== shownLast) {
+      shownLast = shown;
+      recordSeq++;
+    }
     readPlanFor(next);
   }
 
@@ -525,6 +532,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     planSnapshot = null;
     plans = new Map();
     opened = null;
+    shownLast = null;
   }
 
   return {

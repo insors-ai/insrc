@@ -805,6 +805,18 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   await flush();
   assert.deepEqual(detailsOf(ch4).at(-1)!.tasks[1]!.dependsOn, ['Types'], 'the new snapshot\'s own read is');
 
+  // A record read that answers after a newer snapshot was applied is dropped, as a stale plan read is.
+  const s7 = detailsSetup();
+  const ch7 = await openOn(s7, storySnapshot());
+  send(ch7, { type: 'select-item', itemId: 'S1' });
+  send(ch7, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  send(ch7, { type: 'refresh' });
+  s7.snapshots[1]!.resolve({ ok: true, value: storySnapshot('2026-10-09T11:05:00.000Z') });
+  await flush();
+  s7.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Old build' } });
+  await flush();
+  assert.equal(detailsOf(ch7).at(-1)!.openedRecord, null, 'the old snapshot\'s record is not shown');
+
   // A board that cannot be re-shown when an answer arrives logs the failure instead of rejecting unseen.
   const s6 = detailsSetup();
   const ch6 = await openOn(s6, storySnapshot());

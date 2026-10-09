@@ -28,7 +28,7 @@
  * See state-store.ts for the store's TTL + LRU eviction contract.
  */
 
-import type { ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { AnalyzeScope, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	ExecutedPlan,
 	ExplorationPlan,
@@ -70,7 +70,12 @@ export interface StepStatePayload {
 	/** Repo watermark at the moment of `start`. Invalidates the run if
 	 *  the repo re-indexes mid-loop. */
 	readonly repoIndexedAt:  number | null;
+	/** The request's intent. Its size is the measure of the area the scope names, taken at `start`. */
 	readonly intent:         ClassifiedIntent;
+	/** The size the caller stated at `start`. A hint: it is recorded on the
+	 *  measures the later phases take and never becomes the size. Absent when
+	 *  the caller stated none, and on a token minted before the field existed. */
+	readonly sizeHint?:      AnalyzeScope | undefined;
 	/** Which synthesizer prompt key this run resolves to
 	 *  (code | docs | data | infra | adherence | capability). Baked in
 	 *  at `start` so the `plan` handler doesn't need to re-derive it. */

@@ -188,18 +188,30 @@ export function measureLookupResults(
 	let items = 0;
 	let characters = 0;
 	let counted = 0;
+	/** The lookups whose output does not have the shape of its type, so the files it names cannot be read. */
+	const unreadable: string[] = [];
 	for (const r of results) {
 		const output = r.output;
 		if (output.type === 'failed' || output.type === 'unsupported') continue;
 		if (!isCompletenessRecord(output.completeness)) continue;
 		counted += 1;
 		items += output.completeness.returned;
-		for (const file of filesNamedBy(output)) files.add(file);
+		// The measure is taken after the lookups ran and before the answer is
+		// written. An output that is not shaped as its type says is a defect of
+		// its lookup; it must not cost the request its answer, so it is named in
+		// the measure's note and its files are not counted.
+		try {
+			for (const file of filesNamedBy(output)) files.add(file);
+		} catch {
+			unreadable.push(`${r.exploration.type} [${r.exploration.id}]`);
+		}
 		// The answer step is given each output as indented JSON.
 		characters += JSON.stringify(output, null, 2).length;
 	}
 	if (counted === 0) return notDetermined('lookup-results', NO_LOOKUP_RESULT_TO_COUNT, sizeHint);
-	return determined('lookup-results', { files: files.size, items }, characters, sizeHint);
+	const measure = determined('lookup-results', { files: files.size, items }, characters, sizeHint);
+	if (unreadable.length === 0) return measure;
+	return { ...measure, note: `the files named by ${unreadable.length} result(s) could not be read and are not counted: ${unreadable.join(', ')}` };
 }
 
 // ---------------------------------------------------------------------------

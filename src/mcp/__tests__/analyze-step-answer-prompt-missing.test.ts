@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import { renderCompletenessLine } from '../../analyze/completeness.js';
 import { _setSynthesizerPromptPathForTest } from '../../analyze/context/synthesizer.js';
 import { reportFromLookups } from '../../analyze/explore/answer-report.js';
+import { measureLookupResults } from '../../analyze/measure.js';
 import { stepPlan } from '../../analyze/explore/executor.js';
 import type { Exploration, ExplorationPlan } from '../../analyze/explore/types.js';
 import { getDb } from '../../db/client.js';
@@ -121,7 +122,7 @@ function assertCarriesFindings(out: StepOutputError, ids: readonly string[]): vo
 	assert.equal(data.results.find(r => r.exploration.id === 'e2')?.output.type, 'concept.resolve');
 	assert.equal(data.results.find(r => r.exploration.id === 'e3')?.output.type, 'failed');
 	// The report is the one derived from those results, and names the failed lookup.
-	assert.deepEqual(data.report, reportFromLookups(data.results));
+	assert.deepEqual(data.report, reportFromLookups(data.results, measureLookupResults(data.results)));
 	assert.equal(data.report.completeness.complete, false);
 	assert.deepEqual(data.report.completeness.failed.map(f => f.sourceId), ['doc.constraint.enumerate [e3]']);
 	// The message starts with the completeness line and names the missing file.

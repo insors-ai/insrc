@@ -5,6 +5,7 @@
 
 import type { Completeness, PartialFinding } from '../completeness.js';
 import type { ResolvedScope } from '../context/scope.js';
+import type { AnalyzeScope } from '../../shared/analyze-types.js';
 
 /**
  * Exploration types -- the vocabulary the decomposer emits and the
@@ -886,6 +887,11 @@ export interface ExplorationRunnerContext {
 	 *  that executes a plan on a bare repo path -- `repoPath` then is
 	 *  all there is, and it stands for a workspace scope on it. */
 	readonly scope?:      ResolvedScope | undefined;
+	/** The request's measured size: of the area its scope names. Present
+	 *  when the caller that executes the plan measured the request (the
+	 *  context builder, the step tool). A runner that needs a size and
+	 *  finds none here measures for itself; it never takes a default. */
+	readonly requestSize?: AnalyzeScope | undefined;
 	/** Read a prior exploration's output by id. Returns undefined
 	 *  when the id doesn't resolve (should not happen if the
 	 *  decomposer emitted a valid dependsOn). */

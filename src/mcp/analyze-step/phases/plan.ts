@@ -31,6 +31,7 @@ import {
 	DecomposerSchemaUnrecoverable,
 } from '../../../analyze/context/decomposer.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
+import { measureLookupResults } from '../../../analyze/measure.js';
 import { stepPlan } from '../../../analyze/explore/index.js';
 import { getLogger } from '../../../shared/logger.js';
 
@@ -115,6 +116,8 @@ export async function handlePlan(
 		closureRepos:        [scope.lookupPath],
 		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
+		// The request's size as the start phase measured it, for a lookup that sizes its own work.
+		requestSize:         state.intent.scope,
 		plan:                validatedPlan,
 	});
 
@@ -135,6 +138,7 @@ export async function handlePlan(
 			repoPath:       state.repoPath,
 			repoIndexedAt:  state.repoIndexedAt,
 			intent:         state.intent,
+			...(state.sizeHint !== undefined ? { sizeHint: state.sizeHint } : {}),
 			synthesizerKey,
 			plan:           validatedPlan,
 			narrow: {
@@ -177,9 +181,13 @@ export async function handlePlan(
 
 	// (5) Load synthesizer prompt + schema.
 	// A missing answer prompt is reported with what the lookups found, not thrown.
+	// The size the answer turn is given is measured from what the lookups returned,
+	// with the caller's stated size as the hint.
+	const measure = measureLookupResults(executed.results, state.sizeHint);
 	const turn = prepareAnswerTurn({
-		intent:   state.intent,
+		intent:   { ...state.intent, scope: measure.size },
 		executed,
+		measure,
 		target:   synthesizerKey,
 	});
 	// Not retryable: the file will still be missing on the next call.
@@ -193,6 +201,7 @@ export async function handlePlan(
 		repoPath:       state.repoPath,
 		repoIndexedAt:  state.repoIndexedAt,
 		intent:         state.intent,
+		...(state.sizeHint !== undefined ? { sizeHint: state.sizeHint } : {}),
 		synthesizerKey,
 		plan:           validatedPlan,
 		executed,

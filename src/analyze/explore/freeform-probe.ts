@@ -37,6 +37,9 @@ import type {
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
 import { LookupFailedError } from './lookup-failed.js';
+import { measureRequestScope, measureResolvedScope } from '../measure.js';
+import type { RequestMeasure } from '../measure.js';
+import type { AnalyzeTarget } from '../../shared/analyze-types.js';
 
 const log = getLogger('analyze:explore:freeform-probe');
 
@@ -82,6 +85,24 @@ function parseParams(exp: Exploration): FreeformProbeParams {
  * -- the decomposer is required to seed `purpose` with the intent's
  * focus so the tool loop knows what it's answering.
  */
+/**
+ * The measure of a request whose caller handed over no size.
+ *
+ * With a resolved scope in the context, that scope is measured. With none (a
+ * caller that executes a plan on a bare repo path), a repo scope at the
+ * context's repo path is measured through the scope function, so that the
+ * registered repo is found and the count is real. The scope this lookup
+ * builds for itself, which has no repo, is NOT measured: it would always
+ * read as a path the index does not hold.
+ */
+export function measureOwnRequest(
+	ctx:    Pick<ExplorationRunnerContext, 'scope' | 'repoPath'>,
+	target: AnalyzeTarget,
+): Promise<RequestMeasure> {
+	if (ctx.scope !== undefined) return measureResolvedScope(ctx.scope, target);
+	return measureRequestScope({ kind: 'repo', value: ctx.repoPath }, target);
+}
+
 export async function runFreeformProbe(
 	exp:  Exploration,
 	ctx:  ExplorationRunnerContext,
@@ -102,17 +123,20 @@ export async function runFreeformProbe(
 		lookupPath: ctx.repoPath,
 	};
 
+	const target = params.shaperId;
+
+	// The request's size, which the loop is told. The caller that executes
+	// the plan measured the request and handed the size over; with none, the
+	// lookup measures for itself. It never takes a default.
+	const size = ctx.requestSize ?? (await measureOwnRequest(ctx, target)).size;
+
 	// Reconstruct a run-mode input. The tool loop's buildMessages
 	// carries the intent verbatim, so the scope reference here is what
 	// the legacy prompt's scope-boundary rule keys off.
 	const inputs: RunShapeInput = {
 		intent: {
-			target:    params.shaperId === 'generic' ? 'generic'
-				: params.shaperId === 'code'   ? 'code'
-				: params.shaperId === 'docs'   ? 'docs'
-				: params.shaperId === 'data'   ? 'data'
-				: 'infra',
-			scope:    'M',
+			target,
+			scope:    size,
 			focused:  true,
 			focus:    params.purpose,
 			scopeRef: { kind: scope.kind, value: scope.value },

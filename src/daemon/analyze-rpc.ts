@@ -109,7 +109,7 @@ import type {
 } from '../shared/analyze-types.js';
 import type { AnswerReport } from '../analyze/completeness.js';
 import { measureRequestScope } from '../analyze/measure.js';
-import type { RequestMeasure } from '../analyze/measure.js';
+import type { RequestMeasure, UnsizedIntent } from '../analyze/measure.js';
 
 const log = getLogger('analyze-rpc');
 
@@ -290,7 +290,7 @@ export async function buildRun(params: unknown): Promise<AnalyzeRpcResponse> {
 		return invalidParams(err);
 	}
 	const shaper = shaperFor('run', parsed.intent.target);
-	const input: RunShapeInput = { intent: parsed.intent };
+	const input: RunShapeInput = { intent: parsed.intent, ...(parsed.sizeHint !== undefined ? { sizeHint: parsed.sizeHint } : {}) };
 	const opts: ShapeOpts = { runId: parsed.runId };
 	return invoke(() => shaper.buildRunBundle(input, opts), 'run', parsed.runId);
 }
@@ -1058,7 +1058,10 @@ interface ClassificationParams {
 
 interface RunParams {
 	readonly runId: string;
-	readonly intent: ClassifiedIntent;
+	/** What the request is. A size on it is checked when present and is not read. */
+	readonly intent: UnsizedIntent;
+	/** The size the caller stated: a hint for the measure. */
+	readonly sizeHint?: AnalyzeScope;
 }
 
 interface ClassifyParams {
@@ -1111,10 +1114,20 @@ function parseClassificationParams(params: unknown): ClassificationParams {
 
 function parseRunParams(params: unknown): RunParams {
 	const obj = requireObject(params, 'params');
-	return {
-		runId: requireString(obj, 'runId'),
-		intent: parseIntent(obj['intent']),
-	};
+	// The builder measures the request, so the intent of a run-level request
+	// need not carry a size. One that does is checked as before and then left
+	// out: only a size given as `sizeHint` is carried, as a hint.
+	const rawIntent = requireObject(obj['intent'], 'intent');
+	const { scope: _notRead, ...unsized } = parseIntent(rawIntent['scope'] === undefined ? { ...rawIntent, scope: 'M' } : rawIntent);
+	const result: { runId: string; intent: UnsizedIntent; sizeHint?: AnalyzeScope } = { runId: requireString(obj, 'runId'), intent: unsized };
+	if (obj['sizeHint'] !== undefined) {
+		const validScopes = ['XS', 'S', 'M', 'L', 'XL'];
+		if (typeof obj['sizeHint'] !== 'string' || !validScopes.includes(obj['sizeHint'])) {
+			throw new TypeError(`sizeHint: must be one of ${validScopes.join(', ')}; got ${JSON.stringify(obj['sizeHint'])}`);
+		}
+		result.sizeHint = obj['sizeHint'] as AnalyzeScope;
+	}
+	return result;
 }
 
 function parseClassifyParams(params: unknown): ClassifyParams {

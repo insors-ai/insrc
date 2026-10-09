@@ -32,7 +32,11 @@ import { addRepo } from '../../db/repos.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { Entity, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
-import { _setClassifierForTest, classify, plan, planDepthScope, runStart } from '../analyze-rpc.js';
+import { renderCompletenessLine, renderMeasureLine } from '../../analyze/completeness.js';
+import { renderBundleAsMarkdown } from '../../mcp/bundle-md.js';
+import { oneShotRunParams } from '../../mcp/server.js';
+import { _setClassifierForTest, buildRun, classify, plan, planDepthScope, runStart } from '../analyze-rpc.js';
+import { _groundingForTest, _groundingIntentForTest } from '../workflow-rpc.js';
 
 let sandbox: string;
 /** A registered repo of one file: it measures XS. */
@@ -76,6 +80,7 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(async () => {
+	roles.length = 0;
 	_setClassifierForTest(undefined);
 	for (const id of runIds.splice(0)) purgeRunForTests(id);
 	await closeGraphStore();
@@ -115,11 +120,22 @@ function fourTaskPlan(repo: string, statedSize: AnalyzeScope): unknown {
 	};
 }
 
-/** Call a handler with the stand-in model answering the planner with `planAnswer`. */
-function withModel<T>(planAnswer: unknown, call: () => Promise<T>): Promise<T> {
-	const routing = { router: { resolveProviderForRole: (role: string) => ({
-		provider: { completeStructured: async (_m: unknown, schema: unknown) => (role === 'analyze.plan' ? planAnswer : smallest(schema)) } as unknown as LLMProvider,
-	}) } } as unknown as RoutingSeamContext;
+/** The roles a model was asked for, in order, since the test began. */
+const roles: string[] = [];
+/** The lookups the stand-in model plans for a run context: a text search, which needs no model. */
+const LOOKUPS = { answerType: 'how-does-it-work', synthesisHint: 'say where it is', explorations: [{ id: 'e1', type: 'search.text', purpose: 'where the function is', params: { pattern: 'fn0' } }] };
+
+/** Call a handler with the stand-in model answering the planner with `planAnswer`, and the run context's planning call with `lookups` when given. */
+function withModel<T>(planAnswer: unknown, call: () => Promise<T>, lookups?: unknown): Promise<T> {
+	const routing = { router: { resolveProviderForRole: (role: string) => {
+		roles.push(role);
+		const completeStructured = async (_m: unknown, schema: unknown): Promise<unknown> => {
+			if (role === 'analyze.plan') return planAnswer;
+			if (role === 'analyze.decompose' && lookups !== undefined) return lookups;
+			return smallest(schema);
+		};
+		return { provider: { completeStructured } as unknown as LLMProvider };
+	} } } as unknown as RoutingSeamContext;
 	return runWithRoutingContext(routing, call);
 }
 
@@ -202,4 +218,60 @@ test("the daemon's run request, plan request and classify request treat a stated
 	assert.ok(!unindexed.ok);
 	if (unindexed.ok) return;
 	assert.equal(unindexed.error.code, 'scope-not-indexed');
+});
+
+test("the one-shot tool and the workflow runner state no size of their own and their answers carry the measure line; a run-level request needs no size on its intent, and a run and a plan request for the same scope share one cached run bundle", async () => {
+	// --- What the two callers send: an intent with no size. Only a size the caller stated goes along, as a hint. ---
+	const unstated = oneShotRunParams({ focus: 'where is fn0' }, small, id('one-shot'));
+	assert.ok(!('scope' in unstated.intent) && !('sizeHint' in unstated), 'the one-shot tool sets no size');
+	const stated = oneShotRunParams({ focus: 'where is fn0', scope: 'L' }, small, id('one-shot-stated'));
+	assert.ok(!('scope' in stated.intent));
+	assert.equal(stated.sizeHint, 'L');
+	const grounding = _groundingIntentForTest({ focus: 'where is fn0', repoPath: small } as never);
+	assert.ok(!('scope' in grounding), 'the workflow runner sets no size');
+	assert.deepEqual(grounding.scopeRef, { kind: 'workspace', value: small });
+
+	// --- The one-shot tool's answer. The request is accepted with no size on its intent. ---
+	const answered = await withModel(null, () => buildRun(stated), LOOKUPS);
+	assert.ok(answered.ok, answered.ok ? '' : answered.error.message);
+	if (!answered.ok) return;
+	const measure = answered.bundle.report?.measure;
+	assert.ok(measure !== undefined, 'the report carries a measure');
+	assert.deepEqual([measure.source, measure.determined, measure.sizeHint], ['lookup-results', true, 'L']);
+	assert.ok(measure.items > 0, 'the stored function was found and counted');
+	assert.deepEqual(renderBundleAsMarkdown(answered.bundle, { includeMeta: false }).split('\n\n')[0]!.split('\n'),
+		[renderCompletenessLine(answered.bundle.report!), renderMeasureLine(measure)]);
+	assert.match(renderMeasureLine(measure), /^Size: \w+, measured from what the lookups returned: .* The caller asked for L\.$/);
+	// With none stated the measure has no hint.
+	const plain = await withModel(null, () => buildRun(unstated), LOOKUPS);
+	assert.ok(plain.ok);
+	if (!plain.ok) return;
+	const { sizeHint: _hint, ...counted } = measure;
+	assert.deepEqual(plain.bundle.report?.measure, counted);
+
+	// A size on the intent is still checked when present, and a stated size must be a size.
+	const badSize = await buildRun({ runId: 'x', intent: { ...stated.intent, scope: 'huge' } });
+	assert.ok(!badSize.ok && badSize.error.code === 'invalid-params' && /intent\.scope/.test(badSize.error.message));
+	const badHint = await buildRun({ runId: 'x', intent: stated.intent, sizeHint: 'huge' });
+	assert.ok(!badHint.ok && badHint.error.code === 'invalid-params' && /sizeHint/.test(badHint.error.message));
+
+	// --- The workflow runner's grounding text: the measure line under the completeness line, and no hint. ---
+	const text = await withModel(null, () => _groundingForTest('context.assemble', { runId: id('grounding'), intent: grounding }), LOOKUPS);
+	const head = text.split('\n\n')[0]!.split('\n');
+	assert.equal(head.length, 2);
+	assert.equal(head[1], renderMeasureLine(counted));
+	assert.ok(!head[1]!.includes('The caller asked for'));
+
+	// --- One cached run bundle for a run and the plan request that follows it. ---
+	// The run's context is built for the scope, with L stated. The plan request for the same run and scope carries
+	// another size on its intent: it gets the cached bundle, so the run context's planning call is not made again.
+	const shared = id('shared');
+	roles.length = 0;
+	const first = await withModel(null, () => buildRun({ ...stated, runId: shared }), LOOKUPS);
+	assert.ok(first.ok);
+	assert.deepEqual(roles.filter(r => r === 'analyze.decompose'), ['analyze.decompose']);
+	const planned = await withModel(fourTaskPlan(small, 'XL'), () => plan({ runId: shared, intent: { ...intentOn(small, 'XL'), focused: true, focus: 'where is fn0', reasoning: stated.intent.reasoning, scopeRef: stated.intent.scopeRef } }), LOOKUPS);
+	assert.ok(planned.ok, planned.ok ? '' : planned.error.message);
+	assert.deepEqual(roles.filter(r => r === 'analyze.decompose'), ['analyze.decompose'], "the run context was not built again for the plan request");
+	assert.ok(roles.includes('analyze.plan'), 'the planner was asked');
 });

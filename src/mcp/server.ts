@@ -1281,6 +1281,28 @@ export async function runInsrcMcpStdio(): Promise<void> {
 // insrc_analyze handler
 // ---------------------------------------------------------------------------
 
+/**
+ * The run-level request the one-shot tool sends for a call.
+ *
+ * The intent carries no size: the context builder measures the request. A
+ * size the caller stated is passed on as `sizeHint`, never as the size, and
+ * with none stated no size is sent at all.
+ */
+export function oneShotRunParams(
+	args:     { readonly focus: string; readonly target?: 'code' | 'docs' | 'data' | 'infra' | 'generic'; readonly scope?: 'XS' | 'S' | 'M' | 'L' | 'XL' },
+	repoPath: string,
+	runId:    string,
+) {
+	const intent = {
+		target:    args.target ?? 'code',
+		focused:   true,
+		focus:     args.focus,
+		scopeRef:  { kind: 'workspace', value: repoPath },
+		reasoning: `MCP invocation: ${args.focus}`,
+	};
+	return { runId, intent, ...(args.scope !== undefined ? { sizeHint: args.scope } : {}) };
+}
+
 async function handleAnalyze(
 	server: McpServer,
 	args:   {
@@ -1307,14 +1329,8 @@ async function handleAnalyze(
 	// Assemble the intent. This mirrors the shape the daemon's
 	// `analyze.context.buildRun` RPC accepts (see daemon/analyze-rpc.ts).
 	const runId  = `mcp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const intent = {
-		target:    args.target ?? 'code',
-		scope:     args.scope ?? 'M',
-		focused:   true,
-		focus:     args.focus,
-		scopeRef:  { kind: 'workspace', value: repoPath },
-		reasoning: `MCP invocation: ${args.focus}`,
-	};
+	const rpcParams = oneShotRunParams(args, repoPath, runId);
+	const intent = rpcParams.intent;
 
 	// Provider routing for the in-process analyze pipeline:
 	//   1. Client declared `sampling` -> route inner calls back to it.
@@ -1332,7 +1348,7 @@ async function handleAnalyze(
 			runId,
 			repoPath,
 			target: intent.target,
-			scope:  intent.scope,
+			sizeHint: args.scope ?? '(none)',
 			focus:  intent.focus.slice(0, 80),
 			client: server.server.getClientVersion()?.name ?? '(unknown)',
 			samplingSupported,
@@ -1341,7 +1357,6 @@ async function handleAnalyze(
 		'insrc_analyze: dispatching',
 	);
 
-	const rpcParams = { runId, intent };
 	const rpc = samplingSupported
 		? runWithSamplerContext(
 			makeSamplerFromMcpServer(server.server),

@@ -37,6 +37,10 @@ import { scopeErrorMapping } from './context/invariants.js';
 import { resolveScopeForTarget } from './context/scope.js';
 import type { ResolvedScope, ScopeDeps } from './context/scope.js';
 import { isCompletenessRecord } from './completeness.js';
+
+// The measure's one line is written with the completeness line, by a module
+// that loads no store: the agent tools' process reads it and opens none.
+export { renderMeasureLine } from './completeness.js';
 import { filesNamedBy } from './explore/types.js';
 import type { ExecutedExploration } from './explore/types.js';
 import { acquireDataPool, dataScopeOf } from './runtimes/data/_shared.js';
@@ -196,40 +200,6 @@ export function measureLookupResults(
 	}
 	if (counted === 0) return notDetermined('lookup-results', NO_LOOKUP_RESULT_TO_COUNT, sizeHint);
 	return determined('lookup-results', { files: files.size, items }, characters, sizeHint);
-}
-
-const SOURCE_PHRASE: Readonly<Record<RequestMeasure['source'], string>> = {
-	'named-area':     'measured from the area the request names',
-	'data-source':    'measured from the data source',
-	'lookup-results': 'measured from what the lookups returned',
-};
-
-/** A count with its unit, in the singular for one. */
-function counted(n: number, one: string, many: string): string {
-	return `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
-}
-
-/**
- * The one line an answer carries about its size, under the completeness line:
- * the size, where the measure came from and the counts; the reason when it
- * could not be determined; and what a caller asked for.
- */
-export function renderMeasureLine(measure: RequestMeasure): string {
-	const hint = measure.sizeHint !== undefined ? ` The caller asked for ${measure.sizeHint}.` : '';
-	if (!measure.determined) {
-		return `Size: ${measure.size}, not determined: ${measure.note ?? 'no reason was recorded'}.${hint}`;
-	}
-	const counts: string[] = [];
-	if (measure.source === 'data-source') {
-		counts.push(counted(measure.items, 'object', 'objects'));
-		if (measure.files > 0) counts.push(counted(measure.files, 'file', 'files'));
-	} else {
-		counts.push(counted(measure.files, 'file', 'files'));
-		counts.push(counted(measure.items, measure.source === 'named-area' ? 'entity' : 'item', measure.source === 'named-area' ? 'entities' : 'items'));
-	}
-	if (measure.characters !== null) counts.push(counted(measure.characters, 'character', 'characters'));
-	const note = measure.note !== undefined ? ` ${measure.note}.` : '';
-	return `Size: ${measure.size}, ${SOURCE_PHRASE[measure.source]}: ${counts.join(', ')}.${note}${hint}`;
 }
 
 // ---------------------------------------------------------------------------

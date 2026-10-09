@@ -45,7 +45,7 @@ import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, t
 import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from '../mcp/workflow-step/phases/start.js';
 import { buildRun } from './analyze-rpc.js';
-import { completenessHeadLine, isAnswerReport, renderCompletenessLine, type AnswerReport } from '../analyze/completeness.js';
+import { completenessHeadLine, isAnswerReport, renderReportHead, type AnswerReport } from '../analyze/completeness.js';
 
 const log = getLogger('daemon:workflow-rpc');
 
@@ -588,7 +588,7 @@ export class AnalyzeGroundingFailedError extends Error {
 	constructor(runner: string, error: { readonly code: string; readonly message: string; readonly data?: Readonly<Record<string, unknown>> | undefined }) {
 		const report = isAnswerReport(error.data?.['report']) ? error.data['report'] : undefined;
 		const failure = `workflow.run: analyze grounding failed for step '${runner}' (${error.code}): ${error.message}`;
-		super(report !== undefined ? `${renderCompletenessLine(report)}\n${failure}` : failure);
+		super(report !== undefined ? `${renderReportHead(report)}\n${failure}` : failure);
 		this.name = 'AnalyzeGroundingFailedError';
 		this.code = error.code;
 		const reason = error.data?.['reason'];

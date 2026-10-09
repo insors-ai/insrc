@@ -67,10 +67,11 @@ import type { PlanTreeNode } from '../planner/recursive.js';
 import {
 	deriveAnswerReport,
 	mergeAnswerReports,
-	renderCompletenessLine,
+	renderReportHead,
 	RUN_COMPLETENESS_NOT_RECORDED,
 	type AnswerReport,
 } from '../completeness.js';
+import type { RequestMeasure } from '../measure.js';
 
 import { liveRunCount, lowerRunLive, raiseRunLive } from './live-runs.js';
 import { readRunRecord, writeRunRecord } from './persistence.js';
@@ -546,7 +547,8 @@ function headFinalReport(finalReport: unknown, line: string): unknown {
 
 /**
  * What an executed plan tree gives the run: its answer report, and its final
- * report with the completeness line at the head of its text.
+ * report with the report's head (the completeness line and, when the run has
+ * a measure, the measure line) at the head of its text.
  *
  * The report is derived from two steps. The run context (the run's first
  * step) has the report of its own lookups. The plan's tasks each state their
@@ -557,13 +559,18 @@ export function concludeRun(
 	tree:          PlanTreeNode,
 	executed:      ExecutorResult,
 	contextReport: AnswerReport | undefined,
+	measure?:      RequestMeasure,
 ): { readonly report: AnswerReport; readonly finalReport: unknown } {
-	const report = mergeAnswerReports(
+	const merged = mergeAnswerReports(
 		contextReport ?? RUN_CONTEXT_NOT_RECORDED,
 		deriveAnswerReport(collectPlanSources(tree, executed)),
 		RUN_CONTEXT_SOURCE_PREFIX,
 	);
-	return { report, finalReport: headFinalReport(executed.root.finalReport, renderCompletenessLine(report)) };
+	// The merge keeps the completeness part and the answer failure only. The
+	// run's measure is added after it, so the stored report and the head of
+	// the final report both carry it.
+	const report: AnswerReport = measure !== undefined ? { ...merged, measure } : merged;
+	return { report, finalReport: headFinalReport(executed.root.finalReport, renderReportHead(report)) };
 }
 
 /**
@@ -579,12 +586,14 @@ export function completeRun(args: {
 	readonly executed:      ExecutorResult;
 	/** The report of the run context, the run's first step. */
 	readonly contextReport: AnswerReport | undefined;
+	/** The measure of the area the request names; absent until the run measures it. */
+	readonly measure?:      RequestMeasure | undefined;
 	/** When the run started, in milliseconds. */
 	readonly start:         number;
 }): RunAnalyzeResult {
 	const { record, intent, tree, executed } = args;
 	const rootPlan = executed.root;
-	const concluded = concludeRun(tree, executed, args.contextReport);
+	const concluded = concludeRun(tree, executed, args.contextReport, args.measure);
 	writeRunRecord(patch(record, {
 		stage: 'done',
 		status: 'ok',

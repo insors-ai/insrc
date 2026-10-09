@@ -4015,18 +4015,21 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
   // the change was uncommitted and went red the moment it was committed — caught
   // by the build validation gate, which is the whole reason that gate exists.
   //
-  // The build window is "every commit since this Story's PLAN was approved",
-  // which is a boundary the repo itself records rather than a hash pasted here.
+  // The build window is "every commit from this Story's PLAN approval to its
+  // BUILD approval" — two boundaries the repo itself records rather than hashes
+  // pasted here. It ends at the BUILD approval, not HEAD: the Story is complete,
+  // and a window left open at HEAD (and the working tree) checked every later
+  // change in the repo against this Story's rule (ISSUE-2f07f59c).
   const planCommit = git('log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
   assert.match(planCommit, /^[0-9a-f]{40}$/, 'the PLAN commit is the build-window boundary');
+  const buildCommit = git('log', '--format=%H', '-1', '--',
+    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md').trim();
+  assert.match(buildCommit, /^[0-9a-f]{40}$/, 'the BUILD approval commit closes the build window');
 
-  const committed = git('diff', '--name-only', `${planCommit}..HEAD`)
+  const committed = git('diff', '--name-only', `${planCommit}..${buildCommit}`)
     .split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
-  // Union with the working tree so the check also holds mid-task, before a commit.
-  const working = git('status', '--porcelain')
-    .split('\n').map((l) => l.slice(3).trim()).filter((l) => l.length > 0);
-  const paths = [...new Set([...committed, ...working])];
+  const paths = committed;
 
   // Positive control: a check that inspects an EMPTY change set passes vacuously,
   // and this suite has shipped exactly that kind of check before. There must be
@@ -5645,7 +5648,11 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
   const planCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md'],
     { cwd: repoRoot, encoding: 'utf8' }).trim();
-  const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..HEAD`], { cwd: repoRoot, encoding: 'utf8' });
+  // Closed at the Story's BUILD approval, as the src/ guard above is (ISSUE-2f07f59c).
+  const buildCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
+    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md'],
+    { cwd: repoRoot, encoding: 'utf8' }).trim();
+  const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..${buildCommit}`], { cwd: repoRoot, encoding: 'utf8' });
   assert.ok(!changed.includes('docs-sections.ts'),
     'S004 consumes sc3 and mints none of its own section identity');
 });

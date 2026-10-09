@@ -249,7 +249,8 @@ export type BoardUpMessage =
   | { readonly type: 'close-details' }
   | { readonly type: 'open-evidence'; readonly itemId: string; readonly artifactId: string }
   | { readonly type: 'set-density'; readonly density: Density }
-  | { readonly type: 'show-more'; readonly stage: DeliveryStage };
+  | { readonly type: 'show-more'; readonly stage: DeliveryStage }
+  | { readonly type: 'clear-filters' };
 
 const isNonEmptyString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
 
@@ -291,6 +292,9 @@ export function parseBoardUpMessage(raw: unknown): BoardUpMessage | null {
       const stage = STAGE_ORDER.find(st => st === p['stage']);
       return stage === undefined ? null : { type: 'show-more', stage };
     }
+    // Carries nothing but its type; anything more is not a clear-filters message.
+    case 'clear-filters':
+      return Object.keys(p).length === 1 ? { type: 'clear-filters' } : null;
     default:
       return null;
   }

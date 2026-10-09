@@ -469,6 +469,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
         return;
       case 'set-search': select({ ...sel, search: msg.search }, {}); return;
       case 'set-attention': select({ ...sel, needsAttentionOnly: msg.on }, {}); return;
+      // Clears the search and the attention filter, keeps the scope and the view; paging resets like any filter change.
+      case 'clear-filters': select({ ...sel, search: '', needsAttentionOnly: false }, {}); return;
       case 'select-item':
         if (!onBoard(msg.itemId)) {
           log.warn('delivery board: ignored a link to an item that is not on the board');

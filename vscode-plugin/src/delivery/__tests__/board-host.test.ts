@@ -1189,3 +1189,49 @@ test('the refresh announcement text is unchanged after statusView takes now', as
   assert.ok(last !== undefined && last.type === 'announce');
   assert.match(last.text, /^The refresh failed at 2026-10-09T12:00:00.000Z: bad store Showing the board from 2026-10-09T10:00:00.000Z\.$/);
 });
+
+test('clear-filters resets search and attention, keeps scope and view, and resets paging', async () => {
+  const host = await openWith(fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: 'Board epic' }),
+    item({ id: 'E2', kind: 'epic', title: 'Other epic' }),
+    ...Array.from({ length: 60 }, (_, n) => item({ id: `E1:S${String(n).padStart(3, '0')}`, parentId: 'E1', title: `Story ${n}`, needsAttention: n % 2 === 0 })),
+    item({ id: 'E2:S001', parentId: 'E2', title: 'Elsewhere' }),
+  ]));
+  send(host.ch, { type: 'set-scope', scope: { kind: 'epic', epicItemId: 'E1' } });
+  send(host.ch, { type: 'set-search', search: 'story 1' });
+  send(host.ch, { type: 'set-attention', on: true });
+  assert.ok(lastBoard(host.ch)!.totals.items < 60, 'the filters narrow the board');
+  send(host.ch, { type: 'set-search', search: '' });
+  send(host.ch, { type: 'set-attention', on: false });
+  send(host.ch, { type: 'show-more', stage: 'scoped' });
+  assert.equal(column(host.ch, 'scoped')!.cards.length, 60, 'show-more revealed the second page');
+  send(host.ch, { type: 'set-search', search: 'story' });
+  send(host.ch, { type: 'set-attention', on: true });
+  send(host.ch, { type: 'show-more', stage: 'scoped' });
+
+  send(host.ch, { type: 'clear-filters' });
+  const cleared = lastBoard(host.ch)!;
+  assert.equal(cleared.totals.items, 60, 'search and attention are cleared; the epic scope is kept (E2\'s story stays out)');
+  assert.deepEqual([column(host.ch, 'scoped')!.cards.length, column(host.ch, 'scoped')!.hiddenCount], [50, 10], 'paging is back to the first page');
+  assert.equal(host.logs.warn.length, 0);
+
+  send(host.ch, { type: 'set-view', view: 'epics' });
+  send(host.ch, { type: 'set-search', search: 'nothing like this' });
+  send(host.ch, { type: 'clear-filters' });
+  const types = payloads(host.ch).slice(-2).map(p => p.type);
+  assert.deepEqual(types, ['status', 'epics'], 'the view is kept');
+  assert.equal(lastOf(host.ch, 'epics')!.model.totals.items, 60);
+});
+
+test('clear-filters with no snapshot shown posts only the status message', async () => {
+  const s = setup();
+  s.host.open();
+  const ch = s.channels[0]!;
+  send(ch, { type: 'set-search', search: 'zzz' });
+  const before = ch.posted.length;
+  send(ch, { type: 'clear-filters' });
+  assert.deepEqual(payloads(ch).slice(before).map(p => p.type), ['status'], 'no view model without a snapshot');
+  s.calls[0]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'S1' }), item({ id: 'S2' })]) });
+  await flush();
+  assert.equal(lastBoard(ch)!.totals.items, 2, 'the cleared search applies when the snapshot arrives');
+});

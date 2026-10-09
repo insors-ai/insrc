@@ -38,8 +38,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The Define's Story s2 has five acceptance criteria (ac1 to ac5) and the HLD's contract sc3; the design covers each and declares RequestMeasure exactly as the HLD sketches it.",
-          "evidence": ".insrc/artifacts/DEF-b9d5c5c40df5a574.json story s2 lists ac1 (size from counts, no size assumed), ac2 (different sizes for different areas), ac3 (answer states size and counts), ac4 (not determined is the largest size), ac5 (stated size kept as a hint). HLD.md 4.3 gives the eight fields source, items, files, characters, size, determined, sizeHint, note; section 2.1 of the design repeats them unchanged. HLD.md 5.2 assigns s2 the measuring pass, removal of the scope picker, removal of the classifier's size, child-plan measuring and the listings' complete mode, all of which the design contains. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md, .insrc/artifacts/DEF-b9d5c5c40df5a574.json]",
+          "premise": "Each of the Define's five acceptance criteria for Story s2 (ac1 counted size on every path including the agent tools, ac2 different sizes for different areas, ac3 size and counts stated in the answer, ac4 unmeasurable is XL and says so, ac5 stated size kept as a hint) and each item of the HLD's s2 scope is designed, and nothing listed as another Story's is built.",
+          "evidence": "DEF.md lines 145-149 give ac1-ac5; HLD.md line 205 lists the s2 scope (two measuring sources, the four places that assume a size, the pass after both classification branches, removal of the picker and of the classifier's size, depth as well as task count, child plans, the seven kinds of scope, complete mode for five relational drivers, four namespace drivers and the file listing, Redis and etcd not determined). The design's sections 2.1-2.17 and the acceptance mapping cover each one. The limit removals (s4), handling in parts (s3) and layouts (s5) are not designed here.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -50,8 +50,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "On the plan tree today a stated size is taken as it is, otherwise pickScope picks one with a fallback to M, and the classifier returns a required `scope` under a schema that rejects unknown fields.",
-          "evidence": "src/analyze/orchestrator/driver.ts:292-323: `if (args.scopeHint !== undefined) { pickedScope = args.scopeHint; ... } else { ... await pickScope({...}) ... } catch { pickedScope = 'M'; ...`. src/analyze/classifier/schema.ts:46-49 has `additionalProperties: false` and `scope: { type: 'string', enum: [...] }`. The run's scope check at driver.ts:398-400 (`resolveTaskScope(intent.scopeRef, intent.target, 'the run')`, skipped for generic) is after the run context is built, as the design says. [files: src/analyze/orchestrator/driver.ts, src/analyze/classifier/schema.ts]",
+          "premise": "On the plan tree today a stated size is taken as it is on the hinted branch, otherwise pickScope picks one with a fallback to M, and the classifier returns a required `scope` under a schema that rejects unknown fields.",
+          "evidence": "src/analyze/orchestrator/driver.ts:292-323: `if (args.scopeHint !== undefined) { pickedScope = args.scopeHint; ... } else { ... await pickScope({...}) ... } catch { pickedScope = 'M'; ...}`. src/analyze/classifier/schema.ts:45-49: `required: ['target', 'scope', 'focused', 'scopeRef', 'reasoning'], additionalProperties: false`, `scope: { type: 'string', enum: [...] }`.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -62,9 +62,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Four places in the lookup pipeline and the agent tools set the size M today, and the free-form lookup builds a workspace scope with no repo when its context carries none.",
-          "evidence": "src/mcp/analyze-step/phases/start.ts:51 `const scope = input.scope ?? 'M';`; src/mcp/server.ts:1312 `scope: args.scope ?? 'M'`; src/daemon/workflow-rpc.ts:550 `scope: 'M'`; src/analyze/explore/freeform-probe.ts:115 `scope: 'M'`, and :98-103 `ctx.scope ?? { kind: 'workspace', value: ctx.repoPath, repoPath: null, ... }`. One more literal exists that the design does not name: src/analyze/orchestrator/driver.ts:667 `validateIntentSemantics({ ...base, scope: 'M', reasoning: '' }, ...)`, a throwaway intent for the validator on the hinted branch. [files: src/mcp/analyze-step/phases/start.ts, src/mcp/server.ts, src/daemon/workflow-rpc.ts, src/analyze/explore/freeform-probe.ts, src/analyze/orchestrator/driver.ts]",
-          "action": "When the validator is changed to take an intent with no size, drop the literal at src/analyze/orchestrator/driver.ts:667 too, so the source scan for a default size passes.",
+          "premise": "Four places in the lookup pipeline and the agent tools set M unless a caller stated a size: the one-shot tool, the step tool's start phase, the workflow runner and the free-form lookup; the step tool sends a workspace scope at the repo path.",
+          "evidence": "src/mcp/server.ts:1312 `scope: args.scope ?? 'M'`; src/mcp/analyze-step/phases/start.ts:51 `const scope = input.scope ?? 'M'` and :58 `scopeRef: { kind: 'workspace', value: repoPath }`; src/daemon/workflow-rpc.ts:550 `scope: 'M'`; src/analyze/explore/freeform-probe.ts:115 `scope: 'M'`, with :98-103 building a workspace scope with `repoPath: null` when the context has none. The only other literal is the placeholder at orchestrator/driver.ts:667, commented 'The size is not part of either check'.",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,12 +73,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "measureRequestScope can sum a workspace that no registered repo contains over the registered repos under it (section 2.5, the edge case 'a workspace scope over three registered repos', and the integration test that names measureRequestScope for it).",
-          "evidence": "Section 2.4 resolves a code or docs request with resolveTaskScope. src/analyze/runtimes/shared/task-scope.ts:73-75 then runs `ensureNonEmptyClosure(scope, readers)` for the code and docs families, and src/analyze/context/invariants.ts:195-200 throws `ScopeNotIndexedError(scopePath, undefined, 'no registered repo contains the scope path')` whenever the registry holds repos and none contains the path. So for a code or docs request this workspace never reaches measureResolvedScope: measureRequestScope returns determined false, XL. The sum is reachable only for a generic request (resolved with resolveScopeForTarget, no index check) and through a direct call of measureResolvedScope (the builder checks the index for the code source only, src/analyze/context/driver.ts:378). [files: src/analyze/runtimes/shared/task-scope.ts, src/analyze/context/invariants.ts, src/analyze/context/driver.ts]",
-          "action": "State in 2.4 and 2.5 that the sum over repos applies to a generic request and to a direct call of measureResolvedScope, and that a code or docs workspace above the repos is not determined; give the edge-case row and the test subject a target (generic), or move that test to measureResolvedScope.",
+          "severity": "LOW",
+          "premise": "resolveTaskScope checks the index for code and docs only, refuses a scope no registered repo contains, does not refuse when the registry is empty or unreadable, and does not accept a generic request.",
+          "evidence": "src/analyze/runtimes/shared/task-scope.ts:35 `type TaskFamily = 'code' | 'docs' | 'infra' | 'data'`, :45 `GRAPH_FAMILIES = new Set(['code', 'docs'])`, :73-75. src/analyze/context/invariants.ts:157-184 returns undefined when the registry read fails or `repos.length === 0`; :195-200 throws ScopeNotIndexedError 'no registered repo contains the scope path'; :208-213 throws on zero entities. orchestrator/driver.ts:398 already skips the check for `generic`.",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -86,8 +86,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "What the design calls new does not exist yet (RequestMeasure, sizeOfCounts, renderMeasureLine, renderReportHead, RETIRED_ROLE_IDS), and the report's `measure` field exists today as `unknown`.",
-          "evidence": "A search of src for `RequestMeasure|RETIRED_ROLE_IDS|renderReportHead|sizeOfCounts|renderMeasureLine|measure\\?:` returns one line only: src/analyze/completeness.ts:185 `readonly measure?:  unknown;`. [files: src/analyze/completeness.ts]",
+          "premise": "The scope helpers the measure reuses exist with the stated behaviour: inAreaOf keeps the whole repo for a non-module scope at the repo's path and only what lies under a directory otherwise, graphRepoOf, scopeErrorMapping over three error classes, and walkFiles returning `unreadable` and throwing for an unreadable root with a numeric default cap.",
+          "evidence": "task-scope.ts:88-107: `if (scope.kind !== 'module' && dir === graphRepoOf(scope)) return () => true; return e => e.file === dir || e.file.startsWith(`${dir}/`)`. invariants.ts:105-111 maps ScopeNotIndexedError, ScopeRefUnresolvedError and ScopeKindTargetMismatchError and returns undefined otherwise. runtimes/infra/_shared.ts:132-175: `cap: number = DEFAULT_FILE_CAP`, `if (dir === root) throw err;`, `unreadable.push(...)`.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -98,23 +98,35 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The reused functions exist with the shapes the design relies on: resolveTaskScope, resolveScopeForTarget (accepts 'generic'), graphRepoOf, inAreaOf, scopeErrorMapping, ResolvedScope.repoPath nullable, DataScope, walkFiles.",
-          "evidence": "task-scope.ts:56 `resolveTaskScope(scopeRef, family: TaskFamily, templateLabel, deps?, table?)` with `TaskFamily = 'code' | 'docs' | 'infra' | 'data'` (no generic, as the design says); scope.ts:123 `resolveScopeForTarget(ref, target: AnalyzeTarget, ...)` and validate.ts:59 gives generic all seven kinds including connection; task-scope.ts:101-107 inAreaOf keeps every entity when a non-module scope's directory is the repo read and filters by prefix otherwise, by `e.id === scope.entityId` for a symbol; scope.ts:55 `readonly repoPath: string | null`; data/_shared.ts:22 DataScope `{ poolPath; connectionId? }`; infra/_shared.ts:132-135 `walkFiles(root, cap = DEFAULT_FILE_CAP): Promise<{ files; truncated; unreadable }>`. Note: resolveDataScope takes `TemplateExecuteArgs`, so the measure must build its DataScope from the ResolvedScope itself (lookupPath and connectionId for a connection; the scope's value otherwise). [files: src/analyze/runtimes/shared/task-scope.ts, src/analyze/context/scope.ts, src/analyze/classifier/validate.ts, src/analyze/runtimes/data/_shared.ts, src/analyze/runtimes/infra/_shared.ts]",
-          "action": "In 2.6, say the measure builds the DataScope from the resolved scope, since resolveDataScope cannot be called without a task's arguments.",
+          "premise": "The report's `measure` is `unknown` and unfilled today, mergeAnswerReports returns the completeness part and the answer failure only, and completenessHeadLine returns the completeness line when there is a report.",
+          "evidence": "src/analyze/completeness.ts:317-333 builds `{ completeness: {...}, ...(answerFailure !== undefined ? { answerFailure } : {}) }` with no measure; :345-351 `if (report !== undefined) return renderCompletenessLine(report);`. HLD.md:107 declares `readonly measure?: RequestMeasure | undefined; // filled by sizing`. No measuring module or RETIRED_ROLE_IDS exists in src today.",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "measureDataSource takes 'the pool path and connection id resolveDataScope gives', so the existing function can supply its argument from what the measuring pass holds.",
+          "evidence": "resolveDataScope's signature is `(args: TemplateExecuteArgs, templateLabel: string)` and it resolves the scope itself from `args.intent.scopeRef` (lines 39-49). measureResolvedScope holds a ResolvedScope and no TemplateExecuteArgs, so it cannot call it. The mapping it would have to repeat has a rule the design does not state: `poolPath: scope.lookupPath` for a connection, but `poolPath: scope.value` (the scope's OWN path, not the containing repo) for a repo, workspace or manifest directory. The design says only 'the connections registered there'. Also, with no connection id a DataScope names a pool, not one source, and the design does not say how the sum passes each connection to a function typed `(scope: DataScope)`. [files: src/analyze/runtimes/data/_shared.ts]",
+          "action": "State how a ResolvedScope becomes a DataScope: either split a pure `dataScopeOf(scope: ResolvedScope): DataScope` out of resolveDataScope and have both use it, or give the rule. State that the sum calls measureDataSource once per id from the pool's list, with `connectionId` set.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.1",
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "reportFromLookups has three callers, and the head of an answer is written at the seven places the design lists; mergeAnswerReports carries no measure.",
-          "evidence": "reportFromLookups: src/analyze/context/driver.ts:1438, src/mcp/analyze-step/phases/bundle.ts:109, src/mcp/analyze-step/answer-turn.ts:36, and no other caller outside tests. Head line: src/analyze/context/bundle.ts:96 (completenessHeadLine), src/mcp/bundle-md.ts:65 (completenessHeadLine) and :121 (direct), src/mcp/analyze-step/answer-turn.ts:41, src/daemon/workflow-rpc.ts:565 and :591, src/analyze/orchestrator/driver.ts:566 in concludeRun. completeness.ts:317-333 mergeAnswerReports returns `completeness` and `answerFailure` only. On the plan tree the merge and the head line are both inside concludeRun (driver.ts:556-567), so the measure has to be added inside that function or passed to it. [files: src/analyze/orchestrator/driver.ts, src/analyze/completeness.ts, src/mcp/bundle-md.ts, src/daemon/workflow-rpc.ts, src/mcp/analyze-step/answer-turn.ts, src/analyze/context/bundle.ts]",
-          "action": "Name concludeRun as the change site on the plan tree: it merges and writes the head in one expression, so it needs the run's measure as an argument.",
+          "severity": "MED",
+          "premise": "Removing `scope` from the classifier's output touches the schema, the prompt file and the validator's checks, and that list is complete.",
+          "evidence": "src/analyze/classifier/driver.ts:234-236 builds the user message of every classify call in code: `'Now classify. Emit ONLY the JSON object matching the ClassifiedIntent schema -- no prose, no fenced block. Required fields: target, scope, focused, scopeRef ({kind, value}), reasoning.'`. Left as it is, each call tells the model to emit a field that the schema (additionalProperties false) then rejects. The same file types the call `completeStructured<ClassifiedIntent>` (:155), reads `raw.scope` in a log (:177) and returns `raw`. The validator, which the design names, has no check of the size: every `scope` in validate.ts is `scopeRef` (lines 95-219), and hintedIntentBase passes it a placeholder 'M' (orchestrator/driver.ts:667). [files: src/analyze/classifier/driver.ts, src/analyze/classifier/validate.ts]",
+          "action": "Add src/analyze/classifier/driver.ts to 2.13: the 'Required fields' sentence of buildInitialMessages, the type of the structured call, the log line and the return type. Replace 'from the validator's checks' with the validator's parameter type (UnsizedIntent) and the removal of the placeholder at orchestrator/driver.ts:667. Add a test that the user message names no size.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.2",
@@ -122,8 +134,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The inventory of everything that names the scope picker and its role is complete.",
-          "evidence": "A repo-wide search for `scope.pick|scope-picker|scopePick` outside docs/epics, docs/standalone and .insrc finds: scope-picker.ts, classifier/index.ts:28-37, orchestrator/driver.ts:32 and 299-335, context/driver.ts:1031 (comment), boot-validator.ts:120, role-taxonomy.ts:89, the two tests that import the classes (model-schemas-draft-2020.test.ts:24, model-failure-callers.test.ts:24-27), config/__tests__/role-taxonomy.test.ts:30, vscode-plugin/package.json:712. The remaining hits are prose or fixtures that only contain the words. vscode-plugin/src/config/__tests__/per-role.test.ts:77-79 asserts the declared keys exactly cover the taxonomy, so the two must change together, as the design says. The JetBrains plugin does not name the role. [files: src/analyze/classifier/index.ts, src/analyze/context/boot-validator.ts, src/config/role-taxonomy.ts, vscode-plugin/package.json, vscode-plugin/src/config/__tests__/per-role.test.ts]",
+          "premise": "The inventory of everything that names the scope picker is complete: its module, prompt, export, role row, boot-validator entry, the driver comment, the two tests that import its classes, the role-list test and the VS Code declaration.",
+          "evidence": "A repo-wide search for `scope-picker|pickScope|analyze.scope.pick|ScopePicker` outside docs finds: classifier/scope-picker.ts, classifier/index.ts:28-37, orchestrator/driver.ts:32,299-335, config/role-taxonomy.ts:89, context/boot-validator.ts:120, context/driver.ts:1031 (comment), __tests__/model-schemas-draft-2020.test.ts:24, context/__tests__/model-failure-callers.test.ts:24-27, config/__tests__/role-taxonomy.test.ts:30, vscode-plugin/package.json:712. Each is named in 2.12 or covered by 'the other tests that list prompts or roles'. The remaining hits are unrelated fixture strings. The JetBrains plugin has no literal for the role.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -134,9 +146,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The per-driver description of where each listing applies its limit is right, and every driver with a listing is accounted for.",
-          "evidence": "pg.ts:266-275 `const cap = clampListLimit(opts?.limit)` then `LIMIT ${cap + 1}` (sqlite.ts:224 and mysql.ts:266 use the same clamp); oracle.ts:310-324 `clampOracleListLimit` and `FETCH FIRST ${cap + 1} ROWS ONLY`; mssql.ts:303-313 `clampMssqlListLimit` and `SELECT TOP ${cap + 1}`; clickhouse.ts:153-154 `listTables(): Promise<never> { throw new Error('... not yet implemented ...') }`. Namespace listings: mongodb.ts:117, cassandra.ts:158 and dynamodb.ts:169 clamp to at most 1000 and set `truncated`; nats.ts:104-116 returns its one bucket. A seventh namespace driver the design does not name, memcached.ts:112-116, returns `supported: false`, which the design's 'listing says it is not supported' case covers. shared/db-driver.ts:672 and :711 hold the two optional method signatures. [files: src/daemon/db/drivers/pg.ts, src/daemon/db/drivers/oracle.ts, src/daemon/db/drivers/mssql.ts, src/daemon/db/drivers/clickhouse.ts, src/daemon/db/drivers/mongodb.ts, src/daemon/db/drivers/memcached.ts, src/shared/db-driver.ts]",
-          "action": "Mention memcached beside Redis and etcd in 2.6 and 2.8 so the list of drivers is complete.",
+          "premise": "reportFromLookups has three callers, and the writers of an answer's head are the ones listed in 2.16.",
+          "evidence": "Callers: src/analyze/context/driver.ts:1438, src/mcp/analyze-step/phases/bundle.ts:109, src/mcp/analyze-step/answer-turn.ts:36. Head writers: context/bundle.ts:96 (completenessHeadLine), mcp/bundle-md.ts:65 (completenessHeadLine) and :121 (direct), answer-turn.ts:41 (direct), daemon/workflow-rpc.ts:565 (completenessHeadLine) and :591 (direct), orchestrator/driver.ts:566 (`headFinalReport(..., renderCompletenessLine(report))`). No other non-test caller exists.",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -146,11 +158,23 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "measureLookupResults can take 'the distinct file paths the outputs name' from the lookup outputs by a stated rule.",
-          "evidence": "The design gives no rule for which field of an output is a file path. The outputs are a union of per-lookup shapes: src/analyze/explore/types.ts declares 23 path-like fields under different names (file, filePath, path, files, paths and others) across the output types, and reportFromLookups (answer-report.ts:39) reads only the common `completeness` field. I found no shared accessor that lists the files an output names, and the design names none, so I could not confirm that `files` is defined for every lookup type. [files: src/analyze/explore/types.ts, src/analyze/explore/answer-report.ts]",
-          "action": "Add to 2.10 the rule for the file count: either one function per output type that returns its file paths (with the list of types and fields), or a statement of which fields are read, and what an output type with no file field contributes.",
+          "premise": "The per-driver description of the listings is right: sqlite, pg and mysql clamp through clampListLimit; oracle and mssql put the limit in the query text; ClickHouse's listing always throws; the four namespace drivers apply a limit and report `truncated`; the file listing's `limit` is required today.",
+          "evidence": "sqlite.ts:224, pg.ts:266, mysql.ts:266 `const cap = clampListLimit(opts?.limit)`; oracle.ts:324 `FETCH FIRST ${cap + 1} ROWS ONLY`; mssql.ts:313 `SELECT TOP ${cap + 1}`; clickhouse.ts:153-154 `async listTables(): Promise<never> { throw new Error('... not yet implemented ...') }`; mongodb.ts:117-130, cassandra.ts:158-171 and dynamodb.ts:169-184 clamp to 1000 and set `truncated`; nats.ts:110-114 computes the limit and discards it (`void limit; truncated: false`), so its complete mode changes nothing. list-files.ts:37 `readonly limit: number`. shared/db-driver.ts:672 and :711 hold the two signatures as quoted, and :520-524 has `truncated` and `supported`.",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "could-not-verify"
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.5",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A child plan is spawned in one place, the recursive planner, where the depth cap comes from the root's size handed down, and the daemon's plan request takes `rootScope ?? intent.scope` for the depth.",
+          "evidence": "src/analyze/planner/recursive.ts:96 `const rootScope = input.rootScope ?? input.intent.scope;`, :121 `const childIntent = extractChildIntent(task);`, :132-139 builds the child input with `rootScope`. The only other caller of runPlanner is src/daemon/analyze-rpc.ts:452, where :426 reads `const rootScope = parsed.rootScope ?? parsed.intent.scope;`. extractChildIntent requires a string `scope` on the child (:187), which the design keeps as the hint.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
@@ -158,20 +182,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "RETIRED_PATHS cannot retire the role because the reconcile splits a path on every dot while a per-role value is stored under one key that contains dots.",
-          "evidence": "src/config/reconcile.ts:355-360: `for (const r of retired) { const keys = r.path.split('.'); if (hasPath(config, keys)) { deleteAt(...)`. src/config/write-path.ts:11-13 documents keys that contain dots: `models.tasks.<roleId> \u2014 role ids like \"context.assemble\"` and `models.byRepo.<repoPath>.*`; src/config/analyze.ts:384-392 reads `models['byRepo']` entries with their own tasks. assertRetiredDisjoint (reconcile.ts:263-272) checks retired paths against catalog paths only, so the extension to role ids is new work, as stated. [files: src/config/reconcile.ts, src/config/write-path.ts, src/config/analyze.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An optional `sizeHint` on the step tool's state needs no version bump, and the builder's cache key is a hash over its whole inputs, so the size must be taken out of what is hashed.",
-          "evidence": "src/mcp/analyze-step/state.ts:46-47 `/** Bump when adding required fields. ... */ export const STATE_VERSION = 2`; the payload already has optional fields (plan, executed, narrow). src/analyze/context/driver.ts:335-337 `hash: computeCacheKey(promptContent, inputs)` and :541 `h.update(stableStringify(inputs))`, computed before the scope is used at :356. The step tool has no cache of its own to change: src/mcp/analyze-step/cache-lookup.ts:40-42 `readBundleForStep` always returns null. [files: src/mcp/analyze-step/state.ts, src/analyze/context/driver.ts, src/mcp/analyze-step/cache-lookup.ts]",
+          "premise": "A retired per-role setting cannot be named in RETIRED_PATHS, because the reconcile splits a path on every dot while a per-role value is stored under one key that contains dots, and the reconcile keeps keys the catalog does not list.",
+          "evidence": "src/config/reconcile.ts:356 `const keys = r.path.split('.');` and its header: 'preserve every un-catalogued key EXCEPT those explicitly on the retired list'. src/config/write-path.ts:10-17: 'Two dynamic-key namespaces use keys that CONTAIN dots ... `models.tasks.<roleId>` ... the reader ... expects the flat key roleTiers[\"context.assemble\"]'. src/config/analyze.ts:360-363 reads `Object.entries(src['tasks'])` and accepts any role key with a valid tier, so a stored value for the removed role would stay until pruned. assertRetiredDisjoint (reconcile.ts:263) compares against catalog paths only, so the extension the design describes is needed.",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -182,8 +194,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Adding the listings' complete mode and switching off walkFiles' cap for the measure alone are this Story's, and the limits other callers meet stay for Story s4.",
-          "evidence": "HLD.md 5.2 (Story S002): 'Adding a complete mode to the data drivers' listings for the count (the five relational drivers, four of the six namespace drivers, the file listing; Redis and etcd are recorded as not determined ...), with the limited mode kept for other callers'. The existing callers pass no complete flag and keep their limits: src/analyze/runtimes/data/discovery-objects.ts:102, :121 and :137-140 (`limit: FILE_LIST_LIMIT`), src/analyze/explore/db-tables-list.ts:105 and :120, and the infra tasks call `walkFiles(repoPath)` with the default cap (inventory-kubernetes.ts:75 and four others). The design changes none of them. [files: docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md, src/analyze/runtimes/data/discovery-objects.ts, src/analyze/explore/db-tables-list.ts]",
+          "premise": "The design keeps sc3 as the HLD sketches it and does not redesign what other Stories own: the scope function and the error mapping (s6), the completeness record (s1), and the caps that s4 removes.",
+          "evidence": "HLD.md:123-132 gives the same eight fields as 2.1 (the size is the same five names). The design calls resolveTaskScope, resolveScopeForTarget and scopeErrorMapping unchanged, and adds no error code. walkFiles gains only `null` for 'no cap', with the default at _shared.ts:134 left for s4. The listings keep their limited mode as the default, which the HLD's s2 text asks for (line 205: 'with the limited mode kept for other callers').",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -193,22 +205,10 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "measureRequestScope never throws: its stated detection (the three scope error classes, and the rejection of the one entity read) covers every failure of resolving the scope.",
-          "evidence": "Resolution reads the registry outside any guard for two kinds of scope. src/analyze/context/scope.ts:196 in resolveSymbol: `const repos = await deps.listRepos();` and :205-207 `findEntitiesByFile` / `listEntitiesForRepo`; :270 in resolveConnection: `const repos = await deps.listRepos();`. A rejection there (the graph store closed or unreadable) is not a ScopeNotIndexedError, ScopeRefUnresolvedError or ScopeKindTargetMismatchError, so scopeErrorMapping returns undefined (invariants.ts:105-112), and it is not the read of the area's entities either. Only the path kinds are lenient (containingRepoOrNull, scope.ts:167-176). ensureNonEmptyClosure's own entity read (invariants.ts:205-207) can reject the same way. As written, such a failure escapes measureRequestScope, against its 'Never throws'. [files: src/analyze/context/scope.ts, src/analyze/context/invariants.ts]",
-          "action": "State that measureRequestScope catches every rejection of the resolution, not only the three scope classes: a scope error gives its message as the note, any other error gives determined false, XL, with a note naming the failed read. Add the case to section 5 and to the test of the not-determined cases (a symbol and a connection scope with a registry read that rejects).",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
           "severity": "LOW",
-          "premise": "The file listing and the infra walk report what the measure's error cases rely on: a cut listing sets `truncated`, a walk names unreadable directories and throws for an unreadable root, and the file listing walks to the end when no limit is given.",
-          "evidence": "src/analyze/runtimes/infra/_shared.ts:146-155: `if (dir === root) throw err; unreadable.push({ what: ..., reason: ... }); return;` and :141 `if (out.length >= cap) { truncated = true; return; }`. src/daemon/db/list-files.ts:37 `readonly limit: number;` (required today) and :66, :71 `if (out.length >= opts.limit) { truncated = true; return; }`, which is false for an absent limit, so the walk ends with `truncated` false. Two things the measure inherits from that listing: it skips names that begin with a dot (:72) and descends only when `recursive` is true (:75); the data task passes `recursive: config.recursive === true` (discovery-objects.ts:138). [files: src/analyze/runtimes/infra/_shared.ts, src/daemon/db/list-files.ts, src/analyze/runtimes/data/discovery-objects.ts]",
-          "action": "Say in 2.6 that the file count is taken with the connection's own `recursive` setting, as the data task does, so the measure counts what the task would list.",
+          "premise": "A rejection that is none of the three scope errors can leave the resolution of a symbol or a connection scope, so the measuring pass must catch every rejection and not only the mapped ones.",
+          "evidence": "src/analyze/context/scope.ts:196 (`const repos = await deps.listRepos();` in resolveSymbol), :205-207 (findEntitiesByFile, listEntitiesForRepo) and :270 (resolveConnection) have no guard, while the path kinds go through containingRepoOrNull (:167-176), which catches and returns null. invariants.ts:205-207 reads the repo's entities unguarded in the index check. The design's second error case states this and its handling (determined false, XL, a note naming the read).",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -218,9 +218,9 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each of the five acceptance criteria maps to at least one named test, and the named test subjects exist in the test levels.",
-          "evidence": "The acceptance mapping in section 6 has rows ac1 to ac5, matching the five criteria of the Define's Story s2, and every subject quoted in a row appears under a unit, integration or live level above it. The framework stated (node:test under Node 22, tests in `__tests__` beside the code) matches CLAUDE.md's `npx tsx --test 'src/**/__tests__/*.test.ts'`. One subject cannot pass as worded for a code or docs target: the workspace sum through measureRequestScope (see the finding under current-behaviour). [files: .insrc/artifacts/DEF-b9d5c5c40df5a574.json, CLAUDE.md]",
-          "action": "Reword the workspace test subject with the target it applies to, as set out under current-behaviour.",
+          "premise": "Each of ac1-ac5 maps to at least one named test, and the existing tests the design says it changes exist.",
+          "evidence": "The acceptance mapping lists tests for all five criteria of DEF.md:145-149. The tests named as changed exist: src/analyze/__tests__/model-schemas-draft-2020.test.ts:24 and src/analyze/context/__tests__/model-failure-callers.test.ts:24-27 import the picker's classes; src/config/__tests__/role-taxonomy.test.ts:30 lists the role; vscode-plugin/src/config/__tests__ holds per-role.test.ts and per-role-engine.test.ts. One gap follows from the change-sites finding: the classifier test asserts the schema only, so it would pass while the user message still asks for a size.",
+          "action": "Add the user-message assertion named under change-sites.",
           "fixability": "manual",
           "outcome": "holds"
         }
@@ -229,10 +229,10 @@
         "high": 0,
         "med": 2,
         "low": 14,
-        "unverified": 1
+        "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-09T15:41:21.152Z",
+      "reviewedAt": "2026-10-09T15:46:01.519Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     }
@@ -559,7 +559,7 @@
             {
               "name": "scope",
               "type": "DataScope",
-              "purpose": "The pool path and connection id resolveDataScope gives for a connection scope.",
+              "purpose": "A pool path and ONE connection id. resolveDataScope cannot supply it here: it takes a plan task's arguments and resolves the scope itself. So the rule it applies is split out of it into a pure function, dataScopeOf(scope: ResolvedScope): DataScope, in src/analyze/runtimes/data/_shared.ts, which resolveDataScope then calls and the measuring pass calls with the resolved scope it holds. The rule is unchanged: for a connection scope the pool path is the scope's lookup path (the repo that declares the connection) and the connection id is the scope's; for a repo, workspace or manifest directory the pool path is the scope's OWN path, not the containing repo's, and there is no connection id.",
               "optional": false
             },
             {
@@ -577,7 +577,8 @@
           "preconditions": [],
           "postconditions": [
             "Never starts a scan of a live store's keys.",
-            "A listing that reports it was cut is never a determined count."
+            "A listing that reports it was cut is never a determined count.",
+            "For a data request on a repo, workspace or manifest directory, measureResolvedScope lists the connections of the pool at that path and calls measureDataSource once per connection id, one after another, each with `connectionId` set; it never passes a scope with no connection id."
           ]
         },
         {
@@ -716,13 +717,14 @@
           "parameters": [],
           "returns": {
             "type": "Promise<UnsizedIntent>",
-            "meaning": "The classifier's output loses `scope`: it is removed from the schema's properties and required list (src/analyze/classifier/schema.ts), from the classifier prompt (src/prompts/analyze/classify.system.md) and from the validator's checks. ClassifiedIntent itself is unchanged and keeps `scope`."
+            "meaning": "The classifier's output loses `scope`, at every place that names it: the schema's properties and required list (src/analyze/classifier/schema.ts); the classifier prompt (src/prompts/analyze/classify.system.md); and the classifier's driver (src/analyze/classifier/driver.ts), where the user message of every call is built in code and ends with a sentence that lists the required fields, `scope` among them, where the structured call is typed with the full intent, where a log line reads the size, and where the result is returned: the sentence drops the field, the call and the return are typed UnsizedIntent, and the log line drops it. The validator has no check of the size (every `scope` it reads is the scope reference); its parameter type becomes UnsizedIntent, and the placeholder size 'M' that the plan tree's driver gives it for a request with a stated kind of source (hintedIntentBase in src/analyze/orchestrator/driver.ts) is removed. ClassifiedIntent itself is unchanged and keeps `scope`."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
             "A classifier answer that still carries a `scope` is rejected by the schema, as any unknown field is.",
-            "The daemon's classify request returns the classifier's result with a measured size added, so its response keeps the field."
+            "The daemon's classify request returns the classifier's result with a measured size added, so its response keeps the field.",
+            "No message sent to the classifier model asks for a size."
           ]
         },
         {
@@ -804,7 +806,7 @@
       {
         "entity": "RequestMeasure (new module src/analyze/measure.ts)",
         "change": "new",
-        "details": "The HLD's sc3 type, the SIZE_THRESHOLDS table, sizeOfCounts, measureNamedArea, measureRequestScope, measureDataSource, measureLookupResults and the type UnsizedIntent. The module imports the scope function (src/analyze/runtimes/shared/task-scope.ts), the entity reader (src/db/entities.ts) and the data scope and pool the data tasks use (src/analyze/runtimes/data/_shared.ts); it is imported by the plan tree's driver, the recursive planner, the context builder, the step tool, the answer report and the daemon's handlers. One function lives outside the module, beside the lookup output types: filesNamedBy, which returns the file paths an output names, one case per output type.",
+        "details": "The HLD's sc3 type, the SIZE_THRESHOLDS table, sizeOfCounts, measureNamedArea, measureRequestScope, measureDataSource, measureLookupResults and the type UnsizedIntent. The module imports the scope function (src/analyze/runtimes/shared/task-scope.ts), the entity reader (src/db/entities.ts) and the data scope and pool the data tasks use (src/analyze/runtimes/data/_shared.ts); it is imported by the plan tree's driver, the recursive planner, the context builder, the step tool, the answer report and the daemon's handlers. One function lives outside the module, beside the lookup output types: filesNamedBy, which returns the file paths an output names, one case per output type. A second function is split out for it in the data tasks' shared module: dataScopeOf, the pure rule from a resolved scope to a pool path and a connection id, which resolveDataScope also calls.",
         "schemaDiff": "export const SIZE_THRESHOLDS = { files: [1, 20, 200, 1500], items: [50, 500, 5000, 20000] } as const; // upper bounds of XS, S, M, L",
         "callSites": [
           "src/analyze/orchestrator/driver.ts",
@@ -812,7 +814,8 @@
           "src/analyze/context/driver.ts",
           "src/mcp/analyze-step/phases/start.ts",
           "src/analyze/explore/answer-report.ts",
-          "src/analyze/explore/types.ts"
+          "src/analyze/explore/types.ts",
+          "src/analyze/runtimes/data/_shared.ts"
         ]
       },
       {
@@ -825,7 +828,10 @@
           "src/analyze/planner/recursive.ts",
           "src/analyze/planner/driver.ts",
           "src/analyze/planner/validate.ts",
-          "src/analyze/context/decomposer.ts"
+          "src/analyze/context/decomposer.ts",
+          "src/analyze/classifier/driver.ts",
+          "src/analyze/classifier/validate.ts",
+          "src/prompts/analyze/classify.system.md"
         ]
       },
       {
@@ -1174,7 +1180,7 @@
             "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record",
             "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)",
             "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given",
-            "the classifier's output schema has no size property and rejects an answer that carries one; ClassifiedIntent still has the field",
+            "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
             "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
             "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union"
           ],
@@ -1202,7 +1208,8 @@
             "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
             "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)",
             "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle",
-            "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes"
+            "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes",
+            "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id"
           ],
           "fixturesNeeded": [
             "a temporary LMDB graph store with two registered repos of different sizes",
@@ -1232,9 +1239,10 @@
             "runAnalyze sets the intent's size from the measure on both classification branches, keeps a stated size as the hint, puts the measure on the classified event, in the run record and in the final report, and makes no model call to pick a size (mutation: take the stated size as the size)",
             "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path",
             "a source scan finds no call that picks a size with a model and no literal default size at the four places that set M today (mutation: restore one default)",
-            "the classifier's output schema has no size property and rejects an answer that carries one; ClassifiedIntent still has the field",
+            "the classifier's output schema has no size property and rejects an answer that carries one, the user message built for the classifier names no size among its required fields, and no placeholder size is given to the validator; ClassifiedIntent still has the field",
             "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution",
-            "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)"
+            "the scope picker's role is gone from the role taxonomy and from the VS Code extension's declared settings, the two agree in both directions, and the reconcile drops a value stored for the role under `models.tasks` and under a repo's `models.byRepo.<repo>.tasks`, where the key holds dots (mutation: retire it as a dotted path)",
+            "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id"
           ]
         },
         {
@@ -1571,6 +1579,24 @@
       "kind": "code",
       "ref": "src/analyze/context/scope.ts",
       "quotedText": "const repos = await deps.listRepos();"
+    },
+    {
+      "id": "c32",
+      "kind": "code",
+      "ref": "src/analyze/classifier/driver.ts",
+      "quotedText": "Required fields: target, scope, "
+    },
+    {
+      "id": "c33",
+      "kind": "code",
+      "ref": "src/analyze/runtimes/data/_shared.ts",
+      "quotedText": "export async function resolveDataScope("
+    },
+    {
+      "id": "c34",
+      "kind": "code",
+      "ref": "src/analyze/orchestrator/driver.ts",
+      "quotedText": "// The size is not part of either check; 'M' is a placeholder here."
     }
   ]
 }

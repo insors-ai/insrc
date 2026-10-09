@@ -891,8 +891,8 @@ test('a narrow pane stacks the columns into one list grouped by stage, and no ru
   // Wide: columns side by side. Narrow: the same sections stacked, one per stage, under their headings.
   assert.match(BOARD_STYLE, /\.board\{display:grid;/);
   const narrow = /@media \(max-width:600px\)\{(.*)\}$/.exec(BOARD_STYLE)?.[1] ?? '';
-  assert.match(narrow, /\.board\{display:block;\}/, 'below 600 px the columns stack into one list');
-  assert.match(narrow, /\.board>section\{/);
+  assert.match(narrow, /\.board\{display:flex;flex-wrap:wrap;/, 'below 600 px the columns stack into one list');
+  assert.match(narrow, /\.board>section\{flex:1 0 100%;\}/, 'each non-empty stage takes a full row');
   // Nothing is hidden at any width or density.
   for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0/]) {
     assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
@@ -1234,4 +1234,41 @@ test('clear-filters with no snapshot shown posts only the status message', async
   s.calls[0]!.resolve({ ok: true, value: fixtureSnapshot([item({ id: 'S1' }), item({ id: 'S2' })]) });
   await flush();
   assert.equal(lastBoard(ch)!.totals.items, 2, 'the cleared search applies when the snapshot arrives');
+});
+
+test('CSP string unchanged, exactly one aria-live region, #details precedes #board', () => {
+  const doc = renderBoardDocument('N0NCE');
+  assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/);
+  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"'], 'the announcer is the only live region');
+  assert.match(doc, /<p id="status" role="status"><\/p>/, 'the status keeps its role without aria-live');
+  const details = doc.indexOf('<aside id="details"');
+  const board = doc.indexOf('<div id="board"');
+  assert.ok(details > 0 && board > details, 'the details pane comes before the board, so a narrow pane shows it first');
+  // The app bar carries the wordmark, breadcrumb, freshness line and read-only marker; the toolbar the chips.
+  for (const part of ['<span class="wordmark">insrc</span>', '<span class="crumb">Workspace / Delivery</span>', '<span class="readonly">Read-only</span>',
+    '<div id="scope-chips" class="chips" role="group" aria-label="Scope"></div>', '<button id="attention-chip" class="chip" type="button" aria-pressed="false">Needs attention</button>',
+    '<div id="panel"></div>']) assert.ok(doc.includes(part), part);
+});
+
+test('BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible', () => {
+  assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
+  for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) assert.match(v, /^var\(--(vscode-|gap|pad|small)/, v);
+  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0/]) {
+    assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
+  }
+  assert.match(BOARD_STYLE, /\.board\{display:grid;grid-template-columns:repeat\(6,minmax\(0,1fr\)\);/, 'six equal columns when wide');
+  for (const tone of ['success', 'warning', 'danger', 'neutral']) assert.match(BOARD_STYLE, new RegExp(`\\[data-tone="${tone}"\\]\\{color:var\\(--vscode-`), `${tone} pills are tinted from the theme`);
+  assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
+  assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
+  assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
+});
+
+test('BOARD_STYLE\'s 600 px block orders empty stage sections after non-empty ones and contains no hiding rule', () => {
+  const narrow = /@media \(max-width:600px\)\{(.*)\}$/.exec(BOARD_STYLE)?.[1] ?? '';
+  assert.ok(narrow.length > 0, 'the narrow block closes the stylesheet');
+  assert.match(narrow, /\.board>section\{flex:1 0 100%;\}/, 'non-empty stages each take a full row');
+  assert.match(narrow, /\.board>section\[data-empty="true"\]\{order:1;flex:0 0 auto;\}/, 'empty stages come after and wrap onto one line');
+  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /overflow:\s*hidden/, /height:\s*0/]) {
+    assert.doesNotMatch(narrow, hiding, `no ${hiding} rule in the narrow block`);
+  }
 });

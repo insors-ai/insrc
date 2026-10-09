@@ -213,33 +213,84 @@ export const BOARD_WEBVIEW_SCRIPT = [
 ].join('');
 
 /**
- * The board's one stylesheet (E2 s5), under the existing style-src 'unsafe-inline'. Theme colours come only from
- * VS Code's --vscode-* variables. Wide panes set the six board columns side by side; below 600 px the same sections
- * stack into one list grouped by stage, each column's heading leading its group. No rule hides content: the DOM is the
- * same at every width and density, and only the [hidden] details pane is out of view while nothing is selected.
- * Density changes spacing and font size only.
+ * The board's one stylesheet (E2 s5, restyled to the PRD's mocks A-F by ISSUE-b2687832), under the existing style-src
+ * 'unsafe-inline'. Theme colours come only from VS Code's --vscode-* variables: the PRD's tones map to the testing,
+ * warning, error and description colours over the input-validation and widget backgrounds. Wide panes set the six
+ * board columns side by side and, when an item is open, the details as a side column; below 600 px the same sections
+ * stack into one list grouped by stage, empty stages wrapping onto one compact line after the others. No rule hides
+ * content: the DOM is the same at every width and density, and only the [hidden] details pane is out of view while
+ * nothing is selected. Density changes spacing and font size only.
  */
 export const BOARD_STYLE = [
-  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:8px 12px;}`,
-  `header,.tabs,.controls,.density{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}`,
-  `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);padding:2px 8px;cursor:pointer;}`,
+  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:0 16px 16px;line-height:1.45;}`,
+  `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);border-radius:4px;padding:3px 10px;cursor:pointer;}`,
+  `button:hover{background:var(--vscode-button-secondaryHoverBackground);}`,
   `button[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
-  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);}`,
+  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);border-radius:4px;padding:3px 8px;}`,
   `:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}`,
-  `.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--gap);align-items:start;}`,
-  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
-  `.card{border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
-  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}`,
-  `.badge{border:1px solid var(--vscode-panel-border);padding:0 4px;font-size:var(--small);}`,
-  `.badge[data-tone="danger"]{border-color:var(--vscode-errorForeground);color:var(--vscode-errorForeground);}`,
-  `.badge[data-tone="warning"]{border-color:var(--vscode-editorWarning-foreground);color:var(--vscode-editorWarning-foreground);}`,
-  `.badge[data-tone="success"]{border-color:var(--vscode-testing-iconPassed);}`,
-  `#details{border-left:2px solid var(--vscode-focusBorder);margin-top:12px;padding:var(--pad);overflow-wrap:anywhere;}`,
+  // App bar: wordmark and breadcrumb on the left, freshness, read-only marker, refresh and density on the right.
+  `.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin:0 -16px;padding:8px 16px;background:var(--vscode-sideBar-background,var(--vscode-editorWidget-background));border-bottom:1px solid var(--vscode-panel-border);}`,
+  `.brand,.appbar-tools,.density{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}`,
+  `.wordmark{font-weight:700;color:var(--vscode-textLink-foreground);}`,
+  `.crumb,#status,.readonly,#totals,.muted{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  `#status{margin:0;}`,
+  `.page-title{font-size:1.4em;font-weight:600;margin:14px 0 2px;}`,
+  `.announce{color:var(--vscode-descriptionForeground);font-size:var(--small);margin:0;min-height:1em;}`,
+  // Underline tabs.
+  `.tabs{display:flex;gap:18px;border-bottom:1px solid var(--vscode-panel-border);margin:10px 0 0;}`,
+  `.tabs button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 0;color:var(--vscode-descriptionForeground);}`,
+  `.tabs button[aria-pressed="true"],.tabs button[aria-selected="true"]{background:none;color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);font-weight:600;}`,
+  // Chip toolbar: search, scope chips and the attention chip.
+  `.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;}`,
+  `.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}`,
+  `.chip{border-radius:999px;padding:2px 10px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
+  `.chip[aria-pressed="true"]{border-color:var(--vscode-focusBorder);background:var(--vscode-list-activeSelectionBackground,var(--vscode-button-background));color:var(--vscode-list-activeSelectionForeground,var(--vscode-button-foreground));}`,
+  // Tone pills: the label carries the meaning, the tone only tints it.
+  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;padding:0;list-style:none;}`,
+  `.badge,.pill,.count{display:inline-block;border-radius:999px;padding:0 8px;font-size:var(--small);border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);color:var(--vscode-descriptionForeground);}`,
+  `[data-tone="success"]{color:var(--vscode-testing-iconPassed);border-color:var(--vscode-testing-iconPassed);}`,
+  `[data-tone="warning"]{color:var(--vscode-editorWarning-foreground);background:var(--vscode-inputValidation-warningBackground);border-color:var(--vscode-inputValidation-warningBorder);}`,
+  `[data-tone="danger"]{color:var(--vscode-errorForeground);background:var(--vscode-inputValidation-errorBackground);border-color:var(--vscode-inputValidation-errorBorder);}`,
+  `[data-tone="neutral"]{color:var(--vscode-descriptionForeground);}`,
+  // State panels.
+  `.panel{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:12px 16px;margin:10px 0;background:var(--vscode-editorWidget-background);}`,
+  `.panel[data-kind="unavailable"],.panel[data-kind="refresh-failed"],.panel[data-kind="partial"]{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);}`,
+  `.panel-title{font-weight:600;margin:0 0 4px;}`,
+  `.panel p{margin:4px 0;}`,
+  // Layout: the details pane precedes the board in the DOM, so a narrow pane shows it first.
+  `.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start;}`,
+  `#details{border:1px solid var(--vscode-panel-border);border-radius:6px;padding:var(--pad) 14px;background:var(--vscode-editorWidget-background);overflow-wrap:anywhere;}`,
   `#details pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
+  `.details-conflict{border-left:3px solid var(--vscode-inputValidation-warningBorder);background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:10px 0;}`,
+  `.why{background:var(--vscode-textBlockQuote-background);border-left:3px solid var(--vscode-textLink-foreground);border-radius:0 4px 4px 0;padding:8px 12px;margin:8px 0;}`,
+  `.chain{list-style:none;margin:6px 0;padding:0;}`,
+  `.chain li{display:grid;grid-template-columns:4.5em minmax(0,1fr);gap:8px;padding:6px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
+  `.task{border-top:1px solid var(--vscode-panel-border);padding:6px 0;}`,
+  `.task summary{cursor:pointer;font-weight:600;}`,
+  `.task-checks{list-style:none;padding:0;margin:6px 0;}`,
+  `.task-checks li::before{content:"\\2610  ";color:var(--vscode-descriptionForeground);}`,
+  // Board: six equal columns; each column heading carries a count chip.
+  `.board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--gap);align-items:start;}`,
+  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
+  `.board h2{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:var(--small);font-weight:600;margin:0 0 8px;}`,
+  `.card{border:1px solid var(--vscode-panel-border);border-radius:6px;background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
+  `.card:hover{border-color:var(--vscode-focusBorder);}`,
+  `.kicker{font-family:var(--vscode-editor-font-family);font-size:0.8em;letter-spacing:0.3px;color:var(--vscode-descriptionForeground);}`,
+  `.card-title{font-weight:600;margin:2px 0;}`,
+  `.card-epic,.card-tasks{color:var(--vscode-descriptionForeground);font-size:var(--small);}`,
+  // Epic rollup rows: name and counts, the completion meter, the attention chip.
+  `.epic-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(7rem,9rem) auto;gap:8px 18px;align-items:center;padding:12px 0;border-bottom:1px solid var(--vscode-panel-border);}`,
+  `.epic-row h2{font-size:1em;margin:2px 0;}`,
+  `.epic-row p{margin:0;}`,
+  `.meter{height:5px;border-radius:3px;background:var(--vscode-panel-border);margin-top:6px;}`,
+  `.meter>span{display:block;height:5px;border-radius:3px;background:var(--vscode-testing-iconPassed);}`,
   `body[data-density="comfortable"]{--gap:10px;--pad:8px;--small:0.9em;}`,
   `body[data-density="compact"]{--gap:4px;--pad:3px;--small:0.85em;font-size:0.92em;}`,
   `body:not([data-density]){--gap:10px;--pad:8px;--small:0.9em;}`,
-  `@media (max-width:600px){.board{display:block;}.board>section{margin-bottom:12px;}.board h2{font-size:1em;margin:8px 0 4px;}}`,
+  // Wide: an open item sits in a side column beside the board.
+  `@media (min-width:1000px){.layout:has(> #details:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(18rem,26rem);}#details{grid-column:2;grid-row:1;position:sticky;top:8px;}.board{grid-column:1;grid-row:1;}}`,
+  // Narrow: one list grouped by stage; empty stages wrap onto one compact line after the others.
+  `@media (max-width:600px){.board{display:flex;flex-wrap:wrap;gap:12px 8px;}.board>section{flex:1 0 100%;}.board>section[data-empty="true"]{order:1;flex:0 0 auto;}.board>section[data-empty="true"] h2{margin:0;}.board h2{font-size:1em;margin:8px 0 4px;}.epic-row{grid-template-columns:minmax(0,1fr) minmax(6rem,8rem);}.epic-row>:last-child{grid-column:1/-1;}}`,
 ].join('');
 
 export function renderBoardDocument(nonce: string): string {
@@ -248,13 +299,16 @@ export function renderBoardDocument(nonce: string): string {
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
     `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
-    `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button>` +
+    // App bar (mock A): wordmark and breadcrumb; the freshness line, the read-only marker, refresh and density.
+    `<header class="appbar"><div class="brand"><span class="wordmark">insrc</span><span class="crumb">Workspace / Delivery</span></div>` +
+    // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
+    `<div class="appbar-tools"><p id="status" role="status"></p><span class="readonly">Read-only</span>` +
+    `<button id="refresh" type="button">Refresh</button>` +
     `<div class="density" role="group" aria-label="Density">` +
     `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
     `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
-    `</div></header>` +
-    // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
-    `<p id="status" role="status"></p>` +
+    `</div></div></header>` +
+    `<h1 class="page-title">${BOARD_TITLE}</h1>` +
     `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
     `<p id="notice"></p>` +
     `<nav class="tabs" aria-label="Views">` +
@@ -262,15 +316,18 @@ export function renderBoardDocument(nonce: string): string {
     `<button id="tab-epics" type="button" aria-pressed="false">Epics</button>` +
     `<button id="tab-issues" type="button" aria-pressed="false">Issues</button>` +
     `</nav>` +
-    `<div class="controls">` +
+    // Chip toolbar (mock A); the scope <select> and attention checkbox remain until the renderers switch to the chips.
+    `<div class="toolbar">` +
     `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
+    `<div id="scope-chips" class="chips" role="group" aria-label="Scope"></div>` +
+    `<button id="attention-chip" class="chip" type="button" aria-pressed="false">Needs attention</button>` +
     `<select id="scope" aria-label="Scope"><option value="all">All work</option></select>` +
     `<label><input id="attention" type="checkbox"> Needs attention</label>` +
     `</div>` +
     `<p id="totals"></p>` +
+    `<div id="panel"></div>` +
     `<p id="empty"></p>` +
-    `<div id="board" class="board"></div>` +
-    `<aside id="details" aria-label="Item details" hidden></aside>` +
+    `<div class="layout"><aside id="details" aria-label="Item details" hidden></aside><div id="board" class="board"></div></div>` +
     `<script nonce="${attr(nonce)}">${BOARD_WEBVIEW_SCRIPT}</script></body></html>`
   );
 }

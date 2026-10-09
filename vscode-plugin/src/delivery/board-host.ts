@@ -25,6 +25,7 @@ import { parseBoardUpMessage, type BoardUpMessage } from './board-protocol.js';
 import { boardDownMessages, initialBoardState, reduceBoardState, type BoardEvent, type BoardState } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
 import type { DeliverySnapshot } from './delivery-contract.js';
+import { errorText } from './guards.js';
 import { DISPLAY_LABELS } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
@@ -123,7 +124,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     try {
       result = await deps.client.snapshot();
     } catch (err) {
-      result = { ok: false, failure: { kind: 'read-failed', message: err instanceof Error ? err.message : String(err) } };
+      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
     }
     if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
     const at = deps.now();
@@ -141,13 +142,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     } catch (err) {
       // A snapshot that slipped past the client's checks but cannot be rendered: state still holds the previous
       // board, so this shows a failed refresh over it rather than a frozen board.
-      const message = err instanceof Error ? err.message : String(err);
+      const message = errorText(err);
       deps.logger.error(`delivery board: refresh ${seq} could not be applied: ${message}`);
       try {
         dispatch({ type: 'snapshot-arrived', seq, result: { ok: false, failure: { kind: 'read-failed', message } }, at });
       } catch (again) {
         // Last resort: the board keeps whatever it last posted.
-        deps.logger.error(`delivery board: refresh ${seq} failure could not be shown: ${again instanceof Error ? again.message : String(again)}`);
+        deps.logger.error(`delivery board: refresh ${seq} failure could not be shown: ${errorText(again)}`);
       }
     }
   }

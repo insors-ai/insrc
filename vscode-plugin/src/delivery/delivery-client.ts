@@ -17,7 +17,7 @@
  */
 
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from './delivery-contract.js';
-import { isObject } from './guards.js';
+import { errorText, isObject } from './guards.js';
 
 export type DeliveryFailureKind = 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace';
 
@@ -78,7 +78,7 @@ function race(call: () => Promise<unknown>, deadlineMs: number): Promise<{ reado
 }
 
 function rejectionFailure<T>(error: unknown): DeliveryResult<T> {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = errorText(error);
   return fail(message.startsWith(NOT_RUNNING_PREFIX) ? 'daemon-unavailable' : 'read-failed', message);
 }
 

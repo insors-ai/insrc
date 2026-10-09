@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "createdAt": "2026-10-09T16:31:36.297Z",
+    "updatedAt": "2026-10-09T16:31:36.297Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c5b16af1",
+        "ranAt": "2026-10-09T16:31:36.297Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/measure.test.ts",
+                "title": "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 592,
+            "titles": [
+              {
+                "title": "sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)",
+                "result": "pass"
+              },
+              {
+                "title": "measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)",
+                "result": "pass"
+              },
+              {
+                "title": "measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'",
+                "result": "pass"
+              },
+              {
+                "title": "measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)",
+                "result": "pass"
+              },
+              {
+                "title": "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record",
+                "result": "pass"
+              },
+              {
+                "title": "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)",
+                "result": "pass"
+              },
+              {
+                "title": "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given",
+                "result": "pass"
+              },
+              {
+                "title": "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

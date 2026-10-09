@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T08:45:50.036Z"
+    "updatedAt": "2026-10-09T09:00:08.514Z"
   },
   "body": {
     "tasks": [
@@ -1456,6 +1456,42 @@
               },
               {
                 "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "9d819dab",
+        "ranAt": "2026-10-09T09:00:08.514Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker-walk-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 695,
+            "titles": [
+              {
+                "title": "a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates",
                 "result": "pass"
               }
             ],

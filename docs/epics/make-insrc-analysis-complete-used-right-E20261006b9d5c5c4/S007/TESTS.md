@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -307,3 +307,19 @@ Run at 2026-10-09T08:45:50.036Z on commit `7efc942b`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/executor/__tests__/walker-aggregate.test.ts` | 0 | 4 | 0.9 s |  |
+
+## t11
+
+Run at 2026-10-09T09:00:08.514Z on commit `9d819dab`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates | `src/analyze/executor/__tests__/walker-walk-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/executor/__tests__/walker-walk-failure.test.ts` | 0 | 1 | 0.7 s |  |

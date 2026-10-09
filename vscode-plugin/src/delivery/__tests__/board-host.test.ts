@@ -504,3 +504,66 @@ test('a follow link naming an item that is not on the board is ignored and logge
   assert.equal(lastOf(ch, 'issues')!.model.selectedItemId, 'B', 'an item on the board is selected');
   assert.equal(logs.warn.length, 1);
 });
+
+test('the epic rollup and issue view render as text, and their tabs and links post only set-view and select-item', async () => {
+  const hostile = '<img src=x onerror=alert(1)>';
+  const snap = fixtureSnapshot([
+    item({ id: 'E1', kind: 'epic', title: `Epic ${hostile}` }),
+    item({ id: 'E1:S001', parentId: 'E1', stage: 'complete', title: 'Columns' }),
+    item({ id: 'E1:S002', parentId: 'E1', stage: 'scoped', title: hostile }),
+    item({ id: 'I1', kind: 'issue', standalone: true, stage: 'design-plan', title: 'Overflow', correctsRef: { resolvedItemId: 'E1:S001' } as never,
+      childIds: ['I1:S001', 'I1:S002'] }),
+    item({ id: 'I1:S001', parentId: 'I1', stage: 'complete', title: 'Wrap the text' }),
+    item({ id: 'I1:S002', parentId: 'I1', stage: 'design-plan', title: 'Measure first' }),
+    item({ id: 'I2', kind: 'issue', standalone: true, stage: 'scoped', title: 'Orphan',
+      correctsRef: { resolvedItemId: null } as never,
+      notices: [{ code: 'unresolved-parent', message: `cannot find ${hostile}`, itemIds: ['I2'], artifactIds: [], fileNames: [], attention: true }] as never }),
+  ]);
+  const host = await openWith(snap);
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  const epics = lastOf(host.ch, 'epics')!;
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'issues' } });
+  const issues = lastOf(host.ch, 'issues')!;
+
+  const { posted, deliver, el } = runScript();
+  deliver({ v: 1, payload: epics });
+  const groups = el['board']!.children;
+  assert.deepEqual(groups.map(g => texts(g).slice(0, 2)), [
+    [`Epic ${hostile}`, '1 of 2 stories complete'],
+    ['Not in an epic', '1 of 2 stories complete, 2 issues'],
+  ], 'titles and completion labels as literal text; the fix stories (parent: their issue) are not in an epic');
+  assert.deepEqual(findAll(groups[0]!, x => x.tag === 'h3').map(h => h.textContent), ['Scoped (1)', 'Complete (1)']);
+  assert.ok(texts(groups[0]!).includes(`Story · ${hostile}`), 'a hostile card title is literal text');
+  assert.equal(el['tab-epics']!.attrs['aria-pressed'], 'true');
+  assert.equal(el['tab-board']!.attrs['aria-pressed'], 'false');
+  assert.equal(el['totals']!.textContent, '6 items, 0 needing attention');
+
+  deliver({ v: 1, payload: issues });
+  const entries = el['board']!.children;
+  assert.deepEqual(entries.map(e => e.attrs['data-item-id']), ['I1', 'I2']);
+  assert.deepEqual(texts(entries[0]!).filter(t => !t.startsWith('Issue')), ['Standalone', 'Stage: Design & plan', 'Corrects: ', 'Story · Columns · Complete', 'Fix stories', 'Story · Wrap the text · Complete', 'Story · Measure first · Design & plan']);
+  assert.ok(texts(entries[1]!).includes(`cannot find ${hostile}`), 'the unresolved-parent notice is literal text');
+  assert.ok(texts(entries[1]!).includes('No fix stories yet'));
+  assert.equal(el['tab-issues']!.attrs['aria-pressed'], 'true');
+
+  // The links and tabs post only select-item and set-view.
+  const links = findAll(el['board']!, x => x.attrs['class'] === 'link');
+  assert.deepEqual(links.map(l => l.attrs['data-item-id']), ['E1:S001', 'I1:S001', 'I1:S002']);
+  for (const l of links) l.listeners['click']!();
+  for (const t of ['tab-board', 'tab-epics', 'tab-issues']) el[t]!.listeners['click']!();
+  const sent = posted.slice(2);
+  for (const m of sent) assert.notEqual(parseBoardUpMessage(m), null, `posted ${JSON.stringify(m)} is a BoardUpMessage envelope`);
+  assert.deepEqual(sent.map(m => (m as { payload: unknown }).payload), [
+    { type: 'select-item', itemId: 'E1:S001' }, { type: 'select-item', itemId: 'I1:S001' }, { type: 'select-item', itemId: 'I1:S002' },
+    { type: 'set-view', view: 'board' }, { type: 'set-view', view: 'epics' }, { type: 'set-view', view: 'issues' },
+  ]);
+
+  // An empty selection in either view says nothing matches.
+  host.ch.send({ v: 1, payload: { type: 'set-search', search: 'no such thing' } });
+  deliver({ v: 1, payload: lastOf(host.ch, 'issues')! });
+  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  host.ch.send({ v: 1, payload: { type: 'set-view', view: 'epics' } });
+  deliver({ v: 1, payload: lastOf(host.ch, 'epics')! });
+  assert.equal(el['empty']!.textContent, 'Nothing on the board matches the search and filters.');
+  assert.deepEqual(el['board']!.children.map(g => g.children[0]!.textContent), [], 'no epic matches the search');
+});

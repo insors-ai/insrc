@@ -62,7 +62,8 @@ function attr(v: string): string {
 /**
  * The webview script. Everything shown is set with textContent, and the only
  * messages posted are board up-messages: ready, refresh, set-search,
- * set-scope, set-attention and show-more.
+ * set-scope, set-attention, show-more, set-view (the tabs) and select-item
+ * (follow links in the issue view).
  */
 export const BOARD_WEBVIEW_SCRIPT = [
   `(function(){`,
@@ -73,7 +74,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const search=byId('search'),scope=byId('scope'),attention=byId('attention');`,
   `const make=function(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.setAttribute('class',cls);return e;};`,
   `const clear=function(n){while(n.firstChild)n.removeChild(n.firstChild);};`,
-  `const KIND={story:'Story',issue:'Issue'};`,
+  `const KIND={story:'Story',issue:'Issue',epic:'Epic',task:'Task'};`,
   `byId('refresh').addEventListener('click',function(){send({type:'refresh'});});`,
   `search.addEventListener('input',function(){send({type:'set-search',search:String(search.value)});});`,
   `attention.addEventListener('change',function(){send({type:'set-attention',on:attention.checked===true});});`,
@@ -93,7 +94,40 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `const badges=make('ul',undefined,'badges');`,
   `for(const b of c.badges){const t=make('li',b.label,'badge');t.setAttribute('data-tone',b.tone);t.setAttribute('data-kind',b.kind);badges.appendChild(t);}`,
   `li.appendChild(badges);return li;}`,
-  `function renderBoard(m){renderScope(m.scopeOptions);clear(board);`,
+  // View tabs: each posts set-view; the shown view's tab is marked pressed.
+  `const TABS={board:byId('tab-board'),epics:byId('tab-epics'),issues:byId('tab-issues')};`,
+  `for(const v of ['board','epics','issues'])TABS[v].addEventListener('click',function(){send({type:'set-view',view:v});});`,
+  `function markTab(view){for(const v of ['board','epics','issues'])TABS[v].setAttribute('aria-pressed',v===view?'true':'false');}`,
+  `const EMPTY='Nothing on the board matches the search and filters.';`,
+  `const plural=function(n,one,many){return n+' '+(n===1?one:many);};`,
+  // A follow link: a button whose text names the item; clicking it posts select-item with the item's id.
+  `function linkButton(l){const b=make('button',KIND[l.kind]+' \u00b7 '+l.title+(l.stageLabel===null?'':' \u00b7 '+l.stageLabel),'link');`,
+  `b.setAttribute('type','button');b.setAttribute('data-item-id',l.itemId);b.addEventListener('click',function(){send({type:'select-item',itemId:l.itemId});});return b;}`,
+  `function renderGroup(g){const sec=make('section',undefined,'epic-group');if(g.epicItemId!==null)sec.setAttribute('data-epic',g.epicItemId);`,
+  `sec.appendChild(make('h2',g.title));`,
+  `sec.appendChild(make('p',g.completionLabel+(g.issueCount>0?', '+plural(g.issueCount,'issue','issues'):''),'completion'));`,
+  `for(const st of g.stages){sec.appendChild(make('h3',st.label+' ('+st.cards.length+')'));`,
+  `const ul=make('ul');ul.setAttribute('aria-label',g.title+': '+st.label);for(const c of st.cards)ul.appendChild(renderCard(c));sec.appendChild(ul);}`,
+  `return sec;}`,
+  `function renderEpics(m){markTab('epics');clear(board);`,
+  `totals.textContent=plural(m.totals.items,'item','items')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const g of m.epics)board.appendChild(renderGroup(g));`,
+  `if(m.notInEpic.total>0)board.appendChild(renderGroup(m.notInEpic));`,
+  `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  `function renderIssue(e){const sec=make('section',undefined,'issue');sec.setAttribute('data-item-id',e.card.itemId);`,
+  `const cards=make('ul');cards.appendChild(renderCard(e.card));sec.appendChild(cards);`,
+  `sec.appendChild(make('p','Stage: '+e.stageLabel,'issue-stage'));`,
+  `if(e.parent!==null){const p=make('p','Corrects: ','parent');p.appendChild(linkButton(e.parent));sec.appendChild(p);}`,
+  `else if(e.parentNotice!==null)sec.appendChild(make('p',e.parentNotice,'parent-notice'));`,
+  `sec.appendChild(make('h3','Fix stories'));`,
+  `if(e.fixStories.length===0)sec.appendChild(make('p','No fix stories yet','no-fix'));`,
+  `else{const ul=make('ul');ul.setAttribute('aria-label','Fix stories');for(const f of e.fixStories){const li=make('li');li.appendChild(linkButton(f));ul.appendChild(li);}sec.appendChild(ul);}`,
+  `return sec;}`,
+  `function renderIssues(m){markTab('issues');clear(board);`,
+  `totals.textContent=plural(m.totals.issues,'issue','issues')+', '+m.totals.needsAttention+' needing attention';`,
+  `for(const e of m.issues)board.appendChild(renderIssue(e));`,
+  `empty.textContent=m.emptySelection?EMPTY:'';}`,
+  `function renderBoard(m){markTab('board');renderScope(m.scopeOptions);clear(board);`,
   `totals.textContent=m.totals.items+' item'+(m.totals.items===1?'':'s')+', '+m.totals.needsAttention+' needing attention';`,
   `for(const col of m.columns){const sec=make('section',undefined,'column');sec.setAttribute('data-stage',col.stage);`,
   `sec.appendChild(make('h2',col.label+' ('+col.total+')'));`,
@@ -101,7 +135,7 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `if(col.hiddenCount>0){const more=make('button','Show '+col.hiddenCount+' more');more.setAttribute('type','button');`,
   `more.addEventListener('click',function(){send({type:'show-more',stage:col.stage});});sec.appendChild(more);}`,
   `board.appendChild(sec);}`,
-  `empty.textContent=m.emptySelection?'Nothing on the board matches the search and filters.':'';}`,
+  `empty.textContent=m.emptySelection?EMPTY:'';}`,
   `window.addEventListener('message',function(e){`,
   `const m=e.data;if(!m||m.v!==1||!m.payload)return;const p=m.payload;`,
   `if(p.type==='status'){const s=p.status;`,
@@ -110,6 +144,8 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `status.textContent=parts.join(' ');status.setAttribute('data-state',s.state);`,
   `notice.textContent=s.partialNotice||'';return;}`,
   `if(p.type==='board'){renderBoard(p.model);return;}`,
+  `if(p.type==='epics'){renderEpics(p.model);return;}`,
+  `if(p.type==='issues'){renderIssues(p.model);return;}`,
   `});`,
   `send({type:'ready'});`,
   `})();`,
@@ -124,6 +160,11 @@ export function renderBoardDocument(nonce: string): string {
     `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
     `<p id="status" role="status" aria-live="polite"></p>` +
     `<p id="notice"></p>` +
+    `<nav class="tabs" aria-label="Views">` +
+    `<button id="tab-board" type="button" aria-pressed="true">Board</button>` +
+    `<button id="tab-epics" type="button" aria-pressed="false">Epics</button>` +
+    `<button id="tab-issues" type="button" aria-pressed="false">Issues</button>` +
+    `</nav>` +
     `<div class="controls">` +
     `<input id="search" type="search" aria-label="Search work items" placeholder="Search">` +
     `<select id="scope" aria-label="Scope"><option value="all">All work</option></select>` +

@@ -161,11 +161,37 @@ function badgesOf(item: CardItem, labels: DisplayLabels): readonly BadgeView[] {
 
 const KIND_TEXT = { story: 'Story', issue: 'Issue' } as const;
 
+const CANONICAL_ID = /^E\d{8}([0-9a-f]{8})(?::(S\d+))?$/i;
+const H_FORM_ID = /^H([0-9a-f]{8})[0-9a-f]*(?::(S\d+))?$/i;
+
+/**
+ * An item id in short form, per the published id format ('E<date><hash8>[:S<nnn>]', or the 'H<hash>' fallback): the
+ * 8-character hash in upper case, then ' / S<nnn>' when the id names a story. Any other id (a ':R(<raw>)' fallback, a
+ * task id, an id of unknown shape) is returned whole.
+ */
+export function compactIdOf(id: string): string {
+  const m = CANONICAL_ID.exec(id) ?? H_FORM_ID.exec(id);
+  if (m === null) return id;
+  const hash = (m[1] ?? '').toUpperCase();
+  return m[2] === undefined ? hash : `${hash} / ${m[2].toUpperCase()}`;
+}
+
+/** The recorded task results as 'n/N tasks passed'; unplanned tasks are not counted, and no recorded task gives null. */
+function taskSummaryOf(item: DeliveryItemView): CardView['taskSummary'] {
+  const v = item.validation;
+  if (v === null) return null;
+  const total = v.passed + v.failed + v.unrecorded;
+  return total === 0 ? null : { passed: v.passed, total, label: `${v.passed}/${total} tasks passed` };
+}
+
 function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | null, labels: DisplayLabels): CardView {
   const title = titleOf(item);
   const epicTitle = epic === null ? null : titleOf(epic);
   const badges = badgesOf(item, labels);
-  const parts = [`${KIND_TEXT[item.kind]}: ${title}.`, `Stage: ${labels.stage[stage]}.`];
+  const compactId = compactIdOf(item.id);
+  const taskSummary = taskSummaryOf(item);
+  const parts = [`${KIND_TEXT[item.kind]}: ${title}.`, `Id: ${compactId}.`, `Stage: ${labels.stage[stage]}.`];
+  if (taskSummary !== null) parts.push(`${taskSummary.label}.`);
   if (item.standalone) parts.push('Standalone.');
   else if (epicTitle !== null) parts.push(`Epic: ${epicTitle}.`);
   if (item.needsAttention) parts.push('Needs attention.');
@@ -176,6 +202,8 @@ function cardOf(item: CardItem, stage: DeliveryStage, epic: DeliveryItemView | n
     title,
     standalone: item.standalone,
     epicTitle,
+    compactId,
+    taskSummary,
     badges,
     needsAttention: item.needsAttention,
     accessibleLabel: parts.join(' '),

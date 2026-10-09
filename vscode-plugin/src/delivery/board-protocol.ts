@@ -53,9 +53,13 @@ export interface CardView {
   readonly title: string;
   readonly standalone: boolean;
   readonly epicTitle: string | null;
+  /** The item id in short form ('ABCDEF01 / S001'), or the full id when it has no canonical or H-form hash. */
+  readonly compactId: string;
+  /** Recorded task results ('n/N tasks passed'); null when the item records none. */
+  readonly taskSummary: { readonly passed: number; readonly total: number; readonly label: string } | null;
   readonly badges: readonly BadgeView[];
   readonly needsAttention: boolean;
-  /** One line naming every badge, for screen readers. */
+  /** One line naming the id, the task summary and every badge, for screen readers. */
   readonly accessibleLabel: string;
 }
 

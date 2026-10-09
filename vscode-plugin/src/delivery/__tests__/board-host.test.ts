@@ -817,6 +817,20 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   await flush();
   assert.equal(detailsOf(ch7).at(-1)!.openedRecord, null, 'the old snapshot\'s record is not shown');
 
+  // A selection that cannot be rendered changes nothing, so the opened record stays.
+  const s8 = detailsSetup();
+  const broken = fixtureSnapshot([...storySnapshot().items, item({ id: 'S9', title: 'Broken', tasks: 42 as never })]);
+  const ch8 = await openOn(s8, broken);
+  send(ch8, { type: 'select-item', itemId: 'S1' });
+  send(ch8, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  s8.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Build' } });
+  await flush();
+  send(ch8, { type: 'select-item', itemId: 'S9' });
+  assert.ok(s8.logs.error.some(e => /select-item could not be shown/.test(e)));
+  send(ch8, { type: 'ready' });
+  assert.equal(detailsOf(ch8).at(-1)!.itemId, 'S1', 'the selection stays');
+  assert.deepEqual(detailsOf(ch8).at(-1)!.openedRecord, { artifactId: 'BUILD-x', text: '# Build' }, 'and so does its opened record');
+
   // A board that cannot be re-shown when an answer arrives logs the failure instead of rejecting unseen.
   const s6 = detailsSetup();
   const ch6 = await openOn(s6, storySnapshot());

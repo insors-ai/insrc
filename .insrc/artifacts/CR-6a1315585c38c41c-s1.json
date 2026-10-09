@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791525928842-5b51vd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T06:05:28.842Z",
+    "model": "claude:opus",
+    "elapsedMs": 102784,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "reviewedBy": "daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/__tests__/packaging.test.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/webview-channel.ts",
+        "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-host.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-protocol.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-state.test.ts",
+        "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts",
+        "vscode-plugin/src/delivery/__tests__/delivery-client.test.ts",
+        "vscode-plugin/src/delivery/__tests__/flush.ts",
+        "vscode-plugin/src/delivery/__tests__/labels.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/delivery/board-wiring.ts",
+        "vscode-plugin/src/delivery/delivery-client.ts",
+        "vscode-plugin/src/delivery/delivery-contract.ts",
+        "vscode-plugin/src/delivery/guards.ts",
+        "vscode-plugin/src/delivery/labels.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/surfaces/command-registry.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:1",
+            "message": "No test edges were recorded for the changed code. Every production symbol in the changed set (createDeliveryBoardHost, reduceBoardState, parseBoardUpMessage, createDeliveryClient, registerDeliveryBoard, webviewChannel and the rest) has an empty testsReaching list, even though the test files import and call them. The graph grounding is incomplete for these new files, so it can't show coverage either way. I checked coverage by running the tests instead. All 18 promised tests are present and passed in a local run on 2026-10-09: 55/55 in the plugin delivery, packaging, truthful-sync and chat-wiring files, and 2/2 in src/workflow/delivery/__tests__/contract.test.ts, which includes 'the VS Code plugin type-checks against the published delivery types'. There is no build record, so the pass state rests on that local run, not the ledger. No coverage gap was found in the Story's changed behaviour.",
+            "expectationRef": "testsReaching grounding (empty for all changed production symbols)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-host.ts:122",
+            "message": "refresh() is always started fire-and-forget (`void refresh()` in open() and handle()), and its first `dispatch({ type: 'refresh-requested', seq })` runs outside any try. If that reduce/render step ever throws, the result is an unhandled promise rejection, not the logged-failure path that the snapshot-arrived dispatch below it gets. Today the risk is small: a state is only kept once it has rendered, so re-deriving it with status 'loading' should not throw. Wrapping the whole body, or adding a `.catch` that logs at the `void refresh()` call sites, would make the 'board never stays frozen, failures are logged' guarantee hold on this path too.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

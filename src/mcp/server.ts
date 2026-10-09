@@ -160,9 +160,9 @@ const ANALYZE_INPUT = {
 		.optional(),
 	scope: z.enum(['XS', 'S', 'M', 'L', 'XL'])
 		.describe(
-			'Optional scope bucket. XS = single symbol; XL = entire ' +
-			'workspace. Larger scopes take longer and produce bigger ' +
-			'bundles. Defaults are computed from the intent.',
+			'Optional. The size you expect the request to be (XS smallest, ' +
+			'XL largest). It is a hint only: the size is measured from what ' +
+			'the request touches, and the answer reports both.',
 		)
 		.optional(),
 };
@@ -334,7 +334,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Optional target hint.')
 					.optional(),
 				scope: z.enum(['XS', 'S', 'M', 'L', 'XL'])
-					.describe('Only for phase=start. Optional scope bucket.')
+					.describe('Only for phase=start. Optional. The size you expect the request to be; a hint only, as the size is measured.')
 					.optional(),
 				// plan-phase inputs. We type this loosely as an object with
 				// the three known top-level fields; ajv still runs a strict

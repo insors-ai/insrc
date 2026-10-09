@@ -1,0 +1,429 @@
+ok 1 - a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase
+ok 2 - the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member
+ok 3 - the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'
+ok 4 - stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)
+ok 5 - an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called
+ok 6 - a finalize that throws records the failed output and the run goes on
+ok 7 - no answer at all to capability.reuse-check is accepted and gives a record that is not established
+ok 8 - a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)
+ok 9 - a step state minted before the change still resumes
+ok 10 - a plan with two lookups that need a model call pauses again after the first
+ok 11 - handler rejects non-object input
+ok 12 - handler rejects an unknown phase
+ok 13 - handler rejects missing phase field
+ok 14 - start returns emit_plan with a state blob + a real prompt
+ok 15 - start with no repo + no INSRC_REPO env → clear no-repo error
+ok 16 - plan phase with a garbage state blob returns wrong-state error
+ok 17 - bundle phase with awaiting_plan state returns wrong-stage error
+ok 18 - envelope is { content: [{type:"text", text: JSON}] }
+ok 19 - the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes
+ok 20 - state codec round-trips awaiting_narrow with preparedBlob + resumeState
+ok 21 - handler rejects phase=narrow with a garbage state blob
+ok 22 - handler rejects phase=narrow when state stage is awaiting_plan
+ok 23 - handler rejects phase=narrow when explorationId does not match paused exp
+ok 24 - step tool start phase: resolved workspace scope, and the pairing test refusing a stand-in scope
+ok 25 - step tool plan and narrow phases resolve the scope from a token that has no scope field
+ok 26 - the real start phase builds a workspace scope, for every kind of source, and its prompt names that directory
+ok 27 - encodeState + decodeState round-trip preserves every field
+ok 28 - encodeState mints a short URL-safe base64 token (22 chars, no padding)
+ok 29 - decodeState rejects a bogus token with StepStateDecodeError
+ok 30 - decodeState rejects a token of the wrong shape (too short)
+ok 31 - assertStage passes for a matching stage
+ok 32 - assertStage throws on a stage mismatch
+ok 33 - releaseState drops the entry so a subsequent decodeState fails
+ok 34 - token round-trips a state with an executed plan attached
+ok 35 - analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+ok 36 - analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+ok 37 - analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+ok 38 - render includes the meta comment prefix by default
+ok 39 - meta line can be suppressed via includeMeta=false
+ok 40 - the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded
+ok 41 - render walks the seven layers in order + emits headings
+ok 42 - empty layers are dropped from the rendered output
+ok 43 - layers filter narrows the rendered output
+ok 44 - missing meta renders "(unset)" instead of throwing
+ok 45 - meta includes repoIndexedAt when set
+ok 46 - runWorkflowStream: forwards progress/delta frames then resolves on done
+ok 47 - runWorkflowStream: rejects on an error frame
+ok 48 - runWorkflowStream: aborting the signal destroys the socket and rejects
+ok 49 - runWorkflowStream: pre-aborted signal rejects without connecting
+ok 50 - handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1)
+ok 51 - handleInsrcGuide({}) forwards to guide.list and returns a structured Error (ac2)
+ok 52 - handleInsrcGuide passes through an unknown-workflow error from guide.get
+ok 53 - handleInsrcGuide surfaces a daemon-unreachable transport failure as an isError envelope (never throws)
+ok 54 - handleInsrcGuide treats a whitespace-only workflow as omitted (ac2)
+ok 55 - review-step stays leak-free: updateState is in-place — a multi-turn run keeps ~1 live token
+ok 56 - code-review-step stays leak-free: release-on-consume — a resend of a released token fails loadState
+ok 57 - mcpProgressSink: undefined progressToken → sink sends nothing
+ok 58 - mcpProgressSink: defined token → monotonic progress + correct token + messages
+ok 59 - mcpProgressSink: a rejecting sendNotification does not throw out of the sink
+ok 60 - repoContainingCwd: CWD inside a registered repo matches it
+ok 61 - repoContainingCwd: CWD equal to a repo root matches (equality inclusive)
+ok 62 - repoContainingCwd: nested repos — most-specific (longest) containing path wins
+ok 63 - repoContainingCwd: path-segment boundary respected — /foo does NOT contain /foobar
+ok 64 - repoContainingCwd: CWD outside every registered repo → undefined
+ok 65 - repoContainingCwd: empty registry → undefined
+ok 66 - resolveRepoPath: explicit non-empty arg wins unconditionally + never calls the CWD lookup
+ok 67 - resolveRepoPath: explicit empty string is treated as absent → proceeds to CWD match
+ok 68 - resolveRepoPath: CWD-contained repo wins over a DIFFERENT INSRC_REPO (the core fix)
+ok 69 - resolveRepoPath: no CWD match → falls through to INSRC_REPO (headless/cron fallback)
+ok 70 - resolveRepoPath: no CWD match + INSRC_REPO unset → undefined (terminal no-repo contract unchanged)
+ok 71 - resolveRepoPath: daemon-unreachable surfaces the error (does NOT silently fall through to INSRC_REPO)
+ok 72 - T13 the steering source no longer states the old rule
+ok 73 - T13 the insrc_review_step description no longer states the old rule
+ok 74 - T13 the insrc_code_review_step description no longer states the old rule
+ok 75 - T13 the insrc_workflow_approve description no longer states the old rule
+ok 76 - T13 the steering review guide states the rule in both directions
+ok 77 - T13 the steering code-review guide states the rule in both directions
+ok 78 - T13 the steering build guide says completion requires a code review whatever the enforcement setting
+ok 79 - T13 the steering tool table describes both review tools by the other-party rule
+ok 80 - T13 the insrc_review_step description states the rule in both directions
+ok 81 - T13 the insrc_code_review_step description states the rule in both directions
+ok 82 - T13 the insrc_workflow_approve description says what approval requires
+ok 83 - T13 the plugin copy of the steering source is identical to the source
+ok 84 - T11 reviewArtifactStream: sends one stream request, forwards progress, resolves on done
+ok 85 - T11 reviewArtifactStream: rejects on an error frame and carries the daemon's reason
+ok 86 - T11 reviewArtifactStream: rejects when the daemon is not running
+ok 87 - T11 reviewArtifactStream: rejects when the connection closes before a final frame
+ok 88 - T11 reviewArtifactStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+ok 89 - T11 reviewArtifactStream: any other plain error line is a final daemon error; a plain result is a protocol error
+ok 90 - T11 reviewArtifactStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+ok 91 - T11 reviewArtifactStream: an invalid line is a protocol error; an abort rejects
+ok 92 - T11 codeReviewStream: sends one stream request, forwards progress, resolves on done
+ok 93 - T11 codeReviewStream: rejects on an error frame and carries the daemon's reason
+ok 94 - T11 codeReviewStream: rejects when the daemon is not running
+ok 95 - T11 codeReviewStream: rejects when the connection closes before a final frame
+ok 96 - T11 codeReviewStream: a plain unknown-method line with the socket kept open fails AT ONCE, not at the timer
+ok 97 - T11 codeReviewStream: any other plain error line is a final daemon error; a plain result is a protocol error
+ok 98 - T11 codeReviewStream: with a daemon that never answers, it fails at its wait limit and drops the connection
+ok 99 - T11 codeReviewStream: an invalid line is a protocol error; an abort rejects
+ok 100 - toSdkParams wraps each SamplingMessage as {type:"text", text}
+ok 101 - toSdkParams defaults maxTokens to DEFAULT_MAX_TOKENS when unset
+ok 102 - toSdkParams honours an explicit maxTokens
+ok 103 - toSdkParams forwards systemPrompt + temperature
+ok 104 - toSdkParams forwards stopSequences when non-empty
+ok 105 - toSdkParams wraps modelHints as {name} objects
+ok 106 - toSdkParams passes through the three priority fields when set
+ok 107 - fromSdkResult extracts text content + preserves model/stopReason
+ok 108 - fromSdkResult throws when content is not text (image/audio)
+ok 109 - omitted tool → structured validTools, never throws (ac4)
+ok 110 - empty-string tool → structured validTools (ac4)
+ok 111 - unknown tool → structured validTools (ac4)
+ok 112 - phaseless tool returns its single contract (ok)
+ok 113 - phaseless tool ignores a spurious phase (ac3)
+ok 114 - multi-turn hit with a valid phase → schema + validPhases (ac1)
+ok 115 - multi-turn phase omitted → error + validPhases, no schema (ac2)
+ok 116 - multi-turn unknown phase → error + validPhases (ac2)
+ok 117 - multi-turn hit surfaces the dynamicNote in the description (ac5)
+ok 118 - insrc_schema can look up itself (self-introspection)
+ok 119 - JSON-Schema derivation of a rawShape yields a non-empty Record
+ok 120 - schema-unavailable is a structured error, not a throw
+ok 121 - registry key set == registered tool set (all 11 incl. insrc_schema)
+ok 122 - validTools (from an omitted-tool lookup) equals the registry key set (ac4)
+ok 123 - every recorded rawShape converts to JSON Schema without throwing (k1)
+ok 124 - a real registered shape is served, not a stub (insrc_workflow_step)
+ok 125 - each multi-turn record phases[] equals its handler accepted set (lockstep)
+ok 126 - phaseless tools carry no phases
+ok 127 - readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section
+ok 128 - the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool
+ok 129 - handleWorkflowApprove: NEITHER artifactPath nor epicHash → InvalidTarget error, no IPC
+ok 130 - handleWorkflowApprove: BOTH artifactPath and epicHash → InvalidTarget error, no IPC
+ok 131 - handleWorkflowApprove: empty-string target fields count as absent (neither) → error
+ok 132 - handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed verbatim in the JSON response
+ok 133 - startRun / pollRun / abortRun speak the unary framing against a fake daemon
+ok 134 - unaryRpc rejects when the daemon returns an error field
+ok 135 - handleWorkflowRun: START returns runId + next:poll + guidance
+ok 136 - handleWorkflowRun: POLL renders frames as short lines + status
+ok 137 - handleWorkflowRun: POLL done surfaces artifact + runId + model + review
+ok 138 - handleWorkflowRun: POLL error surfaces the error + marks isError
+ok 139 - handleWorkflowRun: ABORT returns aborted + runId
+ok 140 - handleWorkflowRun: no phase args → guidance error
+ok 141 - T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)
+ok 142 - T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set
+ok 143 - T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work
+ok 144 - T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files
+ok 145 - T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one
+ok 146 - T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files
+ok 147 - T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story
+ok 148 - T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none
+ok 149 - Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp
+ok 150 - fail-open: a stamp that cannot be written leaves the implement result unchanged on every route
+ok 151 - a REFUSED implement stamps nothing
+ok 152 - T37: the completion writer excludes a COMMITTED build-start file — exact set
+ok 153 - T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)
+ok 154 - implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref
+ok 155 - implement: does NOT gate on the LLD open questions (resolved at stage-start now)
+ok 156 - implement: unapproved plan returns next=refused with reason plan-unapproved
+ok 157 - implement: a non-task target (a story) is a resolution error
+ok 158 - validate: returns the judge verdict from a stubbed CliProvider review session
+ok 159 - validate: a failing judge verdict gives passed:false
+ok 160 - validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed
+ok 161 - validate: a BUILD-record persist failure is swallowed — the verdict is still returned
+ok 162 - validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)
+ok 163 - validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set
+ok 164 - validate[standalone]: a persist failure is swallowed — the verdict is still returned
+ok 165 - validate[standalone]: a Small build with no resolvable identity → err(no-identity)
+ok 166 - validate[standalone]: the persisted record is approvable by the completion gate
+ok 167 - implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds
+ok 168 - validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict
+ok 169 - implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)
+ok 170 - CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '\#\# Scope' for its body.focus
+ok 171 - CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate
+ok 172 - CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '\#\# Changes' section
+ok 173 - t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story
+ok 174 - t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped
+ok 175 - CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable
+ok 176 - t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change
+ok 177 - t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set
+ok 178 - t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest
+ok 179 - t6: a DIRTY tree yields today's working-tree result and does NOT union in the committed range
+ok 180 - t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range
+ok 181 - t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains
+ok 182 - t7: a SUPPLIED summary reaches body.summary
+ok 183 - t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)
+ok 184 - t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank
+ok 185 - t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference
+ok 186 - validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head
+ok 187 - validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/
+ok 188 - 0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD
+ok 189 - 0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written
+ok 190 - 0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise
+ok 191 - 0855311b — completion: an LLD-only story's record is written standalone, beside the LLD
+ok 192 - 43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path
+ok 193 - validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results
+ok 194 - a judge passed:true with a failing typecheck gives passed:false
+ok 195 - a judge timeout returns verdict-session-timeout and writes no BUILD record
+ok 196 - the validate judge is called through runReviewSession with the repo as cwd and a verdict schema
+ok 197 - a judge object without a boolean passed gives unparseable-verdict
+ok 198 - a non-timeout judge error gives verdict-session-failed and writes no BUILD record
+ok 199 - plan-driven and standalone validate each hand the check runner the plan for their route
+ok 200 - implement and validate return merge-in-progress while a merge is uncommitted
+ok 201 - a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record
+ok 202 - a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)
+ok 203 - a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused
+ok 204 - the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails
+ok 205 - the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field
+ok 206 - a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path
+ok 207 - when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)
+ok 208 - when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)
+ok 209 - a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)
+ok 210 - a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)
+ok 211 - when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn
+ok 212 - a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live
+ok 213 - on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build
+ok 214 - builder text in the judge's evidence is kept to one line
+ok 215 - the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it
+ok 216 - both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape
+ok 217 - the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own
+ok 218 - the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before
+ok 219 - the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before
+ok 220 - admitStandaloneBuild: trivial (no LLD) is admitted directly
+ok 221 - admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)
+ok 222 - trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record
+ok 223 - trivial standalone build without a focus is an error (no-scope)
+ok 224 - Small standalone build without an epicHash is an error (no-identity)
+ok 225 - the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' \# SKIP' with and without a reason, and skipped for ' \# TODO'
+ok 226 - a title nested in a suite or a subtest is found at its depth by its own title
+ok 227 - TAP's escaping of '\#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)
+ok 228 - a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped
+ok 229 - output with no TAP version line and no result line is reported as not understood, with no titles
+ok 230 - a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level
+ok 231 - a correct mapping with cases, with a reported result on a live test, and with both, is accepted
+ok 232 - text the builder supplies must be one line: a title or evidence with a line break is a fault
+ok 233 - a stored mapping is reused only as far as the rules still allow: a stale name, a reported result on a test that is no longer live or smoke, and a file outside the repository are dropped, without a fault
+ok 234 - resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved
+ok 235 - a base name under two __tests__ directories resolves to both files
+ok 236 - the plan-driven, small and trivial routes each build the expected check plan
+ok 237 - a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run
+ok 238 - a passing and a failing command give ok true and ok false with their exit codes and output tails
+ok 239 - a command past its limit is reported timedOut and its whole process group, grandchild included, is gone
+ok 240 - a test file that keeps its process alive after its tests pass still finishes under --test-force-exit
+ok 241 - an unresolved test name makes tests fail with a note naming it
+ok 242 - a trivial build that deletes a test file does not ask to run it
+ok 243 - with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'
+ok 244 - with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)
+ok 245 - smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail
+ok 246 - runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)
+ok 247 - a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)
+ok 248 - a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles
+ok 249 - a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok
+ok 250 - a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note
+ok 251 - a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)
+ok 252 - trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file
+ok 253 - a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it
+ok 254 - a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments
+ok 255 - the whole output is still written after the output directory has been removed, and files older than the retention are pruned
+ok 256 - start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)
+ok 257 - the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)
+ok 258 - an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)
+ok 259 - fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)
+ok 260 - all-empty judgements => a written PASS record (vacuous but valid, ac3)
+ok 261 - ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write
+ok 262 - ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write
+ok 263 - ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved
+ok 264 - resending the same judgements token after done fails loadState (no double-write)
+ok 265 - s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called
+ok 266 - s9: start with isProcessing:true (empty staleFiles) => confirm_wait too
+ok 267 - s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)
+ok 268 - s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements
+ok 269 - S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt
+ok 270 - S001: the timeout auto-diff releases the confirm_wait token before the diff review
+ok 271 - S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit
+ok 272 - S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)
+ok 273 - s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write
+ok 274 - s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error
+ok 275 - s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record
+ok 276 - T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler
+ok 277 - T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base
+ok 278 - s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write
+ok 279 - s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full
+ok 280 - 11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted
+ok 281 - 11e4fa88 — the response says how many were dropped, per dimension, and against how large a set
+ok 282 - 11e4fa88 — the markdown lists the dropped findings and says they are not counted
+ok 283 - 11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature
+ok 284 - T10 code of controller author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+ok 285 - T10 code of unknown author with fresh grounding is sent to the daemon (full) and returns done with its verdict
+ok 286 - T10 daemon-authored code gets the judgements prompt as before, and the daemon is not asked
+ok 287 - T10 the invoking client is passed to the daemon when the tool knows it
+ok 288 - T17 a stale index returns confirm_wait and asks no daemon; the author is not even read yet
+ok 289 - T17 a declined wait asks the daemon with the degraded mode, and the tool does not assemble the diff itself
+ok 290 - T17 an accepted wait that never becomes fresh asks the daemon with the degraded mode
+ok 291 - T17 an accepted wait that becomes fresh asks the daemon with the full mode, and never returns emit_judgements
+ok 292 - T17 fresh grounding with no symbols asks the daemon with the degraded mode
+ok 293 - T17 an unavailable freshness check and unavailable grounding each return their own error and ask no daemon
+ok 294 - T17 a diff the daemon cannot read comes back as a failed daemon review naming the cause; nothing is stamped
+ok 295 - an older daemon that ignored the degraded mode is an error, not a verdict
+ok 296 - an older daemon that stamped no reviewer is an error, not a verdict
+ok 297 - T11 a daemon code review that fails (unreachable) is an error: nothing stamped, no judgements prompt offered
+ok 298 - T11 a daemon code review that fails (daemon-error) is an error: nothing stamped, no judgements prompt offered
+ok 299 - T11 a daemon code review that fails (unknown-method) is an error: nothing stamped, no judgements prompt offered
+ok 300 - T11 a daemon code review that fails (timeout) is an error: nothing stamped, no judgements prompt offered
+ok 301 - T11 a daemon code review that fails (failed) is an error: nothing stamped, no judgements prompt offered
+ok 302 - T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires
+ok 303 - T12 the judgements phase refuses controller-authored code and stamps nothing
+ok 304 - T12 an unknown author does not stop the judgements phase (only a known controller author does)
+ok 305 - start: a uxDefinition subject → emit_judgements with FIVE prompts + a schema admitting ux
+ok 306 - judgements: a UX HIGH finding withholds completion (verdict block)
+ok 307 - judgements: an adhering (empty) UX judgement folds to pass
+ok 308 - start: a subject with neither uxDefinition nor adherence → the base four (byte-shape compatible)
+ok 309 - DeployStepProtocol envelope matches the flat a1 interfaceSketch (compiles under strict)
+ok 310 - DeploymentContextBundle quartet is independent of AnalyzeContextBundle; entityId optional
+ok 311 - handleDocgen: missing docType → isError, no daemon call
+ok 312 - handleDocgen: ok outcome → JSON content; forwards docType+repo+per-type fields to docgen.generate (ac1)
+ok 313 - handleDocgen: non-ok outcome (source-not-ready) → isError carrying the reason (ac3)
+ok 314 - handleDocgen: not-found outcome → isError naming the unknown type
+ok 315 - handleDocgen: daemon unreachable → actionable isError, never a fabricated document
+ok 316 - handler module imports only the daemon IPC seam — never generateDocument or an extractor
+ok 317 - T13 start on a design returns the review template with next emit_findings
+ok 318 - T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too
+ok 319 - T13 the findings phase stamps the review and does not edit the design
+ok 320 - T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped
+ok 321 - T13 the two paths do not cross: no claims on a design run, no findings on a non-design run
+ok 322 - T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt
+ok 323 - T4 the findings phase stamps the controller on an HLD too
+ok 324 - T13 the registered tool accepts phase `findings` and its phase list names it
+ok 325 - T13 the ISSUE template is validated against its own items
+ok 326 - T9 a DEF of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 327 - T9 a LLD of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 328 - T9 a HLD of controller author is sent to the daemon and returns done with the daemon's verdict
+ok 329 - T9 a DEF of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 330 - T9 a LLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 331 - T9 a HLD of unknown author is sent to the daemon and returns done with the daemon's verdict
+ok 332 - T9/T14 daemon-authored work runs the controller loop as before, and the daemon is not asked
+ok 333 - T9 an older artifact with no author field is routed by its attribution labels
+ok 334 - T11 the tool waits 31 minutes for a design (HLD, LLD) and 90 minutes for a DEF
+ok 335 - T11 a daemon review that fails (unreachable) is an error: nothing stamped, no controller loop offered
+ok 336 - T11 a daemon review that fails (daemon-error) is an error: nothing stamped, no controller loop offered
+ok 337 - T11 a daemon review that fails (unknown-method) is an error: nothing stamped, no controller loop offered
+ok 338 - T11 a daemon review that fails (timeout) is an error: nothing stamped, no controller loop offered
+ok 339 - T11 a daemon review that fails (closed) is an error: nothing stamped, no controller loop offered
+ok 340 - T11 a daemon review that fails (failed) is an error: nothing stamped, no controller loop offered
+ok 341 - T11 against an older daemon (a plain unknown-method line, socket kept open) the tool fails at once with the update message
+ok 342 - T12 the findings phase refuses a controller-authored LLD and stamps nothing
+ok 343 - T12 the findings phase refuses a controller-authored HLD and stamps nothing
+ok 344 - T12 the verdicts phase refuses a controller-authored DEF and stamps nothing
+ok 345 - T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, and so does findings on an LLD
+ok 346 - review-step drives the full loop and stamps meta.review with model=client
+ok 347 - review-step verdicts with an unknown state token returns an error envelope
+ok 348 - buildExtractPrompt / EXTRACT_SCHEMA export the expected shape
+ok 349 - buildVerifyPrompt / VERIFY_SCHEMA export the expected shape
+ok 350 - start: returns emit_classification with a schema, prompt, and state token
+ok 351 - start: errors without a focus
+ok 352 - feature → standalone design.story with plan; nextCall pre-fills standalone params
+ok 353 - small → standalone design.story, no plan
+ok 354 - trivial → build (no LLD), routed to insrc_build_step standalone
+ok 355 - epic → define, full chain, no standalone params
+ok 356 - bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude
+ok 357 - bugfix (sized) → issue → design → plan → build
+ok 358 - classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)
+ok 359 - classify: rejects an unknown sizeClass emitted by the controller
+ok 360 - classify: rejects a tampered/undecodable state token
+ok 361 - LLD s4 amendment proposal lands as pending AmendmentRecord
+ok 362 - Bad amendment proposal is dropped; the LLD still synthesizes
+ok 363 - Approving amendment marks existing LLD stale via effective-hash mismatch
+ok 364 - ack-stale writes staleAckedAt onto LLD meta
+ok 365 - t5: a payload carrying BrainstormElicitState round-trips unchanged through save->token->load
+ok 366 - t5: releaseState frees the token (subsequent load throws StateTokenNotFound)
+ok 367 - t5: loadState for an unknown/expired token still throws unchanged — no brainstorm-specific silent-replace
+ok 368 - t5: BrainstormElicitState has exactly the three sc3 fields
+ok 369 - define workflow: happy path writes artifact to docs/epics/<slug>-E.../DEF.md
+ok 370 - define workflow: s4 sb1=missed forces synthesize hard-fail
+ok 371 - define workflow: ungrounded citation fails synthesize
+ok 372 - define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact
+ok 373 - define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)
+ok 374 - design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../
+ok 375 - design.epic: refuses to start without an approved Define
+ok 376 - design.epic: refuses without epicHash param
+ok 377 - design.epic: s6 sbdry1=missed forces synthesize hard-fail
+ok 378 - design.epic: refuses when a Story from Epic is missing from storyBoundaries
+ok 379 - design.epic: refuses when interfaceSketch contains a return
+ok 380 - design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.../S<nnn>/LLD.md
+ok 381 - design.story new-capability: s7 skips, artifact has no Migration section
+ok 382 - design.story: refuses without an approved HLD
+ok 383 - design.story: refuses without epicHash or storyId params
+ok 384 - design.story: unknown shared-contract id fails synthesize
+ok 385 - design.story: migration MISSING for enhancement Epic → hard-fail
+ok 386 - design.story: migration PRESENT for new-capability Epic → hard-fail
+ok 387 - stub workflow: start → plan → synthesize → done writes artifact
+ok 388 - stub workflow: synthesizer rejects ungrounded citation
+ok 389 - stub workflow: bad state token errors cleanly
+ok 390 - plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md
+ok 391 - plan: refuses when the Story LLD is unapproved (gate)
+ok 392 - plan: refuses when the Story LLD is stale with no ack (gate)
+ok 393 - plan: finalize rejects a task graph with a dangling dependsOn
+ok 394 - start gates on an unresolved HLD open question, returns resolve_questions with options
+ok 395 - resolve_question resolve → HLD meta resolved, then start proceeds to emit_plan
+ok 396 - resolve_question ignore → HLD meta ignored, start proceeds
+ok 397 - resolve_question defer → deferred does NOT re-trigger start, shows in review_deferred
+ok 398 - start proceeds directly when the upstream HLD has no open questions
+ok 399 - synthesize `done` carries the new artifact's still-open questions
+ok 400 - synthesize `done` omits openQuestions when the artifact carries none
+ok 401 - augmentStandaloneParams: no-op unless standalone===true
+ok 402 - augmentStandaloneParams: standalone mints a 16-char self-hash + default storyId
+ok 403 - augmentStandaloneParams: is deterministic in the runId (same runId → same hash)
+ok 404 - augmentStandaloneParams: preserves a caller-provided epicHash + storyId
+ok 405 - epicKeyFor: a standalone design.story keys by the minted (augmented) epicHash
+ok 406 - save + load round-trip
+ok 407 - release drops the entry
+ok 408 - load throws on unknown token
+ok 409 - token is URL-safe base64 (no +, /, =)
+ok 410 - s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message
+ok 411 - s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')
+ok 412 - s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)
+ok 413 - s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three
+ok 414 - replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1
+ok 415 - replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)
+ok 416 - replaceState is mint-before-release: the new token always exists even as the old is dropped
+ok 417 - replaceState never deletes the just-minted token in the degenerate prev===next case
+ok 418 - replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)
+ok 419 - reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)
+ok 420 - tracker.push: happy path patches Epic meta.tracker with refs
+ok 421 - tracker.push: checklist failure refuses synthesize + leaves meta untouched
+ok 422 - tracker.sync: happy path merges status + lastSyncedAt into meta.tracker
+ok 423 - tracker.sync: refuses when Epic has no prior tracker refs
+ok 424 - tracker.push: refuses without epicHash param
+ok 425 - tracker.push: refuses when Epic is unapproved
+ok 426 - coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks
+ok 427 - coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)
+ok 428 - coarse push with pushTasks OFF: execute prompt has no task instructions
+ok 429 - coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker

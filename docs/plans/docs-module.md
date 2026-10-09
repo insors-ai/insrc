@@ -7,6 +7,11 @@ constraint in `design/foo.md`?").
 
 Status: **DRAFT** -- not yet approved for implementation.
 
+> **Note (2026-10-10).** This plan mentions a *scope-picker*: a model call that
+> picked a request's size. It no longer exists. A request's size is measured
+> by code; see [`docs/daemon.md`](../daemon.md#how-a-requests-size-is-measured).
+> The mentions below are kept as the plan was written.
+
 ## 1. Motivation
 
 The indexer already handles non-code files ([indexer/parser/artifact.ts](../../src/insrc/indexer/parser/artifact.ts)):

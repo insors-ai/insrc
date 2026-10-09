@@ -347,3 +347,23 @@ Have code.discovery.modules walk the scope's directory on disk with the same ign
 ## 9. Open questions
 
 - The module list returns every directory that directly holds a stored source file, with no grouping: this repository has 209. A directory that holds source only in its sub-directories (such as 'src') is not in the list, though it is accepted as a module value. Is a flat list of source directories what a broad analysis should be given as its modules, or should the list also carry the parent directories?
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-09T12:24:21.388Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| data-compatibility | A run that completed before the change and is asked for again is replayed from its run record, with its stored final report returned as written and its tasks not run again. | I confirmed that plans and task outputs are stored per run id (planner/cache.ts, executor/cache.ts:84-94) and that no production code re-reads a stored plan, but I did not read the status / replay path in src/analyze/orchestrator or the daemon's run handlers to confirm that a completed run's tasks are never executed again. [files: src/analyze/planner/cache.ts, src/analyze/executor/cache.ts] | Cite the function that returns a completed run from its record, or drop the sentence; nothing else in the design depends on it. |

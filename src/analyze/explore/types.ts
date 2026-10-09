@@ -752,6 +752,93 @@ export type ExplorationOutput =
 	| FailedExplorationOutput;
 
 // ---------------------------------------------------------------------------
+// The files an output names
+// ---------------------------------------------------------------------------
+
+/** A path joined to the root it was searched from, when it is relative. */
+function underRoot(root: string, file: string): string {
+	if (file.startsWith('/')) return file;
+	return root.endsWith('/') ? `${root}${file}` : `${root}/${file}`;
+}
+
+/** The paths of a list of references whose file may be absent (an inherited or
+ *  implemented name the graph could not place). */
+function filesOf(refs: readonly { readonly file?: string | undefined }[]): string[] {
+	const out: string[] = [];
+	for (const r of refs) {
+		if (r.file !== undefined && r.file.length > 0) out.push(r.file);
+	}
+	return out;
+}
+
+/**
+ * The file paths a lookup output names (LLD-b9d5c5c40df5a574-s2, task t1).
+ *
+ * The ONE place that knows which field of which output is a file path; the
+ * request measure counts the distinct paths it returns and reads no output
+ * field itself. One case per member of `ExplorationOutput`, with no default:
+ * a new output type does not compile until it says which files it names.
+ *
+ * A path may be returned more than once; the caller counts each once. A field
+ * that names a directory, a module or a data object is not a file and is left
+ * out: a concept hit of kind 'dir', a module profile's own path when it is a
+ * directory, an import graph's target, a reuse candidate's module path, the
+ * path a convention was detected under, and everything in the three data
+ * outputs. A free-form answer is text and names no file by a field. A failed
+ * or unsupported lookup names none.
+ */
+export function filesNamedBy(output: ExplorationOutput): readonly string[] {
+	switch (output.type) {
+		case 'concept.resolve':
+			return output.hits.filter(h => h.kind !== 'dir').map(h => h.path);
+		case 'module.profile':
+			return [
+				...(output.profile.kind === 'file' ? [output.profile.path] : []),
+				...output.profile.filesInDir.map(f => f.file),
+			];
+		case 'symbol.locate':
+			return output.hits.map(h => h.file);
+		case 'import.graph':
+			return [...filesOf(output.summary.topImporters), ...filesOf(output.summary.topImportees)];
+		case 'doc.mention':
+			return output.hits.map(h => h.file);
+		case 'doc.decision.trace':
+			return output.decisions.map(d => d.file);
+		case 'doc.constraint.enumerate':
+			return output.constraints.map(c => c.file);
+		case 'usage.example':
+			return output.callers.map(c => c.file);
+		case 'class.hierarchy':
+			return output.nodes.flatMap(n => [
+				n.file, ...filesOf(n.extendsList), ...filesOf(n.implementsList), ...filesOf(n.subclasses), ...filesOf(n.implementers),
+			]);
+		case 'capability.reuse-check':
+			return [];
+		case 'search.text':
+			return output.hits.map(h => underRoot(output.root, h.file));
+		case 'convention.detect':
+			return [];
+		case 'config.trace':
+			return output.hits.map(h => underRoot(output.root, h.file));
+		case 'test.locate':
+			return output.hits.map(h => h.file);
+		case 'data-model.trace':
+			return output.nodes.flatMap(n => [n.file, ...filesOf(n.extendsList), ...filesOf(n.subclasses), ...filesOf(n.topCallers)]);
+		case 'db.connections.list':
+		case 'db.tables.list':
+		case 'db.table.describe':
+			return [];
+		case 'manifests.locate':
+			return output.hits.map(h => h.file);
+		case 'freeform.probe':
+			return [];
+		case 'unsupported':
+		case 'failed':
+			return [];
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Execution shape
 // ---------------------------------------------------------------------------
 

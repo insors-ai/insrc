@@ -257,7 +257,7 @@ export function attentionCount(matches: readonly MatchedCard[]): number {
   return matches.filter(m => m.item.needsAttention).length;
 }
 
-/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns and the rollup's stage groups both use it. */
+/** Matches bucketed by stage, every stage present, in STAGE_ORDER; each bucket keeps snapshot order. The board's columns use it. */
 export function groupByStage(matches: readonly MatchedCard[]): ReadonlyMap<DeliveryStage, readonly MatchedCard[]> {
   const out = new Map<DeliveryStage, MatchedCard[]>(STAGE_ORDER.map(s => [s, []]));
   for (const m of matches) out.get(m.stage)?.push(m);

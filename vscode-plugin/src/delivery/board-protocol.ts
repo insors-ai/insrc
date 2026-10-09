@@ -80,32 +80,30 @@ export interface BoardViewModel {
   readonly emptySelection: boolean;
 }
 
-/** One stage's cards inside an epic group (s3). */
-export interface StageGroupView {
-  readonly stage: DeliveryStage;
-  readonly label: string;
-  readonly cards: readonly CardView[];
-}
-
-export interface EpicGroupView {
-  /** null for the 'Not in an epic' group. */
+/** One epic's rollup row (s3): counts only, no cards. The 'Not in an epic' row has no epic id and no compact id. */
+export interface EpicRollupRowView {
   readonly epicItemId: string | null;
+  readonly compactId: string | null;
   readonly title: string;
+  readonly storiesTotal: number;
+  readonly storiesComplete: number;
   /** e.g. '2 of 5 stories complete'; names its denominator. */
   readonly completionLabel: string;
-  readonly storiesComplete: number;
-  readonly storiesTotal: number;
+  /** Planned tasks of the row's matching stories. */
+  readonly taskCount: number;
   readonly issueCount: number;
-  /** Matching cards in this group. */
+  /** Matching cards counted in this row. */
   readonly total: number;
-  /** Non-empty stages only, in STAGE_ORDER. */
-  readonly stages: readonly StageGroupView[];
+  readonly attentionCount: number;
+  /** 'No open gates', '1 needs attention' or 'N need attention'. */
+  readonly attentionLabel: string;
+  readonly attentionTone: 'warning' | 'success';
 }
 
-/** The epic rollup (s3): one group per listed epic, then the work that counts towards no epic. */
+/** The epic rollup (s3): one row per listed epic, then the work that counts towards no epic. */
 export interface EpicRollupViewModel {
-  readonly epics: readonly EpicGroupView[];
-  readonly notInEpic: EpicGroupView;
+  readonly epics: readonly EpicRollupRowView[];
+  readonly notInEpic: EpicRollupRowView;
   readonly totals: { readonly items: number; readonly needsAttention: number };
   /** The epics the scope control offers, as on the board, so the control stays current on every tab. */
   readonly scopeOptions: BoardViewModel['scopeOptions'];

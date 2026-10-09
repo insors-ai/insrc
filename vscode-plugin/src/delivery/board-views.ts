@@ -10,8 +10,8 @@
  * board. Pure and vscode-free.
  */
 
-import { attentionCount, groupByStage, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectMatches, titleOf, type MatchedCard } from './board-model.js';
-import type { EpicGroupView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView, StageGroupView } from './board-protocol.js';
+import { attentionCount, compactIdOf, indexItems, isPlaceable, placeableCount, scopeOptionsOf, selectMatches, titleOf, type MatchedCard } from './board-model.js';
+import type { EpicRollupRowView, EpicRollupViewModel, IssueEntryView, IssueViewModel, LinkView } from './board-protocol.js';
 import type { BoardSelection } from './board-state.js';
 import type { DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
 import type { DisplayLabels } from './labels.js';
@@ -26,22 +26,29 @@ export function completionLabel(complete: number, total: number): string {
   return `${complete} of ${total} ${total === 1 ? 'story' : 'stories'} complete`;
 }
 
-function groupOf(epicItemId: string | null, title: string, matches: readonly MatchedCard[], labels: DisplayLabels): EpicGroupView {
+/** 'No open gates' at 0, otherwise how many matches need attention. */
+export function attentionLabel(count: number): string {
+  if (count === 0) return 'No open gates';
+  return count === 1 ? '1 needs attention' : `${count} need attention`;
+}
+
+function rowOf(epicItemId: string | null, title: string, matches: readonly MatchedCard[]): EpicRollupRowView {
   const stories = matches.filter(m => m.item.kind === 'story');
   const storiesComplete = stories.filter(m => m.stage === 'complete').length;
-  const stages: StageGroupView[] = [];
-  for (const [stage, inStage] of groupByStage(matches)) {
-    if (inStage.length > 0) stages.push({ stage, label: labels.stage[stage], cards: inStage.map(m => m.card) });
-  }
+  const needing = attentionCount(matches);
   return {
     epicItemId,
+    compactId: epicItemId === null ? null : compactIdOf(epicItemId),
     title,
-    completionLabel: completionLabel(storiesComplete, stories.length),
-    storiesComplete,
     storiesTotal: stories.length,
+    storiesComplete,
+    completionLabel: completionLabel(storiesComplete, stories.length),
+    taskCount: stories.reduce((n, m) => n + m.item.tasks.filter(t => t.planned).length, 0),
     issueCount: matches.filter(m => m.item.kind === 'issue').length,
     total: matches.length,
-    stages,
+    attentionCount: needing,
+    attentionLabel: attentionLabel(needing),
+    attentionTone: needing === 0 ? 'success' : 'warning',
   };
 }
 
@@ -51,11 +58,11 @@ function unnarrowed(selection: BoardSelection): boolean {
 }
 
 /**
- * The epic rollup: one group per listed epic in snapshot order, then 'Not in
+ * The epic rollup: one row per listed epic in snapshot order, then 'Not in
  * an epic'. A match flagged standalone always goes to 'Not in an epic', so
  * standalone work never counts towards an epic; any other match goes to its
- * epic's group, or to 'Not in an epic' when it has none. Every match is in
- * exactly one group, so totals equal the board's for the same selection.
+ * epic's row, or to 'Not in an epic' when it has none. Every match is counted
+ * in exactly one row, so the row totals sum to the board's for the same selection.
  */
 export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSelection, labels: DisplayLabels): EpicRollupViewModel {
   const matches = selectMatches(snapshot, selection, labels);
@@ -72,16 +79,16 @@ export function buildEpicRollup(snapshot: DeliverySnapshot, selection: BoardSele
   }
   const scopedEpic = selection.scope.kind === 'epic' ? selection.scope.epicItemId : null;
   const listAll = unnarrowed(selection);
-  const epics: EpicGroupView[] = [];
+  const epics: EpicRollupRowView[] = [];
   for (const e of snapshot.items) {
     if (e.kind !== 'epic') continue;
     const own = byEpic.get(e.id) ?? [];
     if (own.length === 0 && !listAll && e.id !== scopedEpic) continue;
-    epics.push(groupOf(e.id, titleOf(e), own, labels));
+    epics.push(rowOf(e.id, titleOf(e), own));
   }
   return {
     epics,
-    notInEpic: groupOf(null, NOT_IN_EPIC_TITLE, notInEpic, labels),
+    notInEpic: rowOf(null, NOT_IN_EPIC_TITLE, notInEpic),
     totals: { items: matches.length, needsAttention: attentionCount(matches) },
     scopeOptions: scopeOptionsOf(snapshot),
     selectedItemId: selection.selectedItemId,

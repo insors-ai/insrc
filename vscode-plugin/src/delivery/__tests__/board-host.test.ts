@@ -486,13 +486,14 @@ test('the epic rollup and issue view render as text, and their tabs and links po
 
   const { posted, deliver, el } = runScript();
   deliver({ v: 1, payload: epics });
-  const groups = el['board']!.children;
-  assert.deepEqual(groups.map(g => texts(g).slice(0, 2)), [
-    [`Epic ${hostile}`, '1 of 2 stories complete'],
-    ['Not in an epic', '1 of 2 stories complete, 2 issues'],
-  ], 'titles and completion labels as literal text; the fix stories (parent: their issue) are not in an epic');
-  assert.deepEqual(findAll(groups[0]!, x => x.tag === 'h3').map(h => h.textContent), ['Scoped (1)', 'Complete (1)']);
-  assert.ok(texts(groups[0]!).includes(`Story · ${hostile}`), 'a hostile card title is literal text');
+  const rows = el['board']!.children;
+  assert.deepEqual(rows.map(g => texts(g)), [
+    ['EPIC · E1', `Epic ${hostile}`, '1 of 2 stories complete', '2 stories · 0 tasks', 'No open gates'],
+    ['Not in an epic', '1 of 2 stories complete', '2 stories · 0 tasks · 2 issues', 'No open gates'],
+  ], 'titles, completion labels and counts as literal text; the fix stories (parent: their issue) are not in an epic');
+  assert.equal(rows[0]!.attrs['data-epic'], 'E1');
+  assert.equal(rows[1]!.attrs['data-epic'], undefined, "the 'Not in an epic' row names no epic");
+  assert.equal(findAll(el['board']!, x => x.attrs['class'] === 'card').length, 0, 'the rollup lists counts, not cards');
   assert.equal(el['tab-epics']!.attrs['aria-pressed'], 'true');
   assert.equal(el['tab-board']!.attrs['aria-pressed'], 'false');
   assert.equal(el['totals']!.textContent, '6 items, 0 needing attention');
@@ -1024,8 +1025,8 @@ const cardOf = (root: FakeEl, id: string) => cardsIn(root).find(c => c.attrs['da
 test('every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card', async () => {
   const b = await liveBoard(keyboardSnapshot());
   const board = b.w.el['board']!;
-  // Every card in all three views is focusable and keeps its accessible label.
-  for (const view of ['board', 'epics', 'issues'] as const) {
+  // Every card in the two card views is focusable and keeps its accessible label (the epic rollup lists counts, not cards).
+  for (const view of ['board', 'issues'] as const) {
     b.ch.send({ v: 1, payload: { type: 'set-view', view } });
     b.pump();
     const cards = cardsIn(board);

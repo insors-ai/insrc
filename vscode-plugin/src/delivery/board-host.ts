@@ -23,18 +23,28 @@
  * The document is CSP-locked (default-src 'none') with one nonce'd script that
  * renders the status and the board's columns, cards and controls as text
  * (textContent only) and posts only BoardUpMessage envelopes. vscode-free: extension.ts supplies the panel.
+ *
+ * The item details (E2 s4): while an item is selected, every derive also posts
+ * its details after the view message. The host keeps a details memory, never
+ * persisted: the selected story's PLAN reads, keyed by PLAN artifact id and
+ * cleared when a new snapshot is applied, and the one record the reader opened.
+ * A PLAN read is made once per applied snapshot; an answer that arrives after a
+ * newer snapshot or a closed panel is dropped. open-evidence goes to the review
+ * pane for a review-view record and is otherwise read read-only from the daemon.
  */
 
 import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
+import type { Envelope } from '../chat/protocol.js';
+import { buildItemDetails, type OpenedRecord, type PlanRead, type PlanTaskView } from './board-details.js';
 import { showMore, unknownStages, type BoardPaging } from './board-model.js';
-import { parseBoardUpMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
+import { parseBoardUpMessage, type BoardDownMessage, type BoardScope, type BoardUpMessage } from './board-protocol.js';
 import {
   boardDownMessages, initialBoardState, reduceBoardState, shownSnapshot,
   type BoardEvent, type BoardSelection, type BoardState,
 } from './board-state.js';
 import type { DeliveryClient, DeliveryResult } from './delivery-client.js';
-import type { DeliverySnapshot } from './delivery-contract.js';
-import { errorText } from './guards.js';
+import type { DeliveryEvidenceRecord, DeliveryItemView, DeliverySnapshot } from './delivery-contract.js';
+import { errorText, isObject } from './guards.js';
 import { DISPLAY_LABELS } from './labels.js';
 
 export const BOARD_VIEW_TYPE = 'insrc.deliveryBoard';
@@ -47,6 +57,35 @@ export interface DeliveryBoardHostDeps {
   /** ISO-8601 time; stamps failures and measures elapsed time. */
   readonly now: () => string;
   readonly genNonce: () => string;
+  /** The review pane, when the chat setting created one; a review-view record opens there. */
+  readonly reviewPane?: { openArtifact(target: { readonly artifactId: string; readonly mdPath: string }): void } | undefined;
+}
+
+export const NO_TASK_LIST = 'The plan record has no task list';
+
+/** A PLAN record's task list; entries without a string id and string-array dependsOn and checks are skipped. */
+export function planTasksOf(record: DeliveryEvidenceRecord): PlanRead {
+  const tasks = isObject(record.body) ? record.body['tasks'] : undefined;
+  if (!Array.isArray(tasks)) return { state: 'failed', message: NO_TASK_LIST };
+  const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
+  const out: PlanTaskView[] = [];
+  for (const t of tasks) {
+    if (!isObject(t) || typeof t['id'] !== 'string' || !strings(t['dependsOn']) || !strings(t['acceptanceChecks'])) continue;
+    out.push({ id: t['id'], dependsOn: t['dependsOn'], acceptanceChecks: t['acceptanceChecks'] });
+  }
+  return { state: 'ok', tasks: out };
+}
+
+/** The text shown for an opened read-only record: its rendered markdown, else its meta and body as JSON. */
+function recordText(record: DeliveryEvidenceRecord): string {
+  return record.renderedMarkdown ?? JSON.stringify({ meta: record.meta, body: record.body }, null, 2);
+}
+
+/** The PLAN evidence entry a story's details read, or null for anything else. */
+function planIdOf(item: DeliveryItemView | undefined): string | null {
+  if (item === undefined || item.kind !== 'story') return null;
+  const plans = item.evidence.filter(e => e.kind === 'PLAN');
+  return plans.length === 0 ? null : plans[plans.length - 1]!.artifactId;
 }
 
 export interface DeliveryBoardHost {
@@ -190,6 +229,107 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let nextSeq = 0;
   /** Bumped on every dispose; an answer from an earlier panel generation is discarded. */
   let generation = 0;
+  /** The details memory (s4): PLAN reads for the snapshot they were made against, and the opened record. */
+  let planSnapshot: DeliverySnapshot | null = null;
+  let plans = new Map<string, PlanRead>();
+  let opened: (OpenedRecord & { readonly itemId: string }) | null = null;
+
+  /** The selected item in a state's shown snapshot. */
+  function selectedIn(s: BoardState): { snapshot: DeliverySnapshot; item: DeliveryItemView | undefined } | null {
+    const shown = shownSnapshot(s.status);
+    const id = s.selection.selectedItemId;
+    if (shown === null || id === null) return null;
+    return { snapshot: shown.snapshot, item: shown.snapshot.items.find(i => i.id === id) };
+  }
+
+  /** The details message for a state, read from the memory; reads for another snapshot do not apply to it. */
+  function detailsMessage(s: BoardState): Envelope<BoardDownMessage> | null {
+    const sel = selectedIn(s);
+    if (sel === null) return null;
+    const planId = planIdOf(sel.item);
+    const plan: PlanRead = planId === null ? { state: 'none' }
+      : (sel.snapshot === planSnapshot ? plans.get(planId) : undefined) ?? { state: 'loading' };
+    const record = opened !== null && opened.itemId === s.selection.selectedItemId
+      ? { artifactId: opened.artifactId, text: opened.text } : null;
+    const model = buildItemDetails(sel.snapshot, s.selection.selectedItemId!, plan, record, DISPLAY_LABELS);
+    return { v: 1, payload: { type: 'details', model } };
+  }
+
+  /** After a state is kept: a new snapshot clears the PLAN reads, and the selected story's PLAN is read once. */
+  function readPlanFor(s: BoardState): void {
+    const sel = selectedIn(s);
+    if (sel === null) return;
+    if (sel.snapshot !== planSnapshot) {
+      planSnapshot = sel.snapshot;
+      plans = new Map();
+    }
+    const planId = planIdOf(sel.item);
+    if (planId === null || plans.has(planId)) return;
+    plans.set(planId, { state: 'loading' });
+    void readPlan(planId, sel.snapshot);
+  }
+
+  async function readPlan(planId: string, snapshot: DeliverySnapshot): Promise<void> {
+    const gen = generation;
+    let result: DeliveryResult<DeliveryEvidenceRecord>;
+    try {
+      result = await deps.client.evidence(planId);
+    } catch (err) {
+      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
+    }
+    if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
+    if (snapshot !== planSnapshot) {
+      log.warn(`delivery board: dropped the plan read of ${planId}; a newer snapshot is shown`);
+      return;
+    }
+    let read: PlanRead;
+    if (result.ok) {
+      read = planTasksOf(result.value);
+      if (read.state === 'failed') log.error(`delivery board: plan ${planId}: ${read.message}`);
+    } else {
+      log.error(`delivery board: plan ${planId} ${result.failure.kind}: ${result.failure.message}`);
+      read = { state: 'failed', message: result.failure.message };
+    }
+    plans.set(planId, read);
+    if (planIdOf(selectedIn(state)?.item) === planId) apply(state, paging);
+  }
+
+  /** open-evidence: only one of the selected item's own records; a review-view record goes to the review pane. */
+  function openEvidence(itemId: string, artifactId: string): void {
+    const sel = selectedIn(state);
+    const entry = sel !== null && sel.item !== undefined && sel.item.id === itemId
+      ? sel.item.evidence.find(e => e.artifactId === artifactId) : undefined;
+    if (entry === undefined) {
+      log.warn('delivery board: ignored a request to open a record that is not the selected item\'s evidence');
+      return;
+    }
+    if (entry.openWith === 'review-view' && entry.mdPath !== null && deps.reviewPane !== undefined) {
+      deps.reviewPane.openArtifact({ artifactId, mdPath: entry.mdPath });
+      return;
+    }
+    void readRecord(itemId, artifactId);
+  }
+
+  async function readRecord(itemId: string, artifactId: string): Promise<void> {
+    const gen = generation;
+    let result: DeliveryResult<DeliveryEvidenceRecord>;
+    try {
+      result = await deps.client.evidence(artifactId);
+    } catch (err) {
+      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
+    }
+    if (gen !== generation || channel === undefined) return;
+    if (state.selection.selectedItemId !== itemId) return;   // the reader moved on; nothing to show it in
+    let text: string;
+    if (result.ok) {
+      text = recordText(result.value);
+    } else {
+      log.error(`delivery board: record ${artifactId} ${result.failure.kind}: ${result.failure.message}`);
+      text = `Could not read ${artifactId}: ${result.failure.message}`;
+    }
+    opened = { itemId, artifactId, text };
+    apply(state, paging);
+  }
 
   /**
    * Derive the messages first; the new state and paging are kept only when their messages can be built, so a bad
@@ -197,10 +337,14 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
    * nothing. Posting itself is fire-and-forget (ChatPanelChannel.postMessage never rejects inward).
    */
   function apply(next: BoardState, nextPaging: BoardPaging): void {
-    const messages = boardDownMessages(next, DISPLAY_LABELS, nextPaging);
+    const details = detailsMessage(next);
+    const messages = details === null
+      ? boardDownMessages(next, DISPLAY_LABELS, nextPaging)
+      : [...boardDownMessages(next, DISPLAY_LABELS, nextPaging), details];
     state = next;
     paging = nextPaging;
     for (const m of messages) channel?.postMessage(m);
+    readPlanFor(next);
   }
 
   function dispatch(event: BoardEvent, nextPaging: BoardPaging = paging): void {
@@ -312,12 +456,17 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           log.warn('delivery board: ignored a link to an item that is not on the board');
           return;
         }
+        if (msg.itemId !== sel.selectedItemId) opened = null;
         select({ ...sel, selectedItemId: msg.itemId });
         return;
-      case 'close-details': select({ ...sel, selectedItemId: null }); return;
+      case 'close-details':
+        opened = null;
+        select({ ...sel, selectedItemId: null });
+        channel?.postMessage({ v: 1, payload: { type: 'details', model: null } });
+        return;
       case 'set-density': select({ ...sel, density: msg.density }); return;
       case 'show-more': apply(state, showMore(paging, msg.stage)); return;
-      case 'open-evidence': return;   // opening evidence is s4's
+      case 'open-evidence': openEvidence(msg.itemId, msg.artifactId); return;
     }
   }
 
@@ -327,6 +476,9 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
     state = initialBoardState();
     paging = {};
     nextSeq = 0;
+    planSnapshot = null;
+    plans = new Map();
+    opened = null;
   }
 
   return {

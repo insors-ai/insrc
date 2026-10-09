@@ -12,7 +12,7 @@ import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
-import type { DeliverySnapshot } from '../delivery-contract.js';
+import type { DeliveryEvidenceEntry, DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
 import { item, snapshot as fixtureSnapshot } from './board-fixtures.js';
 import { flush } from './flush.js';
 
@@ -599,4 +599,201 @@ test('a logger that throws never leaves the board loading or stops a refresh', a
   assert.deepEqual(lastItems(ch), ['B'], 'the newer answer is applied; the dropped one and the unknown stage are logged into a broken sink without harm');
   ch.send({ v: 1, payload: { type: 'select-item', itemId: 'nowhere' } });
   assert.deepEqual(lastItems(ch), ['B']);
+});
+
+// ---------------------------------------------------------------------------
+// E2 s4 — the item details: PLAN reads, evidence routing and the details memory.
+
+interface EvidenceCall { artifactId: string; resolve(r: DeliveryResult<DeliveryEvidenceRecord>): void }
+
+/** A host whose snapshot and evidence reads both stay outstanding until the test answers them. */
+function detailsSetup(opts: { reviewPane?: boolean } = {}) {
+  const channels: FakeChannel[] = [];
+  const logs = { warn: [] as string[], error: [] as string[] };
+  const snapshots: Deferred[] = [];
+  const evidence: EvidenceCall[] = [];
+  const opened: { artifactId: string; mdPath: string }[] = [];
+  const host = createDeliveryBoardHost({
+    createPanel: () => { const c = fakeChannel(); channels.push(c); return c; },
+    client: {
+      snapshot: () => new Promise(resolve => { snapshots.push({ resolve }); }),
+      evidence: (artifactId) => new Promise(resolve => { evidence.push({ artifactId, resolve }); }),
+    },
+    logger: { warn: m => logs.warn.push(m), error: m => logs.error.push(m) },
+    now: () => '2026-10-09T12:00:00.000Z',
+    genNonce: () => 'N0NCE',
+    ...(opts.reviewPane === true ? { reviewPane: { openArtifact: (t: { artifactId: string; mdPath: string }) => { opened.push({ ...t }); } } } : {}),
+  });
+  return { host, channels, logs, snapshots, evidence, opened };
+}
+
+const ev = (artifactId: string, kind: DeliveryEvidenceEntry['kind'], over: Partial<DeliveryEvidenceEntry> = {}): DeliveryEvidenceEntry => ({
+  artifactId, kind, mdPath: null, openWith: 'evidence-read', approval: { state: 'approved', at: null }, review: null, reviewCurrency: null, ...over,
+});
+
+/** A story with a PLAN, an LLD that opens in the review pane and a BUILD, and its two task items. */
+function storySnapshot(takenAt = '2026-10-09T11:00:00.000Z'): DeliverySnapshot {
+  return fixtureSnapshot([
+    item({ id: 'S1', title: 'Details', stage: 'build-recorded', childIds: ['S1:T1', 'S1:T2'],
+      tasks: [{ taskItemId: 'S1:T1', result: 'passed', planned: true }, { taskItemId: 'S1:T2', result: 'failed', planned: true }],
+      validation: { passed: 1, failed: 1, unrecorded: 0, unplanned: 0 },
+      evidence: [ev('BUILD-x', 'BUILD'), ev('LLD-x', 'LLD', { mdPath: 'docs/e/S001/LLD.md', openWith: 'review-view' }), ev('PLAN-x', 'PLAN')] }),
+    item({ id: 'S1:T1', kind: 'task', parentId: 'S1', title: 'Types', sourceIds: ['t1'] }),
+    item({ id: 'S1:T2', kind: 'task', parentId: 'S1', title: 'Builder', sourceIds: ['t2'] }),
+    item({ id: 'S2', title: 'No plan' }),
+  ], { takenAt });
+}
+
+const planRecord = (body: unknown): DeliveryEvidenceRecord => ({ artifactId: 'PLAN-x', kind: 'PLAN', meta: {}, body, renderedMarkdown: null });
+const PLAN_BODY = { tasks: [
+  { id: 't1', dependsOn: [], acceptanceChecks: ['types compile'] },
+  { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
+] };
+const detailsOf = (c: FakeChannel) => payloads(c).filter(p => p.type === 'details').map(p => (p.type === 'details' ? p.model : null));
+const send = (c: FakeChannel, payload: unknown) => c.send({ v: 1, payload });
+
+async function openOn(s: ReturnType<typeof detailsSetup>, snap: DeliverySnapshot): Promise<FakeChannel> {
+  s.host.open();
+  s.snapshots[0]!.resolve({ ok: true, value: snap });
+  await flush();
+  return s.channels[0]!;
+}
+
+test('opening a story reads its plan once per snapshot and shows the dependencies when it arrives', async () => {
+  const s = detailsSetup();
+  const ch = await openOn(s, storySnapshot());
+  assert.deepEqual(detailsOf(ch), [], 'nothing is selected yet, so no details are posted');
+
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  const loading = detailsOf(ch).at(-1)!;
+  assert.equal(loading.itemId, 'S1');
+  assert.ok(loading.tasks.every(t => t.dependsOn === null), 'the plan is still loading');
+  assert.equal(payloads(ch).at(-1)!.type, 'details', 'details come after the view message');
+  assert.deepEqual(s.evidence.map(e => e.artifactId), ['PLAN-x'], 'one evidence read for the PLAN');
+
+  s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  const ready = detailsOf(ch).at(-1)!;
+  assert.deepEqual(ready.tasks.map(t => [t.title, t.dependsOn, t.acceptanceChecks]), [
+    ['Types', [], ['types compile']],
+    ['Builder', ['Types'], ['rows built']],
+  ]);
+  assert.equal(ready.planNotice, null);
+
+  // Reopening it in the same snapshot uses the read already made.
+  send(ch, { type: 'close-details' });
+  assert.equal(detailsOf(ch).at(-1), null, 'close-details posts details null');
+  send(ch, { type: 'select-item', itemId: 'S2' });
+  assert.equal(detailsOf(ch).at(-1)!.itemId, 'S2');
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  assert.equal(s.evidence.length, 1, 'no second read in the same snapshot');
+  assert.deepEqual(detailsOf(ch).at(-1)!.tasks[1]!.dependsOn, ['Types']);
+
+  // A new snapshot reads again.
+  send(ch, { type: 'refresh' });
+  s.snapshots[1]!.resolve({ ok: true, value: storySnapshot('2026-10-09T11:05:00.000Z') });
+  await flush();
+  assert.deepEqual(s.evidence.map(e => e.artifactId), ['PLAN-x', 'PLAN-x'], 'a new snapshot reads the plan again');
+  assert.ok(detailsOf(ch).at(-1)!.tasks.every(t => t.dependsOn === null), 'and shows it loading until it arrives');
+});
+
+test('a review-view record opens in the review pane and a build record opens read-only from the daemon as text', async () => {
+  const s = detailsSetup({ reviewPane: true });
+  const ch = await openOn(s, storySnapshot());
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  s.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' });
+  assert.deepEqual(s.opened, [{ artifactId: 'LLD-x', mdPath: 'docs/e/S001/LLD.md' }]);
+  assert.equal(s.evidence.length, 1, 'the review pane reads it; the board does not');
+
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  assert.deepEqual(s.evidence.map(e => e.artifactId), ['PLAN-x', 'BUILD-x']);
+  s.evidence[1]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: { a: 1 }, body: { b: 2 }, renderedMarkdown: null } });
+  await flush();
+  assert.deepEqual(detailsOf(ch).at(-1)!.openedRecord, {
+    artifactId: 'BUILD-x', text: JSON.stringify({ meta: { a: 1 }, body: { b: 2 } }, null, 2),
+  });
+
+  // A record that is not the selected item's evidence is ignored and logged.
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'CR-elsewhere' });
+  send(ch, { type: 'open-evidence', itemId: 'S2', artifactId: 'BUILD-x' });
+  assert.equal(s.evidence.length, 2);
+  assert.equal(s.logs.warn.filter(w => /not the selected item's evidence/.test(w)).length, 2);
+
+  // close-details clears the opened record.
+  send(ch, { type: 'close-details' });
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  assert.equal(detailsOf(ch).at(-1)!.openedRecord, null);
+
+  // With no review pane, a review-view record is read too; rendered markdown is preferred, and a failure is shown.
+  const s2 = detailsSetup();
+  const ch2 = await openOn(s2, storySnapshot());
+  send(ch2, { type: 'select-item', itemId: 'S1' });
+  send(ch2, { type: 'open-evidence', itemId: 'S1', artifactId: 'LLD-x' });
+  assert.deepEqual(s2.evidence.map(e => e.artifactId), ['PLAN-x', 'LLD-x']);
+  s2.evidence[1]!.resolve({ ok: true, value: { artifactId: 'LLD-x', kind: 'LLD', meta: {}, body: {}, renderedMarkdown: '# LLD' } });
+  await flush();
+  assert.deepEqual(detailsOf(ch2).at(-1)!.openedRecord, { artifactId: 'LLD-x', text: '# LLD' });
+  send(ch2, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  s2.evidence[2]!.resolve({ ok: false, failure: { kind: 'timed-out', message: 'took longer than 10 s' } });
+  await flush();
+  assert.deepEqual(detailsOf(ch2).at(-1)!.openedRecord, { artifactId: 'BUILD-x', text: 'Could not read BUILD-x: took longer than 10 s' });
+  assert.ok(s2.logs.error.some(e => /record BUILD-x timed-out/.test(e)));
+});
+
+test('a failed, malformed or stale plan read leaves the details standing with a notice', async () => {
+  // Failed.
+  const s = detailsSetup();
+  const ch = await openOn(s, storySnapshot());
+  send(ch, { type: 'select-item', itemId: 'S1' });
+  s.evidence[0]!.resolve({ ok: false, failure: { kind: 'read-failed', message: 'no such record' } });
+  await flush();
+  const failed = detailsOf(ch).at(-1)!;
+  assert.equal(failed.planNotice, 'The plan could not be read: no such record');
+  assert.deepEqual(failed.tasks.map(t => t.resultLabel), ['Passed', 'Failed'], 'the rest of the details stand');
+  assert.ok(s.logs.error.some(e => /plan PLAN-x read-failed: no such record/.test(e)));
+
+  // No task list, and malformed entries skipped.
+  const s2 = detailsSetup();
+  const ch2 = await openOn(s2, storySnapshot());
+  send(ch2, { type: 'select-item', itemId: 'S1' });
+  s2.evidence[0]!.resolve({ ok: true, value: planRecord({ summary: 'no tasks' }) });
+  await flush();
+  assert.equal(detailsOf(ch2).at(-1)!.planNotice, 'The plan could not be read: The plan record has no task list');
+  const s3 = detailsSetup();
+  const ch3 = await openOn(s3, storySnapshot());
+  send(ch3, { type: 'select-item', itemId: 'S1' });
+  s3.evidence[0]!.resolve({ ok: true, value: planRecord({ tasks: [
+    { id: 't1', dependsOn: 'not a list', acceptanceChecks: [] },
+    null,
+    { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
+  ] }) });
+  await flush();
+  assert.deepEqual(detailsOf(ch3).at(-1)!.tasks.map(t => t.dependsOn), [null, ['Types']], 'the malformed t1 entry is skipped');
+
+  // Stale: a read that finishes after a newer snapshot is dropped; one after the panel closed posts nothing.
+  const s4 = detailsSetup();
+  const ch4 = await openOn(s4, storySnapshot());
+  send(ch4, { type: 'select-item', itemId: 'S1' });
+  send(ch4, { type: 'refresh' });
+  s4.snapshots[1]!.resolve({ ok: true, value: storySnapshot('2026-10-09T11:05:00.000Z') });
+  await flush();
+  s4.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  assert.ok(detailsOf(ch4).at(-1)!.tasks.every(t => t.dependsOn === null), 'the old snapshot\'s answer is not shown');
+  assert.ok(s4.logs.warn.some(w => /dropped the plan read of PLAN-x/.test(w)));
+  s4.evidence[1]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  assert.deepEqual(detailsOf(ch4).at(-1)!.tasks[1]!.dependsOn, ['Types'], 'the new snapshot\'s own read is');
+
+  const s5 = detailsSetup();
+  const ch5 = await openOn(s5, storySnapshot());
+  send(ch5, { type: 'select-item', itemId: 'S1' });
+  ch5.close();
+  const before = ch5.posted.length;
+  s5.evidence[0]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  assert.equal(ch5.posted.length, before, 'a read that finishes after the panel closed posts nothing');
 });

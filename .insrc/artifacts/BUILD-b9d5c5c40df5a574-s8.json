@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s8",
+    "createdAt": "2026-10-09T13:06:19.852Z",
+    "updatedAt": "2026-10-09T13:31:43.007Z",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "The functional-surface task reads its module value in two steps. A stored entity's id is looked up first and read exactly as before, with no scope resolved (the wrong-kind message is unchanged). Any other value is a directory path: the run's scope is resolved through the one scope function, the directory is tested against the scope's area, and the surface is every function, method and class of the stored source files under it, sub-directories included. A value under which no stored source file lies fails the task; a directory outside the area, and any directory under a file or symbol scope, is refused. Notes: (1) the plan's mutation 'test a directory against the area with the entity predicate' is equivalent once the file/symbol refusal comes first, so it cannot be killed; the falsifiable form, removing that refusal, is killed. (2) Resolving a repo scope tolerates a registry that cannot be read, so with throwing readers a directory path fails under a symbol scope, and under a repo scope the test asserts the readers were called. (3) The gated test of the unknown value cannot run in the gate; an ungated test of the same case carries that name.",
+    "testRecord": {
+      "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/analyze.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S008/baseline/deterministic-runtimes.gated.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/planner/templates/code/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/completeness-all-runtimes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/scope-sources.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/__tests__/module-directories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/discovery-modules.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/structure-module-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/code/surface-functional.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/source-modules.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-09T13:31:43.007Z"
+      }
+    ],
+    "commit": "ba4b5014"
+  }
+}

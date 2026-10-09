@@ -12,21 +12,26 @@
  * graph view.
  *
  * Strategy (this revision):
- *   1. List every module entity in the repo (kind='module').
- *   2. For each module, find every file under that module's
- *      directory prefix (via listEntitiesForRepo + file-prefix
- *      filter, same approach as code.surface.functional).
- *   3. For each in-module file, follow IMPORTS edges to collect
- *      target entities. Map each target back to its containing
- *      module (longest-prefix match) -> module-to-module edge.
+ *   1. Take the modules of the scope's area from the one definition,
+ *      shared/source-modules.ts: a stored module entity in the area,
+ *      or a directory that directly holds source files the index
+ *      stores and lies under no stored module entity's directory.
+ *   2. Every file of the area belongs to the module with the longest
+ *      directory that contains it: its own directory, or the stored
+ *      module entity it lies under, at any depth.
+ *   3. For each file, follow IMPORTS edges to collect target
+ *      entities. Map each target back to its module in the same way
+ *      -> module-to-module edge.
  *   4. Drop self-loops + dedupe parallel edges.
  *
  * Output:
  *   { module-tree: {
  *       repo: string,
  *       modules: Array<{ id, name, path, language }>,
- *       edges:   Array<{ from: moduleId, to: moduleId, viaImports: number }>
+ *       edges:   Array<{ from: id, to: id, viaImports: number }>
  *     } }
+ *   A node's `id` is the entity id of a stored module entity, and the
+ *   module's directory otherwise; `from` and `to` hold the same values.
  *
  * `maxDepth` param is accepted (for forward-compat with the
  * template's inputSchema) but ignored in this revision -- the
@@ -49,16 +54,19 @@ import type {
 	TemplateExecuteResult,
 	TemplateRuntime,
 } from '../../executor/types.js';
-import {
-	modulePrefixOf,
-	readScopeRef,
-} from './_shared.js';
+import { readScopeRef } from './_shared.js';
+import { MODULE_RULE, sourceModulesOf } from '../shared/source-modules.js';
 import { graphRepoOf, inAreaOf, resolveTaskScope } from '../shared/task-scope.js';
 import type { AnalyzeScopeRef } from '../../../shared/analyze-types.js';
 import type { SkippedItem } from '../../completeness.js';
 import { graphCompleteness } from '../../explore/completeness-facts.js';
 
 const TEMPLATE_ID = 'code.structure.module-tree';
+
+/** What the tree rests on, for its completeness record. */
+export const MODULE_TREE_RULE =
+	`${MODULE_RULE} A file whose module is not in the area is not part of the tree, and neither are its imports. ` +
+	'An import whose target lies outside the area is not an edge.';
 const log = getLogger('analyze:runtimes:code:structure-module-tree');
 
 interface ModuleNode {
@@ -85,24 +93,31 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 		const repoPath = graphRepoOf(scope);
 
 		const db       = await getDb();
-		const entities = (await listEntitiesForRepo(db, repoPath)).filter(inAreaOf(scope));
+		// The one read of the repo's entities, kept whole: the modules of the tree
+		// come from the area's entities, and the repo's stored module entities
+		// decide whether a directory of the area is a module of its own.
+		const repoEntities = await listEntitiesForRepo(db, repoPath);
+		const entities     = repoEntities.filter(inAreaOf(scope));
+		const storedModulesOfRepo = repoEntities.filter(e => e.kind === 'module');
 
-		// (1) Module entities -> nodes.
-		const modules = entities.filter(e => e.kind === 'module');
-		modules.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0));
-		const moduleNodes: ModuleNode[] = modules.map(m => ({
-			id:       m.id,
-			name:     m.name,
-			path:     m.file,
-			language: m.language,
+		// (1) The modules of the area -> nodes, in the definition's order. A stored
+		//     module entity keeps the id, name and path it always had; a directory
+		//     is known by its path.
+		const modules = sourceModulesOf(scope, entities, storedModulesOfRepo).map(m => ({
+			id:        m.entity !== undefined ? m.entity.id : m.directory,
+			name:      m.entity !== undefined ? m.entity.name : m.name,
+			path:      m.entity !== undefined ? m.entity.file : m.directory,
+			language:  m.language,
+			directory: m.directory,
 		}));
+		const moduleNodes: ModuleNode[] = modules.map(({ id, name, path, language }) => ({ id, name, path, language }));
 
-		// Module prefix index: every module entity contributes a directory
-		// prefix that "owns" every file under it. Sort prefixes longest-
-		// first so longest-prefix lookups are deterministic when modules
-		// nest (e.g. monorepo `packages/api/sub`).
+		// Module prefix index: every module's directory "owns" every file under
+		// it. Sort prefixes longest-first so that a file belongs to the module
+		// with the longest directory that contains it: its own directory, or the
+		// innermost stored module entity it lies under.
 		const prefixToModuleId: Array<{ prefix: string; moduleId: string }> = modules
-			.map(m => ({ prefix: modulePrefixOf(m.file), moduleId: m.id }))
+			.map(m => ({ prefix: `${m.directory}/`, moduleId: m.id }))
 			.sort((a, b) => b.prefix.length - a.prefix.length);
 
 		const moduleForFile = (filePath: string): string | null => {
@@ -172,7 +187,7 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 			completeness: graphCompleteness({
 				returned: moduleNodes.length,
 				skipped,
-				rule:     'A file that lies under no module is not part of the tree, and neither are its imports.',
+				rule:     MODULE_TREE_RULE,
 			}),
 		};
 	},

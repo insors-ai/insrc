@@ -1,0 +1,11 @@
+ok 1 - modulePrefixOf: includes trailing slash for nested paths
+ok 2 - modulePrefixOf: root-level path (no slash) returns input
+ok 3 - compareEntitiesByLocation: file then startLine then name
+ok 4 - discovery.entrypoints: lists only exported functions/methods/classes, sorted by location
+ok 5 - surface.functional: splits exports vs internalHelpers for a single module
+ok 6 - surface.functional: shallow depth omits body, deep includes it
+ok 7 - surface.functional: unknown module entity id -> throws
+ok 8 - surface.functional: passing a non-module entity id -> throws
+ok 9 - surface.functional: missing params.module -> throws with INV-5 message
+ok 10 - structure.module-tree: emits module nodes + IMPORTS edges as module-to-module
+ok 11 - structure.module-tree: repo with zero modules -> empty tree, not error

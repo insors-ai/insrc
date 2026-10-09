@@ -28,7 +28,7 @@ export const codeDiscoveryModules: AnalyzeTaskTemplate = {
 	family:      'discovery',
 	kind:        'leaf',
 	revision:    'r1',
-	description: 'Enumerate the modules in scope (top-level packages or directories with build-system manifests).',
+	description: 'Enumerate the modules in scope: every directory of the scope that directly holds source files, each with its `directory` (an absolute path) and its `name` (the path relative to the repo).',
 	inputSchema: {
 		type:                 'object',
 		additionalProperties: false,
@@ -88,7 +88,11 @@ export const codeSurfaceFunctional: AnalyzeTaskTemplate = {
 		additionalProperties: false,
 		required:             ['module'],
 		properties: {
-			module: { type: 'string', minLength: 1 },
+			module: {
+				type:        'string',
+				minLength:   1,
+				description: 'The module to describe. Write a directory of the repository: its absolute path, or its path relative to the repo (the `directory` or the `name` that code.discovery.modules returns). A directory that holds source only in its sub-directories is accepted, and its surface is everything under it. The entity id of a stored module entity is accepted too.',
+			},
 			depth:  { type: 'string', enum: ['shallow', 'deep'] },
 		},
 	},

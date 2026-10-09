@@ -214,6 +214,29 @@ test('a table test over every registered plan-task runtime finds a completeness 
 	}
 });
 
+test('a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path', async () => {
+	// The table above gives the functional-surface task a stored module entity's id.
+	// A plan writes a directory path: the same task, the same record.
+	const surface = ALL.find(r => r.templateId === 'code.surface.functional')!;
+	const byId = await run(surface, rowFor('code.surface.functional'));
+	for (const value of [join(REPO, 'src/pay'), 'src/pay', 'src']) {
+		const result = await run(surface, args('code.surface.functional', { module: value }));
+		const c = result.completeness;
+		assert.ok(isCompletenessRecord(c), value);
+		assert.equal(c.basis, 'graph', value);
+		assert.ok(c.basisNote?.startsWith(GRAPH_BASIS_NOTE), value);
+		assert.equal(c.complete, true, value);
+		// The directory holds the two functions the module entity's surface holds.
+		const out = result.outputs.get('functional-surface') as { module: { directory: string; entityId?: string }; exports: unknown[]; internalHelpers: unknown[] };
+		assert.equal(c.returned, 2, value);
+		assert.equal(out.exports.length + out.internalHelpers.length, 2, value);
+		assert.ok(!('entityId' in out.module), value);
+	}
+	assert.equal(byId.completeness.returned, 2);
+	// Every other runtime of the table is run as before by the test above; the count of runtimes is unchanged.
+	assert.equal(ALL.length, 25);
+});
+
 test('the fixture gives the inventories and listings something to return', async () => {
 	const returned: Record<string, number> = {};
 	for (const runtime of ALL) returned[runtime.templateId] = (await run(runtime, rowFor(runtime.templateId))).completeness.returned;

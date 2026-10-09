@@ -250,7 +250,7 @@ As someone asking for a broad analysis of a codebase, I get its modules and what
 
 - **ac1:** Given a repository whose stored graph holds no entity of kind 'module' for its own directories, as for a TypeScript repository today, when a broad code analysis lists the repository's modules and its module tree, then the directories that hold source are returned as its modules, and the result says what it rests on.
 - **ac2:** Given a plan in which the planner names a directory of the repository as the module to describe, when the task that describes a module's functional surface runs, then it returns what that directory offers, and does not fail for want of a stored module entity.
-- **ac3:** Given a repository whose graph does hold module entities, as for a language whose parser emits them, when the same tasks run, then they return at least what they return today.
+- **ac3:** Given a repository whose graph does hold entities of kind 'module' for its own directories (no parser stores them today: each stores a module only for an imported module; a graph written by other means may hold them), when the same tasks run, then they return at least what they return today.
 - **ac4:** Given a module value that names nothing in the repository, when a task is given it, then the task fails with a reason that says so, and is not reported as an empty module.
 - **ac5:** Given a broad code analysis of an indexed repository, once this Story and Story s7 are built, when it is run, then it returns a final report in which the functional-surface tasks succeeded.
 

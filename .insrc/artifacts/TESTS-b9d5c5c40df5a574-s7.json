@@ -4,7 +4,7 @@
     "epicHash": "b9d5c5c40df5a574",
     "storyId": "s7",
     "createdAt": "2026-10-08T18:44:10.632Z",
-    "updatedAt": "2026-10-09T06:54:27.128Z"
+    "updatedAt": "2026-10-09T08:45:50.036Z"
   },
   "body": {
     "tasks": [
@@ -1369,6 +1369,93 @@
               },
               {
                 "title": "the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "7efc942b",
+        "ranAt": "2026-10-09T08:45:50.036Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/executor/__tests__/walker-aggregate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 919,
+            "titles": [
+              {
+                "title": "a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)",
+                "result": "pass"
+              },
+              {
+                "title": "a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)",
+                "result": "pass"
+              },
+              {
+                "title": "a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path",
                 "result": "pass"
               }
             ],

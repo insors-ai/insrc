@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -273,3 +273,37 @@ Run at 2026-10-09T06:54:27.128Z on commit `10b075c0`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts` | 0 | 1 | 0.6 s |  |
 | `src/analyze/runtimes/shared/__tests__/aggregator.test.ts` | 0 | 20 | 0.6 s |  |
+
+## t10
+
+Run at 2026-10-09T08:45:50.036Z on commit `7efc942b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before) | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing) | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**integration: a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path | `src/analyze/executor/__tests__/walker-aggregate.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/executor/__tests__/walker-aggregate.test.ts` | 0 | 4 | 0.9 s |  |

@@ -185,14 +185,50 @@ export const BOARD_WEBVIEW_SCRIPT = [
   `})();`,
 ].join('');
 
+/**
+ * The board's one stylesheet (E2 s5), under the existing style-src 'unsafe-inline'. Theme colours come only from
+ * VS Code's --vscode-* variables. Wide panes set the six board columns side by side; below 600 px the same sections
+ * stack into one list grouped by stage, each column's heading leading its group. No rule hides content: the DOM is the
+ * same at every width and density, and only the [hidden] details pane is out of view while nothing is selected.
+ * Density changes spacing and font size only.
+ */
+export const BOARD_STYLE = [
+  `body{font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);color:var(--vscode-foreground);background:var(--vscode-editor-background);margin:0;padding:8px 12px;}`,
+  `header,.tabs,.controls,.density{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}`,
+  `button{font:inherit;color:var(--vscode-button-secondaryForeground);background:var(--vscode-button-secondaryBackground);border:1px solid var(--vscode-contrastBorder,transparent);padding:2px 8px;cursor:pointer;}`,
+  `button[aria-pressed="true"]{color:var(--vscode-button-foreground);background:var(--vscode-button-background);}`,
+  `input,select{font:inherit;color:var(--vscode-input-foreground);background:var(--vscode-input-background);border:1px solid var(--vscode-input-border,transparent);}`,
+  `:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:2px;}`,
+  `.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--gap);align-items:start;}`,
+  `.board ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--gap);}`,
+  `.card{border:1px solid var(--vscode-panel-border);background:var(--vscode-editorWidget-background);padding:var(--pad);overflow-wrap:anywhere;cursor:pointer;}`,
+  `.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}`,
+  `.badge{border:1px solid var(--vscode-panel-border);padding:0 4px;font-size:var(--small);}`,
+  `.badge[data-tone="danger"]{border-color:var(--vscode-errorForeground);color:var(--vscode-errorForeground);}`,
+  `.badge[data-tone="warning"]{border-color:var(--vscode-editorWarning-foreground);color:var(--vscode-editorWarning-foreground);}`,
+  `.badge[data-tone="success"]{border-color:var(--vscode-testing-iconPassed);}`,
+  `#details{border-left:2px solid var(--vscode-focusBorder);margin-top:12px;padding:var(--pad);overflow-wrap:anywhere;}`,
+  `#details pre{white-space:pre-wrap;overflow-wrap:anywhere;}`,
+  `body[data-density="comfortable"]{--gap:10px;--pad:8px;--small:0.9em;}`,
+  `body[data-density="compact"]{--gap:4px;--pad:3px;--small:0.85em;font-size:0.92em;}`,
+  `body:not([data-density]){--gap:10px;--pad:8px;--small:0.9em;}`,
+  `@media (max-width:600px){.board{display:block;}.board>section{margin-bottom:12px;}.board h2{font-size:1em;margin:8px 0 4px;}}`,
+].join('');
+
 export function renderBoardDocument(nonce: string): string {
   const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
   return (
     `<!DOCTYPE html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
-    `<title>${BOARD_TITLE}</title></head><body>` +
-    `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button></header>` +
-    `<p id="status" role="status" aria-live="polite"></p>` +
+    `<title>${BOARD_TITLE}</title><style>${BOARD_STYLE}</style></head><body>` +
+    `<header><h1>${BOARD_TITLE}</h1><button id="refresh" type="button">Refresh</button>` +
+    `<div class="density" role="group" aria-label="Density">` +
+    `<button id="density-compact" type="button" aria-pressed="false">Compact</button>` +
+    `<button id="density-comfortable" type="button" aria-pressed="true">Comfortable</button>` +
+    `</div></header>` +
+    // The status line keeps role=status but is not a live region: #announce is the one announcer (s5).
+    `<p id="status" role="status"></p>` +
+    `<p id="announce" class="announce" aria-live="polite" aria-atomic="true"></p>` +
     `<p id="notice"></p>` +
     `<nav class="tabs" aria-label="Views">` +
     `<button id="tab-board" type="button" aria-pressed="true">Board</button>` +

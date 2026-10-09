@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { ChatPanelChannel } from '../../chat/chat-panel.js';
-import { BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
+import { BOARD_STYLE, BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
 import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
@@ -920,4 +920,53 @@ test('the details pane renders as text and its controls post only select-item, c
   deliver({ v: 1, payload: { type: 'details', model: null } });
   assert.deepEqual(pane.children, []);
   assert.equal('hidden' in pane.attrs, true);
+});
+
+// ---------------------------------------------------------------------------
+// E2 s5 — narrow pane, keyboard, announcements and density.
+
+test('a narrow pane stacks the columns into one list grouped by stage, and no rule hides a card, badge or warning', async () => {
+  const doc = renderBoardDocument('N0NCE');
+  assert.equal((doc.match(/<style>/g) ?? []).length, 1, 'one stylesheet');
+  assert.ok(doc.includes(`<style>${BOARD_STYLE}</style>`));
+  assert.match(doc, /content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-N0NCE';"/, 'the CSP is unchanged');
+
+  // Wide: columns side by side. Narrow: the same sections stacked, one per stage, under their headings.
+  assert.match(BOARD_STYLE, /\.board\{display:grid;/);
+  const narrow = /@media \(max-width:600px\)\{(.*)\}$/.exec(BOARD_STYLE)?.[1] ?? '';
+  assert.match(narrow, /\.board\{display:block;\}/, 'below 600 px the columns stack into one list');
+  assert.match(narrow, /\.board>section\{/);
+  // Nothing is hidden at any width or density.
+  for (const hiding of [/display:\s*none/, /visibility:\s*hidden/, /clip/, /text-overflow/, /overflow:\s*hidden/, /height:\s*0/]) {
+    assert.doesNotMatch(BOARD_STYLE, hiding, `no ${hiding} rule`);
+  }
+  // Colours come only from the theme.
+  assert.doesNotMatch(BOARD_STYLE, /#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/, 'no literal colour');
+  for (const v of BOARD_STYLE.match(/var\(--[a-zA-Z-]+/g) ?? []) {
+    assert.match(v, /^var\(--(vscode-|gap|pad|small)/, `${v} is a theme or density variable`);
+  }
+  // Density changes spacing and size only; focus is always visible.
+  assert.match(BOARD_STYLE, /body\[data-density="compact"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;]+;font-size:[^;}]+;\}/);
+  assert.match(BOARD_STYLE, /body\[data-density="comfortable"\]\{--gap:[^;]+;--pad:[^;]+;--small:[^;}]+;\}/);
+  assert.match(BOARD_STYLE, /:focus-visible\{outline:2px solid var\(--vscode-focusBorder\)/);
+
+  // One announcer; the status keeps its role but is not live; the density control is two pressed-state buttons.
+  assert.deepEqual(doc.match(/aria-live="[^"]+"/g), ['aria-live="polite"']);
+  assert.match(doc, /<p id="announce" class="announce" aria-live="polite" aria-atomic="true"><\/p>/);
+  assert.match(doc, /<p id="status" role="status"><\/p>/);
+  assert.match(doc, /<button id="density-compact" type="button" aria-pressed="false">Compact<\/button>/);
+  assert.match(doc, /<button id="density-comfortable" type="button" aria-pressed="true">Comfortable<\/button>/);
+
+  // The board's DOM is still one section per stage with every card and badge, whatever the width.
+  const snap = fixtureSnapshot([
+    item({ id: 'S1', stage: 'scoped', title: 'One', needsAttention: true, attentionReasons: ['rejected'] }),
+    item({ id: 'S2', stage: 'complete', title: 'Two' }),
+  ]);
+  const { ch } = await openWith(snap);
+  const { deliver, el } = runScript();
+  deliver({ v: 1, payload: { type: 'board', model: lastBoard(ch) } });
+  const sections = findAll(el['board']!, e => e.tag === 'section');
+  assert.equal(sections.length, 6, 'one group per stage');
+  assert.deepEqual(findAll(el['board']!, e => e.tag === 'li' && e.attrs['class'] === 'card').map(c => c.attrs['data-item-id']), ['S1', 'S2']);
+  assert.ok(texts(el['board']!).includes('Rejected'), 'the warning badge is rendered');
 });

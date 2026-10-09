@@ -9,13 +9,14 @@
  * Run: npx tsx --test vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts
  */
 import { test } from 'node:test';
+import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
 import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
@@ -28,6 +29,66 @@ import type { WorkflowApproveResult } from '../../../../src/workflow/gates.js';
 // authors' intentions. They live in the plugin test tree because S004 must touch
 // no file under src/.
 import { UX_PARITY_FIXTURES, UX_RENESTED_FIXTURE } from './fixtures/ux-parity.js';
+
+// ---------------------------------------------------------------------------
+// ISSUE-3b6bd6b5 — some checks read git history or run the root's TypeScript
+// compiler, and a checkout may have neither: a source tarball, a --depth 1 clone,
+// a rewritten history, an uninstalled tree. Each such check goes through one of
+// the two guards below, which skip it with the reason instead of letting it fail
+// on a raw subprocess error or pass on an empty window.
+// ---------------------------------------------------------------------------
+
+const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+const TSC = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
+
+/** The part of a test context the guards use, so their own test can record the skip. */
+type Skipper = Pick<TestContext, 'skip'>;
+
+/** What history a check relies on. */
+interface GitNeed {
+  /** Commits it reads, which must exist. */
+  readonly commits?: readonly string[] | undefined;
+  /** A window between the last commits touching two files: two distinct commits, from an ancestor of to. */
+  readonly window?: { readonly from: string; readonly to: string } | undefined;
+}
+
+/** A git runner bound to `root`, or null after skipping the test with the reason its history is missing. */
+function git(t: Skipper, need: GitNeed, root: string = REPO_ROOT): ((...args: string[]) => string) | null {
+  const run = (...args: string[]): string =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 1 << 24, stdio: ['ignore', 'pipe', 'pipe'] });
+  const succeeds = (...args: string[]): boolean => {
+    try { run(...args); return true; } catch { return false; }
+  };
+  const skip = (reason: string): null => { t.skip(reason); return null; };
+
+  let inside = false;
+  try { inside = run('rev-parse', '--is-inside-work-tree').trim() === 'true'; } catch { /* not a repository */ }
+  if (!inside) return skip(`not a git work tree: ${root}`);
+  if (run('rev-parse', '--is-shallow-repository').trim() === 'true') {
+    const what = [...(need.commits ?? []), ...(need.window ? [`${need.window.from} .. ${need.window.to}`] : [])];
+    return skip(`shallow clone: history needed for ${what.join(', ') || 'this check'}`);
+  }
+  for (const sha of need.commits ?? []) {
+    if (!succeeds('cat-file', '-e', `${sha}^{commit}`)) return skip(`commit ${sha} is not in this history`);
+  }
+  if (need.window) {
+    const { from, to } = need.window;
+    const noWindow = (why: string): null => skip(`no build window between ${from} and ${to}: ${why}`);
+    const a = run('log', '--format=%H', '-1', '--', from).trim();
+    const b = run('log', '--format=%H', '-1', '--', to).trim();
+    if (a === '' || b === '') return noWindow(`no commit touches ${a === '' ? from : to}`);
+    if (a === b) return noWindow('both ends are the same commit');
+    if (!succeeds('merge-base', '--is-ancestor', a, b)) return noWindow(`the ${from} commit is not an ancestor of the ${to} commit`);
+  }
+  return run;
+}
+
+/** The compiler's path, or null after skipping the test because it is not installed there. */
+function tscOrSkip(t: Skipper, path: string = TSC): string | null {
+  if (existsSync(path)) return path;
+  t.skip(`TypeScript compiler not installed at ${path}`);
+  return null;
+}
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -1402,9 +1463,8 @@ test('t3: a heading inside a fenced code block produces no anchor in the posted 
   assert.ok(real.anchors.some((a) => a.slug === slug), 'the slug is one sc3 produced, not one this task minted');
 });
 
-test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', async () => {
+test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', async (t) => {
   const { readFileSync } = await import('node:fs');
-  const { execFileSync } = await import('node:child_process');
   const { fileURLToPath } = await import('node:url');
   const { dirname, join, resolve } = await import('node:path');
   const here = dirname(fileURLToPath(import.meta.url));
@@ -1418,9 +1478,10 @@ test('t3 (contract): docs-sections.ts is unchanged and still has zero imports', 
   // UNCHANGED by this Story, not merely import-free: compare against the commit
   // that opened S002's build. This Story consumes section identity and never
   // edits its source — an edit here would be a scope breach onto s1's contract.
-  const repo = resolve(here, '..', '..', '..', '..');
+  const run = git(t, { commits: ['09e6efa'] }, resolve(here, '..', '..', '..', '..'));
+  if (!run) return;
   const rel = 'vscode-plugin/src/chat/docs-sections.ts';
-  const atBase = execFileSync('git', ['show', `09e6efa:${rel}`], { cwd: repo, encoding: 'utf8', maxBuffer: 1 << 24 });
+  const atBase = run('show', `09e6efa:${rel}`);
   assert.equal(src, atBase, 'docs-sections.ts is byte-identical to its pre-S002 state');
 });
 
@@ -2238,11 +2299,12 @@ test('t2 (contract): protocol.ts indexes all three off DocsContent rather than r
  * `tsc --noEmit` never sees this file and any `@ts-expect-error` written here is
  * INERT — it would decorate a test without checking anything. A type-level
  * guarantee is only real if something executes the check, so the probe writes a
- * file next to the module (relative import resolves) and runs tsc over it.
+ * file next to the module (relative import resolves) and runs tsc over it. When
+ * the compiler is not installed it skips the test and returns null.
  */
-function typecheckAgainstPanel(snippet: string): { ok: boolean; out: string } {
-  const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
-  assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+function typecheckAgainstPanel(t: Skipper, snippet: string): { ok: boolean; out: string } | null {
+  const tsc = tscOrSkip(t);
+  if (!tsc) return null;
   const probe = fileURLToPath(new URL(`../__sc4probe_${process.pid}_${Math.random().toString(36).slice(2)}__.ts`, import.meta.url));
   try {
     writeFileSync(probe, snippet);
@@ -2262,7 +2324,7 @@ function typecheckAgainstPanel(snippet: string): { ok: boolean; out: string } {
   }
 }
 
-test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", () => {
+test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", (t) => {
   const absent: CompanionSlotState = { state: 'absent' };
   // Runtime shape: exactly one own key.
   assert.deepEqual(Object.keys(absent), ['state']);
@@ -2272,23 +2334,26 @@ test("t3: the 'absent' state carries NO member other than state — enforced by 
   // accident. Reading any other member off the narrowed absent arm must be a
   // COMPILE error against the real published union.
   for (const member of ['label', 'body', 'linkOut', 'kind', 'reason']) {
-    const { ok, out } = typecheckAgainstPanel(`
+    const probe = typecheckAgainstPanel(t, `
       import type { CompanionSlotState } from './docs-review-panel.js';
       export function probe(s: CompanionSlotState): unknown {
         if (s.state === 'absent') return s.${member};
         return undefined;
       }
     `);
+    if (!probe) return;
+    const { ok, out } = probe;
     assert.equal(ok, false, `reading '${member}' off the absent arm must NOT compile`);
     assert.match(out, /Property '.*' does not exist on type/, `and fail because '${member}' is absent from the arm`);
   }
 
   // The positive control: `state` itself IS readable, so the probe is capable of
   // passing and the failures above are about the members, not a broken probe.
-  const control = typecheckAgainstPanel(`
+  const control = typecheckAgainstPanel(t, `
     import type { CompanionSlotState } from './docs-review-panel.js';
     export function probe(s: CompanionSlotState): string { return s.state; }
   `);
+  if (!control) return;
   assert.equal(control.ok, true, `the probe must accept valid code too — got: ${control.out}`);
 });
 
@@ -2311,7 +2376,7 @@ test('t3: companionVisualKind maps the closed union TOTALLY — both diagram kin
   assert.equal(Object.keys(every).length, 3, 'the union is three members wide');
 });
 
-test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', () => {
+test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', (t) => {
   // The exhaustiveness guarantee is invisible at runtime: a bare `default` would
   // pass every assertion above while silently swallowing a new kind. So compile a
   // copy of the mapping with one branch removed and require tsc to REJECT it.
@@ -2337,12 +2402,12 @@ test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
     writeFileSync(file, src);
     // tsc lives at the REPO ROOT, not under vscode-plugin. Resolved relative to
     // this file so the probe does not depend on the cwd the suite was started
-    // from — and asserted to exist first, because a missing binary ALSO exits
+    // from — and checked to exist first, because a missing binary ALSO exits
     // non-zero and would make the "tsc rejected it" assertion pass for entirely
     // the wrong reason. (It did, on the first run; the message assertion below is
-    // what caught it.)
-    const tsc = fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url));
-    assert.ok(existsSync(tsc), `tsc must be resolvable for this probe to mean anything (looked at ${tsc})`);
+    // what caught it.) Missing, the test skips with that reason.
+    const tsc = tscOrSkip(t);
+    if (!tsc) return;
 
     const r = spawnSync(process.execPath, [tsc, '--noEmit', '--strict', file], { encoding: 'utf8' });
     const out = `${r.stdout}${r.stderr}`;
@@ -3311,12 +3376,12 @@ test('t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce\'d script and the c
   assert.ok(mount < chooser, 'and BEFORE the chooser');
 });
 
-test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const repo = fileURLToPath(new URL('../../../../', import.meta.url));
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', (t) => {
   // Compared against the commit BEFORE this Epic's S003 work began, so the claim is
   // about the whole Story and not just this task.
-  const shipped = execFileSync('git', ['show', '8908338:vscode-plugin/src/chat/docs-sections.ts'], { cwd: repo, encoding: 'utf8' });
+  const run = git(t, { commits: ['8908338'] });
+  if (!run) return;
+  const shipped = run('show', '8908338:vscode-plugin/src/chat/docs-sections.ts');
   const now = readFileSync(new URL('../docs-sections.ts', import.meta.url), 'utf8');
   assert.equal(now, shipped, 'sc3 is CONSUMED as shipped; the resolver is called, never reimplemented');
 });
@@ -3753,14 +3818,9 @@ test('t2: the pin moved by EXACTLY the declared source string and CSS fragment �
   }
 });
 
-test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { fileURLToPath } = await import('node:url');
-  const { dirname, join } = await import('node:path');
-  const here = dirname(fileURLToPath(import.meta.url));
-  const repoRoot = join(here, '..', '..', '..', '..');
-  const git = (...args: string[]): string =>
-    execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', (t) => {
+  const run = git(t, { window: { from: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md', to: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md' } });
+  if (!run) return;
 
   // Read the Story's COMMITTED change set, not the working tree. An earlier
   // version of this test read `git status --porcelain`, which passed only while
@@ -3772,14 +3832,14 @@ test('t1: NO file under src/ is modified — the fact that makes S004 need no da
   // pasted here. It ends at the BUILD approval, not HEAD: the Story is complete,
   // and a window left open at HEAD (and the working tree) checked every later
   // change in the repo against this Story's rule (ISSUE-2f07f59c).
-  const planCommit = git('log', '--format=%H', '-1', '--',
+  const planCommit = run('log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
   assert.match(planCommit, /^[0-9a-f]{40}$/, 'the PLAN commit is the build-window boundary');
-  const buildCommit = git('log', '--format=%H', '-1', '--',
+  const buildCommit = run('log', '--format=%H', '-1', '--',
     'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md').trim();
   assert.match(buildCommit, /^[0-9a-f]{40}$/, 'the BUILD approval commit closes the build window');
 
-  const committed = git('diff', '--name-only', `${planCommit}..${buildCommit}`)
+  const committed = run('diff', '--name-only', `${planCommit}..${buildCommit}`)
     .split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
   const paths = committed;
 
@@ -5344,20 +5404,13 @@ test('t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is 
   assert.doesNotMatch(html, /querySelector\('#'\+/, 'and the selector form is nowhere in the shell');
 });
 
-test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { fileURLToPath } = await import('node:url');
-  const { dirname, join } = await import('node:path');
-  const here = dirname(fileURLToPath(import.meta.url));
-  const repoRoot = join(here, '..', '..', '..', '..');
-  const planCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
-    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md'],
-    { cwd: repoRoot, encoding: 'utf8' }).trim();
+test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity', (t) => {
+  const run = git(t, { window: { from: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md', to: 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md' } });
+  if (!run) return;
+  const planCommit = run('log', '--format=%H', '-1', '--', 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/PLAN.md').trim();
   // Closed at the Story's BUILD approval, as the src/ guard above is (ISSUE-2f07f59c).
-  const buildCommit = execFileSync('git', ['log', '--format=%H', '-1', '--',
-    'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md'],
-    { cwd: repoRoot, encoding: 'utf8' }).trim();
-  const changed = execFileSync('git', ['diff', '--name-only', `${planCommit}..${buildCommit}`], { cwd: repoRoot, encoding: 'utf8' });
+  const buildCommit = run('log', '--format=%H', '-1', '--', 'docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S004/BUILD.md').trim();
+  const changed = run('diff', '--name-only', `${planCommit}..${buildCommit}`);
   assert.ok(!changed.includes('docs-sections.ts'),
     'S004 consumes sc3 and mints none of its own section identity');
 });
@@ -5442,4 +5495,78 @@ test('openArtifact on a cold pane decides pending from its own pending read, eve
   const notices = fc2.posted.filter((p) => p.payload.type === 'docs-content').map((p) => p.payload.markdown);
   assert.match(String(notices[0]), /^docs-review unavailable: daemon down/);
   assert.equal(fc2.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!.payload['readOnly'], true);
+});
+
+// ISSUE-3b6bd6b5 — the guards themselves, against directories built for each case.
+test('history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window', (t) => {
+  const recorder = (): Skipper & { reasons: string[] } => {
+    const reasons: string[] = [];
+    return { reasons, skip: (reason?: string) => { reasons.push(reason ?? ''); } };
+  };
+  if (!git(t, {})) return; // the guard tests drive git itself
+
+  const bare = mkdtempSync(join(tmpdir(), 'insrc-guard-plain-'));
+  const repo = mkdtempSync(join(tmpdir(), 'insrc-guard-git-'));
+  try {
+    // Not a work tree.
+    const plain = recorder();
+    assert.equal(git(plain, { commits: ['HEAD'] }, bare), null);
+    assert.deepEqual(plain.reasons, [`not a git work tree: ${bare}`]);
+
+    // A one-commit repository: both files' last commit is that one commit.
+    const sh = (...args: string[]): string => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+    sh('init', '-q');
+    writeFileSync(join(repo, 'PLAN.md'), 'plan\n');
+    writeFileSync(join(repo, 'BUILD.md'), 'build\n');
+    sh('add', '.');
+    sh('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'one');
+    const head = sh('rev-parse', 'HEAD').trim();
+
+    const equal = recorder();
+    assert.equal(git(equal, { window: { from: 'PLAN.md', to: 'BUILD.md' } }, repo), null, 'an equal window never runs');
+    assert.deepEqual(equal.reasons, ['no build window between PLAN.md and BUILD.md: both ends are the same commit']);
+
+    const unborn = recorder();
+    assert.equal(git(unborn, { window: { from: 'PLAN.md', to: 'NOWHERE.md' } }, repo), null);
+    assert.deepEqual(unborn.reasons, ['no build window between PLAN.md and NOWHERE.md: no commit touches NOWHERE.md']);
+
+    const missing = recorder();
+    assert.equal(git(missing, { commits: ['0123456789abcdef0123456789abcdef01234567'] }, repo), null);
+    assert.deepEqual(missing.reasons, ['commit 0123456789abcdef0123456789abcdef01234567 is not in this history']);
+
+    // Out of order: a second commit, then a window whose start is the later one.
+    writeFileSync(join(repo, 'PLAN.md'), 'plan, revised\n');
+    sh('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-am', 'two');
+    const inverted = recorder();
+    assert.equal(git(inverted, { window: { from: 'PLAN.md', to: 'BUILD.md' } }, repo), null);
+    assert.deepEqual(inverted.reasons, ['no build window between PLAN.md and BUILD.md: the PLAN.md commit is not an ancestor of the BUILD.md commit']);
+
+    // Positive control: with the history present, it runs and skips nothing.
+    const present = recorder();
+    const run = git(present, { commits: [head], window: { from: 'BUILD.md', to: 'PLAN.md' } }, repo);
+    assert.ok(run, 'a real window between existing commits runs');
+    assert.deepEqual(present.reasons, []);
+    assert.equal(run('rev-parse', 'HEAD~1').trim(), head);
+
+    // A missing compiler.
+    const nocomp = recorder();
+    const absent = join(bare, 'node_modules', 'typescript', 'bin', 'tsc');
+    assert.equal(tscOrSkip(nocomp, absent), null);
+    assert.deepEqual(nocomp.reasons, [`TypeScript compiler not installed at ${absent}`]);
+    if (existsSync(TSC)) {
+      const found = recorder();
+      assert.equal(tscOrSkip(found, TSC), TSC, 'an installed compiler is returned');
+      assert.deepEqual(found.reasons, []);
+    }
+  } finally {
+    rmSync(bare, { recursive: true, force: true });
+    rmSync(repo, { recursive: true, force: true });
+  }
+
+  // No history or compiler check bypasses the guards.
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  assert.equal(src.split("execFileSync('" + "git', [").length - 1, 0, 'no check runs git directly');
+  assert.equal(src.split('const ' + 'git = (').length - 1, 0, 'and no check keeps a git helper of its own');
+  assert.equal(src.split('function ' + 'git(').length - 1, 1, 'the guard is the one git runner');
+  assert.equal(src.split('existsSync(' + 'tsc)').length - 1, 0, 'no test asserts the compiler is present');
 });

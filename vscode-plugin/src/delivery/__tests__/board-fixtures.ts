@@ -5,7 +5,7 @@
 
 /** Snapshot builders for the board tests: items carry every field the board reads, overridable per item. */
 
-import type { DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
+import type { DeliveryEvidenceEntry, DeliveryItem, DeliverySnapshot } from '../delivery-contract.js';
 
 /** stage is the stage id (null for none); reasonIds are the records its reason names. */
 export type ItemSpec = Partial<Omit<DeliveryItem, 'stage'>> & { readonly id: string; readonly stage?: string | null; readonly reasonIds?: readonly string[] };
@@ -27,4 +27,12 @@ export function snapshot(items: readonly DeliveryItem[], extra: Partial<Delivery
     schemaVersion: 1, repo: '/ws', takenAt: '2026-10-09T10:00:00.000Z', recordCount: sorted.length, unreadableCount: 0,
     items: sorted, rootIds: [], notices: [], counts: {}, attentionRule: '', ...extra,
   } as unknown as DeliverySnapshot;
+}
+
+/** An evidence entry: approved, no review, read through evidence-read unless overridden. */
+export function evidence(artifactId: string, kind: DeliveryEvidenceEntry['kind'], over: Partial<DeliveryEvidenceEntry> = {}): DeliveryEvidenceEntry {
+  return {
+    artifactId, kind, mdPath: null, openWith: 'evidence-read',
+    approval: { state: 'approved', at: null }, review: null, reviewCurrency: null, ...over,
+  };
 }

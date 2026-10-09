@@ -12,8 +12,8 @@ import type { ChatPanelChannel } from '../../chat/chat-panel.js';
 import { BOARD_VIEW_TYPE, BOARD_WEBVIEW_SCRIPT, createDeliveryBoardHost, renderBoardDocument } from '../board-host.js';
 import { parseBoardUpMessage, type BoardDownMessage, type Envelope } from '../board-protocol.js';
 import type { DeliveryClient, DeliveryResult } from '../delivery-client.js';
-import type { DeliveryEvidenceEntry, DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
-import { item, snapshot as fixtureSnapshot } from './board-fixtures.js';
+import type { DeliveryEvidenceRecord, DeliverySnapshot } from '../delivery-contract.js';
+import { evidence as ev, item, snapshot as fixtureSnapshot } from './board-fixtures.js';
 import { flush } from './flush.js';
 
 interface FakeChannel extends ChatPanelChannel {
@@ -629,10 +629,6 @@ function detailsSetup(opts: { reviewPane?: boolean } = {}) {
   return { host, channels, logs, snapshots, evidence, opened };
 }
 
-const ev = (artifactId: string, kind: DeliveryEvidenceEntry['kind'], over: Partial<DeliveryEvidenceEntry> = {}): DeliveryEvidenceEntry => ({
-  artifactId, kind, mdPath: null, openWith: 'evidence-read', approval: { state: 'approved', at: null }, review: null, reviewCurrency: null, ...over,
-});
-
 /** A story with a PLAN, an LLD that opens in the review pane and a BUILD, and its two task items. */
 function storySnapshot(takenAt = '2026-10-09T11:00:00.000Z'): DeliverySnapshot {
   return fixtureSnapshot([
@@ -718,10 +714,20 @@ test('a review-view record opens in the review pane and a build record opens rea
     artifactId: 'BUILD-x', text: JSON.stringify({ meta: { a: 1 }, body: { b: 2 } }, null, 2),
   });
 
+  // Two quick opens: only the later one is shown, whichever read answers last.
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'PLAN-x' });
+  send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'BUILD-x' });
+  assert.deepEqual(s.evidence.slice(2).map(e => e.artifactId), ['PLAN-x', 'BUILD-x']);
+  s.evidence[3]!.resolve({ ok: true, value: { artifactId: 'BUILD-x', kind: 'BUILD', meta: {}, body: {}, renderedMarkdown: '# Build' } });
+  await flush();
+  s.evidence[2]!.resolve({ ok: true, value: planRecord(PLAN_BODY) });
+  await flush();
+  assert.deepEqual(detailsOf(ch).at(-1)!.openedRecord, { artifactId: 'BUILD-x', text: '# Build' }, 'the earlier open answering later is dropped');
+
   // A record that is not the selected item's evidence is ignored and logged.
   send(ch, { type: 'open-evidence', itemId: 'S1', artifactId: 'CR-elsewhere' });
   send(ch, { type: 'open-evidence', itemId: 'S2', artifactId: 'BUILD-x' });
-  assert.equal(s.evidence.length, 2);
+  assert.equal(s.evidence.length, 4);
   assert.equal(s.logs.warn.filter(w => /not the selected item's evidence/.test(w)).length, 2);
 
   // close-details clears the opened record.
@@ -768,12 +774,14 @@ test('a failed, malformed or stale plan read leaves the details standing with a 
   const ch3 = await openOn(s3, storySnapshot());
   send(ch3, { type: 'select-item', itemId: 'S1' });
   s3.evidence[0]!.resolve({ ok: true, value: planRecord({ tasks: [
-    { id: 't1', dependsOn: 'not a list', acceptanceChecks: [] },
+    { id: 't1', dependsOn: 'not a list' },
     null,
+    { id: 7, dependsOn: [], acceptanceChecks: ['no string id'] },
     { id: 't2', dependsOn: ['t1'], acceptanceChecks: ['rows built'] },
   ] }) });
   await flush();
-  assert.deepEqual(detailsOf(ch3).at(-1)!.tasks.map(t => t.dependsOn), [null, ['Types']], 'the malformed t1 entry is skipped');
+  assert.deepEqual(detailsOf(ch3).at(-1)!.tasks.map(t => [t.dependsOn, t.acceptanceChecks]), [[[], []], [['Types'], ['rows built']]],
+    'a task with a string id keeps its row, its malformed lists read as empty, and entries without a string id are skipped');
 
   // Stale: a read that finishes after a newer snapshot is dropped; one after the panel closed posts nothing.
   const s4 = detailsSetup();

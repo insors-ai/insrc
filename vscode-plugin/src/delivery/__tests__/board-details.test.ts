@@ -11,18 +11,11 @@ import assert from 'node:assert/strict';
 import type { DeliveryEvidenceEntry } from '../delivery-contract.js';
 import { buildItemDetails, type PlanRead } from '../board-details.js';
 import { DISPLAY_LABELS } from '../labels.js';
-import { item, snapshot } from './board-fixtures.js';
+import { evidence as ev, item, snapshot } from './board-fixtures.js';
 
 const NONE: PlanRead = { state: 'none' };
 
 type Review = NonNullable<DeliveryEvidenceEntry['review']>;
-
-function ev(artifactId: string, kind: DeliveryEvidenceEntry['kind'], over: Partial<DeliveryEvidenceEntry> = {}): DeliveryEvidenceEntry {
-  return {
-    artifactId, kind, mdPath: null, openWith: 'evidence-read',
-    approval: { state: 'approved', at: '2026-10-09T09:00:00.000Z' }, review: null, reviewCurrency: null, ...over,
-  };
-}
 
 function review(over: Partial<Review>): Review {
   return {

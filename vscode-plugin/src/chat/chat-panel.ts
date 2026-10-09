@@ -104,8 +104,8 @@ export const CHAT_VIEW_TYPE = 'insrc.chatPanel';
 const VIEW_TYPE = CHAT_VIEW_TYPE;
 const NOOP_LOGGER: ChatPanelLogger = { warn: () => {}, error: () => {} };
 
-/** Escape a value for safe embedding in an HTML attribute / the CSP meta content. */
-function attr(v: string): string {
+/** Escape a value for safe embedding in an HTML attribute / the CSP meta content; shared by every webview shell. */
+export function attr(v: string): string {
   return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 

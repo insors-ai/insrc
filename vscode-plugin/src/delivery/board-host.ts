@@ -33,7 +33,7 @@
  * pane for a review-view record and is otherwise read read-only from the daemon.
  */
 
-import type { ChatPanelChannel, ChatPanelLogger } from '../chat/chat-panel.js';
+import { attr, type ChatPanelChannel, type ChatPanelLogger } from '../chat/chat-panel.js';
 import type { Envelope } from '../chat/protocol.js';
 import { buildItemDetails, type OpenedRecord, type PlanRead, type PlanTaskView } from './board-details.js';
 import { showMore, unknownStages, type BoardPaging } from './board-model.js';
@@ -63,15 +63,18 @@ export interface DeliveryBoardHostDeps {
 
 export const NO_TASK_LIST = 'The plan record has no task list';
 
-/** A PLAN record's task list; entries without a string id and string-array dependsOn and checks are skipped. */
+/**
+ * A PLAN record's task list. Entries without a string id are skipped; a dependsOn or acceptanceChecks that is not
+ * a string array reads as empty, so the task keeps its row.
+ */
 export function planTasksOf(record: DeliveryEvidenceRecord): PlanRead {
   const tasks = isObject(record.body) ? record.body['tasks'] : undefined;
   if (!Array.isArray(tasks)) return { state: 'failed', message: NO_TASK_LIST };
-  const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
+  const strings = (v: unknown): string[] => (Array.isArray(v) && v.every(x => typeof x === 'string') ? v : []);
   const out: PlanTaskView[] = [];
   for (const t of tasks) {
-    if (!isObject(t) || typeof t['id'] !== 'string' || !strings(t['dependsOn']) || !strings(t['acceptanceChecks'])) continue;
-    out.push({ id: t['id'], dependsOn: t['dependsOn'], acceptanceChecks: t['acceptanceChecks'] });
+    if (!isObject(t) || typeof t['id'] !== 'string') continue;
+    out.push({ id: t['id'], dependsOn: strings(t['dependsOn']), acceptanceChecks: strings(t['acceptanceChecks']) });
   }
   return { state: 'ok', tasks: out };
 }
@@ -93,10 +96,6 @@ export interface DeliveryBoardHost {
   dispose(): void;
 }
 
-/** Escape a value for an HTML attribute (the CSP meta content). */
-function attr(v: string): string {
-  return v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /**
  * The webview script. Everything shown is set with textContent, and the only
@@ -263,6 +262,20 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   let planSnapshot: DeliverySnapshot | null = null;
   let plans = new Map<string, PlanRead>();
   let opened: (OpenedRecord & { readonly itemId: string }) | null = null;
+  /** Bumped by every open-evidence, close and selection change; only the latest record read is shown. */
+  let recordSeq = 0;
+
+  /** One evidence read, a throw turned into a typed failure; null when the panel closed meanwhile. */
+  async function readEvidence(artifactId: string): Promise<DeliveryResult<DeliveryEvidenceRecord> | null> {
+    const gen = generation;
+    let result: DeliveryResult<DeliveryEvidenceRecord>;
+    try {
+      result = await deps.client.evidence(artifactId);
+    } catch (err) {
+      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
+    }
+    return gen !== generation || channel === undefined ? null : result;
+  }
 
   /** The selected item in a state's shown snapshot. */
   function selectedIn(s: BoardState): { snapshot: DeliverySnapshot; item: DeliveryItemView | undefined } | null {
@@ -300,14 +313,8 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
   }
 
   async function readPlan(planId: string, snapshot: DeliverySnapshot): Promise<void> {
-    const gen = generation;
-    let result: DeliveryResult<DeliveryEvidenceRecord>;
-    try {
-      result = await deps.client.evidence(planId);
-    } catch (err) {
-      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
-    }
-    if (gen !== generation || channel === undefined) return;   // the panel was closed meanwhile
+    const result = await readEvidence(planId);
+    if (result === null) return;   // the panel was closed meanwhile
     if (snapshot !== planSnapshot) {
       log.warn(`delivery board: dropped the plan read of ${planId}; a newer snapshot is shown`);
       return;
@@ -326,6 +333,7 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
 
   /** open-evidence: only one of the selected item's own records; a review-view record goes to the review pane. */
   function openEvidence(itemId: string, artifactId: string): void {
+    const seq = ++recordSeq;
     const sel = selectedIn(state);
     const entry = sel !== null && sel.item !== undefined && sel.item.id === itemId
       ? sel.item.evidence.find(e => e.artifactId === artifactId) : undefined;
@@ -337,19 +345,13 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
       deps.reviewPane.openArtifact({ artifactId, mdPath: entry.mdPath });
       return;
     }
-    void readRecord(itemId, artifactId);
+    void readRecord(itemId, artifactId, seq);
   }
 
-  async function readRecord(itemId: string, artifactId: string): Promise<void> {
-    const gen = generation;
-    let result: DeliveryResult<DeliveryEvidenceRecord>;
-    try {
-      result = await deps.client.evidence(artifactId);
-    } catch (err) {
-      result = { ok: false, failure: { kind: 'read-failed', message: errorText(err) } };
-    }
-    if (gen !== generation || channel === undefined) return;
-    if (state.selection.selectedItemId !== itemId) return;   // the reader moved on; nothing to show it in
+  async function readRecord(itemId: string, artifactId: string, seq: number): Promise<void> {
+    const result = await readEvidence(artifactId);
+    if (result === null) return;
+    if (seq !== recordSeq) return;   // a later open, close or selection change supersedes this read
     let text: string;
     if (result.ok) {
       text = recordText(result.value);
@@ -486,11 +488,15 @@ export function createDeliveryBoardHost(deps: DeliveryBoardHostDeps): DeliveryBo
           log.warn('delivery board: ignored a link to an item that is not on the board');
           return;
         }
-        if (msg.itemId !== sel.selectedItemId) opened = null;
+        if (msg.itemId !== sel.selectedItemId) {
+          opened = null;
+          recordSeq++;
+        }
         select({ ...sel, selectedItemId: msg.itemId });
         return;
       case 'close-details':
         opened = null;
+        recordSeq++;
         select({ ...sel, selectedItemId: null });
         channel?.postMessage({ v: 1, payload: { type: 'details', model: null } });
         return;
